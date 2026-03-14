@@ -317,10 +317,11 @@ const GameBoard: React.FC = () => {
       // 1. Ensure stolen cards return to original owner's zones
       const correctOwner = activeCard.owner;
 
-      // 2. Ensure Main Deck cards don't enter Evolve Deck and vice-versa
-      if (baseZonePrefix === 'mainDeck' && activeCard.isEvolveCard) {
+      // 2. Ensure Evolve cards ONLY go to Evolve Deck when leaving play (Hand, Main Deck, Cemetery, Banish all redirect)
+      const restrictedDestinations = ['mainDeck', 'hand', 'cemetery', 'banish'];
+      if (activeCard.isEvolveCard && restrictedDestinations.includes(baseZonePrefix)) {
         baseZonePrefix = 'evolveDeck';
-      } else if (baseZonePrefix === 'evolveDeck' && !activeCard.isEvolveCard) {
+      } else if (!activeCard.isEvolveCard && baseZonePrefix === 'evolveDeck') {
         baseZonePrefix = 'mainDeck';
       }
 
@@ -413,8 +414,10 @@ const GameBoard: React.FC = () => {
        return;
     }
 
+    const destinationZone = targetCard.isEvolveCard ? `evolveDeck-${targetCard.owner}` : `banish-${targetCard.owner}`;
+
     const newCards = gameState.cards.map(c => 
-      c.id === cardId ? { ...c, zone: `banish-${c.owner}`, isTapped: false, isFlipped: false, attachedTo: undefined, counters: { atk: 0, hp: 0 } } : c
+      c.id === cardId ? { ...c, zone: destinationZone, isTapped: false, isFlipped: false, attachedTo: undefined, counters: { atk: 0, hp: 0 } } : c
     );
     syncState({ ...gameState, cards: newCards });
   };
