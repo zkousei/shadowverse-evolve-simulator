@@ -1,0 +1,21 @@
+{
+  "mainDeck": [
+    {
+      "id": "test-1",
+      "name": "Bellringer Angel",
+      "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/B01/B01-001.png"
+    }
+  ],
+  "evolveDeck": [
+    {
+      "id": "test-evo-1",
+      "name": "Bellringer Angel (Evolved)",
+      "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/B01/B01-002.png"
+    },
+    {
+      "id": "test-evo-2",
+      "name": "Dark Angel Olivia",
+      "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/B01/B01-003.png"
+    }
+  ]
+}
