@@ -181,8 +181,14 @@ const GameBoard: React.FC = () => {
   };
 
   const handleExtractCard = (cardId: string) => {
+    const targetCard = gameState.cards.find(c => c.id === cardId);
+    if (!targetCard) return;
+
+    // Direct to field for Evolve cards, to hand for others
+    const destinationZone = targetCard.isEvolveCard ? `field-${role}` : `hand-${role}`;
+
     const newCards = gameState.cards.map(c => 
-      c.id === cardId ? { ...c, zone: `hand-${role}`, isFlipped: false } : c
+      c.id === cardId ? { ...c, zone: destinationZone, isFlipped: false } : c
     );
     syncState({ ...gameState, cards: newCards });
     setSearchZone(null); // Close modal
@@ -305,10 +311,20 @@ const GameBoard: React.FC = () => {
       isFlipped = false; // Reveal when entering open play areas
     }
 
-    // ENFORCE OWNERSHIP RETURNING: Stolen cards cannot enter the thief's deck, hand, cemetery, or banish zones.
-    const baseZone = targetZone.split('-')[0];
-    if (['mainDeck', 'evolveDeck', 'hand', 'cemetery', 'banish'].includes(baseZone)) {
-      targetZone = `${baseZone}-${activeCard.owner}`;
+    // ENFORCE OWNERSHIP RETURNING & DECK TYPE RESTRICTIONS
+    let baseZonePrefix = targetZone.split('-')[0];
+    if (['mainDeck', 'evolveDeck', 'hand', 'cemetery', 'banish'].includes(baseZonePrefix)) {
+      // 1. Ensure stolen cards return to original owner's zones
+      const correctOwner = activeCard.owner;
+
+      // 2. Ensure Main Deck cards don't enter Evolve Deck and vice-versa
+      if (baseZonePrefix === 'mainDeck' && activeCard.isEvolveCard) {
+        baseZonePrefix = 'evolveDeck';
+      } else if (baseZonePrefix === 'evolveDeck' && !activeCard.isEvolveCard) {
+        baseZonePrefix = 'mainDeck';
+      }
+
+      targetZone = `${baseZonePrefix}-${correctOwner}`;
       
       // Tokens disappear entirely if entering these restricted/hidden zones
       if (activeCard.cardId === 'token') {
@@ -317,18 +333,38 @@ const GameBoard: React.FC = () => {
         return;
       }
     }
+    const baseZone = baseZonePrefix; // Update for reuse below
 
     // Otherwise, dropping onto a Zone or another card in a zone
+    const isEnteringRestrictedZone = ['mainDeck', 'evolveDeck', 'hand', 'cemetery', 'banish'].includes(baseZone);
+    
     const newCards = gameState.cards.map(c => 
-      c.id === cardId ? { ...c, zone: targetZone, attachedTo: undefined, isFlipped, isTapped: false } : c
+      c.id === cardId ? { 
+        ...c, 
+        zone: targetZone, 
+        attachedTo: undefined, 
+        isFlipped, 
+        isTapped: isEnteringRestrictedZone ? false : c.isTapped 
+      } : c
     );
 
     syncState({ ...gameState, cards: newCards });
   };
 
   const toggleTap = (cardId: string) => {
+    const targetCard = gameState.cards.find(c => c.id === cardId);
+    if (!targetCard) return;
+
+    // Find all cards in this "stack" (either attached to this, or this is attached to something)
+    const baseId = targetCard.attachedTo || targetCard.id;
+    const stackIds = new Set([baseId]);
+    gameState.cards.forEach(c => {
+      if (c.attachedTo === baseId) stackIds.add(c.id);
+    });
+
+    const newIsTapped = !targetCard.isTapped;
     const newCards = gameState.cards.map(c => 
-      c.id === cardId ? { ...c, isTapped: !c.isTapped } : c
+      stackIds.has(c.id) ? { ...c, isTapped: newIsTapped } : c
     );
     syncState({ ...gameState, cards: newCards });
   };
@@ -383,6 +419,36 @@ const GameBoard: React.FC = () => {
     syncState({ ...gameState, cards: newCards });
   };
 
+  const handleSendToCemetery = (cardId: string) => {
+    const targetCard = gameState.cards.find(c => c.id === cardId);
+    if (!targetCard) return;
+
+    if (targetCard.cardId === 'token') {
+       const filtered = gameState.cards.filter(c => c.id !== cardId);
+       syncState({ ...gameState, cards: filtered });
+       return;
+    }
+
+    // Determine the destination for the target card itself
+    const targetDestination = targetCard.isEvolveCard 
+      ? `evolveDeck-${targetCard.owner}` 
+      : `cemetery-${targetCard.owner}`;
+    
+    const newCards = gameState.cards.map(c => {
+      if (c.id === cardId) {
+        // Reset state and move to its proper destination
+        return { ...c, zone: targetDestination, isTapped: false, isFlipped: false, attachedTo: undefined, counters: { atk: 0, hp: 0 } };
+      }
+      if (c.attachedTo === cardId) {
+        // Evolve cards attached to the target always go back to Evolve Deck face up
+        return { ...c, zone: `evolveDeck-${c.owner}`, isTapped: false, isFlipped: false, attachedTo: undefined, counters: { atk: 0, hp: 0 } };
+      }
+      return c;
+    });
+
+    syncState({ ...gameState, cards: newCards });
+  };
+
   const handleReturnEvolve = (cardId: string) => {
     const targetCard = gameState.cards.find(c => c.id === cardId);
     if (!targetCard) return;
@@ -394,8 +460,12 @@ const GameBoard: React.FC = () => {
     }
 
     // According to Shadowverse Evolve rules, when an evolved card leaves the field, it goes FACE UP onto the Evolve Deck.
+    // If somehow a non-evolve card triggered this, route it to the main deck as a safety fallback.
+    const destinationDeck = targetCard.isEvolveCard ? 'evolveDeck' : 'mainDeck';
+    const isFlipped = !targetCard.isEvolveCard; // main deck cards should be face down
+
     const newCards = gameState.cards.map(c => 
-      c.id === cardId ? { ...c, zone: `evolveDeck-${c.owner}`, isTapped: false, isFlipped: false, attachedTo: undefined, counters: { atk: 0, hp: 0 } } : c
+      c.id === cardId ? { ...c, zone: `${destinationDeck}-${c.owner}`, isTapped: false, isFlipped, attachedTo: undefined, counters: { atk: 0, hp: 0 } } : c
     );
     syncState({ ...gameState, cards: newCards });
   };
@@ -480,25 +550,25 @@ const GameBoard: React.FC = () => {
                 <Zone id={`banish-${isHost ? 'guest' : 'host'}`} label="Opponent Banish" cards={getCards(`banish-${isHost ? 'guest' : 'host'}`)} layout="stack" />
               </div>
             </div>
-            <Zone id={`field-${isHost ? 'guest' : 'host'}`} label="Opponent Field" cards={getCards(`field-${isHost ? 'guest' : 'host'}`)} onTap={toggleTap} onModifyCounter={handleModifyCounter} />
+            <Zone id={`field-${isHost ? 'guest' : 'host'}`} label="Opponent Field" cards={getCards(`field-${isHost ? 'guest' : 'host'}`)} onTap={toggleTap} onModifyCounter={handleModifyCounter} onCemetery={handleSendToCemetery} />
           </div>
 
           <hr style={{ borderColor: 'rgba(255,255,255,0.1)', margin: '1rem 0' }} />
 
           {/* MY BOARD */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <Zone id={`field-${role}`} label="My Field" cards={getCards(`field-${role}`)} onTap={toggleTap} onModifyCounter={handleModifyCounter} onFlip={handleFlipCard} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} />
+            <Zone id={`field-${role}`} label="My Field" cards={getCards(`field-${role}`)} onTap={toggleTap} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} />
             
             <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <Zone id={`ex-${role}`} label="My EX Area" cards={getCards(`ex-${role}`)} onTap={toggleTap} onModifyCounter={handleModifyCounter} onFlip={handleFlipCard} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} />
+              <Zone id={`ex-${role}`} label="My EX Area" cards={getCards(`ex-${role}`)} onTap={toggleTap} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} />
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <Zone id={`banish-${role}`} label="Banish" cards={getCards(`banish-${role}`)} layout="stack" onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} />
+                <Zone id={`banish-${role}`} label="Banish" cards={getCards(`banish-${role}`)} layout="stack" onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onCemetery={handleSendToCemetery} />
                 <button onClick={() => setSearchZone({ id: `banish-${role}`, title: 'Banish Zone' })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <Zone id={`cemetery-${role}`} label="Cemetery" cards={getCards(`cemetery-${role}`)} layout="stack" onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} />
+                <Zone id={`cemetery-${role}`} label="Cemetery" cards={getCards(`cemetery-${role}`)} layout="stack" onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onCemetery={handleSendToCemetery} />
                 <button onClick={() => setSearchZone({ id: `cemetery-${role}`, title: 'Cemetery' })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
               </div>
 
@@ -519,7 +589,7 @@ const GameBoard: React.FC = () => {
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
                <div style={{ flex: 1, minHeight: '180px' }}>
                  {/* My Hand - strictly hidden from opponent but visible to me */}
-                 <Zone id={`hand-${role}`} label="My Hand" cards={getCards(`hand-${role}`)} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} />
+                 <Zone id={`hand-${role}`} label="My Hand" cards={getCards(`hand-${role}`)} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onCemetery={handleSendToCemetery} />
                </div>
                
                {/* Controls */}
@@ -581,6 +651,7 @@ const GameBoard: React.FC = () => {
         title={searchZone?.title || ''}
         cards={searchZone ? getCards(searchZone.id) : []}
         onExtractCard={handleExtractCard}
+        onToggleFlip={handleFlipCard}
       />
 
       {/* Custom Global Overlays */}

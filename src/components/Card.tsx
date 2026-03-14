@@ -23,10 +23,11 @@ interface Props {
   onSendToBottom?: (id: string) => void;
   onBanish?: (id: string) => void;
   onReturnEvolve?: (id: string) => void;
+  onCemetery?: (id: string) => void;
   isHidden?: boolean; // if true, STRICTLY render card back only
 }
 
-const Card: React.FC<Props> = ({ card, onTap, onModifyCounter, onFlip, onSendToBottom, onBanish, onReturnEvolve, isHidden }) => {
+const Card: React.FC<Props> = ({ card, onTap, onModifyCounter, onFlip, onSendToBottom, onBanish, onReturnEvolve, onCemetery, isHidden }) => {
   const { attributes, listeners, setNodeRef: setDraggableRef, transform } = useDraggable({
     id: card.id,
     data: { card }
@@ -63,6 +64,7 @@ const Card: React.FC<Props> = ({ card, onTap, onModifyCounter, onFlip, onSendToB
   return (
     <div 
       ref={setRefs} 
+      className="game-card"
       style={{ ...style, border: isOver ? '2px solid var(--vivid-green-cyan)' : 'none', borderRadius: '4px' }} 
       {...listeners} 
       {...attributes}
@@ -125,11 +127,19 @@ const Card: React.FC<Props> = ({ card, onTap, onModifyCounter, onFlip, onSendToB
               <div style={{ display: 'flex', justifyContent: 'center', gap: '4px', marginTop: 'auto' }}>
                 {onFlip && <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onFlip(card.id); }} style={{ background:'var(--bg-surface-elevated)', color:'white', border:'1px solid gray', padding:'2px 4px', fontSize:'10px', borderRadius:'2px' }}>Flip</button>}
                 {onSendToBottom && <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onSendToBottom(card.id); }} style={{ background:'var(--bg-surface-elevated)', color:'white', border:'1px solid gray', padding:'2px 4px', fontSize:'10px', borderRadius:'2px' }}>↓Bot</button>}
+                {onCemetery && <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onCemetery(card.id); }} style={{ background:'#374151', color:'white', border:'1px solid #9ca3af', padding:'2px 4px', fontSize:'10px', borderRadius:'2px' }}>Cemetery</button>}
                 {onBanish && <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onBanish(card.id); }} style={{ background:'#4c1d95', color:'white', border:'1px solid #c4b5fd', padding:'2px 4px', fontSize:'10px', borderRadius:'2px' }}>Banish</button>}
               </div>
-              {onReturnEvolve && (
+              {onReturnEvolve && card.isEvolveCard && (
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '4px', marginTop: '2px' }}>
                   <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onReturnEvolve(card.id); }} style={{ background:'var(--accent-primary)', color:'black', border:'1px solid var(--accent-primary)', padding:'2px 4px', fontSize:'10px', borderRadius:'2px', width: '100%', fontWeight: 'bold' }}>To Evolve Deck</button>
+                </div>
+              )}
+              {onTap && (
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '4px', marginTop: '2px' }}>
+                  <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onTap(card.id); }} style={{ background: card.isTapped ? '#fbbf24' : '#64748b', color: 'black', border: '1px solid #fff', padding: '4px 4px', fontSize: '11px', borderRadius: '4px', width: '100%', fontWeight: 'bold' }}>
+                    {card.isTapped ? 'STAND' : 'REST'}
+                  </button>
                 </div>
               )}
             </div>

@@ -108,6 +108,23 @@ button {
   animation: fadeIn 0.4s ease forwards;
 }
 
+.modal-card-controls {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.search-card-container:hover .modal-card-controls {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Restore field card controls hover */
 .card-controls:hover {
   opacity: 1 !important;
+  z-index: 100;
+}
+
+.game-card:hover {
+  z-index: 50 !important;
 }

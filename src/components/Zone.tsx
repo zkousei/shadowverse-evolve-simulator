@@ -12,11 +12,12 @@ interface Props {
   onSendToBottom?: (id: string) => void;
   onBanish?: (id: string) => void;
   onReturnEvolve?: (id: string) => void;
+  onCemetery?: (id: string) => void;
   hideCards?: boolean; // e.g. opponent hand
   layout?: 'horizontal' | 'stack';
 }
 
-const Zone: React.FC<Props> = ({ id, label, cards, onTap, onModifyCounter, onFlip, onSendToBottom, onBanish, onReturnEvolve, hideCards, layout = 'horizontal' }) => {
+const Zone: React.FC<Props> = ({ id, label, cards, onTap, onModifyCounter, onFlip, onSendToBottom, onBanish, onReturnEvolve, onCemetery, hideCards, layout = 'horizontal' }) => {
   const { isOver, setNodeRef } = useDroppable({ id });
 
   const isStack = layout === 'stack';
@@ -66,6 +67,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, onTap, onModifyCounter, onFli
                 onSendToBottom={onSendToBottom}
                 onBanish={onBanish}
                 onReturnEvolve={onReturnEvolve}
+                onCemetery={onCemetery}
                 isHidden={hideCards} 
               />
               
@@ -80,6 +82,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, onTap, onModifyCounter, onFli
                     onSendToBottom={onSendToBottom}
                     onBanish={onBanish}
                     onReturnEvolve={onReturnEvolve}
+                    onCemetery={onCemetery}
                     isHidden={hideCards} 
                   />
                 </div>
