@@ -2,6 +2,7 @@ import React from 'react';
 import { DndContext } from '@dnd-kit/core';
 import Zone from '../components/Zone';
 import CardSearchModal from '../components/CardSearchModal';
+import TopDeckModal from '../components/TopDeckModal';
 import { useGameBoardLogic } from '../hooks/useGameBoardLogic';
 
 const GameBoard: React.FC = () => {
@@ -15,8 +16,12 @@ const GameBoard: React.FC = () => {
     drawCard, handleExtractCard, confirmResetGame, handleDeckUpload, spawnToken,
     handleModifyCounter, handleDragEnd, toggleTap, handleFlipCard, handleSendToBottom,
     handleBanish, handlePlayToField, handleSendToCemetery, handleReturnEvolve, handleShuffleDeck,
-    getCards, lastGameState, millCard
+    getCards, lastGameState, millCard,
+    topDeckCards, handleLookAtTop, handleResolveTopDeck, setTopDeckCards
   } = useGameBoardLogic();
+
+  const [isTopNInputOpen, setIsTopNInputOpen] = React.useState(false);
+  const [topNValue, setTopNValue] = React.useState(3);
 
   return (
     <DndContext onDragEnd={handleDragEnd}>
@@ -237,9 +242,10 @@ const GameBoard: React.FC = () => {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <Zone id={`mainDeck-${role}`} label="Main Deck" cards={getCards(`mainDeck-${role}`)} layout="stack" isProtected={true} viewerRole={role} containerStyle={{ minWidth: '110px', minHeight: '150px' }} />
-                <div style={{ display: 'flex', gap: '2px' }}>
-                  <button onClick={() => setSearchZone({ id: `mainDeck-${role}`, title: 'Main Deck' })} style={{ flex: 1, fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
-                  <button onClick={handleShuffleDeck} style={{ flex: 1, fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Shuffle</button>
+                <div style={{ display: 'flex', gap: '2px', flexWrap: 'wrap' }}>
+                  <button onClick={() => setSearchZone({ id: `mainDeck-${role}`, title: 'Main Deck' })} style={{ flex: '1 1 48%', fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
+                  <button onClick={handleShuffleDeck} style={{ flex: '1 1 48%', fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Shuffle</button>
+                  <button onClick={() => setIsTopNInputOpen(true)} style={{ flex: '1 1 100%', fontSize: '0.75rem', padding: '4px', background: '#3b82f6', border: '1px solid #2563eb', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Look Top (N)</button>
                 </div>
               </div>
             </div>
@@ -462,12 +468,41 @@ const GameBoard: React.FC = () => {
           (searchZone.id.startsWith('evolveDeck-') && !searchZone.id.endsWith(role)
             ? getCards(searchZone.id).filter(c => !c.isFlipped)
             : getCards(searchZone.id)
-          ).slice().reverse()
+          ).slice()
         ) : []}
         onExtractCard={handleExtractCard}
         onToggleFlip={handleFlipCard}
         viewerRole={role}
       />
+
+      <TopDeckModal
+        isOpen={topDeckCards.length > 0}
+        cards={topDeckCards}
+        onConfirm={handleResolveTopDeck}
+        onCancel={() => setTopDeckCards([])}
+      />
+
+      {isTopNInputOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 5000 }}>
+          <div style={{ background: 'var(--bg-surface)', padding: '2rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', textAlign: 'center' }}>
+            <h3 style={{ marginBottom: '1rem', color: 'white' }}>How many cards to look at?</h3>
+            <input 
+              type="number" 
+              value={topNValue} 
+              onChange={(e) => setTopNValue(Number(e.target.value))} 
+              min="1" max="50"
+              style={{ padding: '0.5rem', borderRadius: '4px', background: 'black', color: 'white', border: '1px solid #444', fontSize: '1.25rem', textAlign: 'center', width: '80px', marginBottom: '1.5rem' }}
+            />
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+              <button onClick={() => setIsTopNInputOpen(false)} style={{ padding: '0.5rem 1.5rem', background: '#333', color: 'white', borderRadius: '4px', cursor: 'pointer', border: 'none' }}>Cancel</button>
+              <button onClick={() => {
+                handleLookAtTop(topNValue);
+                setIsTopNInputOpen(false);
+              }} style={{ padding: '0.5rem 1.5rem', background: 'var(--accent-primary)', color: 'white', borderRadius: '4px', cursor: 'pointer', border: 'none', fontWeight: 'bold' }}>Look</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Custom Global Overlays */}
       {coinMessage && (

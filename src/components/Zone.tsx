@@ -57,13 +57,59 @@ const Zone: React.FC<Props> = ({ id, label, cards, onTap, onModifyCounter, onFli
         );
         const topLevelCards = cards.filter(c => !validAttachedIds.has(c.id));
 
-        return topLevelCards.map((card, index) => {
-          // Cap the visual depth of the stack so it doesn't overflow downwards indefinitely
-          const stackOffset = Math.min(index, 5) * 2;
-          const attachments = cards.filter(c => c.attachedTo === card.id);
-
+        if (isStack && topLevelCards.length > 0) {
           return (
-            <div key={card.id} style={isStack ? { position: index === 0 ? 'relative' : 'absolute', top: stackOffset, left: stackOffset } : { position: 'relative' }}>
+            <div style={{ position: 'relative', width: '100px', height: '140px' }}>
+              {topLevelCards.map((card, index) => {
+                // To make index 0 (Top card) appear at the absolute top of the stack:
+                // 1. Give it the highest zIndex
+                // 2. Put it at the last offset (or just correct the offset logic)
+                const displayIndex = cards.length - index;
+                const stackOffset = Math.min(index, 5) * 2;
+                const attachments = cards.filter(c => c.attachedTo === card.id);
+                return (
+                  <div key={card.id} style={{ position: 'absolute', top: stackOffset, left: stackOffset, zIndex: displayIndex }}>
+                    <Card
+                      card={card}
+                      onTap={onTap}
+                      onModifyCounter={onModifyCounter}
+                      onFlip={onFlip}
+                      onSendToBottom={onSendToBottom}
+                      onBanish={onBanish}
+                      onReturnEvolve={onReturnEvolve}
+                      onCemetery={onCemetery}
+                      onPlayToField={onPlayToField}
+                      isHidden={hideCards}
+                      isLocked={isProtected && card.owner !== viewerRole}
+                    />
+                    {attachments.map((attachedCard, i) => (
+                      <div key={attachedCard.id} style={{ position: 'absolute', top: (i + 1) * 20, left: (i + 1) * 15, zIndex: index + 10 + i }}>
+                        <Card
+                          card={attachedCard}
+                          onTap={onTap}
+                          onModifyCounter={onModifyCounter}
+                          onFlip={onFlip}
+                          onSendToBottom={onSendToBottom}
+                          onBanish={onBanish}
+                          onReturnEvolve={onReturnEvolve}
+                          onCemetery={onCemetery}
+                          onPlayToField={onPlayToField}
+                          isHidden={hideCards}
+                          isLocked={isProtected && attachedCard.owner !== viewerRole}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        }
+
+        return topLevelCards.map((card) => {
+          const attachments = cards.filter(c => c.attachedTo === card.id);
+          return (
+            <div key={card.id} style={{ position: 'relative' }}>
               <Card
                 card={card}
                 onTap={onTap}
@@ -77,8 +123,6 @@ const Zone: React.FC<Props> = ({ id, label, cards, onTap, onModifyCounter, onFli
                 isHidden={hideCards}
                 isLocked={isProtected && card.owner !== viewerRole}
               />
-
-              {/* Render Attached Evolve Cards overlaying the base card */}
               {attachments.map((attachedCard, i) => (
                 <div key={attachedCard.id} style={{ position: 'absolute', top: (i + 1) * 20, left: (i + 1) * 15, zIndex: 10 + i }}>
                   <Card
