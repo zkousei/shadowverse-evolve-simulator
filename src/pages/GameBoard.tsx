@@ -132,7 +132,7 @@ const GameBoard: React.FC = () => {
     // 3. Stand all fields (handled dynamically or we can explicitly un-tap here)
     // Actually, rulebook says untap all field cards at Start Phase
     const newCards = gameState.cards.map(c => 
-      c.owner === nextPlayer && c.isTapped && (c.zone === `field-${nextPlayer}` || c.zone === `ex-${nextPlayer}`)
+      c.isTapped && c.zone === `field-${nextPlayer}`
         ? { ...c, isTapped: false }
         : c
     );
@@ -580,7 +580,7 @@ const GameBoard: React.FC = () => {
             <Zone id={`field-${role}`} label="My Field" cards={getCards(`field-${role}`)} onTap={toggleTap} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} />
             
             <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <Zone id={`ex-${role}`} label="My EX Area" cards={getCards(`ex-${role}`)} onTap={toggleTap} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} />
+              <Zone id={`ex-${role}`} label="My EX Area" cards={getCards(`ex-${role}`)} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} />
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <Zone id={`banish-${role}`} label="Banish" cards={getCards(`banish-${role}`)} layout="stack" onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onCemetery={handleSendToCemetery} />
