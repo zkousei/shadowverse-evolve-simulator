@@ -104,6 +104,12 @@ const Home: React.FC = () => {
           </form>
         </div>
       </div>
+
+      <div style={{ position: 'fixed', bottom: '1rem', textAlign: 'center', maxWidth: '800px', padding: '0 1rem' }}>
+        <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+          当サイトに使用しているカード画像は、Shadowverse EVOLVE公式サイト(https://shadowverse-evolve.com/)より、ガイドラインに従って転載しております。該当画像の再利用（転載・配布等）は禁止しております。© Cygames, Inc. ©bushiroad All Rights Reserved.
+        </p>
+      </div>
     </div>
   );
 };
