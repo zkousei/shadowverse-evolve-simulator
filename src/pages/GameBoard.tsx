@@ -15,7 +15,7 @@ const GameBoard: React.FC = () => {
     drawCard, handleExtractCard, confirmResetGame, handleDeckUpload, spawnToken,
     handleModifyCounter, handleDragEnd, toggleTap, handleFlipCard, handleSendToBottom,
     handleBanish, handlePlayToField, handleSendToCemetery, handleReturnEvolve, handleShuffleDeck,
-    getCards, lastGameState
+    getCards, lastGameState, millCard
   } = useGameBoardLogic();
 
   return (
@@ -286,6 +286,21 @@ const GameBoard: React.FC = () => {
                   }}
                 >
                   Draw Card
+                </button>
+
+                <button
+                  onClick={millCard}
+                  className="glass-panel"
+                  disabled={gameState.gameStatus !== 'playing'}
+                  style={{
+                    padding: '0.5rem',
+                    background: '#64748b', // Slate color for mill
+                    fontWeight: 'bold',
+                    opacity: gameState.gameStatus === 'playing' ? 1 : 0.5,
+                    cursor: gameState.gameStatus === 'playing' ? 'pointer' : 'not-allowed'
+                  }}
+                >
+                  Mill Card (デッキ破棄)
                 </button>
 
                 {gameState.turnPlayer === role && (

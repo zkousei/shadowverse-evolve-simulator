@@ -299,6 +299,17 @@ export const useGameBoardLogic = () => {
     syncState({ ...gameState, cards: newCards });
   };
 
+  const millCard = () => {
+    if (gameState.gameStatus !== 'playing') return;
+    const myDeck = gameState.cards.filter(c => c.zone === `mainDeck-${role}`);
+    if (myDeck.length === 0) return;
+    const topCard = myDeck[0];
+    const newCards = gameState.cards.map(c =>
+      c.id === topCard.id ? { ...c, zone: `cemetery-${role}`, isFlipped: false, isTapped: false, attachedTo: undefined, counters: { atk: 0, hp: 0 } } : c
+    );
+    syncState({ ...gameState, cards: newCards });
+  };
+
   const handleExtractCard = (cardId: string, customDestination?: string) => {
     const targetCard = gameState.cards.find(c => c.id === cardId);
     if (!targetCard) return;
@@ -545,6 +556,6 @@ export const useGameBoardLogic = () => {
     drawCard, handleExtractCard, confirmResetGame, handleDeckUpload, spawnToken,
     handleModifyCounter, handleDragEnd, toggleTap, handleFlipCard, handleSendToBottom,
     handleBanish, handlePlayToField, handleSendToCemetery, handleReturnEvolve, handleShuffleDeck,
-    getCards, lastGameState
+    getCards, lastGameState, millCard
   };
 };
