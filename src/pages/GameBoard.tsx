@@ -180,12 +180,18 @@ const GameBoard: React.FC = () => {
     syncState({ ...gameState, cards: newCards });
   };
 
-  const handleExtractCard = (cardId: string) => {
+  const handleExtractCard = (cardId: string, customDestination?: string) => {
     const targetCard = gameState.cards.find(c => c.id === cardId);
     if (!targetCard) return;
-
-    // Direct to field for Evolve cards, to hand for others
-    const destinationZone = targetCard.isEvolveCard ? `field-${role}` : `hand-${role}`;
+    
+    // By default, Evolve cards go to Field, others go to Hand.
+    // octrice/usurpation effects might target specific zones.
+    let destinationZone = targetCard.isEvolveCard ? `field-${role}` : `hand-${role}`;
+    
+    if (customDestination) {
+      destinationZone = customDestination;
+    }
+    // Riverside
 
     const newCards = gameState.cards.map(c => 
       c.id === cardId ? { ...c, zone: destinationZone, isFlipped: false } : c
@@ -336,7 +342,14 @@ const GameBoard: React.FC = () => {
     }
     const baseZone = baseZonePrefix; // Update for reuse below
 
-    // Otherwise, dropping onto a Zone or another card in a zone
+    // Define flip state based on where it's ending up
+    if (baseZone === 'mainDeck') {
+      isFlipped = true;
+    } else if (['field', 'ex', 'hand', 'cemetery', 'banish'].includes(baseZone)) {
+      isFlipped = false;
+    }
+    // For evolveDeck, we preserve the current flipped state (USED/UNUSED status)
+
     const isEnteringRestrictedZone = ['mainDeck', 'evolveDeck', 'hand', 'cemetery', 'banish'].includes(baseZone);
     
     const newCards = gameState.cards.map(c => 
@@ -560,45 +573,54 @@ const GameBoard: React.FC = () => {
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               {/* Opponent Hand (STRICT HIDDEN) */}
               <div style={{ flex: 1 }}>
-                 <Zone id={`hand-${isHost ? 'guest' : 'host'}`} label="Opponent Hand" cards={getCards(`hand-${isHost ? 'guest' : 'host'}`)} hideCards={true} layout="stack" />
+                 <Zone id={`hand-${isHost ? 'guest' : 'host'}`} label="Opponent Hand" cards={getCards(`hand-${isHost ? 'guest' : 'host'}`)} hideCards={true} layout="stack" isProtected={true} viewerRole={role} />
               </div>
               <div style={{ display: 'flex', flex: 3, gap: '0.5rem' }}>
-                <Zone id={`ex-${isHost ? 'guest' : 'host'}`} label="Opponent EX Area" cards={getCards(`ex-${isHost ? 'guest' : 'host'}`)} />
-                <Zone id={`evolveDeck-${isHost ? 'guest' : 'host'}`} label="Opponent Evolve Deck" cards={getCards(`evolveDeck-${isHost ? 'guest' : 'host'}`)} layout="stack" />
-                <Zone id={`mainDeck-${isHost ? 'guest' : 'host'}`} label="Opponent Main Deck" cards={getCards(`mainDeck-${isHost ? 'guest' : 'host'}`)} layout="stack" />
-                <Zone id={`cemetery-${isHost ? 'guest' : 'host'}`} label="Opponent Cemetery" cards={getCards(`cemetery-${isHost ? 'guest' : 'host'}`)} layout="stack" />
-                <Zone id={`banish-${isHost ? 'guest' : 'host'}`} label="Opponent Banish" cards={getCards(`banish-${isHost ? 'guest' : 'host'}`)} layout="stack" />
+                <Zone id={`ex-${isHost ? 'guest' : 'host'}`} label="Opponent EX Area" cards={getCards(`ex-${isHost ? 'guest' : 'host'}`)} isProtected={true} viewerRole={role} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <Zone id={`evolveDeck-${isHost ? 'guest' : 'host'}`} label="Opponent Evolve Deck" cards={getCards(`evolveDeck-${isHost ? 'guest' : 'host'}`)} layout="stack" isProtected={true} viewerRole={role} />
+                  <button onClick={() => setSearchZone({ id: `evolveDeck-${isHost ? 'guest' : 'host'}`, title: "Opponent's Evolve Deck (Used)" })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
+                </div>
+                <Zone id={`mainDeck-${isHost ? 'guest' : 'host'}`} label="Opponent Main Deck" cards={getCards(`mainDeck-${isHost ? 'guest' : 'host'}`)} layout="stack" isProtected={true} viewerRole={role} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <Zone id={`cemetery-${isHost ? 'guest' : 'host'}`} label="Opponent Cemetery" cards={getCards(`cemetery-${isHost ? 'guest' : 'host'}`)} layout="stack" viewerRole={role} />
+                  <button onClick={() => setSearchZone({ id: `cemetery-${isHost ? 'guest' : 'host'}`, title: "Opponent's Cemetery" })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <Zone id={`banish-${isHost ? 'guest' : 'host'}`} label="Opponent Banish" cards={getCards(`banish-${isHost ? 'guest' : 'host'}`)} layout="stack" viewerRole={role} />
+                  <button onClick={() => setSearchZone({ id: `banish-${isHost ? 'guest' : 'host'}`, title: "Opponent's Banish Zone" })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
+                </div>
               </div>
             </div>
-            <Zone id={`field-${isHost ? 'guest' : 'host'}`} label="Opponent Field" cards={getCards(`field-${isHost ? 'guest' : 'host'}`)} onTap={toggleTap} onModifyCounter={handleModifyCounter} onCemetery={handleSendToCemetery} />
+            <Zone id={`field-${isHost ? 'guest' : 'host'}`} label="Opponent Field" cards={getCards(`field-${isHost ? 'guest' : 'host'}`)} onTap={toggleTap} onModifyCounter={handleModifyCounter} onCemetery={handleSendToCemetery} viewerRole={role} />
           </div>
 
           <hr style={{ borderColor: 'rgba(255,255,255,0.1)', margin: '1rem 0' }} />
 
           {/* MY BOARD */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <Zone id={`field-${role}`} label="My Field" cards={getCards(`field-${role}`)} onTap={toggleTap} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} />
+            <Zone id={`field-${role}`} label="My Field" cards={getCards(`field-${role}`)} onTap={toggleTap} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} viewerRole={role} />
             
             <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <Zone id={`ex-${role}`} label="My EX Area" cards={getCards(`ex-${role}`)} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} />
+              <Zone id={`ex-${role}`} label="My EX Area" cards={getCards(`ex-${role}`)} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} viewerRole={role} />
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <Zone id={`banish-${role}`} label="Banish" cards={getCards(`banish-${role}`)} layout="stack" onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onCemetery={handleSendToCemetery} />
+                <Zone id={`banish-${role}`} label="Banish" cards={getCards(`banish-${role}`)} layout="stack" onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onCemetery={handleSendToCemetery} viewerRole={role} />
                 <button onClick={() => setSearchZone({ id: `banish-${role}`, title: 'Banish Zone' })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <Zone id={`cemetery-${role}`} label="Cemetery" cards={getCards(`cemetery-${role}`)} layout="stack" onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onCemetery={handleSendToCemetery} />
+                <Zone id={`cemetery-${role}`} label="Cemetery" cards={getCards(`cemetery-${role}`)} layout="stack" onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onCemetery={handleSendToCemetery} viewerRole={role} />
                 <button onClick={() => setSearchZone({ id: `cemetery-${role}`, title: 'Cemetery' })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <Zone id={`evolveDeck-${role}`} label="Evolve Deck" cards={getCards(`evolveDeck-${role}`)} layout="stack" />
+                <Zone id={`evolveDeck-${role}`} label="Evolve Deck" cards={getCards(`evolveDeck-${role}`)} layout="stack" isProtected={true} viewerRole={role} />
                 <button onClick={() => setSearchZone({ id: `evolveDeck-${role}`, title: 'Evolve Deck' })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <Zone id={`mainDeck-${role}`} label="Main Deck" cards={getCards(`mainDeck-${role}`)} layout="stack" />
+                <Zone id={`mainDeck-${role}`} label="Main Deck" cards={getCards(`mainDeck-${role}`)} layout="stack" isProtected={true} viewerRole={role} />
                 <div style={{ display: 'flex', gap: '2px' }}>
                   <button onClick={() => setSearchZone({ id: `mainDeck-${role}`, title: 'Main Deck' })} style={{ flex: 1, fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
                   <button onClick={handleShuffleDeck} style={{ flex: 1, fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Shuffle</button>
@@ -609,7 +631,7 @@ const GameBoard: React.FC = () => {
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
                <div style={{ flex: 1, minHeight: '180px' }}>
                  {/* My Hand - strictly hidden from opponent but visible to me */}
-                 <Zone id={`hand-${role}`} label="My Hand" cards={getCards(`hand-${role}`)} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onCemetery={handleSendToCemetery} />
+                 <Zone id={`hand-${role}`} label="My Hand" cards={getCards(`hand-${role}`)} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onCemetery={handleSendToCemetery} isProtected={true} viewerRole={role} />
                </div>
                
                {/* Controls */}
@@ -669,9 +691,14 @@ const GameBoard: React.FC = () => {
         isOpen={searchZone !== null}
         onClose={() => setSearchZone(null)}
         title={searchZone?.title || ''}
-        cards={searchZone ? getCards(searchZone.id) : []}
+        cards={searchZone ? (
+          searchZone.id.startsWith('evolveDeck-') && !searchZone.id.endsWith(role)
+            ? getCards(searchZone.id).filter(c => !c.isFlipped) // Only show face-up (used) cards for opponent's evolve deck
+            : getCards(searchZone.id)
+        ) : []}
         onExtractCard={handleExtractCard}
         onToggleFlip={handleFlipCard}
+        viewerRole={role}
       />
 
       {/* Custom Global Overlays */}

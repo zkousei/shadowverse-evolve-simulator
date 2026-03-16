@@ -15,9 +15,11 @@ interface Props {
   onCemetery?: (id: string) => void;
   hideCards?: boolean; // e.g. opponent hand
   layout?: 'horizontal' | 'stack';
+  isProtected?: boolean; // if true, opponent cannot operate cards in this zone
+  viewerRole?: 'host' | 'guest'; // current player's role
 }
 
-const Zone: React.FC<Props> = ({ id, label, cards, onTap, onModifyCounter, onFlip, onSendToBottom, onBanish, onReturnEvolve, onCemetery, hideCards, layout = 'horizontal' }) => {
+const Zone: React.FC<Props> = ({ id, label, cards, onTap, onModifyCounter, onFlip, onSendToBottom, onBanish, onReturnEvolve, onCemetery, hideCards, layout = 'horizontal', isProtected, viewerRole }) => {
   const { isOver, setNodeRef } = useDroppable({ id });
 
   const isStack = layout === 'stack';
@@ -69,6 +71,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, onTap, onModifyCounter, onFli
                 onReturnEvolve={onReturnEvolve}
                 onCemetery={onCemetery}
                 isHidden={hideCards} 
+                isLocked={isProtected && card.owner !== viewerRole}
               />
               
               {/* Render Attached Evolve Cards overlaying the base card */}
@@ -84,6 +87,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, onTap, onModifyCounter, onFli
                     onReturnEvolve={onReturnEvolve}
                     onCemetery={onCemetery}
                     isHidden={hideCards} 
+                    isLocked={isProtected && attachedCard.owner !== viewerRole}
                   />
                 </div>
               ))}

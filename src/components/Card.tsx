@@ -25,12 +25,14 @@ interface Props {
   onReturnEvolve?: (id: string) => void;
   onCemetery?: (id: string) => void;
   isHidden?: boolean; // if true, STRICTLY render card back only
+  isLocked?: boolean; // if true, prevent dragging and operating (opponent's hand/deck/ex)
 }
 
-const Card: React.FC<Props> = ({ card, onTap, onModifyCounter, onFlip, onSendToBottom, onBanish, onReturnEvolve, onCemetery, isHidden }) => {
+const Card: React.FC<Props> = ({ card, onTap, onModifyCounter, onFlip, onSendToBottom, onBanish, onReturnEvolve, onCemetery, isHidden, isLocked }) => {
   const { attributes, listeners, setNodeRef: setDraggableRef, transform } = useDraggable({
     id: card.id,
-    data: { card }
+    data: { card },
+    disabled: isLocked
   });
 
   const { isOver, setNodeRef: setDroppableRef } = useDroppable({
@@ -47,7 +49,7 @@ const Card: React.FC<Props> = ({ card, onTap, onModifyCounter, onFlip, onSendToB
     // Translate x/y for the drag
     transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
     zIndex: transform ? 999 : 1,
-    cursor: 'grab',
+    cursor: isLocked ? 'default' : 'grab',
     position: 'relative',
     width: '100px',
     height: '140px',
@@ -103,8 +105,8 @@ const Card: React.FC<Props> = ({ card, onTap, onModifyCounter, onFlip, onSendToB
             </div>
           )}
 
-          {/* Quick Edit Overlay - Only show on hover for the owner (we'll assume if it's not hidden, the player can edit it) */}
-          {!isHidden && (
+          {/* Quick Edit Overlay - Only show if not hidden AND not locked */}
+          {!isHidden && !isLocked && (
             <div className="card-controls" 
               style={{
               position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,

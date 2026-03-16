@@ -6,11 +6,12 @@ interface CardSearchModalProps {
   onClose: () => void;
   title: string;
   cards: CardInstance[];
-  onExtractCard: (cardId: string) => void;
+  onExtractCard: (cardId: string, destination?: string) => void;
   onToggleFlip?: (cardId: string) => void;
+  viewerRole?: 'host' | 'guest';
 }
 
-const CardSearchModal: React.FC<CardSearchModalProps> = ({ isOpen, onClose, title, cards, onExtractCard, onToggleFlip }) => {
+const CardSearchModal: React.FC<CardSearchModalProps> = ({ isOpen, onClose, title, cards, onExtractCard, onToggleFlip, viewerRole }) => {
   if (!isOpen) return null;
 
   return (
@@ -66,39 +67,64 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({ isOpen, onClose, titl
                 )}
 
                 {/* Overlay Controls - Visible on Hover via CSS */}
-                <div 
-                  className="modal-card-controls"
-                  style={{
-                    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                    background: 'rgba(0,0,0,0.8)', display: 'flex', flexDirection: 'column',
-                    justifyContent: 'center', alignItems: 'center', gap: '8px',
-                    borderRadius: '4px', padding: '8px'
-                  }}
-                >
-                  <button 
-                    onClick={() => onExtractCard(c.id)}
+                {/* Rule: Show controls if it's my card OR if it's a public zone (Cemetery/Banish) and I am searching */}
+                {(c.owner === viewerRole || title.includes('Cemetery') || title.includes('Banish')) && (
+                  <div 
+                    className="modal-card-controls"
                     style={{
-                      width: '100%', background: '#3b82f6', color: 'white', border: 'none',
-                      padding: '4px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold',
-                      cursor: 'pointer'
+                      position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                      background: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column',
+                      justifyContent: 'center', alignItems: 'center', gap: '4px',
+                      borderRadius: '4px', padding: '6px'
                     }}
                   >
-                    {c.isEvolveCard ? 'Play to Field' : 'Add to Hand'}
-                  </button>
-                  
-                  {onToggleFlip && c.isEvolveCard && (
                     <button 
-                      onClick={() => onToggleFlip(c.id)}
+                      onClick={() => onExtractCard(c.id, `field-${viewerRole}`)}
                       style={{
-                        width: '100%', background: '#4b5563', color: 'white', border: '1px solid #9ca3af',
-                        padding: '4px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold',
+                        width: '100%', background: '#3b82f6', color: 'white', border: 'none',
+                        padding: '3px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold',
                         cursor: 'pointer'
                       }}
                     >
-                      {c.isFlipped ? 'Set USED (Face-up)' : 'Set UNUSED (Face-down)'}
+                      Play to Field
                     </button>
-                  )}
-                </div>
+                    {c.owner === viewerRole && (
+                      <button 
+                        onClick={() => onExtractCard(c.id, `hand-${viewerRole}`)}
+                        style={{
+                          width: '100%', background: '#10b981', color: 'white', border: 'none',
+                          padding: '3px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Add to Hand
+                      </button>
+                    )}
+                    <button 
+                      onClick={() => onExtractCard(c.id, `ex-${viewerRole}`)}
+                      style={{
+                        width: '100%', background: '#a855f7', color: 'white', border: 'none',
+                        padding: '3px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Add to EX Area
+                    </button>
+                    
+                    {onToggleFlip && c.isEvolveCard && c.owner === viewerRole && (
+                      <button 
+                        onClick={() => onToggleFlip(c.id)}
+                        style={{
+                          width: '100%', background: '#4b5563', color: 'white', border: '1px solid #9ca3af',
+                          padding: '3px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold',
+                          cursor: 'pointer', marginTop: '2px'
+                        }}
+                      >
+                        {c.isFlipped ? 'Set USED' : 'Set UNUSED'}
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
