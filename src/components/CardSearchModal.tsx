@@ -9,9 +9,10 @@ interface CardSearchModalProps {
   onExtractCard: (cardId: string, destination?: string) => void;
   onToggleFlip?: (cardId: string) => void;
   viewerRole?: 'host' | 'guest';
+  allowHandExtraction?: boolean;
 }
 
-const CardSearchModal: React.FC<CardSearchModalProps> = ({ isOpen, onClose, title, cards, onExtractCard, onToggleFlip, viewerRole }) => {
+const CardSearchModal: React.FC<CardSearchModalProps> = ({ isOpen, onClose, title, cards, onExtractCard, onToggleFlip, viewerRole, allowHandExtraction = true }) => {
   if (!isOpen) return null;
 
   return (
@@ -91,10 +92,11 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({ isOpen, onClose, titl
                     {c.owner === viewerRole && (
                       <button 
                         onClick={() => onExtractCard(c.id, `hand-${viewerRole}`)}
+                        disabled={!allowHandExtraction}
                         style={{
-                          width: '100%', background: '#10b981', color: 'white', border: 'none',
+                          width: '100%', background: allowHandExtraction ? '#10b981' : '#374151', color: allowHandExtraction ? 'white' : '#949db0', border: 'none',
                           padding: '3px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold',
-                          cursor: 'pointer'
+                          cursor: allowHandExtraction ? 'pointer' : 'not-allowed'
                         }}
                       >
                         Add to Hand
@@ -102,10 +104,11 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({ isOpen, onClose, titl
                     )}
                     <button 
                       onClick={() => onExtractCard(c.id, `ex-${viewerRole}`)}
+                      disabled={!allowHandExtraction}
                       style={{
-                        width: '100%', background: '#a855f7', color: 'white', border: 'none',
+                        width: '100%', background: allowHandExtraction ? '#a855f7' : '#374151', color: allowHandExtraction ? 'white' : '#949db0', border: 'none',
                         padding: '3px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold',
-                        cursor: 'pointer'
+                        cursor: allowHandExtraction ? 'pointer' : 'not-allowed'
                       }}
                     >
                       Add to EX Area

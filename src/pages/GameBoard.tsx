@@ -359,6 +359,7 @@ const GameBoard: React.FC = () => {
   };
 
   const drawCard = () => {
+    if (gameState.gameStatus !== 'playing') return;
     const myDeck = gameState.cards.filter(c => c.zone === `mainDeck-${role}`);
     if (myDeck.length === 0) return;
 
@@ -534,6 +535,11 @@ const GameBoard: React.FC = () => {
 
       targetZone = `${baseZonePrefix}-${correctOwner}`;
       
+      // PREPARATION GUARD: Prevent manual moves to hand during setup
+      if (baseZonePrefix === 'hand' && gameState.gameStatus === 'preparing') {
+        return;
+      }
+
       // Tokens disappear entirely if entering these restricted/hidden zones
       if (activeCard.cardId === 'token') {
         const remainingCards = gameState.cards.filter(c => c.id !== cardId);
@@ -975,8 +981,18 @@ const GameBoard: React.FC = () => {
                     Import Deck (.json)
                     <input type="file" accept=".json" style={{ display: 'none' }} onChange={handleDeckUpload} />
                   </label>
-                  
-                  <button onClick={drawCard} className="glass-panel" style={{ padding: '0.5rem', background: 'var(--accent-primary)', fontWeight: 'bold' }}>
+                                    <button 
+                    onClick={drawCard} 
+                    className="glass-panel" 
+                    disabled={gameState.gameStatus !== 'playing'}
+                    style={{ 
+                      padding: '0.5rem', 
+                      background: 'var(--accent-primary)', 
+                      fontWeight: 'bold',
+                      opacity: gameState.gameStatus === 'playing' ? 1 : 0.5,
+                      cursor: gameState.gameStatus === 'playing' ? 'pointer' : 'not-allowed'
+                    }}
+                  >
                     Draw Card
                   </button>
 
@@ -1134,6 +1150,7 @@ const GameBoard: React.FC = () => {
         isOpen={searchZone !== null}
         onClose={() => setSearchZone(null)}
         title={searchZone?.title || ''}
+        allowHandExtraction={gameState.gameStatus === 'playing'}
         cards={searchZone ? (
           searchZone.id.startsWith('evolveDeck-') && !searchZone.id.endsWith(role)
             ? getCards(searchZone.id).filter(c => !c.isFlipped) // Only show face-up (used) cards for opponent's evolve deck
