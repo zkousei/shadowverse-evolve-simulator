@@ -298,18 +298,8 @@ const GameBoard: React.FC = () => {
     // Cards to return are already in hand, but we move them to deck bottom in the chosen order.
     // Order: The 1st selected is the "top" of the bottom 4, the 4th selected is the ABSOLUTE bottom.
     
-    const remainingCards = gameState.cards.filter(c => !mulliganOrder.includes(c.id));
-    const returnedCards = mulliganOrder.map(id => {
-      const c = gameState.cards.find(card => card.id === id)!;
-      return { ...c, zone: `mainDeck-${role}`, isFlipped: true, isTapped: false };
-    });
-
-    // Re-construct the deck: [Current Other Cards] + [Chosen Returned Cards]
-    // Note: mainDeck logic assumes top is index 0. So bottom is at the end.
-    const otherInDeck = myDeck.filter(c => !mulliganOrder.includes(c.id));
-    const newDeckPart = [...otherInDeck, ...returnedCards];
-    
     // Draw new 4 cards from the TOP of the updated deck (excluding the ones we just returned)
+    const otherInDeck = myDeck.filter(c => !mulliganOrder.includes(c.id));
     const newHandIds = otherInDeck.slice(0, 4).map(c => c.id);
     
     const finalCards = gameState.cards.map(c => {
