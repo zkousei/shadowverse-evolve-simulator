@@ -279,7 +279,8 @@ const GameBoard: React.FC = () => {
           });
         });
 
-        syncState({ ...gameState, cards: [...gameState.cards, ...newCards] });
+        const otherPlayersCards = gameState.cards.filter(c => c.owner !== role);
+        syncState({ ...gameState, cards: [...otherPlayersCards, ...newCards] });
       } catch (err) {
         alert("Failed to parse deck JSON.");
       }
