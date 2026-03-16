@@ -96,6 +96,23 @@ const GameBoard: React.FC = () => {
 
   // Debug Mode: auto-setup game state when ?debug=true
   useEffect(() => {
+    if (isDebug) {
+      // Expose internal functions for automated testing speedup
+      (window as any).gameDebug = {
+        drawCard,
+        endTurn,
+        spawnToken: () => spawnToken(), // Wrap if needed
+        handleStartGame,
+        handleToggleReady,
+        handleSetInitialTurnOrder,
+        setGameState,
+        syncState,
+        // Helper to check state easily
+        getState: () => gameState,
+        getRole: () => role
+      };
+    }
+
     if (!isDebug) return;
     const makeMockCards = (playerRole: 'host' | 'guest') =>
       Array.from({ length: 20 }, (_, i) => ({
