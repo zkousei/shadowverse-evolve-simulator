@@ -86,11 +86,11 @@ const GameBoard: React.FC = () => {
 
   // Handle Turn Start Notification
   useEffect(() => {
-    if (gameState.turnPlayer === role && gameState.turnCount > 0) {
+    if (gameState.gameStatus === 'playing' && gameState.turnPlayer === role && gameState.turnCount > 0) {
       setTurnMessage("YOUR TURN");
       setTimeout(() => setTurnMessage(null), 2500);
     }
-  }, [gameState.turnPlayer, gameState.turnCount, role]);
+  }, [gameState.turnPlayer, gameState.turnCount, gameState.gameStatus, role]);
 
   const setupConnection = (conn: DataConnection) => {
     connRef.current = conn;
@@ -644,22 +644,24 @@ const GameBoard: React.FC = () => {
           </div>
 
           {/* Turn Management */}
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', background: 'var(--bg-overlay)', padding: '0.5rem 1rem', borderRadius: '4px' }}>
-            <span style={{ color: gameState.turnPlayer === role ? 'var(--vivid-green-cyan)' : 'var(--vivid-red)' }}>
-              {gameState.turnPlayer === role ? "YOUR TURN" : "OPPONENT'S TURN"}
-            </span>
-            <span className="Garamond">TURN {gameState.turnCount}</span>
-            <select 
-              value={gameState.phase} 
-              onChange={(e) => setPhase(e.target.value as 'Start' | 'Main' | 'End')} 
-              disabled={gameState.turnPlayer !== role}
-              style={{ padding: '0.2rem', borderRadius: '4px', background: 'black', color: 'white' }}
-            >
-              <option value="Start">Start Phase</option>
-              <option value="Main">Main Phase</option>
-              <option value="End">End Phase</option>
-            </select>
-          </div>
+          {gameState.gameStatus === 'playing' && (
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', background: 'var(--bg-overlay)', padding: '0.5rem 1rem', borderRadius: '4px' }}>
+              <span style={{ color: gameState.turnPlayer === role ? 'var(--vivid-green-cyan)' : 'var(--vivid-red)' }}>
+                {gameState.turnPlayer === role ? "YOUR TURN" : "OPPONENT'S TURN"}
+              </span>
+              <span className="Garamond">TURN {gameState.turnCount}</span>
+              <select 
+                value={gameState.phase} 
+                onChange={(e) => setPhase(e.target.value as 'Start' | 'Main' | 'End')} 
+                disabled={gameState.turnPlayer !== role}
+                style={{ padding: '0.2rem', borderRadius: '4px', background: 'black', color: 'white' }}
+              >
+                <option value="Start">Start Phase</option>
+                <option value="Main">Main Phase</option>
+                <option value="End">End Phase</option>
+              </select>
+            </div>
+          )}
         </div>
 
         {/* Board Playmat */}
