@@ -53,6 +53,8 @@ const GameBoard: React.FC = () => {
   const [coinMessage, setCoinMessage] = useState<string | null>(null);
   const [turnMessage, setTurnMessage] = useState<string | null>(null);
   const [lastGameState, setLastGameState] = useState<SyncState | null>(null);
+  const [isRollingDice, setIsRollingDice] = useState(false);
+  const [diceValue, setDiceValue] = useState<number | null>(null);
   
   const peerRef = useRef<Peer | null>(null);
   const connRef = useRef<DataConnection | null>(null);
@@ -208,6 +210,30 @@ const GameBoard: React.FC = () => {
     const result = isHeads ? "HEADS (表)" : "TAILS (裏)";
     setCoinMessage(`Result: ${result}`);
     setTimeout(() => setCoinMessage(null), 3000);
+  };
+
+  const handleRollDice = () => {
+    if (isRollingDice) return;
+    
+    setIsRollingDice(true);
+    let rolls = 0;
+    const maxRolls = 15;
+    
+    const interval = setInterval(() => {
+      setDiceValue(Math.floor(Math.random() * 6) + 1);
+      rolls++;
+      if (rolls >= maxRolls) {
+        clearInterval(interval);
+        const finalValue = Math.floor(Math.random() * 6) + 1;
+        setDiceValue(finalValue);
+        setCoinMessage(`DIE ROLL: ${finalValue}`);
+        setTimeout(() => {
+          setIsRollingDice(false);
+          setDiceValue(null);
+          setTimeout(() => setCoinMessage(null), 3000);
+        }, 800);
+      }
+    }, 60);
   };
 
   const handleStartGame = () => {
@@ -640,12 +666,20 @@ const GameBoard: React.FC = () => {
                 </button>
               </div>
             ) : (
-              <button 
-                onClick={handlePureCoinFlip} 
-                style={{ padding: '0.3rem 0.6rem', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer', fontSize: '0.875rem' }}
-              >
-                🪙 Toss Coin
-              </button>
+              <>
+                <button 
+                  onClick={handlePureCoinFlip} 
+                  style={{ padding: '0.3rem 0.6rem', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer', fontSize: '0.875rem' }}
+                >
+                  🪙 Toss Coin
+                </button>
+                <button 
+                  onClick={handleRollDice} 
+                  style={{ padding: '0.3rem 0.6rem', background: '#8b5cf6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 'bold' }}
+                >
+                  🎲 Roll Dice
+                </button>
+              </>
             )}
 
             {gameState.turnPlayer !== role && lastGameState && (
@@ -913,6 +947,44 @@ const GameBoard: React.FC = () => {
               <button onClick={confirmResetGame} style={{ padding: '0.5rem 1rem', background: '#ef4444', border: 'none', color: 'white', cursor: 'pointer', borderRadius: '4px', fontWeight: 'bold' }}>Yes, Reset</button>
             </div>
           </div>
+        </div>
+      )}
+
+      {isRollingDice && (
+        <div style={{ 
+          position: 'fixed', 
+          inset: 0, 
+          backgroundColor: 'rgba(0,0,0,0.4)', 
+          backdropFilter: 'blur(4px)',
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          zIndex: 3000,
+          pointerEvents: 'none'
+        }}>
+          <div style={{
+            width: '120px',
+            height: '120px',
+            background: 'white',
+            borderRadius: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '4rem',
+            fontWeight: '900',
+            color: '#1f2937',
+            boxShadow: '0 0 40px rgba(139, 92, 246, 0.6)',
+            border: '4px solid #8b5cf6',
+            animation: 'diceRoll 0.1s infinite alternate'
+          }}>
+            {diceValue}
+          </div>
+          <style>{`
+            @keyframes diceRoll {
+              from { transform: rotate(-10deg) scale(0.9); }
+              to { transform: rotate(10deg) scale(1.1); }
+            }
+          `}</style>
         </div>
       )}
     </DndContext>
