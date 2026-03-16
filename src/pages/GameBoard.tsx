@@ -46,6 +46,7 @@ const GameBoard: React.FC = () => {
   const room = searchParams.get('room') || '';
   const isHost = searchParams.get('host') === 'true';
   const role = isHost ? 'host' : 'guest';
+  const isDebug = searchParams.get('debug') === 'true';
 
   const [status, setStatus] = useState<string>('Initializing P2P...');
   const [gameState, setGameState] = useState<SyncState>(initialState);
@@ -92,6 +93,34 @@ const GameBoard: React.FC = () => {
     return () => peer.destroy();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [room, isHost]);
+
+  // Debug Mode: auto-setup game state when ?debug=true
+  useEffect(() => {
+    if (!isDebug) return;
+    const makeMockCards = (playerRole: 'host' | 'guest') =>
+      Array.from({ length: 20 }, (_, i) => ({
+        id: `debug-${playerRole}-${i}`,
+        cardId: `debug-card-${i}`,
+        name: `Debug Card ${i + 1}`,
+        image: '',
+        zone: `mainDeck-${playerRole}`,
+        owner: playerRole,
+        isTapped: false,
+        isFlipped: true,
+        counters: { atk: 0, hp: 0 },
+      }));
+    const debugCards = [...makeMockCards('host'), ...makeMockCards('guest')];
+    setGameState({
+      ...initialState,
+      cards: debugCards,
+      host: { ...initialState.host, pp: 1, maxPp: 1, initialHandDrawn: true, isReady: true },
+      guest: { ...initialState.guest, initialHandDrawn: true, isReady: true },
+      gameStatus: 'playing',
+      turnPlayer: 'host',
+    });
+    setStatus('[DEBUG] Game auto-started. Both decks injected (20 cards each).');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDebug]);
 
   // Handle Turn Start Notification
   useEffect(() => {
@@ -167,13 +196,22 @@ const GameBoard: React.FC = () => {
     // 3. Reset Combo
     nextPlayerState.combo = 0;
 
-    // 3. Stand all fields (handled dynamically or we can explicitly un-tap here)
-    // Actually, rulebook says untap all field cards at Start Phase
-    const newCards = gameState.cards.map(c => 
+    // 4. Stand all fields
+    const untapCards = gameState.cards.map(c => 
       c.isTapped && c.zone === `field-${nextPlayer}`
         ? { ...c, isTapped: false }
         : c
     );
+
+    // 5. Automatic Draw (1 card from deck top)
+    const nextPlayerDeck = untapCards.filter(c => c.zone === `mainDeck-${nextPlayer}`);
+    let finalCards = untapCards;
+    if (nextPlayerDeck.length > 0) {
+      const topCardId = nextPlayerDeck[0].id;
+      finalCards = untapCards.map(c => 
+        c.id === topCardId ? { ...c, zone: `hand-${nextPlayer}`, isFlipped: false } : c
+      );
+    }
 
     syncState({
       ...gameState,
@@ -181,7 +219,7 @@ const GameBoard: React.FC = () => {
       turnCount: newTurnCount,
       phase: 'Start',
       [nextPlayer]: nextPlayerState,
-      cards: newCards
+      cards: finalCards
     });
   };
 
