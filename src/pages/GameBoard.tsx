@@ -566,6 +566,26 @@ const GameBoard: React.FC = () => {
             <button onClick={decideTurnOrder} style={{ padding: '0.3rem 0.6rem', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer', fontSize: '0.875rem' }}>
               🪙 Flip Coin
             </button>
+            {gameState.turnPlayer !== role && lastGameState && (
+              <button 
+                onClick={handleUndoTurn} 
+                style={{ 
+                  padding: '0.3rem 0.6rem', 
+                  background: '#ec4899', 
+                  color: 'white', 
+                  fontWeight: 'bold', 
+                  border: '1px solid rgba(255,255,255,0.5)', 
+                  borderRadius: '4px', 
+                  cursor: 'pointer', 
+                  fontSize: '0.75rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                <span style={{ fontSize: '1rem' }}>↺</span> UNDO LAST END TURN
+              </button>
+            )}
           </div>
 
           {/* Turn Management */}
@@ -681,12 +701,6 @@ const GameBoard: React.FC = () => {
                   {gameState.turnPlayer === role && (
                     <button onClick={endTurn} className="glass-panel" style={{ padding: '0.5rem', background: '#f59e0b', color: 'black', fontWeight: 'bold', marginBottom: '4px' }}>
                       END TURN
-                    </button>
-                  )}
-
-                  {gameState.turnPlayer !== role && lastGameState && (
-                    <button onClick={handleUndoTurn} className="glass-panel" style={{ padding: '0.5rem', background: '#ec4899', color: 'white', fontWeight: 'bold', border: '1px solid #fff', marginBottom: '4px' }}>
-                      UNDO END TURN
                     </button>
                   )}
 
