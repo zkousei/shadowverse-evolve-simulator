@@ -23,11 +23,14 @@ interface PlayerHUD {
   ep: number;
   sep: number;
   combo: number;
+  initialHandDrawn: boolean;
+  mulliganUsed: boolean;
+  isReady: boolean;
 }
 
 const initialState: SyncState = {
-  host: { hp: 20, pp: 0, maxPp: 0, ep: 0, sep: 1, combo: 0 },
-  guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0 },
+  host: { hp: 20, pp: 0, maxPp: 0, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+  guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
   cards: [],
   turnPlayer: 'host', // Host goes first by default, but can be decided by coin flip
   turnCount: 1,
@@ -55,6 +58,10 @@ const GameBoard: React.FC = () => {
   const [lastGameState, setLastGameState] = useState<SyncState | null>(null);
   const [isRollingDice, setIsRollingDice] = useState(false);
   const [diceValue, setDiceValue] = useState<number | null>(null);
+
+  // Mulligan order selection state: list of card IDs in chosen return order
+  const [mulliganOrder, setMulliganOrder] = useState<string[]>([]);
+  const [isMulliganModalOpen, setIsMulliganModalOpen] = useState(false);
   
   const peerRef = useRef<Peer | null>(null);
   const connRef = useRef<DataConnection | null>(null);
@@ -235,7 +242,7 @@ const GameBoard: React.FC = () => {
       }
     }, 60);
   };
-
+  
   const handleStartGame = () => {
     const starter = gameState.turnPlayer;
     syncState({
@@ -245,6 +252,82 @@ const GameBoard: React.FC = () => {
     });
     setTurnMessage("GAME START!");
     setTimeout(() => setTurnMessage(null), 2500);
+  };
+
+  const handleToggleReady = () => {
+    syncState({
+      ...gameState,
+      [role]: { ...gameState[role], isReady: !gameState[role].isReady }
+    });
+  };
+
+  const handleDrawInitialHand = () => {
+    const myDeck = gameState.cards.filter(c => c.zone === `mainDeck-${role}`);
+    if (myDeck.length < 4) return;
+    
+    // Draw top 4 cards
+    const drawnIds = myDeck.slice(0, 4).map(c => c.id);
+    const newCards = gameState.cards.map(c => 
+      drawnIds.includes(c.id) ? { ...c, zone: `hand-${role}`, isFlipped: false } : c
+    );
+    
+    syncState({
+      ...gameState,
+      cards: newCards,
+      [role]: { ...gameState[role], initialHandDrawn: true }
+    });
+  };
+
+  const startMulligan = () => {
+    setMulliganOrder([]);
+    setIsMulliganModalOpen(true);
+  };
+
+  const handleMulliganOrderSelect = (cardId: string) => {
+    if (mulliganOrder.includes(cardId)) {
+      setMulliganOrder(prev => prev.filter(id => id !== cardId));
+    } else {
+      setMulliganOrder(prev => [...prev, cardId]);
+    }
+  };
+
+  const executeMulligan = () => {
+    if (mulliganOrder.length !== 4) return;
+
+    const myDeck = gameState.cards.filter(c => c.zone === `mainDeck-${role}`);
+    // Cards to return are already in hand, but we move them to deck bottom in the chosen order.
+    // Order: The 1st selected is the "top" of the bottom 4, the 4th selected is the ABSOLUTE bottom.
+    
+    const remainingCards = gameState.cards.filter(c => !mulliganOrder.includes(c.id));
+    const returnedCards = mulliganOrder.map(id => {
+      const c = gameState.cards.find(card => card.id === id)!;
+      return { ...c, zone: `mainDeck-${role}`, isFlipped: true, isTapped: false };
+    });
+
+    // Re-construct the deck: [Current Other Cards] + [Chosen Returned Cards]
+    // Note: mainDeck logic assumes top is index 0. So bottom is at the end.
+    const otherInDeck = myDeck.filter(c => !mulliganOrder.includes(c.id));
+    const newDeckPart = [...otherInDeck, ...returnedCards];
+    
+    // Draw new 4 cards from the TOP of the updated deck (excluding the ones we just returned)
+    const newHandIds = otherInDeck.slice(0, 4).map(c => c.id);
+    
+    const finalCards = gameState.cards.map(c => {
+      if (mulliganOrder.includes(c.id)) {
+        return { ...c, zone: `mainDeck-${role}`, isFlipped: true };
+      }
+      if (newHandIds.includes(c.id)) {
+        return { ...c, zone: `hand-${role}`, isFlipped: false };
+      }
+      return c;
+    });
+
+    syncState({
+      ...gameState,
+      cards: finalCards,
+      [role]: { ...gameState[role], mulliganUsed: true }
+    });
+    setIsMulliganModalOpen(false);
   };
 
   const drawCard = () => {
@@ -643,9 +726,18 @@ const GameBoard: React.FC = () => {
                 >
                   Opp 1st
                 </button>
+                {!gameState[role].initialHandDrawn && (
+                  <button 
+                    onClick={handleDrawInitialHand}
+                    style={{ padding: '0.3rem 0.6rem', background: '#3b82f6', color: 'white', fontWeight: 'bold', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
+                  >
+                    🃏 Draw Hand (4)
+                  </button>
+                )}
+
                 <button 
                   onClick={handleStartGame} 
-                  disabled={!isHost}
+                  disabled={!isHost || !gameState.host.isReady || !gameState.guest.isReady}
                   style={{ 
                     padding: '0.3rem 0.6rem', 
                     background: 'var(--vivid-green-cyan)', 
@@ -653,17 +745,46 @@ const GameBoard: React.FC = () => {
                     fontWeight: 'bold', 
                     border: 'none', 
                     borderRadius: '4px', 
-                    cursor: 'pointer', 
+                    cursor: (isHost && gameState.host.isReady && gameState.guest.isReady) ? 'pointer' : 'not-allowed', 
                     fontSize: '0.75rem', 
-                    opacity: isHost ? 1 : 0.5,
-                    boxShadow: '0 0 10px rgba(0, 208, 132, 0.4)',
+                    opacity: (isHost && gameState.host.isReady && gameState.guest.isReady) ? 1 : 0.5,
+                    boxShadow: (isHost && gameState.host.isReady && gameState.guest.isReady) ? '0 0 10px rgba(0, 208, 132, 0.4)' : 'none',
                     transition: 'all 0.2s'
                   }}
-                  onMouseOver={(e) => e.currentTarget.style.filter = 'brightness(1.1)'}
+                  onMouseOver={(e) => { if(isHost && gameState.host.isReady && gameState.guest.isReady) e.currentTarget.style.filter = 'brightness(1.1)'; }}
                   onMouseOut={(e) => e.currentTarget.style.filter = 'none'}
                 >
                   ▶ START GAME
                 </button>
+
+                {gameState[role].initialHandDrawn && (
+                  <button 
+                    onClick={handleToggleReady}
+                    style={{ 
+                      padding: '0.3rem 0.6rem', 
+                      background: gameState[role].isReady ? '#ef4444' : 'var(--vivid-green-cyan)', 
+                      color: gameState[role].isReady ? 'white' : 'black', 
+                      fontWeight: 'bold', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' 
+                    }}
+                  >
+                    {gameState[role].isReady ? '✕ Cancel Ready' : '✅ Ready (準備完了)'}
+                  </button>
+                )}
+
+                <div style={{ display: 'flex', gap: '0.8rem', marginLeft: '0.5rem', borderLeft: '1px solid var(--border-light)', paddingLeft: '0.8rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', fontSize: '0.65rem', alignItems: 'center' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>HOST</span>
+                    <span style={{ color: gameState.host.isReady ? 'var(--vivid-green-cyan)' : '#ef4444', fontWeight: 'bold' }}>
+                      {gameState.host.isReady ? 'READY' : (gameState.host.initialHandDrawn ? 'DECIDING' : 'WAITING')}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', fontSize: '0.65rem', alignItems: 'center' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>GUEST</span>
+                    <span style={{ color: gameState.guest.isReady ? 'var(--vivid-green-cyan)' : '#ef4444', fontWeight: 'bold' }}>
+                      {gameState.guest.isReady ? 'READY' : (gameState.guest.initialHandDrawn ? 'DECIDING' : 'WAITING')}
+                    </span>
+                  </div>
+                </div>
               </div>
             ) : (
               <>
@@ -797,10 +918,27 @@ const GameBoard: React.FC = () => {
               </div>
             </div>
                   <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', justifyContent: 'center', width: '100%' }}>
-               <div style={{ width: '850px', minHeight: '160px' }}>
-                 {/* My Hand - strictly hidden from opponent but visible to me */}
-                 <Zone id={`hand-${role}`} label="My Hand" cards={getCards(`hand-${role}`)} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onCemetery={handleSendToCemetery} isProtected={true} viewerRole={role} containerStyle={{ minHeight: '160px' }} />
-               </div>
+                <div style={{ width: '850px', minHeight: '160px', position: 'relative' }}>
+                  {/* My Hand - strictly hidden from opponent but visible to me */}
+                  <Zone id={`hand-${role}`} label="My Hand" cards={getCards(`hand-${role}`)} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onCemetery={handleSendToCemetery} isProtected={true} viewerRole={role} containerStyle={{ minHeight: '160px' }} />
+                  
+                  {/* Mulligan Button Overlay near hand */}
+                  {gameState.gameStatus === 'preparing' && gameState[role].initialHandDrawn && !gameState[role].mulliganUsed && (
+                    <button 
+                      onClick={startMulligan}
+                      style={{ 
+                        position: 'absolute', top: '-10px', right: '10px',
+                        padding: '0.5rem 1rem', background: '#eab308', color: 'black', 
+                        fontWeight: 'bold', borderRadius: '4px', 
+                        cursor: 'pointer', fontSize: '0.875rem', zIndex: 10,
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                        border: '2px solid black'
+                      }}
+                    >
+                      🔄 Mulligan (マリガンする)
+                    </button>
+                  )}
+                </div>
                
                {/* Controls */}
                <div style={{ width: '200px', display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(0,0,0,0.8)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
@@ -893,6 +1031,77 @@ const GameBoard: React.FC = () => {
         </div>
       </div>
       
+      {/* Mulligan Modal */}
+      {isMulliganModalOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
+          <div style={{ background: 'var(--bg-surface)', padding: '2rem', borderRadius: 'var(--radius-lg)', maxWidth: '800px', width: '90%', textAlign: 'center', border: '1px solid var(--border-light)' }}>
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: 'var(--accent-primary)' }}>Mulligan: Select Return Order</h2>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
+              Select cards in the order you want to put them on the <strong>bottom</strong> of your deck.<br/>
+              (The 4th selection will be at the absolute bottom.)
+            </p>
+            
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginBottom: '2rem', flexWrap: 'wrap' }}>
+              {gameState.cards.filter(c => c.zone === `hand-${role}`).map(card => {
+                const selectionIndex = mulliganOrder.indexOf(card.id);
+                return (
+                  <div 
+                    key={card.id} 
+                    onClick={() => handleMulliganOrderSelect(card.id)}
+                    style={{ 
+                      position: 'relative', 
+                      cursor: 'pointer', 
+                      border: selectionIndex !== -1 ? '3px solid var(--accent-primary)' : '1px solid var(--border-light)',
+                      borderRadius: 'var(--radius-md)',
+                      padding: '4px',
+                      transition: 'all 0.2s',
+                      transform: selectionIndex !== -1 ? 'scale(1.05)' : 'scale(1)',
+                      boxShadow: selectionIndex !== -1 ? '0 0 15px rgba(59, 130, 246, 0.5)' : 'none'
+                    }}
+                  >
+                    <img src={card.image} alt={card.name} style={{ width: '120px', borderRadius: '4px' }} />
+                    {selectionIndex !== -1 && (
+                      <div style={{ 
+                        position: 'absolute', top: '-10px', right: '-10px', 
+                        background: 'var(--accent-primary)', color: 'white', 
+                        borderRadius: '50%', width: '28px', height: '28px', 
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontWeight: 'bold', fontSize: '1rem', boxShadow: '0 2px 5px rgba(0,0,0,0.5)'
+                      }}>
+                        {selectionIndex + 1}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+              <button 
+                onClick={() => setIsMulliganModalOpen(false)}
+                style={{ padding: '0.6rem 1.5rem', background: 'transparent', border: '1px solid var(--border-light)', color: 'var(--text-main)', borderRadius: '4px', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={executeMulligan}
+                disabled={mulliganOrder.length !== 4}
+                style={{ 
+                  padding: '0.6rem 2rem', 
+                  background: mulliganOrder.length === 4 ? 'var(--vivid-green-cyan)' : 'var(--bg-surface-elevated)', 
+                  color: mulliganOrder.length === 4 ? 'black' : 'var(--text-muted)', 
+                  fontWeight: 'bold', border: 'none', borderRadius: '4px', 
+                  cursor: mulliganOrder.length === 4 ? 'pointer' : 'not-allowed',
+                  boxShadow: mulliganOrder.length === 4 ? '0 0 10px rgba(0, 208, 132, 0.3)' : 'none'
+                }}
+              >
+                Exchange (Mulligan)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <CardSearchModal 
         isOpen={searchZone !== null}
         onClose={() => setSearchZone(null)}
