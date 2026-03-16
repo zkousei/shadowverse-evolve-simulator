@@ -388,9 +388,6 @@ const GameBoard: React.FC = () => {
        return;
     }
 
-    // Remove it from current array
-    const filtered = gameState.cards.filter(c => c.id !== cardId);
-    
     // Prevent Evolve cards from entering Main Deck, and ensure stolen cards go to original OWNER's deck
     const destinationDeck = targetCard.isEvolveCard ? 'evolveDeck' : 'mainDeck';
     const destinationZone = `${destinationDeck}-${targetCard.owner}`;
@@ -398,10 +395,21 @@ const GameBoard: React.FC = () => {
     // Evolve cards are face up if they are in the Evolve Deck used, but usually bottom decking means returning it.
     const destinationFlipped = !targetCard.isEvolveCard; 
 
-    // Push it to the bottom of the appropriate deck
+    // Push target to the appropriate deck
     const movedCard = { ...targetCard, zone: destinationZone, isFlipped: destinationFlipped, isTapped: false, attachedTo: undefined, counters: { atk: 0, hp: 0 } };
     
-    syncState({ ...gameState, cards: [...filtered, movedCard] });
+    // Also handle any attachments
+    const newCards = gameState.cards.map(c => {
+      if (c.id === cardId) return movedCard;
+      if (c.attachedTo === cardId) {
+        const attachDestZone = c.isEvolveCard ? `evolveDeck-${c.owner}` : `mainDeck-${c.owner}`;
+        const attachFlipped = !c.isEvolveCard;
+        return { ...c, zone: attachDestZone, isFlipped: attachFlipped, isTapped: false, attachedTo: undefined, counters: { atk: 0, hp: 0 } };
+      }
+      return c;
+    });
+
+    syncState({ ...gameState, cards: newCards });
   };
 
   const handleBanish = (cardId: string) => {
@@ -416,9 +424,17 @@ const GameBoard: React.FC = () => {
 
     const destinationZone = targetCard.isEvolveCard ? `evolveDeck-${targetCard.owner}` : `banish-${targetCard.owner}`;
 
-    const newCards = gameState.cards.map(c => 
-      c.id === cardId ? { ...c, zone: destinationZone, isTapped: false, isFlipped: false, attachedTo: undefined, counters: { atk: 0, hp: 0 } } : c
-    );
+    const newCards = gameState.cards.map(c => {
+      if (c.id === cardId) {
+        return { ...c, zone: destinationZone, isTapped: false, isFlipped: false, attachedTo: undefined, counters: { atk: 0, hp: 0 } };
+      }
+      if (c.attachedTo === cardId) {
+        // Handle attachments during banish: Evolve cards back to deck, others to banish
+        const attachDest = c.isEvolveCard ? `evolveDeck-${c.owner}` : `banish-${c.owner}`;
+        return { ...c, zone: attachDest, isTapped: false, isFlipped: false, attachedTo: undefined, counters: { atk: 0, hp: 0 } };
+      }
+      return c;
+    });
     syncState({ ...gameState, cards: newCards });
   };
 
@@ -443,8 +459,9 @@ const GameBoard: React.FC = () => {
         return { ...c, zone: targetDestination, isTapped: false, isFlipped: false, attachedTo: undefined, counters: { atk: 0, hp: 0 } };
       }
       if (c.attachedTo === cardId) {
-        // Evolve cards attached to the target always go back to Evolve Deck face up
-        return { ...c, zone: `evolveDeck-${c.owner}`, isTapped: false, isFlipped: false, attachedTo: undefined, counters: { atk: 0, hp: 0 } };
+        // Handle attachments during cemetery move: Evolve cards back to deck, others to cemetery
+        const attachDest = c.isEvolveCard ? `evolveDeck-${c.owner}` : `cemetery-${c.owner}`;
+        return { ...c, zone: attachDest, isTapped: false, isFlipped: false, attachedTo: undefined, counters: { atk: 0, hp: 0 } };
       }
       return c;
     });
