@@ -13,14 +13,15 @@ interface Props {
   onBanish?: (id: string) => void;
   onReturnEvolve?: (id: string) => void;
   onCemetery?: (id: string) => void;
+  onPlayToField?: (id: string) => void;
   hideCards?: boolean; // e.g. opponent hand
   layout?: 'horizontal' | 'stack';
   isProtected?: boolean; // if true, opponent cannot operate cards in this zone
   viewerRole?: 'host' | 'guest'; // current player's role
-  containerStyle?: React.CSSProperties; 
+  containerStyle?: React.CSSProperties;
 }
 
-const Zone: React.FC<Props> = ({ id, label, cards, onTap, onModifyCounter, onFlip, onSendToBottom, onBanish, onReturnEvolve, onCemetery, hideCards, layout = 'horizontal', isProtected, viewerRole, containerStyle }) => {
+const Zone: React.FC<Props> = ({ id, label, cards, onTap, onModifyCounter, onFlip, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, hideCards, layout = 'horizontal', isProtected, viewerRole, containerStyle }) => {
   const { isOver, setNodeRef } = useDroppable({ id });
 
   const isStack = layout === 'stack';
@@ -48,7 +49,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, onTap, onModifyCounter, onFli
       <div style={{ position: 'absolute', top: -10, left: 10, background: 'var(--bg-surface-elevated)', padding: '0 8px', fontSize: '0.75rem', fontWeight: 'bold' }}>
         {label} ({cards.length})
       </div>
-      
+
       {(() => {
         // Only consider a card attached if its parent is also present in THIS zone
         const validAttachedIds = new Set(
@@ -63,32 +64,34 @@ const Zone: React.FC<Props> = ({ id, label, cards, onTap, onModifyCounter, onFli
 
           return (
             <div key={card.id} style={isStack ? { position: index === 0 ? 'relative' : 'absolute', top: stackOffset, left: stackOffset } : { position: 'relative' }}>
-              <Card 
-                card={card} 
-                onTap={onTap} 
+              <Card
+                card={card}
+                onTap={onTap}
                 onModifyCounter={onModifyCounter}
                 onFlip={onFlip}
                 onSendToBottom={onSendToBottom}
                 onBanish={onBanish}
                 onReturnEvolve={onReturnEvolve}
                 onCemetery={onCemetery}
-                isHidden={hideCards} 
+                onPlayToField={onPlayToField}
+                isHidden={hideCards}
                 isLocked={isProtected && card.owner !== viewerRole}
               />
-              
+
               {/* Render Attached Evolve Cards overlaying the base card */}
               {attachments.map((attachedCard, i) => (
                 <div key={attachedCard.id} style={{ position: 'absolute', top: (i + 1) * 20, left: (i + 1) * 15, zIndex: 10 + i }}>
-                  <Card 
-                    card={attachedCard} 
-                    onTap={onTap} 
+                  <Card
+                    card={attachedCard}
+                    onTap={onTap}
                     onModifyCounter={onModifyCounter}
                     onFlip={onFlip}
                     onSendToBottom={onSendToBottom}
                     onBanish={onBanish}
                     onReturnEvolve={onReturnEvolve}
                     onCemetery={onCemetery}
-                    isHidden={hideCards} 
+                    onPlayToField={onPlayToField}
+                    isHidden={hideCards}
                     isLocked={isProtected && attachedCard.owner !== viewerRole}
                   />
                 </div>

@@ -51,7 +51,7 @@ const GameBoard: React.FC = () => {
   const [status, setStatus] = useState<string>('Initializing P2P...');
   const [gameState, setGameState] = useState<SyncState>(initialState);
   const [searchZone, setSearchZone] = useState<{ id: string, title: string } | null>(null);
-  
+
   // Custom dialog states to replace native window.confirm/alert
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [coinMessage, setCoinMessage] = useState<string | null>(null);
@@ -63,7 +63,7 @@ const GameBoard: React.FC = () => {
   // Mulligan order selection state: list of card IDs in chosen return order
   const [mulliganOrder, setMulliganOrder] = useState<string[]>([]);
   const [isMulliganModalOpen, setIsMulliganModalOpen] = useState(false);
-  
+
   const peerRef = useRef<Peer | null>(null);
   const connRef = useRef<DataConnection | null>(null);
 
@@ -91,28 +91,11 @@ const GameBoard: React.FC = () => {
     });
 
     return () => peer.destroy();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [room, isHost]);
 
   // Debug Mode: auto-setup game state when ?debug=true
   useEffect(() => {
-    if (isDebug) {
-      // Expose internal functions for automated testing speedup
-      (window as any).gameDebug = {
-        drawCard,
-        endTurn,
-        spawnToken: () => spawnToken(), // Wrap if needed
-        handleStartGame,
-        handleToggleReady,
-        handleSetInitialTurnOrder,
-        setGameState,
-        syncState,
-        // Helper to check state easily
-        getState: () => gameState,
-        getRole: () => role
-      };
-    }
-
     if (!isDebug) return;
     const makeMockCards = (playerRole: 'host' | 'guest') =>
       Array.from({ length: 20 }, (_, i) => ({
@@ -136,7 +119,7 @@ const GameBoard: React.FC = () => {
       turnPlayer: 'host',
     });
     setStatus('[DEBUG] Game auto-started. Both decks injected (20 cards each).');
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDebug]);
 
   // Handle Turn Start Notification
@@ -170,7 +153,7 @@ const GameBoard: React.FC = () => {
 
   const handleStatChange = (playerKey: 'host' | 'guest', stat: 'hp' | 'pp' | 'maxPp' | 'ep' | 'sep' | 'combo', delta: number) => {
     let newValue = gameState[playerKey][stat] + delta;
-    
+
     // Apply clamping rules
     if (stat === 'maxPp') {
       newValue = Math.min(10, Math.max(0, newValue));
@@ -203,7 +186,7 @@ const GameBoard: React.FC = () => {
 
     // Start Phase Logic for next player
     const nextPlayerState = { ...gameState[nextPlayer] };
-    
+
     // 1. Max PP +1 (up to 10)
     if (nextPlayerState.maxPp < 10) {
       nextPlayerState.maxPp += 1;
@@ -214,7 +197,7 @@ const GameBoard: React.FC = () => {
     nextPlayerState.combo = 0;
 
     // 4. Stand all fields
-    const untapCards = gameState.cards.map(c => 
+    const untapCards = gameState.cards.map(c =>
       c.isTapped && c.zone === `field-${nextPlayer}`
         ? { ...c, isTapped: false }
         : c
@@ -225,7 +208,7 @@ const GameBoard: React.FC = () => {
     let finalCards = untapCards;
     if (nextPlayerDeck.length > 0) {
       const topCardId = nextPlayerDeck[0].id;
-      finalCards = untapCards.map(c => 
+      finalCards = untapCards.map(c =>
         c.id === topCardId ? { ...c, zone: `hand-${nextPlayer}`, isFlipped: false } : c
       );
     }
@@ -261,7 +244,7 @@ const GameBoard: React.FC = () => {
       [starter]: { ...gameState[starter], ep: 0 }, // First player typically gets 0 EP
       [second]: { ...gameState[second], ep: 3 }    // Second player typically gets 3 EP
     });
-    
+
     const msg = `${starter === role ? "You" : "Opponent"} will go first!`;
     setCoinMessage(forcedStarter ? `Manually set: ${msg}` : msg);
     setTimeout(() => setCoinMessage(null), 4000);
@@ -276,11 +259,11 @@ const GameBoard: React.FC = () => {
 
   const handleRollDice = () => {
     if (isRollingDice) return;
-    
+
     setIsRollingDice(true);
     let rolls = 0;
     const maxRolls = 15;
-    
+
     const interval = setInterval(() => {
       setDiceValue(Math.floor(Math.random() * 6) + 1);
       rolls++;
@@ -297,7 +280,7 @@ const GameBoard: React.FC = () => {
       }
     }, 60);
   };
-  
+
   const handleStartGame = () => {
     const starter = gameState.turnPlayer;
     syncState({
@@ -319,13 +302,13 @@ const GameBoard: React.FC = () => {
   const handleDrawInitialHand = () => {
     const myDeck = gameState.cards.filter(c => c.zone === `mainDeck-${role}`);
     if (myDeck.length < 4) return;
-    
+
     // Draw top 4 cards
     const drawnIds = myDeck.slice(0, 4).map(c => c.id);
-    const newCards = gameState.cards.map(c => 
+    const newCards = gameState.cards.map(c =>
       drawnIds.includes(c.id) ? { ...c, zone: `hand-${role}`, isFlipped: false } : c
     );
-    
+
     syncState({
       ...gameState,
       cards: newCards,
@@ -352,11 +335,11 @@ const GameBoard: React.FC = () => {
     const myDeck = gameState.cards.filter(c => c.zone === `mainDeck-${role}`);
     // Cards to return are already in hand, but we move them to deck bottom in the chosen order.
     // Order: The 1st selected is the "top" of the bottom 4, the 4th selected is the ABSOLUTE bottom.
-    
+
     // Draw new 4 cards from the TOP of the updated deck (excluding the ones we just returned)
     const otherInDeck = myDeck.filter(c => !mulliganOrder.includes(c.id));
     const newHandIds = otherInDeck.slice(0, 4).map(c => c.id);
-    
+
     const finalCards = gameState.cards.map(c => {
       if (mulliganOrder.includes(c.id)) {
         return { ...c, zone: `mainDeck-${role}`, isFlipped: true };
@@ -382,7 +365,7 @@ const GameBoard: React.FC = () => {
 
     // Draw the top card (first in array)
     const topCard = myDeck[0];
-    const newCards = gameState.cards.map(c => 
+    const newCards = gameState.cards.map(c =>
       c.id === topCard.id ? { ...c, zone: `hand-${role}`, isFlipped: false } : c
     );
     syncState({ ...gameState, cards: newCards });
@@ -391,20 +374,20 @@ const GameBoard: React.FC = () => {
   const handleExtractCard = (cardId: string, customDestination?: string) => {
     const targetCard = gameState.cards.find(c => c.id === cardId);
     if (!targetCard) return;
-    
+
     // By default, Evolve cards go to Field, others go to Hand.
     // octrice/usurpation effects might target specific zones.
     let destinationZone = targetCard.isEvolveCard ? `field-${role}` : `hand-${role}`;
-    
+
     if (customDestination) {
       destinationZone = customDestination;
     }
     const isEnteringHand = destinationZone.startsWith('hand');
 
-    const newCards = gameState.cards.map(c => 
-      c.id === cardId ? { 
-        ...c, 
-        zone: destinationZone, 
+    const newCards = gameState.cards.map(c =>
+      c.id === cardId ? {
+        ...c,
+        zone: destinationZone,
         isFlipped: false,
         counters: isEnteringHand ? { atk: 0, hp: 0 } : c.counters
       } : c
@@ -415,7 +398,7 @@ const GameBoard: React.FC = () => {
 
   const confirmResetGame = () => {
     setShowResetConfirm(false);
-    
+
     // Purge tokens, and reset other cards to their original decks face-down
     const resetCards = gameState.cards
       .filter(c => c.cardId !== 'token')
@@ -427,7 +410,7 @@ const GameBoard: React.FC = () => {
         attachedTo: undefined,
         counters: { atk: 0, hp: 0 }
       }));
-    
+
     syncState({
       ...initialState,
       turnPlayer: 'host', // Reset to host first
@@ -492,10 +475,10 @@ const GameBoard: React.FC = () => {
     const targetCard = gameState.cards.find(c => c.id === cardId);
     if (!targetCard || targetCard.zone.startsWith('hand')) return;
 
-    const newCards = gameState.cards.map(c => 
-      c.id === cardId ? { 
-        ...c, 
-        counters: { ...c.counters, [stat]: c.counters[stat] + delta } 
+    const newCards = gameState.cards.map(c =>
+      c.id === cardId ? {
+        ...c,
+        counters: { ...c.counters, [stat]: c.counters[stat] + delta }
       } : c
     );
     syncState({ ...gameState, cards: newCards });
@@ -504,7 +487,7 @@ const GameBoard: React.FC = () => {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over) return;
-    
+
     const cardId = active.id;
     const overId = over.id as string;
 
@@ -521,7 +504,7 @@ const GameBoard: React.FC = () => {
     if (overCard) {
       if (overCard.zone.startsWith('field')) {
         // Stacking Evolve onto field follower
-        const newCards = gameState.cards.map(c => 
+        const newCards = gameState.cards.map(c =>
           c.id === cardId ? { ...c, zone: overCard.zone, attachedTo: overCard.id, isFlipped: false, isTapped: false } : c
         );
         syncState({ ...gameState, cards: newCards });
@@ -551,11 +534,6 @@ const GameBoard: React.FC = () => {
       }
 
       targetZone = `${baseZonePrefix}-${correctOwner}`;
-      
-      // PREPARATION GUARD: Prevent manual moves to hand during setup
-      if (baseZonePrefix === 'hand' && gameState.gameStatus === 'preparing') {
-        return;
-      }
 
       // Tokens disappear entirely if entering these restricted/hidden zones
       if (activeCard.cardId === 'token') {
@@ -575,15 +553,15 @@ const GameBoard: React.FC = () => {
     // For evolveDeck, we preserve the current flipped state (USED/UNUSED status)
 
     const isEnteringRestrictedZone = ['mainDeck', 'evolveDeck', 'hand', 'cemetery', 'banish'].includes(baseZone);
-    
+
     const isEnteringHand = baseZone === 'hand';
-    
-    const newCards = gameState.cards.map(c => 
-      c.id === cardId ? { 
-        ...c, 
-        zone: targetZone, 
-        attachedTo: undefined, 
-        isFlipped, 
+
+    const newCards = gameState.cards.map(c =>
+      c.id === cardId ? {
+        ...c,
+        zone: targetZone,
+        attachedTo: undefined,
+        isFlipped,
         isTapped: isEnteringRestrictedZone ? false : c.isTapped,
         counters: isEnteringHand ? { atk: 0, hp: 0 } : c.counters
       } : c
@@ -604,14 +582,14 @@ const GameBoard: React.FC = () => {
     });
 
     const newIsTapped = !targetCard.isTapped;
-    const newCards = gameState.cards.map(c => 
+    const newCards = gameState.cards.map(c =>
       stackIds.has(c.id) ? { ...c, isTapped: newIsTapped } : c
     );
     syncState({ ...gameState, cards: newCards });
   };
 
   const handleFlipCard = (cardId: string) => {
-    const newCards = gameState.cards.map(c => 
+    const newCards = gameState.cards.map(c =>
       c.id === cardId ? { ...c, isFlipped: !c.isFlipped } : c
     );
     syncState({ ...gameState, cards: newCards });
@@ -623,21 +601,21 @@ const GameBoard: React.FC = () => {
 
     // Tokens disappear when sent to bottom of deck
     if (targetCard.cardId === 'token') {
-       const filtered = gameState.cards.filter(c => c.id !== cardId);
-       syncState({ ...gameState, cards: filtered });
-       return;
+      const filtered = gameState.cards.filter(c => c.id !== cardId);
+      syncState({ ...gameState, cards: filtered });
+      return;
     }
 
     // Prevent Evolve cards from entering Main Deck, and ensure stolen cards go to original OWNER's deck
     const destinationDeck = targetCard.isEvolveCard ? 'evolveDeck' : 'mainDeck';
     const destinationZone = `${destinationDeck}-${targetCard.owner}`;
-    
+
     // Evolve cards are face up if they are in the Evolve Deck used, but usually bottom decking means returning it.
-    const destinationFlipped = !targetCard.isEvolveCard; 
+    const destinationFlipped = !targetCard.isEvolveCard;
 
     // Push target to the appropriate deck
     const movedCard = { ...targetCard, zone: destinationZone, isFlipped: destinationFlipped, isTapped: false, attachedTo: undefined, counters: { atk: 0, hp: 0 } };
-    
+
     // Also handle any attachments
     const newCards = gameState.cards.map(c => {
       if (c.id === cardId) return movedCard;
@@ -657,9 +635,9 @@ const GameBoard: React.FC = () => {
     if (!targetCard) return;
 
     if (targetCard.cardId === 'token') {
-       const filtered = gameState.cards.filter(c => c.id !== cardId);
-       syncState({ ...gameState, cards: filtered });
-       return;
+      const filtered = gameState.cards.filter(c => c.id !== cardId);
+      syncState({ ...gameState, cards: filtered });
+      return;
     }
 
     const destinationZone = targetCard.isEvolveCard ? `evolveDeck-${targetCard.owner}` : `banish-${targetCard.owner}`;
@@ -678,21 +656,41 @@ const GameBoard: React.FC = () => {
     syncState({ ...gameState, cards: newCards });
   };
 
+  const handlePlayToField = (cardId: string) => {
+    const targetCard = gameState.cards.find(c => c.id === cardId);
+    if (!targetCard) return;
+
+    // Move card from Hand to Field. Evolve cards will auto-attach if dropped, 
+    // but button usage implies playing as a standalone or simplest standard move.
+    syncState({
+      ...gameState,
+      cards: gameState.cards.map(c =>
+        c.id === cardId ? {
+          ...c,
+          zone: `field-${targetCard.owner}`,
+          attachedTo: undefined,
+          isTapped: false,
+          isFlipped: false
+        } : c
+      )
+    });
+  };
+
   const handleSendToCemetery = (cardId: string) => {
     const targetCard = gameState.cards.find(c => c.id === cardId);
     if (!targetCard) return;
 
     if (targetCard.cardId === 'token') {
-       const filtered = gameState.cards.filter(c => c.id !== cardId);
-       syncState({ ...gameState, cards: filtered });
-       return;
+      const filtered = gameState.cards.filter(c => c.id !== cardId);
+      syncState({ ...gameState, cards: filtered });
+      return;
     }
 
     // Determine the destination for the target card itself
-    const targetDestination = targetCard.isEvolveCard 
-      ? `evolveDeck-${targetCard.owner}` 
+    const targetDestination = targetCard.isEvolveCard
+      ? `evolveDeck-${targetCard.owner}`
       : `cemetery-${targetCard.owner}`;
-    
+
     const newCards = gameState.cards.map(c => {
       if (c.id === cardId) {
         // Reset state and move to its proper destination
@@ -714,9 +712,9 @@ const GameBoard: React.FC = () => {
     if (!targetCard) return;
 
     if (targetCard.cardId === 'token') {
-       const filtered = gameState.cards.filter(c => c.id !== cardId);
-       syncState({ ...gameState, cards: filtered });
-       return;
+      const filtered = gameState.cards.filter(c => c.id !== cardId);
+      syncState({ ...gameState, cards: filtered });
+      return;
     }
 
     // According to Shadowverse Evolve rules, when an evolved card leaves the field, it goes FACE UP onto the Evolve Deck.
@@ -724,7 +722,7 @@ const GameBoard: React.FC = () => {
     const destinationDeck = targetCard.isEvolveCard ? 'evolveDeck' : 'mainDeck';
     const isFlipped = !targetCard.isEvolveCard; // main deck cards should be face down
 
-    const newCards = gameState.cards.map(c => 
+    const newCards = gameState.cards.map(c =>
       c.id === cardId ? { ...c, zone: `${destinationDeck}-${c.owner}`, isTapped: false, isFlipped, attachedTo: undefined, counters: { atk: 0, hp: 0 } } : c
     );
     syncState({ ...gameState, cards: newCards });
@@ -733,10 +731,10 @@ const GameBoard: React.FC = () => {
   const handleShuffleDeck = () => {
     const deckCards = gameState.cards.filter(c => c.zone === `mainDeck-${role}`);
     const otherCards = gameState.cards.filter(c => c.zone !== `mainDeck-${role}`);
-    
+
     // Fisher-Yates inline or random sort
     const shuffled = [...deckCards].sort(() => Math.random() - 0.5);
-    
+
     syncState({ ...gameState, cards: [...otherCards, ...shuffled] });
   };
 
@@ -746,39 +744,39 @@ const GameBoard: React.FC = () => {
   return (
     <DndContext onDragEnd={handleDragEnd}>
       <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', height: '100%', gap: '1rem', overflow: 'hidden' }}>
-        
+
         {/* Header bar */}
-        {/* Header bar tracking Phase / Turn */ }
+        {/* Header bar tracking Phase / Turn */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-surface)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)' }}>
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
             <span>Room: <strong>{room}</strong></span>
             <span style={{ color: status.includes('ready') ? 'var(--vivid-green-cyan)' : 'var(--text-muted)' }}>{status}</span>
-            
+
             {gameState.gameStatus === 'preparing' ? (
               <div style={{ display: 'flex', gap: '0.4rem' }}>
-                <button 
-                  onClick={() => handleSetInitialTurnOrder()} 
+                <button
+                  onClick={() => handleSetInitialTurnOrder()}
                   disabled={!isHost}
                   style={{ padding: '0.3rem 0.5rem', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', opacity: isHost ? 1 : 0.5 }}
                 >
                   🪙 Decide Turn Order (Random)
                 </button>
-                <button 
-                  onClick={() => handleSetInitialTurnOrder(role)} 
+                <button
+                  onClick={() => handleSetInitialTurnOrder(role)}
                   disabled={!isHost}
                   style={{ padding: '0.3rem 0.5rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', opacity: isHost ? 1 : 0.5 }}
                 >
                   Me 1st
                 </button>
-                <button 
-                  onClick={() => handleSetInitialTurnOrder(isHost ? 'guest' : 'host')} 
+                <button
+                  onClick={() => handleSetInitialTurnOrder(isHost ? 'guest' : 'host')}
                   disabled={!isHost}
                   style={{ padding: '0.3rem 0.5rem', background: '#6366f1', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', opacity: isHost ? 1 : 0.5 }}
                 >
                   Opp 1st
                 </button>
                 {!gameState[role].initialHandDrawn && (
-                  <button 
+                  <button
                     onClick={handleDrawInitialHand}
                     style={{ padding: '0.3rem 0.6rem', background: '#3b82f6', color: 'white', fontWeight: 'bold', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
                   >
@@ -786,36 +784,36 @@ const GameBoard: React.FC = () => {
                   </button>
                 )}
 
-                <button 
-                  onClick={handleStartGame} 
+                <button
+                  onClick={handleStartGame}
                   disabled={!isHost || !gameState.host.isReady || !gameState.guest.isReady}
-                  style={{ 
-                    padding: '0.3rem 0.6rem', 
-                    background: 'var(--vivid-green-cyan)', 
-                    color: 'black', 
-                    fontWeight: 'bold', 
-                    border: 'none', 
-                    borderRadius: '4px', 
-                    cursor: (isHost && gameState.host.isReady && gameState.guest.isReady) ? 'pointer' : 'not-allowed', 
-                    fontSize: '0.75rem', 
+                  style={{
+                    padding: '0.3rem 0.6rem',
+                    background: 'var(--vivid-green-cyan)',
+                    color: 'black',
+                    fontWeight: 'bold',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: (isHost && gameState.host.isReady && gameState.guest.isReady) ? 'pointer' : 'not-allowed',
+                    fontSize: '0.75rem',
                     opacity: (isHost && gameState.host.isReady && gameState.guest.isReady) ? 1 : 0.5,
                     boxShadow: (isHost && gameState.host.isReady && gameState.guest.isReady) ? '0 0 10px rgba(0, 208, 132, 0.4)' : 'none',
                     transition: 'all 0.2s'
                   }}
-                  onMouseOver={(e) => { if(isHost && gameState.host.isReady && gameState.guest.isReady) e.currentTarget.style.filter = 'brightness(1.1)'; }}
+                  onMouseOver={(e) => { if (isHost && gameState.host.isReady && gameState.guest.isReady) e.currentTarget.style.filter = 'brightness(1.1)'; }}
                   onMouseOut={(e) => e.currentTarget.style.filter = 'none'}
                 >
                   ▶ START GAME
                 </button>
 
                 {gameState[role].initialHandDrawn && (
-                  <button 
+                  <button
                     onClick={handleToggleReady}
-                    style={{ 
-                      padding: '0.3rem 0.6rem', 
-                      background: gameState[role].isReady ? '#ef4444' : 'var(--vivid-green-cyan)', 
-                      color: gameState[role].isReady ? 'white' : 'black', 
-                      fontWeight: 'bold', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' 
+                    style={{
+                      padding: '0.3rem 0.6rem',
+                      background: gameState[role].isReady ? '#ef4444' : 'var(--vivid-green-cyan)',
+                      color: gameState[role].isReady ? 'white' : 'black',
+                      fontWeight: 'bold', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem'
                     }}
                   >
                     {gameState[role].isReady ? '✕ Cancel Ready' : '✅ Ready (準備完了)'}
@@ -839,14 +837,14 @@ const GameBoard: React.FC = () => {
               </div>
             ) : (
               <>
-                <button 
-                  onClick={handlePureCoinFlip} 
+                <button
+                  onClick={handlePureCoinFlip}
                   style={{ padding: '0.3rem 0.6rem', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer', fontSize: '0.875rem' }}
                 >
                   🪙 Toss Coin
                 </button>
-                <button 
-                  onClick={handleRollDice} 
+                <button
+                  onClick={handleRollDice}
                   style={{ padding: '0.3rem 0.6rem', background: '#8b5cf6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 'bold' }}
                 >
                   🎲 Roll Dice
@@ -855,16 +853,16 @@ const GameBoard: React.FC = () => {
             )}
 
             {gameState.turnPlayer !== role && lastGameState && (
-              <button 
-                onClick={handleUndoTurn} 
-                style={{ 
-                  padding: '0.3rem 0.6rem', 
-                  background: '#ec4899', 
-                  color: 'white', 
-                  fontWeight: 'bold', 
-                  border: '1px solid rgba(255,255,255,0.5)', 
-                  borderRadius: '4px', 
-                  cursor: 'pointer', 
+              <button
+                onClick={handleUndoTurn}
+                style={{
+                  padding: '0.3rem 0.6rem',
+                  background: '#ec4899',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  border: '1px solid rgba(255,255,255,0.5)',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
                   fontSize: '0.75rem',
                   display: 'flex',
                   alignItems: 'center',
@@ -883,9 +881,9 @@ const GameBoard: React.FC = () => {
                 {gameState.turnPlayer === role ? "YOUR TURN" : "OPPONENT'S TURN"}
               </span>
               <span className="Garamond">TURN {gameState.turnCount}</span>
-              <select 
-                value={gameState.phase} 
-                onChange={(e) => setPhase(e.target.value as 'Start' | 'Main' | 'End')} 
+              <select
+                value={gameState.phase}
+                onChange={(e) => setPhase(e.target.value as 'Start' | 'Main' | 'End')}
                 disabled={gameState.turnPlayer !== role}
                 style={{ padding: '0.2rem', borderRadius: '4px', background: 'black', color: 'white' }}
               >
@@ -899,23 +897,23 @@ const GameBoard: React.FC = () => {
 
         {/* Board Playmat */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'url("https://shadowverse-evolve.com/wordpress/wp-content/themes/shadowverse-evolve-release_v0/assets/images/common/bg.jpg")', backgroundSize: 'cover', backgroundPosition: 'center', borderRadius: 'var(--radius-lg)', padding: '1rem', overflowY: 'auto', alignItems: 'center' }}>
-          
+
           {/* OPPONENT BOARD */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', opacity: 0.9 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <div style={{ background: 'rgba(0,0,0,0.5)', padding: '0.5rem 1rem', borderRadius: '4px', display: 'flex', gap: '1rem', color: '#fff' }}>
-                <span>Opponent HP: <strong style={{color:'#ef4444'}}>{gameState[isHost ? 'guest' : 'host'].hp}</strong></span>
-                <span>PP: <strong style={{color:'#3b82f6'}}>{gameState[isHost ? 'guest' : 'host'].pp}</strong> / {gameState[isHost ? 'guest' : 'host'].maxPp}</span>
-                <span>EP: <strong style={{color:'#fbbf24'}}>{gameState[isHost ? 'guest' : 'host'].ep}</strong></span>
-                <span>SEP: <strong style={{color:'#facc15'}}>{gameState[isHost ? 'guest' : 'host'].sep}</strong></span>
+                <span>Opponent HP: <strong style={{ color: '#ef4444' }}>{gameState[isHost ? 'guest' : 'host'].hp}</strong></span>
+                <span>PP: <strong style={{ color: '#3b82f6' }}>{gameState[isHost ? 'guest' : 'host'].pp}</strong> / {gameState[isHost ? 'guest' : 'host'].maxPp}</span>
+                <span>EP: <strong style={{ color: '#fbbf24' }}>{gameState[isHost ? 'guest' : 'host'].ep}</strong></span>
+                <span>SEP: <strong style={{ color: '#facc15' }}>{gameState[isHost ? 'guest' : 'host'].sep}</strong></span>
                 <span>Combo: <strong>{gameState[isHost ? 'guest' : 'host'].combo}</strong></span>
               </div>
             </div>            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', width: '100%' }}>
               {/* Opponent Hand (STRICT HIDDEN) */}
               <div style={{ width: '110px' }}>
-                 <Zone id={`hand-${isHost ? 'guest' : 'host'}`} label="Opponent Hand" cards={getCards(`hand-${isHost ? 'guest' : 'host'}`)} hideCards={true} layout="stack" isProtected={true} viewerRole={role} containerStyle={{ minHeight: '150px' }} />
+                <Zone id={`hand-${isHost ? 'guest' : 'host'}`} label="Opponent Hand" cards={getCards(`hand-${isHost ? 'guest' : 'host'}`)} hideCards={true} layout="stack" isProtected={true} viewerRole={role} containerStyle={{ minHeight: '150px' }} />
               </div>
-              
+
               <Zone id={`ex-${isHost ? 'guest' : 'host'}`} label="Opponent EX Area" cards={getCards(`ex-${isHost ? 'guest' : 'host'}`)} isProtected={true} viewerRole={role} containerStyle={{ maxWidth: '600px', minHeight: '150px', flex: 'none', width: '600px' }} />
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -933,18 +931,18 @@ const GameBoard: React.FC = () => {
                 </div>
               </div>
             </div>
-            <Zone id={`field-${isHost ? 'guest' : 'host'}`} label="Opponent Field" cards={getCards(`field-${isHost ? 'guest' : 'host'}`)} onTap={toggleTap} onModifyCounter={handleModifyCounter} onCemetery={handleSendToCemetery} viewerRole={role} containerStyle={{ maxWidth: '850px', minHeight: '160px', width: '850px', flex: 'none' }} />
+            <Zone id={`field-${isHost ? 'guest' : 'host'}`} label="Opponent Field" cards={getCards(`field-${isHost ? 'guest' : 'host'}`)} onTap={toggleTap} onModifyCounter={handleModifyCounter} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} viewerRole={role} containerStyle={{ maxWidth: '850px', minHeight: '160px', width: '850px', flex: 'none' }} />
           </div>
 
           <hr style={{ borderColor: 'rgba(255,255,255,0.1)', margin: '1rem 0' }} />
 
           {/* MY BOARD */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <Zone id={`field-${role}`} label="My Field" cards={getCards(`field-${role}`)} onTap={toggleTap} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} viewerRole={role} containerStyle={{ maxWidth: '850px', minHeight: '160px', width: '850px', flex: 'none' }} />
-            
+            <Zone id={`field-${role}`} label="My Field" cards={getCards(`field-${role}`)} onTap={toggleTap} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} viewerRole={role} containerStyle={{ maxWidth: '850px', minHeight: '160px', width: '850px', flex: 'none' }} />
+
             <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <Zone id={`ex-${role}`} label="My EX Area" cards={getCards(`ex-${role}`)} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} viewerRole={role} containerStyle={{ maxWidth: '600px', minHeight: '160px', flex: 'none', width: '600px' }} />
-              
+              <Zone id={`ex-${role}`} label="My EX Area" cards={getCards(`ex-${role}`)} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} viewerRole={role} containerStyle={{ maxWidth: '600px', minHeight: '160px', flex: 'none', width: '600px' }} />
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <Zone id={`banish-${role}`} label="Banish" cards={getCards(`banish-${role}`)} layout="stack" onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onCemetery={handleSendToCemetery} viewerRole={role} containerStyle={{ minWidth: '110px', minHeight: '150px' }} />
                 <button onClick={() => setSearchZone({ id: `banish-${role}`, title: 'Banish Zone' })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
@@ -968,150 +966,150 @@ const GameBoard: React.FC = () => {
                 </div>
               </div>
             </div>
-                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', justifyContent: 'center', width: '100%' }}>
-                <div style={{ width: '850px', minHeight: '160px', position: 'relative' }}>
-                  {/* My Hand - strictly hidden from opponent but visible to me */}
-                  <Zone id={`hand-${role}`} label="My Hand" cards={getCards(`hand-${role}`)} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onCemetery={handleSendToCemetery} isProtected={true} viewerRole={role} containerStyle={{ minHeight: '160px' }} />
-                  
-                  {/* Mulligan Button Overlay near hand */}
-                  {gameState.gameStatus === 'preparing' && gameState[role].initialHandDrawn && !gameState[role].mulliganUsed && (
-                    <button 
-                      onClick={startMulligan}
-                      style={{ 
-                        position: 'absolute', top: '-10px', right: '10px',
-                        padding: '0.5rem 1rem', background: '#eab308', color: 'black', 
-                        fontWeight: 'bold', borderRadius: '4px', 
-                        cursor: 'pointer', fontSize: '0.875rem', zIndex: 10,
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                        border: '2px solid black'
-                      }}
-                    >
-                      🔄 Mulligan (マリガンする)
-                    </button>
-                  )}
-                </div>
-               
-               {/* Controls */}
-               <div style={{ width: '200px', display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(0,0,0,0.8)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
-                  
-                  <label className="glass-panel" style={{ padding: '0.5rem', background: 'var(--bg-surface-elevated)', textAlign: 'center', cursor: 'pointer', fontSize: '0.875rem' }}>
-                    Import Deck (.json)
-                    <input type="file" accept=".json" style={{ display: 'none' }} onChange={handleDeckUpload} />
-                  </label>
-                                    <button 
-                    onClick={drawCard} 
-                    className="glass-panel" 
-                    disabled={gameState.gameStatus !== 'playing'}
-                    style={{ 
-                      padding: '0.5rem', 
-                      background: 'var(--accent-primary)', 
-                      fontWeight: 'bold',
-                      opacity: gameState.gameStatus === 'playing' ? 1 : 0.5,
-                      cursor: gameState.gameStatus === 'playing' ? 'pointer' : 'not-allowed'
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', justifyContent: 'center', width: '100%' }}>
+              <div style={{ width: '850px', minHeight: '160px', position: 'relative' }}>
+                {/* My Hand - strictly hidden from opponent but visible to me */}
+                <Zone id={`hand-${role}`} label="My Hand" cards={getCards(`hand-${role}`)} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} isProtected={true} viewerRole={role} containerStyle={{ minHeight: '160px' }} />
+
+                {/* Mulligan Button Overlay near hand */}
+                {gameState.gameStatus === 'preparing' && gameState[role].initialHandDrawn && !gameState[role].mulliganUsed && (
+                  <button
+                    onClick={startMulligan}
+                    style={{
+                      position: 'absolute', top: '-10px', right: '10px',
+                      padding: '0.5rem 1rem', background: '#eab308', color: 'black',
+                      fontWeight: 'bold', borderRadius: '4px',
+                      cursor: 'pointer', fontSize: '0.875rem', zIndex: 10,
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                      border: '2px solid black'
                     }}
                   >
-                    Draw Card
+                    🔄 Mulligan (マリガンする)
                   </button>
+                )}
+              </div>
 
-                  {gameState.turnPlayer === role && (
-                    <button onClick={endTurn} className="glass-panel" style={{ padding: '0.5rem', background: '#f59e0b', color: 'black', fontWeight: 'bold', marginBottom: '4px' }}>
-                      END TURN
-                    </button>
-                  )}
+              {/* Controls */}
+              <div style={{ width: '200px', display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(0,0,0,0.8)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
 
-                  <button onClick={spawnToken} className="glass-panel" style={{ padding: '0.5rem', background: 'var(--accent-secondary)' }}>
-                    Spawn Token
+                <label className="glass-panel" style={{ padding: '0.5rem', background: 'var(--bg-surface-elevated)', textAlign: 'center', cursor: 'pointer', fontSize: '0.875rem' }}>
+                  Import Deck (.json)
+                  <input type="file" accept=".json" style={{ display: 'none' }} onChange={handleDeckUpload} />
+                </label>
+                <button
+                  onClick={drawCard}
+                  className="glass-panel"
+                  disabled={gameState.gameStatus !== 'playing'}
+                  style={{
+                    padding: '0.5rem',
+                    background: 'var(--accent-primary)',
+                    fontWeight: 'bold',
+                    opacity: gameState.gameStatus === 'playing' ? 1 : 0.5,
+                    cursor: gameState.gameStatus === 'playing' ? 'pointer' : 'not-allowed'
+                  }}
+                >
+                  Draw Card
+                </button>
+
+                {gameState.turnPlayer === role && (
+                  <button onClick={endTurn} className="glass-panel" style={{ padding: '0.5rem', background: '#f59e0b', color: 'black', fontWeight: 'bold', marginBottom: '4px' }}>
+                    END TURN
                   </button>
-                  <button onClick={() => setShowResetConfirm(true)} className="glass-panel" style={{ padding: '0.5rem', background: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', fontWeight: 'bold' }}>
-                    Reset Game
-                  </button>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
-                    <span style={{ color: '#ef4444', fontWeight: 'bold' }}>HP: {gameState[role].hp}</span>
-                    <div>
-                      <button onClick={() => handleStatChange(role, 'hp', 1)} style={{ padding: '2px 8px', background: 'var(--bg-surface)' }}>+</button>
-                      <button onClick={() => handleStatChange(role, 'hp', -1)} style={{ padding: '2px 8px', background: 'var(--bg-surface)' }}>-</button>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: '#fbbf24', fontWeight: 'bold' }}>EP: {gameState[role].ep}</span>
-                    <div>
-                      <button onClick={() => handleStatChange(role, 'ep', 1)} style={{ padding: '2px 8px', background: 'var(--bg-surface)' }}>+</button>
-                      <button onClick={() => handleStatChange(role, 'ep', -1)} style={{ padding: '2px 8px', background: 'var(--bg-surface)' }}>-</button>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: '#facc15', fontWeight: 'bold' }}>SEP: {gameState[role].sep}</span>
-                    <div>
-                      <button onClick={() => handleStatChange(role, 'sep', 1)} style={{ padding: '2px 8px', background: 'var(--bg-surface)' }}>+</button>
-                      <button onClick={() => handleStatChange(role, 'sep', -1)} style={{ padding: '2px 8px', background: 'var(--bg-surface)' }}>-</button>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: '#fff', fontWeight: 'bold' }}>Combo (Play): {gameState[role].combo}</span>
-                    <div>
-                      <button onClick={() => handleStatChange(role, 'combo', 1)} style={{ padding: '2px 8px', background: 'var(--bg-surface)' }}>+</button>
-                      <button onClick={() => handleStatChange(role, 'combo', -1)} style={{ padding: '2px 8px', background: 'var(--bg-surface)' }}>-</button>
-                    </div>
-                  </div>
+                )}
 
-                  {/* PP Tracker */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.8rem', padding: '0.6rem', background: 'rgba(59, 130, 246, 0.15)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(59, 130, 246, 0.3)', boxShadow: 'inset 0 0 10px rgba(59, 130, 246, 0.1)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      {/* Max PP Adjustment (Vertical) */}
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
-                         <button onClick={() => handleStatChange(role, 'maxPp', 1)} style={{ width: '24px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', borderRadius: '2px', cursor: 'pointer', fontSize: '0.75rem', color: '#fff' }}>+</button>
-                         <span style={{ fontSize: '0.6rem', color: '#93c5fd', fontWeight: 'bold' }}>MAX</span>
-                         <button onClick={() => handleStatChange(role, 'maxPp', -1)} style={{ width: '24px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', borderRadius: '2px', cursor: 'pointer', fontSize: '0.75rem', color: '#fff' }}>-</button>
-                      </div>
-                      
-                      {/* PP Display */}
-                      <div style={{ textAlign: 'center', flex: 1 }}>
-                        <div style={{ fontSize: '0.7rem', color: '#3b82f6', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '-2px' }}>Play Points</div>
-                        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '2px' }}>
-                          <span style={{ color: '#3b82f6', fontWeight: '900', fontSize: '1.75rem', textShadow: '0 0 15px rgba(59, 130, 246, 0.5)' }}>
-                            {gameState[role].pp}
-                          </span>
-                          <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '1rem', fontWeight: 'bold' }}>/</span>
-                          <span style={{ color: '#fff', fontSize: '1.25rem', fontWeight: 'bold' }}>
-                            {gameState[role].maxPp}
-                          </span>
-                        </div>
-                      </div>
+                <button onClick={spawnToken} className="glass-panel" style={{ padding: '0.5rem', background: 'var(--accent-secondary)' }}>
+                  Spawn Token
+                </button>
+                <button onClick={() => setShowResetConfirm(true)} className="glass-panel" style={{ padding: '0.5rem', background: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', fontWeight: 'bold' }}>
+                  Reset Game
+                </button>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
+                  <span style={{ color: '#ef4444', fontWeight: 'bold' }}>HP: {gameState[role].hp}</span>
+                  <div>
+                    <button onClick={() => handleStatChange(role, 'hp', 1)} style={{ padding: '2px 8px', background: 'var(--bg-surface)' }}>+</button>
+                    <button onClick={() => handleStatChange(role, 'hp', -1)} style={{ padding: '2px 8px', background: 'var(--bg-surface)' }}>-</button>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: '#fbbf24', fontWeight: 'bold' }}>EP: {gameState[role].ep}</span>
+                  <div>
+                    <button onClick={() => handleStatChange(role, 'ep', 1)} style={{ padding: '2px 8px', background: 'var(--bg-surface)' }}>+</button>
+                    <button onClick={() => handleStatChange(role, 'ep', -1)} style={{ padding: '2px 8px', background: 'var(--bg-surface)' }}>-</button>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: '#facc15', fontWeight: 'bold' }}>SEP: {gameState[role].sep}</span>
+                  <div>
+                    <button onClick={() => handleStatChange(role, 'sep', 1)} style={{ padding: '2px 8px', background: 'var(--bg-surface)' }}>+</button>
+                    <button onClick={() => handleStatChange(role, 'sep', -1)} style={{ padding: '2px 8px', background: 'var(--bg-surface)' }}>-</button>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: '#fff', fontWeight: 'bold' }}>Combo (Play): {gameState[role].combo}</span>
+                  <div>
+                    <button onClick={() => handleStatChange(role, 'combo', 1)} style={{ padding: '2px 8px', background: 'var(--bg-surface)' }}>+</button>
+                    <button onClick={() => handleStatChange(role, 'combo', -1)} style={{ padding: '2px 8px', background: 'var(--bg-surface)' }}>-</button>
+                  </div>
+                </div>
 
-                      {/* Current PP Adjustment (Horizontal) */}
-                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                        <button onClick={() => handleStatChange(role, 'pp', -1)} style={{ width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', borderRadius: '50%', cursor: 'pointer', fontSize: '1rem', color: '#3b82f6', fontWeight: 'bold', transition: 'all 0.2s' }}>∨</button>
-                        <button onClick={() => handleStatChange(role, 'pp', 1)} style={{ width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', borderRadius: '50%', cursor: 'pointer', fontSize: '1rem', color: '#3b82f6', fontWeight: 'bold', transition: 'all 0.2s' }}>∧</button>
+                {/* PP Tracker */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.8rem', padding: '0.6rem', background: 'rgba(59, 130, 246, 0.15)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(59, 130, 246, 0.3)', boxShadow: 'inset 0 0 10px rgba(59, 130, 246, 0.1)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    {/* Max PP Adjustment (Vertical) */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                      <button onClick={() => handleStatChange(role, 'maxPp', 1)} style={{ width: '24px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', borderRadius: '2px', cursor: 'pointer', fontSize: '0.75rem', color: '#fff' }}>+</button>
+                      <span style={{ fontSize: '0.6rem', color: '#93c5fd', fontWeight: 'bold' }}>MAX</span>
+                      <button onClick={() => handleStatChange(role, 'maxPp', -1)} style={{ width: '24px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', borderRadius: '2px', cursor: 'pointer', fontSize: '0.75rem', color: '#fff' }}>-</button>
+                    </div>
+
+                    {/* PP Display */}
+                    <div style={{ textAlign: 'center', flex: 1 }}>
+                      <div style={{ fontSize: '0.7rem', color: '#3b82f6', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '-2px' }}>Play Points</div>
+                      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '2px' }}>
+                        <span style={{ color: '#3b82f6', fontWeight: '900', fontSize: '1.75rem', textShadow: '0 0 15px rgba(59, 130, 246, 0.5)' }}>
+                          {gameState[role].pp}
+                        </span>
+                        <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '1rem', fontWeight: 'bold' }}>/</span>
+                        <span style={{ color: '#fff', fontSize: '1.25rem', fontWeight: 'bold' }}>
+                          {gameState[role].maxPp}
+                        </span>
                       </div>
                     </div>
+
+                    {/* Current PP Adjustment (Horizontal) */}
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                      <button onClick={() => handleStatChange(role, 'pp', -1)} style={{ width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', borderRadius: '50%', cursor: 'pointer', fontSize: '1rem', color: '#3b82f6', fontWeight: 'bold', transition: 'all 0.2s' }}>∨</button>
+                      <button onClick={() => handleStatChange(role, 'pp', 1)} style={{ width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', borderRadius: '50%', cursor: 'pointer', fontSize: '1rem', color: '#3b82f6', fontWeight: 'bold', transition: 'all 0.2s' }}>∧</button>
+                    </div>
                   </div>
-               </div>
+                </div>
+              </div>
             </div>
           </div>
 
         </div>
       </div>
-      
+
       {/* Mulligan Modal */}
       {isMulliganModalOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
           <div style={{ background: 'var(--bg-surface)', padding: '2rem', borderRadius: 'var(--radius-lg)', maxWidth: '800px', width: '90%', textAlign: 'center', border: '1px solid var(--border-light)' }}>
             <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: 'var(--accent-primary)' }}>Mulligan: Select Return Order</h2>
             <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-              Select cards in the order you want to put them on the <strong>bottom</strong> of your deck.<br/>
+              Select cards in the order you want to put them on the <strong>bottom</strong> of your deck.<br />
               (The 4th selection will be at the absolute bottom.)
             </p>
-            
+
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginBottom: '2rem', flexWrap: 'wrap' }}>
               {gameState.cards.filter(c => c.zone === `hand-${role}`).map(card => {
                 const selectionIndex = mulliganOrder.indexOf(card.id);
                 return (
-                  <div 
-                    key={card.id} 
+                  <div
+                    key={card.id}
                     onClick={() => handleMulliganOrderSelect(card.id)}
-                    style={{ 
-                      position: 'relative', 
-                      cursor: 'pointer', 
+                    style={{
+                      position: 'relative',
+                      cursor: 'pointer',
                       border: selectionIndex !== -1 ? '3px solid var(--accent-primary)' : '1px solid var(--border-light)',
                       borderRadius: 'var(--radius-md)',
                       padding: '4px',
@@ -1122,10 +1120,10 @@ const GameBoard: React.FC = () => {
                   >
                     <img src={card.image} alt={card.name} style={{ width: '120px', borderRadius: '4px' }} />
                     {selectionIndex !== -1 && (
-                      <div style={{ 
-                        position: 'absolute', top: '-10px', right: '-10px', 
-                        background: 'var(--accent-primary)', color: 'white', 
-                        borderRadius: '50%', width: '28px', height: '28px', 
+                      <div style={{
+                        position: 'absolute', top: '-10px', right: '-10px',
+                        background: 'var(--accent-primary)', color: 'white',
+                        borderRadius: '50%', width: '28px', height: '28px',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontWeight: 'bold', fontSize: '1rem', boxShadow: '0 2px 5px rgba(0,0,0,0.5)'
                       }}>
@@ -1138,20 +1136,20 @@ const GameBoard: React.FC = () => {
             </div>
 
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-              <button 
+              <button
                 onClick={() => setIsMulliganModalOpen(false)}
                 style={{ padding: '0.6rem 1.5rem', background: 'transparent', border: '1px solid var(--border-light)', color: 'var(--text-main)', borderRadius: '4px', cursor: 'pointer' }}
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={executeMulligan}
                 disabled={mulliganOrder.length !== 4}
-                style={{ 
-                  padding: '0.6rem 2rem', 
-                  background: mulliganOrder.length === 4 ? 'var(--vivid-green-cyan)' : 'var(--bg-surface-elevated)', 
-                  color: mulliganOrder.length === 4 ? 'black' : 'var(--text-muted)', 
-                  fontWeight: 'bold', border: 'none', borderRadius: '4px', 
+                style={{
+                  padding: '0.6rem 2rem',
+                  background: mulliganOrder.length === 4 ? 'var(--vivid-green-cyan)' : 'var(--bg-surface-elevated)',
+                  color: mulliganOrder.length === 4 ? 'black' : 'var(--text-muted)',
+                  fontWeight: 'bold', border: 'none', borderRadius: '4px',
                   cursor: mulliganOrder.length === 4 ? 'pointer' : 'not-allowed',
                   boxShadow: mulliganOrder.length === 4 ? '0 0 10px rgba(0, 208, 132, 0.3)' : 'none'
                 }}
@@ -1163,7 +1161,7 @@ const GameBoard: React.FC = () => {
         </div>
       )}
 
-      <CardSearchModal 
+      <CardSearchModal
         isOpen={searchZone !== null}
         onClose={() => setSearchZone(null)}
         title={searchZone?.title || ''}
@@ -1186,23 +1184,23 @@ const GameBoard: React.FC = () => {
       )}
 
       {turnMessage && (
-        <div style={{ 
-          position: 'fixed', 
-          top: '40%', 
-          left: '50%', 
-          transform: 'translate(-50%, -50%)', 
-          background: 'rgba(0,0,0,0.9)', 
-          color: '#f59e0b', 
-          padding: '2rem 4rem', 
-          borderRadius: 'var(--radius-lg)', 
-          border: '4px double #f59e0b', 
-          fontSize: '3rem', 
-          fontWeight: '900', 
-          zIndex: 2000, 
-          boxShadow: '0 0 30px rgba(245,158,11,0.4)', 
-          textShadow: '0 0 10px rgba(0,0,0,0.5)', 
-          pointerEvents: 'none', 
-          letterSpacing: '8px' 
+        <div style={{
+          position: 'fixed',
+          top: '40%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          background: 'rgba(0,0,0,0.9)',
+          color: '#f59e0b',
+          padding: '2rem 4rem',
+          borderRadius: 'var(--radius-lg)',
+          border: '4px double #f59e0b',
+          fontSize: '3rem',
+          fontWeight: '900',
+          zIndex: 2000,
+          boxShadow: '0 0 30px rgba(245,158,11,0.4)',
+          textShadow: '0 0 10px rgba(0,0,0,0.5)',
+          pointerEvents: 'none',
+          letterSpacing: '8px'
         }}>
           {turnMessage}
         </div>
@@ -1222,14 +1220,14 @@ const GameBoard: React.FC = () => {
       )}
 
       {isRollingDice && (
-        <div style={{ 
-          position: 'fixed', 
-          inset: 0, 
-          backgroundColor: 'rgba(0,0,0,0.4)', 
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0,0,0,0.4)',
           backdropFilter: 'blur(4px)',
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
           zIndex: 3000,
           pointerEvents: 'none'
         }}>
