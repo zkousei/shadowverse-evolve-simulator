@@ -444,9 +444,10 @@ const GameBoard: React.FC = () => {
         title={searchZone?.title || ''}
         allowHandExtraction={gameState.gameStatus === 'playing'}
         cards={searchZone ? (
-          searchZone.id.startsWith('evolveDeck-') && !searchZone.id.endsWith(role)
-            ? getCards(searchZone.id).filter(c => !c.isFlipped) // Only show face-up (used) cards for opponent's evolve deck
+          (searchZone.id.startsWith('evolveDeck-') && !searchZone.id.endsWith(role)
+            ? getCards(searchZone.id).filter(c => !c.isFlipped)
             : getCards(searchZone.id)
+          ).slice().reverse()
         ) : []}
         onExtractCard={handleExtractCard}
         onToggleFlip={handleFlipCard}
