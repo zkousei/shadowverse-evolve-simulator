@@ -25,6 +25,10 @@
   
   --transition-fast: 0.15s ease;
   --transition-normal: 0.25s ease;
+  
+  /* Palette */
+  --vivid-green-cyan: #00d084;
+  --vivid-red: #ff4d4f;
 }
 
 * {

@@ -17,9 +17,10 @@ interface Props {
   layout?: 'horizontal' | 'stack';
   isProtected?: boolean; // if true, opponent cannot operate cards in this zone
   viewerRole?: 'host' | 'guest'; // current player's role
+  containerStyle?: React.CSSProperties; 
 }
 
-const Zone: React.FC<Props> = ({ id, label, cards, onTap, onModifyCounter, onFlip, onSendToBottom, onBanish, onReturnEvolve, onCemetery, hideCards, layout = 'horizontal', isProtected, viewerRole }) => {
+const Zone: React.FC<Props> = ({ id, label, cards, onTap, onModifyCounter, onFlip, onSendToBottom, onBanish, onReturnEvolve, onCemetery, hideCards, layout = 'horizontal', isProtected, viewerRole, containerStyle }) => {
   const { isOver, setNodeRef } = useDroppable({ id });
 
   const isStack = layout === 'stack';
@@ -40,7 +41,8 @@ const Zone: React.FC<Props> = ({ id, label, cards, onTap, onModifyCounter, onFli
         gap: '0.5rem',
         flexWrap: isStack ? 'nowrap' : 'wrap',
         alignItems: isStack ? 'center' : 'flex-start',
-        transition: 'var(--transition-fast)'
+        transition: 'var(--transition-fast)',
+        ...containerStyle
       }}
     >
       <div style={{ position: 'absolute', top: -10, left: 10, background: 'var(--bg-surface-elevated)', padding: '0 8px', fontSize: '0.75rem', fontWeight: 'bold' }}>
