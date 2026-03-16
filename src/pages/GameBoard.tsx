@@ -303,7 +303,7 @@ const GameBoard: React.FC = () => {
                   Mill Card (デッキ破棄)
                 </button>
 
-                {gameState.turnPlayer === role && (
+                {gameState.turnPlayer === role && gameState.gameStatus === 'playing' && (
                   <button onClick={endTurn} className="glass-panel" style={{ padding: '0.5rem', background: '#f59e0b', color: 'black', fontWeight: 'bold', marginBottom: '4px' }}>
                     END TURN
                   </button>

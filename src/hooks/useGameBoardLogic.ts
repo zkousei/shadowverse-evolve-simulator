@@ -139,6 +139,7 @@ export const useGameBoardLogic = () => {
   };
 
   const endTurn = () => {
+    if (gameState.gameStatus !== 'playing') return;
     setLastGameState(JSON.parse(JSON.stringify(gameState)));
     const nextPlayer = gameState.turnPlayer === 'host' ? 'guest' : 'host';
     const isNewTurnRound = nextPlayer === 'host';
