@@ -13,6 +13,7 @@ interface SyncState {
   turnPlayer: 'host' | 'guest';
   turnCount: number;
   phase: 'Start' | 'Main' | 'End';
+  gameStatus: 'preparing' | 'playing';
 }
 
 interface PlayerHUD {
@@ -30,7 +31,8 @@ const initialState: SyncState = {
   cards: [],
   turnPlayer: 'host', // Host goes first by default, but can be decided by coin flip
   turnCount: 1,
-  phase: 'Start'
+  phase: 'Start',
+  gameStatus: 'preparing'
 };
 
 // Quick helper to generate random ID
@@ -170,9 +172,9 @@ const GameBoard: React.FC = () => {
     }
   };
 
-  const decideTurnOrder = () => {
-    // 50/50 chance for host to go first
-    const isHostFirst = Math.random() > 0.5;
+  const handleSetInitialTurnOrder = (forcedStarter?: 'host' | 'guest') => {
+    // 50/50 chance if no forced starter
+    const isHostFirst = forcedStarter ? (forcedStarter === 'host') : (Math.random() > 0.5);
     const starter = isHostFirst ? 'host' : 'guest';
     const second = isHostFirst ? 'guest' : 'host';
 
@@ -185,10 +187,25 @@ const GameBoard: React.FC = () => {
       [second]: { ...gameState[second], ep: 3 }    // Second player typically gets 3 EP
     });
     
-    // Instead of alert(), use a custom on-screen message
-    const msg = `${starter === role ? "You" : "Opponent"} won the coin flip and will go first!`;
-    setCoinMessage(msg);
+    const msg = `${starter === role ? "You" : "Opponent"} will go first!`;
+    setCoinMessage(forcedStarter ? `Manually set: ${msg}` : msg);
     setTimeout(() => setCoinMessage(null), 4000);
+  };
+
+  const handlePureCoinFlip = () => {
+    const isHeads = Math.random() > 0.5;
+    const result = isHeads ? "HEADS (表)" : "TAILS (裏)";
+    setCoinMessage(`Result: ${result}`);
+    setTimeout(() => setCoinMessage(null), 3000);
+  };
+
+  const handleStartGame = () => {
+    syncState({
+      ...gameState,
+      gameStatus: 'playing'
+    });
+    setTurnMessage("GAME START!");
+    setTimeout(() => setTurnMessage(null), 2500);
   };
 
   const drawCard = () => {
@@ -560,12 +577,50 @@ const GameBoard: React.FC = () => {
         {/* Header bar */}
         {/* Header bar tracking Phase / Turn */ }
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-surface)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)' }}>
-          <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
             <span>Room: <strong>{room}</strong></span>
             <span style={{ color: status.includes('ready') ? 'var(--vivid-green-cyan)' : 'var(--text-muted)' }}>{status}</span>
-            <button onClick={decideTurnOrder} style={{ padding: '0.3rem 0.6rem', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer', fontSize: '0.875rem' }}>
-              🪙 Flip Coin
-            </button>
+            
+            {gameState.gameStatus === 'preparing' ? (
+              <div style={{ display: 'flex', gap: '0.4rem' }}>
+                <button 
+                  onClick={() => handleSetInitialTurnOrder()} 
+                  disabled={!isHost}
+                  style={{ padding: '0.3rem 0.5rem', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', opacity: isHost ? 1 : 0.5 }}
+                >
+                  🪙 Random
+                </button>
+                <button 
+                  onClick={() => handleSetInitialTurnOrder(role)} 
+                  disabled={!isHost}
+                  style={{ padding: '0.3rem 0.5rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', opacity: isHost ? 1 : 0.5 }}
+                >
+                  Me 1st
+                </button>
+                <button 
+                  onClick={() => handleSetInitialTurnOrder(isHost ? 'guest' : 'host')} 
+                  disabled={!isHost}
+                  style={{ padding: '0.3rem 0.5rem', background: '#6366f1', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', opacity: isHost ? 1 : 0.5 }}
+                >
+                  Opp 1st
+                </button>
+                <button 
+                  onClick={handleStartGame} 
+                  disabled={!isHost}
+                  style={{ padding: '0.3rem 0.5rem', background: 'var(--vivid-green-cyan)', color: 'black', fontWeight: 'bold', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', opacity: isHost ? 1 : 0.5 }}
+                >
+                  ▶ START
+                </button>
+              </div>
+            ) : (
+              <button 
+                onClick={handlePureCoinFlip} 
+                style={{ padding: '0.3rem 0.6rem', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer', fontSize: '0.875rem' }}
+              >
+                🪙 Toss Coin
+              </button>
+            )}
+
             {gameState.turnPlayer !== role && lastGameState && (
               <button 
                 onClick={handleUndoTurn} 
