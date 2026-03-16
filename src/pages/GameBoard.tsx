@@ -49,6 +49,7 @@ const GameBoard: React.FC = () => {
   // Custom dialog states to replace native window.confirm/alert
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [coinMessage, setCoinMessage] = useState<string | null>(null);
+  const [turnMessage, setTurnMessage] = useState<string | null>(null);
   
   const peerRef = useRef<Peer | null>(null);
   const connRef = useRef<DataConnection | null>(null);
@@ -79,6 +80,14 @@ const GameBoard: React.FC = () => {
     return () => peer.destroy();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [room, isHost]);
+
+  // Handle Turn Start Notification
+  useEffect(() => {
+    if (gameState.turnPlayer === role && gameState.turnCount > 0) {
+      setTurnMessage("YOUR TURN");
+      setTimeout(() => setTurnMessage(null), 2500);
+    }
+  }, [gameState.turnPlayer, gameState.turnCount, role]);
 
   const setupConnection = (conn: DataConnection) => {
     connRef.current = conn;
@@ -558,11 +567,6 @@ const GameBoard: React.FC = () => {
               <option value="Main">Main Phase</option>
               <option value="End">End Phase</option>
             </select>
-            {gameState.turnPlayer === role && (
-              <button onClick={endTurn} style={{ padding: '0.3rem 1rem', background: 'var(--brand-accent)', color: 'black', fontWeight: 'bold', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-                End Turn
-              </button>
-            )}
           </div>
         </div>
 
@@ -657,6 +661,12 @@ const GameBoard: React.FC = () => {
                     Draw Card
                   </button>
 
+                  {gameState.turnPlayer === role && (
+                    <button onClick={endTurn} className="glass-panel" style={{ padding: '0.5rem', background: '#f59e0b', color: 'black', fontWeight: 'bold', marginBottom: '4px' }}>
+                      END TURN
+                    </button>
+                  )}
+
                   <button onClick={spawnToken} className="glass-panel" style={{ padding: '0.5rem', background: 'var(--accent-secondary)' }}>
                     Spawn Token
                   </button>
@@ -716,6 +726,29 @@ const GameBoard: React.FC = () => {
       {coinMessage && (
         <div style={{ position: 'fixed', top: '20%', left: '50%', transform: 'translate(-50%, -50%)', background: 'rgba(0,0,0,0.85)', color: 'var(--vivid-green-cyan)', padding: '1.5rem 2.5rem', borderRadius: 'var(--radius-lg)', border: '2px solid var(--vivid-green-cyan)', fontSize: '1.25rem', fontWeight: 'bold', zIndex: 1000, boxShadow: 'var(--shadow-lg)' }}>
           {coinMessage}
+        </div>
+      )}
+
+      {turnMessage && (
+        <div style={{ 
+          position: 'fixed', 
+          top: '40%', 
+          left: '50%', 
+          transform: 'translate(-50%, -50%)', 
+          background: 'rgba(0,0,0,0.9)', 
+          color: '#f59e0b', 
+          padding: '2rem 4rem', 
+          borderRadius: 'var(--radius-lg)', 
+          border: '4px double #f59e0b', 
+          fontSize: '3rem', 
+          fontWeight: '900', 
+          zIndex: 2000, 
+          boxShadow: '0 0 30px rgba(245,158,11,0.4)', 
+          textShadow: '0 0 10px rgba(0,0,0,0.5)', 
+          pointerEvents: 'none', 
+          letterSpacing: '8px' 
+        }}>
+          {turnMessage}
         </div>
       )}
 
