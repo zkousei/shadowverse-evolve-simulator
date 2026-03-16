@@ -191,10 +191,15 @@ const GameBoard: React.FC = () => {
     if (customDestination) {
       destinationZone = customDestination;
     }
-    // Riverside
+    const isEnteringHand = destinationZone.startsWith('hand');
 
     const newCards = gameState.cards.map(c => 
-      c.id === cardId ? { ...c, zone: destinationZone, isFlipped: false } : c
+      c.id === cardId ? { 
+        ...c, 
+        zone: destinationZone, 
+        isFlipped: false,
+        counters: isEnteringHand ? { atk: 0, hp: 0 } : c.counters
+      } : c
     );
     syncState({ ...gameState, cards: newCards });
     setSearchZone(null); // Close modal
@@ -273,6 +278,9 @@ const GameBoard: React.FC = () => {
   };
 
   const handleModifyCounter = (cardId: string, stat: 'atk' | 'hp', delta: number) => {
+    const targetCard = gameState.cards.find(c => c.id === cardId);
+    if (!targetCard || targetCard.zone.startsWith('hand')) return;
+
     const newCards = gameState.cards.map(c => 
       c.id === cardId ? { 
         ...c, 
@@ -352,13 +360,16 @@ const GameBoard: React.FC = () => {
 
     const isEnteringRestrictedZone = ['mainDeck', 'evolveDeck', 'hand', 'cemetery', 'banish'].includes(baseZone);
     
+    const isEnteringHand = baseZone === 'hand';
+    
     const newCards = gameState.cards.map(c => 
       c.id === cardId ? { 
         ...c, 
         zone: targetZone, 
         attachedTo: undefined, 
         isFlipped, 
-        isTapped: isEnteringRestrictedZone ? false : c.isTapped 
+        isTapped: isEnteringRestrictedZone ? false : c.isTapped,
+        counters: isEnteringHand ? { atk: 0, hp: 0 } : c.counters
       } : c
     );
 

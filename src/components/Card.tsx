@@ -91,8 +91,8 @@ const Card: React.FC<Props> = ({ card, onTap, onModifyCounter, onFlip, onSendToB
             draggable={false} 
           />
           
-          {/* Counters Overlay - Render only if visible and has stats */}
-          {(card.counters.atk !== 0 || card.counters.hp !== 0) && (
+          {/* Counters Overlay - Hide if in hand */}
+          {!card.zone.startsWith('hand') && (card.counters.atk !== 0 || card.counters.hp !== 0) && (
             <div style={{
               position: 'absolute', bottom: -5, right: -5,
               background: 'rgba(0,0,0,0.85)', padding: '4px 8px', borderRadius: '8px',
@@ -114,7 +114,7 @@ const Card: React.FC<Props> = ({ card, onTap, onModifyCounter, onFlip, onSendToB
               background: 'rgba(0,0,0,0.6)', opacity: 0, transition: 'opacity 0.2s ease',
               borderRadius: '4px'
             }}>
-              {onModifyCounter && (
+              {onModifyCounter && !card.zone.startsWith('hand') && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onModifyCounter(card.id, 'atk', 1); }} style={{ background:'#3b82f6', color:'#fff', padding:'2px', fontSize:'10px', borderRadius:'2px' }}>+A</button>

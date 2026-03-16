@@ -73,21 +73,29 @@ const DeckBuilder: React.FC = () => {
   };
 
   const exportDeck = () => {
-    const data = JSON.stringify({ deckName, mainDeck, evolveDeck });
+    const data = JSON.stringify({ deckName, mainDeck, evolveDeck }, null, 2);
+    
+    // Sanitize filename - allow alphanumeric, Japanese characters, underscores, hyphens
+    const rawName = deckName.trim();
+    const safeName = rawName.length > 0
+      ? rawName.replace(/[^\w\u3000-\u303F\u3040-\u309F\u30A0-\u30FF\uFF00-\uFFEF\u4E00-\u9FAF\-]/g, '_')
+      : 'shadowverse_deck';
+    
     const blob = new Blob([data], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
+    
     const a = document.createElement('a');
     a.href = url;
-    
-    // Sanitize filename
-    const safeName = deckName.replace(/[^a-z0-9_\u3000-\u303F\u3040-\u309F\u30A0-\u30FF\uFF00-\uFFEF\u4E00-\u9FAF]/gi, '_') || 'shadowverse_deck';
     a.download = `${safeName}.json`;
-    
-    // Most browsers require the element to be in the DOM to respect the download attribute
+    a.style.display = 'none';
     document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    
+    // Delay revoke to ensure download starts
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 200);
   };
 
   const handleImportDeck = (event: React.ChangeEvent<HTMLInputElement>) => {
