@@ -50,6 +50,7 @@ const GameBoard: React.FC = () => {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [coinMessage, setCoinMessage] = useState<string | null>(null);
   const [turnMessage, setTurnMessage] = useState<string | null>(null);
+  const [lastGameState, setLastGameState] = useState<SyncState | null>(null);
   
   const peerRef = useRef<Peer | null>(null);
   const connRef = useRef<DataConnection | null>(null);
@@ -95,7 +96,10 @@ const GameBoard: React.FC = () => {
       if (!isHost) setStatus('Connected to host! Game ready.');
     });
     conn.on('data', (data: any) => {
-      if (data.type === 'SYNC') setGameState(data.state);
+      if (data.type === 'SYNC') {
+        setGameState(data.state);
+        setLastGameState(null); // Clear local undo state if opponent synced a new board
+      }
     });
     conn.on('close', () => setStatus('Opponent disconnected.'));
   };
@@ -122,6 +126,9 @@ const GameBoard: React.FC = () => {
   };
 
   const endTurn = () => {
+    // Save current state before modification for Undo (deep copy to avoid reference issues)
+    setLastGameState(JSON.parse(JSON.stringify(gameState)));
+
     const nextPlayer = gameState.turnPlayer === 'host' ? 'guest' : 'host';
     const isNewTurnRound = nextPlayer === 'host'; // Assuming Host goes first, round completes when Guest finishes
     const newTurnCount = isNewTurnRound ? gameState.turnCount + 1 : gameState.turnCount;
@@ -154,6 +161,13 @@ const GameBoard: React.FC = () => {
       [nextPlayer]: nextPlayerState,
       cards: newCards
     });
+  };
+
+  const handleUndoTurn = () => {
+    if (lastGameState) {
+      syncState(lastGameState);
+      setLastGameState(null);
+    }
   };
 
   const decideTurnOrder = () => {
@@ -240,6 +254,8 @@ const GameBoard: React.FC = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Reset input value so the same file name can be uploaded again if needed (e.g. after Undo)
+    event.target.value = '';
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
@@ -664,6 +680,12 @@ const GameBoard: React.FC = () => {
                   {gameState.turnPlayer === role && (
                     <button onClick={endTurn} className="glass-panel" style={{ padding: '0.5rem', background: '#f59e0b', color: 'black', fontWeight: 'bold', marginBottom: '4px' }}>
                       END TURN
+                    </button>
+                  )}
+
+                  {gameState.turnPlayer !== role && lastGameState && (
+                    <button onClick={handleUndoTurn} className="glass-panel" style={{ padding: '0.5rem', background: '#ec4899', color: 'white', fontWeight: 'bold', border: '1px solid #fff', marginBottom: '4px' }}>
+                      UNDO END TURN
                     </button>
                   )}
 
