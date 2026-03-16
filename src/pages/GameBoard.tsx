@@ -700,7 +700,7 @@ const GameBoard: React.FC = () => {
                   disabled={!isHost}
                   style={{ padding: '0.3rem 0.5rem', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', opacity: isHost ? 1 : 0.5 }}
                 >
-                  🪙 Random
+                  🪙 Decide Turn Order (Random)
                 </button>
                 <button 
                   onClick={() => handleSetInitialTurnOrder(role)} 
