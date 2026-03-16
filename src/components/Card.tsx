@@ -27,9 +27,10 @@ interface Props {
   onPlayToField?: (id: string) => void;
   isHidden?: boolean; // if true, STRICTLY render card back only
   isLocked?: boolean; // if true, prevent dragging and operating (opponent's hand/deck/ex)
+  debugIndex?: number;
 }
 
-const Card: React.FC<Props> = ({ card, onTap, onModifyCounter, onFlip, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, isHidden, isLocked }) => {
+const Card: React.FC<Props> = ({ card, onTap, onModifyCounter, onFlip, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, isHidden, isLocked, debugIndex }) => {
   const { attributes, listeners, setNodeRef: setDraggableRef, transform } = useDraggable({
     id: card.id,
     data: { card },
@@ -91,6 +92,18 @@ const Card: React.FC<Props> = ({ card, onTap, onModifyCounter, onFlip, onSendToB
             style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px', boxShadow: 'var(--shadow-sm)' }}
             draggable={false}
           />
+
+          {/* Debug Index */}
+          {debugIndex !== undefined && (
+            <div style={{
+              position: 'absolute', top: 2, left: 2,
+              background: 'rgba(255,0,0,0.8)', color: 'white',
+              fontSize: '10px', padding: '1px 4px', borderRadius: '3px',
+              zIndex: 10, pointerEvents: 'none', border: '1px solid white'
+            }}>
+              IDX: {debugIndex}
+            </div>
+          )}
 
           {/* Counters Overlay - Hide if in hand */}
           {!card.zone.startsWith('hand') && (card.counters.atk !== 0 || card.counters.hp !== 0) && (

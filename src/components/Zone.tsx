@@ -19,9 +19,10 @@ interface Props {
   isProtected?: boolean; // if true, opponent cannot operate cards in this zone
   viewerRole?: 'host' | 'guest'; // current player's role
   containerStyle?: React.CSSProperties;
+  isDebug?: boolean;
 }
 
-const Zone: React.FC<Props> = ({ id, label, cards, onTap, onModifyCounter, onFlip, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, hideCards, layout = 'horizontal', isProtected, viewerRole, containerStyle }) => {
+const Zone: React.FC<Props> = ({ id, label, cards, onTap, onModifyCounter, onFlip, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, hideCards, layout = 'horizontal', isProtected, viewerRole, containerStyle, isDebug }) => {
   const { isOver, setNodeRef } = useDroppable({ id });
 
   const isStack = layout === 'stack';
@@ -81,6 +82,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, onTap, onModifyCounter, onFli
                       onPlayToField={onPlayToField}
                       isHidden={hideCards}
                       isLocked={isProtected && card.owner !== viewerRole}
+                      debugIndex={isDebug ? index : undefined}
                     />
                     {attachments.map((attachedCard, i) => (
                       <div key={attachedCard.id} style={{ position: 'absolute', top: (i + 1) * 20, left: (i + 1) * 15, zIndex: index + 10 + i }}>
@@ -96,6 +98,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, onTap, onModifyCounter, onFli
                           onPlayToField={onPlayToField}
                           isHidden={hideCards}
                           isLocked={isProtected && attachedCard.owner !== viewerRole}
+                          debugIndex={isDebug ? i : undefined}
                         />
                       </div>
                     ))}
@@ -122,6 +125,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, onTap, onModifyCounter, onFli
                 onPlayToField={onPlayToField}
                 isHidden={hideCards}
                 isLocked={isProtected && card.owner !== viewerRole}
+                debugIndex={isDebug ? topLevelCards.indexOf(card) : undefined}
               />
               {attachments.map((attachedCard, i) => (
                 <div key={attachedCard.id} style={{ position: 'absolute', top: (i + 1) * 20, left: (i + 1) * 15, zIndex: 10 + i }}>
@@ -137,6 +141,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, onTap, onModifyCounter, onFli
                     onPlayToField={onPlayToField}
                     isHidden={hideCards}
                     isLocked={isProtected && attachedCard.owner !== viewerRole}
+                    debugIndex={isDebug ? i : undefined}
                   />
                 </div>
               ))}

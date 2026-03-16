@@ -17,7 +17,8 @@ const GameBoard: React.FC = () => {
     handleModifyCounter, handleDragEnd, toggleTap, handleFlipCard, handleSendToBottom,
     handleBanish, handlePlayToField, handleSendToCemetery, handleReturnEvolve, handleShuffleDeck,
     getCards, lastGameState, millCard,
-    topDeckCards, handleLookAtTop, handleResolveTopDeck, setTopDeckCards
+    topDeckCards, handleLookAtTop, handleResolveTopDeck, setTopDeckCards,
+    isDebug
   } = useGameBoardLogic();
 
   const [isTopNInputOpen, setIsTopNInputOpen] = React.useState(false);
@@ -196,52 +197,52 @@ const GameBoard: React.FC = () => {
                 <Zone id={`hand-${isHost ? 'guest' : 'host'}`} label="Opponent Hand" cards={getCards(`hand-${isHost ? 'guest' : 'host'}`)} hideCards={true} layout="stack" isProtected={true} viewerRole={role} containerStyle={{ minHeight: '150px' }} />
               </div>
 
-              <Zone id={`ex-${isHost ? 'guest' : 'host'}`} label="Opponent EX Area" cards={getCards(`ex-${isHost ? 'guest' : 'host'}`)} isProtected={true} viewerRole={role} containerStyle={{ maxWidth: '600px', minHeight: '150px', flex: 'none', width: '600px' }} />
+              <Zone id={`ex-${isHost ? 'guest' : 'host'}`} label="Opponent EX Area" cards={getCards(`ex-${isHost ? 'guest' : 'host'}`)} isProtected={false} viewerRole={role} containerStyle={{ maxWidth: '600px', minHeight: '150px', flex: 'none', width: '600px' }} />
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <Zone id={`evolveDeck-${isHost ? 'guest' : 'host'}`} label="Opponent Evolve Deck" cards={getCards(`evolveDeck-${isHost ? 'guest' : 'host'}`)} layout="stack" isProtected={true} viewerRole={role} containerStyle={{ minWidth: '110px', minHeight: '150px' }} />
+                  <Zone id={`evolveDeck-${isHost ? 'guest' : 'host'}`} label="Opponent Evolve Deck" cards={getCards(`evolveDeck-${isHost ? 'guest' : 'host'}`)} layout="stack" isProtected={true} viewerRole={role} containerStyle={{ minWidth: '110px', minHeight: '150px' }} isDebug={isDebug} />
                   <button onClick={() => setSearchZone({ id: `evolveDeck-${isHost ? 'guest' : 'host'}`, title: "Opponent's Evolve Deck (Used)" })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
                 </div>
-                <Zone id={`mainDeck-${isHost ? 'guest' : 'host'}`} label="Opponent Main Deck" cards={getCards(`mainDeck-${isHost ? 'guest' : 'host'}`)} layout="stack" isProtected={true} viewerRole={role} containerStyle={{ minWidth: '110px', minHeight: '150px' }} />
+                <Zone id={`mainDeck-${isHost ? 'guest' : 'host'}`} label="Opponent Main Deck" cards={getCards(`mainDeck-${isHost ? 'guest' : 'host'}`)} layout="stack" isProtected={true} viewerRole={role} containerStyle={{ minWidth: '110px', minHeight: '150px' }} isDebug={isDebug} />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <Zone id={`cemetery-${isHost ? 'guest' : 'host'}`} label="Opponent Cemetery" cards={getCards(`cemetery-${isHost ? 'guest' : 'host'}`)} layout="stack" viewerRole={role} containerStyle={{ minWidth: '110px', minHeight: '150px' }} />
+                  <Zone id={`cemetery-${isHost ? 'guest' : 'host'}`} label="Opponent Cemetery" cards={getCards(`cemetery-${isHost ? 'guest' : 'host'}`)} layout="stack" viewerRole={role} containerStyle={{ minWidth: '110px', minHeight: '150px' }} isDebug={isDebug} />
                   <button onClick={() => setSearchZone({ id: `cemetery-${isHost ? 'guest' : 'host'}`, title: "Opponent's Cemetery" })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <Zone id={`banish-${isHost ? 'guest' : 'host'}`} label="Opponent Banish" cards={getCards(`banish-${isHost ? 'guest' : 'host'}`)} layout="stack" viewerRole={role} containerStyle={{ minWidth: '110px', minHeight: '150px' }} />
+                  <Zone id={`banish-${isHost ? 'guest' : 'host'}`} label="Opponent Banish" cards={getCards(`banish-${isHost ? 'guest' : 'host'}`)} layout="stack" viewerRole={role} containerStyle={{ minWidth: '110px', minHeight: '150px' }} isDebug={isDebug} />
                   <button onClick={() => setSearchZone({ id: `banish-${isHost ? 'guest' : 'host'}`, title: "Opponent's Banish Zone" })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
                 </div>
               </div>
             </div>
-            <Zone id={`field-${isHost ? 'guest' : 'host'}`} label="Opponent Field" cards={getCards(`field-${isHost ? 'guest' : 'host'}`)} onTap={toggleTap} onModifyCounter={handleModifyCounter} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} viewerRole={role} containerStyle={{ maxWidth: '850px', minHeight: '160px', width: '850px', flex: 'none' }} />
+            <Zone id={`field-${isHost ? 'guest' : 'host'}`} label="Opponent Field" cards={getCards(`field-${isHost ? 'guest' : 'host'}`)} onTap={toggleTap} onModifyCounter={handleModifyCounter} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} viewerRole={role} containerStyle={{ maxWidth: '850px', minHeight: '160px', width: '850px', flex: 'none' }} isDebug={isDebug} />
           </div>
 
           <hr style={{ borderColor: 'rgba(255,255,255,0.1)', margin: '1rem 0' }} />
 
           {/* MY BOARD */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <Zone id={`field-${role}`} label="My Field" cards={getCards(`field-${role}`)} onTap={toggleTap} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} viewerRole={role} containerStyle={{ maxWidth: '850px', minHeight: '160px', width: '850px', flex: 'none' }} />
+            <Zone id={`field-${role}`} label="My Field" cards={getCards(`field-${role}`)} onTap={toggleTap} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} viewerRole={role} containerStyle={{ maxWidth: '850px', minHeight: '160px', width: '850px', flex: 'none' }} isDebug={isDebug} />
 
             <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <Zone id={`ex-${role}`} label="My EX Area" cards={getCards(`ex-${role}`)} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} viewerRole={role} containerStyle={{ maxWidth: '600px', minHeight: '160px', flex: 'none', width: '600px' }} />
+              <Zone id={`ex-${role}`} label="My EX Area" cards={getCards(`ex-${role}`)} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} viewerRole={role} containerStyle={{ maxWidth: '600px', minHeight: '160px', flex: 'none', width: '600px' }} isDebug={isDebug} />
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <Zone id={`banish-${role}`} label="Banish" cards={getCards(`banish-${role}`)} layout="stack" onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onCemetery={handleSendToCemetery} viewerRole={role} containerStyle={{ minWidth: '110px', minHeight: '150px' }} />
+                <Zone id={`banish-${role}`} label="Banish" cards={getCards(`banish-${role}`)} layout="stack" onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onCemetery={handleSendToCemetery} viewerRole={role} containerStyle={{ minWidth: '110px', minHeight: '150px' }} isDebug={isDebug} />
                 <button onClick={() => setSearchZone({ id: `banish-${role}`, title: 'Banish Zone' })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <Zone id={`cemetery-${role}`} label="Cemetery" cards={getCards(`cemetery-${role}`)} layout="stack" onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onCemetery={handleSendToCemetery} viewerRole={role} containerStyle={{ minWidth: '110px', minHeight: '150px' }} />
+                <Zone id={`cemetery-${role}`} label="Cemetery" cards={getCards(`cemetery-${role}`)} layout="stack" onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onCemetery={handleSendToCemetery} viewerRole={role} containerStyle={{ minWidth: '110px', minHeight: '150px' }} isDebug={isDebug} />
                 <button onClick={() => setSearchZone({ id: `cemetery-${role}`, title: 'Cemetery' })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <Zone id={`evolveDeck-${role}`} label="Evolve Deck" cards={getCards(`evolveDeck-${role}`)} layout="stack" isProtected={true} viewerRole={role} containerStyle={{ minWidth: '110px', minHeight: '150px' }} />
+                <Zone id={`evolveDeck-${role}`} label="Evolve Deck" cards={getCards(`evolveDeck-${role}`)} layout="stack" isProtected={true} viewerRole={role} containerStyle={{ minWidth: '110px', minHeight: '150px' }} isDebug={isDebug} />
                 <button onClick={() => setSearchZone({ id: `evolveDeck-${role}`, title: 'Evolve Deck' })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <Zone id={`mainDeck-${role}`} label="Main Deck" cards={getCards(`mainDeck-${role}`)} layout="stack" isProtected={true} viewerRole={role} containerStyle={{ minWidth: '110px', minHeight: '150px' }} />
+                <Zone id={`mainDeck-${role}`} label="Main Deck" cards={getCards(`mainDeck-${role}`)} layout="stack" isProtected={true} viewerRole={role} containerStyle={{ minWidth: '110px', minHeight: '150px' }} isDebug={isDebug} />
                 <div style={{ display: 'flex', gap: '2px', flexWrap: 'wrap' }}>
                   <button onClick={() => setSearchZone({ id: `mainDeck-${role}`, title: 'Main Deck' })} style={{ flex: '1 1 48%', fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
                   <button onClick={handleShuffleDeck} style={{ flex: '1 1 48%', fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Shuffle</button>
@@ -252,7 +253,7 @@ const GameBoard: React.FC = () => {
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', justifyContent: 'center', width: '100%' }}>
               <div style={{ width: '850px', minHeight: '160px', position: 'relative' }}>
                 {/* My Hand - strictly hidden from opponent but visible to me */}
-                <Zone id={`hand-${role}`} label="My Hand" cards={getCards(`hand-${role}`)} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} isProtected={true} viewerRole={role} containerStyle={{ minHeight: '160px' }} />
+                <Zone id={`hand-${role}`} label="My Hand" cards={getCards(`hand-${role}`)} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} isProtected={true} viewerRole={role} containerStyle={{ minHeight: '160px' }} isDebug={isDebug} />
 
                 {/* Mulligan Button Overlay near hand */}
                 {gameState.gameStatus === 'preparing' && gameState[role].initialHandDrawn && !gameState[role].mulliganUsed && (

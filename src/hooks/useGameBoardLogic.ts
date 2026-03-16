@@ -5,7 +5,7 @@ import { type DragEndEvent } from '@dnd-kit/core';
 import { type CardInstance } from '../components/Card';
 import { type SyncState, initialState } from '../types/game';
 import { uuid } from '../utils/helpers';
-import type { TopDeckAction } from '../components/TopDeckModal';
+import * as CardLogic from '../utils/cardLogic';
 
 export const useGameBoardLogic = () => {
   const [searchParams] = useSearchParams();
@@ -34,10 +34,14 @@ export const useGameBoardLogic = () => {
   const gameStateRef = useRef<SyncState>(initialState);
 
   const syncState = useCallback((newState: SyncState) => {
-    setGameState(newState);
-    gameStateRef.current = newState;
+    const guardedState: SyncState = {
+      ...newState,
+      cards: CardLogic.applyStateWithGuards(newState.cards)
+    };
+    setGameState(guardedState);
+    gameStateRef.current = guardedState;
     if (connRef.current?.open) {
-      connRef.current.send({ type: 'SYNC', state: newState });
+      connRef.current.send({ type: 'SYNC', state: guardedState });
     }
   }, []);
 
@@ -156,14 +160,7 @@ export const useGameBoardLogic = () => {
       c.isTapped && c.zone === `field-${nextPlayer}` ? { ...c, isTapped: false } : c
     );
 
-    const nextPlayerDeck = untapCards.filter(c => c.zone === `mainDeck-${nextPlayer}`);
-    let finalCards = untapCards;
-    if (nextPlayerDeck.length > 0) {
-      const topCardId = nextPlayerDeck[0].id;
-      finalCards = untapCards.map(c =>
-        c.id === topCardId ? { ...c, zone: `hand-${nextPlayer}`, isFlipped: false } : c
-      );
-    }
+    const finalCards = CardLogic.drawCard(untapCards, nextPlayer);
 
     syncState({
       ...gameState,
@@ -249,10 +246,10 @@ export const useGameBoardLogic = () => {
   const handleDrawInitialHand = () => {
     const myDeck = gameState.cards.filter(c => c.zone === `mainDeck-${role}`);
     if (myDeck.length < 4) return;
-    const drawnIds = myDeck.slice(0, 4).map(c => c.id);
-    const newCards = gameState.cards.map(c =>
-      drawnIds.includes(c.id) ? { ...c, zone: `hand-${role}`, isFlipped: false } : c
-    );
+    const drawnCards = myDeck.slice(0, 4).map(c => ({ ...c, zone: `hand-${role}`, isFlipped: false }));
+    const drawnIds = drawnCards.map(c => c.id);
+    const otherCards = gameState.cards.filter(c => !drawnIds.includes(c.id));
+    const newCards = [...otherCards, ...drawnCards];
     syncState({
       ...gameState,
       cards: newCards,
@@ -274,31 +271,12 @@ export const useGameBoardLogic = () => {
   };
 
   const executeMulligan = () => {
-    if (mulliganOrder.length !== 4) return;
-    const myDeck = gameState.cards.filter(c => c.zone === `mainDeck-${role}`);
-    
-    // Cards originally in hand (being returned) - Respect user selection order
-    const returnedCards = mulliganOrder.map(id => {
-      const card = gameState.cards.find(c => c.id === id)!;
-      return { ...card, zone: `mainDeck-${role}`, isFlipped: true };
-    });
-      
-    // The rest of the deck
-    const restOfDeck = myDeck.filter(c => !mulliganOrder.includes(c.id));
-    
-    // Draw 4 new ones from the TOP of the rest of the deck
-    const newHandCards = restOfDeck.slice(0, 4).map(c => ({ ...c, zone: `hand-${role}`, isFlipped: false }));
-    
-    // Cards that remain in the deck
-    const remainingDeckCards = restOfDeck.slice(4);
-    
-    // Everything that isn't part of my deck/hand involvement
-    const otherCards = gameState.cards.filter(c => c.owner !== role || (c.zone !== `mainDeck-${role}` && c.zone !== `hand-${role}`));
+    const newCards = CardLogic.executeMulligan(gameState.cards, role, mulliganOrder);
+    if (newCards === gameState.cards) return;
 
-    // Final order: [Others, New Hand, Remaining Deck, Returned cards at the bottom (ordered by selection)]
     syncState({
       ...gameState,
-      cards: [...otherCards, ...newHandCards, ...remainingDeckCards, ...returnedCards],
+      cards: newCards,
       [role]: { ...gameState[role], mulliganUsed: true }
     });
     setIsMulliganModalOpen(false);
@@ -306,24 +284,15 @@ export const useGameBoardLogic = () => {
 
   const drawCard = () => {
     if (gameState.gameStatus !== 'playing') return;
-    const myDeck = gameState.cards.filter(c => c.zone === `mainDeck-${role}`);
-    if (myDeck.length === 0) return;
-    const topCard = myDeck[0];
-    const newCards = gameState.cards.map(c =>
-      c.id === topCard.id ? { ...c, zone: `hand-${role}`, isFlipped: false } : c
-    );
-    syncState({ ...gameState, cards: newCards });
+    syncState({
+      ...gameState,
+      cards: CardLogic.drawCard(gameState.cards, role)
+    });
   };
 
   const millCard = () => {
     if (gameState.gameStatus !== 'playing') return;
-    const myDeck = gameState.cards.filter(c => c.zone === `mainDeck-${role}`);
-    if (myDeck.length === 0) return;
-    const topCard = myDeck[0];
-    const newCards = gameState.cards.map(c =>
-      c.id === topCard.id ? { ...c, zone: `cemetery-${role}`, isFlipped: false, isTapped: false, attachedTo: undefined, counters: { atk: 0, hp: 0 } } : c
-    );
-    syncState({ ...gameState, cards: newCards });
+    syncState({ ...gameState, cards: CardLogic.millCard(gameState.cards, role) });
   };
 
   const handleLookAtTop = (n: number) => {
@@ -332,58 +301,9 @@ export const useGameBoardLogic = () => {
     setTopDeckCards(myDeck.slice(0, n));
   };
 
-  const handleResolveTopDeck = (results: { cardId: string, action: TopDeckAction, order?: number }[]) => {
-    const cardsToMoveIds = results.map(r => r.cardId);
-    
-    const handResult = results.filter(r => r.action === 'hand');
-    const fieldResult = results.filter(r => r.action === 'field');
-    const exResult = results.filter(r => r.action === 'ex');
-    const cemeteryResult = results.filter(r => r.action === 'cemetery');
-    // Top 1 should be the first element in the deck array (the one drawn first)
-    const topResult = results.filter(r => r.action === 'top').sort((a, b) => (a.order || 0) - (b.order || 0)); 
-    const bottomResult = results.filter(r => r.action === 'bottom').sort((a, b) => (a.order || 0) - (b.order || 0)); 
-
-    // Separate all cards into "my current deck" and "everything else"
-    const myDeck = gameState.cards.filter(c => c.zone === `mainDeck-${role}`);
-    const nonDeckCards = gameState.cards.filter(c => c.zone !== `mainDeck-${role}`);
-    
-    const resolveCard = (cardId: string, action: TopDeckAction): CardInstance => {
-      const card = myDeck.find(c => c.id === cardId)!;
-      let zone = `mainDeck-${role}`;
-      if (action === 'hand') zone = `hand-${role}`;
-      else if (action === 'field') zone = `field-${role}`;
-      else if (action === 'ex') zone = `ex-${role}`;
-      else if (action === 'cemetery') zone = `cemetery-${role}`;
-      
-      const isEnteringSafeZone = zone.startsWith('hand') || zone.startsWith('mainDeck');
-      return { 
-        ...card, 
-        zone, 
-        isFlipped: zone.startsWith('mainDeck'),
-        isTapped: false,
-        attachedTo: undefined,
-        counters: isEnteringSafeZone ? { atk: 0, hp: 0 } : card.counters
-      };
-    };
-
-    const movedHand = handResult.map(r => resolveCard(r.cardId, 'hand'));
-    const movedField = fieldResult.map(r => resolveCard(r.cardId, 'field'));
-    const movedEx = exResult.map(r => resolveCard(r.cardId, 'ex'));
-    const movedCemetery = cemeteryResult.map(r => resolveCard(r.cardId, 'cemetery'));
-    
-    const movedTop = topResult.map(r => resolveCard(r.cardId, 'top'));
-    const movedBottom = bottomResult.map(r => resolveCard(r.cardId, 'bottom'));
-
-    // Cards that were in the deck but NOT even looked at (the rest of the deck)
-    const unlookedDeck = myDeck.filter(c => !cardsToMoveIds.includes(c.id));
-    
-    // New deck structure: [Chosen Top cards (1,2,3...), Remaining cards, Chosen Bottom cards (1,2,3...)]
-    const finalDeck = [...movedTop, ...unlookedDeck, ...movedBottom];
-
-    syncState({
-      ...gameState,
-      cards: [...nonDeckCards, ...movedHand, ...movedField, ...movedEx, ...movedCemetery, ...finalDeck]
-    });
+  const handleResolveTopDeck = (results: CardLogic.TopDeckResult[]) => {
+    const newCards = CardLogic.resolveTopDeckResults(gameState.cards, role, results);
+    syncState({ ...gameState, cards: newCards });
     setTopDeckCards([]);
   };
 
@@ -393,15 +313,15 @@ export const useGameBoardLogic = () => {
     let destinationZone = targetCard.isEvolveCard ? `field-${role}` : `hand-${role}`;
     if (customDestination) destinationZone = customDestination;
     const isEnteringHand = destinationZone.startsWith('hand');
-    const newCards = gameState.cards.map(c =>
-      c.id === cardId ? {
-        ...c,
+    
+    syncState({
+      ...gameState,
+      cards: CardLogic.moveCardToEnd(gameState.cards, cardId, {
         zone: destinationZone,
         isFlipped: false,
-        counters: isEnteringHand ? { atk: 0, hp: 0 } : c.counters
-      } : c
-    );
-    syncState({ ...gameState, cards: newCards });
+        counters: isEnteringHand ? { atk: 0, hp: 0 } : targetCard.counters
+      })
+    });
     setSearchZone(null);
   };
 
@@ -411,7 +331,7 @@ export const useGameBoardLogic = () => {
       .filter(c => c.cardId !== 'token')
       .map(c => ({
         ...c,
-        zone: c.isEvolveCard ? `evolveDeck-${c.owner}` : `mainDeck-${c.owner}`,
+        zone: CardLogic.getDeckZone(c),
         isFlipped: true,
         isTapped: false,
         attachedTo: undefined,
@@ -470,66 +390,58 @@ export const useGameBoardLogic = () => {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over) return;
-    const cardId = active.id;
+    const cardId = active.id as string;
     const overId = over.id as string;
     if (cardId === overId) return;
     const activeCard = gameState.cards.find(c => c.id === cardId);
     if (!activeCard) return;
 
     let targetZone = overId;
-    let isFlipped = activeCard.isFlipped;
+    let newAttachedTo: string | undefined = undefined;
+    
     const overCard = gameState.cards.find(c => c.id === overId);
     if (overCard) {
       if (overCard.zone.startsWith('field')) {
-        const newCards = gameState.cards.map(c =>
-          c.id === cardId ? { ...c, zone: overCard.zone, attachedTo: overCard.id, isFlipped: false, isTapped: false } : c
-        );
-        syncState({ ...gameState, cards: newCards });
-        return;
-      } else targetZone = overCard.zone;
-    }
-
-    if (targetZone.startsWith('field') || targetZone.startsWith('ex') || targetZone.startsWith('hand') || targetZone.startsWith('cemetery') || targetZone.startsWith('banish')) {
-      isFlipped = false;
-    }
-
-    let baseZonePrefix = targetZone.split('-')[0];
-    if (['mainDeck', 'evolveDeck', 'hand', 'cemetery', 'banish'].includes(baseZonePrefix)) {
-      const correctOwner = activeCard.owner;
-      const restrictedDestinations = ['mainDeck', 'hand', 'cemetery', 'banish'];
-      if (activeCard.isEvolveCard && restrictedDestinations.includes(baseZonePrefix)) baseZonePrefix = 'evolveDeck';
-      else if (!activeCard.isEvolveCard && baseZonePrefix === 'evolveDeck') baseZonePrefix = 'mainDeck';
-      targetZone = `${baseZonePrefix}-${correctOwner}`;
-      if (activeCard.cardId === 'token') {
-        syncState({ ...gameState, cards: gameState.cards.filter(c => c.id !== cardId) });
-        return;
+        // Stacking/Attaching
+        targetZone = overCard.zone;
+        newAttachedTo = overCard.id;
+      } else {
+        targetZone = overCard.zone;
       }
     }
 
-    if (baseZonePrefix === 'mainDeck') isFlipped = true;
-    else if (['field', 'ex', 'hand', 'cemetery', 'banish'].includes(baseZonePrefix)) isFlipped = false;
-
-    const movedCard = {
-      ...activeCard, 
-      zone: targetZone, 
-      attachedTo: undefined, 
-      isFlipped,
-      isTapped: ['mainDeck', 'evolveDeck', 'hand', 'cemetery', 'banish'].includes(baseZonePrefix) ? false : activeCard.isTapped,
-      counters: baseZonePrefix === 'hand' ? { atk: 0, hp: 0 } : activeCard.counters
-    };
-
-    const otherCards = gameState.cards.filter(c => c.id !== cardId);
-
-    // If returning to deck, move to the FRONT (Top of deck)
-    let finalCards: CardInstance[];
-    if (baseZonePrefix === 'mainDeck' || baseZonePrefix === 'evolveDeck') {
-      finalCards = [movedCard, ...otherCards];
-    } else {
-      // Otherwise maintain original index relation for others
-      finalCards = gameState.cards.map(c => c.id === cardId ? movedCard : c);
+    let baseZonePrefix = targetZone.split('-')[0];
+    // Rule: Hand/Deck/Cemetery/Banish must go to original owner's zone.
+    // Field/EX can be cross-owner (for "steal" and "control" effects).
+    const isPrivateZone = ['mainDeck', 'evolveDeck', 'hand', 'cemetery', 'banish'].includes(baseZonePrefix);
+    if (isPrivateZone) {
+      targetZone = `${baseZonePrefix}-${activeCard.owner}`;
     }
 
-    syncState({ ...gameState, cards: finalCards });
+    // Rule: Reset attributes when entering hand/deck/cemetery
+    const isEnteringSafeZone = ['mainDeck', 'evolveDeck', 'hand', 'cemetery', 'banish'].includes(baseZonePrefix);
+    const isReturningToDeck = baseZonePrefix === 'mainDeck' || baseZonePrefix === 'evolveDeck';
+    const isEnteringHand = baseZonePrefix === 'hand';
+
+    const moveOptions: CardLogic.MoveCardOptions = {
+      zone: targetZone,
+      attachedTo: newAttachedTo,
+      isFlipped: baseZonePrefix === 'mainDeck',
+      isTapped: isEnteringSafeZone ? false : activeCard.isTapped,
+      counters: isEnteringHand ? { atk: 0, hp: 0 } : activeCard.counters
+    };
+
+    if (activeCard.cardId === 'token' && isEnteringSafeZone) {
+      // Delete token if it enters any safe zone (including hand)
+      syncState({ ...gameState, cards: gameState.cards.filter(c => c.id !== cardId && c.attachedTo !== cardId) });
+      return;
+    }
+
+    const nextCards = isReturningToDeck 
+      ? CardLogic.moveCardToFront(gameState.cards, cardId, moveOptions)
+      : CardLogic.moveCardToEnd(gameState.cards, cardId, moveOptions);
+
+    syncState({ ...gameState, cards: nextCards });
   };
 
   const toggleTap = (cardId: string) => {
@@ -552,65 +464,58 @@ export const useGameBoardLogic = () => {
     const targetCard = gameState.cards.find(c => c.id === cardId);
     if (!targetCard) return;
     if (targetCard.cardId === 'token') {
-      syncState({ ...gameState, cards: gameState.cards.filter(c => c.id !== cardId) });
+      syncState({ ...gameState, cards: gameState.cards.filter(c => c.id !== cardId && c.attachedTo !== cardId) });
       return;
     }
-    const destinationDeck = targetCard.isEvolveCard ? 'evolveDeck' : 'mainDeck';
-    const destinationZone = `${destinationDeck}-${targetCard.owner}`;
-    const destinationFlipped = !targetCard.isEvolveCard;
-    
-    const movedCard = { 
-      ...targetCard, 
-      zone: destinationZone, 
-      isFlipped: destinationFlipped, 
-      isTapped: false, 
-      attachedTo: undefined, 
-      counters: { atk: 0, hp: 0 } 
-    };
 
-    // Filter out target card and its attachments
-    const otherCards = gameState.cards.filter(c => c.id !== cardId && c.attachedTo !== cardId);
+    const targetZone = CardLogic.getDeckZone(targetCard);
     
-    // Also resolve attachments
-    const movedAttachments = gameState.cards
-      .filter(c => c.attachedTo === cardId)
-      .map(c => ({
-        ...c,
-        zone: c.isEvolveCard ? `evolveDeck-${c.owner}` : `mainDeck-${c.owner}`,
-        isFlipped: !c.isEvolveCard,
+    syncState({
+      ...gameState,
+      cards: CardLogic.moveCardToEnd(gameState.cards, cardId, {
+        zone: targetZone,
+        isFlipped: !targetCard.isEvolveCard,
         isTapped: false,
         attachedTo: undefined,
         counters: { atk: 0, hp: 0 }
-      }));
-
-    // New order: [Existing other cards, attachments, the target card itself at the absolute bottom]
-    syncState({ ...gameState, cards: [...otherCards, ...movedAttachments, movedCard] });
+      })
+    });
   };
 
   const handleBanish = (cardId: string) => {
     const targetCard = gameState.cards.find(c => c.id === cardId);
-    if (!targetCard) return;
-    if (targetCard.cardId === 'token') {
-      syncState({ ...gameState, cards: gameState.cards.filter(c => c.id !== cardId) });
-      return;
+    if (!targetCard && cardId === 'token') return; // Token logic below
+    
+    if (targetCard?.cardId === 'token' || (!targetCard && cardId.startsWith('debug-'))) {
+        // Simple filter for tokens
+        syncState({ ...gameState, cards: gameState.cards.filter(c => c.id !== cardId && c.attachedTo !== cardId) });
+        return;
     }
-    const destinationZone = targetCard.isEvolveCard ? `evolveDeck-${targetCard.owner}` : `banish-${targetCard.owner}`;
-    const newCards = gameState.cards.map(c => {
-      if (c.id === cardId) return { ...c, zone: destinationZone, isTapped: false, isFlipped: false, attachedTo: undefined, counters: { atk: 0, hp: 0 } };
-      if (c.attachedTo === cardId) return { ...c, zone: c.isEvolveCard ? `evolveDeck-${c.owner}` : `banish-${c.owner}`, isTapped: false, isFlipped: false, attachedTo: undefined, counters: { atk: 0, hp: 0 } };
-      return c;
+
+    if (!targetCard) return;
+    const destinationZone = targetCard.isEvolveCard ? CardLogic.getDeckZone(targetCard) : `banish-${targetCard.owner}`;
+    
+    syncState({
+      ...gameState,
+      cards: CardLogic.moveCardToEnd(gameState.cards, cardId, {
+        zone: destinationZone,
+        isTapped: false,
+        isFlipped: false,
+        attachedTo: undefined,
+        counters: { atk: 0, hp: 0 }
+      })
     });
-    syncState({ ...gameState, cards: newCards });
   };
 
   const handlePlayToField = (cardId: string) => {
-    const targetCard = gameState.cards.find(c => c.id === cardId);
-    if (!targetCard) return;
     syncState({
       ...gameState,
-      cards: gameState.cards.map(c =>
-        c.id === cardId ? { ...c, zone: `field-${targetCard.owner}`, attachedTo: undefined, isTapped: false, isFlipped: false } : c
-      )
+      cards: CardLogic.moveCardToEnd(gameState.cards, cardId, {
+        zone: `field-${role}`,
+        attachedTo: undefined,
+        isTapped: false,
+        isFlipped: false
+      })
     });
   };
 
@@ -618,45 +523,45 @@ export const useGameBoardLogic = () => {
     const targetCard = gameState.cards.find(c => c.id === cardId);
     if (!targetCard) return;
     if (targetCard.cardId === 'token') {
-      syncState({ ...gameState, cards: gameState.cards.filter(c => c.id !== cardId) });
+      syncState({ ...gameState, cards: gameState.cards.filter(c => c.id !== cardId && c.attachedTo !== cardId) });
       return;
     }
-    const targetDestination = targetCard.isEvolveCard ? `evolveDeck-${targetCard.owner}` : `cemetery-${targetCard.owner}`;
-    const newCards = gameState.cards.map(c => {
-      if (c.id === cardId) return { ...c, zone: targetDestination, isTapped: false, isFlipped: false, attachedTo: undefined, counters: { atk: 0, hp: 0 } };
-      if (c.attachedTo === cardId) return { ...c, zone: c.isEvolveCard ? `evolveDeck-${c.owner}` : `cemetery-${c.owner}`, isTapped: false, isFlipped: false, attachedTo: undefined, counters: { atk: 0, hp: 0 } };
-      return c;
+    const targetDestination = targetCard.isEvolveCard ? CardLogic.getDeckZone(targetCard) : `cemetery-${targetCard.owner}`;
+    
+    syncState({
+      ...gameState,
+      cards: CardLogic.moveCardToEnd(gameState.cards, cardId, {
+        zone: targetDestination,
+        isTapped: false,
+        isFlipped: false,
+        attachedTo: undefined,
+        counters: { atk: 0, hp: 0 }
+      })
     });
-    syncState({ ...gameState, cards: newCards });
   };
 
   const handleReturnEvolve = (cardId: string) => {
     const targetCard = gameState.cards.find(c => c.id === cardId);
     if (!targetCard) return;
     if (targetCard.cardId === 'token') {
-      syncState({ ...gameState, cards: gameState.cards.filter(c => c.id !== cardId) });
+      syncState({ ...gameState, cards: gameState.cards.filter(c => c.id !== cardId && c.attachedTo !== cardId) });
       return;
     }
-    const destinationZone = `evolveDeck-${targetCard.owner}`;
-    const movedCard = { 
-      ...targetCard, 
-      zone: destinationZone, 
-      isTapped: false, 
-      isFlipped: false, 
-      attachedTo: undefined, 
-      counters: { atk: 0, hp: 0 } 
-    };
-
-    const otherCards = gameState.cards.filter(c => c.id !== cardId);
-    // Push to the end of array to ensure it's at the "bottom" (back) of the evolve deck
-    syncState({ ...gameState, cards: [...otherCards, movedCard] });
+    
+    syncState({
+      ...gameState,
+      cards: CardLogic.moveCardToFront(gameState.cards, cardId, {
+        zone: CardLogic.getDeckZone(targetCard),
+        isTapped: false,
+        isFlipped: false,
+        attachedTo: undefined,
+        counters: { atk: 0, hp: 0 }
+      })
+    });
   };
 
   const handleShuffleDeck = () => {
-    const deckCards = gameState.cards.filter(c => c.zone === `mainDeck-${role}`);
-    const otherCards = gameState.cards.filter(c => c.zone !== `mainDeck-${role}`);
-    const shuffled = [...deckCards].sort(() => Math.random() - 0.5);
-    syncState({ ...gameState, cards: [...otherCards, ...shuffled] });
+    syncState({ ...gameState, cards: CardLogic.shuffleDeck(gameState.cards, role) });
   };
 
   const getCards = (zone: string) => gameState.cards.filter(c => c.zone === zone);
@@ -672,6 +577,7 @@ export const useGameBoardLogic = () => {
     handleModifyCounter, handleDragEnd, toggleTap, handleFlipCard, handleSendToBottom,
     handleBanish, handlePlayToField, handleSendToCemetery, handleReturnEvolve, handleShuffleDeck,
     getCards, lastGameState, millCard,
-    topDeckCards, handleLookAtTop, handleResolveTopDeck, setTopDeckCards
+    topDeckCards, handleLookAtTop, handleResolveTopDeck, setTopDeckCards,
+    isDebug
   };
 };
