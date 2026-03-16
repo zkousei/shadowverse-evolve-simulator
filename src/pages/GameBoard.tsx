@@ -114,11 +114,22 @@ const GameBoard: React.FC = () => {
   };
 
   const handleStatChange = (playerKey: 'host' | 'guest', stat: 'hp' | 'pp' | 'maxPp' | 'ep' | 'sep' | 'combo', delta: number) => {
+    let newValue = gameState[playerKey][stat] + delta;
+    
+    // Apply clamping rules
+    if (stat === 'maxPp') {
+      newValue = Math.min(10, Math.max(0, newValue));
+    } else if (stat === 'pp') {
+      newValue = Math.min(gameState[playerKey].maxPp, Math.max(0, newValue));
+    } else {
+      newValue = Math.max(0, newValue);
+    }
+
     syncState({
       ...gameState,
       [playerKey]: {
         ...gameState[playerKey],
-        [stat]: Math.max(0, gameState[playerKey][stat] + delta)
+        [stat]: newValue
       }
     });
   };
@@ -200,9 +211,11 @@ const GameBoard: React.FC = () => {
   };
 
   const handleStartGame = () => {
+    const starter = gameState.turnPlayer;
     syncState({
       ...gameState,
-      gameStatus: 'playing'
+      gameStatus: 'playing',
+      [starter]: { ...gameState[starter], pp: 1, maxPp: 1 }
     });
     setTurnMessage("GAME START!");
     setTimeout(() => setTurnMessage(null), 2500);
@@ -805,6 +818,38 @@ const GameBoard: React.FC = () => {
                     <div>
                       <button onClick={() => handleStatChange(role, 'combo', 1)} style={{ padding: '2px 8px', background: 'var(--bg-surface)' }}>+</button>
                       <button onClick={() => handleStatChange(role, 'combo', -1)} style={{ padding: '2px 8px', background: 'var(--bg-surface)' }}>-</button>
+                    </div>
+                  </div>
+
+                  {/* PP Tracker */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.8rem', padding: '0.6rem', background: 'rgba(59, 130, 246, 0.15)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(59, 130, 246, 0.3)', boxShadow: 'inset 0 0 10px rgba(59, 130, 246, 0.1)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      {/* Max PP Adjustment (Vertical) */}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                         <button onClick={() => handleStatChange(role, 'maxPp', 1)} style={{ width: '24px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', borderRadius: '2px', cursor: 'pointer', fontSize: '0.75rem', color: '#fff' }}>+</button>
+                         <span style={{ fontSize: '0.6rem', color: '#93c5fd', fontWeight: 'bold' }}>MAX</span>
+                         <button onClick={() => handleStatChange(role, 'maxPp', -1)} style={{ width: '24px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', borderRadius: '2px', cursor: 'pointer', fontSize: '0.75rem', color: '#fff' }}>-</button>
+                      </div>
+                      
+                      {/* PP Display */}
+                      <div style={{ textAlign: 'center', flex: 1 }}>
+                        <div style={{ fontSize: '0.7rem', color: '#3b82f6', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '-2px' }}>Play Points</div>
+                        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '2px' }}>
+                          <span style={{ color: '#3b82f6', fontWeight: '900', fontSize: '1.75rem', textShadow: '0 0 15px rgba(59, 130, 246, 0.5)' }}>
+                            {gameState[role].pp}
+                          </span>
+                          <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '1rem', fontWeight: 'bold' }}>/</span>
+                          <span style={{ color: '#fff', fontSize: '1.25rem', fontWeight: 'bold' }}>
+                            {gameState[role].maxPp}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Current PP Adjustment (Horizontal) */}
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                        <button onClick={() => handleStatChange(role, 'pp', -1)} style={{ width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', borderRadius: '50%', cursor: 'pointer', fontSize: '1rem', color: '#3b82f6', fontWeight: 'bold', transition: 'all 0.2s' }}>∨</button>
+                        <button onClick={() => handleStatChange(role, 'pp', 1)} style={{ width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', borderRadius: '50%', cursor: 'pointer', fontSize: '1rem', color: '#3b82f6', fontWeight: 'bold', transition: 'all 0.2s' }}>∧</button>
+                      </div>
                     </div>
                   </div>
                </div>
