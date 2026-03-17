@@ -1,19 +1,19 @@
-
 export const CLASS = {
-    ELF: 'エルフ',
-    ROYAL: 'ロイヤル',
-    WITCH: 'ウィッチ',
-    DRAGON: 'ドラゴン',
-    NIGHTMARE: 'ナイトメア',
-    BISHOP: 'ビショップ',
-    NEUTRAL: 'ニュートラル',
+  ELF: 'エルフ',
+  ROYAL: 'ロイヤル',
+  WITCH: 'ウィッチ',
+  DRAGON: 'ドラゴン',
+  NIGHTMARE: 'ナイトメア',
+  BISHOP: 'ビショップ',
+  NEUTRAL: 'ニュートラル',
 } as const;
 
 export type CardClass = typeof CLASS[keyof typeof CLASS];
+export type CardClassValue = CardClass | '-';
 export type ClassFilter = 'All' | CardClass;
 
 export const CLASS_ORDER: (keyof typeof CLASS)[] = [
-    'ELF', 'ROYAL', 'WITCH', 'DRAGON', 'NIGHTMARE', 'BISHOP', 'NEUTRAL',
+  'ELF', 'ROYAL', 'WITCH', 'DRAGON', 'NIGHTMARE', 'BISHOP', 'NEUTRAL',
 ];
 
 // UI用（表示順固定の values）

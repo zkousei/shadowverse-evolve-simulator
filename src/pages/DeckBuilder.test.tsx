@@ -3,9 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import DeckBuilder from './DeckBuilder';
 
 const mockCards = [
-  { id: 'BP01-001', name: 'Alpha Knight', image: '/alpha.png', cost: '1' },
-  { id: 'EV01-001', name: 'Evolve Angel', image: '/evolve.png', cost: '-' },
-  { id: 'BP02-007', name: 'Beta Mage', image: '/beta.png', cost: '7' },
+  { id: 'BP01-001', name: 'Alpha Knight', image: '/alpha.png', cost: '1', class: 'ロイヤル' },
+  { id: 'EV01-001', name: 'Evolve Angel', image: '/evolve.png', cost: '-', class: '-' },
+  { id: 'BP02-007', name: 'Beta Mage', image: '/beta.png', cost: '7', class: 'ウィッチ' },
 ];
 
 describe('DeckBuilder', () => {
@@ -15,7 +15,7 @@ describe('DeckBuilder', () => {
       'fetch',
       vi.fn().mockResolvedValue({
         json: vi.fn().mockResolvedValue(mockCards),
-      } as Response)
+      } as unknown as Response)
     );
   });
 
@@ -26,6 +26,8 @@ describe('DeckBuilder', () => {
 
   it('loads cards, filters them, and updates deck counts through add/remove actions', async () => {
     render(<DeckBuilder />);
+    const classFilterGroup = screen.getByRole('group', { name: 'Class filter' });
+    const costFilterGroup = screen.getByRole('group', { name: 'Cost filter' });
 
     expect(screen.getByText('Loading card database...')).toBeInTheDocument();
     expect(await screen.findByText('Alpha Knight')).toBeInTheDocument();
@@ -40,11 +42,18 @@ describe('DeckBuilder', () => {
     fireEvent.change(screen.getByPlaceholderText('Search cards by name...'), {
       target: { value: '' },
     });
-    fireEvent.click(screen.getByRole('button', { name: '7+' }));
+    fireEvent.click(within(costFilterGroup).getByRole('button', { name: '7+' }));
     expect(screen.getByText('Beta Mage')).toBeInTheDocument();
     expect(screen.queryByText('Alpha Knight')).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'All' }));
+    fireEvent.click(within(classFilterGroup).getByRole('button', { name: 'ウィッチ' }));
+    expect(screen.getByText('Beta Mage')).toBeInTheDocument();
+    expect(screen.queryByText('Alpha Knight')).not.toBeInTheDocument();
+    expect(screen.queryByText('Evolve Angel')).not.toBeInTheDocument();
+    expect(within(classFilterGroup).getByRole('button', { name: 'ウィッチ' })).toHaveAttribute('aria-pressed', 'true');
+
+    fireEvent.click(within(classFilterGroup).getByRole('button', { name: 'All' }));
+    fireEvent.click(within(costFilterGroup).getByRole('button', { name: 'All' }));
     fireEvent.change(screen.getByRole('combobox'), {
       target: { value: 'EV01' },
     });
@@ -70,6 +79,20 @@ describe('DeckBuilder', () => {
 
     expect(screen.getByText('0/50')).toBeInTheDocument();
     expect(screen.getByText('0/10')).toBeInTheDocument();
+  });
+
+  it('excludes cards without a selectable class when a class filter is active', async () => {
+    render(<DeckBuilder />);
+
+    await screen.findByText('Alpha Knight');
+
+    const classFilterGroup = screen.getByRole('group', { name: 'Class filter' });
+    fireEvent.click(within(classFilterGroup).getByRole('button', { name: 'ロイヤル' }));
+
+    expect(screen.getByText('Alpha Knight')).toBeInTheDocument();
+    expect(screen.queryByText('Beta Mage')).not.toBeInTheDocument();
+    expect(screen.queryByText('Evolve Angel')).not.toBeInTheDocument();
+    expect(within(classFilterGroup).getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'false');
   });
 
   it('exports a sanitized deck file', async () => {

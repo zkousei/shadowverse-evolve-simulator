@@ -1,17 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { Search, Plus, Minus, Download, Upload } from 'lucide-react';
 import { CLASS_FILTER_VALUES } from '../models/class';
-import type { ClassFilter } from '../models/class';
+import type { CardClassValue, ClassFilter } from '../models/class';
 
 interface CardData {
   id: string; // EXP-NUM format, e.g PCS01-001
   name: string;
   image: string;
-  class?: string;
+  class?: CardClassValue;
   cost?: string; // '-' for Evolve cards
 }
 
 const PAGE_SIZE = 50;
+const COST_FILTER_VALUES = ['All', '0', '1', '2', '3', '4', '5', '6', '7+'] as const;
 
 const DeckBuilder: React.FC = () => {
   const [cards, setCards] = useState<CardData[]>([]);
@@ -164,6 +165,8 @@ const DeckBuilder: React.FC = () => {
         <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
           {/* Class Filter */}
           <div
+            role="group"
+            aria-label="Class filter"
             style={{
               display: 'flex',
               background: 'var(--bg-surface)',
@@ -182,6 +185,8 @@ const DeckBuilder: React.FC = () => {
             {CLASS_FILTER_VALUES.map((cls) => (
               <button
                 key={cls}
+                type="button"
+                aria-pressed={classFilter === cls}
                 onClick={() => { setClassFilter(cls); setPage(0); }}
                 style={{
                   padding: '0.25rem 0.75rem',
@@ -199,11 +204,17 @@ const DeckBuilder: React.FC = () => {
         </div>
         <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
           {/* Cost Filter */}
-          <div style={{ display: 'flex', background: 'var(--bg-surface)', padding: '0.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
+          <div
+            role="group"
+            aria-label="Cost filter"
+            style={{ display: 'flex', background: 'var(--bg-surface)', padding: '0.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}
+          >
             <span style={{ padding: '0.5rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>Cost:</span>
-            {['All', '0', '1', '2', '3', '4', '5', '6', '7+'].map(c => (
+            {COST_FILTER_VALUES.map(c => (
               <button
                 key={c}
+                type="button"
+                aria-pressed={costFilter === c}
                 onClick={() => { setCostFilter(c); setPage(0); }}
                 style={{
                   padding: '0.25rem 0.75rem',
@@ -246,6 +257,7 @@ const DeckBuilder: React.FC = () => {
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <button
+              type="button"
               disabled={page === 0}
               onClick={() => setPage(p => Math.max(0, p - 1))}
               className="glass-panel"
@@ -255,6 +267,7 @@ const DeckBuilder: React.FC = () => {
             </button>
             <span>{page + 1} / {totalPages}</span>
             <button
+              type="button"
               disabled={page >= totalPages - 1}
               onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
               className="glass-panel"
@@ -277,6 +290,7 @@ const DeckBuilder: React.FC = () => {
                 </p>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <button
+                    type="button"
                     onClick={() => addToDeck(card, false)}
                     style={{ flex: 1, padding: '0.25rem', background: 'var(--accent-primary)', borderRadius: '4px', display: 'flex', justifyContent: 'center' }}
                     title="Add to Main Deck"
@@ -284,6 +298,7 @@ const DeckBuilder: React.FC = () => {
                     <Plus size={16} color="#fff" />
                   </button>
                   <button
+                    type="button"
                     onClick={() => addToDeck(card, true)}
                     style={{ flex: 1, padding: '0.25rem', background: 'var(--accent-secondary)', borderRadius: '4px', display: 'flex', justifyContent: 'center' }}
                     title="Add to Evolve Deck"
@@ -325,6 +340,7 @@ const DeckBuilder: React.FC = () => {
               <input type="file" accept=".json" onChange={handleImportDeck} style={{ display: 'none' }} />
             </label>
             <button
+              type="button"
               onClick={exportDeck}
               style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'var(--bg-surface-elevated)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)', fontSize: '0.875rem' }}
             >
