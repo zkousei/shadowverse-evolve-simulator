@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Search, Plus, Minus, Download, Upload } from 'lucide-react';
+import { CLASS_FILTER_VALUES } from '../models/class';
+import type { ClassFilter } from '../models/class';
 
 interface CardData {
   id: string; // EXP-NUM format, e.g PCS01-001
@@ -16,10 +18,11 @@ const DeckBuilder: React.FC = () => {
   const [search, setSearch] = useState('');
   const [costFilter, setCostFilter] = useState('All');
   const [expansionFilter, setExpansionFilter] = useState('All');
+  const [classFilter, setClassFilter] = useState<ClassFilter>('All');
   const [page, setPage] = useState(0);
-  
+
   const [deckName, setDeckName] = useState('My Deck');
-  
+
   const [mainDeck, setMainDeck] = useState<CardData[]>([]);
   const [evolveDeck, setEvolveDeck] = useState<CardData[]>([]);
 
@@ -36,7 +39,7 @@ const DeckBuilder: React.FC = () => {
   const filteredCards = cards.filter(c => {
     // 1. Name Filter
     if (!c.name.toLowerCase().includes(search.toLowerCase())) return false;
-    
+
     // 2. Cost Filter
     if (costFilter !== 'All') {
       if (costFilter === '7+') {
@@ -49,6 +52,12 @@ const DeckBuilder: React.FC = () => {
     // 3. Expansion Filter
     if (expansionFilter !== 'All') {
       if (!c.id.startsWith(expansionFilter + '-')) return false;
+    }
+
+    // 4. Class Filter
+    if (classFilter !== 'All') {
+      if (!c.class) return false;
+      if (c.class !== classFilter) return false;
     }
 
     return true;
@@ -74,23 +83,23 @@ const DeckBuilder: React.FC = () => {
 
   const exportDeck = () => {
     const data = JSON.stringify({ deckName, mainDeck, evolveDeck }, null, 2);
-    
+
     // Sanitize filename - allow alphanumeric, Japanese characters, underscores, hyphens
     const rawName = deckName.trim();
     const safeName = rawName.length > 0
       ? rawName.replace(/[^\w\u3000-\u303F\u3040-\u309F\u30A0-\u30FF\uFF00-\uFFEF\u4E00-\u9FAF\-]/g, '_')
       : 'shadowverse_deck';
-    
+
     const blob = new Blob([data], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    
+
     const a = document.createElement('a');
     a.href = url;
     a.download = `${safeName}.json`;
     a.style.display = 'none';
     document.body.appendChild(a);
     a.click();
-    
+
     // Delay revoke to ensure download starts
     setTimeout(() => {
       document.body.removeChild(a);
@@ -128,13 +137,13 @@ const DeckBuilder: React.FC = () => {
       {/* Left: Card Database */}
       <div style={{ flex: 1, padding: '2rem', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
         <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>Card Library</h1>
-        
+
         <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', alignItems: 'center' }}>
           <div style={{ position: 'relative', flex: 1 }}>
             <Search size={20} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-            <input 
-              type="text" 
-              placeholder="Search cards by name..." 
+            <input
+              type="text"
+              placeholder="Search cards by name..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(0); }}
               style={{
@@ -152,6 +161,42 @@ const DeckBuilder: React.FC = () => {
         </div>
 
         {/* Filters */}
+        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          {/* Class Filter */}
+          <div
+            style={{
+              display: 'flex',
+              background: 'var(--bg-surface)',
+              padding: '0.25rem',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border-light)',
+              flexWrap: 'wrap',
+              gap: '0.25rem',
+              alignItems: 'center',
+            }}
+          >
+            <span style={{ padding: '0.5rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+              Class:
+            </span>
+
+            {CLASS_FILTER_VALUES.map((cls) => (
+              <button
+                key={cls}
+                onClick={() => { setClassFilter(cls); setPage(0); }}
+                style={{
+                  padding: '0.25rem 0.75rem',
+                  borderRadius: '4px',
+                  background: classFilter === cls ? 'var(--brand-accent)' : 'transparent',
+                  color: classFilter === cls ? '#fff' : 'var(--text-main)',
+                  fontWeight: classFilter === cls ? 'bold' : 'normal',
+                }}
+              >
+                {cls}
+              </button>
+            ))}
+          </div>
+
+        </div>
         <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
           {/* Cost Filter */}
           <div style={{ display: 'flex', background: 'var(--bg-surface)', padding: '0.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
@@ -196,12 +241,12 @@ const DeckBuilder: React.FC = () => {
             </select>
           </div>
         </div>
-        
+
         {/* Pagination Controls */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <button 
-              disabled={page === 0} 
+            <button
+              disabled={page === 0}
               onClick={() => setPage(p => Math.max(0, p - 1))}
               className="glass-panel"
               style={{ padding: '0.5rem 1rem' }}
@@ -209,8 +254,8 @@ const DeckBuilder: React.FC = () => {
               Prev
             </button>
             <span>{page + 1} / {totalPages}</span>
-            <button 
-              disabled={page >= totalPages - 1} 
+            <button
+              disabled={page >= totalPages - 1}
               onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
               className="glass-panel"
               style={{ padding: '0.5rem 1rem' }}
@@ -231,14 +276,14 @@ const DeckBuilder: React.FC = () => {
                   {card.name}
                 </p>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button 
+                  <button
                     onClick={() => addToDeck(card, false)}
                     style={{ flex: 1, padding: '0.25rem', background: 'var(--accent-primary)', borderRadius: '4px', display: 'flex', justifyContent: 'center' }}
                     title="Add to Main Deck"
                   >
                     <Plus size={16} color="#fff" />
                   </button>
-                  <button 
+                  <button
                     onClick={() => addToDeck(card, true)}
                     style={{ flex: 1, padding: '0.25rem', background: 'var(--accent-secondary)', borderRadius: '4px', display: 'flex', justifyContent: 'center' }}
                     title="Add to Evolve Deck"
@@ -255,17 +300,17 @@ const DeckBuilder: React.FC = () => {
       {/* Right: Deck Checklist */}
       <div className="glass-panel" style={{ width: '350px', display: 'flex', flexDirection: 'column', borderRight: 'none', borderTop: 'none', borderBottom: 'none', borderRadius: 0 }}>
         <div style={{ padding: '0.5rem 1.5rem', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <input 
+          <input
             type="text"
             value={deckName}
             onChange={(e) => setDeckName(e.target.value)}
-            style={{ 
-              fontSize: '1.5rem', 
-              fontWeight: 'bold', 
-              background: 'transparent', 
-              border: 'none', 
+            style={{
+              fontSize: '1.5rem',
+              fontWeight: 'bold',
+              background: 'transparent',
+              border: 'none',
               borderBottom: '2px solid transparent',
-              color: 'var(--text-main)', 
+              color: 'var(--text-main)',
               outline: 'none',
               width: '180px',
               transition: 'border-color 0.2s',
@@ -276,18 +321,18 @@ const DeckBuilder: React.FC = () => {
           />
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'var(--bg-overlay)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontSize: '0.875rem' }}>
-              <Upload size={14}/> Import
+              <Upload size={14} /> Import
               <input type="file" accept=".json" onChange={handleImportDeck} style={{ display: 'none' }} />
             </label>
-            <button 
+            <button
               onClick={exportDeck}
               style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'var(--bg-surface-elevated)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)', fontSize: '0.875rem' }}
             >
-              <Download size={14}/> Export
+              <Download size={14} /> Export
             </button>
           </div>
         </div>
-        
+
         <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
           <h3 style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
             <span>Main Deck</span>
