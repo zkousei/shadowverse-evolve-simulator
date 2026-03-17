@@ -40,10 +40,9 @@ const canToggleEvolveDeckUsage = (
   actor: GameSyncEvent['actor'],
   cardId: string
 ): boolean => {
-  if (state.gameStatus !== 'preparing') return false;
   const card = state.cards.find(c => c.id === cardId);
   if (!card) return false;
-  return card.owner === actor && card.zone === `evolveDeck-${actor}`;
+  return card.owner === actor && card.zone === `evolveDeck-${actor}` && card.isEvolveCard === true;
 };
 
 const isPreparingMainDeckFieldSet = (

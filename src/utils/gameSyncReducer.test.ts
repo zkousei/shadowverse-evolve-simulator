@@ -431,7 +431,7 @@ describe('gameSyncReducer', () => {
       cards: [
         {
           id: 'parent',
-          cardId: 'BP01-013',
+          cardId: 'EV01-013',
           name: 'Parent',
           image: '',
           zone: 'evolveDeck-host',
@@ -439,6 +439,7 @@ describe('gameSyncReducer', () => {
           isTapped: false,
           isFlipped: true,
           counters: { atk: 0, hp: 0 },
+          isEvolveCard: true,
         },
         {
           id: 'child',
@@ -473,7 +474,7 @@ describe('gameSyncReducer', () => {
     expect(flipped.cards.find(c => c.id === 'child')?.isFlipped).toBe(false);
   });
 
-  it('blocks flip events outside preparation or for non-owned/non-evolve-deck cards', () => {
+  it('blocks flip events for non-owned or non-evolve-deck cards', () => {
     const baseState = createState({
       revision: 4,
       gameStatus: 'preparing',
@@ -520,17 +521,60 @@ describe('gameSyncReducer', () => {
     });
     expect(otherOwnerFlip).toBe(baseState);
 
-    const playingState = {
+    const nonEvolveDeckState = createState({
       ...baseState,
-      gameStatus: 'playing' as const,
-    };
-    const duringGameFlip = applyGameSyncEvent(playingState, {
+      cards: [
+        ...baseState.cards,
+        {
+          id: 'host-main',
+          cardId: 'BP01-901',
+          name: 'Host Main',
+          image: '',
+          zone: 'evolveDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+    const nonEvolveDeckFlip = applyGameSyncEvent(nonEvolveDeckState, {
       id: 'evt-11c',
+      type: 'TOGGLE_FLIP',
+      actor: 'host',
+      cardId: 'host-main',
+    });
+    expect(nonEvolveDeckFlip).toBe(nonEvolveDeckState);
+  });
+
+  it('allows evolve-deck usage flip events during the game', () => {
+    const playingState = createState({
+      revision: 4,
+      gameStatus: 'playing',
+      cards: [
+        {
+          id: 'guest-evo',
+          cardId: 'EV01-900',
+          name: 'Guest Evolve',
+          image: '',
+          zone: 'evolveDeck-guest',
+          owner: 'guest',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+          isEvolveCard: true,
+        },
+      ],
+    });
+
+    const duringGameFlip = applyGameSyncEvent(playingState, {
+      id: 'evt-11d',
       type: 'TOGGLE_FLIP',
       actor: 'guest',
       cardId: 'guest-evo',
     });
-    expect(duringGameFlip).toBe(playingState);
+
+    expect(duringGameFlip.cards.find(c => c.id === 'guest-evo')?.isFlipped).toBe(false);
   });
 
   it('applies shortcut movement events through shared card rules', () => {
