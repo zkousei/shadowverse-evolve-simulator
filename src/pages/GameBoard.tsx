@@ -38,6 +38,29 @@ const GameBoard: React.FC = () => {
   const searchTargetRole = searchZone ? getZoneOwner(searchZone.id) ?? role : role;
   const currentTurnLabel = gameState.turnPlayer === bottomRole ? bottomLabel : topLabel;
   const canUndoTurn = Boolean(lastGameState) && (isSoloMode || gameState.turnPlayer !== role);
+  const sidePanelWidth = 200;
+  const playmatContentWidth = 1080;
+  const topZoneStripColumns = '110px 110px 110px 110px 600px';
+  const bottomZoneStripColumns = '600px 110px 110px 110px 110px';
+  const p2pTopPlaymatWidth = 1080;
+  const p2pTopZoneStripColumns = '110px 110px 110px 110px 640px';
+  const p2pTopBoardWidth = 1200;
+  const soloFieldOffset = sidePanelWidth + 16;
+  const soloMulliganButtonStyle: React.CSSProperties = {
+    position: 'absolute',
+    top: '-10px',
+    right: '10px',
+    padding: '0.5rem 1rem',
+    background: '#eab308',
+    color: 'black',
+    fontWeight: 'bold',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '0.875rem',
+    zIndex: 10,
+    boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+    border: '2px solid black'
+  };
 
   const openTopDeckModal = (targetRole: PlayerRole) => {
     setTopDeckTargetRole(targetRole);
@@ -95,11 +118,48 @@ const GameBoard: React.FC = () => {
               <span style={{ color: '#fff', fontSize: '1.25rem', fontWeight: 'bold' }}>{gameState[playerRole].maxPp}</span>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-            <button onClick={() => handleStatChange(playerRole, 'pp', -1)} style={{ width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', borderRadius: '50%', cursor: 'pointer', fontSize: '1rem', color: '#3b82f6', fontWeight: 'bold' }}>∨</button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
             <button onClick={() => handleStatChange(playerRole, 'pp', 1)} style={{ width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', borderRadius: '50%', cursor: 'pointer', fontSize: '1rem', color: '#3b82f6', fontWeight: 'bold' }}>∧</button>
+            <button onClick={() => handleStatChange(playerRole, 'pp', -1)} style={{ width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', borderRadius: '50%', cursor: 'pointer', fontSize: '1rem', color: '#3b82f6', fontWeight: 'bold' }}>∨</button>
           </div>
         </div>
+      </div>
+    </div>
+  );
+
+  const renderReadOnlyStatusPanel = (playerRole: PlayerRole, label: string) => (
+    <div style={{
+      width: '180px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.55rem',
+      padding: '0.9rem 1rem',
+      background: 'rgba(0, 0, 0, 0.55)',
+      borderRadius: 'var(--radius-md)',
+      border: '1px solid rgba(255,255,255,0.12)'
+    }}>
+      <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#fff' }}>
+        {label} Status
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', fontSize: '0.95rem' }}>
+        <span>HP</span>
+        <strong style={{ color: '#ef4444' }}>{gameState[playerRole].hp}</strong>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', fontSize: '0.95rem' }}>
+        <span>PP</span>
+        <strong><span style={{ color: '#3b82f6' }}>{gameState[playerRole].pp}</span> / {gameState[playerRole].maxPp}</strong>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', fontSize: '0.95rem' }}>
+        <span>EP</span>
+        <strong style={{ color: '#fbbf24' }}>{gameState[playerRole].ep}</strong>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', fontSize: '0.95rem' }}>
+        <span>SEP</span>
+        <strong style={{ color: '#facc15' }}>{gameState[playerRole].sep}</strong>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', fontSize: '0.95rem' }}>
+        <span>Combo</span>
+        <strong>{gameState[playerRole].combo}</strong>
       </div>
     </div>
   );
@@ -301,257 +361,282 @@ const GameBoard: React.FC = () => {
 
           {/* OPPONENT BOARD */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', opacity: 0.9 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <div style={{ background: 'rgba(0,0,0,0.5)', padding: '0.5rem 1rem', borderRadius: '4px', display: 'flex', gap: '1rem', color: '#fff' }}>
-                <span>{topLabel} HP: <strong style={{ color: '#ef4444' }}>{gameState[topRole].hp}</strong></span>
-                <span>PP: <strong style={{ color: '#3b82f6' }}>{gameState[topRole].pp}</strong> / {gameState[topRole].maxPp}</span>
-                <span>EP: <strong style={{ color: '#fbbf24' }}>{gameState[topRole].ep}</strong></span>
-                <span>SEP: <strong style={{ color: '#facc15' }}>{gameState[topRole].sep}</strong></span>
-                <span>Combo: <strong>{gameState[topRole].combo}</strong></span>
-              </div>
-            </div>
-            {isSoloMode ? (
-              <>
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', justifyContent: 'center', width: '100%' }}>
-                  <div style={{ width: '850px', minHeight: '150px', position: 'relative' }}>
-                    <Zone
-                      id={`hand-${topRole}`}
-                      label={`${topLabel} Hand`}
-                      cards={getCards(`hand-${topRole}`)}
-                      hideCards={false}
-                      layout="horizontal"
-                      isProtected={true}
-                      viewerRole={viewerRole}
-                      onModifyCounter={handleModifyCounter}
-                      onSendToBottom={handleSendToBottom}
-                      onBanish={handleBanish}
-                      onCemetery={handleSendToCemetery}
-                      onPlayToField={(cardId) => handlePlayToField(cardId, topRole)}
-                      containerStyle={{ minHeight: '150px' }}
-                    />
-                    {gameState.gameStatus === 'preparing' && gameState[topRole].initialHandDrawn && !gameState[topRole].mulliganUsed && (
-                      <button
-                        onClick={() => openMulliganModal(topRole)}
-                        style={{
-                          position: 'absolute',
-                          top: '-10px',
-                          right: '10px',
-                          width: 'auto',
-                          padding: '0.4rem',
-                          background: '#6366f1',
-                          color: 'white',
-                          fontWeight: 'bold',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          fontSize: '0.75rem',
-                          border: '1px solid rgba(255,255,255,0.25)'
-                        }}
-                      >
-                        P2 Mulligan
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', width: '100%' }}>
-                  <Zone
-                    id={`ex-${topRole}`}
-                    label={`${topLabel} EX Area`}
-                    cards={getCards(`ex-${topRole}`)}
-                    isProtected={false}
-                    viewerRole={viewerRole}
-                    onModifyCounter={handleModifyCounter}
-                    onSendToBottom={handleSendToBottom}
-                    onBanish={handleBanish}
-                    onReturnEvolve={handleReturnEvolve}
-                    onCemetery={handleSendToCemetery}
-                    onPlayToField={(cardId) => handlePlayToField(cardId, topRole)}
-                    containerStyle={{ maxWidth: '600px', minHeight: '150px', flex: 'none', width: '600px' }}
-                  />
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <Zone id={`evolveDeck-${topRole}`} label={`${topLabel} Evolve Deck`} cards={getCards(`evolveDeck-${topRole}`)} layout="stack" isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: '110px', minHeight: '150px' }} isDebug={isDebug} />
-                      <button onClick={() => setSearchZone({ id: `evolveDeck-${topRole}`, title: `${topLabel} Evolve Deck` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <Zone id={`mainDeck-${topRole}`} label={`${topLabel} Main Deck`} cards={getCards(`mainDeck-${topRole}`)} layout="stack" isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: '110px', minHeight: '150px' }} isDebug={isDebug} />
-                      <div style={{ display: 'flex', gap: '2px', flexWrap: 'wrap' }}>
-                        <button onClick={() => setSearchZone({ id: `mainDeck-${topRole}`, title: `${topLabel} Main Deck` })} style={{ flex: '1 1 48%', fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
-                        <button onClick={() => handleShuffleDeck(topRole)} style={{ flex: '1 1 48%', fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Shuffle</button>
-                        <button onClick={() => openTopDeckModal(topRole)} style={{ flex: '1 1 100%', fontSize: '0.75rem', padding: '4px', background: '#3b82f6', border: '1px solid #2563eb', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Look Top (N)</button>
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <Zone id={`cemetery-${topRole}`} label={`${topLabel} Cemetery`} cards={getCards(`cemetery-${topRole}`)} layout="stack" viewerRole={viewerRole} containerStyle={{ minWidth: '110px', minHeight: '150px' }} isDebug={isDebug} />
-                      <button onClick={() => setSearchZone({ id: `cemetery-${topRole}`, title: `${topLabel} Cemetery` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <Zone id={`banish-${topRole}`} label={`${topLabel} Banish`} cards={getCards(`banish-${topRole}`)} layout="stack" viewerRole={viewerRole} containerStyle={{ minWidth: '110px', minHeight: '150px' }} isDebug={isDebug} />
-                      <button onClick={() => setSearchZone({ id: `banish-${topRole}`, title: `${topLabel} Banish` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
-                    </div>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', width: '100%' }}>
-                <div style={{ width: '110px' }}>
-                  <Zone
-                    id={`hand-${topRole}`}
-                    label={`${topLabel} Hand`}
-                    cards={getCards(`hand-${topRole}`)}
-                    hideCards={true}
-                    layout="stack"
-                    isProtected={true}
-                    viewerRole={viewerRole}
-                    containerStyle={{ minHeight: '150px' }}
-                  />
-                </div>
-                <Zone
-                  id={`ex-${topRole}`}
-                  label={`${topLabel} EX Area`}
-                  cards={getCards(`ex-${topRole}`)}
-                  isProtected={false}
-                  viewerRole={viewerRole}
-                  containerStyle={{ maxWidth: '600px', minHeight: '150px', flex: 'none', width: '600px' }}
-                />
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <Zone id={`evolveDeck-${topRole}`} label={`${topLabel} Evolve Deck`} cards={getCards(`evolveDeck-${topRole}`)} layout="stack" isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: '110px', minHeight: '150px' }} isDebug={isDebug} />
-                    <button onClick={() => setSearchZone({ id: `evolveDeck-${topRole}`, title: `${topLabel} Evolve Deck` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <Zone id={`mainDeck-${topRole}`} label={`${topLabel} Main Deck`} cards={getCards(`mainDeck-${topRole}`)} layout="stack" isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: '110px', minHeight: '150px' }} isDebug={isDebug} />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <Zone id={`cemetery-${topRole}`} label={`${topLabel} Cemetery`} cards={getCards(`cemetery-${topRole}`)} layout="stack" viewerRole={viewerRole} containerStyle={{ minWidth: '110px', minHeight: '150px' }} isDebug={isDebug} />
-                    <button onClick={() => setSearchZone({ id: `cemetery-${topRole}`, title: `${topLabel} Cemetery` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <Zone id={`banish-${topRole}`} label={`${topLabel} Banish`} cards={getCards(`banish-${topRole}`)} layout="stack" viewerRole={viewerRole} containerStyle={{ minWidth: '110px', minHeight: '150px' }} isDebug={isDebug} />
-                    <button onClick={() => setSearchZone({ id: `banish-${topRole}`, title: `${topLabel} Banish` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
-                  </div>
+            {isSoloMode && (
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <div style={{ background: 'rgba(0,0,0,0.5)', padding: '0.5rem 1rem', borderRadius: '4px', display: 'flex', gap: '1rem', color: '#fff' }}>
+                  <span>{topLabel} HP: <strong style={{ color: '#ef4444' }}>{gameState[topRole].hp}</strong></span>
+                  <span>PP: <strong style={{ color: '#3b82f6' }}>{gameState[topRole].pp}</strong> / {gameState[topRole].maxPp}</span>
+                  <span>EP: <strong style={{ color: '#fbbf24' }}>{gameState[topRole].ep}</strong></span>
+                  <span>SEP: <strong style={{ color: '#facc15' }}>{gameState[topRole].sep}</strong></span>
+                  <span>Combo: <strong>{gameState[topRole].combo}</strong></span>
                 </div>
               </div>
             )}
-            <Zone
-              id={`field-${topRole}`}
-              label={`${topLabel} Field`}
-              cards={getCards(`field-${topRole}`)}
-              onTap={toggleTap}
-              onModifyCounter={handleModifyCounter}
-              onSendToBottom={isSoloMode ? handleSendToBottom : undefined}
-              onBanish={isSoloMode ? handleBanish : undefined}
-              onReturnEvolve={isSoloMode ? handleReturnEvolve : undefined}
-              onCemetery={handleSendToCemetery}
-              onPlayToField={isSoloMode ? (cardId) => handlePlayToField(cardId, topRole) : undefined}
-              viewerRole={viewerRole}
-              containerStyle={{ maxWidth: '850px', minHeight: '160px', width: '850px', flex: 'none' }}
-              isDebug={isDebug}
-            />
+	            {isSoloMode ? (
+	              <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', justifyContent: 'center', width: '100%', maxWidth: '1320px' }}>
+	                <div style={{ width: `${sidePanelWidth}px`, flex: `0 0 ${sidePanelWidth}px`, display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(0,0,0,0.8)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
+	                  <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'white', marginBottom: '0.25rem' }}>{topLabel} Controls</div>
+	                  <label
+	                    className="glass-panel"
+	                    style={{
+	                      padding: '0.5rem',
+	                      background: 'var(--bg-surface-elevated)',
+	                      textAlign: 'center',
+	                      cursor: canImportCurrentDeck ? 'pointer' : 'not-allowed',
+	                      fontSize: '0.875rem',
+	                      opacity: canImportCurrentDeck ? 1 : 0.5
+	                    }}
+	                  >
+	                    Import {topLabel} Deck
+	                    <input
+	                      type="file"
+	                      accept=".json"
+	                      style={{ display: 'none' }}
+	                      onChange={(event) => handleDeckUpload(event, topRole)}
+	                      disabled={!canImportCurrentDeck}
+	                    />
+	                  </label>
+	                  <button onClick={() => drawCard(topRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing'} style={{ padding: '0.5rem', background: '#6366f1', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' ? 'pointer' : 'not-allowed' }}>
+	                    Draw {topLabel}
+	                  </button>
+	                  <button onClick={() => millCard(topRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing'} style={{ padding: '0.5rem', background: '#475569', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' ? 'pointer' : 'not-allowed' }}>
+	                    Mill {topLabel}
+	                  </button>
+	                  <button onClick={() => spawnToken(topRole)} className="glass-panel" style={{ padding: '0.5rem', background: '#7c3aed' }}>
+	                    Spawn {topLabel} Token
+	                  </button>
+	                  {renderPlayerTracker(topRole, topLabel)}
+	                </div>
+
+	                <div style={{ width: `${playmatContentWidth}px`, flex: `0 0 ${playmatContentWidth}px`, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-start' }}>
+	                  <div style={{ width: '850px', minHeight: '150px', position: 'relative' }}>
+	                    <Zone
+	                      id={`hand-${topRole}`}
+	                      label={`${topLabel} Hand`}
+	                      cards={getCards(`hand-${topRole}`)}
+	                      hideCards={false}
+	                      layout="horizontal"
+	                      isProtected={true}
+	                      viewerRole={viewerRole}
+	                      onModifyCounter={handleModifyCounter}
+	                      onSendToBottom={handleSendToBottom}
+	                      onBanish={handleBanish}
+	                      onCemetery={handleSendToCemetery}
+	                      onPlayToField={(cardId) => handlePlayToField(cardId, topRole)}
+	                      containerStyle={{ minHeight: '150px' }}
+	                    />
+	                    {gameState.gameStatus === 'preparing' && gameState[topRole].initialHandDrawn && !gameState[topRole].mulliganUsed && (
+	                      <button
+	                        onClick={() => openMulliganModal(topRole)}
+	                        style={soloMulliganButtonStyle}
+	                      >
+	                        🔄 Mulligan ({topLabel})
+	                      </button>
+	                    )}
+	                  </div>
+
+		                  <div style={{ display: 'grid', gridTemplateColumns: topZoneStripColumns, gap: '0.5rem', justifyContent: 'flex-start', width: `${playmatContentWidth}px` }}>
+		                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+		                        <Zone id={`mainDeck-${topRole}`} label={`${topLabel} Main Deck`} cards={getCards(`mainDeck-${topRole}`)} layout="stack" isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: '110px', minHeight: '150px' }} isDebug={isDebug} />
+		                        <div style={{ display: 'flex', gap: '2px', flexWrap: 'wrap' }}>
+		                          <button onClick={() => setSearchZone({ id: `mainDeck-${topRole}`, title: `${topLabel} Main Deck` })} style={{ flex: '1 1 48%', fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
+		                          <button onClick={() => handleShuffleDeck(topRole)} style={{ flex: '1 1 48%', fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Shuffle</button>
+		                          <button onClick={() => openTopDeckModal(topRole)} style={{ flex: '1 1 100%', fontSize: '0.75rem', padding: '4px', background: '#3b82f6', border: '1px solid #2563eb', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Look Top (N)</button>
+		                        </div>
+		                      </div>
+		                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+		                      <Zone id={`evolveDeck-${topRole}`} label={`${topLabel} Evolve Deck`} cards={getCards(`evolveDeck-${topRole}`)} layout="stack" isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: '110px', minHeight: '150px' }} isDebug={isDebug} />
+		                      <button onClick={() => setSearchZone({ id: `evolveDeck-${topRole}`, title: `${topLabel} Evolve Deck` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
+		                    </div>
+	                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+	                      <Zone id={`banish-${topRole}`} label={`${topLabel} Banish`} cards={getCards(`banish-${topRole}`)} layout="stack" viewerRole={viewerRole} containerStyle={{ minWidth: '110px', minHeight: '150px' }} isDebug={isDebug} />
+	                      <button onClick={() => setSearchZone({ id: `banish-${topRole}`, title: `${topLabel} Banish` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
+	                    </div>
+		                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+		                      <Zone id={`cemetery-${topRole}`} label={`${topLabel} Cemetery`} cards={getCards(`cemetery-${topRole}`)} layout="stack" viewerRole={viewerRole} containerStyle={{ minWidth: '110px', minHeight: '150px' }} isDebug={isDebug} />
+		                      <button onClick={() => setSearchZone({ id: `cemetery-${topRole}`, title: `${topLabel} Cemetery` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
+		                    </div>
+		                    <Zone
+		                      id={`ex-${topRole}`}
+	                      label={`${topLabel} EX Area`}
+	                      cards={getCards(`ex-${topRole}`)}
+	                      isProtected={false}
+	                      viewerRole={viewerRole}
+	                      onModifyCounter={handleModifyCounter}
+	                      onSendToBottom={handleSendToBottom}
+	                      onBanish={handleBanish}
+	                      onReturnEvolve={handleReturnEvolve}
+	                      onCemetery={handleSendToCemetery}
+	                      onPlayToField={(cardId) => handlePlayToField(cardId, topRole)}
+	                      containerStyle={{ maxWidth: '600px', minHeight: '150px', flex: 'none', width: '600px' }}
+	                    />
+	                  </div>
+	                  <Zone
+	                    id={`field-${topRole}`}
+	                    label={`${topLabel} Field`}
+	                    cards={getCards(`field-${topRole}`)}
+	                    onTap={toggleTap}
+	                    onModifyCounter={handleModifyCounter}
+	                    onSendToBottom={handleSendToBottom}
+	                    onBanish={handleBanish}
+	                    onReturnEvolve={handleReturnEvolve}
+	                    onCemetery={handleSendToCemetery}
+	                    onPlayToField={(cardId) => handlePlayToField(cardId, topRole)}
+	                    viewerRole={viewerRole}
+	                    containerStyle={{ maxWidth: '850px', minHeight: '160px', width: '850px', flex: 'none' }}
+	                    isDebug={isDebug}
+	                  />
+	                </div>
+	              </div>
+	            ) : (
+	              <div style={{ display: 'grid', gridTemplateColumns: `180px ${p2pTopBoardWidth}px`, gap: '1rem', alignItems: 'start', justifyContent: 'center', width: '100%', maxWidth: '1400px' }}>
+	                <div style={{ paddingTop: '6px' }}>
+	                  {renderReadOnlyStatusPanel(topRole, topLabel)}
+	                </div>
+
+	                <div style={{ width: `${p2pTopBoardWidth}px`, display: 'flex', flexDirection: 'column', gap: '0.85rem', alignItems: 'flex-start', padding: '0.4rem 0' }}>
+	                  <div style={{ display: 'grid', gridTemplateColumns: `110px ${p2pTopPlaymatWidth}px`, gap: '0.75rem', width: `${p2pTopBoardWidth}px`, alignItems: 'start' }}>
+	                    <div style={{ width: '110px' }}>
+	                      <Zone
+	                        id={`hand-${topRole}`}
+	                        label={`${topLabel} Hand`}
+	                        cards={getCards(`hand-${topRole}`)}
+	                        hideCards={true}
+	                        layout="stack"
+	                        isProtected={true}
+	                        viewerRole={viewerRole}
+	                        containerStyle={{ minHeight: '150px' }}
+	                      />
+	                    </div>
+
+	                    <div style={{ display: 'grid', gridTemplateColumns: p2pTopZoneStripColumns, gap: '0.75rem', width: `${p2pTopPlaymatWidth}px` }}>
+	                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+	                        <Zone id={`mainDeck-${topRole}`} label={`${topLabel} Main Deck`} cards={getCards(`mainDeck-${topRole}`)} layout="stack" isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: '110px', minHeight: '150px' }} isDebug={isDebug} />
+	                      </div>
+	                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+	                        <Zone id={`evolveDeck-${topRole}`} label={`${topLabel} Evolve Deck`} cards={getCards(`evolveDeck-${topRole}`)} layout="stack" isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: '110px', minHeight: '150px' }} isDebug={isDebug} />
+	                        <button onClick={() => setSearchZone({ id: `evolveDeck-${topRole}`, title: `${topLabel} Evolve Deck` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
+	                      </div>
+	                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+	                        <Zone id={`banish-${topRole}`} label={`${topLabel} Banish`} cards={getCards(`banish-${topRole}`)} layout="stack" viewerRole={viewerRole} containerStyle={{ minWidth: '110px', minHeight: '150px' }} isDebug={isDebug} />
+	                        <button onClick={() => setSearchZone({ id: `banish-${topRole}`, title: `${topLabel} Banish` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
+	                      </div>
+	                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+	                        <Zone id={`cemetery-${topRole}`} label={`${topLabel} Cemetery`} cards={getCards(`cemetery-${topRole}`)} layout="stack" viewerRole={viewerRole} containerStyle={{ minWidth: '110px', minHeight: '150px' }} isDebug={isDebug} />
+	                        <button onClick={() => setSearchZone({ id: `cemetery-${topRole}`, title: `${topLabel} Cemetery` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
+	                      </div>
+	                      <Zone
+	                        id={`ex-${topRole}`}
+	                        label={`${topLabel} EX Area`}
+	                        cards={getCards(`ex-${topRole}`)}
+	                        isProtected={false}
+	                        viewerRole={viewerRole}
+	                        containerStyle={{ maxWidth: '640px', minHeight: '150px', flex: 'none', width: '640px' }}
+	                      />
+	                    </div>
+	                  </div>
+
+	                  <div style={{ display: 'grid', gridTemplateColumns: `110px ${p2pTopPlaymatWidth}px`, gap: '0.75rem', width: `${p2pTopBoardWidth}px` }}>
+	                    <div />
+	                    <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+	                      <Zone
+	                        id={`field-${topRole}`}
+	                        label={`${topLabel} Field`}
+	                        cards={getCards(`field-${topRole}`)}
+	                        onTap={toggleTap}
+	                        onModifyCounter={handleModifyCounter}
+	                        onCemetery={handleSendToCemetery}
+	                        viewerRole={viewerRole}
+	                        containerStyle={{ maxWidth: '850px', minHeight: '160px', width: '850px', flex: 'none' }}
+	                        isDebug={isDebug}
+	                      />
+	                    </div>
+	                  </div>
+	                </div>
+	              </div>
+	            )}
           </div>
 
           <hr style={{ borderColor: 'rgba(255,255,255,0.1)', margin: '1rem 0' }} />
 
           {/* MY BOARD */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <Zone id={`field-${bottomRole}`} label={`${bottomLabel} Field`} cards={getCards(`field-${bottomRole}`)} onTap={toggleTap} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} viewerRole={viewerRole} containerStyle={{ maxWidth: '850px', minHeight: '160px', width: '850px', flex: 'none' }} isDebug={isDebug} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%', alignItems: 'center' }}>
+	            <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', justifyContent: 'center', width: '100%', maxWidth: '1360px' }}>
+	              <div style={{ width: `${playmatContentWidth}px`, flex: `0 0 ${playmatContentWidth}px`, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-start' }}>
+	                <div style={{ width: '100%', display: 'flex', justifyContent: isSoloMode ? 'flex-start' : 'flex-end', paddingLeft: isSoloMode ? soloFieldOffset : 0, boxSizing: 'border-box' }}>
+                  <Zone id={`field-${bottomRole}`} label={`${bottomLabel} Field`} cards={getCards(`field-${bottomRole}`)} onTap={toggleTap} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} viewerRole={viewerRole} containerStyle={{ maxWidth: '850px', minHeight: '160px', width: '850px', flex: 'none' }} isDebug={isDebug} />
+                </div>
 
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <Zone id={`ex-${bottomRole}`} label={`${bottomLabel} EX Area`} cards={getCards(`ex-${bottomRole}`)} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} viewerRole={viewerRole} containerStyle={{ maxWidth: '600px', minHeight: '160px', flex: 'none', width: '600px' }} isDebug={isDebug} />
+	                <div style={{ display: 'grid', gridTemplateColumns: bottomZoneStripColumns, gap: '0.5rem', justifyContent: 'flex-start', width: `${playmatContentWidth}px` }}>
+	                  <Zone id={`ex-${bottomRole}`} label={`${bottomLabel} EX Area`} cards={getCards(`ex-${bottomRole}`)} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} viewerRole={viewerRole} containerStyle={{ maxWidth: '600px', minHeight: '150px', flex: 'none', width: '600px' }} isDebug={isDebug} />
+	                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+	                    <Zone id={`cemetery-${bottomRole}`} label={`${bottomLabel} Cemetery`} cards={getCards(`cemetery-${bottomRole}`)} layout="stack" onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onCemetery={handleSendToCemetery} viewerRole={viewerRole} containerStyle={{ minWidth: '110px', minHeight: '150px' }} isDebug={isDebug} />
+	                    <button onClick={() => setSearchZone({ id: `cemetery-${bottomRole}`, title: `${bottomLabel} Cemetery` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
+	                  </div>
+	                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+	                    <Zone id={`banish-${bottomRole}`} label={`${bottomLabel} Banish`} cards={getCards(`banish-${bottomRole}`)} layout="stack" onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onCemetery={handleSendToCemetery} viewerRole={viewerRole} containerStyle={{ minWidth: '110px', minHeight: '150px' }} isDebug={isDebug} />
+	                    <button onClick={() => setSearchZone({ id: `banish-${bottomRole}`, title: `${bottomLabel} Banish` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
+	                  </div>
+	                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+	                    <Zone id={`evolveDeck-${bottomRole}`} label={`${bottomLabel} Evolve Deck`} cards={getCards(`evolveDeck-${bottomRole}`)} layout="stack" isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: '110px', minHeight: '150px' }} isDebug={isDebug} />
+	                    <button onClick={() => setSearchZone({ id: `evolveDeck-${bottomRole}`, title: `${bottomLabel} Evolve Deck` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
+	                  </div>
+	                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+	                    <Zone id={`mainDeck-${bottomRole}`} label={`${bottomLabel} Main Deck`} cards={getCards(`mainDeck-${bottomRole}`)} layout="stack" isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: '110px', minHeight: '150px' }} isDebug={isDebug} />
+	                    <div style={{ display: 'flex', gap: '2px', flexWrap: 'wrap' }}>
+	                      <button onClick={() => setSearchZone({ id: `mainDeck-${bottomRole}`, title: `${bottomLabel} Main Deck` })} style={{ flex: '1 1 48%', fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
+	                      <button onClick={() => handleShuffleDeck(bottomRole)} style={{ flex: '1 1 48%', fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Shuffle</button>
+	                      <button onClick={() => openTopDeckModal(bottomRole)} style={{ flex: '1 1 100%', fontSize: '0.75rem', padding: '4px', background: '#3b82f6', border: '1px solid #2563eb', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Look Top (N)</button>
+	                    </div>
+	                  </div>
+	                </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <Zone id={`banish-${bottomRole}`} label={`${bottomLabel} Banish`} cards={getCards(`banish-${bottomRole}`)} layout="stack" onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onCemetery={handleSendToCemetery} viewerRole={viewerRole} containerStyle={{ minWidth: '110px', minHeight: '150px' }} isDebug={isDebug} />
-                <button onClick={() => setSearchZone({ id: `banish-${bottomRole}`, title: `${bottomLabel} Banish` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
-              </div>
+	                <div style={{ width: '100%', display: 'flex', justifyContent: isSoloMode ? 'flex-start' : 'flex-end', paddingLeft: isSoloMode ? soloFieldOffset : 0, boxSizing: 'border-box' }}>
+                  <div style={{ width: '850px', minHeight: '160px', position: 'relative' }}>
+                    <Zone id={`hand-${bottomRole}`} label={`${bottomLabel} Hand`} cards={getCards(`hand-${bottomRole}`)} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} isProtected={true} viewerRole={viewerRole} containerStyle={{ minHeight: '160px' }} isDebug={isDebug} />
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <Zone id={`cemetery-${bottomRole}`} label={`${bottomLabel} Cemetery`} cards={getCards(`cemetery-${bottomRole}`)} layout="stack" onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onCemetery={handleSendToCemetery} viewerRole={viewerRole} containerStyle={{ minWidth: '110px', minHeight: '150px' }} isDebug={isDebug} />
-                <button onClick={() => setSearchZone({ id: `cemetery-${bottomRole}`, title: `${bottomLabel} Cemetery` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <Zone id={`evolveDeck-${bottomRole}`} label={`${bottomLabel} Evolve Deck`} cards={getCards(`evolveDeck-${bottomRole}`)} layout="stack" isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: '110px', minHeight: '150px' }} isDebug={isDebug} />
-                <button onClick={() => setSearchZone({ id: `evolveDeck-${bottomRole}`, title: `${bottomLabel} Evolve Deck` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <Zone id={`mainDeck-${bottomRole}`} label={`${bottomLabel} Main Deck`} cards={getCards(`mainDeck-${bottomRole}`)} layout="stack" isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: '110px', minHeight: '150px' }} isDebug={isDebug} />
-                <div style={{ display: 'flex', gap: '2px', flexWrap: 'wrap' }}>
-                  <button onClick={() => setSearchZone({ id: `mainDeck-${bottomRole}`, title: `${bottomLabel} Main Deck` })} style={{ flex: '1 1 48%', fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
-                  <button onClick={() => handleShuffleDeck(bottomRole)} style={{ flex: '1 1 48%', fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Shuffle</button>
-                  <button onClick={() => openTopDeckModal(bottomRole)} style={{ flex: '1 1 100%', fontSize: '0.75rem', padding: '4px', background: '#3b82f6', border: '1px solid #2563eb', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Look Top (N)</button>
+                    {gameState.gameStatus === 'preparing' && gameState[bottomRole].initialHandDrawn && !gameState[bottomRole].mulliganUsed && (
+                      <button
+                        onClick={() => openMulliganModal(bottomRole)}
+                        style={isSoloMode ? soloMulliganButtonStyle : {
+                          position: 'absolute', top: '-10px', right: '10px',
+                          padding: '0.5rem 1rem', background: '#eab308', color: 'black',
+                          fontWeight: 'bold', borderRadius: '4px',
+                          cursor: 'pointer', fontSize: '0.875rem', zIndex: 10,
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                          border: '2px solid black'
+                        }}
+                      >
+                        {isSoloMode ? `🔄 Mulligan (${bottomLabel})` : '🔄 Mulligan (マリガンする)'}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-            <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', justifyContent: 'center', width: '100%' }}>
-              <div style={{ width: '850px', minHeight: '160px', position: 'relative' }}>
-                {/* My Hand - strictly hidden from opponent but visible to me */}
-                <Zone id={`hand-${bottomRole}`} label={`${bottomLabel} Hand`} cards={getCards(`hand-${bottomRole}`)} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} isProtected={true} viewerRole={viewerRole} containerStyle={{ minHeight: '160px' }} isDebug={isDebug} />
 
-                {/* Mulligan Button Overlay near hand */}
-                {gameState.gameStatus === 'preparing' && gameState[bottomRole].initialHandDrawn && !gameState[bottomRole].mulliganUsed && (
-                  <button
-                    onClick={() => openMulliganModal(bottomRole)}
+              <div style={{ width: '200px', flex: '0 0 200px', display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(0,0,0,0.8)', padding: '1rem', borderRadius: 'var(--radius-md)', marginLeft: '0.5rem' }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'white', marginBottom: '0.25rem' }}>{bottomLabel} Controls</div>
+                {isSoloMode ? (
+                  <label
+                    className="glass-panel"
                     style={{
-                      position: 'absolute', top: '-10px', right: '10px',
-                      padding: '0.5rem 1rem', background: '#eab308', color: 'black',
-                      fontWeight: 'bold', borderRadius: '4px',
-                      cursor: 'pointer', fontSize: '0.875rem', zIndex: 10,
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                      border: '2px solid black'
+                      padding: '0.5rem',
+                      background: 'var(--bg-surface-elevated)',
+                      textAlign: 'center',
+                      cursor: canImportCurrentDeck ? 'pointer' : 'not-allowed',
+                      fontSize: '0.875rem',
+                      opacity: canImportCurrentDeck ? 1 : 0.5
                     }}
                   >
-                    🔄 Mulligan (マリガンする)
-                  </button>
-                )}
-              </div>
-
-              {/* Controls */}
-              <div style={{ width: '200px', display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(0,0,0,0.8)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
-
-                {isSoloMode ? (
-                  <>
-                    <label
-                      className="glass-panel"
-                      style={{
-                        padding: '0.5rem',
-                        background: 'var(--bg-surface-elevated)',
-                        textAlign: 'center',
-                        cursor: canImportCurrentDeck ? 'pointer' : 'not-allowed',
-                        fontSize: '0.875rem',
-                        opacity: canImportCurrentDeck ? 1 : 0.5
-                      }}
-                    >
-                      Import {bottomLabel} Deck
-                      <input
-                        type="file"
-                        accept=".json"
-                        style={{ display: 'none' }}
-                        onChange={(event) => handleDeckUpload(event, bottomRole)}
-                        disabled={!canImportCurrentDeck}
-                      />
-                    </label>
-                    <label
-                      className="glass-panel"
-                      style={{
-                        padding: '0.5rem',
-                        background: 'var(--bg-surface-elevated)',
-                        textAlign: 'center',
-                        cursor: canImportCurrentDeck ? 'pointer' : 'not-allowed',
-                        fontSize: '0.875rem',
-                        opacity: canImportCurrentDeck ? 1 : 0.5
-                      }}
-                    >
-                      Import {topLabel} Deck
-                      <input
-                        type="file"
-                        accept=".json"
-                        style={{ display: 'none' }}
-                        onChange={(event) => handleDeckUpload(event, topRole)}
-                        disabled={!canImportCurrentDeck}
-                      />
-                    </label>
-                  </>
+                    Import {bottomLabel} Deck
+                    <input
+                      type="file"
+                      accept=".json"
+                      style={{ display: 'none' }}
+                      onChange={(event) => handleDeckUpload(event, bottomRole)}
+                      disabled={!canImportCurrentDeck}
+                    />
+                  </label>
                 ) : (
                   <label
                     className="glass-panel"
@@ -574,63 +659,24 @@ const GameBoard: React.FC = () => {
                     />
                   </label>
                 )}
-                <button
-                  onClick={() => drawCard(bottomRole)}
-                  className="glass-panel"
-                  disabled={gameState.gameStatus !== 'playing'}
-                  style={{
-                    padding: '0.5rem',
-                    background: 'var(--accent-primary)',
-                    fontWeight: 'bold',
-                    opacity: gameState.gameStatus === 'playing' ? 1 : 0.5,
-                    cursor: gameState.gameStatus === 'playing' ? 'pointer' : 'not-allowed'
-                  }}
-                >
-                  Draw Card
+                <button onClick={() => drawCard(bottomRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing'} style={{ padding: '0.5rem', background: 'var(--accent-primary)', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' ? 'pointer' : 'not-allowed' }}>
+                  Draw {bottomLabel}
                 </button>
-
-                <button
-                  onClick={() => millCard(bottomRole)}
-                  className="glass-panel"
-                  disabled={gameState.gameStatus !== 'playing'}
-                  style={{
-                    padding: '0.5rem',
-                    background: '#64748b', // Slate color for mill
-                    fontWeight: 'bold',
-                    opacity: gameState.gameStatus === 'playing' ? 1 : 0.5,
-                    cursor: gameState.gameStatus === 'playing' ? 'pointer' : 'not-allowed'
-                  }}
-                >
-                  Mill Card (デッキ破棄)
+                <button onClick={() => millCard(bottomRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing'} style={{ padding: '0.5rem', background: '#475569', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' ? 'pointer' : 'not-allowed' }}>
+                  Mill {bottomLabel}
                 </button>
-
                 {(isSoloMode ? gameState.gameStatus === 'playing' : gameState.turnPlayer === role && gameState.gameStatus === 'playing') && (
-                  <button onClick={endTurn} className="glass-panel" style={{ padding: '0.5rem', background: '#f59e0b', color: 'black', fontWeight: 'bold', marginBottom: '4px' }}>
+                  <button onClick={endTurn} className="glass-panel" style={{ padding: '0.5rem', background: '#f59e0b', color: 'black', fontWeight: 'bold' }}>
                     {isSoloMode ? `End ${currentTurnLabel} Turn` : 'END TURN'}
                   </button>
                 )}
-
                 <button onClick={() => spawnToken(bottomRole)} className="glass-panel" style={{ padding: '0.5rem', background: 'var(--accent-secondary)' }}>
-                  Spawn Token
+                  Spawn {bottomLabel} Token
                 </button>
-                {isSoloMode && (
-                  <>
-                    <button onClick={() => drawCard(topRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing'} style={{ padding: '0.5rem', background: '#6366f1', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' ? 'pointer' : 'not-allowed' }}>
-                      Draw {topLabel}
-                    </button>
-                    <button onClick={() => millCard(topRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing'} style={{ padding: '0.5rem', background: '#475569', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' ? 'pointer' : 'not-allowed' }}>
-                      Mill {topLabel}
-                    </button>
-                    <button onClick={() => spawnToken(topRole)} className="glass-panel" style={{ padding: '0.5rem', background: '#7c3aed' }}>
-                      Spawn {topLabel} Token
-                    </button>
-                  </>
-                )}
                 <button onClick={() => setShowResetConfirm(true)} className="glass-panel" style={{ padding: '0.5rem', background: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', fontWeight: 'bold' }}>
                   Reset Game
                 </button>
                 {renderPlayerTracker(bottomRole, bottomLabel)}
-                {isSoloMode && renderPlayerTracker(topRole, topLabel)}
               </div>
             </div>
           </div>
