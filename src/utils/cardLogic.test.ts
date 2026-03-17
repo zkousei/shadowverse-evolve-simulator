@@ -253,6 +253,26 @@ describe('CardLogic utils', () => {
   });
 
   describe('applyDrop', () => {
+    it('should keep main-deck cards in place when dragged onto the evolve deck', () => {
+      const mainDeckCard = createMockCard('main-1', 'mainDeck-host');
+      const evolveDeckCard = { ...createMockCard('evo-1', 'evolveDeck-host'), isEvolveCard: true };
+      const cards = [mainDeckCard, evolveDeckCard];
+
+      const result = CardLogic.applyDrop(cards, 'main-1', 'evo-1');
+
+      expect(result).toBe(cards);
+    });
+
+    it('should keep evolve-deck cards in place when dragged onto the main deck', () => {
+      const mainDeckCard = createMockCard('main-1', 'mainDeck-host');
+      const evolveDeckCard = { ...createMockCard('evo-1', 'evolveDeck-host'), isEvolveCard: true };
+      const cards = [mainDeckCard, evolveDeckCard];
+
+      const result = CardLogic.applyDrop(cards, 'evo-1', 'main-1');
+
+      expect(result).toBe(cards);
+    });
+
     it('should route evolve cards dropped on cemetery back to evolve deck', () => {
       const evolve = { ...createMockCard('e1', 'field-host'), isEvolveCard: true };
       const cemetery = createMockCard('cem', 'cemetery-host');

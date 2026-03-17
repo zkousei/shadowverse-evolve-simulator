@@ -308,6 +308,15 @@ export const resolveDrop = (
     }
   }
 
+  const requestedPrefix = getZonePrefix(targetZone);
+  const naturalDeckPrefix = getZonePrefix(getDeckZone(activeCard));
+  if (
+    (requestedPrefix === 'mainDeck' || requestedPrefix === 'evolveDeck') &&
+    requestedPrefix !== naturalDeckPrefix
+  ) {
+    return null;
+  }
+
   targetZone = resolveMoveDestination(activeCard, targetZone);
 
   let baseZonePrefix = getZonePrefix(targetZone);
