@@ -4,6 +4,7 @@ import Zone from '../components/Zone';
 import CardSearchModal from '../components/CardSearchModal';
 import TopDeckModal from '../components/TopDeckModal';
 import { useGameBoardLogic } from '../hooks/useGameBoardLogic';
+import { canImportDeck } from '../utils/gameRules';
 
 const GameBoard: React.FC = () => {
   const {
@@ -23,6 +24,7 @@ const GameBoard: React.FC = () => {
 
   const [isTopNInputOpen, setIsTopNInputOpen] = React.useState(false);
   const [topNValue, setTopNValue] = React.useState(3);
+  const canImportCurrentDeck = canImportDeck(gameState.gameStatus);
 
   return (
     <DndContext onDragEnd={handleDragEnd}>
@@ -276,9 +278,25 @@ const GameBoard: React.FC = () => {
               {/* Controls */}
               <div style={{ width: '200px', display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(0,0,0,0.8)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
 
-                <label className="glass-panel" style={{ padding: '0.5rem', background: 'var(--bg-surface-elevated)', textAlign: 'center', cursor: 'pointer', fontSize: '0.875rem' }}>
+                <label
+                  className="glass-panel"
+                  style={{
+                    padding: '0.5rem',
+                    background: 'var(--bg-surface-elevated)',
+                    textAlign: 'center',
+                    cursor: canImportCurrentDeck ? 'pointer' : 'not-allowed',
+                    fontSize: '0.875rem',
+                    opacity: canImportCurrentDeck ? 1 : 0.5
+                  }}
+                >
                   Import Deck (.json)
-                  <input type="file" accept=".json" style={{ display: 'none' }} onChange={handleDeckUpload} />
+                  <input
+                    type="file"
+                    accept=".json"
+                    style={{ display: 'none' }}
+                    onChange={handleDeckUpload}
+                    disabled={!canImportCurrentDeck}
+                  />
                 </label>
                 <button
                   onClick={drawCard}

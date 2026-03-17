@@ -48,6 +48,37 @@ describe('CardLogic utils', () => {
       expect(result[2].id).toBe('parent');
       expect(result[2].zone).toBe('cemetery-host');
     });
+
+    it('should carry nested attachments with the parent card', () => {
+      const parent = createMockCard('parent', 'field-host');
+      const child = { ...createMockCard('child', 'field-host'), attachedTo: 'parent' };
+      const grandchild = { ...createMockCard('grandchild', 'field-host'), attachedTo: 'child' };
+      const other = createMockCard('other', 'field-host');
+      const cards = [parent, child, grandchild, other];
+
+      const result = CardLogic.moveCardToEnd(cards, 'parent', { zone: 'cemetery-host' });
+
+      expect(result).toHaveLength(4);
+      expect(result[0].id).toBe('other');
+      expect(result.slice(1).map(c => c.id)).toEqual(['child', 'grandchild', 'parent']);
+      expect(result.slice(1).every(c => c.zone === 'cemetery-host')).toBe(true);
+    });
+
+    it('should detach nested attachments when preserveAttachment is false', () => {
+      const parent = createMockCard('parent', 'field-host');
+      const child = { ...createMockCard('child', 'field-host'), attachedTo: 'parent' };
+      const grandchild = { ...createMockCard('grandchild', 'field-host'), attachedTo: 'child' };
+      const cards = [parent, child, grandchild];
+
+      const result = CardLogic.moveCardToEnd(cards, 'parent', {
+        zone: 'cemetery-host',
+        attachedTo: undefined,
+        preserveAttachment: false
+      });
+
+      expect(result.every(c => c.zone === 'cemetery-host')).toBe(true);
+      expect(result.every(c => c.attachedTo === undefined)).toBe(true);
+    });
   });
 
   describe('moveCardToFront', () => {
@@ -62,6 +93,36 @@ describe('CardLogic utils', () => {
       expect(result[0].id).toBe('2');
       expect(result[0].isFlipped).toBe(true);
       expect(result[1].id).toBe('1');
+    });
+
+    it('should move nested attachments together when returning to the front', () => {
+      const parent = createMockCard('parent', 'field-host');
+      const child = { ...createMockCard('child', 'field-host'), attachedTo: 'parent' };
+      const grandchild = { ...createMockCard('grandchild', 'field-host'), attachedTo: 'child' };
+      const other = createMockCard('other', 'mainDeck-host');
+      const cards = [other, parent, child, grandchild];
+
+      const result = CardLogic.moveCardToFront(cards, 'parent', { zone: 'mainDeck-host', isFlipped: true });
+
+      expect(result.map(c => c.id)).toEqual(['parent', 'child', 'grandchild', 'other']);
+      expect(result.slice(0, 3).every(c => c.zone === 'mainDeck-host')).toBe(true);
+      expect(result.slice(0, 3).every(c => c.isFlipped)).toBe(true);
+    });
+
+    it('should detach nested attachments when returning a stack to the front', () => {
+      const parent = createMockCard('parent', 'field-host');
+      const child = { ...createMockCard('child', 'field-host'), attachedTo: 'parent' };
+      const grandchild = { ...createMockCard('grandchild', 'field-host'), attachedTo: 'child' };
+      const cards = [parent, child, grandchild];
+
+      const result = CardLogic.moveCardToFront(cards, 'parent', {
+        zone: 'mainDeck-host',
+        isFlipped: true,
+        attachedTo: undefined,
+        preserveAttachment: false
+      });
+
+      expect(result.every(c => c.attachedTo === undefined)).toBe(true);
     });
   });
 
@@ -169,6 +230,25 @@ describe('CardLogic utils', () => {
     it('should return mainDeck for normal cards', () => {
       const card = createMockCard('n1', 'field-host');
       expect(CardLogic.getDeckZone(card)).toBe('mainDeck-host');
+    });
+  });
+
+  describe('resolveMoveDestination', () => {
+    it('should prevent main deck cards from entering evolve deck', () => {
+      const card = createMockCard('n1', 'field-host');
+      expect(CardLogic.resolveMoveDestination(card, 'evolveDeck-host')).toBe('mainDeck-host');
+    });
+
+    it('should prevent evolve cards from entering main deck', () => {
+      const card = { ...createMockCard('e1', 'field-host'), isEvolveCard: true };
+      expect(CardLogic.resolveMoveDestination(card, 'mainDeck-host')).toBe('evolveDeck-host');
+    });
+
+    it('should return evolve cards to evolve deck when sent to cemetery/banish/hand', () => {
+      const card = { ...createMockCard('e1', 'field-host'), isEvolveCard: true };
+      expect(CardLogic.resolveMoveDestination(card, 'cemetery-host')).toBe('evolveDeck-host');
+      expect(CardLogic.resolveMoveDestination(card, 'banish-host')).toBe('evolveDeck-host');
+      expect(CardLogic.resolveMoveDestination(card, 'hand-host')).toBe('evolveDeck-host');
     });
   });
 

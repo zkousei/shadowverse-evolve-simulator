@@ -47,6 +47,8 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({ isOpen, onClose, titl
           {cards.map(c => {
             const isEvolveDeck = title.includes('Evolve');
             const isUsed = isEvolveDeck && !c.isFlipped;
+            const canAddToHand = c.owner === viewerRole && !c.isEvolveCard;
+            const canAddToEx = !c.isEvolveCard;
             
             return (
               <div key={c.id} className="search-card-container" style={{ position: 'relative', opacity: isUsed ? 0.6 : 1, transition: 'opacity 0.1s' }}>
@@ -89,7 +91,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({ isOpen, onClose, titl
                     >
                       Play to Field
                     </button>
-                    {c.owner === viewerRole && (
+                    {canAddToHand && (
                       <button 
                         onClick={() => onExtractCard(c.id, `hand-${viewerRole}`)}
                         disabled={!allowHandExtraction}
@@ -102,17 +104,19 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({ isOpen, onClose, titl
                         Add to Hand
                       </button>
                     )}
-                    <button 
-                      onClick={() => onExtractCard(c.id, `ex-${viewerRole}`)}
-                      disabled={!allowHandExtraction}
-                      style={{
-                        width: '100%', background: allowHandExtraction ? '#a855f7' : '#374151', color: allowHandExtraction ? 'white' : '#949db0', border: 'none',
-                        padding: '3px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold',
-                        cursor: allowHandExtraction ? 'pointer' : 'not-allowed'
-                      }}
-                    >
-                      Add to EX Area
-                    </button>
+                    {canAddToEx && (
+                      <button 
+                        onClick={() => onExtractCard(c.id, `ex-${viewerRole}`)}
+                        disabled={!allowHandExtraction}
+                        style={{
+                          width: '100%', background: allowHandExtraction ? '#a855f7' : '#374151', color: allowHandExtraction ? 'white' : '#949db0', border: 'none',
+                          padding: '3px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold',
+                          cursor: allowHandExtraction ? 'pointer' : 'not-allowed'
+                        }}
+                      >
+                        Add to EX Area
+                      </button>
+                    )}
                     
                     {onToggleFlip && c.isEvolveCard && c.owner === viewerRole && (
                       <button 

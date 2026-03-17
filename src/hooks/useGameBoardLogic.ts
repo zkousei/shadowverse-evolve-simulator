@@ -6,6 +6,7 @@ import { type CardInstance } from '../components/Card';
 import { type SyncState, initialState } from '../types/game';
 import { uuid } from '../utils/helpers';
 import * as CardLogic from '../utils/cardLogic';
+import { canImportDeck } from '../utils/gameRules';
 
 export const useGameBoardLogic = () => {
   const [searchParams] = useSearchParams();
@@ -312,14 +313,18 @@ export const useGameBoardLogic = () => {
     if (!targetCard) return;
     let destinationZone = targetCard.isEvolveCard ? `field-${role}` : `hand-${role}`;
     if (customDestination) destinationZone = customDestination;
+    destinationZone = CardLogic.resolveMoveDestination(targetCard, destinationZone);
     const isEnteringHand = destinationZone.startsWith('hand');
+    const isEnteringSafeZone = ['mainDeck', 'evolveDeck', 'hand', 'cemetery', 'banish'].includes(destinationZone.split('-')[0]);
     
     syncState({
       ...gameState,
       cards: CardLogic.moveCardToEnd(gameState.cards, cardId, {
         zone: destinationZone,
         isFlipped: false,
-        counters: isEnteringHand ? { atk: 0, hp: 0 } : targetCard.counters
+        counters: isEnteringHand ? { atk: 0, hp: 0 } : targetCard.counters,
+        attachedTo: undefined,
+        preserveAttachment: !isEnteringSafeZone
       })
     });
     setSearchZone(null);
@@ -341,6 +346,10 @@ export const useGameBoardLogic = () => {
   };
 
   const handleDeckUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!canImportDeck(gameState.gameStatus)) {
+      event.target.value = '';
+      return;
+    }
     const file = event.target.files?.[0];
     if (!file) return;
     event.target.value = '';
@@ -402,13 +411,25 @@ export const useGameBoardLogic = () => {
     const overCard = gameState.cards.find(c => c.id === overId);
     if (overCard) {
       if (overCard.zone.startsWith('field')) {
-        // Stacking/Attaching
+        // Always attach to the root of the stack so nested attachment chains cannot form.
         targetZone = overCard.zone;
-        newAttachedTo = overCard.id;
+        let rootCard = overCard;
+        const visited = new Set<string>();
+
+        while (rootCard.attachedTo && !visited.has(rootCard.attachedTo)) {
+          visited.add(rootCard.id);
+          const parentCard = gameState.cards.find(c => c.id === rootCard.attachedTo);
+          if (!parentCard) break;
+          rootCard = parentCard;
+        }
+
+        newAttachedTo = rootCard.id;
       } else {
         targetZone = overCard.zone;
       }
     }
+
+    targetZone = CardLogic.resolveMoveDestination(activeCard, targetZone);
 
     let baseZonePrefix = targetZone.split('-')[0];
     // Rule: Hand/Deck/Cemetery/Banish must go to original owner's zone.
@@ -417,6 +438,8 @@ export const useGameBoardLogic = () => {
     if (isPrivateZone) {
       targetZone = `${baseZonePrefix}-${activeCard.owner}`;
     }
+    targetZone = CardLogic.resolveMoveDestination(activeCard, targetZone);
+    baseZonePrefix = targetZone.split('-')[0];
 
     // Rule: Reset attributes when entering hand/deck/cemetery
     const isEnteringSafeZone = ['mainDeck', 'evolveDeck', 'hand', 'cemetery', 'banish'].includes(baseZonePrefix);
@@ -426,9 +449,10 @@ export const useGameBoardLogic = () => {
     const moveOptions: CardLogic.MoveCardOptions = {
       zone: targetZone,
       attachedTo: newAttachedTo,
-      isFlipped: baseZonePrefix === 'mainDeck',
+      isFlipped: baseZonePrefix === 'mainDeck' ? true : baseZonePrefix === 'evolveDeck' ? false : activeCard.isFlipped,
       isTapped: isEnteringSafeZone ? false : activeCard.isTapped,
-      counters: isEnteringHand ? { atk: 0, hp: 0 } : activeCard.counters
+      counters: isEnteringHand ? { atk: 0, hp: 0 } : activeCard.counters,
+      preserveAttachment: !isEnteringSafeZone
     };
 
     if (activeCard.cardId === 'token' && isEnteringSafeZone) {
@@ -477,7 +501,8 @@ export const useGameBoardLogic = () => {
         isFlipped: !targetCard.isEvolveCard,
         isTapped: false,
         attachedTo: undefined,
-        counters: { atk: 0, hp: 0 }
+        counters: { atk: 0, hp: 0 },
+        preserveAttachment: false
       })
     });
   };
@@ -502,7 +527,8 @@ export const useGameBoardLogic = () => {
         isTapped: false,
         isFlipped: false,
         attachedTo: undefined,
-        counters: { atk: 0, hp: 0 }
+        counters: { atk: 0, hp: 0 },
+        preserveAttachment: false
       })
     });
   };
@@ -535,7 +561,8 @@ export const useGameBoardLogic = () => {
         isTapped: false,
         isFlipped: false,
         attachedTo: undefined,
-        counters: { atk: 0, hp: 0 }
+        counters: { atk: 0, hp: 0 },
+        preserveAttachment: false
       })
     });
   };
@@ -555,7 +582,8 @@ export const useGameBoardLogic = () => {
         isTapped: false,
         isFlipped: false,
         attachedTo: undefined,
-        counters: { atk: 0, hp: 0 }
+        counters: { atk: 0, hp: 0 },
+        preserveAttachment: false
       })
     });
   };

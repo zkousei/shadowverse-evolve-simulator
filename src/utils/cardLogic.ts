@@ -11,7 +11,31 @@ export interface MoveCardOptions {
   isTapped?: boolean;
   attachedTo?: string;
   counters?: { atk: number; hp: number };
+  preserveAttachment?: boolean;
 }
+
+const collectDescendantIds = (
+  cards: CardInstance[],
+  parentId: string
+): Set<string> => {
+  const descendantIds = new Set<string>();
+  const queue = [parentId];
+
+  while (queue.length > 0) {
+    const currentId = queue.shift()!;
+    const children = cards.filter(c => c.attachedTo === currentId);
+
+    for (const child of children) {
+      if (descendantIds.has(child.id)) continue;
+      descendantIds.add(child.id);
+      queue.push(child.id);
+    }
+  }
+
+  return descendantIds;
+};
+
+const getZonePrefix = (zone: string): string => zone.split('-')[0];
 
 /**
  * Moves a card to a new zone and places it at the END of the array (Rightmost/Bottom).
@@ -25,15 +49,16 @@ export const moveCardToEnd = (
   const targetCard = cards.find(c => c.id === cardId);
   if (!targetCard) return cards;
 
-  const otherCards = cards.filter(c => c.id !== cardId && c.attachedTo !== cardId);
-  const attachments = cards.filter(c => c.attachedTo === cardId);
+  const descendantIds = collectDescendantIds(cards, cardId);
+  const otherCards = cards.filter(c => c.id !== cardId && !descendantIds.has(c.id));
+  const attachments = cards.filter(c => descendantIds.has(c.id));
 
   const movedAttachments = attachments.map(a => ({
     ...a,
     ...options, // Inherit zone/flipped if desired, but usually attachments follow a specific rule
     isTapped: options.isTapped ?? a.isTapped,
     isFlipped: options.isFlipped ?? a.isFlipped,
-    attachedTo: options.attachedTo ?? a.attachedTo,
+    attachedTo: options.preserveAttachment === false ? undefined : (options.attachedTo ?? a.attachedTo),
   }));
 
   const movedCard: CardInstance = {
@@ -57,15 +82,16 @@ export const moveCardToFront = (
   const targetCard = cards.find(c => c.id === cardId);
   if (!targetCard) return cards;
 
-  const otherCards = cards.filter(c => c.id !== cardId && c.attachedTo !== cardId);
-  const attachments = cards.filter(c => c.attachedTo === cardId);
+  const descendantIds = collectDescendantIds(cards, cardId);
+  const otherCards = cards.filter(c => c.id !== cardId && !descendantIds.has(c.id));
+  const attachments = cards.filter(c => descendantIds.has(c.id));
 
   const movedAttachments = attachments.map(a => ({
     ...a,
     ...options,
     isTapped: options.isTapped ?? a.isTapped,
     isFlipped: options.isFlipped ?? a.isFlipped,
-    attachedTo: options.attachedTo ?? a.attachedTo,
+    attachedTo: options.preserveAttachment === false ? undefined : (options.attachedTo ?? a.attachedTo),
   }));
 
   const movedCard: CardInstance = {
@@ -138,6 +164,26 @@ export const millCard = (
  */
 export const getDeckZone = (card: CardInstance): string => {
   return card.isEvolveCard ? `evolveDeck-${card.owner}` : `mainDeck-${card.owner}`;
+};
+
+/**
+ * Enforces deck-separation rules for manual moves.
+ */
+export const resolveMoveDestination = (
+  card: CardInstance,
+  requestedZone: string
+): string => {
+  const requestedPrefix = getZonePrefix(requestedZone);
+
+  if (requestedPrefix === 'mainDeck' || requestedPrefix === 'evolveDeck') {
+    return getDeckZone(card);
+  }
+
+  if (card.isEvolveCard && ['hand', 'cemetery', 'banish'].includes(requestedPrefix)) {
+    return getDeckZone(card);
+  }
+
+  return requestedZone;
 };
 
 /**
