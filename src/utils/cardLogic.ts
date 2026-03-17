@@ -19,6 +19,7 @@ export interface DropResolution {
   targetZone: string;
   moveOptions: MoveCardOptions;
   isReturningToDeck: boolean;
+  shouldPlaceAtFront: boolean;
   shouldDeleteToken: boolean;
 }
 
@@ -224,7 +225,7 @@ export const millCard = (
   if (myDeck.length === 0) return cards;
 
   const topCard = myDeck[0];
-  return moveCardToEnd(cards, topCard.id, {
+  return moveCardToFront(cards, topCard.id, {
     zone: `cemetery-${role}`,
     isFlipped: false,
     counters: { atk: 0, hp: 0 },
@@ -297,10 +298,12 @@ export const resolveDrop = (
   const isEnteringSafeZone = ['mainDeck', 'evolveDeck', 'hand', 'cemetery', 'banish'].includes(baseZonePrefix);
   const isReturningToDeck = baseZonePrefix === 'mainDeck' || baseZonePrefix === 'evolveDeck';
   const isEnteringHand = baseZonePrefix === 'hand';
+  const shouldPlaceAtFront = isReturningToDeck || baseZonePrefix === 'cemetery' || baseZonePrefix === 'banish';
 
   return {
     targetZone,
     isReturningToDeck,
+    shouldPlaceAtFront,
     shouldDeleteToken: activeCard.cardId === 'token' && isEnteringSafeZone,
     moveOptions: {
       zone: targetZone,
@@ -332,7 +335,7 @@ export const applyDrop = (
     return removeTokenAndAttachments(cards, cardId);
   }
 
-  return resolution.isReturningToDeck
+  return resolution.shouldPlaceAtFront
     ? moveCardToFront(cards, cardId, resolution.moveOptions)
     : moveCardToEnd(cards, cardId, resolution.moveOptions);
 };
@@ -409,7 +412,7 @@ export const banishCard = (
   if (targetCard.cardId === 'token') return removeTokenAndAttachments(cards, cardId);
 
   const destinationZone = targetCard.isEvolveCard ? getDeckZone(targetCard) : `banish-${targetCard.owner}`;
-  return moveCardToEnd(cards, cardId, {
+  return moveCardToFront(cards, cardId, {
     zone: destinationZone,
     isTapped: false,
     isFlipped: false,
@@ -428,7 +431,7 @@ export const sendCardToCemetery = (
   if (targetCard.cardId === 'token') return removeTokenAndAttachments(cards, cardId);
 
   const destinationZone = targetCard.isEvolveCard ? getDeckZone(targetCard) : `cemetery-${targetCard.owner}`;
-  return moveCardToEnd(cards, cardId, {
+  return moveCardToFront(cards, cardId, {
     zone: destinationZone,
     isTapped: false,
     isFlipped: false,
@@ -603,13 +606,18 @@ export const resolveTopDeckResults = (
 
   const topCards = results.filter(r => r.action === 'top').sort((a, b) => (a.order || 0) - (b.order || 0)).map(r => processedCards.find(pc => pc.id === r.cardId)!);
   const bottomCards = results.filter(r => r.action === 'bottom').sort((a, b) => (a.order || 0) - (b.order || 0)).map(r => processedCards.find(pc => pc.id === r.cardId)!);
-  const sideCards = processedCards.filter(pc => pc.zone !== `mainDeck-${role}`);
+  const cemeteryCards = processedCards.filter(pc => pc.zone === `cemetery-${role}`);
+  const sideCards = processedCards.filter(pc => pc.zone !== `mainDeck-${role}` && pc.zone !== `cemetery-${role}`);
 
   const myDeckRemaining = otherCards.filter(c => c.zone === `mainDeck-${role}`);
   const nonMyDeck = otherCards.filter(c => c.zone !== `mainDeck-${role}`);
+  const existingCemeteryCards = nonMyDeck.filter(c => c.zone === `cemetery-${role}`);
+  const otherZoneCards = nonMyDeck.filter(c => c.zone !== `cemetery-${role}`);
 
   return [
-    ...nonMyDeck,
+    ...cemeteryCards,
+    ...otherZoneCards,
+    ...existingCemeteryCards,
     ...sideCards,
     ...topCards,
     ...myDeckRemaining,

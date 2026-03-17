@@ -212,7 +212,7 @@ describe('CardLogic utils', () => {
       const result = CardLogic.millCard(cards, 'host');
       const top = result.find(c => c.id === 'top');
       expect(top?.zone).toBe('cemetery-host');
-      expect(result[result.length - 1].id).toBe('top');
+      expect(result[0].id).toBe('top');
     });
 
     it('should do nothing if deck is empty', () => {
@@ -353,10 +353,22 @@ describe('CardLogic utils', () => {
     });
 
     it('should return evolve cards to evolve deck when banished', () => {
+      const used = { ...createMockCard('used', 'evolveDeck-host'), isEvolveCard: true, isFlipped: false };
       const card = { ...createMockCard('e1', 'field-host'), isEvolveCard: true };
-      const result = CardLogic.banishCard([card], 'e1');
+      const result = CardLogic.banishCard([used, card], 'e1');
       expect(result[0].zone).toBe('evolveDeck-host');
+      expect(result[0].id).toBe('e1');
       expect(result[0].isFlipped).toBe(false);
+    });
+
+    it('should place newly banished cards on top of the banish stack', () => {
+      const oldBanish = createMockCard('old-banish', 'banish-host');
+      const card = createMockCard('new-banish', 'field-host');
+
+      const result = CardLogic.banishCard([oldBanish, card], 'new-banish');
+
+      expect(result[0].id).toBe('new-banish');
+      expect(result[1].id).toBe('old-banish');
     });
 
     it('should remove tokens when sending to cemetery', () => {
@@ -376,14 +388,38 @@ describe('CardLogic utils', () => {
     });
 
     it('should return attached evolve cards to evolve deck when sending the base card to cemetery', () => {
+      const oldCemetery = createMockCard('old-cemetery', 'cemetery-host');
+      const oldUsedEvo = { ...createMockCard('old-evo', 'evolveDeck-host'), isEvolveCard: true, isFlipped: false };
       const base = createMockCard('base', 'field-host');
       const evolve = { ...createMockCard('evo', 'field-host'), attachedTo: 'base', isEvolveCard: true };
 
-      const result = CardLogic.sendCardToCemetery([base, evolve], 'base');
+      const result = CardLogic.sendCardToCemetery([oldCemetery, oldUsedEvo, base, evolve], 'base');
 
       expect(result.find(c => c.id === 'base')?.zone).toBe('cemetery-host');
       expect(result.find(c => c.id === 'evo')?.zone).toBe('evolveDeck-host');
       expect(result.find(c => c.id === 'evo')?.attachedTo).toBeUndefined();
+      expect(result[0].id).toBe('base');
+      expect(result[1].id).toBe('evo');
+    });
+
+    it('should place newly sent cemetery cards on top of the cemetery stack', () => {
+      const oldCemetery = createMockCard('old-cemetery', 'cemetery-host');
+      const card = createMockCard('new-cemetery', 'field-host');
+
+      const result = CardLogic.sendCardToCemetery([oldCemetery, card], 'new-cemetery');
+
+      expect(result[0].id).toBe('new-cemetery');
+      expect(result[1].id).toBe('old-cemetery');
+    });
+
+    it('should place returned evolve cards on top of used evolve cards', () => {
+      const used = { ...createMockCard('used', 'evolveDeck-host'), isEvolveCard: true, isFlipped: false };
+      const card = { ...createMockCard('returning', 'field-host'), isEvolveCard: true };
+
+      const result = CardLogic.returnEvolveCard([used, card], 'returning');
+
+      expect(result[0].id).toBe('returning');
+      expect(result[1].id).toBe('used');
     });
 
     it('should move cards to field for the acting role', () => {
