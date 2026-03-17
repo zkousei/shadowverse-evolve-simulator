@@ -4,7 +4,7 @@ import Zone from '../components/Zone';
 import CardSearchModal from '../components/CardSearchModal';
 import TopDeckModal from '../components/TopDeckModal';
 import { useGameBoardLogic } from '../hooks/useGameBoardLogic';
-import { canImportDeck } from '../utils/gameRules';
+import { canImportDeck, canUndoLastTurn } from '../utils/gameRules';
 import { getPlayerLabel, getZoneOwner } from '../utils/soloMode';
 import type { PlayerRole } from '../types/game';
 
@@ -39,7 +39,7 @@ const GameBoard: React.FC = () => {
   const bottomLabel = getPlayerLabel(bottomRole, isSoloMode, 'My', 'Opponent', role);
   const searchTargetRole = searchZone ? getZoneOwner(searchZone.id) ?? role : role;
   const currentTurnLabel = gameState.turnPlayer === bottomRole ? bottomLabel : topLabel;
-  const canUndoTurn = Boolean(lastGameState) && (isSoloMode || gameState.turnPlayer !== role);
+  const canUndoTurn = canUndoLastTurn(gameState, lastGameState, role, isSoloMode);
   const sidePanelWidth = 220;
   const topPanelWidth = 188;
   const sideZoneWidth = 120;

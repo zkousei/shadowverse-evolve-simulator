@@ -437,6 +437,7 @@ export const useGameBoardLogic = () => {
 
   const confirmResetGame = () => {
     setShowResetConfirm(false);
+    setLastGameState(null);
     dispatchGameEvent({ type: 'RESET_GAME' });
   };
 

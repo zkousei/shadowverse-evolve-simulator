@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { initialState } from '../types/game';
-import { canImportDeck } from './gameRules';
+import { canImportDeck, canUndoLastTurn } from './gameRules';
 
 describe('gameRules', () => {
   describe('canImportDeck', () => {
@@ -38,6 +38,37 @@ describe('gameRules', () => {
         ...initialState,
         guest: { ...initialState.guest, initialHandDrawn: true, isReady: true },
       }, 'host')).toBe(true);
+    });
+  });
+
+  describe('canUndoLastTurn', () => {
+    it('blocks undo when there is no previous end-turn snapshot', () => {
+      expect(canUndoLastTurn(initialState, null, 'host', false)).toBe(false);
+    });
+
+    it('blocks undo while the game is not playing', () => {
+      expect(canUndoLastTurn(initialState, initialState, 'host', true)).toBe(false);
+    });
+
+    it('allows undo in solo mode while playing if a snapshot exists', () => {
+      expect(canUndoLastTurn({
+        ...initialState,
+        gameStatus: 'playing',
+      }, initialState, 'host', true)).toBe(true);
+    });
+
+    it('allows undo in p2p only on the non-turn player side', () => {
+      expect(canUndoLastTurn({
+        ...initialState,
+        gameStatus: 'playing',
+        turnPlayer: 'guest',
+      }, initialState, 'host', false)).toBe(true);
+
+      expect(canUndoLastTurn({
+        ...initialState,
+        gameStatus: 'playing',
+        turnPlayer: 'host',
+      }, initialState, 'host', false)).toBe(false);
     });
   });
 });
