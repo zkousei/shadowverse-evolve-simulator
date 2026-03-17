@@ -2,6 +2,12 @@ import type { CardInstance } from '../components/Card';
 import type { PlayerRole, SyncState } from './game';
 import type { TopDeckResult } from '../utils/cardLogic';
 
+export interface PublicCardView {
+  cardId: string;
+  name: string;
+  image: string;
+}
+
 export type GameSyncEvent =
   | { id: string; type: 'FLIP_SHARED_COIN'; actor: PlayerRole }
   | { id: string; type: 'ROLL_SHARED_DIE'; actor: PlayerRole }
@@ -21,7 +27,7 @@ export type GameSyncEvent =
   | { id: string; type: 'SEND_TO_CEMETERY'; actor: PlayerRole; cardId: string }
   | { id: string; type: 'RETURN_EVOLVE'; actor: PlayerRole; cardId: string }
   | { id: string; type: 'PLAY_TO_FIELD'; actor: PlayerRole; cardId: string }
-  | { id: string; type: 'EXTRACT_CARD'; actor: PlayerRole; cardId: string; destination?: string }
+  | { id: string; type: 'EXTRACT_CARD'; actor: PlayerRole; cardId: string; destination?: string; revealToOpponent?: boolean }
   | { id: string; type: 'SHUFFLE_DECK'; actor: PlayerRole }
   | { id: string; type: 'MODIFY_PLAYER_STAT'; actor: PlayerRole; playerKey: PlayerRole; stat: 'hp' | 'pp' | 'maxPp' | 'ep' | 'sep' | 'combo'; delta: number }
   | { id: string; type: 'DRAW_INITIAL_HAND'; actor: PlayerRole }
@@ -35,7 +41,9 @@ export type GameSyncEvent =
 export type SharedUiEffect =
   | { type: 'COIN_FLIP_RESULT'; actor: PlayerRole; result: 'HEADS (表)' | 'TAILS (裏)' }
   | { type: 'DICE_ROLL_RESULT'; actor: PlayerRole; value: number }
-  | { type: 'STARTER_DECIDED'; actor: PlayerRole; starter: PlayerRole; manual: boolean };
+  | { type: 'STARTER_DECIDED'; actor: PlayerRole; starter: PlayerRole; manual: boolean }
+  | { type: 'REVEAL_TOP_DECK_CARDS'; actor: PlayerRole; cards: PublicCardView[] }
+  | { type: 'REVEAL_SEARCHED_CARD_TO_HAND'; actor: PlayerRole; cards: PublicCardView[] };
 
 export type SyncMessage =
   | { type: 'EVENT'; event: GameSyncEvent }

@@ -71,6 +71,7 @@ describe('CardSearchModal', () => {
 
     expect(screen.getByText('Play to Field')).toBeInTheDocument();
     expect(screen.getByText('Add to Hand')).toBeInTheDocument();
+    expect(screen.getByText('Reveal & Add to Hand')).toBeInTheDocument();
     expect(screen.getByText('Add to EX Area')).toBeInTheDocument();
   });
 
@@ -109,11 +110,13 @@ describe('CardSearchModal', () => {
 
     fireEvent.click(screen.getByText('Play to Field'));
     fireEvent.click(screen.getByText('Add to Hand'));
+    fireEvent.click(screen.getByText('Reveal & Add to Hand'));
     fireEvent.click(screen.getByText('Add to EX Area'));
 
     expect(onExtractCard).toHaveBeenNthCalledWith(1, 'card-1', 'field-host');
     expect(onExtractCard).toHaveBeenNthCalledWith(2, 'card-1', 'hand-host');
-    expect(onExtractCard).toHaveBeenNthCalledWith(3, 'card-1', 'ex-host');
+    expect(onExtractCard).toHaveBeenNthCalledWith(3, 'card-1', 'hand-host', true);
+    expect(onExtractCard).toHaveBeenNthCalledWith(4, 'card-1', 'ex-host');
   });
 
   it('fires evolve-deck usage toggle and shows the unused label when face-up', () => {

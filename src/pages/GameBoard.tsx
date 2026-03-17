@@ -11,7 +11,7 @@ import type { PlayerRole } from '../types/game';
 const GameBoard: React.FC = () => {
   const {
     room, isSoloMode, isHost, role, status, gameState, searchZone, setSearchZone,
-    showResetConfirm, setShowResetConfirm, coinMessage, turnMessage,
+    showResetConfirm, setShowResetConfirm, coinMessage, turnMessage, revealedCardsOverlay,
     isRollingDice, diceValue, mulliganOrder, isMulliganModalOpen, setIsMulliganModalOpen,
     handleStatChange, setPhase, endTurn, handleUndoTurn, handleSetInitialTurnOrder,
     handlePureCoinFlip, handleRollDice, handleStartGame, handleToggleReady,
@@ -852,7 +852,7 @@ const GameBoard: React.FC = () => {
             : getCards(searchZone.id)
           ).slice()
         ) : []}
-        onExtractCard={(cardId, destination) => handleExtractCard(cardId, destination, searchTargetRole)}
+        onExtractCard={(cardId, destination, revealToOpponent) => handleExtractCard(cardId, destination, searchTargetRole, revealToOpponent)}
         onToggleFlip={(cardId) => handleFlipCard(cardId, searchTargetRole)}
         viewerRole={searchTargetRole}
         targetRole={searchTargetRole}
@@ -914,6 +914,41 @@ const GameBoard: React.FC = () => {
           letterSpacing: '8px'
         }}>
           {turnMessage}
+        </div>
+      )}
+
+      {revealedCardsOverlay && (
+        <div style={{
+          position: 'fixed',
+          top: '18%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          background: 'rgba(3, 7, 18, 0.96)',
+          border: '2px solid #14b8a6',
+          borderRadius: '16px',
+          padding: '1.25rem 1.5rem',
+          zIndex: 2100,
+          boxShadow: '0 0 30px rgba(20,184,166,0.25)',
+          minWidth: '320px',
+          maxWidth: '90vw'
+        }}>
+          <div style={{ color: '#99f6e4', fontWeight: 'bold', fontSize: '1rem', marginBottom: '0.9rem', textAlign: 'center' }}>
+            {revealedCardsOverlay.title}
+          </div>
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            {revealedCardsOverlay.cards.map((card) => (
+              <div key={`${card.cardId}-${card.name}`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem', maxWidth: '120px' }}>
+                <img
+                  src={card.image}
+                  alt={card.name}
+                  style={{ width: '90px', height: '126px', objectFit: 'cover', borderRadius: '8px', boxShadow: '0 4px 14px rgba(0,0,0,0.45)' }}
+                />
+                <div style={{ color: 'white', fontSize: '0.7rem', textAlign: 'center', lineHeight: 1.3 }}>
+                  {card.name}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

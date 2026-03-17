@@ -40,6 +40,16 @@ export const formatSharedUiMessage = (
     return `${actorLabel} rolled: ${effect.value}`;
   }
 
+  if (effect.type === 'REVEAL_TOP_DECK_CARDS') {
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode);
+    return `${actorLabel} revealed from Look Top`;
+  }
+
+  if (effect.type === 'REVEAL_SEARCHED_CARD_TO_HAND') {
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode);
+    return `${actorLabel} revealed from Search`;
+  }
+
   const starterLabel = getSharedActorLabel(effect.starter, viewerRole, isSoloMode);
   const baseMessage = `${starterLabel} will go first!`;
   return effect.manual ? `Manually set: ${baseMessage}` : baseMessage;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { CardInstance } from './Card';
 
-export type TopDeckAction = 'hand' | 'field' | 'ex' | 'cemetery' | 'top' | 'bottom';
+export type TopDeckAction = 'hand' | 'revealedHand' | 'field' | 'ex' | 'cemetery' | 'top' | 'bottom';
 
 interface TopDeckModalProps {
   isOpen: boolean;
@@ -72,6 +72,7 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, onConfirm, o
   const actionButtons: { id: TopDeckAction; label: string; color: string }[] = [
     { id: 'field', label: '場 (Field)', color: '#f59e0b' },
     { id: 'hand', label: '手札 (Hand)', color: '#10b981' },
+    { id: 'revealedHand', label: '公開して手札', color: '#14b8a6' },
     { id: 'ex', label: 'EXエリア', color: '#ec4899' },
     { id: 'bottom', label: '山下 (Bottom)', color: '#8b5cf6' },
     { id: 'top', label: '山上 (Top)', color: '#3b82f6' },
