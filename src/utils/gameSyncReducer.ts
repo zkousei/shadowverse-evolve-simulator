@@ -1,6 +1,7 @@
 import type { SyncState } from '../types/game';
 import type { GameSyncEvent } from '../types/sync';
 import * as CardLogic from './cardLogic';
+import { canImportDeck } from './gameRules';
 
 const bumpRevision = (state: SyncState): SyncState => ({
   ...state,
@@ -53,6 +54,10 @@ export const applyGameSyncEvent = (
   event: GameSyncEvent
 ): SyncState => {
   switch (event.type) {
+    case 'FLIP_SHARED_COIN':
+    case 'ROLL_SHARED_DIE':
+      return state;
+
     case 'TOGGLE_READY':
       return bumpRevision({
         ...state,
@@ -333,9 +338,16 @@ export const applyGameSyncEvent = (
     }
 
     case 'IMPORT_DECK': {
+      if (!canImportDeck(state, event.actor)) return state;
       const nextCards = CardLogic.importDeckCards(state.cards, event.actor, event.cards);
       return bumpRevision({
         ...state,
+        [event.actor]: {
+          ...state[event.actor],
+          initialHandDrawn: false,
+          mulliganUsed: false,
+          isReady: false,
+        },
         cards: nextCards,
       });
     }

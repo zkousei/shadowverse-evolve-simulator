@@ -4,13 +4,17 @@ import Peer, { type DataConnection } from 'peerjs';
 import { type DragEndEvent } from '@dnd-kit/core';
 import { type CardInstance } from '../components/Card';
 import { type PlayerRole, type SyncState, initialState } from '../types/game';
-import { type GameSyncEvent, type SyncMessage } from '../types/sync';
+import { type GameSyncEvent, type SharedUiEffect, type SyncMessage } from '../types/sync';
 import { uuid } from '../utils/helpers';
 import * as CardLogic from '../utils/cardLogic';
 import { canImportDeck } from '../utils/gameRules';
 import { applyGameSyncEvent } from '../utils/gameSyncReducer';
+import { flipSharedCoin, formatSharedUiMessage, rollSharedDie } from '../utils/sharedRandom';
+import { createEventDeduper } from '../utils/eventDeduper';
 
 type DispatchableGameSyncEvent =
+  | { type: 'FLIP_SHARED_COIN'; actor?: PlayerRole }
+  | { type: 'ROLL_SHARED_DIE'; actor?: PlayerRole }
   | { type: 'TOGGLE_READY'; actor?: PlayerRole }
   | { type: 'SET_PHASE'; actor?: PlayerRole; phase: SyncState['phase'] }
   | { type: 'END_TURN'; actor?: PlayerRole }
@@ -34,7 +38,7 @@ type DispatchableGameSyncEvent =
   | { type: 'EXECUTE_MULLIGAN'; actor?: PlayerRole; selectedIds: string[] }
   | { type: 'RESOLVE_TOP_DECK'; actor?: PlayerRole; results: CardLogic.TopDeckResult[] }
   | { type: 'IMPORT_DECK'; actor?: PlayerRole; cards: CardInstance[] }
-  | { type: 'SET_INITIAL_TURN_ORDER'; actor?: PlayerRole; starter: PlayerRole }
+  | { type: 'SET_INITIAL_TURN_ORDER'; actor?: PlayerRole; starter: PlayerRole; manual: boolean }
   | { type: 'UNDO_LAST_TURN'; actor?: PlayerRole; previousState: SyncState }
   | { type: 'SPAWN_TOKEN'; actor?: PlayerRole; token: CardInstance };
 
@@ -65,6 +69,11 @@ export const useGameBoardLogic = () => {
   const peerRef = useRef<Peer | null>(null);
   const connRef = useRef<DataConnection | null>(null);
   const gameStateRef = useRef<SyncState>(initialState);
+  const coinMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const diceRollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const diceFinalizeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const diceMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const processedEventDeduperRef = useRef(createEventDeduper());
 
   const applyLocalState = useCallback((newState: SyncState) => {
     const guardedCards = CardLogic.applyStateWithGuards(newState.cards);
@@ -86,6 +95,84 @@ export const useGameBoardLogic = () => {
     sendMessage({ type: 'STATE_SNAPSHOT', state, source });
   }, [sendMessage]);
 
+  const sendSharedUiEffect = useCallback((effect: SharedUiEffect) => {
+    sendMessage({ type: 'SHARED_UI_EFFECT', effect });
+  }, [sendMessage]);
+
+  const clearCoinMessageTimer = useCallback(() => {
+    if (coinMessageTimeoutRef.current) {
+      clearTimeout(coinMessageTimeoutRef.current);
+      coinMessageTimeoutRef.current = null;
+    }
+  }, []);
+
+  const showTimedCoinMessage = useCallback((message: string, durationMs: number) => {
+    clearCoinMessageTimer();
+    setCoinMessage(message);
+    coinMessageTimeoutRef.current = setTimeout(() => {
+      setCoinMessage(null);
+      coinMessageTimeoutRef.current = null;
+    }, durationMs);
+  }, [clearCoinMessageTimer]);
+
+  const clearDiceTimers = useCallback(() => {
+    if (diceRollIntervalRef.current) {
+      clearInterval(diceRollIntervalRef.current);
+      diceRollIntervalRef.current = null;
+    }
+    if (diceFinalizeTimeoutRef.current) {
+      clearTimeout(diceFinalizeTimeoutRef.current);
+      diceFinalizeTimeoutRef.current = null;
+    }
+    if (diceMessageTimeoutRef.current) {
+      clearTimeout(diceMessageTimeoutRef.current);
+      diceMessageTimeoutRef.current = null;
+    }
+  }, []);
+
+  const playSharedUiEffect = useCallback((effect: SharedUiEffect) => {
+    if (effect.type === 'COIN_FLIP_RESULT') {
+      showTimedCoinMessage(formatSharedUiMessage(effect, role, isSoloMode), 3000);
+      return;
+    }
+
+    if (effect.type === 'STARTER_DECIDED') {
+      showTimedCoinMessage(formatSharedUiMessage(effect, role, isSoloMode), 4000);
+      return;
+    }
+
+    clearDiceTimers();
+    clearCoinMessageTimer();
+    setIsRollingDice(true);
+    setCoinMessage(null);
+
+    let rolls = 0;
+    const maxRolls = 15;
+    diceRollIntervalRef.current = setInterval(() => {
+      setDiceValue(Math.floor(Math.random() * 6) + 1);
+      rolls += 1;
+      if (rolls >= maxRolls && diceRollIntervalRef.current) {
+        clearInterval(diceRollIntervalRef.current);
+        diceRollIntervalRef.current = null;
+      }
+    }, 60);
+
+    diceFinalizeTimeoutRef.current = setTimeout(() => {
+      if (diceRollIntervalRef.current) {
+        clearInterval(diceRollIntervalRef.current);
+        diceRollIntervalRef.current = null;
+      }
+      setDiceValue(effect.value);
+      showTimedCoinMessage(formatSharedUiMessage(effect, role, isSoloMode), 3000);
+      diceMessageTimeoutRef.current = setTimeout(() => {
+        setIsRollingDice(false);
+        setDiceValue(null);
+        diceMessageTimeoutRef.current = null;
+      }, 800);
+      diceFinalizeTimeoutRef.current = null;
+    }, 900);
+  }, [clearCoinMessageTimer, clearDiceTimers, isSoloMode, role, showTimedCoinMessage]);
+
   const maybeApplySnapshot = useCallback((incomingState: SyncState, source: PlayerRole) => {
     const currentRevision = gameStateRef.current.revision;
     if (incomingState.revision < currentRevision) return;
@@ -95,6 +182,32 @@ export const useGameBoardLogic = () => {
   }, [applyLocalState, isHost]);
 
   const applyAuthoritativeEvent = useCallback((event: GameSyncEvent) => {
+    if (!processedEventDeduperRef.current.markIfNew(event.id)) {
+      return;
+    }
+
+    if (event.type === 'FLIP_SHARED_COIN') {
+      const effect: SharedUiEffect = {
+        type: 'COIN_FLIP_RESULT',
+        actor: event.actor,
+        result: flipSharedCoin(),
+      };
+      playSharedUiEffect(effect);
+      sendSharedUiEffect(effect);
+      return;
+    }
+
+    if (event.type === 'ROLL_SHARED_DIE') {
+      const effect: SharedUiEffect = {
+        type: 'DICE_ROLL_RESULT',
+        actor: event.actor,
+        value: rollSharedDie(),
+      };
+      playSharedUiEffect(effect);
+      sendSharedUiEffect(effect);
+      return;
+    }
+
     const currentState = gameStateRef.current;
     if (event.type === 'END_TURN') {
       setLastGameState(JSON.parse(JSON.stringify(currentState)));
@@ -103,7 +216,18 @@ export const useGameBoardLogic = () => {
     if (nextState === currentState) return;
     applyLocalState(nextState);
     sendSnapshot(nextState, role);
-  }, [applyLocalState, role, sendSnapshot]);
+
+    if (event.type === 'SET_INITIAL_TURN_ORDER') {
+      const effect: SharedUiEffect = {
+        type: 'STARTER_DECIDED',
+        actor: event.actor,
+        starter: event.starter,
+        manual: event.manual,
+      };
+      playSharedUiEffect(effect);
+      sendSharedUiEffect(effect);
+    }
+  }, [applyLocalState, playSharedUiEffect, role, sendSharedUiEffect, sendSnapshot]);
 
   const dispatchGameEvent = useCallback((event: DispatchableGameSyncEvent) => {
     const fullEvent: GameSyncEvent = {
@@ -133,19 +257,25 @@ export const useGameBoardLogic = () => {
         }
         return;
       }
+      if (data.type === 'SHARED_UI_EFFECT') {
+        playSharedUiEffect(data.effect);
+        return;
+      }
       if (data.type === 'STATE_SNAPSHOT') {
         maybeApplySnapshot(data.state, data.source);
       }
     });
     conn.on('close', () => setStatus('Opponent disconnected.'));
-  }, [applyAuthoritativeEvent, applyLocalState, isHost, maybeApplySnapshot]);
+  }, [applyAuthoritativeEvent, isHost, maybeApplySnapshot, playSharedUiEffect]);
 
   useEffect(() => {
     if (isSoloMode) {
       setStatus('Solo Mode');
+      processedEventDeduperRef.current.reset();
       return;
     }
     if (!room) return;
+    processedEventDeduperRef.current.reset();
     const peerId = isHost ? `sv-evolve-${room}` : undefined;
     const peer = peerId ? new Peer(peerId) : new Peer();
     peerRef.current = peer;
@@ -197,6 +327,13 @@ export const useGameBoardLogic = () => {
   }, [applyLocalState, isDebug]);
 
   useEffect(() => {
+    return () => {
+      clearCoinMessageTimer();
+      clearDiceTimers();
+    };
+  }, [clearCoinMessageTimer, clearDiceTimers]);
+
+  useEffect(() => {
     if (gameState.gameStatus !== 'playing') return;
     if (!isSoloMode && gameState.turnPlayer !== role) return;
     if (gameState.turnCount === 0) return;
@@ -227,41 +364,16 @@ export const useGameBoardLogic = () => {
   const handleSetInitialTurnOrder = (forcedStarter?: 'host' | 'guest') => {
     const isHostFirst = forcedStarter ? (forcedStarter === 'host') : (Math.random() > 0.5);
     const starter = isHostFirst ? 'host' : 'guest';
-    dispatchGameEvent({ type: 'SET_INITIAL_TURN_ORDER', starter });
-    const msg = isSoloMode
-      ? `${starter === 'host' ? 'Player 1' : 'Player 2'} will go first!`
-      : `${starter === role ? "You" : "Opponent"} will go first!`;
-    setCoinMessage(forcedStarter ? `Manually set: ${msg}` : msg);
-    setTimeout(() => setCoinMessage(null), 4000);
+    dispatchGameEvent({ type: 'SET_INITIAL_TURN_ORDER', starter, manual: Boolean(forcedStarter) });
   };
 
   const handlePureCoinFlip = () => {
-    const isHeads = Math.random() > 0.5;
-    const result = isHeads ? "HEADS (表)" : "TAILS (裏)";
-    setCoinMessage(`Result: ${result}`);
-    setTimeout(() => setCoinMessage(null), 3000);
+    dispatchGameEvent({ type: 'FLIP_SHARED_COIN' });
   };
 
   const handleRollDice = () => {
     if (isRollingDice) return;
-    setIsRollingDice(true);
-    let rolls = 0;
-    const maxRolls = 15;
-    const interval = setInterval(() => {
-      setDiceValue(Math.floor(Math.random() * 6) + 1);
-      rolls++;
-      if (rolls >= maxRolls) {
-        clearInterval(interval);
-        const finalValue = Math.floor(Math.random() * 6) + 1;
-        setDiceValue(finalValue);
-        setCoinMessage(`DIE ROLL: ${finalValue}`);
-        setTimeout(() => {
-          setIsRollingDice(false);
-          setDiceValue(null);
-          setTimeout(() => setCoinMessage(null), 3000);
-        }, 800);
-      }
-    }, 60);
+    dispatchGameEvent({ type: 'ROLL_SHARED_DIE' });
   };
 
   const handleStartGame = () => {
@@ -326,7 +438,7 @@ export const useGameBoardLogic = () => {
   };
 
   const handleDeckUpload = (event: React.ChangeEvent<HTMLInputElement>, targetRole: PlayerRole = role) => {
-    if (!canImportDeck(gameState.gameStatus)) {
+    if (!canImportDeck(gameState, targetRole)) {
       event.target.value = '';
       return;
     }

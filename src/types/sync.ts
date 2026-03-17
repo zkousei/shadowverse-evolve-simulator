@@ -3,6 +3,8 @@ import type { PlayerRole, SyncState } from './game';
 import type { TopDeckResult } from '../utils/cardLogic';
 
 export type GameSyncEvent =
+  | { id: string; type: 'FLIP_SHARED_COIN'; actor: PlayerRole }
+  | { id: string; type: 'ROLL_SHARED_DIE'; actor: PlayerRole }
   | { id: string; type: 'TOGGLE_READY'; actor: PlayerRole }
   | { id: string; type: 'SET_PHASE'; actor: PlayerRole; phase: SyncState['phase'] }
   | { id: string; type: 'END_TURN'; actor: PlayerRole }
@@ -26,10 +28,16 @@ export type GameSyncEvent =
   | { id: string; type: 'EXECUTE_MULLIGAN'; actor: PlayerRole; selectedIds: string[] }
   | { id: string; type: 'RESOLVE_TOP_DECK'; actor: PlayerRole; results: TopDeckResult[] }
   | { id: string; type: 'IMPORT_DECK'; actor: PlayerRole; cards: CardInstance[] }
-  | { id: string; type: 'SET_INITIAL_TURN_ORDER'; actor: PlayerRole; starter: PlayerRole }
+  | { id: string; type: 'SET_INITIAL_TURN_ORDER'; actor: PlayerRole; starter: PlayerRole; manual: boolean }
   | { id: string; type: 'UNDO_LAST_TURN'; actor: PlayerRole; previousState: SyncState }
   | { id: string; type: 'SPAWN_TOKEN'; actor: PlayerRole; token: CardInstance };
 
+export type SharedUiEffect =
+  | { type: 'COIN_FLIP_RESULT'; actor: PlayerRole; result: 'HEADS (表)' | 'TAILS (裏)' }
+  | { type: 'DICE_ROLL_RESULT'; actor: PlayerRole; value: number }
+  | { type: 'STARTER_DECIDED'; actor: PlayerRole; starter: PlayerRole; manual: boolean };
+
 export type SyncMessage =
   | { type: 'EVENT'; event: GameSyncEvent }
-  | { type: 'STATE_SNAPSHOT'; state: SyncState; source: PlayerRole };
+  | { type: 'STATE_SNAPSHOT'; state: SyncState; source: PlayerRole }
+  | { type: 'SHARED_UI_EFFECT'; effect: SharedUiEffect };

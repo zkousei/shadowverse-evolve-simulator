@@ -866,6 +866,9 @@ describe('gameSyncReducer', () => {
     });
     expect(imported.cards.map(c => c.id)).toContain('new1');
     expect(imported.cards.map(c => c.id)).not.toContain('d1');
+    expect(imported.host.initialHandDrawn).toBe(false);
+    expect(imported.host.mulliganUsed).toBe(false);
+    expect(imported.host.isReady).toBe(false);
 
     const shuffled = applyGameSyncEvent(baseState, {
       id: 'evt-20b',
@@ -874,6 +877,47 @@ describe('gameSyncReducer', () => {
     });
     expect(shuffled.revision).toBe(baseState.revision + 1);
     expect(shuffled.cards.filter(c => c.zone === 'mainDeck-host')).toHaveLength(5);
+  });
+
+  it('blocks deck import after the target player has started preparing', () => {
+    const state = createState({
+      revision: 6,
+      host: { ...initialState.host, initialHandDrawn: true },
+      cards: [
+        {
+          id: 'original-host-card',
+          cardId: 'BP01-001',
+          name: 'Original',
+          image: '',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    const result = applyGameSyncEvent(state, {
+      id: 'evt-import-blocked',
+      type: 'IMPORT_DECK',
+      actor: 'host',
+      cards: [
+        {
+          id: 'new-host-card',
+          cardId: 'BP01-999',
+          name: 'Blocked Import',
+          image: '',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    expect(result).toBe(state);
   });
 
   it('forces all field cards face-up when the game starts', () => {
@@ -941,6 +985,7 @@ describe('gameSyncReducer', () => {
       type: 'SET_INITIAL_TURN_ORDER',
       actor: 'host',
       starter: 'guest',
+      manual: false,
     });
     expect(ordered.turnPlayer).toBe('guest');
     expect(ordered.guest.ep).toBe(0);

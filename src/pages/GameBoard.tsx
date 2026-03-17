@@ -30,10 +30,11 @@ const GameBoard: React.FC = () => {
   const [topDeckTargetRole, setTopDeckTargetRole] = React.useState<PlayerRole>('host');
   const [mulliganTargetRole, setMulliganTargetRole] = React.useState<PlayerRole>('host');
   const [activeZoneActions, setActiveZoneActions] = React.useState<string | null>(null);
-  const canImportCurrentDeck = canImportDeck(gameState.gameStatus);
   const viewerRole = isSoloMode ? 'all' : role;
   const topRole = (isSoloMode ? 'guest' : role === 'host' ? 'guest' : 'host') as PlayerRole;
   const bottomRole = (isSoloMode ? 'host' : role) as PlayerRole;
+  const canImportTopDeck = canImportDeck(gameState, topRole);
+  const canImportBottomDeck = canImportDeck(gameState, bottomRole);
   const topLabel = getPlayerLabel(topRole, isSoloMode, 'My', 'Opponent', role);
   const bottomLabel = getPlayerLabel(bottomRole, isSoloMode, 'My', 'Opponent', role);
   const searchTargetRole = searchZone ? getZoneOwner(searchZone.id) ?? role : role;
@@ -461,9 +462,9 @@ const GameBoard: React.FC = () => {
                       padding: '0.5rem',
                       background: 'var(--bg-surface-elevated)',
                       textAlign: 'center',
-                      cursor: canImportCurrentDeck ? 'pointer' : 'not-allowed',
+                      cursor: canImportTopDeck ? 'pointer' : 'not-allowed',
                       fontSize: '0.875rem',
-                      opacity: canImportCurrentDeck ? 1 : 0.5
+                      opacity: canImportTopDeck ? 1 : 0.5
                     }}
                   >
                     Import {topLabel} Deck
@@ -472,7 +473,7 @@ const GameBoard: React.FC = () => {
                       accept=".json"
                       style={{ display: 'none' }}
                       onChange={(event) => handleDeckUpload(event, topRole)}
-                      disabled={!canImportCurrentDeck}
+                      disabled={!canImportTopDeck}
                     />
                   </label>
                   <button onClick={() => drawCard(topRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing'} style={{ padding: '0.5rem', background: '#6366f1', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' ? 'pointer' : 'not-allowed' }}>
@@ -707,9 +708,9 @@ const GameBoard: React.FC = () => {
                       padding: '0.5rem',
                       background: 'var(--bg-surface-elevated)',
                       textAlign: 'center',
-                      cursor: canImportCurrentDeck ? 'pointer' : 'not-allowed',
+                      cursor: canImportBottomDeck ? 'pointer' : 'not-allowed',
                       fontSize: '0.875rem',
-                      opacity: canImportCurrentDeck ? 1 : 0.5
+                      opacity: canImportBottomDeck ? 1 : 0.5
                     }}
                   >
                     Import {bottomLabel} Deck
@@ -718,7 +719,7 @@ const GameBoard: React.FC = () => {
                       accept=".json"
                       style={{ display: 'none' }}
                       onChange={(event) => handleDeckUpload(event, bottomRole)}
-                      disabled={!canImportCurrentDeck}
+                      disabled={!canImportBottomDeck}
                     />
                   </label>
                 ) : (
@@ -728,9 +729,9 @@ const GameBoard: React.FC = () => {
                       padding: '0.5rem',
                       background: 'var(--bg-surface-elevated)',
                       textAlign: 'center',
-                      cursor: canImportCurrentDeck ? 'pointer' : 'not-allowed',
+                      cursor: canImportBottomDeck ? 'pointer' : 'not-allowed',
                       fontSize: '0.875rem',
-                      opacity: canImportCurrentDeck ? 1 : 0.5
+                      opacity: canImportBottomDeck ? 1 : 0.5
                     }}
                   >
                     Import Deck (.json)
@@ -739,7 +740,7 @@ const GameBoard: React.FC = () => {
                       accept=".json"
                       style={{ display: 'none' }}
                       onChange={(event) => handleDeckUpload(event, bottomRole)}
-                      disabled={!canImportCurrentDeck}
+                      disabled={!canImportBottomDeck}
                     />
                   </label>
                 )}
