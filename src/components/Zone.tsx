@@ -26,6 +26,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, onTap, onModifyCounter, onSen
   const { isOver, setNodeRef } = useDroppable({ id });
 
   const isStack = layout === 'stack';
+  const displayLabel = label.replace(/^(My|Opponent|Player 1|Player 2)\s+/, '');
 
   return (
     <div
@@ -47,8 +48,67 @@ const Zone: React.FC<Props> = ({ id, label, cards, onTap, onModifyCounter, onSen
         ...containerStyle
       }}
     >
-      <div style={{ position: 'absolute', top: -10, left: 10, background: 'var(--bg-surface-elevated)', padding: '0 8px', fontSize: '0.75rem', fontWeight: 'bold' }}>
-        {label} ({cards.length})
+      <div
+        style={{
+          position: 'absolute',
+          top: -12,
+          left: 10,
+          zIndex: 20,
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          maxWidth: 'calc(100% - 20px)',
+          padding: '2px 8px',
+          background: 'rgba(17, 24, 39, 0.92)',
+          border: '1px solid rgba(255,255,255,0.16)',
+          borderRadius: '999px',
+          boxShadow: '0 6px 16px rgba(0,0,0,0.35)',
+          backdropFilter: 'blur(6px)',
+          pointerEvents: 'none'
+        }}
+      >
+        <span
+          style={{
+            position: 'absolute',
+            width: '1px',
+            height: '1px',
+            padding: 0,
+            margin: '-1px',
+            overflow: 'hidden',
+            clip: 'rect(0, 0, 0, 0)',
+            whiteSpace: 'nowrap',
+            border: 0
+          }}
+        >
+          {label} ({cards.length})
+        </span>
+        <span
+          style={{
+            fontSize: '0.72rem',
+            fontWeight: 'bold',
+            color: 'white',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+          }}
+        >
+          {displayLabel}
+        </span>
+        <span
+          style={{
+            flex: '0 0 auto',
+            minWidth: '22px',
+            padding: '0 6px',
+            borderRadius: '999px',
+            background: 'rgba(59, 130, 246, 0.24)',
+            color: '#bfdbfe',
+            fontSize: '0.7rem',
+            fontWeight: 'bold',
+            textAlign: 'center'
+          }}
+        >
+          {cards.length}
+        </span>
       </div>
 
       {(() => {
