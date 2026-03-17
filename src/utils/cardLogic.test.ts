@@ -270,6 +270,17 @@ describe('CardLogic utils', () => {
 
       expect(result.find(c => c.id === 'token-1')).toBeUndefined();
     });
+
+    it('should delete nested attachments along with a token dropped into a safe zone', () => {
+      const token = { ...createMockCard('token-1', 'field-host'), cardId: 'token' };
+      const child = { ...createMockCard('child-1', 'field-host'), attachedTo: 'token-1' };
+      const grandchild = { ...createMockCard('grandchild-1', 'field-host'), attachedTo: 'child-1' };
+      const deck = createMockCard('deck', 'mainDeck-host');
+
+      const result = CardLogic.applyDrop([token, child, grandchild, deck], 'token-1', 'deck');
+
+      expect(result.map(c => c.id)).toEqual(['deck']);
+    });
   });
 
   describe('modifyCardCounter', () => {
@@ -328,6 +339,16 @@ describe('CardLogic utils', () => {
     it('should remove tokens when sending to cemetery', () => {
       const token = { ...createMockCard('t1', 'field-host'), cardId: 'token' };
       const result = CardLogic.sendCardToCemetery([token], 't1');
+      expect(result).toEqual([]);
+    });
+
+    it('should remove nested attachments when sending a token to the bottom of the deck', () => {
+      const token = { ...createMockCard('t1', 'field-host'), cardId: 'token' };
+      const child = { ...createMockCard('t2', 'field-host'), attachedTo: 't1' };
+      const grandchild = { ...createMockCard('t3', 'field-host'), attachedTo: 't2' };
+
+      const result = CardLogic.sendCardToBottom([token, child, grandchild], 't1');
+
       expect(result).toEqual([]);
     });
 

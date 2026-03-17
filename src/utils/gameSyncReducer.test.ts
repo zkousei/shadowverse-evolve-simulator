@@ -259,6 +259,68 @@ describe('gameSyncReducer', () => {
     expect(milled.cards.find(c => c.id === 'deck-2')?.zone).toBe('cemetery-host');
   });
 
+  it('applies top-deck resolution and appends imported cards with revision bumps', () => {
+    const state = createState({
+      revision: 10,
+      cards: [
+        {
+          id: 'deck-1',
+          cardId: 'BP01-013',
+          name: 'Deck Card',
+          image: '',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'guest-old',
+          cardId: 'BP01-014',
+          name: 'Guest Card',
+          image: '',
+          zone: 'mainDeck-guest',
+          owner: 'guest',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    const resolved = applyGameSyncEvent(state, {
+      id: 'evt-10',
+      type: 'RESOLVE_TOP_DECK',
+      actor: 'host',
+      results: [{ cardId: 'deck-1', action: 'hand' }],
+    });
+    expect(resolved.cards.find(c => c.id === 'deck-1')?.zone).toBe('hand-host');
+    expect(resolved.revision).toBe(11);
+
+    const imported = applyGameSyncEvent(resolved, {
+      id: 'evt-11',
+      type: 'IMPORT_DECK',
+      actor: 'host',
+      cards: [
+        {
+          id: 'new-host',
+          cardId: 'BP01-015',
+          name: 'New Host Card',
+          image: '',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    expect(imported.cards.find(c => c.id === 'new-host')).toBeDefined();
+    expect(imported.cards.find(c => c.id === 'guest-old')).toBeDefined();
+    expect(imported.revision).toBe(12);
+  });
+
   it('applies tap and flip events through shared card rules', () => {
     const state = createState({
       revision: 6,

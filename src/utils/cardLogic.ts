@@ -291,7 +291,7 @@ export const applyDrop = (
   if (!resolution) return cards;
 
   if (resolution.shouldDeleteToken) {
-    return cards.filter(c => c.id !== cardId && c.attachedTo !== cardId);
+    return removeTokenAndAttachments(cards, cardId);
   }
 
   return resolution.isReturningToDeck
@@ -339,7 +339,10 @@ export const toggleFlip = (
 const removeTokenAndAttachments = (
   cards: CardInstance[],
   cardId: string
-): CardInstance[] => cards.filter(c => c.id !== cardId && c.attachedTo !== cardId);
+): CardInstance[] => {
+  const descendantIds = collectDescendantIds(cards, cardId);
+  return cards.filter(c => c.id !== cardId && !descendantIds.has(c.id));
+};
 
 export const sendCardToBottom = (
   cards: CardInstance[],

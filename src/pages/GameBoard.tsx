@@ -24,6 +24,7 @@ const GameBoard: React.FC = () => {
 
   const [isTopNInputOpen, setIsTopNInputOpen] = React.useState(false);
   const [topNValue, setTopNValue] = React.useState(3);
+  const [showUndoConfirm, setShowUndoConfirm] = React.useState(false);
   const canImportCurrentDeck = canImportDeck(gameState.gameStatus);
 
   return (
@@ -139,7 +140,7 @@ const GameBoard: React.FC = () => {
 
             {gameState.turnPlayer !== role && lastGameState && (
               <button
-                onClick={handleUndoTurn}
+                onClick={() => setShowUndoConfirm(true)}
                 style={{
                   padding: '0.3rem 0.6rem',
                   background: '#ec4899',
@@ -561,6 +562,34 @@ const GameBoard: React.FC = () => {
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
               <button onClick={() => setShowResetConfirm(false)} style={{ padding: '0.5rem 1rem', background: 'var(--bg-surface)', border: '1px solid var(--border-light)', color: 'white', cursor: 'pointer', borderRadius: '4px' }}>Cancel</button>
               <button onClick={confirmResetGame} style={{ padding: '0.5rem 1rem', background: '#ef4444', border: 'none', color: 'white', cursor: 'pointer', borderRadius: '4px', fontWeight: 'bold' }}>Yes, Reset</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showUndoConfirm && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: 'var(--bg-surface-elevated)', padding: '2rem', borderRadius: 'var(--radius-md)', maxWidth: '420px', textAlign: 'center', border: '1px solid var(--border-light)' }}>
+            <h3 style={{ margin: '0 0 1rem 0', color: '#f9a8d4' }}>Undo Last End Turn</h3>
+            <p style={{ margin: '0 0 2rem 0', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+              相手のターン開始後の操作も取り消します。続けますか？
+            </p>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+              <button
+                onClick={() => setShowUndoConfirm(false)}
+                style={{ padding: '0.5rem 1rem', background: 'var(--bg-surface)', border: '1px solid var(--border-light)', color: 'white', cursor: 'pointer', borderRadius: '4px' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowUndoConfirm(false);
+                  handleUndoTurn();
+                }}
+                style={{ padding: '0.5rem 1rem', background: '#ec4899', border: 'none', color: 'white', cursor: 'pointer', borderRadius: '4px', fontWeight: 'bold' }}
+              >
+                Yes, Undo
+              </button>
             </div>
           </div>
         </div>
