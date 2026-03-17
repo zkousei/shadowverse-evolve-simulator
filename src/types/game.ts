@@ -22,6 +22,7 @@ export interface SyncState {
   turnCount: number;
   phase: 'Start' | 'Main' | 'End';
   gameStatus: 'preparing' | 'playing';
+  revision: number;
 }
 
 export const initialState: SyncState = {
@@ -31,5 +32,6 @@ export const initialState: SyncState = {
   turnPlayer: 'host',
   turnCount: 1,
   phase: 'Start',
-  gameStatus: 'preparing'
+  gameStatus: 'preparing',
+  revision: 0
 };

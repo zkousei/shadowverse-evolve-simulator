@@ -3,10 +3,40 @@ import { useSearchParams } from 'react-router-dom';
 import Peer, { type DataConnection } from 'peerjs';
 import { type DragEndEvent } from '@dnd-kit/core';
 import { type CardInstance } from '../components/Card';
-import { type SyncState, initialState } from '../types/game';
+import { type PlayerRole, type SyncState, initialState } from '../types/game';
+import { type GameSyncEvent, type SyncMessage } from '../types/sync';
 import { uuid } from '../utils/helpers';
 import * as CardLogic from '../utils/cardLogic';
 import { canImportDeck } from '../utils/gameRules';
+import { applyGameSyncEvent } from '../utils/gameSyncReducer';
+
+type DispatchableGameSyncEvent =
+  | { type: 'TOGGLE_READY'; actor?: PlayerRole }
+  | { type: 'SET_PHASE'; actor?: PlayerRole; phase: SyncState['phase'] }
+  | { type: 'END_TURN'; actor?: PlayerRole }
+  | { type: 'START_GAME'; actor?: PlayerRole }
+  | { type: 'RESET_GAME'; actor?: PlayerRole }
+  | { type: 'MOVE_CARD'; actor?: PlayerRole; cardId: string; overId: string }
+  | { type: 'MODIFY_COUNTER'; actor?: PlayerRole; cardId: string; stat: 'atk' | 'hp'; delta: number }
+  | { type: 'DRAW_CARD'; actor?: PlayerRole }
+  | { type: 'MILL_CARD'; actor?: PlayerRole }
+  | { type: 'TOGGLE_TAP'; actor?: PlayerRole; cardId: string }
+  | { type: 'TOGGLE_FLIP'; actor?: PlayerRole; cardId: string }
+  | { type: 'SEND_TO_BOTTOM'; actor?: PlayerRole; cardId: string }
+  | { type: 'BANISH_CARD'; actor?: PlayerRole; cardId: string }
+  | { type: 'SEND_TO_CEMETERY'; actor?: PlayerRole; cardId: string }
+  | { type: 'RETURN_EVOLVE'; actor?: PlayerRole; cardId: string }
+  | { type: 'PLAY_TO_FIELD'; actor?: PlayerRole; cardId: string }
+  | { type: 'EXTRACT_CARD'; actor?: PlayerRole; cardId: string; destination?: string }
+  | { type: 'SHUFFLE_DECK'; actor?: PlayerRole }
+  | { type: 'MODIFY_PLAYER_STAT'; actor?: PlayerRole; playerKey: PlayerRole; stat: 'hp' | 'pp' | 'maxPp' | 'ep' | 'sep' | 'combo'; delta: number }
+  | { type: 'DRAW_INITIAL_HAND'; actor?: PlayerRole }
+  | { type: 'EXECUTE_MULLIGAN'; actor?: PlayerRole; selectedIds: string[] }
+  | { type: 'RESOLVE_TOP_DECK'; actor?: PlayerRole; results: CardLogic.TopDeckResult[] }
+  | { type: 'IMPORT_DECK'; actor?: PlayerRole; cards: CardInstance[] }
+  | { type: 'SET_INITIAL_TURN_ORDER'; actor?: PlayerRole; starter: PlayerRole }
+  | { type: 'UNDO_LAST_TURN'; actor?: PlayerRole; previousState: SyncState }
+  | { type: 'SPAWN_TOKEN'; actor?: PlayerRole; token: CardInstance };
 
 export const useGameBoardLogic = () => {
   const [searchParams] = useSearchParams();
@@ -34,33 +64,78 @@ export const useGameBoardLogic = () => {
   const connRef = useRef<DataConnection | null>(null);
   const gameStateRef = useRef<SyncState>(initialState);
 
-  const syncState = useCallback((newState: SyncState) => {
+  const applyLocalState = useCallback((newState: SyncState) => {
     const guardedState: SyncState = {
       ...newState,
       cards: CardLogic.applyStateWithGuards(newState.cards)
     };
     setGameState(guardedState);
     gameStateRef.current = guardedState;
+  }, []);
+
+  const sendMessage = useCallback((message: SyncMessage) => {
     if (connRef.current?.open) {
-      connRef.current.send({ type: 'SYNC', state: guardedState });
+      connRef.current.send(message);
     }
   }, []);
+
+  const sendSnapshot = useCallback((state: SyncState, source: PlayerRole) => {
+    sendMessage({ type: 'STATE_SNAPSHOT', state, source });
+  }, [sendMessage]);
+
+  const maybeApplySnapshot = useCallback((incomingState: SyncState, source: PlayerRole) => {
+    const currentRevision = gameStateRef.current.revision;
+    if (incomingState.revision < currentRevision) return;
+    if (incomingState.revision === currentRevision && !(source === 'host' && !isHost)) return;
+    applyLocalState(incomingState);
+    setLastGameState(null);
+  }, [applyLocalState, isHost]);
+
+  const applyAuthoritativeEvent = useCallback((event: GameSyncEvent) => {
+    const currentState = gameStateRef.current;
+    if (event.type === 'END_TURN') {
+      setLastGameState(JSON.parse(JSON.stringify(currentState)));
+    }
+    const nextState = applyGameSyncEvent(currentState, event);
+    if (nextState === currentState) return;
+    applyLocalState(nextState);
+    sendSnapshot(nextState, role);
+  }, [applyLocalState, role, sendSnapshot]);
+
+  const dispatchGameEvent = useCallback((event: DispatchableGameSyncEvent) => {
+    const fullEvent: GameSyncEvent = {
+      ...event,
+      id: uuid(),
+      actor: event.actor ?? role,
+    } as GameSyncEvent;
+
+    if (isHost) {
+      applyAuthoritativeEvent(fullEvent);
+      return;
+    }
+
+    sendMessage({ type: 'EVENT', event: fullEvent });
+  }, [applyAuthoritativeEvent, isHost, role, sendMessage]);
 
   const setupConnection = useCallback((conn: DataConnection) => {
     connRef.current = conn;
     conn.on('open', () => {
       if (!isHost) setStatus('Connected to host! Game ready.');
     });
-    conn.on('data', (data: any) => {
-      if (data.type === 'SYNC') {
-        // 相手からの同期: gameStateRef も更新して整合性を保つ
-        setGameState(data.state);
-        gameStateRef.current = data.state;
-        setLastGameState(null);
+    conn.on('data', (rawData: unknown) => {
+      const data = rawData as SyncMessage;
+      if (data.type === 'EVENT') {
+        if (isHost) {
+          applyAuthoritativeEvent(data.event);
+        }
+        return;
+      }
+      if (data.type === 'STATE_SNAPSHOT') {
+        maybeApplySnapshot(data.state, data.source);
       }
     });
     conn.on('close', () => setStatus('Opponent disconnected.'));
-  }, [isHost]);
+  }, [applyAuthoritativeEvent, applyLocalState, isHost, maybeApplySnapshot]);
 
   useEffect(() => {
     if (!room) return;
@@ -80,7 +155,7 @@ export const useGameBoardLogic = () => {
       if (isHost) {
         setStatus('Guest connected! Game ready.');
         setupConnection(conn);
-      setTimeout(() => conn.send({ type: 'SYNC', state: gameStateRef.current }), 500);
+      setTimeout(() => conn.send({ type: 'STATE_SNAPSHOT', state: gameStateRef.current, source: 'host' } satisfies SyncMessage), 500);
       }
     });
 
@@ -110,10 +185,9 @@ export const useGameBoardLogic = () => {
       gameStatus: 'playing',
       turnPlayer: 'host',
     };
-    setGameState(debugState);
-    gameStateRef.current = debugState; // ref も同期
+    applyLocalState(debugState);
     setStatus('[DEBUG] Game auto-started. Both decks injected (20 cards each).');
-  }, [isDebug]);
+  }, [applyLocalState, isDebug]);
 
   useEffect(() => {
     // ゲーム中、かつ自分のターンになったときだけ通知を表示
@@ -127,55 +201,20 @@ export const useGameBoardLogic = () => {
   }, [gameState.turnPlayer, gameState.turnCount, gameState.gameStatus, role]);
 
   const handleStatChange = (playerKey: 'host' | 'guest', stat: 'hp' | 'pp' | 'maxPp' | 'ep' | 'sep' | 'combo', delta: number) => {
-    let newValue = gameState[playerKey][stat] + delta;
-    if (stat === 'maxPp') {
-      newValue = Math.min(10, Math.max(0, newValue));
-    } else if (stat === 'pp') {
-      newValue = Math.min(gameState[playerKey].maxPp, Math.max(0, newValue));
-    } else {
-      newValue = Math.max(0, newValue);
-    }
-    syncState({
-      ...gameState,
-      [playerKey]: { ...gameState[playerKey], [stat]: newValue }
-    });
+    dispatchGameEvent({ type: 'MODIFY_PLAYER_STAT', playerKey, stat, delta });
   };
 
   const setPhase = (newPhase: 'Start' | 'Main' | 'End') => {
-    syncState({ ...gameState, phase: newPhase });
+    dispatchGameEvent({ type: 'SET_PHASE', phase: newPhase });
   };
 
   const endTurn = () => {
-    if (gameState.gameStatus !== 'playing') return;
-    setLastGameState(JSON.parse(JSON.stringify(gameState)));
-    const nextPlayer = gameState.turnPlayer === 'host' ? 'guest' : 'host';
-    const isNewTurnRound = nextPlayer === 'host';
-    const newTurnCount = isNewTurnRound ? gameState.turnCount + 1 : gameState.turnCount;
-    const nextPlayerState = { ...gameState[nextPlayer] };
-
-    if (nextPlayerState.maxPp < 10) nextPlayerState.maxPp += 1;
-    nextPlayerState.pp = nextPlayerState.maxPp;
-    nextPlayerState.combo = 0;
-
-    const untapCards = gameState.cards.map(c =>
-      c.isTapped && c.zone === `field-${nextPlayer}` ? { ...c, isTapped: false } : c
-    );
-
-    const finalCards = CardLogic.drawCard(untapCards, nextPlayer);
-
-    syncState({
-      ...gameState,
-      turnPlayer: nextPlayer,
-      turnCount: newTurnCount,
-      phase: 'Start',
-      [nextPlayer]: nextPlayerState,
-      cards: finalCards
-    });
+    dispatchGameEvent({ type: 'END_TURN' });
   };
 
   const handleUndoTurn = () => {
     if (lastGameState) {
-      syncState(lastGameState);
+      dispatchGameEvent({ type: 'UNDO_LAST_TURN', previousState: lastGameState });
       setLastGameState(null);
     }
   };
@@ -183,15 +222,7 @@ export const useGameBoardLogic = () => {
   const handleSetInitialTurnOrder = (forcedStarter?: 'host' | 'guest') => {
     const isHostFirst = forcedStarter ? (forcedStarter === 'host') : (Math.random() > 0.5);
     const starter = isHostFirst ? 'host' : 'guest';
-    const second = isHostFirst ? 'guest' : 'host';
-    syncState({
-      ...gameState,
-      turnPlayer: starter,
-      turnCount: 1,
-      phase: 'Start',
-      [starter]: { ...gameState[starter], ep: 0 },
-      [second]: { ...gameState[second], ep: 3 }
-    });
+    dispatchGameEvent({ type: 'SET_INITIAL_TURN_ORDER', starter });
     const msg = `${starter === role ? "You" : "Opponent"} will go first!`;
     setCoinMessage(forcedStarter ? `Manually set: ${msg}` : msg);
     setTimeout(() => setCoinMessage(null), 4000);
@@ -227,35 +258,17 @@ export const useGameBoardLogic = () => {
   };
 
   const handleStartGame = () => {
-    const starter = gameState.turnPlayer;
-    syncState({
-      ...gameState,
-      gameStatus: 'playing',
-      [starter]: { ...gameState[starter], pp: 1, maxPp: 1 }
-    });
+    dispatchGameEvent({ type: 'START_GAME' });
     setTurnMessage("GAME START!");
     setTimeout(() => setTurnMessage(null), 2500);
   };
 
   const handleToggleReady = () => {
-    syncState({
-      ...gameState,
-      [role]: { ...gameState[role], isReady: !gameState[role].isReady }
-    });
+    dispatchGameEvent({ type: 'TOGGLE_READY' });
   };
 
   const handleDrawInitialHand = () => {
-    const myDeck = gameState.cards.filter(c => c.zone === `mainDeck-${role}`);
-    if (myDeck.length < 4) return;
-    const drawnCards = myDeck.slice(0, 4).map(c => ({ ...c, zone: `hand-${role}`, isFlipped: false }));
-    const drawnIds = drawnCards.map(c => c.id);
-    const otherCards = gameState.cards.filter(c => !drawnIds.includes(c.id));
-    const newCards = [...otherCards, ...drawnCards];
-    syncState({
-      ...gameState,
-      cards: newCards,
-      [role]: { ...gameState[role], initialHandDrawn: true }
-    });
+    dispatchGameEvent({ type: 'DRAW_INITIAL_HAND' });
   };
 
   const startMulligan = () => {
@@ -272,28 +285,16 @@ export const useGameBoardLogic = () => {
   };
 
   const executeMulligan = () => {
-    const newCards = CardLogic.executeMulligan(gameState.cards, role, mulliganOrder);
-    if (newCards === gameState.cards) return;
-
-    syncState({
-      ...gameState,
-      cards: newCards,
-      [role]: { ...gameState[role], mulliganUsed: true }
-    });
+    dispatchGameEvent({ type: 'EXECUTE_MULLIGAN', selectedIds: mulliganOrder });
     setIsMulliganModalOpen(false);
   };
 
   const drawCard = () => {
-    if (gameState.gameStatus !== 'playing') return;
-    syncState({
-      ...gameState,
-      cards: CardLogic.drawCard(gameState.cards, role)
-    });
+    dispatchGameEvent({ type: 'DRAW_CARD' });
   };
 
   const millCard = () => {
-    if (gameState.gameStatus !== 'playing') return;
-    syncState({ ...gameState, cards: CardLogic.millCard(gameState.cards, role) });
+    dispatchGameEvent({ type: 'MILL_CARD' });
   };
 
   const handleLookAtTop = (n: number) => {
@@ -303,46 +304,18 @@ export const useGameBoardLogic = () => {
   };
 
   const handleResolveTopDeck = (results: CardLogic.TopDeckResult[]) => {
-    const newCards = CardLogic.resolveTopDeckResults(gameState.cards, role, results);
-    syncState({ ...gameState, cards: newCards });
+    dispatchGameEvent({ type: 'RESOLVE_TOP_DECK', results });
     setTopDeckCards([]);
   };
 
   const handleExtractCard = (cardId: string, customDestination?: string) => {
-    const targetCard = gameState.cards.find(c => c.id === cardId);
-    if (!targetCard) return;
-    let destinationZone = targetCard.isEvolveCard ? `field-${role}` : `hand-${role}`;
-    if (customDestination) destinationZone = customDestination;
-    destinationZone = CardLogic.resolveMoveDestination(targetCard, destinationZone);
-    const isEnteringHand = destinationZone.startsWith('hand');
-    const isEnteringSafeZone = ['mainDeck', 'evolveDeck', 'hand', 'cemetery', 'banish'].includes(destinationZone.split('-')[0]);
-    
-    syncState({
-      ...gameState,
-      cards: CardLogic.moveCardToEnd(gameState.cards, cardId, {
-        zone: destinationZone,
-        isFlipped: false,
-        counters: isEnteringHand ? { atk: 0, hp: 0 } : targetCard.counters,
-        attachedTo: undefined,
-        preserveAttachment: !isEnteringSafeZone
-      })
-    });
+    dispatchGameEvent({ type: 'EXTRACT_CARD', cardId, destination: customDestination });
     setSearchZone(null);
   };
 
   const confirmResetGame = () => {
     setShowResetConfirm(false);
-    const resetCards = gameState.cards
-      .filter(c => c.cardId !== 'token')
-      .map(c => ({
-        ...c,
-        zone: CardLogic.getDeckZone(c),
-        isFlipped: true,
-        isTapped: false,
-        attachedTo: undefined,
-        counters: { atk: 0, hp: 0 }
-      }));
-    syncState({ ...initialState, cards: resetCards });
+    dispatchGameEvent({ type: 'RESET_GAME' });
   };
 
   const handleDeckUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -371,8 +344,7 @@ export const useGameBoardLogic = () => {
             zone: `evolveDeck-${role}`, owner: role, isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 }, isEvolveCard: true
           });
         });
-        const otherPlayersCards = gameState.cards.filter(c => c.owner !== role);
-        syncState({ ...gameState, cards: [...otherPlayersCards, ...newCards] });
+        dispatchGameEvent({ type: 'IMPORT_DECK', cards: newCards });
       } catch (err) { alert("Failed to parse deck JSON."); }
     };
     reader.readAsText(file);
@@ -384,16 +356,11 @@ export const useGameBoardLogic = () => {
       image: 'https://shadowverse-evolve.com/wordpress/wp-content/themes/shadowverse-evolve-release_v0/assets/images/common/ogp.jpg',
       zone: `ex-${role}`, owner: role, isTapped: false, isFlipped: false, counters: { atk: 1, hp: 1 }
     };
-    syncState({ ...gameState, cards: [...gameState.cards, newCard] });
+    dispatchGameEvent({ type: 'SPAWN_TOKEN', token: newCard });
   };
 
   const handleModifyCounter = (cardId: string, stat: 'atk' | 'hp', delta: number) => {
-    const targetCard = gameState.cards.find(c => c.id === cardId);
-    if (!targetCard || targetCard.zone.startsWith('hand')) return;
-    const newCards = gameState.cards.map(c =>
-      c.id === cardId ? { ...c, counters: { ...c.counters, [stat]: c.counters[stat] + delta } } : c
-    );
-    syncState({ ...gameState, cards: newCards });
+    dispatchGameEvent({ type: 'MODIFY_COUNTER', cardId, stat, delta });
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -401,195 +368,39 @@ export const useGameBoardLogic = () => {
     if (!over) return;
     const cardId = active.id as string;
     const overId = over.id as string;
-    if (cardId === overId) return;
-    const activeCard = gameState.cards.find(c => c.id === cardId);
-    if (!activeCard) return;
-
-    let targetZone = overId;
-    let newAttachedTo: string | undefined = undefined;
-    
-    const overCard = gameState.cards.find(c => c.id === overId);
-    if (overCard) {
-      if (overCard.zone.startsWith('field')) {
-        // Always attach to the root of the stack so nested attachment chains cannot form.
-        targetZone = overCard.zone;
-        let rootCard = overCard;
-        const visited = new Set<string>();
-
-        while (rootCard.attachedTo && !visited.has(rootCard.attachedTo)) {
-          visited.add(rootCard.id);
-          const parentCard = gameState.cards.find(c => c.id === rootCard.attachedTo);
-          if (!parentCard) break;
-          rootCard = parentCard;
-        }
-
-        newAttachedTo = rootCard.id;
-      } else {
-        targetZone = overCard.zone;
-      }
-    }
-
-    targetZone = CardLogic.resolveMoveDestination(activeCard, targetZone);
-
-    let baseZonePrefix = targetZone.split('-')[0];
-    // Rule: Hand/Deck/Cemetery/Banish must go to original owner's zone.
-    // Field/EX can be cross-owner (for "steal" and "control" effects).
-    const isPrivateZone = ['mainDeck', 'evolveDeck', 'hand', 'cemetery', 'banish'].includes(baseZonePrefix);
-    if (isPrivateZone) {
-      targetZone = `${baseZonePrefix}-${activeCard.owner}`;
-    }
-    targetZone = CardLogic.resolveMoveDestination(activeCard, targetZone);
-    baseZonePrefix = targetZone.split('-')[0];
-
-    // Rule: Reset attributes when entering hand/deck/cemetery
-    const isEnteringSafeZone = ['mainDeck', 'evolveDeck', 'hand', 'cemetery', 'banish'].includes(baseZonePrefix);
-    const isReturningToDeck = baseZonePrefix === 'mainDeck' || baseZonePrefix === 'evolveDeck';
-    const isEnteringHand = baseZonePrefix === 'hand';
-
-    const moveOptions: CardLogic.MoveCardOptions = {
-      zone: targetZone,
-      attachedTo: newAttachedTo,
-      isFlipped: baseZonePrefix === 'mainDeck' ? true : baseZonePrefix === 'evolveDeck' ? false : activeCard.isFlipped,
-      isTapped: isEnteringSafeZone ? false : activeCard.isTapped,
-      counters: isEnteringHand ? { atk: 0, hp: 0 } : activeCard.counters,
-      preserveAttachment: !isEnteringSafeZone
-    };
-
-    if (activeCard.cardId === 'token' && isEnteringSafeZone) {
-      // Delete token if it enters any safe zone (including hand)
-      syncState({ ...gameState, cards: gameState.cards.filter(c => c.id !== cardId && c.attachedTo !== cardId) });
-      return;
-    }
-
-    const nextCards = isReturningToDeck 
-      ? CardLogic.moveCardToFront(gameState.cards, cardId, moveOptions)
-      : CardLogic.moveCardToEnd(gameState.cards, cardId, moveOptions);
-
-    syncState({ ...gameState, cards: nextCards });
+    dispatchGameEvent({ type: 'MOVE_CARD', cardId, overId });
   };
 
   const toggleTap = (cardId: string) => {
-    const targetCard = gameState.cards.find(c => c.id === cardId);
-    if (!targetCard) return;
-    const baseId = targetCard.attachedTo || targetCard.id;
-    const stackIds = new Set([baseId]);
-    gameState.cards.forEach(c => { if (c.attachedTo === baseId) stackIds.add(c.id); });
-    const newIsTapped = !targetCard.isTapped;
-    const newCards = gameState.cards.map(c => stackIds.has(c.id) ? { ...c, isTapped: newIsTapped } : c);
-    syncState({ ...gameState, cards: newCards });
+    dispatchGameEvent({ type: 'TOGGLE_TAP', cardId });
   };
 
   const handleFlipCard = (cardId: string) => {
-    const newCards = gameState.cards.map(c => c.id === cardId ? { ...c, isFlipped: !c.isFlipped } : c);
-    syncState({ ...gameState, cards: newCards });
+    dispatchGameEvent({ type: 'TOGGLE_FLIP', cardId });
   };
 
   const handleSendToBottom = (cardId: string) => {
-    const targetCard = gameState.cards.find(c => c.id === cardId);
-    if (!targetCard) return;
-    if (targetCard.cardId === 'token') {
-      syncState({ ...gameState, cards: gameState.cards.filter(c => c.id !== cardId && c.attachedTo !== cardId) });
-      return;
-    }
-
-    const targetZone = CardLogic.getDeckZone(targetCard);
-    
-    syncState({
-      ...gameState,
-      cards: CardLogic.moveCardToEnd(gameState.cards, cardId, {
-        zone: targetZone,
-        isFlipped: !targetCard.isEvolveCard,
-        isTapped: false,
-        attachedTo: undefined,
-        counters: { atk: 0, hp: 0 },
-        preserveAttachment: false
-      })
-    });
+    dispatchGameEvent({ type: 'SEND_TO_BOTTOM', cardId });
   };
 
   const handleBanish = (cardId: string) => {
-    const targetCard = gameState.cards.find(c => c.id === cardId);
-    if (!targetCard && cardId === 'token') return; // Token logic below
-    
-    if (targetCard?.cardId === 'token' || (!targetCard && cardId.startsWith('debug-'))) {
-        // Simple filter for tokens
-        syncState({ ...gameState, cards: gameState.cards.filter(c => c.id !== cardId && c.attachedTo !== cardId) });
-        return;
-    }
-
-    if (!targetCard) return;
-    const destinationZone = targetCard.isEvolveCard ? CardLogic.getDeckZone(targetCard) : `banish-${targetCard.owner}`;
-    
-    syncState({
-      ...gameState,
-      cards: CardLogic.moveCardToEnd(gameState.cards, cardId, {
-        zone: destinationZone,
-        isTapped: false,
-        isFlipped: false,
-        attachedTo: undefined,
-        counters: { atk: 0, hp: 0 },
-        preserveAttachment: false
-      })
-    });
+    dispatchGameEvent({ type: 'BANISH_CARD', cardId });
   };
 
   const handlePlayToField = (cardId: string) => {
-    syncState({
-      ...gameState,
-      cards: CardLogic.moveCardToEnd(gameState.cards, cardId, {
-        zone: `field-${role}`,
-        attachedTo: undefined,
-        isTapped: false,
-        isFlipped: false
-      })
-    });
+    dispatchGameEvent({ type: 'PLAY_TO_FIELD', cardId });
   };
 
   const handleSendToCemetery = (cardId: string) => {
-    const targetCard = gameState.cards.find(c => c.id === cardId);
-    if (!targetCard) return;
-    if (targetCard.cardId === 'token') {
-      syncState({ ...gameState, cards: gameState.cards.filter(c => c.id !== cardId && c.attachedTo !== cardId) });
-      return;
-    }
-    const targetDestination = targetCard.isEvolveCard ? CardLogic.getDeckZone(targetCard) : `cemetery-${targetCard.owner}`;
-    
-    syncState({
-      ...gameState,
-      cards: CardLogic.moveCardToEnd(gameState.cards, cardId, {
-        zone: targetDestination,
-        isTapped: false,
-        isFlipped: false,
-        attachedTo: undefined,
-        counters: { atk: 0, hp: 0 },
-        preserveAttachment: false
-      })
-    });
+    dispatchGameEvent({ type: 'SEND_TO_CEMETERY', cardId });
   };
 
   const handleReturnEvolve = (cardId: string) => {
-    const targetCard = gameState.cards.find(c => c.id === cardId);
-    if (!targetCard) return;
-    if (targetCard.cardId === 'token') {
-      syncState({ ...gameState, cards: gameState.cards.filter(c => c.id !== cardId && c.attachedTo !== cardId) });
-      return;
-    }
-    
-    syncState({
-      ...gameState,
-      cards: CardLogic.moveCardToFront(gameState.cards, cardId, {
-        zone: CardLogic.getDeckZone(targetCard),
-        isTapped: false,
-        isFlipped: false,
-        attachedTo: undefined,
-        counters: { atk: 0, hp: 0 },
-        preserveAttachment: false
-      })
-    });
+    dispatchGameEvent({ type: 'RETURN_EVOLVE', cardId });
   };
 
   const handleShuffleDeck = () => {
-    syncState({ ...gameState, cards: CardLogic.shuffleDeck(gameState.cards, role) });
+    dispatchGameEvent({ type: 'SHUFFLE_DECK' });
   };
 
   const getCards = (zone: string) => gameState.cards.filter(c => c.zone === zone);

@@ -14,6 +14,13 @@ export interface MoveCardOptions {
   preserveAttachment?: boolean;
 }
 
+export interface DropResolution {
+  targetZone: string;
+  moveOptions: MoveCardOptions;
+  isReturningToDeck: boolean;
+  shouldDeleteToken: boolean;
+}
+
 const collectDescendantIds = (
   cards: CardInstance[],
   parentId: string
@@ -36,6 +43,42 @@ const collectDescendantIds = (
 };
 
 const getZonePrefix = (zone: string): string => zone.split('-')[0];
+
+const findRootCard = (cards: CardInstance[], card: CardInstance): CardInstance => {
+  let rootCard = card;
+  const visited = new Set<string>();
+
+  while (rootCard.attachedTo && !visited.has(rootCard.attachedTo)) {
+    visited.add(rootCard.id);
+    const parentCard = cards.find(c => c.id === rootCard.attachedTo);
+    if (!parentCard) break;
+    rootCard = parentCard;
+  }
+
+  return rootCard;
+};
+
+const collectStackIds = (cards: CardInstance[], cardId: string): Set<string> => {
+  const targetCard = cards.find(c => c.id === cardId);
+  if (!targetCard) return new Set();
+
+  const baseId = targetCard.attachedTo || targetCard.id;
+  const stackIds = new Set<string>([baseId]);
+  const queue = [baseId];
+
+  while (queue.length > 0) {
+    const currentId = queue.shift()!;
+    const children = cards.filter(c => c.attachedTo === currentId);
+
+    for (const child of children) {
+      if (stackIds.has(child.id)) continue;
+      stackIds.add(child.id);
+      queue.push(child.id);
+    }
+  }
+
+  return stackIds;
+};
 
 /**
  * Moves a card to a new zone and places it at the END of the array (Rightmost/Bottom).
@@ -185,6 +228,273 @@ export const resolveMoveDestination = (
 
   return requestedZone;
 };
+
+export const resolveDrop = (
+  cards: CardInstance[],
+  cardId: string,
+  overId: string
+): DropResolution | null => {
+  if (cardId === overId) return null;
+
+  const activeCard = cards.find(c => c.id === cardId);
+  if (!activeCard) return null;
+
+  let targetZone = overId;
+  let newAttachedTo: string | undefined;
+
+  const overCard = cards.find(c => c.id === overId);
+  if (overCard) {
+    if (overCard.zone.startsWith('field')) {
+      targetZone = overCard.zone;
+      newAttachedTo = findRootCard(cards, overCard).id;
+    } else {
+      targetZone = overCard.zone;
+    }
+  }
+
+  targetZone = resolveMoveDestination(activeCard, targetZone);
+
+  let baseZonePrefix = getZonePrefix(targetZone);
+  const isPrivateZone = ['mainDeck', 'evolveDeck', 'hand', 'cemetery', 'banish'].includes(baseZonePrefix);
+  if (isPrivateZone) {
+    targetZone = `${baseZonePrefix}-${activeCard.owner}`;
+  }
+
+  targetZone = resolveMoveDestination(activeCard, targetZone);
+  baseZonePrefix = getZonePrefix(targetZone);
+
+  const isEnteringSafeZone = ['mainDeck', 'evolveDeck', 'hand', 'cemetery', 'banish'].includes(baseZonePrefix);
+  const isReturningToDeck = baseZonePrefix === 'mainDeck' || baseZonePrefix === 'evolveDeck';
+  const isEnteringHand = baseZonePrefix === 'hand';
+
+  return {
+    targetZone,
+    isReturningToDeck,
+    shouldDeleteToken: activeCard.cardId === 'token' && isEnteringSafeZone,
+    moveOptions: {
+      zone: targetZone,
+      attachedTo: newAttachedTo,
+      isFlipped: baseZonePrefix === 'mainDeck' ? true : baseZonePrefix === 'evolveDeck' ? false : activeCard.isFlipped,
+      isTapped: isEnteringSafeZone ? false : activeCard.isTapped,
+      counters: isEnteringHand ? { atk: 0, hp: 0 } : activeCard.counters,
+      preserveAttachment: !isEnteringSafeZone,
+    },
+  };
+};
+
+export const applyDrop = (
+  cards: CardInstance[],
+  cardId: string,
+  overId: string
+): CardInstance[] => {
+  const resolution = resolveDrop(cards, cardId, overId);
+  if (!resolution) return cards;
+
+  if (resolution.shouldDeleteToken) {
+    return cards.filter(c => c.id !== cardId && c.attachedTo !== cardId);
+  }
+
+  return resolution.isReturningToDeck
+    ? moveCardToFront(cards, cardId, resolution.moveOptions)
+    : moveCardToEnd(cards, cardId, resolution.moveOptions);
+};
+
+export const modifyCardCounter = (
+  cards: CardInstance[],
+  cardId: string,
+  stat: 'atk' | 'hp',
+  delta: number
+): CardInstance[] => {
+  const targetCard = cards.find(c => c.id === cardId);
+  if (!targetCard || targetCard.zone.startsWith('hand')) return cards;
+
+  return cards.map(c =>
+    c.id === cardId ? { ...c, counters: { ...c.counters, [stat]: c.counters[stat] + delta } } : c
+  );
+};
+
+export const toggleTapStack = (
+  cards: CardInstance[],
+  cardId: string
+): CardInstance[] => {
+  const targetCard = cards.find(c => c.id === cardId);
+  if (!targetCard) return cards;
+
+  const stackIds = collectStackIds(cards, cardId);
+  const newIsTapped = !targetCard.isTapped;
+
+  return cards.map(c => stackIds.has(c.id) ? { ...c, isTapped: newIsTapped } : c);
+};
+
+export const toggleFlip = (
+  cards: CardInstance[],
+  cardId: string
+): CardInstance[] => {
+  const targetCard = cards.find(c => c.id === cardId);
+  if (!targetCard) return cards;
+
+  return cards.map(c => c.id === cardId ? { ...c, isFlipped: !c.isFlipped } : c);
+};
+
+const removeTokenAndAttachments = (
+  cards: CardInstance[],
+  cardId: string
+): CardInstance[] => cards.filter(c => c.id !== cardId && c.attachedTo !== cardId);
+
+export const sendCardToBottom = (
+  cards: CardInstance[],
+  cardId: string
+): CardInstance[] => {
+  const targetCard = cards.find(c => c.id === cardId);
+  if (!targetCard) return cards;
+  if (targetCard.cardId === 'token') return removeTokenAndAttachments(cards, cardId);
+
+  return moveCardToEnd(cards, cardId, {
+    zone: getDeckZone(targetCard),
+    isFlipped: !targetCard.isEvolveCard,
+    isTapped: false,
+    attachedTo: undefined,
+    counters: { atk: 0, hp: 0 },
+    preserveAttachment: false,
+  });
+};
+
+export const banishCard = (
+  cards: CardInstance[],
+  cardId: string
+): CardInstance[] => {
+  const targetCard = cards.find(c => c.id === cardId);
+  if (!targetCard) return cards;
+  if (targetCard.cardId === 'token') return removeTokenAndAttachments(cards, cardId);
+
+  const destinationZone = targetCard.isEvolveCard ? getDeckZone(targetCard) : `banish-${targetCard.owner}`;
+  return moveCardToEnd(cards, cardId, {
+    zone: destinationZone,
+    isTapped: false,
+    isFlipped: false,
+    attachedTo: undefined,
+    counters: { atk: 0, hp: 0 },
+    preserveAttachment: false,
+  });
+};
+
+export const sendCardToCemetery = (
+  cards: CardInstance[],
+  cardId: string
+): CardInstance[] => {
+  const targetCard = cards.find(c => c.id === cardId);
+  if (!targetCard) return cards;
+  if (targetCard.cardId === 'token') return removeTokenAndAttachments(cards, cardId);
+
+  const destinationZone = targetCard.isEvolveCard ? getDeckZone(targetCard) : `cemetery-${targetCard.owner}`;
+  return moveCardToEnd(cards, cardId, {
+    zone: destinationZone,
+    isTapped: false,
+    isFlipped: false,
+    attachedTo: undefined,
+    counters: { atk: 0, hp: 0 },
+    preserveAttachment: false,
+  });
+};
+
+export const returnEvolveCard = (
+  cards: CardInstance[],
+  cardId: string
+): CardInstance[] => {
+  const targetCard = cards.find(c => c.id === cardId);
+  if (!targetCard) return cards;
+  if (targetCard.cardId === 'token') return removeTokenAndAttachments(cards, cardId);
+
+  return moveCardToFront(cards, cardId, {
+    zone: getDeckZone(targetCard),
+    isTapped: false,
+    isFlipped: false,
+    attachedTo: undefined,
+    counters: { atk: 0, hp: 0 },
+    preserveAttachment: false,
+  });
+};
+
+export const playCardToField = (
+  cards: CardInstance[],
+  cardId: string,
+  role: 'host' | 'guest'
+): CardInstance[] => moveCardToEnd(cards, cardId, {
+  zone: `field-${role}`,
+  attachedTo: undefined,
+  isTapped: false,
+  isFlipped: false,
+});
+
+export const extractCard = (
+  cards: CardInstance[],
+  cardId: string,
+  role: 'host' | 'guest',
+  customDestination?: string
+): CardInstance[] => {
+  const targetCard = cards.find(c => c.id === cardId);
+  if (!targetCard) return cards;
+
+  let destinationZone = targetCard.isEvolveCard ? `field-${role}` : `hand-${role}`;
+  if (customDestination) destinationZone = customDestination;
+  destinationZone = resolveMoveDestination(targetCard, destinationZone);
+
+  const destinationPrefix = getZonePrefix(destinationZone);
+  const isEnteringHand = destinationPrefix === 'hand';
+  const isEnteringSafeZone = ['mainDeck', 'evolveDeck', 'hand', 'cemetery', 'banish'].includes(destinationPrefix);
+
+  return moveCardToEnd(cards, cardId, {
+    zone: destinationZone,
+    isFlipped: false,
+    counters: isEnteringHand ? { atk: 0, hp: 0 } : targetCard.counters,
+    attachedTo: undefined,
+    preserveAttachment: !isEnteringSafeZone,
+  });
+};
+
+export const modifyPlayerStatValue = (
+  currentValue: number,
+  maxPp: number,
+  stat: 'hp' | 'pp' | 'maxPp' | 'ep' | 'sep' | 'combo',
+  delta: number
+): number => {
+  let newValue = currentValue + delta;
+  if (stat === 'maxPp') {
+    newValue = Math.min(10, Math.max(0, newValue));
+  } else if (stat === 'pp') {
+    newValue = Math.min(maxPp, Math.max(0, newValue));
+  } else {
+    newValue = Math.max(0, newValue);
+  }
+  return newValue;
+};
+
+export const drawInitialHand = (
+  cards: CardInstance[],
+  role: 'host' | 'guest'
+): CardInstance[] => {
+  const myDeck = cards.filter(c => c.zone === `mainDeck-${role}`);
+  if (myDeck.length < 4) return cards;
+
+  const drawnCards = myDeck.slice(0, 4).map(c => ({ ...c, zone: `hand-${role}`, isFlipped: false }));
+  const drawnIds = new Set(drawnCards.map(c => c.id));
+  const otherCards = cards.filter(c => !drawnIds.has(c.id));
+  return [...otherCards, ...drawnCards];
+};
+
+export const importDeckCards = (
+  cards: CardInstance[],
+  role: 'host' | 'guest',
+  importedCards: CardInstance[]
+): CardInstance[] => {
+  const otherPlayersCards = cards.filter(c => c.owner !== role);
+  return [...otherPlayersCards, ...importedCards];
+};
+
+export const spawnTokenCard = (
+  cards: CardInstance[],
+  token: CardInstance
+): CardInstance[] => [...cards, token];
 
 /**
  * Executes a mulligan operation based on selected IDs.

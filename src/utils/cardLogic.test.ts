@@ -252,6 +252,131 @@ describe('CardLogic utils', () => {
     });
   });
 
+  describe('applyDrop', () => {
+    it('should route evolve cards dropped on cemetery back to evolve deck', () => {
+      const evolve = { ...createMockCard('e1', 'field-host'), isEvolveCard: true };
+      const cemetery = createMockCard('cem', 'cemetery-host');
+      const result = CardLogic.applyDrop([evolve, cemetery], 'e1', 'cem');
+
+      const moved = result.find(c => c.id === 'e1');
+      expect(moved?.zone).toBe('evolveDeck-host');
+      expect(moved?.isFlipped).toBe(false);
+    });
+
+    it('should delete a token when dropped into a safe zone', () => {
+      const token = { ...createMockCard('token-1', 'field-host'), cardId: 'token', attachedTo: undefined };
+      const deck = createMockCard('deck', 'mainDeck-host');
+      const result = CardLogic.applyDrop([token, deck], 'token-1', 'deck');
+
+      expect(result.find(c => c.id === 'token-1')).toBeUndefined();
+    });
+  });
+
+  describe('modifyCardCounter', () => {
+    it('should change counters for cards outside the hand', () => {
+      const fieldCard = createMockCard('field-1', 'field-host');
+      const result = CardLogic.modifyCardCounter([fieldCard], 'field-1', 'atk', 2);
+      expect(result[0].counters.atk).toBe(2);
+    });
+
+    it('should ignore counter changes for cards in hand', () => {
+      const handCard = createMockCard('hand-1', 'hand-host');
+      const result = CardLogic.modifyCardCounter([handCard], 'hand-1', 'hp', 1);
+      expect(result).toEqual([handCard]);
+    });
+  });
+
+  describe('toggleTapStack', () => {
+    it('should toggle the entire stack including nested attachments', () => {
+      const parent = createMockCard('parent', 'field-host');
+      const child = { ...createMockCard('child', 'field-host'), attachedTo: 'parent' };
+      const grandchild = { ...createMockCard('grandchild', 'field-host'), attachedTo: 'child' };
+
+      const result = CardLogic.toggleTapStack([parent, child, grandchild], 'child');
+
+      expect(result.every(c => c.isTapped)).toBe(true);
+    });
+  });
+
+  describe('toggleFlip', () => {
+    it('should flip the targeted card only', () => {
+      const first = createMockCard('c1', 'field-host');
+      const second = createMockCard('c2', 'field-host');
+
+      const result = CardLogic.toggleFlip([first, second], 'c1');
+
+      expect(result.find(c => c.id === 'c1')?.isFlipped).toBe(true);
+      expect(result.find(c => c.id === 'c2')?.isFlipped).toBe(false);
+    });
+  });
+
+  describe('shortcut movement helpers', () => {
+    it('should send normal cards to the bottom of their main deck', () => {
+      const card = createMockCard('n1', 'field-host');
+      const result = CardLogic.sendCardToBottom([card], 'n1');
+      expect(result[0].zone).toBe('mainDeck-host');
+      expect(result[0].isFlipped).toBe(true);
+    });
+
+    it('should return evolve cards to evolve deck when banished', () => {
+      const card = { ...createMockCard('e1', 'field-host'), isEvolveCard: true };
+      const result = CardLogic.banishCard([card], 'e1');
+      expect(result[0].zone).toBe('evolveDeck-host');
+      expect(result[0].isFlipped).toBe(false);
+    });
+
+    it('should remove tokens when sending to cemetery', () => {
+      const token = { ...createMockCard('t1', 'field-host'), cardId: 'token' };
+      const result = CardLogic.sendCardToCemetery([token], 't1');
+      expect(result).toEqual([]);
+    });
+
+    it('should move cards to field for the acting role', () => {
+      const card = createMockCard('n2', 'hand-host');
+      const result = CardLogic.playCardToField([card], 'n2', 'guest');
+      expect(result[0].zone).toBe('field-guest');
+    });
+
+    it('should extract evolve cards to field instead of hand', () => {
+      const card = { ...createMockCard('e2', 'evolveDeck-host'), isEvolveCard: true };
+      const result = CardLogic.extractCard([card], 'e2', 'host', 'hand-host');
+      expect(result[0].zone).toBe('evolveDeck-host');
+    });
+  });
+
+  describe('setup and deck helpers', () => {
+    it('should clamp player stat values safely', () => {
+      expect(CardLogic.modifyPlayerStatValue(9, 9, 'maxPp', 5)).toBe(10);
+      expect(CardLogic.modifyPlayerStatValue(5, 4, 'pp', 3)).toBe(4);
+      expect(CardLogic.modifyPlayerStatValue(0, 0, 'hp', -3)).toBe(0);
+    });
+
+    it('should draw an initial hand of four cards', () => {
+      const cards = ['1', '2', '3', '4', '5'].map(id => createMockCard(id, 'mainDeck-host'));
+      const result = CardLogic.drawInitialHand(cards, 'host');
+      expect(result.filter(c => c.zone === 'hand-host')).toHaveLength(4);
+      expect(result.filter(c => c.zone === 'mainDeck-host')).toHaveLength(1);
+    });
+
+    it('should replace only the actor cards on import', () => {
+      const hostOld = createMockCard('old-host', 'mainDeck-host');
+      const guestOld = createMockCard('old-guest', 'mainDeck-guest', 'guest');
+      const imported = [createMockCard('new-host', 'mainDeck-host')];
+      const result = CardLogic.importDeckCards([hostOld, guestOld], 'host', imported);
+      expect(result.find(c => c.id === 'old-host')).toBeUndefined();
+      expect(result.find(c => c.id === 'old-guest')).toBeDefined();
+      expect(result.find(c => c.id === 'new-host')).toBeDefined();
+    });
+
+    it('should append spawned tokens', () => {
+      const existing = createMockCard('base', 'field-host');
+      const token = { ...createMockCard('token-1', 'ex-host'), cardId: 'token' };
+      const result = CardLogic.spawnTokenCard([existing], token);
+      expect(result).toHaveLength(2);
+      expect(result[1].id).toBe('token-1');
+    });
+  });
+
   describe('resolveTopDeckResults', () => {
     it('should handle empty results array', () => {
       const cards = [createMockCard('1', 'mainDeck-host')];
