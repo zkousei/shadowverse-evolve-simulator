@@ -576,7 +576,7 @@ export const executeMulligan = (
  */
 export interface TopDeckResult {
   cardId: string;
-  action: 'hand' | 'field' | 'ex' | 'cemetery' | 'top' | 'bottom';
+  action: 'hand' | 'revealedHand' | 'field' | 'ex' | 'cemetery' | 'top' | 'bottom';
   order?: number;
 }
 
@@ -593,6 +593,7 @@ export const resolveTopDeckResults = (
     let zone = '';
     switch (res.action) {
       case 'hand': zone = `hand-${role}`; break;
+      case 'revealedHand': zone = `hand-${role}`; break;
       case 'field': zone = `field-${role}`; break;
       case 'ex': zone = `ex-${role}`; break;
       case 'cemetery': zone = `cemetery-${role}`; break;

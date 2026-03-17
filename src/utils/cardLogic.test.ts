@@ -492,6 +492,22 @@ describe('CardLogic utils', () => {
       expect(handCards[1].id).toBe('top1'); // Should be at the end (right)
     });
 
+    it('should move revealed-hand cards into the hidden hand zone', () => {
+      const existingHand = createMockCard('existing', 'hand-host');
+      const deckCard = createMockCard('top1', 'mainDeck-host');
+      const cards = [existingHand, deckCard];
+
+      const results: CardLogic.TopDeckResult[] = [
+        { cardId: 'top1', action: 'revealedHand' }
+      ];
+
+      const result = CardLogic.resolveTopDeckResults(cards, 'host', results);
+
+      const handCards = result.filter(c => c.zone === 'hand-host');
+      expect(handCards).toHaveLength(2);
+      expect(handCards[1].id).toBe('top1');
+    });
+
     it('should route evolve cards to evolveDeck even if action is top/bottom', () => {
       const evolveCard = { ...createMockCard('e1', 'field-host'), isEvolveCard: true };
       const results: CardLogic.TopDeckResult[] = [

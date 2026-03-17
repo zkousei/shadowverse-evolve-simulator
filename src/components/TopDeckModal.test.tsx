@@ -98,4 +98,24 @@ describe('TopDeckModal', () => {
     expect(screen.getByText('Remaining: 1 cards')).toBeInTheDocument();
     expect(screen.getByAltText('Card c1')).toBeInTheDocument();
   });
+
+  it('supports assigning cards to revealed hand', () => {
+    const onConfirm = vi.fn();
+    render(
+      <TopDeckModal
+        isOpen={true}
+        cards={[createCard('c1')]}
+        onConfirm={onConfirm}
+        onCancel={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getAllByText('公開して手札')[0]);
+    fireEvent.click(screen.getByAltText('Card c1'));
+    fireEvent.click(screen.getByText('CONFIRM'));
+
+    expect(onConfirm).toHaveBeenCalledWith([
+      { cardId: 'c1', action: 'revealedHand', order: undefined },
+    ]);
+  });
 });

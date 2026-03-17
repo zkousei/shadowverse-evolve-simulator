@@ -7,7 +7,7 @@ interface CardSearchModalProps {
   onClose: () => void;
   title: string;
   cards: CardInstance[];
-  onExtractCard: (cardId: string, destination?: string) => void;
+  onExtractCard: (cardId: string, destination?: string, revealToOpponent?: boolean) => void;
   onToggleFlip?: (cardId: string) => void;
   viewerRole?: PlayerRole;
   targetRole?: PlayerRole;
@@ -18,6 +18,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({ isOpen, onClose, titl
   if (!isOpen) return null;
 
   const isPreparingMainDeckSearch = !allowHandExtraction && title.includes('Main Deck');
+  const isMainDeckSearch = title.includes('Main Deck');
   const actionRole = targetRole ?? viewerRole;
 
   return (
@@ -53,6 +54,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({ isOpen, onClose, titl
             const isEvolveDeck = title.includes('Evolve');
             const isUsed = isEvolveDeck && !c.isFlipped;
             const canAddToHand = !isPreparingMainDeckSearch && c.owner === viewerRole && !c.isEvolveCard;
+            const canRevealToHand = canAddToHand && isMainDeckSearch;
             const canAddToEx = !isPreparingMainDeckSearch && !c.isEvolveCard;
             const canPlayToField = !isEvolveDeck || allowHandExtraction || isPreparingMainDeckSearch;
             const playToFieldLabel = isPreparingMainDeckSearch ? 'Set Face-Down to Field' : 'Play to Field';
@@ -111,6 +113,19 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({ isOpen, onClose, titl
                         }}
                       >
                         Add to Hand
+                      </button>
+                    )}
+                    {canRevealToHand && actionRole && (
+                      <button 
+                        onClick={() => onExtractCard(c.id, `hand-${actionRole}`, true)}
+                        disabled={!allowHandExtraction}
+                        style={{
+                          width: '100%', background: allowHandExtraction ? '#14b8a6' : '#374151', color: allowHandExtraction ? 'white' : '#949db0', border: 'none',
+                          padding: '3px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold',
+                          cursor: allowHandExtraction ? 'pointer' : 'not-allowed'
+                        }}
+                      >
+                        Reveal & Add to Hand
                       </button>
                     )}
                     {canAddToEx && actionRole && (

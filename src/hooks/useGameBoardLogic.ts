@@ -4,13 +4,15 @@ import Peer, { type DataConnection } from 'peerjs';
 import { type DragEndEvent } from '@dnd-kit/core';
 import { type CardInstance } from '../components/Card';
 import { type PlayerRole, type SyncState, initialState } from '../types/game';
-import { type GameSyncEvent, type SharedUiEffect, type SyncMessage } from '../types/sync';
+import { type GameSyncEvent, type PublicCardView, type SharedUiEffect, type SyncMessage } from '../types/sync';
 import { uuid } from '../utils/helpers';
 import * as CardLogic from '../utils/cardLogic';
 import { canImportDeck } from '../utils/gameRules';
 import { applyGameSyncEvent } from '../utils/gameSyncReducer';
-import { flipSharedCoin, formatSharedUiMessage, rollSharedDie } from '../utils/sharedRandom';
+import { flipSharedCoin, formatSharedUiMessage, getSharedActorLabel, rollSharedDie } from '../utils/sharedRandom';
 import { createEventDeduper } from '../utils/eventDeduper';
+import { buildTopDeckRevealEffect } from '../utils/topDeckReveal';
+import { buildSingleCardRevealEffect } from '../utils/cardReveal';
 
 type DispatchableGameSyncEvent =
   | { type: 'FLIP_SHARED_COIN'; actor?: PlayerRole }
@@ -31,7 +33,7 @@ type DispatchableGameSyncEvent =
   | { type: 'SEND_TO_CEMETERY'; actor?: PlayerRole; cardId: string }
   | { type: 'RETURN_EVOLVE'; actor?: PlayerRole; cardId: string }
   | { type: 'PLAY_TO_FIELD'; actor?: PlayerRole; cardId: string }
-  | { type: 'EXTRACT_CARD'; actor?: PlayerRole; cardId: string; destination?: string }
+  | { type: 'EXTRACT_CARD'; actor?: PlayerRole; cardId: string; destination?: string; revealToOpponent?: boolean }
   | { type: 'SHUFFLE_DECK'; actor?: PlayerRole }
   | { type: 'MODIFY_PLAYER_STAT'; actor?: PlayerRole; playerKey: PlayerRole; stat: 'hp' | 'pp' | 'maxPp' | 'ep' | 'sep' | 'combo'; delta: number }
   | { type: 'DRAW_INITIAL_HAND'; actor?: PlayerRole }
@@ -58,6 +60,7 @@ export const useGameBoardLogic = () => {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [coinMessage, setCoinMessage] = useState<string | null>(null);
   const [turnMessage, setTurnMessage] = useState<string | null>(null);
+  const [revealedCardsOverlay, setRevealedCardsOverlay] = useState<{ title: string; cards: PublicCardView[] } | null>(null);
   const [lastGameState, setLastGameState] = useState<SyncState | null>(null);
   const [isRollingDice, setIsRollingDice] = useState(false);
   const [diceValue, setDiceValue] = useState<number | null>(null);
@@ -73,6 +76,7 @@ export const useGameBoardLogic = () => {
   const diceRollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const diceFinalizeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const diceMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const revealedCardsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const processedEventDeduperRef = useRef(createEventDeduper());
 
   const applyLocalState = useCallback((newState: SyncState) => {
@@ -130,6 +134,13 @@ export const useGameBoardLogic = () => {
     }
   }, []);
 
+  const clearRevealedCardsTimer = useCallback(() => {
+    if (revealedCardsTimeoutRef.current) {
+      clearTimeout(revealedCardsTimeoutRef.current);
+      revealedCardsTimeoutRef.current = null;
+    }
+  }, []);
+
   const playSharedUiEffect = useCallback((effect: SharedUiEffect) => {
     if (effect.type === 'COIN_FLIP_RESULT') {
       showTimedCoinMessage(formatSharedUiMessage(effect, role, isSoloMode), 3000);
@@ -138,6 +149,32 @@ export const useGameBoardLogic = () => {
 
     if (effect.type === 'STARTER_DECIDED') {
       showTimedCoinMessage(formatSharedUiMessage(effect, role, isSoloMode), 4000);
+      return;
+    }
+
+    if (effect.type === 'REVEAL_TOP_DECK_CARDS') {
+      clearRevealedCardsTimer();
+      setRevealedCardsOverlay({
+        title: `${getSharedActorLabel(effect.actor, role, isSoloMode)} revealed from Look Top`,
+        cards: effect.cards,
+      });
+      revealedCardsTimeoutRef.current = setTimeout(() => {
+        setRevealedCardsOverlay(null);
+        revealedCardsTimeoutRef.current = null;
+      }, 5000);
+      return;
+    }
+
+    if (effect.type === 'REVEAL_SEARCHED_CARD_TO_HAND') {
+      clearRevealedCardsTimer();
+      setRevealedCardsOverlay({
+        title: `${getSharedActorLabel(effect.actor, role, isSoloMode)} revealed from Search`,
+        cards: effect.cards,
+      });
+      revealedCardsTimeoutRef.current = setTimeout(() => {
+        setRevealedCardsOverlay(null);
+        revealedCardsTimeoutRef.current = null;
+      }, 5000);
       return;
     }
 
@@ -171,7 +208,7 @@ export const useGameBoardLogic = () => {
       }, 800);
       diceFinalizeTimeoutRef.current = null;
     }, 900);
-  }, [clearCoinMessageTimer, clearDiceTimers, isSoloMode, role, showTimedCoinMessage]);
+  }, [clearCoinMessageTimer, clearDiceTimers, clearRevealedCardsTimer, isSoloMode, role, showTimedCoinMessage]);
 
   const maybeApplySnapshot = useCallback((incomingState: SyncState, source: PlayerRole) => {
     const currentRevision = gameStateRef.current.revision;
@@ -219,6 +256,27 @@ export const useGameBoardLogic = () => {
     if (nextState === currentState) return;
     applyLocalState(nextState);
     sendSnapshot(nextState, role);
+
+    if (event.type === 'RESOLVE_TOP_DECK') {
+      const revealEffect = buildTopDeckRevealEffect(currentState.cards, event.actor, event.results);
+      if (revealEffect) {
+        playSharedUiEffect(revealEffect);
+        sendSharedUiEffect(revealEffect);
+      }
+    }
+
+    if (event.type === 'EXTRACT_CARD' && event.revealToOpponent && event.destination?.startsWith('hand-')) {
+      const revealEffect = buildSingleCardRevealEffect(
+        currentState.cards,
+        event.actor,
+        event.cardId,
+        'REVEAL_SEARCHED_CARD_TO_HAND'
+      );
+      if (revealEffect) {
+        playSharedUiEffect(revealEffect);
+        sendSharedUiEffect(revealEffect);
+      }
+    }
 
     if (event.type === 'SET_INITIAL_TURN_ORDER') {
       const effect: SharedUiEffect = {
@@ -333,8 +391,9 @@ export const useGameBoardLogic = () => {
     return () => {
       clearCoinMessageTimer();
       clearDiceTimers();
+      clearRevealedCardsTimer();
     };
-  }, [clearCoinMessageTimer, clearDiceTimers]);
+  }, [clearCoinMessageTimer, clearDiceTimers, clearRevealedCardsTimer]);
 
   useEffect(() => {
     if (gameState.gameStatus !== 'playing') return;
@@ -430,8 +489,13 @@ export const useGameBoardLogic = () => {
     setTopDeckCards([]);
   };
 
-  const handleExtractCard = (cardId: string, customDestination?: string, targetRole?: PlayerRole) => {
-    dispatchGameEvent({ type: 'EXTRACT_CARD', actor: targetRole, cardId, destination: customDestination });
+  const handleExtractCard = (
+    cardId: string,
+    customDestination?: string,
+    targetRole?: PlayerRole,
+    revealToOpponent = false
+  ) => {
+    dispatchGameEvent({ type: 'EXTRACT_CARD', actor: targetRole, cardId, destination: customDestination, revealToOpponent });
     setSearchZone(null);
   };
 
@@ -530,7 +594,7 @@ export const useGameBoardLogic = () => {
 
   return {
     room, mode, isSoloMode, isHost, role, status, gameState, searchZone, setSearchZone,
-    showResetConfirm, setShowResetConfirm, coinMessage, turnMessage,
+    showResetConfirm, setShowResetConfirm, coinMessage, turnMessage, revealedCardsOverlay,
     isRollingDice, diceValue, mulliganOrder, isMulliganModalOpen, setIsMulliganModalOpen,
     handleStatChange, setPhase, endTurn, handleUndoTurn, handleSetInitialTurnOrder,
     handlePureCoinFlip, handleRollDice, handleStartGame, handleToggleReady,
