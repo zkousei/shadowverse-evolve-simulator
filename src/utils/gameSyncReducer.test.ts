@@ -8,6 +8,109 @@ const createState = (overrides: Partial<SyncState> = {}): SyncState => ({
 });
 
 describe('gameSyncReducer', () => {
+  it('rejects host-only events from non-host requesters', () => {
+    const startState = createState({
+      revision: 3,
+      host: { ...initialState.host, isReady: true },
+      guest: { ...initialState.guest, isReady: true },
+    });
+
+    const startDenied = applyGameSyncEvent(startState, {
+      id: 'evt-host-only-start',
+      type: 'START_GAME',
+      actor: 'host',
+    }, 'guest');
+    expect(startDenied).toBe(startState);
+
+    const resetState = createState({
+      revision: 4,
+      gameStatus: 'playing',
+      cards: [
+        {
+          id: 'field-host-card',
+          cardId: 'BP01-001',
+          name: 'Field Card',
+          image: '',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    const resetDenied = applyGameSyncEvent(resetState, {
+      id: 'evt-host-only-reset',
+      type: 'RESET_GAME',
+      actor: 'host',
+    }, 'guest');
+    expect(resetDenied).toBe(resetState);
+  });
+
+  it('rejects actor-scoped events when the requester does not match the actor', () => {
+    const drawState = createState({
+      revision: 5,
+      gameStatus: 'playing',
+      cards: [
+        {
+          id: 'deck-host-card',
+          cardId: 'BP01-002',
+          name: 'Deck Card',
+          image: '',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    const drawDenied = applyGameSyncEvent(drawState, {
+      id: 'evt-actor-only-draw',
+      type: 'DRAW_CARD',
+      actor: 'host',
+    }, 'guest');
+    expect(drawDenied).toBe(drawState);
+
+    const importDenied = applyGameSyncEvent(createState({
+      revision: 6,
+      cards: [
+        {
+          id: 'original-host-card',
+          cardId: 'BP01-003',
+          name: 'Original',
+          image: '',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    }), {
+      id: 'evt-actor-only-import',
+      type: 'IMPORT_DECK',
+      actor: 'host',
+      cards: [
+        {
+          id: 'new-host-card',
+          cardId: 'BP01-999',
+          name: 'Blocked Import',
+          image: '',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    }, 'guest');
+    expect(importDenied.cards.map(c => c.id)).toContain('original-host-card');
+    expect(importDenied.cards.map(c => c.id)).not.toContain('new-host-card');
+  });
+
   it('toggles ready for the actor and increments revision', () => {
     const result = applyGameSyncEvent(createState(), {
       id: 'evt-1',

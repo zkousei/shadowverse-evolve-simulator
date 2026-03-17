@@ -3,10 +3,19 @@ import type { GameSyncEvent } from '../types/sync';
 import * as CardLogic from './cardLogic';
 import { canImportDeck } from './gameRules';
 
+type EventRequester = GameSyncEvent['actor'];
+
 const bumpRevision = (state: SyncState): SyncState => ({
   ...state,
   revision: state.revision + 1,
 });
+
+const isHostRequester = (requester: EventRequester): boolean => requester === 'host';
+
+const isActorRequester = (
+  requester: EventRequester,
+  actor: GameSyncEvent['actor']
+): boolean => requester === actor;
 
 const isPreparingEvolveDeckMoveBlocked = (
   state: SyncState,
@@ -51,7 +60,8 @@ const isPreparingMainDeckFieldSet = (
 
 export const applyGameSyncEvent = (
   state: SyncState,
-  event: GameSyncEvent
+  event: GameSyncEvent,
+  requester: EventRequester = event.actor
 ): SyncState => {
   switch (event.type) {
     case 'FLIP_SHARED_COIN':
@@ -59,6 +69,7 @@ export const applyGameSyncEvent = (
       return state;
 
     case 'TOGGLE_READY':
+      if (!isActorRequester(requester, event.actor)) return state;
       return bumpRevision({
         ...state,
         [event.actor]: {
@@ -68,6 +79,7 @@ export const applyGameSyncEvent = (
       });
 
     case 'SET_PHASE':
+      if (!isActorRequester(requester, event.actor)) return state;
       if (state.gameStatus !== 'playing') return state;
       if (state.turnPlayer !== event.actor) return state;
       return bumpRevision({
@@ -76,6 +88,7 @@ export const applyGameSyncEvent = (
       });
 
     case 'END_TURN': {
+      if (!isActorRequester(requester, event.actor)) return state;
       if (state.gameStatus !== 'playing') return state;
       if (state.turnPlayer !== event.actor) return state;
 
@@ -105,6 +118,7 @@ export const applyGameSyncEvent = (
     }
 
     case 'START_GAME': {
+      if (!isHostRequester(requester)) return state;
       const starter = state.turnPlayer;
       return bumpRevision({
         ...state,
@@ -115,6 +129,7 @@ export const applyGameSyncEvent = (
     }
 
     case 'RESET_GAME': {
+      if (!isHostRequester(requester)) return state;
       const resetCards = state.cards
         .filter(c => c.cardId !== 'token')
         .map(c => ({
@@ -160,6 +175,7 @@ export const applyGameSyncEvent = (
     }
 
     case 'DRAW_CARD': {
+      if (!isActorRequester(requester, event.actor)) return state;
       if (state.gameStatus !== 'playing') return state;
       const nextCards = CardLogic.drawCard(state.cards, event.actor);
       if (nextCards === state.cards) return state;
@@ -170,6 +186,7 @@ export const applyGameSyncEvent = (
     }
 
     case 'MILL_CARD': {
+      if (!isActorRequester(requester, event.actor)) return state;
       if (state.gameStatus !== 'playing') return state;
       const nextCards = CardLogic.millCard(state.cards, event.actor);
       if (nextCards === state.cards) return state;
@@ -189,6 +206,7 @@ export const applyGameSyncEvent = (
     }
 
     case 'TOGGLE_FLIP': {
+      if (!isActorRequester(requester, event.actor)) return state;
       if (!canToggleEvolveDeckUsage(state, event.actor, event.cardId)) return state;
       const nextCards = CardLogic.toggleFlip(state.cards, event.cardId);
       if (nextCards === state.cards) return state;
@@ -269,6 +287,7 @@ export const applyGameSyncEvent = (
     }
 
     case 'SHUFFLE_DECK': {
+      if (!isActorRequester(requester, event.actor)) return state;
       const nextCards = CardLogic.shuffleDeck(state.cards, event.actor);
       if (nextCards === state.cards) return state;
       return bumpRevision({
@@ -303,6 +322,7 @@ export const applyGameSyncEvent = (
     }
 
     case 'DRAW_INITIAL_HAND': {
+      if (!isActorRequester(requester, event.actor)) return state;
       const nextCards = CardLogic.drawInitialHand(state.cards, event.actor);
       if (nextCards === state.cards) return state;
       return bumpRevision({
@@ -316,6 +336,7 @@ export const applyGameSyncEvent = (
     }
 
     case 'EXECUTE_MULLIGAN': {
+      if (!isActorRequester(requester, event.actor)) return state;
       const nextCards = CardLogic.executeMulligan(state.cards, event.actor, event.selectedIds);
       if (nextCards === state.cards) return state;
       return bumpRevision({
@@ -329,6 +350,7 @@ export const applyGameSyncEvent = (
     }
 
     case 'RESOLVE_TOP_DECK': {
+      if (!isActorRequester(requester, event.actor)) return state;
       const nextCards = CardLogic.resolveTopDeckResults(state.cards, event.actor, event.results);
       if (nextCards === state.cards) return state;
       return bumpRevision({
@@ -338,6 +360,7 @@ export const applyGameSyncEvent = (
     }
 
     case 'IMPORT_DECK': {
+      if (!isActorRequester(requester, event.actor)) return state;
       if (!canImportDeck(state, event.actor)) return state;
       const nextCards = CardLogic.importDeckCards(state.cards, event.actor, event.cards);
       return bumpRevision({
@@ -353,6 +376,7 @@ export const applyGameSyncEvent = (
     }
 
     case 'SET_INITIAL_TURN_ORDER': {
+      if (!isHostRequester(requester)) return state;
       const starter = event.starter;
       const second = starter === 'host' ? 'guest' : 'host';
       return bumpRevision({
@@ -366,12 +390,14 @@ export const applyGameSyncEvent = (
     }
 
     case 'UNDO_LAST_TURN':
+      if (!isHostRequester(requester)) return state;
       return {
         ...event.previousState,
         revision: state.revision + 1,
       };
 
     case 'SPAWN_TOKEN': {
+      if (!isActorRequester(requester, event.actor)) return state;
       const nextCards = CardLogic.spawnTokenCard(state.cards, event.token);
       return bumpRevision({
         ...state,

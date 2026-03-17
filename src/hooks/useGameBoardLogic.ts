@@ -181,7 +181,10 @@ export const useGameBoardLogic = () => {
     setLastGameState(null);
   }, [applyLocalState, isHost]);
 
-  const applyAuthoritativeEvent = useCallback((event: GameSyncEvent) => {
+  const applyAuthoritativeEvent = useCallback((
+    event: GameSyncEvent,
+    requester: PlayerRole = role
+  ) => {
     if (!processedEventDeduperRef.current.markIfNew(event.id)) {
       return;
     }
@@ -212,7 +215,7 @@ export const useGameBoardLogic = () => {
     if (event.type === 'END_TURN') {
       setLastGameState(JSON.parse(JSON.stringify(currentState)));
     }
-    const nextState = applyGameSyncEvent(currentState, event);
+    const nextState = applyGameSyncEvent(currentState, event, requester);
     if (nextState === currentState) return;
     applyLocalState(nextState);
     sendSnapshot(nextState, role);
@@ -237,7 +240,7 @@ export const useGameBoardLogic = () => {
     } as GameSyncEvent;
 
     if (isSoloMode || isHost) {
-      applyAuthoritativeEvent(fullEvent);
+      applyAuthoritativeEvent(fullEvent, isSoloMode ? fullEvent.actor : role);
       return;
     }
 
@@ -253,7 +256,7 @@ export const useGameBoardLogic = () => {
       const data = rawData as SyncMessage;
       if (data.type === 'EVENT') {
         if (isHost) {
-          applyAuthoritativeEvent(data.event);
+          applyAuthoritativeEvent(data.event, 'guest');
         }
         return;
       }
