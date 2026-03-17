@@ -12,6 +12,7 @@ export interface CardInstance {
   isTapped: boolean;
   isFlipped: boolean; // For face-down on field
   counters: { atk: number; hp: number };
+  genericCounter?: number;
   attachedTo?: string; // ID of the base card this evolve card is stacked on
   isEvolveCard?: boolean; // Rule flag to prevent Evolve cards mixing into Main deck
 }
@@ -23,6 +24,7 @@ interface Props {
   hideCurrentStats?: boolean;
   onTap?: (id: string) => void;
   onModifyCounter?: (id: string, stat: 'atk' | 'hp', delta: number) => void;
+  onModifyGenericCounter?: (id: string, delta: number) => void;
   onSendToBottom?: (id: string) => void;
   onBanish?: (id: string) => void;
   onReturnEvolve?: (id: string) => void;
@@ -33,7 +35,7 @@ interface Props {
   debugIndex?: number;
 }
 
-const Card: React.FC<Props> = ({ card, baseStats, displayCounters, hideCurrentStats, onTap, onModifyCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, isHidden, isLocked, debugIndex }) => {
+const Card: React.FC<Props> = ({ card, baseStats, displayCounters, hideCurrentStats, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, isHidden, isLocked, debugIndex }) => {
   const { attributes, listeners, setNodeRef: setDraggableRef, transform } = useDraggable({
     id: card.id,
     data: { card },
@@ -70,6 +72,7 @@ const Card: React.FC<Props> = ({ card, baseStats, displayCounters, hideCurrentSt
 
   const isStatDisplayZone = card.zone.startsWith('field-') || card.zone.startsWith('ex-');
   const effectiveDisplayCounters = displayCounters ?? card.counters;
+  const genericCounterValue = card.genericCounter ?? 0;
   const currentStats = !hideCurrentStats && isStatDisplayZone && !isHidden && !card.isFlipped && baseStats
     ? {
         atk: baseStats.atk + effectiveDisplayCounters.atk,
@@ -162,6 +165,32 @@ const Card: React.FC<Props> = ({ card, baseStats, displayCounters, hideCurrentSt
             </div>
           )}
 
+          {!isHidden && !card.isFlipped && genericCounterValue > 0 && (
+            <div
+              data-testid="generic-counter-badge"
+              style={{
+                position: 'absolute',
+                top: currentStats ? 34 : 6,
+                right: 6,
+                background: 'rgba(15, 23, 42, 0.92)',
+                border: '1px solid rgba(255,255,255,0.18)',
+                borderRadius: '999px',
+                padding: '3px 7px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontSize: '0.66rem',
+                fontWeight: 'bold',
+                color: '#e2e8f0',
+                pointerEvents: 'none',
+                boxShadow: '0 6px 12px rgba(0,0,0,0.3)'
+              }}
+            >
+              <span>Counter</span>
+              <span style={{ color: '#f8fafc' }}>{genericCounterValue}</span>
+            </div>
+          )}
+
           {/* Quick Edit Overlay - Only show if not hidden AND not locked */}
           {!isHidden && !isLocked && (
             <div className="card-controls"
@@ -192,6 +221,12 @@ const Card: React.FC<Props> = ({ card, baseStats, displayCounters, hideCurrentSt
                     <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onModifyCounter(card.id, 'hp', 1); }} style={{ background: '#ef4444', color: '#fff', padding: '2px', fontSize: '10px', borderRadius: '2px' }}>+H</button>
                     <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onModifyCounter(card.id, 'hp', -1); }} style={{ background: '#1a1d24', color: '#fff', padding: '2px', fontSize: '10px', borderRadius: '2px', marginTop: '2px' }}>-H</button>
                   </div>
+                </div>
+              )}
+              {onModifyGenericCounter && isStatDisplayZone && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '4px', width: '100%' }}>
+                  <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onModifyGenericCounter(card.id, 1); }} style={{ background: '#0f766e', color: '#fff', padding: '2px 4px', fontSize: '10px', borderRadius: '2px', width: '100%' }}>+C</button>
+                  <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onModifyGenericCounter(card.id, -1); }} style={{ background: '#7f1d1d', color: '#fff', padding: '2px 4px', fontSize: '10px', borderRadius: '2px', width: '100%' }}>-C</button>
                 </div>
               )}
               <div style={{ display: 'flex', justifyContent: 'center', gap: '4px', marginTop: 'auto' }}>

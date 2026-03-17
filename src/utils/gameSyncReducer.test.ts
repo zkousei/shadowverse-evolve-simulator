@@ -317,6 +317,36 @@ describe('gameSyncReducer', () => {
     expect(result.revision).toBe(4);
   });
 
+  it('applies generic counter events through the shared counter rules', () => {
+    const state = createState({
+      revision: 3,
+      cards: [
+        {
+          id: 'field-1',
+          cardId: 'BP01-010',
+          name: 'Field Card',
+          image: '',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    const result = applyGameSyncEvent(state, {
+      id: 'evt-7a',
+      type: 'MODIFY_GENERIC_COUNTER',
+      actor: 'host',
+      cardId: 'field-1',
+      delta: 1,
+    });
+
+    expect(result.cards.find(c => c.id === 'field-1')?.genericCounter).toBe(1);
+    expect(result.revision).toBe(4);
+  });
+
   it('applies draw and mill events through shared card rules', () => {
     const state = createState({
       revision: 0,

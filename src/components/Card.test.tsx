@@ -77,6 +77,23 @@ describe('Card', () => {
     expect(onTap).toHaveBeenCalledWith('card-1');
   });
 
+  it('fires generic counter quick actions for field cards', () => {
+    const onModifyGenericCounter = vi.fn();
+
+    render(
+      <Card
+        card={createCard()}
+        onModifyGenericCounter={onModifyGenericCounter}
+      />
+    );
+
+    fireEvent.click(screen.getByText('+C'));
+    fireEvent.click(screen.getByText('-C'));
+
+    expect(onModifyGenericCounter).toHaveBeenNthCalledWith(1, 'card-1', 1);
+    expect(onModifyGenericCounter).toHaveBeenNthCalledWith(2, 'card-1', -1);
+  });
+
   it('shows the hand-only action and hides controls when locked', () => {
     const onPlayToField = vi.fn();
     const { rerender } = render(
@@ -146,5 +163,15 @@ describe('Card', () => {
     );
 
     expect(screen.queryByTestId('current-stats-badge')).not.toBeInTheDocument();
+  });
+
+  it('renders a generic counter badge when present', () => {
+    render(
+      <Card
+        card={createCard({ genericCounter: 2 })}
+      />
+    );
+
+    expect(screen.getByTestId('generic-counter-badge')).toHaveTextContent('Counter2');
   });
 });

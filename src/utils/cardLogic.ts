@@ -12,6 +12,7 @@ export interface MoveCardOptions {
   isTapped?: boolean;
   attachedTo?: string;
   counters?: { atk: number; hp: number };
+  genericCounter?: number;
   preserveAttachment?: boolean;
 }
 
@@ -53,6 +54,29 @@ const getCountersForMove = (
   }
 
   return card.counters;
+};
+
+const getGenericCounterForMove = (
+  card: CardInstance,
+  destinationZone: string
+): number => {
+  const sourcePrefix = getZonePrefix(card.zone);
+  const destinationPrefix = getZonePrefix(destinationZone);
+  const currentValue = card.genericCounter ?? 0;
+
+  if (sourcePrefix === 'field') {
+    return destinationPrefix === 'field' ? currentValue : 0;
+  }
+
+  if (sourcePrefix === 'ex') {
+    return destinationPrefix === 'field' || destinationPrefix === 'ex' ? currentValue : 0;
+  }
+
+  if (destinationPrefix === 'hand') {
+    return 0;
+  }
+
+  return currentValue;
 };
 
 const collectDescendantIds = (
@@ -130,24 +154,31 @@ export const moveCardToEnd = (
   const otherCards = cards.filter(c => c.id !== cardId && !descendantIds.has(c.id));
   const attachments = cards.filter(c => descendantIds.has(c.id));
 
-  const movedAttachments = attachments.map(a => ({
-    ...a,
-    ...options, // Inherit zone/flipped if desired, but usually attachments follow a specific rule
-    zone: options.zone ? resolveMoveDestination(a, options.zone) : a.zone,
-    isTapped: options.isTapped ?? a.isTapped,
-    isFlipped: options.isFlipped ?? (
-      options.zone
-        ? getFaceStateForZone(resolveMoveDestination(a, options.zone), a.isFlipped)
-        : a.isFlipped
-    ),
-    attachedTo: options.preserveAttachment === false ? undefined : (options.attachedTo ?? a.attachedTo),
-  }));
+  const movedAttachments = attachments.map(a => {
+    const attachmentZone = options.zone ? resolveMoveDestination(a, options.zone) : a.zone;
+    return {
+      ...a,
+      ...options,
+      zone: attachmentZone,
+      counters: options.zone ? getCountersForMove(a, attachmentZone) : (options.counters ?? a.counters),
+      genericCounter: options.zone ? getGenericCounterForMove(a, attachmentZone) : (options.genericCounter ?? a.genericCounter),
+      isTapped: options.isTapped ?? a.isTapped,
+      isFlipped: options.isFlipped ?? (
+        options.zone
+          ? getFaceStateForZone(attachmentZone, a.isFlipped)
+          : a.isFlipped
+      ),
+      attachedTo: options.preserveAttachment === false ? undefined : (options.attachedTo ?? a.attachedTo),
+    };
+  });
 
   const movedZone = options.zone ? resolveMoveDestination(targetCard, options.zone) : targetCard.zone;
   const movedCard: CardInstance = {
     ...targetCard,
     ...options,
     zone: movedZone,
+    counters: options.zone ? getCountersForMove(targetCard, movedZone) : (options.counters ?? targetCard.counters),
+    genericCounter: options.zone ? getGenericCounterForMove(targetCard, movedZone) : (options.genericCounter ?? targetCard.genericCounter),
     isFlipped: options.isFlipped ?? (
       options.zone
         ? getFaceStateForZone(movedZone, targetCard.isFlipped)
@@ -174,24 +205,31 @@ export const moveCardToFront = (
   const otherCards = cards.filter(c => c.id !== cardId && !descendantIds.has(c.id));
   const attachments = cards.filter(c => descendantIds.has(c.id));
 
-  const movedAttachments = attachments.map(a => ({
-    ...a,
-    ...options,
-    zone: options.zone ? resolveMoveDestination(a, options.zone) : a.zone,
-    isTapped: options.isTapped ?? a.isTapped,
-    isFlipped: options.isFlipped ?? (
-      options.zone
-        ? getFaceStateForZone(resolveMoveDestination(a, options.zone), a.isFlipped)
-        : a.isFlipped
-    ),
-    attachedTo: options.preserveAttachment === false ? undefined : (options.attachedTo ?? a.attachedTo),
-  }));
+  const movedAttachments = attachments.map(a => {
+    const attachmentZone = options.zone ? resolveMoveDestination(a, options.zone) : a.zone;
+    return {
+      ...a,
+      ...options,
+      zone: attachmentZone,
+      counters: options.zone ? getCountersForMove(a, attachmentZone) : (options.counters ?? a.counters),
+      genericCounter: options.zone ? getGenericCounterForMove(a, attachmentZone) : (options.genericCounter ?? a.genericCounter),
+      isTapped: options.isTapped ?? a.isTapped,
+      isFlipped: options.isFlipped ?? (
+        options.zone
+          ? getFaceStateForZone(attachmentZone, a.isFlipped)
+          : a.isFlipped
+      ),
+      attachedTo: options.preserveAttachment === false ? undefined : (options.attachedTo ?? a.attachedTo),
+    };
+  });
 
   const movedZone = options.zone ? resolveMoveDestination(targetCard, options.zone) : targetCard.zone;
   const movedCard: CardInstance = {
     ...targetCard,
     ...options,
     zone: movedZone,
+    counters: options.zone ? getCountersForMove(targetCard, movedZone) : (options.counters ?? targetCard.counters),
+    genericCounter: options.zone ? getGenericCounterForMove(targetCard, movedZone) : (options.genericCounter ?? targetCard.genericCounter),
     isFlipped: options.isFlipped ?? (
       options.zone
         ? getFaceStateForZone(movedZone, targetCard.isFlipped)
@@ -217,6 +255,7 @@ export const drawCard = (
     zone: `hand-${role}`,
     isFlipped: false,
     counters: { atk: 0, hp: 0 },
+    genericCounter: 0,
     isTapped: false,
     attachedTo: undefined
   });
@@ -253,6 +292,7 @@ export const millCard = (
     zone: `cemetery-${role}`,
     isFlipped: false,
     counters: { atk: 0, hp: 0 },
+    genericCounter: 0,
     isTapped: false,
     attachedTo: undefined
   });
@@ -351,6 +391,7 @@ export const resolveDrop = (
               : activeCard.isFlipped,
       isTapped: isEnteringSafeZone ? false : activeCard.isTapped,
       counters: isEnteringHand ? { atk: 0, hp: 0 } : getCountersForMove(activeCard, targetZone),
+      genericCounter: getGenericCounterForMove(activeCard, targetZone),
       preserveAttachment: !isEnteringSafeZone,
     },
   };
@@ -384,6 +425,22 @@ export const modifyCardCounter = (
 
   return cards.map(c =>
     c.id === cardId ? { ...c, counters: { ...c.counters, [stat]: c.counters[stat] + delta } } : c
+  );
+};
+
+export const modifyGenericCounter = (
+  cards: CardInstance[],
+  cardId: string,
+  delta: number
+): CardInstance[] => {
+  const targetCard = cards.find(c => c.id === cardId);
+  if (!targetCard) return cards;
+  if (!(targetCard.zone.startsWith('field-') || targetCard.zone.startsWith('ex-'))) return cards;
+
+  return cards.map(card =>
+    card.id === cardId
+      ? { ...card, genericCounter: Math.max(0, (card.genericCounter ?? 0) + delta) }
+      : card
   );
 };
 
@@ -432,6 +489,7 @@ export const sendCardToBottom = (
     isTapped: false,
     attachedTo: undefined,
     counters: { atk: 0, hp: 0 },
+    genericCounter: 0,
     preserveAttachment: false,
   });
 };
@@ -451,6 +509,7 @@ export const banishCard = (
     isFlipped: false,
     attachedTo: undefined,
     counters: { atk: 0, hp: 0 },
+    genericCounter: 0,
     preserveAttachment: false,
   });
 };
@@ -470,6 +529,7 @@ export const sendCardToCemetery = (
     isFlipped: false,
     attachedTo: undefined,
     counters: { atk: 0, hp: 0 },
+    genericCounter: 0,
     preserveAttachment: false,
   });
 };
@@ -488,6 +548,7 @@ export const returnEvolveCard = (
     isFlipped: false,
     attachedTo: undefined,
     counters: { atk: 0, hp: 0 },
+    genericCounter: 0,
     preserveAttachment: false,
   });
 };
@@ -507,6 +568,7 @@ export const playCardToField = (
     isTapped: false,
     isFlipped: false,
     counters: getCountersForMove(targetCard, destinationZone),
+    genericCounter: getGenericCounterForMove(targetCard, destinationZone),
   });
 };
 
@@ -531,6 +593,7 @@ export const extractCard = (
     zone: destinationZone,
     isFlipped: false,
     counters: isEnteringHand ? { atk: 0, hp: 0 } : getCountersForMove(targetCard, destinationZone),
+    genericCounter: getGenericCounterForMove(targetCard, destinationZone),
     attachedTo: undefined,
     preserveAttachment: !isEnteringSafeZone,
   });

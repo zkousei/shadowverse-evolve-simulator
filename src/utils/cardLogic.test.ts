@@ -295,30 +295,33 @@ describe('CardLogic utils', () => {
     });
 
     it('should reset counters when a field card is dragged to a non-field zone', () => {
-      const fieldCard = { ...createMockCard('field-1', 'field-host'), counters: { atk: 2, hp: -1 } };
+      const fieldCard = { ...createMockCard('field-1', 'field-host'), counters: { atk: 2, hp: -1 }, genericCounter: 2 };
       const cemetery = createMockCard('cem', 'cemetery-host');
 
       const result = CardLogic.applyDrop([fieldCard, cemetery], 'field-1', 'cem');
 
       expect(result.find(c => c.id === 'field-1')?.counters).toEqual({ atk: 0, hp: 0 });
+      expect(result.find(c => c.id === 'field-1')?.genericCounter).toBe(0);
     });
 
     it('should preserve counters when an ex card is dragged to the field', () => {
-      const exCard = { ...createMockCard('ex-1', 'ex-host'), counters: { atk: 2, hp: -1 } };
+      const exCard = { ...createMockCard('ex-1', 'ex-host'), counters: { atk: 2, hp: -1 }, genericCounter: 2 };
       const fieldCard = createMockCard('field-1', 'field-host');
 
       const result = CardLogic.applyDrop([exCard, fieldCard], 'ex-1', 'field-1');
 
       expect(result.find(c => c.id === 'ex-1')?.counters).toEqual({ atk: 2, hp: -1 });
+      expect(result.find(c => c.id === 'ex-1')?.genericCounter).toBe(2);
     });
 
     it('should reset counters when an ex card is dragged to a non-field zone', () => {
-      const exCard = { ...createMockCard('ex-1', 'ex-host'), counters: { atk: 2, hp: -1 } };
+      const exCard = { ...createMockCard('ex-1', 'ex-host'), counters: { atk: 2, hp: -1 }, genericCounter: 2 };
       const cemetery = createMockCard('cem', 'cemetery-host');
 
       const result = CardLogic.applyDrop([exCard, cemetery], 'ex-1', 'cem');
 
       expect(result.find(c => c.id === 'ex-1')?.counters).toEqual({ atk: 0, hp: 0 });
+      expect(result.find(c => c.id === 'ex-1')?.genericCounter).toBe(0);
     });
 
     it('should delete a token when dropped into a safe zone', () => {
@@ -363,6 +366,20 @@ describe('CardLogic utils', () => {
     it('should ignore counter changes for cards in hand', () => {
       const handCard = createMockCard('hand-1', 'hand-host');
       const result = CardLogic.modifyCardCounter([handCard], 'hand-1', 'hp', 1);
+      expect(result).toEqual([handCard]);
+    });
+  });
+
+  describe('modifyGenericCounter', () => {
+    it('should change the generic counter for cards in the field or ex area', () => {
+      const fieldCard = createMockCard('field-1', 'field-host');
+      const result = CardLogic.modifyGenericCounter([fieldCard], 'field-1', 2);
+      expect(result[0].genericCounter).toBe(2);
+    });
+
+    it('should ignore generic counter changes for cards outside field and ex', () => {
+      const handCard = createMockCard('hand-1', 'hand-host');
+      const result = CardLogic.modifyGenericCounter([handCard], 'hand-1', 1);
       expect(result).toEqual([handCard]);
     });
   });
@@ -476,11 +493,12 @@ describe('CardLogic utils', () => {
     });
 
     it('should preserve counters when moving a card from ex to field', () => {
-      const card = { ...createMockCard('ex-field', 'ex-host'), counters: { atk: 3, hp: -2 } };
+      const card = { ...createMockCard('ex-field', 'ex-host'), counters: { atk: 3, hp: -2 }, genericCounter: 2 };
       const result = CardLogic.playCardToField([card], 'ex-field', 'host');
 
       expect(result[0].zone).toBe('field-host');
       expect(result[0].counters).toEqual({ atk: 3, hp: -2 });
+      expect(result[0].genericCounter).toBe(2);
     });
 
     it('should extract evolve cards to field instead of hand', () => {

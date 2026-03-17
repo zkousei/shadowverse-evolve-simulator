@@ -11,6 +11,7 @@ interface Props {
   cardStatLookup?: CardStatLookup;
   onTap?: (id: string) => void;
   onModifyCounter?: (id: string, stat: 'atk' | 'hp', delta: number) => void;
+  onModifyGenericCounter?: (id: string, delta: number) => void;
   onSendToBottom?: (id: string) => void;
   onBanish?: (id: string) => void;
   onReturnEvolve?: (id: string) => void;
@@ -24,7 +25,7 @@ interface Props {
   isDebug?: boolean;
 }
 
-const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onTap, onModifyCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, hideCards, layout = 'horizontal', isProtected, viewerRole, containerStyle, isDebug }) => {
+const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, hideCards, layout = 'horizontal', isProtected, viewerRole, containerStyle, isDebug }) => {
   const { isOver, setNodeRef } = useDroppable({ id });
 
   const isStack = layout === 'stack';
@@ -138,6 +139,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onTap, onModi
                       hideCurrentStats={attachments.length > 0}
                       onTap={onTap}
                       onModifyCounter={onModifyCounter}
+                      onModifyGenericCounter={onModifyGenericCounter}
                       onSendToBottom={onSendToBottom}
                       onBanish={onBanish}
                       onReturnEvolve={onReturnEvolve}
@@ -158,6 +160,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onTap, onModi
                           }}
                           onTap={onTap}
                           onModifyCounter={onModifyCounter}
+                          onModifyGenericCounter={onModifyGenericCounter}
                           onSendToBottom={onSendToBottom}
                           onBanish={onBanish}
                           onReturnEvolve={onReturnEvolve}
@@ -186,6 +189,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onTap, onModi
                 hideCurrentStats={attachments.length > 0}
                 onTap={onTap}
                 onModifyCounter={onModifyCounter}
+                onModifyGenericCounter={onModifyGenericCounter}
                 onSendToBottom={onSendToBottom}
                 onBanish={onBanish}
                 onReturnEvolve={onReturnEvolve}
@@ -206,6 +210,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onTap, onModi
                     }}
                     onTap={onTap}
                     onModifyCounter={onModifyCounter}
+                    onModifyGenericCounter={onModifyGenericCounter}
                     onSendToBottom={onSendToBottom}
                     onBanish={onBanish}
                     onReturnEvolve={onReturnEvolve}

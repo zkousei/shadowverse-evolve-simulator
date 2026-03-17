@@ -24,6 +24,7 @@ type DispatchableGameSyncEvent =
   | { type: 'RESET_GAME'; actor?: PlayerRole }
   | { type: 'MOVE_CARD'; actor?: PlayerRole; cardId: string; overId: string }
   | { type: 'MODIFY_COUNTER'; actor?: PlayerRole; cardId: string; stat: 'atk' | 'hp'; delta: number }
+  | { type: 'MODIFY_GENERIC_COUNTER'; actor?: PlayerRole; cardId: string; delta: number }
   | { type: 'DRAW_CARD'; actor?: PlayerRole }
   | { type: 'MILL_CARD'; actor?: PlayerRole }
   | { type: 'TOGGLE_TAP'; actor?: PlayerRole; cardId: string }
@@ -522,13 +523,13 @@ export const useGameBoardLogic = () => {
         shuffledMain.forEach((c: any) => {
           newCards.push({
             id: uuid(), cardId: c.id, name: c.name, image: c.image,
-            zone: `mainDeck-${targetRole}`, owner: targetRole, isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 }
+            zone: `mainDeck-${targetRole}`, owner: targetRole, isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 }, genericCounter: 0
           });
         });
         (data.evolveDeck || []).forEach((c: any) => {
           newCards.push({
             id: uuid(), cardId: c.id, name: c.name, image: c.image,
-            zone: `evolveDeck-${targetRole}`, owner: targetRole, isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 }, isEvolveCard: true
+            zone: `evolveDeck-${targetRole}`, owner: targetRole, isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 }, genericCounter: 0, isEvolveCard: true
           });
         });
         dispatchGameEvent({ type: 'IMPORT_DECK', actor: targetRole, cards: newCards });
@@ -541,13 +542,17 @@ export const useGameBoardLogic = () => {
     const newCard: CardInstance = {
       id: uuid(), cardId: 'token', name: 'Token', 
       image: 'https://shadowverse-evolve.com/wordpress/wp-content/themes/shadowverse-evolve-release_v0/assets/images/common/ogp.jpg',
-      zone: `ex-${targetRole}`, owner: targetRole, isTapped: false, isFlipped: false, counters: { atk: 1, hp: 1 }
+      zone: `ex-${targetRole}`, owner: targetRole, isTapped: false, isFlipped: false, counters: { atk: 1, hp: 1 }, genericCounter: 0
     };
     dispatchGameEvent({ type: 'SPAWN_TOKEN', actor: targetRole, token: newCard });
   };
 
   const handleModifyCounter = (cardId: string, stat: 'atk' | 'hp', delta: number, actor?: PlayerRole) => {
     dispatchGameEvent({ type: 'MODIFY_COUNTER', actor, cardId, stat, delta });
+  };
+
+  const handleModifyGenericCounter = (cardId: string, delta: number, actor?: PlayerRole) => {
+    dispatchGameEvent({ type: 'MODIFY_GENERIC_COUNTER', actor, cardId, delta });
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -600,7 +605,7 @@ export const useGameBoardLogic = () => {
     handlePureCoinFlip, handleRollDice, handleStartGame, handleToggleReady,
     handleDrawInitialHand, startMulligan, handleMulliganOrderSelect, executeMulligan,
     drawCard, handleExtractCard, confirmResetGame, handleDeckUpload, spawnToken,
-    handleModifyCounter, handleDragEnd, toggleTap, handleFlipCard, handleSendToBottom,
+    handleModifyCounter, handleModifyGenericCounter, handleDragEnd, toggleTap, handleFlipCard, handleSendToBottom,
     handleBanish, handlePlayToField, handleSendToCemetery, handleReturnEvolve, handleShuffleDeck,
     getCards, lastGameState, millCard,
     topDeckCards, handleLookAtTop, handleResolveTopDeck, setTopDeckCards,

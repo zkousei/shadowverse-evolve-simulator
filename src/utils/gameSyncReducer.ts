@@ -138,6 +138,7 @@ export const applyGameSyncEvent = (
           isTapped: false,
           attachedTo: undefined,
           counters: { atk: 0, hp: 0 },
+          genericCounter: 0,
         }));
 
       return {
@@ -166,6 +167,15 @@ export const applyGameSyncEvent = (
 
     case 'MODIFY_COUNTER': {
       const nextCards = CardLogic.modifyCardCounter(state.cards, event.cardId, event.stat, event.delta);
+      if (nextCards === state.cards) return state;
+      return bumpRevision({
+        ...state,
+        cards: nextCards,
+      });
+    }
+
+    case 'MODIFY_GENERIC_COUNTER': {
+      const nextCards = CardLogic.modifyGenericCounter(state.cards, event.cardId, event.delta);
       if (nextCards === state.cards) return state;
       return bumpRevision({
         ...state,
