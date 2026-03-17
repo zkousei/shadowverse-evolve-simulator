@@ -29,6 +29,7 @@ const GameBoard: React.FC = () => {
   const [showUndoConfirm, setShowUndoConfirm] = React.useState(false);
   const [topDeckTargetRole, setTopDeckTargetRole] = React.useState<PlayerRole>('host');
   const [mulliganTargetRole, setMulliganTargetRole] = React.useState<PlayerRole>('host');
+  const [activeZoneActions, setActiveZoneActions] = React.useState<string | null>(null);
   const canImportCurrentDeck = canImportDeck(gameState.gameStatus);
   const viewerRole = isSoloMode ? 'all' : role;
   const topRole = (isSoloMode ? 'guest' : role === 'host' ? 'guest' : 'host') as PlayerRole;
@@ -71,6 +72,71 @@ const GameBoard: React.FC = () => {
     setMulliganTargetRole(targetRole);
     startMulligan();
   };
+
+  const renderZoneActions = (
+    menuId: string,
+    actions: Array<{ label: string; onClick: () => void; tone?: 'default' | 'accent' }>,
+    direction: 'down' | 'up' = 'down'
+  ) => (
+    <div style={{ position: 'relative', zIndex: activeZoneActions === menuId ? 60 : 5 }}>
+      <button
+        onClick={() => setActiveZoneActions(current => current === menuId ? null : menuId)}
+        style={{
+          width: '100%',
+          fontSize: '0.75rem',
+          padding: '4px',
+          background: 'var(--bg-surface-elevated)',
+          border: '1px solid var(--border-light)',
+          color: 'white',
+          borderRadius: '4px',
+          cursor: 'pointer',
+          position: 'relative',
+          zIndex: 61
+        }}
+      >
+        Actions
+      </button>
+      {activeZoneActions === menuId && (
+        <div style={{
+          position: 'absolute',
+          top: direction === 'down' ? 'calc(100% + 4px)' : 'auto',
+          bottom: direction === 'up' ? 'calc(100% + 4px)' : 'auto',
+          left: 0,
+          right: 0,
+          zIndex: 62,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '4px',
+          padding: '6px',
+          background: 'rgba(15, 23, 42, 0.96)',
+          border: '1px solid var(--border-light)',
+          borderRadius: '6px',
+          boxShadow: '0 10px 20px rgba(0,0,0,0.35)'
+        }}>
+          {actions.map((action) => (
+            <button
+              key={action.label}
+              onClick={() => {
+                action.onClick();
+                setActiveZoneActions(null);
+              }}
+              style={{
+                fontSize: '0.75rem',
+                padding: '5px 6px',
+                background: action.tone === 'accent' ? '#3b82f6' : 'var(--bg-surface-elevated)',
+                border: `1px solid ${action.tone === 'accent' ? '#2563eb' : 'var(--border-light)'}`,
+                color: 'white',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              {action.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 
   const renderPlayerTracker = (playerRole: PlayerRole, label: string) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.8rem', padding: '0.6rem', background: 'rgba(255,255,255,0.04)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
@@ -454,11 +520,11 @@ const GameBoard: React.FC = () => {
                   <div style={{ display: 'grid', gridTemplateColumns: topRowColumns, gap: '0.75rem', width: `${boardContentWidth}px`, alignItems: 'start' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <Zone id={`mainDeck-${topRole}`} label={`${topLabel} Main Deck`} cards={getCards(`mainDeck-${topRole}`)} layout="stack" isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
-                      <div style={{ display: 'flex', gap: '2px', flexWrap: 'wrap' }}>
-                        <button onClick={() => setSearchZone({ id: `mainDeck-${topRole}`, title: `${topLabel} Main Deck` })} style={{ flex: '1 1 48%', fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
-                        <button onClick={() => handleShuffleDeck(topRole)} style={{ flex: '1 1 48%', fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Shuffle</button>
-                        <button onClick={() => openTopDeckModal(topRole)} style={{ flex: '1 1 100%', fontSize: '0.75rem', padding: '4px', background: '#3b82f6', border: '1px solid #2563eb', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Look Top (N)</button>
-                      </div>
+                      {renderZoneActions(`mainDeck-${topRole}`, [
+                        { label: 'Search', onClick: () => setSearchZone({ id: `mainDeck-${topRole}`, title: `${topLabel} Main Deck` }) },
+                        { label: 'Shuffle', onClick: () => handleShuffleDeck(topRole) },
+                        { label: 'Look Top (N)', onClick: () => openTopDeckModal(topRole), tone: 'accent' }
+                      ], 'up')}
                     </div>
                     <Zone
                       id={`field-${topRole}`}
@@ -567,11 +633,11 @@ const GameBoard: React.FC = () => {
                   <Zone id={`field-${bottomRole}`} label={`${bottomLabel} Field`} cards={getCards(`field-${bottomRole}`)} onTap={toggleTap} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} viewerRole={viewerRole} containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: '160px', width: `${centerZoneWidth}px`, flex: 'none' }} isDebug={isDebug} />
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <Zone id={`mainDeck-${bottomRole}`} label={`${bottomLabel} Main Deck`} cards={getCards(`mainDeck-${bottomRole}`)} layout="stack" isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
-                    <div style={{ display: 'flex', gap: '2px', flexWrap: 'wrap' }}>
-                      <button onClick={() => setSearchZone({ id: `mainDeck-${bottomRole}`, title: `${bottomLabel} Main Deck` })} style={{ flex: '1 1 48%', fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
-                      <button onClick={() => handleShuffleDeck(bottomRole)} style={{ flex: '1 1 48%', fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Shuffle</button>
-                      <button onClick={() => openTopDeckModal(bottomRole)} style={{ flex: '1 1 100%', fontSize: '0.75rem', padding: '4px', background: '#3b82f6', border: '1px solid #2563eb', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Look Top (N)</button>
-                    </div>
+                    {renderZoneActions(`mainDeck-${bottomRole}`, [
+                      { label: 'Search', onClick: () => setSearchZone({ id: `mainDeck-${bottomRole}`, title: `${bottomLabel} Main Deck` }) },
+                      { label: 'Shuffle', onClick: () => handleShuffleDeck(bottomRole) },
+                      { label: 'Look Top (N)', onClick: () => openTopDeckModal(bottomRole), tone: 'accent' }
+                    ])}
                   </div>
                 </div>
 
