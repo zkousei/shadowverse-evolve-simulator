@@ -522,6 +522,49 @@ describe('gameSyncReducer', () => {
     expect(returned.cards.find(c => c.id === 'evo-2')?.zone).toBe('evolveDeck-host');
   });
 
+  it('returns attached evolve cards to evolve deck when the base card goes to cemetery', () => {
+    const state = createState({
+      revision: 20,
+      cards: [
+        {
+          id: 'base',
+          cardId: 'BP01-500',
+          name: 'Base',
+          image: '',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'evo',
+          cardId: 'EV01-500',
+          name: 'Attached Evolve',
+          image: '',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+          attachedTo: 'base',
+          isEvolveCard: true,
+        },
+      ],
+    });
+
+    const result = applyGameSyncEvent(state, {
+      id: 'evt-13c',
+      type: 'SEND_TO_CEMETERY',
+      actor: 'host',
+      cardId: 'base',
+    });
+
+    expect(result.cards.find(c => c.id === 'base')?.zone).toBe('cemetery-host');
+    expect(result.cards.find(c => c.id === 'evo')?.zone).toBe('evolveDeck-host');
+    expect(result.cards.find(c => c.id === 'evo')?.attachedTo).toBeUndefined();
+  });
+
   it('applies extract and play-to-field events through shared card rules', () => {
     const state = createState({
       revision: 2,

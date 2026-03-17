@@ -22,6 +22,14 @@ export interface DropResolution {
   shouldDeleteToken: boolean;
 }
 
+const getFaceStateForZone = (zone: string, fallback: boolean): boolean => {
+  const zonePrefix = getZonePrefix(zone);
+  if (zonePrefix === 'mainDeck') return true;
+  if (zonePrefix === 'evolveDeck') return false;
+  if (['field', 'ex', 'cemetery', 'banish', 'hand'].includes(zonePrefix)) return false;
+  return fallback;
+};
+
 const collectDescendantIds = (
   cards: CardInstance[],
   parentId: string
@@ -100,15 +108,26 @@ export const moveCardToEnd = (
   const movedAttachments = attachments.map(a => ({
     ...a,
     ...options, // Inherit zone/flipped if desired, but usually attachments follow a specific rule
+    zone: options.zone ? resolveMoveDestination(a, options.zone) : a.zone,
     isTapped: options.isTapped ?? a.isTapped,
-    isFlipped: options.isFlipped ?? a.isFlipped,
+    isFlipped: options.isFlipped ?? (
+      options.zone
+        ? getFaceStateForZone(resolveMoveDestination(a, options.zone), a.isFlipped)
+        : a.isFlipped
+    ),
     attachedTo: options.preserveAttachment === false ? undefined : (options.attachedTo ?? a.attachedTo),
   }));
 
+  const movedZone = options.zone ? resolveMoveDestination(targetCard, options.zone) : targetCard.zone;
   const movedCard: CardInstance = {
     ...targetCard,
     ...options,
-    zone: options.zone ?? targetCard.zone,
+    zone: movedZone,
+    isFlipped: options.isFlipped ?? (
+      options.zone
+        ? getFaceStateForZone(movedZone, targetCard.isFlipped)
+        : targetCard.isFlipped
+    ),
   };
 
   return [...otherCards, ...movedAttachments, movedCard];
@@ -133,15 +152,26 @@ export const moveCardToFront = (
   const movedAttachments = attachments.map(a => ({
     ...a,
     ...options,
+    zone: options.zone ? resolveMoveDestination(a, options.zone) : a.zone,
     isTapped: options.isTapped ?? a.isTapped,
-    isFlipped: options.isFlipped ?? a.isFlipped,
+    isFlipped: options.isFlipped ?? (
+      options.zone
+        ? getFaceStateForZone(resolveMoveDestination(a, options.zone), a.isFlipped)
+        : a.isFlipped
+    ),
     attachedTo: options.preserveAttachment === false ? undefined : (options.attachedTo ?? a.attachedTo),
   }));
 
+  const movedZone = options.zone ? resolveMoveDestination(targetCard, options.zone) : targetCard.zone;
   const movedCard: CardInstance = {
     ...targetCard,
     ...options,
-    zone: options.zone ?? targetCard.zone,
+    zone: movedZone,
+    isFlipped: options.isFlipped ?? (
+      options.zone
+        ? getFaceStateForZone(movedZone, targetCard.isFlipped)
+        : targetCard.isFlipped
+    ),
   };
 
   return [movedCard, ...movedAttachments, ...otherCards];

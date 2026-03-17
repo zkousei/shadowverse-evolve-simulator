@@ -292,6 +292,18 @@ describe('CardLogic utils', () => {
 
       expect(result.map(c => c.id)).toEqual(['deck']);
     });
+
+    it('should return attached evolve cards to evolve deck when the base card is dropped onto cemetery', () => {
+      const base = createMockCard('base', 'field-host');
+      const evolve = { ...createMockCard('evo', 'field-host'), attachedTo: 'base', isEvolveCard: true };
+      const cemetery = createMockCard('cem', 'cemetery-host');
+
+      const result = CardLogic.applyDrop([base, evolve, cemetery], 'base', 'cem');
+
+      expect(result.find(c => c.id === 'base')?.zone).toBe('cemetery-host');
+      expect(result.find(c => c.id === 'evo')?.zone).toBe('evolveDeck-host');
+      expect(result.find(c => c.id === 'evo')?.attachedTo).toBeUndefined();
+    });
   });
 
   describe('modifyCardCounter', () => {
@@ -361,6 +373,17 @@ describe('CardLogic utils', () => {
       const result = CardLogic.sendCardToBottom([token, child, grandchild], 't1');
 
       expect(result).toEqual([]);
+    });
+
+    it('should return attached evolve cards to evolve deck when sending the base card to cemetery', () => {
+      const base = createMockCard('base', 'field-host');
+      const evolve = { ...createMockCard('evo', 'field-host'), attachedTo: 'base', isEvolveCard: true };
+
+      const result = CardLogic.sendCardToCemetery([base, evolve], 'base');
+
+      expect(result.find(c => c.id === 'base')?.zone).toBe('cemetery-host');
+      expect(result.find(c => c.id === 'evo')?.zone).toBe('evolveDeck-host');
+      expect(result.find(c => c.id === 'evo')?.attachedTo).toBeUndefined();
     });
 
     it('should move cards to field for the acting role', () => {
