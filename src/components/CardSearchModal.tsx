@@ -15,6 +15,8 @@ interface CardSearchModalProps {
 const CardSearchModal: React.FC<CardSearchModalProps> = ({ isOpen, onClose, title, cards, onExtractCard, onToggleFlip, viewerRole, allowHandExtraction = true }) => {
   if (!isOpen) return null;
 
+  const isPreparingMainDeckSearch = !allowHandExtraction && title.includes('Main Deck');
+
   return (
     <div style={{
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
@@ -47,8 +49,10 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({ isOpen, onClose, titl
           {cards.map(c => {
             const isEvolveDeck = title.includes('Evolve');
             const isUsed = isEvolveDeck && !c.isFlipped;
-            const canAddToHand = c.owner === viewerRole && !c.isEvolveCard;
-            const canAddToEx = !c.isEvolveCard;
+            const canAddToHand = !isPreparingMainDeckSearch && c.owner === viewerRole && !c.isEvolveCard;
+            const canAddToEx = !isPreparingMainDeckSearch && !c.isEvolveCard;
+            const canPlayToField = !isEvolveDeck || allowHandExtraction || isPreparingMainDeckSearch;
+            const playToFieldLabel = isPreparingMainDeckSearch ? 'Set Face-Down to Field' : 'Play to Field';
             
             return (
               <div key={c.id} className="search-card-container" style={{ position: 'relative', opacity: isUsed ? 0.6 : 1, transition: 'opacity 0.1s' }}>
@@ -81,16 +85,18 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({ isOpen, onClose, titl
                       borderRadius: '4px', padding: '6px'
                     }}
                   >
-                    <button 
-                      onClick={() => onExtractCard(c.id, `field-${viewerRole}`)}
-                      style={{
-                        width: '100%', background: '#3b82f6', color: 'white', border: 'none',
-                        padding: '3px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Play to Field
-                    </button>
+                    {canPlayToField && (
+                      <button 
+                        onClick={() => onExtractCard(c.id, `field-${viewerRole}`)}
+                        style={{
+                          width: '100%', background: '#3b82f6', color: 'white', border: 'none',
+                          padding: '3px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {playToFieldLabel}
+                      </button>
+                    )}
                     {canAddToHand && (
                       <button 
                         onClick={() => onExtractCard(c.id, `hand-${viewerRole}`)}

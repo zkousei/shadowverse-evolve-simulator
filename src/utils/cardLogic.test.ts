@@ -263,6 +263,17 @@ describe('CardLogic utils', () => {
       expect(moved?.isFlipped).toBe(false);
     });
 
+    it('should turn cards face-up when moving from a deck to the field by drag and drop', () => {
+      const evolve = { ...createMockCard('e1', 'evolveDeck-host'), isEvolveCard: true, isFlipped: true };
+      const fieldCard = createMockCard('field-1', 'field-host');
+
+      const result = CardLogic.applyDrop([evolve, fieldCard], 'e1', 'field-1');
+
+      const moved = result.find(c => c.id === 'e1');
+      expect(moved?.zone).toBe('field-host');
+      expect(moved?.isFlipped).toBe(false);
+    });
+
     it('should delete a token when dropped into a safe zone', () => {
       const token = { ...createMockCard('token-1', 'field-host'), cardId: 'token', attachedTo: undefined };
       const deck = createMockCard('deck', 'mainDeck-host');
@@ -447,6 +458,34 @@ describe('CardLogic utils', () => {
       // Our implementation currently keeps the FIRST found ID
       expect(dup?.zone).toBe('field-host');
       expect(dup?.name).toBe('Card dup');
+    });
+
+    it('should not change flip state while deduplicating', () => {
+      const cards = [
+        { ...createMockCard('field-hidden', 'field-host'), isFlipped: true },
+        { ...createMockCard('deck-hidden', 'mainDeck-host'), isFlipped: true },
+      ];
+
+      const result = CardLogic.applyStateWithGuards(cards);
+
+      expect(result.find(c => c.id === 'field-hidden')?.isFlipped).toBe(true);
+      expect(result.find(c => c.id === 'deck-hidden')?.isFlipped).toBe(true);
+    });
+  });
+
+  describe('normalizeCardsForGameState', () => {
+    it('should force field cards face-up only while playing', () => {
+      const cards = [
+        { ...createMockCard('field-hidden', 'field-host'), isFlipped: true },
+        { ...createMockCard('deck-hidden', 'mainDeck-host'), isFlipped: true },
+      ];
+
+      const preparing = CardLogic.normalizeCardsForGameState(cards, 'preparing');
+      expect(preparing.find(c => c.id === 'field-hidden')?.isFlipped).toBe(true);
+
+      const playing = CardLogic.normalizeCardsForGameState(cards, 'playing');
+      expect(playing.find(c => c.id === 'field-hidden')?.isFlipped).toBe(false);
+      expect(playing.find(c => c.id === 'deck-hidden')?.isFlipped).toBe(true);
     });
   });
 });

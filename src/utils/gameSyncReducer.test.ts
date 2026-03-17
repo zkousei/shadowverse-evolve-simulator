@@ -321,8 +321,9 @@ describe('gameSyncReducer', () => {
     expect(imported.revision).toBe(12);
   });
 
-  it('applies tap and flip events through shared card rules', () => {
+  it('applies tap and evolve-deck usage flip events through shared card rules', () => {
     const state = createState({
+      gameStatus: 'preparing',
       revision: 6,
       cards: [
         {
@@ -330,10 +331,10 @@ describe('gameSyncReducer', () => {
           cardId: 'BP01-013',
           name: 'Parent',
           image: '',
-          zone: 'field-host',
+          zone: 'evolveDeck-host',
           owner: 'host',
           isTapped: false,
-          isFlipped: false,
+          isFlipped: true,
           counters: { atk: 0, hp: 0 },
         },
         {
@@ -365,8 +366,68 @@ describe('gameSyncReducer', () => {
       actor: 'host',
       cardId: 'parent',
     });
-    expect(flipped.cards.find(c => c.id === 'parent')?.isFlipped).toBe(true);
+    expect(flipped.cards.find(c => c.id === 'parent')?.isFlipped).toBe(false);
     expect(flipped.cards.find(c => c.id === 'child')?.isFlipped).toBe(false);
+  });
+
+  it('blocks flip events outside preparation or for non-owned/non-evolve-deck cards', () => {
+    const baseState = createState({
+      revision: 4,
+      gameStatus: 'preparing',
+      cards: [
+        {
+          id: 'field-card',
+          cardId: 'BP01-900',
+          name: 'Field Card',
+          image: '',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'guest-evo',
+          cardId: 'EV01-900',
+          name: 'Guest Evolve',
+          image: '',
+          zone: 'evolveDeck-guest',
+          owner: 'guest',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+          isEvolveCard: true,
+        },
+      ],
+    });
+
+    const fieldFlip = applyGameSyncEvent(baseState, {
+      id: 'evt-11a',
+      type: 'TOGGLE_FLIP',
+      actor: 'host',
+      cardId: 'field-card',
+    });
+    expect(fieldFlip).toBe(baseState);
+
+    const otherOwnerFlip = applyGameSyncEvent(baseState, {
+      id: 'evt-11b',
+      type: 'TOGGLE_FLIP',
+      actor: 'host',
+      cardId: 'guest-evo',
+    });
+    expect(otherOwnerFlip).toBe(baseState);
+
+    const playingState = {
+      ...baseState,
+      gameStatus: 'playing' as const,
+    };
+    const duringGameFlip = applyGameSyncEvent(playingState, {
+      id: 'evt-11c',
+      type: 'TOGGLE_FLIP',
+      actor: 'guest',
+      cardId: 'guest-evo',
+    });
+    expect(duringGameFlip).toBe(playingState);
   });
 
   it('applies shortcut movement events through shared card rules', () => {
@@ -414,6 +475,51 @@ describe('gameSyncReducer', () => {
       cardId: 'evo',
     });
     expect(banished.cards.find(c => c.id === 'evo')?.zone).toBe('evolveDeck-host');
+
+    const cemeteryState = createState({
+      revision: 12,
+      cards: [
+        {
+          id: 'normal-2',
+          cardId: 'BP01-015',
+          name: 'Normal 2',
+          image: '',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'evo-2',
+          cardId: 'EV01-003',
+          name: 'Evolve 2',
+          image: '',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+          isEvolveCard: true,
+        },
+      ],
+    });
+
+    const sentToCemetery = applyGameSyncEvent(cemeteryState, {
+      id: 'evt-13a',
+      type: 'SEND_TO_CEMETERY',
+      actor: 'host',
+      cardId: 'normal-2',
+    });
+    expect(sentToCemetery.cards.find(c => c.id === 'normal-2')?.zone).toBe('cemetery-host');
+
+    const returned = applyGameSyncEvent(sentToCemetery, {
+      id: 'evt-13b',
+      type: 'RETURN_EVOLVE',
+      actor: 'host',
+      cardId: 'evo-2',
+    });
+    expect(returned.cards.find(c => c.id === 'evo-2')?.zone).toBe('evolveDeck-host');
   });
 
   it('applies extract and play-to-field events through shared card rules', () => {
@@ -461,6 +567,129 @@ describe('gameSyncReducer', () => {
       cardId: 'hand-card',
     });
     expect(played.cards.find(c => c.id === 'hand-card')?.zone).toBe('field-host');
+  });
+
+  it('sets searched main-deck cards face-down onto the field during preparation', () => {
+    const state = createState({
+      revision: 2,
+      gameStatus: 'preparing',
+      cards: [
+        {
+          id: 'main-deck-card',
+          cardId: 'BP01-777',
+          name: 'Starter',
+          image: '',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    const extracted = applyGameSyncEvent(state, {
+      id: 'evt-15-prep',
+      type: 'EXTRACT_CARD',
+      actor: 'host',
+      cardId: 'main-deck-card',
+      destination: 'field-host',
+    });
+
+    const moved = extracted.cards.find(c => c.id === 'main-deck-card');
+    expect(moved?.zone).toBe('field-host');
+    expect(moved?.isFlipped).toBe(true);
+  });
+
+  it('blocks moving evolve-deck cards during preparation across drag and extract paths', () => {
+    const state = createState({
+      revision: 7,
+      gameStatus: 'preparing',
+      cards: [
+        {
+          id: 'evo-deck-card',
+          cardId: 'EV01-003',
+          name: 'Evolve Deck Card',
+          image: '',
+          zone: 'evolveDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+          isEvolveCard: true,
+        },
+        {
+          id: 'field-card',
+          cardId: 'BP01-099',
+          name: 'Field Card',
+          image: '',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    const dragged = applyGameSyncEvent(state, {
+      id: 'evt-15a',
+      type: 'MOVE_CARD',
+      actor: 'host',
+      cardId: 'evo-deck-card',
+      overId: 'field-card',
+    });
+    expect(dragged).toBe(state);
+
+    const extracted = applyGameSyncEvent(state, {
+      id: 'evt-15b',
+      type: 'EXTRACT_CARD',
+      actor: 'host',
+      cardId: 'evo-deck-card',
+      destination: 'field-host',
+    });
+    expect(extracted).toBe(state);
+  });
+
+  it('blocks dragging main-deck cards to other zones during preparation', () => {
+    const state = createState({
+      revision: 8,
+      gameStatus: 'preparing',
+      cards: [
+        {
+          id: 'main-deck-card',
+          cardId: 'BP01-901',
+          name: 'Main Deck Card',
+          image: '',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'field-card',
+          cardId: 'BP01-902',
+          name: 'Field Card',
+          image: '',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    const dragged = applyGameSyncEvent(state, {
+      id: 'evt-15c',
+      type: 'MOVE_CARD',
+      actor: 'host',
+      cardId: 'main-deck-card',
+      overId: 'field-card',
+    });
+
+    expect(dragged).toBe(state);
   });
 
   it('applies stat, initial hand, mulligan, top deck resolve, and import events', () => {
@@ -594,6 +823,54 @@ describe('gameSyncReducer', () => {
     });
     expect(imported.cards.map(c => c.id)).toContain('new1');
     expect(imported.cards.map(c => c.id)).not.toContain('d1');
+
+    const shuffled = applyGameSyncEvent(baseState, {
+      id: 'evt-20b',
+      type: 'SHUFFLE_DECK',
+      actor: 'host',
+    });
+    expect(shuffled.revision).toBe(baseState.revision + 1);
+    expect(shuffled.cards.filter(c => c.zone === 'mainDeck-host')).toHaveLength(5);
+  });
+
+  it('forces all field cards face-up when the game starts', () => {
+    const state = createState({
+      revision: 12,
+      turnPlayer: 'host',
+      cards: [
+        {
+          id: 'starter-amulet',
+          cardId: 'BP01-888',
+          name: 'Starter Amulet',
+          image: '',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'opponent-field',
+          cardId: 'BP01-889',
+          name: 'Opponent Field',
+          image: '',
+          zone: 'field-guest',
+          owner: 'guest',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    const started = applyGameSyncEvent(state, {
+      id: 'evt-start-field',
+      type: 'START_GAME',
+      actor: 'host',
+    });
+
+    expect(started.gameStatus).toBe('playing');
+    expect(started.cards.every(card => !card.zone.startsWith('field-') || card.isFlipped === false)).toBe(true);
   });
 
   it('applies turn-order, undo, and spawn-token events', () => {

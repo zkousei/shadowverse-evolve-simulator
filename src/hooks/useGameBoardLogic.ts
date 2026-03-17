@@ -65,9 +65,10 @@ export const useGameBoardLogic = () => {
   const gameStateRef = useRef<SyncState>(initialState);
 
   const applyLocalState = useCallback((newState: SyncState) => {
+    const guardedCards = CardLogic.applyStateWithGuards(newState.cards);
     const guardedState: SyncState = {
       ...newState,
-      cards: CardLogic.applyStateWithGuards(newState.cards)
+      cards: CardLogic.normalizeCardsForGameState(guardedCards, newState.gameStatus)
     };
     setGameState(guardedState);
     gameStateRef.current = guardedState;

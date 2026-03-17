@@ -7,6 +7,47 @@ const bumpRevision = (state: SyncState): SyncState => ({
   revision: state.revision + 1,
 });
 
+const isPreparingEvolveDeckMoveBlocked = (
+  state: SyncState,
+  cardId: string
+): boolean => {
+  if (state.gameStatus !== 'preparing') return false;
+  const card = state.cards.find(c => c.id === cardId);
+  return card?.zone.startsWith('evolveDeck-') ?? false;
+};
+
+const isPreparingMainDeckDragBlocked = (
+  state: SyncState,
+  cardId: string
+): boolean => {
+  if (state.gameStatus !== 'preparing') return false;
+  const card = state.cards.find(c => c.id === cardId);
+  return card?.zone.startsWith('mainDeck-') ?? false;
+};
+
+const canToggleEvolveDeckUsage = (
+  state: SyncState,
+  actor: GameSyncEvent['actor'],
+  cardId: string
+): boolean => {
+  if (state.gameStatus !== 'preparing') return false;
+  const card = state.cards.find(c => c.id === cardId);
+  if (!card) return false;
+  return card.owner === actor && card.zone === `evolveDeck-${actor}`;
+};
+
+const isPreparingMainDeckFieldSet = (
+  state: SyncState,
+  actor: GameSyncEvent['actor'],
+  cardId: string,
+  destination?: string
+): boolean => {
+  if (state.gameStatus !== 'preparing') return false;
+  const card = state.cards.find(c => c.id === cardId);
+  if (!card) return false;
+  return card.zone === `mainDeck-${actor}` && destination === `field-${actor}`;
+};
+
 export const applyGameSyncEvent = (
   state: SyncState,
   event: GameSyncEvent
@@ -63,6 +104,7 @@ export const applyGameSyncEvent = (
       return bumpRevision({
         ...state,
         gameStatus: 'playing',
+        cards: state.cards.map(card => card.zone.startsWith('field-') ? { ...card, isFlipped: false } : card),
         [starter]: { ...state[starter], pp: 1, maxPp: 1 },
       });
     }
@@ -93,6 +135,8 @@ export const applyGameSyncEvent = (
     }
 
     case 'MOVE_CARD': {
+      if (isPreparingMainDeckDragBlocked(state, event.cardId)) return state;
+      if (isPreparingEvolveDeckMoveBlocked(state, event.cardId)) return state;
       const nextCards = CardLogic.applyDrop(state.cards, event.cardId, event.overId);
       if (nextCards === state.cards) return state;
       return bumpRevision({
@@ -140,6 +184,7 @@ export const applyGameSyncEvent = (
     }
 
     case 'TOGGLE_FLIP': {
+      if (!canToggleEvolveDeckUsage(state, event.actor, event.cardId)) return state;
       const nextCards = CardLogic.toggleFlip(state.cards, event.cardId);
       if (nextCards === state.cards) return state;
       return bumpRevision({
@@ -194,6 +239,22 @@ export const applyGameSyncEvent = (
     }
 
     case 'EXTRACT_CARD': {
+      if (isPreparingEvolveDeckMoveBlocked(state, event.cardId)) return state;
+      if (isPreparingMainDeckFieldSet(state, event.actor, event.cardId, event.destination)) {
+        const nextCards = CardLogic.moveCardToEnd(state.cards, event.cardId, {
+          zone: `field-${event.actor}`,
+          isFlipped: true,
+          isTapped: false,
+          attachedTo: undefined,
+          counters: { atk: 0, hp: 0 },
+          preserveAttachment: false,
+        });
+        if (nextCards === state.cards) return state;
+        return bumpRevision({
+          ...state,
+          cards: nextCards,
+        });
+      }
       const nextCards = CardLogic.extractCard(state.cards, event.cardId, event.actor, event.destination);
       if (nextCards === state.cards) return state;
       return bumpRevision({

@@ -1,4 +1,5 @@
 import type { CardInstance } from '../components/Card';
+import type { SyncState } from '../types/game';
 
 /**
  * Pure logic for card state transitions.
@@ -274,7 +275,14 @@ export const resolveDrop = (
     moveOptions: {
       zone: targetZone,
       attachedTo: newAttachedTo,
-      isFlipped: baseZonePrefix === 'mainDeck' ? true : baseZonePrefix === 'evolveDeck' ? false : activeCard.isFlipped,
+      isFlipped:
+        baseZonePrefix === 'mainDeck'
+          ? true
+          : baseZonePrefix === 'evolveDeck'
+            ? false
+            : ['field', 'ex', 'cemetery', 'banish', 'hand'].includes(baseZonePrefix)
+              ? false
+              : activeCard.isFlipped,
       isTapped: isEnteringSafeZone ? false : activeCard.isTapped,
       counters: isEnteringHand ? { atk: 0, hp: 0 } : activeCard.counters,
       preserveAttachment: !isEnteringSafeZone,
@@ -596,4 +604,14 @@ export const applyStateWithGuards = (newState: CardInstance[]): CardInstance[] =
   }
   
   return uniqueCards;
+};
+
+export const normalizeCardsForGameState = (
+  cards: CardInstance[],
+  gameStatus: SyncState['gameStatus']
+): CardInstance[] => {
+  if (gameStatus !== 'playing') return cards;
+  return cards.map(card =>
+    card.zone.startsWith('field-') && card.isFlipped ? { ...card, isFlipped: false } : card
+  );
 };
