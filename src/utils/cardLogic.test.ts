@@ -274,6 +274,33 @@ describe('CardLogic utils', () => {
       expect(moved?.isFlipped).toBe(false);
     });
 
+    it('should reset counters when a field card is dragged to a non-field zone', () => {
+      const fieldCard = { ...createMockCard('field-1', 'field-host'), counters: { atk: 2, hp: -1 } };
+      const cemetery = createMockCard('cem', 'cemetery-host');
+
+      const result = CardLogic.applyDrop([fieldCard, cemetery], 'field-1', 'cem');
+
+      expect(result.find(c => c.id === 'field-1')?.counters).toEqual({ atk: 0, hp: 0 });
+    });
+
+    it('should preserve counters when an ex card is dragged to the field', () => {
+      const exCard = { ...createMockCard('ex-1', 'ex-host'), counters: { atk: 2, hp: -1 } };
+      const fieldCard = createMockCard('field-1', 'field-host');
+
+      const result = CardLogic.applyDrop([exCard, fieldCard], 'ex-1', 'field-1');
+
+      expect(result.find(c => c.id === 'ex-1')?.counters).toEqual({ atk: 2, hp: -1 });
+    });
+
+    it('should reset counters when an ex card is dragged to a non-field zone', () => {
+      const exCard = { ...createMockCard('ex-1', 'ex-host'), counters: { atk: 2, hp: -1 } };
+      const cemetery = createMockCard('cem', 'cemetery-host');
+
+      const result = CardLogic.applyDrop([exCard, cemetery], 'ex-1', 'cem');
+
+      expect(result.find(c => c.id === 'ex-1')?.counters).toEqual({ atk: 0, hp: 0 });
+    });
+
     it('should delete a token when dropped into a safe zone', () => {
       const token = { ...createMockCard('token-1', 'field-host'), cardId: 'token', attachedTo: undefined };
       const deck = createMockCard('deck', 'mainDeck-host');
@@ -426,6 +453,14 @@ describe('CardLogic utils', () => {
       const card = createMockCard('n2', 'hand-host');
       const result = CardLogic.playCardToField([card], 'n2', 'guest');
       expect(result[0].zone).toBe('field-guest');
+    });
+
+    it('should preserve counters when moving a card from ex to field', () => {
+      const card = { ...createMockCard('ex-field', 'ex-host'), counters: { atk: 3, hp: -2 } };
+      const result = CardLogic.playCardToField([card], 'ex-field', 'host');
+
+      expect(result[0].zone).toBe('field-host');
+      expect(result[0].counters).toEqual({ atk: 3, hp: -2 });
     });
 
     it('should extract evolve cards to field instead of hand', () => {
