@@ -100,4 +100,51 @@ describe('Card', () => {
 
     expect(screen.queryByText('Play to Field')).not.toBeInTheDocument();
   });
+
+  it('shows current stats for field cards when base stats are available', () => {
+    render(
+      <Card
+        card={createCard({ counters: { atk: 1, hp: -1 } })}
+        baseStats={{ atk: 3, hp: 4 }}
+      />
+    );
+
+    expect(screen.getByTestId('current-stats-badge')).toHaveTextContent('4/3');
+    expect(screen.queryByText('+1')).not.toBeInTheDocument();
+  });
+
+  it('does not show current stats for hand cards even if base stats are available', () => {
+    render(
+      <Card
+        card={createCard({ zone: 'hand-host', counters: { atk: 1, hp: -1 } })}
+        baseStats={{ atk: 3, hp: 4 }}
+      />
+    );
+
+    expect(screen.queryByTestId('current-stats-badge')).not.toBeInTheDocument();
+  });
+
+  it('renders inherited display counters for attached evolve cards', () => {
+    render(
+      <Card
+        card={createCard({ zone: 'field-host', counters: { atk: 1, hp: 0 } })}
+        baseStats={{ atk: 4, hp: 5 }}
+        displayCounters={{ atk: 3, hp: -1 }}
+      />
+    );
+
+    expect(screen.getByTestId('current-stats-badge')).toHaveTextContent('7/4');
+  });
+
+  it('hides current stats when the card is underneath a stack', () => {
+    render(
+      <Card
+        card={createCard()}
+        baseStats={{ atk: 3, hp: 4 }}
+        hideCurrentStats={true}
+      />
+    );
+
+    expect(screen.queryByTestId('current-stats-badge')).not.toBeInTheDocument();
+  });
 });

@@ -2,11 +2,13 @@ import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import Card, { type CardInstance } from './Card';
 import type { PlayerRole } from '../types/game';
+import type { CardStatLookup } from '../utils/cardStats';
 
 interface Props {
   id: string;
   label: string;
   cards: CardInstance[];
+  cardStatLookup?: CardStatLookup;
   onTap?: (id: string) => void;
   onModifyCounter?: (id: string, stat: 'atk' | 'hp', delta: number) => void;
   onSendToBottom?: (id: string) => void;
@@ -22,7 +24,7 @@ interface Props {
   isDebug?: boolean;
 }
 
-const Zone: React.FC<Props> = ({ id, label, cards, onTap, onModifyCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, hideCards, layout = 'horizontal', isProtected, viewerRole, containerStyle, isDebug }) => {
+const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onTap, onModifyCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, hideCards, layout = 'horizontal', isProtected, viewerRole, containerStyle, isDebug }) => {
   const { isOver, setNodeRef } = useDroppable({ id });
 
   const isStack = layout === 'stack';
@@ -132,6 +134,8 @@ const Zone: React.FC<Props> = ({ id, label, cards, onTap, onModifyCounter, onSen
                   <div key={card.id} style={{ position: 'absolute', top: stackOffset, left: stackOffset, zIndex: displayIndex }}>
                     <Card
                       card={card}
+                      baseStats={cardStatLookup?.[card.cardId]}
+                      hideCurrentStats={attachments.length > 0}
                       onTap={onTap}
                       onModifyCounter={onModifyCounter}
                       onSendToBottom={onSendToBottom}
@@ -147,6 +151,11 @@ const Zone: React.FC<Props> = ({ id, label, cards, onTap, onModifyCounter, onSen
                       <div key={attachedCard.id} style={{ position: 'absolute', top: (i + 1) * 20, left: (i + 1) * 15, zIndex: index + 10 + i }}>
                         <Card
                           card={attachedCard}
+                          baseStats={cardStatLookup?.[attachedCard.cardId]}
+                          displayCounters={{
+                            atk: card.counters.atk + attachedCard.counters.atk,
+                            hp: card.counters.hp + attachedCard.counters.hp,
+                          }}
                           onTap={onTap}
                           onModifyCounter={onModifyCounter}
                           onSendToBottom={onSendToBottom}
@@ -173,6 +182,8 @@ const Zone: React.FC<Props> = ({ id, label, cards, onTap, onModifyCounter, onSen
             <div key={card.id} style={{ position: 'relative' }}>
               <Card
                 card={card}
+                baseStats={cardStatLookup?.[card.cardId]}
+                hideCurrentStats={attachments.length > 0}
                 onTap={onTap}
                 onModifyCounter={onModifyCounter}
                 onSendToBottom={onSendToBottom}
@@ -188,6 +199,11 @@ const Zone: React.FC<Props> = ({ id, label, cards, onTap, onModifyCounter, onSen
                 <div key={attachedCard.id} style={{ position: 'absolute', top: (i + 1) * 20, left: (i + 1) * 15, zIndex: 10 + i }}>
                   <Card
                     card={attachedCard}
+                    baseStats={cardStatLookup?.[attachedCard.cardId]}
+                    displayCounters={{
+                      atk: card.counters.atk + attachedCard.counters.atk,
+                      hp: card.counters.hp + attachedCard.counters.hp,
+                    }}
                     onTap={onTap}
                     onModifyCounter={onModifyCounter}
                     onSendToBottom={onSendToBottom}

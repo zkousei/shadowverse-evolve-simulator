@@ -31,6 +31,30 @@ const getFaceStateForZone = (zone: string, fallback: boolean): boolean => {
   return fallback;
 };
 
+const getCountersForMove = (
+  card: CardInstance,
+  destinationZone: string
+): { atk: number; hp: number } => {
+  const sourcePrefix = getZonePrefix(card.zone);
+  const destinationPrefix = getZonePrefix(destinationZone);
+
+  if (sourcePrefix === 'field') {
+    return destinationPrefix === 'field' ? card.counters : { atk: 0, hp: 0 };
+  }
+
+  if (sourcePrefix === 'ex') {
+    return destinationPrefix === 'field' || destinationPrefix === 'ex'
+      ? card.counters
+      : { atk: 0, hp: 0 };
+  }
+
+  if (destinationPrefix === 'hand') {
+    return { atk: 0, hp: 0 };
+  }
+
+  return card.counters;
+};
+
 const collectDescendantIds = (
   cards: CardInstance[],
   parentId: string
@@ -317,7 +341,7 @@ export const resolveDrop = (
               ? false
               : activeCard.isFlipped,
       isTapped: isEnteringSafeZone ? false : activeCard.isTapped,
-      counters: isEnteringHand ? { atk: 0, hp: 0 } : activeCard.counters,
+      counters: isEnteringHand ? { atk: 0, hp: 0 } : getCountersForMove(activeCard, targetZone),
       preserveAttachment: !isEnteringSafeZone,
     },
   };
@@ -463,12 +487,19 @@ export const playCardToField = (
   cards: CardInstance[],
   cardId: string,
   role: 'host' | 'guest'
-): CardInstance[] => moveCardToEnd(cards, cardId, {
-  zone: `field-${role}`,
-  attachedTo: undefined,
-  isTapped: false,
-  isFlipped: false,
-});
+): CardInstance[] => {
+  const targetCard = cards.find(c => c.id === cardId);
+  if (!targetCard) return cards;
+
+  const destinationZone = `field-${role}`;
+  return moveCardToEnd(cards, cardId, {
+    zone: destinationZone,
+    attachedTo: undefined,
+    isTapped: false,
+    isFlipped: false,
+    counters: getCountersForMove(targetCard, destinationZone),
+  });
+};
 
 export const extractCard = (
   cards: CardInstance[],
@@ -490,7 +521,7 @@ export const extractCard = (
   return moveCardToEnd(cards, cardId, {
     zone: destinationZone,
     isFlipped: false,
-    counters: isEnteringHand ? { atk: 0, hp: 0 } : targetCard.counters,
+    counters: isEnteringHand ? { atk: 0, hp: 0 } : getCountersForMove(targetCard, destinationZone),
     attachedTo: undefined,
     preserveAttachment: !isEnteringSafeZone,
   });

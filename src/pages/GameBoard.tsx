@@ -7,6 +7,7 @@ import { useGameBoardLogic } from '../hooks/useGameBoardLogic';
 import { canImportDeck, canUndoLastTurn } from '../utils/gameRules';
 import { getPlayerLabel, getZoneOwner } from '../utils/soloMode';
 import type { PlayerRole } from '../types/game';
+import { buildCardStatLookup, type CardStatLookup } from '../utils/cardStats';
 
 const GameBoard: React.FC = () => {
   const {
@@ -30,6 +31,7 @@ const GameBoard: React.FC = () => {
   const [topDeckTargetRole, setTopDeckTargetRole] = React.useState<PlayerRole>('host');
   const [mulliganTargetRole, setMulliganTargetRole] = React.useState<PlayerRole>('host');
   const [activeZoneActions, setActiveZoneActions] = React.useState<string | null>(null);
+  const [cardStatLookup, setCardStatLookup] = React.useState<CardStatLookup>({});
   const viewerRole = isSoloMode ? 'all' : role;
   const topRole = (isSoloMode ? 'guest' : role === 'host' ? 'guest' : 'host') as PlayerRole;
   const bottomRole = (isSoloMode ? 'host' : role) as PlayerRole;
@@ -63,6 +65,22 @@ const GameBoard: React.FC = () => {
     boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
     border: '2px solid black'
   };
+
+  React.useEffect(() => {
+    let isActive = true;
+
+    fetch('/cards_detailed.json')
+      .then(res => res.json())
+      .then(data => {
+        if (!isActive) return;
+        setCardStatLookup(buildCardStatLookup(data));
+      })
+      .catch(err => console.error('Could not load card stats', err));
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   const openTopDeckModal = (targetRole: PlayerRole) => {
     setTopDeckTargetRole(targetRole);
@@ -525,6 +543,7 @@ const GameBoard: React.FC = () => {
                       id={`ex-${topRole}`}
                       label={`${topLabel} EX Area`}
                       cards={getCards(`ex-${topRole}`)}
+                      cardStatLookup={cardStatLookup}
                       isProtected={false}
                       viewerRole={viewerRole}
                       onModifyCounter={handleModifyCounter}
@@ -554,6 +573,7 @@ const GameBoard: React.FC = () => {
                       id={`field-${topRole}`}
                       label={`${topLabel} Field`}
                       cards={getCards(`field-${topRole}`)}
+                      cardStatLookup={cardStatLookup}
                       onTap={toggleTap}
                       onModifyCounter={handleModifyCounter}
                       onSendToBottom={handleSendToBottom}
@@ -606,6 +626,7 @@ const GameBoard: React.FC = () => {
                       id={`ex-${topRole}`}
                       label={`${topLabel} EX Area`}
                       cards={getCards(`ex-${topRole}`)}
+                      cardStatLookup={cardStatLookup}
                       isProtected={false}
                       viewerRole={viewerRole}
                       containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: '150px', flex: 'none', width: `${centerZoneWidth}px` }}
@@ -624,6 +645,7 @@ const GameBoard: React.FC = () => {
                       id={`field-${topRole}`}
                       label={`${topLabel} Field`}
                       cards={getCards(`field-${topRole}`)}
+                      cardStatLookup={cardStatLookup}
                       onTap={toggleTap}
                       onModifyCounter={handleModifyCounter}
                       onCemetery={handleSendToCemetery}
@@ -654,7 +676,7 @@ const GameBoard: React.FC = () => {
                     <Zone id={`evolveDeck-${bottomRole}`} label={`${bottomLabel} Evolve Deck`} cards={getCards(`evolveDeck-${bottomRole}`)} layout="stack" isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
                     <button onClick={() => setSearchZone({ id: `evolveDeck-${bottomRole}`, title: `${bottomLabel} Evolve Deck` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
                   </div>
-                  <Zone id={`field-${bottomRole}`} label={`${bottomLabel} Field`} cards={getCards(`field-${bottomRole}`)} onTap={toggleTap} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} viewerRole={viewerRole} containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: '160px', width: `${centerZoneWidth}px`, flex: 'none' }} isDebug={isDebug} />
+                  <Zone id={`field-${bottomRole}`} label={`${bottomLabel} Field`} cards={getCards(`field-${bottomRole}`)} cardStatLookup={cardStatLookup} onTap={toggleTap} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} viewerRole={viewerRole} containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: '160px', width: `${centerZoneWidth}px`, flex: 'none' }} isDebug={isDebug} />
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <Zone id={`mainDeck-${bottomRole}`} label={`${bottomLabel} Main Deck`} cards={getCards(`mainDeck-${bottomRole}`)} layout="stack" isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
                     {renderZoneActions(`mainDeck-${bottomRole}`, [
@@ -670,7 +692,7 @@ const GameBoard: React.FC = () => {
                     <Zone id={`banish-${bottomRole}`} label={`${bottomLabel} Banish`} cards={getCards(`banish-${bottomRole}`)} layout="stack" onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onCemetery={handleSendToCemetery} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
                     <button onClick={() => setSearchZone({ id: `banish-${bottomRole}`, title: `${bottomLabel} Banish` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
                   </div>
-	                  <Zone id={`ex-${bottomRole}`} label={`${bottomLabel} EX Area`} cards={getCards(`ex-${bottomRole}`)} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} viewerRole={viewerRole} containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: '150px', flex: 'none', width: `${centerZoneWidth}px` }} isDebug={isDebug} />
+	                  <Zone id={`ex-${bottomRole}`} label={`${bottomLabel} EX Area`} cards={getCards(`ex-${bottomRole}`)} cardStatLookup={cardStatLookup} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} viewerRole={viewerRole} containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: '150px', flex: 'none', width: `${centerZoneWidth}px` }} isDebug={isDebug} />
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <Zone id={`cemetery-${bottomRole}`} label={`${bottomLabel} Cemetery`} cards={getCards(`cemetery-${bottomRole}`)} layout="stack" onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onCemetery={handleSendToCemetery} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
                     <button onClick={() => setSearchZone({ id: `cemetery-${bottomRole}`, title: `${bottomLabel} Cemetery` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>

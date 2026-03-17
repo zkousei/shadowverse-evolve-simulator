@@ -1,5 +1,6 @@
 import React from 'react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
+import type { BaseCardStats } from '../utils/cardStats';
 
 export interface CardInstance {
   id: string; // unique instance id
@@ -17,6 +18,9 @@ export interface CardInstance {
 
 interface Props {
   card: CardInstance;
+  baseStats?: BaseCardStats;
+  displayCounters?: { atk: number; hp: number };
+  hideCurrentStats?: boolean;
   onTap?: (id: string) => void;
   onModifyCounter?: (id: string, stat: 'atk' | 'hp', delta: number) => void;
   onSendToBottom?: (id: string) => void;
@@ -29,7 +33,7 @@ interface Props {
   debugIndex?: number;
 }
 
-const Card: React.FC<Props> = ({ card, onTap, onModifyCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, isHidden, isLocked, debugIndex }) => {
+const Card: React.FC<Props> = ({ card, baseStats, displayCounters, hideCurrentStats, onTap, onModifyCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, isHidden, isLocked, debugIndex }) => {
   const { attributes, listeners, setNodeRef: setDraggableRef, transform } = useDraggable({
     id: card.id,
     data: { card },
@@ -63,6 +67,19 @@ const Card: React.FC<Props> = ({ card, onTap, onModifyCounter, onSendToBottom, o
   } else if (card.isTapped && transform) {
     style.transform = `translate3d(${transform.x}px, ${transform.y}px, 0) rotate(90deg)`;
   }
+
+  const isStatDisplayZone = card.zone.startsWith('field-') || card.zone.startsWith('ex-');
+  const effectiveDisplayCounters = displayCounters ?? card.counters;
+  const currentStats = !hideCurrentStats && isStatDisplayZone && !isHidden && !card.isFlipped && baseStats
+    ? {
+        atk: baseStats.atk + effectiveDisplayCounters.atk,
+        hp: baseStats.hp + effectiveDisplayCounters.hp,
+      }
+    : null;
+  const shouldShowCounterOverlay =
+    !card.zone.startsWith('hand') &&
+    (card.counters.atk !== 0 || card.counters.hp !== 0) &&
+    !currentStats;
 
   return (
     <div
@@ -105,7 +122,7 @@ const Card: React.FC<Props> = ({ card, onTap, onModifyCounter, onSendToBottom, o
           )}
 
           {/* Counters Overlay - Hide if in hand */}
-          {!card.zone.startsWith('hand') && (card.counters.atk !== 0 || card.counters.hp !== 0) && (
+          {shouldShowCounterOverlay && (
             <div style={{
               position: 'absolute', bottom: -5, right: -5,
               background: 'rgba(0,0,0,0.85)', padding: '4px 8px', borderRadius: '8px',
@@ -115,6 +132,33 @@ const Card: React.FC<Props> = ({ card, onTap, onModifyCounter, onSendToBottom, o
               <span style={{ color: '#fbbf24' }}>{card.counters.atk > 0 ? '+' : ''}{card.counters.atk}</span>
               <span style={{ color: '#fff' }}>/</span>
               <span style={{ color: '#ef4444' }}>{card.counters.hp > 0 ? '+' : ''}{card.counters.hp}</span>
+            </div>
+          )}
+
+          {currentStats && (
+            <div
+              data-testid="current-stats-badge"
+              style={{
+                position: 'absolute',
+                top: 6,
+                right: 6,
+                background: 'rgba(15, 23, 42, 0.92)',
+                border: '1px solid rgba(255,255,255,0.18)',
+                borderRadius: '999px',
+                padding: '3px 7px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                fontSize: '0.7rem',
+                fontWeight: 'bold',
+                color: 'white',
+                pointerEvents: 'none',
+                boxShadow: '0 6px 12px rgba(0,0,0,0.3)'
+              }}
+            >
+              <span style={{ color: '#fbbf24' }}>{currentStats.atk}</span>
+              <span style={{ color: 'rgba(255,255,255,0.7)' }}>/</span>
+              <span style={{ color: '#f87171' }}>{currentStats.hp}</span>
             </div>
           )}
 
