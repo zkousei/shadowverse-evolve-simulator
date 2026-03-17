@@ -213,8 +213,8 @@ export const useGameBoardLogic = () => {
     dispatchGameEvent({ type: 'SET_PHASE', phase: newPhase });
   };
 
-  const endTurn = () => {
-    dispatchGameEvent({ type: 'END_TURN' });
+  const endTurn = (actor?: PlayerRole) => {
+    dispatchGameEvent({ type: 'END_TURN', actor });
   };
 
   const handleUndoTurn = () => {

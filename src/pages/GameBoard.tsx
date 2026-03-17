@@ -231,6 +231,29 @@ const GameBoard: React.FC = () => {
     </div>
   );
 
+  const renderEndTurnButton = (playerRole: PlayerRole, label: string, background: string) => {
+    const isCurrentTurn = gameState.turnPlayer === playerRole;
+    const isEnabled = gameState.gameStatus === 'playing' && isCurrentTurn;
+
+    return (
+      <button
+        onClick={() => endTurn(playerRole)}
+        disabled={!isEnabled}
+        className="glass-panel"
+        style={{
+          padding: '0.5rem',
+          background,
+          color: 'black',
+          fontWeight: 'bold',
+          opacity: isEnabled ? 1 : 0.5,
+          cursor: isEnabled ? 'pointer' : 'not-allowed'
+        }}
+      >
+        End {label} Turn
+      </button>
+    );
+  };
+
   return (
     <DndContext onDragEnd={handleDragEnd}>
       <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', height: '100%', gap: '1rem', overflow: 'hidden' }}>
@@ -458,6 +481,7 @@ const GameBoard: React.FC = () => {
                   <button onClick={() => millCard(topRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing'} style={{ padding: '0.5rem', background: '#475569', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' ? 'pointer' : 'not-allowed' }}>
                     Mill {topLabel}
                   </button>
+                  {renderEndTurnButton(topRole, topLabel, '#fbbf24')}
                   <button onClick={() => spawnToken(topRole)} className="glass-panel" style={{ padding: '0.5rem', background: '#7c3aed' }}>
                     Spawn {topLabel} Token
                   </button>
@@ -725,9 +749,11 @@ const GameBoard: React.FC = () => {
                 <button onClick={() => millCard(bottomRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing'} style={{ padding: '0.5rem', background: '#475569', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' ? 'pointer' : 'not-allowed' }}>
                   Mill {bottomLabel}
                 </button>
-                {(isSoloMode ? gameState.gameStatus === 'playing' : gameState.turnPlayer === role && gameState.gameStatus === 'playing') && (
-                  <button onClick={endTurn} className="glass-panel" style={{ padding: '0.5rem', background: '#f59e0b', color: 'black', fontWeight: 'bold' }}>
-                    {isSoloMode ? `End ${currentTurnLabel} Turn` : 'END TURN'}
+                {isSoloMode ? (
+                  renderEndTurnButton(bottomRole, bottomLabel, '#f59e0b')
+                ) : (gameState.turnPlayer === role && gameState.gameStatus === 'playing') && (
+                  <button onClick={() => endTurn()} className="glass-panel" style={{ padding: '0.5rem', background: '#f59e0b', color: 'black', fontWeight: 'bold' }}>
+                    END TURN
                   </button>
                 )}
                 <button onClick={() => spawnToken(bottomRole)} className="glass-panel" style={{ padding: '0.5rem', background: 'var(--accent-secondary)' }}>
