@@ -313,28 +313,6 @@ const GameBoard: React.FC = () => {
                   </button>
                 )}
 
-                <button
-                  onClick={handleStartGame}
-                  disabled={(!isHost && !isSoloMode) || !gameState.host.isReady || !gameState.guest.isReady}
-                  style={{
-                    padding: '0.3rem 0.6rem',
-                    background: 'var(--vivid-green-cyan)',
-                    color: 'black',
-                    fontWeight: 'bold',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: ((isHost || isSoloMode) && gameState.host.isReady && gameState.guest.isReady) ? 'pointer' : 'not-allowed',
-                    fontSize: '0.75rem',
-                    opacity: ((isHost || isSoloMode) && gameState.host.isReady && gameState.guest.isReady) ? 1 : 0.5,
-                    boxShadow: ((isHost || isSoloMode) && gameState.host.isReady && gameState.guest.isReady) ? '0 0 10px rgba(0, 208, 132, 0.4)' : 'none',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseOver={(e) => { if ((isHost || isSoloMode) && gameState.host.isReady && gameState.guest.isReady) e.currentTarget.style.filter = 'brightness(1.1)'; }}
-                  onMouseOut={(e) => e.currentTarget.style.filter = 'none'}
-                >
-                  ▶ START GAME
-                </button>
-
                 {gameState[bottomRole].initialHandDrawn && (
                   <button
                     onClick={() => handleToggleReady(bottomRole)}
@@ -369,6 +347,27 @@ const GameBoard: React.FC = () => {
                     {gameState[topRole].isReady ? '✕ Cancel P2 Ready' : '✅ Player 2 Ready'}
                   </button>
                 )}
+                <button
+                  onClick={handleStartGame}
+                  disabled={(!isHost && !isSoloMode) || !gameState.host.isReady || !gameState.guest.isReady}
+                  style={{
+                    padding: '0.3rem 0.6rem',
+                    background: 'var(--vivid-green-cyan)',
+                    color: 'black',
+                    fontWeight: 'bold',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: ((isHost || isSoloMode) && gameState.host.isReady && gameState.guest.isReady) ? 'pointer' : 'not-allowed',
+                    fontSize: '0.75rem',
+                    opacity: ((isHost || isSoloMode) && gameState.host.isReady && gameState.guest.isReady) ? 1 : 0.5,
+                    boxShadow: ((isHost || isSoloMode) && gameState.host.isReady && gameState.guest.isReady) ? '0 0 10px rgba(0, 208, 132, 0.4)' : 'none',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseOver={(e) => { if ((isHost || isSoloMode) && gameState.host.isReady && gameState.guest.isReady) e.currentTarget.style.filter = 'brightness(1.1)'; }}
+                  onMouseOut={(e) => e.currentTarget.style.filter = 'none'}
+                >
+                  ▶ START GAME
+                </button>
 
                 <div style={{ display: 'flex', gap: '0.8rem', marginLeft: '0.5rem', borderLeft: '1px solid var(--border-light)', paddingLeft: '0.8rem' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', fontSize: '0.65rem', alignItems: 'center' }}>
