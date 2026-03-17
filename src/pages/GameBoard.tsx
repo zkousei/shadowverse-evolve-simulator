@@ -589,7 +589,7 @@ const GameBoard: React.FC = () => {
                         label={`${topLabel} Hand`}
                         cards={getCards(`hand-${topRole}`)}
                         hideCards={true}
-                        layout="stack"
+                        layout="horizontal"
                         isProtected={true}
                         viewerRole={viewerRole}
                         containerStyle={{ minHeight: '150px' }}
