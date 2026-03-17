@@ -1,5 +1,6 @@
 import React from 'react';
 import type { CardInstance } from './Card';
+import type { PlayerRole } from '../types/game';
 
 interface CardSearchModalProps {
   isOpen: boolean;
@@ -8,14 +9,16 @@ interface CardSearchModalProps {
   cards: CardInstance[];
   onExtractCard: (cardId: string, destination?: string) => void;
   onToggleFlip?: (cardId: string) => void;
-  viewerRole?: 'host' | 'guest';
+  viewerRole?: PlayerRole;
+  targetRole?: PlayerRole;
   allowHandExtraction?: boolean;
 }
 
-const CardSearchModal: React.FC<CardSearchModalProps> = ({ isOpen, onClose, title, cards, onExtractCard, onToggleFlip, viewerRole, allowHandExtraction = true }) => {
+const CardSearchModal: React.FC<CardSearchModalProps> = ({ isOpen, onClose, title, cards, onExtractCard, onToggleFlip, viewerRole, targetRole, allowHandExtraction = true }) => {
   if (!isOpen) return null;
 
   const isPreparingMainDeckSearch = !allowHandExtraction && title.includes('Main Deck');
+  const actionRole = targetRole ?? viewerRole;
 
   return (
     <div style={{
@@ -85,9 +88,9 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({ isOpen, onClose, titl
                       borderRadius: '4px', padding: '6px'
                     }}
                   >
-                    {canPlayToField && (
+                    {canPlayToField && actionRole && (
                       <button 
-                        onClick={() => onExtractCard(c.id, `field-${viewerRole}`)}
+                        onClick={() => onExtractCard(c.id, `field-${actionRole}`)}
                         style={{
                           width: '100%', background: '#3b82f6', color: 'white', border: 'none',
                           padding: '3px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold',
@@ -97,9 +100,9 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({ isOpen, onClose, titl
                         {playToFieldLabel}
                       </button>
                     )}
-                    {canAddToHand && (
+                    {canAddToHand && actionRole && (
                       <button 
-                        onClick={() => onExtractCard(c.id, `hand-${viewerRole}`)}
+                        onClick={() => onExtractCard(c.id, `hand-${actionRole}`)}
                         disabled={!allowHandExtraction}
                         style={{
                           width: '100%', background: allowHandExtraction ? '#10b981' : '#374151', color: allowHandExtraction ? 'white' : '#949db0', border: 'none',
@@ -110,9 +113,9 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({ isOpen, onClose, titl
                         Add to Hand
                       </button>
                     )}
-                    {canAddToEx && (
+                    {canAddToEx && actionRole && (
                       <button 
-                        onClick={() => onExtractCard(c.id, `ex-${viewerRole}`)}
+                        onClick={() => onExtractCard(c.id, `ex-${actionRole}`)}
                         disabled={!allowHandExtraction}
                         style={{
                           width: '100%', background: allowHandExtraction ? '#a855f7' : '#374151', color: allowHandExtraction ? 'white' : '#949db0', border: 'none',

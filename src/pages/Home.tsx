@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, PenTool, Users } from 'lucide-react';
+import { Play, PenTool, Sword, Users } from 'lucide-react';
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
@@ -17,6 +17,10 @@ const Home: React.FC = () => {
     if (roomId.trim()) {
       navigate(`/game?host=false&room=${roomId.trim()}`);
     }
+  };
+
+  const handleSoloPlay = () => {
+    navigate('/game?mode=solo');
   };
 
   return (
@@ -36,7 +40,7 @@ const Home: React.FC = () => {
           The unofficial digital sandbox tabletop. Build your deck and duel your friends directly via Peer-to-Peer without any servers.
         </p>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
           
           <button 
             onClick={() => navigate('/deck-builder')}
@@ -60,6 +64,31 @@ const Home: React.FC = () => {
             <Play size={48} color="var(--accent-primary)" />
             <span style={{ fontSize: '1.125rem', fontWeight: 'bold' }}>Host Game</span>
             <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Create a new P2P room</span>
+          </button>
+
+          <button 
+            onClick={handleSoloPlay}
+            className="glass-panel"
+            style={{ padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', transition: 'var(--transition-normal)', position: 'relative' }}
+            onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
+            onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+          >
+            <span style={{
+              position: 'absolute',
+              top: '0.75rem',
+              right: '0.75rem',
+              fontSize: '0.7rem',
+              fontWeight: 'bold',
+              color: '#111827',
+              background: '#f59e0b',
+              padding: '0.2rem 0.45rem',
+              borderRadius: '999px'
+            }}>
+              BETA
+            </span>
+            <Sword size={48} color="#f59e0b" />
+            <span style={{ fontSize: '1.125rem', fontWeight: 'bold' }}>Solo Play Beta</span>
+            <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Practice locally with 2 decks. This mode is still under active tuning.</span>
           </button>
         </div>
 

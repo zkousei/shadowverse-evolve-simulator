@@ -36,13 +36,11 @@ describe('Card', () => {
 
     rerender(<Card card={createCard({ isFlipped: true })} />);
     expect(screen.getByAltText('Card Back')).toBeInTheDocument();
-    expect(screen.queryByText('Flip')).not.toBeInTheDocument();
   });
 
   it('fires quick actions for visible unlocked cards', () => {
     const onTap = vi.fn();
     const onModifyCounter = vi.fn();
-    const onFlip = vi.fn();
     const onSendToBottom = vi.fn();
     const onBanish = vi.fn();
     const onReturnEvolve = vi.fn();
@@ -53,7 +51,6 @@ describe('Card', () => {
         card={createCard({ isEvolveCard: true })}
         onTap={onTap}
         onModifyCounter={onModifyCounter}
-        onFlip={onFlip}
         onSendToBottom={onSendToBottom}
         onBanish={onBanish}
         onReturnEvolve={onReturnEvolve}
@@ -63,7 +60,6 @@ describe('Card', () => {
 
     fireEvent.click(screen.getByText('+A'));
     fireEvent.click(screen.getByText('-H'));
-    fireEvent.click(screen.getByText('Flip'));
     fireEvent.click(screen.getByText('↓Bot'));
     fireEvent.click(screen.getByText('Cemetery'));
     fireEvent.click(screen.getByText('Banish'));
@@ -73,7 +69,6 @@ describe('Card', () => {
 
     expect(onModifyCounter).toHaveBeenNthCalledWith(1, 'card-1', 'atk', 1);
     expect(onModifyCounter).toHaveBeenNthCalledWith(2, 'card-1', 'hp', -1);
-    expect(onFlip).toHaveBeenCalledWith('card-1');
     expect(onSendToBottom).toHaveBeenCalledWith('card-1');
     expect(onCemetery).toHaveBeenCalledWith('card-1');
     expect(onBanish).toHaveBeenCalledWith('card-1');

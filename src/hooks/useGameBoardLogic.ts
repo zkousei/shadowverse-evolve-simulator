@@ -41,8 +41,10 @@ type DispatchableGameSyncEvent =
 export const useGameBoardLogic = () => {
   const [searchParams] = useSearchParams();
   const room = searchParams.get('room') || '';
+  const mode = searchParams.get('mode') === 'solo' ? 'solo' : 'p2p';
+  const isSoloMode = mode === 'solo';
   const isHost = searchParams.get('host') === 'true';
-  const role = (isHost ? 'host' : 'guest') as 'host' | 'guest';
+  const role = (isSoloMode ? 'host' : (isHost ? 'host' : 'guest')) as 'host' | 'guest';
   const isDebug = searchParams.get('debug') === 'true';
 
   const [status, setStatus] = useState<string>('Initializing P2P...');
@@ -110,13 +112,13 @@ export const useGameBoardLogic = () => {
       actor: event.actor ?? role,
     } as GameSyncEvent;
 
-    if (isHost) {
+    if (isSoloMode || isHost) {
       applyAuthoritativeEvent(fullEvent);
       return;
     }
 
     sendMessage({ type: 'EVENT', event: fullEvent });
-  }, [applyAuthoritativeEvent, isHost, role, sendMessage]);
+  }, [applyAuthoritativeEvent, isHost, isSoloMode, role, sendMessage]);
 
   const setupConnection = useCallback((conn: DataConnection) => {
     connRef.current = conn;
@@ -139,6 +141,10 @@ export const useGameBoardLogic = () => {
   }, [applyAuthoritativeEvent, applyLocalState, isHost, maybeApplySnapshot]);
 
   useEffect(() => {
+    if (isSoloMode) {
+      setStatus('Solo Mode');
+      return;
+    }
     if (!room) return;
     const peerId = isHost ? `sv-evolve-${room}` : undefined;
     const peer = peerId ? new Peer(peerId) : new Peer();
@@ -161,7 +167,7 @@ export const useGameBoardLogic = () => {
     });
 
     return () => peer.destroy();
-  }, [room, isHost, setupConnection]); // gameState を除外して接続ループを防ぐ
+  }, [room, isHost, isSoloMode, setupConnection]); // gameState を除外して接続ループを防ぐ
 
   useEffect(() => {
     if (!isDebug) return;
@@ -191,15 +197,13 @@ export const useGameBoardLogic = () => {
   }, [applyLocalState, isDebug]);
 
   useEffect(() => {
-    // ゲーム中、かつ自分のターンになったときだけ通知を表示
     if (gameState.gameStatus !== 'playing') return;
-    if (gameState.turnPlayer !== role) return;
-    // turnCount === 1 かつ phase === 'Start' の初回接続時は通知しない（相手の接続前に誤発火を防ぐ）
+    if (!isSoloMode && gameState.turnPlayer !== role) return;
     if (gameState.turnCount === 0) return;
     const timer = setTimeout(() => setTurnMessage(null), 2500);
-    setTurnMessage('YOUR TURN');
+    setTurnMessage(isSoloMode ? `${gameState.turnPlayer === 'host' ? 'PLAYER 1' : 'PLAYER 2'} TURN` : 'YOUR TURN');
     return () => clearTimeout(timer);
-  }, [gameState.turnPlayer, gameState.turnCount, gameState.gameStatus, role]);
+  }, [gameState.turnPlayer, gameState.turnCount, gameState.gameStatus, isSoloMode, role]);
 
   const handleStatChange = (playerKey: 'host' | 'guest', stat: 'hp' | 'pp' | 'maxPp' | 'ep' | 'sep' | 'combo', delta: number) => {
     dispatchGameEvent({ type: 'MODIFY_PLAYER_STAT', playerKey, stat, delta });
@@ -224,7 +228,9 @@ export const useGameBoardLogic = () => {
     const isHostFirst = forcedStarter ? (forcedStarter === 'host') : (Math.random() > 0.5);
     const starter = isHostFirst ? 'host' : 'guest';
     dispatchGameEvent({ type: 'SET_INITIAL_TURN_ORDER', starter });
-    const msg = `${starter === role ? "You" : "Opponent"} will go first!`;
+    const msg = isSoloMode
+      ? `${starter === 'host' ? 'Player 1' : 'Player 2'} will go first!`
+      : `${starter === role ? "You" : "Opponent"} will go first!`;
     setCoinMessage(forcedStarter ? `Manually set: ${msg}` : msg);
     setTimeout(() => setCoinMessage(null), 4000);
   };
@@ -264,12 +270,12 @@ export const useGameBoardLogic = () => {
     setTimeout(() => setTurnMessage(null), 2500);
   };
 
-  const handleToggleReady = () => {
-    dispatchGameEvent({ type: 'TOGGLE_READY' });
+  const handleToggleReady = (targetRole?: PlayerRole) => {
+    dispatchGameEvent({ type: 'TOGGLE_READY', actor: targetRole });
   };
 
-  const handleDrawInitialHand = () => {
-    dispatchGameEvent({ type: 'DRAW_INITIAL_HAND' });
+  const handleDrawInitialHand = (targetRole?: PlayerRole) => {
+    dispatchGameEvent({ type: 'DRAW_INITIAL_HAND', actor: targetRole });
   };
 
   const startMulligan = () => {
@@ -285,32 +291,32 @@ export const useGameBoardLogic = () => {
     }
   };
 
-  const executeMulligan = () => {
-    dispatchGameEvent({ type: 'EXECUTE_MULLIGAN', selectedIds: mulliganOrder });
+  const executeMulligan = (targetRole?: PlayerRole) => {
+    dispatchGameEvent({ type: 'EXECUTE_MULLIGAN', actor: targetRole, selectedIds: mulliganOrder });
     setIsMulliganModalOpen(false);
   };
 
-  const drawCard = () => {
-    dispatchGameEvent({ type: 'DRAW_CARD' });
+  const drawCard = (targetRole?: PlayerRole) => {
+    dispatchGameEvent({ type: 'DRAW_CARD', actor: targetRole });
   };
 
-  const millCard = () => {
-    dispatchGameEvent({ type: 'MILL_CARD' });
+  const millCard = (targetRole?: PlayerRole) => {
+    dispatchGameEvent({ type: 'MILL_CARD', actor: targetRole });
   };
 
-  const handleLookAtTop = (n: number) => {
+  const handleLookAtTop = (n: number, targetRole: PlayerRole = role) => {
     if (gameState.gameStatus !== 'playing') return;
-    const myDeck = gameState.cards.filter(c => c.zone === `mainDeck-${role}`);
+    const myDeck = gameState.cards.filter(c => c.zone === `mainDeck-${targetRole}`);
     setTopDeckCards(myDeck.slice(0, n));
   };
 
-  const handleResolveTopDeck = (results: CardLogic.TopDeckResult[]) => {
-    dispatchGameEvent({ type: 'RESOLVE_TOP_DECK', results });
+  const handleResolveTopDeck = (results: CardLogic.TopDeckResult[], targetRole?: PlayerRole) => {
+    dispatchGameEvent({ type: 'RESOLVE_TOP_DECK', actor: targetRole, results });
     setTopDeckCards([]);
   };
 
-  const handleExtractCard = (cardId: string, customDestination?: string) => {
-    dispatchGameEvent({ type: 'EXTRACT_CARD', cardId, destination: customDestination });
+  const handleExtractCard = (cardId: string, customDestination?: string, targetRole?: PlayerRole) => {
+    dispatchGameEvent({ type: 'EXTRACT_CARD', actor: targetRole, cardId, destination: customDestination });
     setSearchZone(null);
   };
 
@@ -319,7 +325,7 @@ export const useGameBoardLogic = () => {
     dispatchGameEvent({ type: 'RESET_GAME' });
   };
 
-  const handleDeckUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDeckUpload = (event: React.ChangeEvent<HTMLInputElement>, targetRole: PlayerRole = role) => {
     if (!canImportDeck(gameState.gameStatus)) {
       event.target.value = '';
       return;
@@ -336,32 +342,32 @@ export const useGameBoardLogic = () => {
         shuffledMain.forEach((c: any) => {
           newCards.push({
             id: uuid(), cardId: c.id, name: c.name, image: c.image,
-            zone: `mainDeck-${role}`, owner: role, isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 }
+            zone: `mainDeck-${targetRole}`, owner: targetRole, isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 }
           });
         });
         (data.evolveDeck || []).forEach((c: any) => {
           newCards.push({
             id: uuid(), cardId: c.id, name: c.name, image: c.image,
-            zone: `evolveDeck-${role}`, owner: role, isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 }, isEvolveCard: true
+            zone: `evolveDeck-${targetRole}`, owner: targetRole, isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 }, isEvolveCard: true
           });
         });
-        dispatchGameEvent({ type: 'IMPORT_DECK', cards: newCards });
+        dispatchGameEvent({ type: 'IMPORT_DECK', actor: targetRole, cards: newCards });
       } catch (err) { alert("Failed to parse deck JSON."); }
     };
     reader.readAsText(file);
   };
 
-  const spawnToken = () => {
+  const spawnToken = (targetRole: PlayerRole = role) => {
     const newCard: CardInstance = {
       id: uuid(), cardId: 'token', name: 'Token', 
       image: 'https://shadowverse-evolve.com/wordpress/wp-content/themes/shadowverse-evolve-release_v0/assets/images/common/ogp.jpg',
-      zone: `ex-${role}`, owner: role, isTapped: false, isFlipped: false, counters: { atk: 1, hp: 1 }
+      zone: `ex-${targetRole}`, owner: targetRole, isTapped: false, isFlipped: false, counters: { atk: 1, hp: 1 }
     };
-    dispatchGameEvent({ type: 'SPAWN_TOKEN', token: newCard });
+    dispatchGameEvent({ type: 'SPAWN_TOKEN', actor: targetRole, token: newCard });
   };
 
-  const handleModifyCounter = (cardId: string, stat: 'atk' | 'hp', delta: number) => {
-    dispatchGameEvent({ type: 'MODIFY_COUNTER', cardId, stat, delta });
+  const handleModifyCounter = (cardId: string, stat: 'atk' | 'hp', delta: number, actor?: PlayerRole) => {
+    dispatchGameEvent({ type: 'MODIFY_COUNTER', actor, cardId, stat, delta });
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -376,8 +382,8 @@ export const useGameBoardLogic = () => {
     dispatchGameEvent({ type: 'TOGGLE_TAP', cardId });
   };
 
-  const handleFlipCard = (cardId: string) => {
-    dispatchGameEvent({ type: 'TOGGLE_FLIP', cardId });
+  const handleFlipCard = (cardId: string, targetRole?: PlayerRole) => {
+    dispatchGameEvent({ type: 'TOGGLE_FLIP', actor: targetRole, cardId });
   };
 
   const handleSendToBottom = (cardId: string) => {
@@ -388,8 +394,8 @@ export const useGameBoardLogic = () => {
     dispatchGameEvent({ type: 'BANISH_CARD', cardId });
   };
 
-  const handlePlayToField = (cardId: string) => {
-    dispatchGameEvent({ type: 'PLAY_TO_FIELD', cardId });
+  const handlePlayToField = (cardId: string, targetRole?: PlayerRole) => {
+    dispatchGameEvent({ type: 'PLAY_TO_FIELD', actor: targetRole, cardId });
   };
 
   const handleSendToCemetery = (cardId: string) => {
@@ -400,14 +406,14 @@ export const useGameBoardLogic = () => {
     dispatchGameEvent({ type: 'RETURN_EVOLVE', cardId });
   };
 
-  const handleShuffleDeck = () => {
-    dispatchGameEvent({ type: 'SHUFFLE_DECK' });
+  const handleShuffleDeck = (targetRole?: PlayerRole) => {
+    dispatchGameEvent({ type: 'SHUFFLE_DECK', actor: targetRole });
   };
 
   const getCards = (zone: string) => gameState.cards.filter(c => c.zone === zone);
 
   return {
-    room, isHost, role, status, gameState, searchZone, setSearchZone,
+    room, mode, isSoloMode, isHost, role, status, gameState, searchZone, setSearchZone,
     showResetConfirm, setShowResetConfirm, coinMessage, turnMessage,
     isRollingDice, diceValue, mulliganOrder, isMulliganModalOpen, setIsMulliganModalOpen,
     handleStatChange, setPhase, endTurn, handleUndoTurn, handleSetInitialTurnOrder,
