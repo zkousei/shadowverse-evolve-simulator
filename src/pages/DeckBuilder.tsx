@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Search, Plus, Minus, Download, Upload } from 'lucide-react';
-import { CLASS_FILTER_VALUES, CLASS_VALUES } from '../models/class';
+import { CLASS_FILTER_VALUES, CLASS_VALUES, CONSTRUCTED_CLASS_VALUES } from '../models/class';
 import type { ClassFilter } from '../models/class';
 import {
   dedupeCardsByDisplayIdentity,
@@ -679,7 +679,7 @@ const DeckBuilder: React.FC = () => {
                       }}
                     >
                       <option value="">Select class</option>
-                      {CLASS_VALUES.map(cardClass => (
+                      {CONSTRUCTED_CLASS_VALUES.map(cardClass => (
                         <option key={cardClass} value={cardClass}>{cardClass}</option>
                       ))}
                     </select>

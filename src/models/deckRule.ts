@@ -1,4 +1,4 @@
-import type { CardClass } from './class';
+import { CONSTRUCTED_CLASS_VALUES, type CardClass } from './class';
 
 export const DECK_FORMAT_VALUES = ['constructed', 'crossover', 'other'] as const;
 export type DeckFormat = typeof DECK_FORMAT_VALUES[number];
@@ -36,7 +36,9 @@ export const getImportedDeckRuleConfig = (data: Record<string, unknown>): DeckRu
   return {
     format,
     identityType: identityType === 'title' ? 'title' : 'class',
-    selectedClass: typeof data.selectedClass === 'string' ? data.selectedClass as CardClass : null,
+    selectedClass: typeof data.selectedClass === 'string' && CONSTRUCTED_CLASS_VALUES.includes(data.selectedClass as CardClass)
+      ? data.selectedClass as CardClass
+      : null,
     selectedTitle: typeof data.selectedTitle === 'string' ? data.selectedTitle : null,
   };
 };

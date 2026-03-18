@@ -137,6 +137,7 @@ describe('DeckBuilder', () => {
     expect(await screen.findByText('Alpha Knight')).toBeInTheDocument();
     expect(screen.getByText('Evolve Angel')).toBeInTheDocument();
     expect(screen.getByText('Select a class or title to enable constructed deck building.')).toBeInTheDocument();
+    expect(within(constructedClass).queryByRole('option', { name: 'ニュートラル' })).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByPlaceholderText('Search cards by name...'), {
       target: { value: 'beta' },
