@@ -182,6 +182,21 @@ describe('CardLogic utils', () => {
       expect(deckCards[deckCards.length - 2].id).toBe('h3');
       expect(deckCards[deckCards.length - 1].id).toBe('h4');
     });
+
+    it('should do nothing unless exactly four cards are selected', () => {
+      const cards = [
+        createMockCard('d1', 'mainDeck-host'),
+        createMockCard('d2', 'mainDeck-host'),
+        createMockCard('d3', 'mainDeck-host'),
+        createMockCard('d4', 'mainDeck-host'),
+        createMockCard('h1', 'hand-host'),
+        createMockCard('h2', 'hand-host'),
+      ];
+
+      const result = CardLogic.executeMulligan(cards, 'host', ['h1', 'h2']);
+
+      expect(result).toBe(cards);
+    });
   });
 
   describe('shuffleDeck', () => {
@@ -253,6 +268,13 @@ describe('CardLogic utils', () => {
       expect(CardLogic.resolveMoveDestination(card, 'cemetery-host')).toBe('evolveDeck-host');
       expect(CardLogic.resolveMoveDestination(card, 'banish-host')).toBe('evolveDeck-host');
       expect(CardLogic.resolveMoveDestination(card, 'hand-host')).toBe('evolveDeck-host');
+    });
+
+    it('should keep leader cards in the leader zone regardless of the requested destination', () => {
+      const leader = { ...createMockCard('leader-1', 'leader-host'), isLeaderCard: true };
+
+      expect(CardLogic.resolveMoveDestination(leader, 'field-host')).toBe('leader-host');
+      expect(CardLogic.resolveMoveDestination(leader, 'hand-host')).toBe('leader-host');
     });
   });
 
@@ -585,6 +607,14 @@ describe('CardLogic utils', () => {
       expect(result.filter(c => c.zone === 'mainDeck-host')).toHaveLength(1);
     });
 
+    it('should do nothing when there are fewer than four cards left in the deck', () => {
+      const cards = ['1', '2', '3'].map(id => createMockCard(id, 'mainDeck-host'));
+
+      const result = CardLogic.drawInitialHand(cards, 'host');
+
+      expect(result).toBe(cards);
+    });
+
     it('should replace only the actor cards on import', () => {
       const hostOld = createMockCard('old-host', 'mainDeck-host');
       const guestOld = createMockCard('old-guest', 'mainDeck-guest', 'guest');
@@ -697,6 +727,18 @@ describe('CardLogic utils', () => {
       const playing = CardLogic.normalizeCardsForGameState(cards, 'playing');
       expect(playing.find(c => c.id === 'field-hidden')?.isFlipped).toBe(false);
       expect(playing.find(c => c.id === 'deck-hidden')?.isFlipped).toBe(true);
+    });
+
+    it('should not modify face-down cards outside the field while playing', () => {
+      const cards = [
+        { ...createMockCard('ex-hidden', 'ex-host'), isFlipped: true },
+        { ...createMockCard('cem-hidden', 'cemetery-host'), isFlipped: true },
+      ];
+
+      const playing = CardLogic.normalizeCardsForGameState(cards, 'playing');
+
+      expect(playing.find(c => c.id === 'ex-hidden')?.isFlipped).toBe(true);
+      expect(playing.find(c => c.id === 'cem-hidden')?.isFlipped).toBe(true);
     });
   });
 });

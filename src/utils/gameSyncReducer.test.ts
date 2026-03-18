@@ -129,6 +129,69 @@ describe('gameSyncReducer', () => {
     expect(importDenied.cards.map(c => c.id)).not.toContain('new-host-card');
   });
 
+  it('keeps actor-scoped setup events as no-ops when the requester does not match the actor', () => {
+    const state = createState({
+      revision: 7,
+      cards: [
+        {
+          id: 'deck-host-1',
+          cardId: 'BP01-010',
+          name: 'Deck Host 1',
+          image: '',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'deck-host-2',
+          cardId: 'BP01-011',
+          name: 'Deck Host 2',
+          image: '',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'hand-host-1',
+          cardId: 'BP01-012',
+          name: 'Hand Host 1',
+          image: '',
+          zone: 'hand-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    const deniedInitialHand = applyGameSyncEvent(state, {
+      id: 'evt-actor-only-initial-hand',
+      type: 'DRAW_INITIAL_HAND',
+      actor: 'host',
+    }, 'guest');
+    expect(deniedInitialHand).toBe(state);
+
+    const deniedMulligan = applyGameSyncEvent(state, {
+      id: 'evt-actor-only-mulligan',
+      type: 'EXECUTE_MULLIGAN',
+      actor: 'host',
+      selectedIds: ['hand-host-1'],
+    }, 'guest');
+    expect(deniedMulligan).toBe(state);
+
+    const deniedShuffle = applyGameSyncEvent(state, {
+      id: 'evt-actor-only-shuffle',
+      type: 'SHUFFLE_DECK',
+      actor: 'host',
+    }, 'guest');
+    expect(deniedShuffle).toBe(state);
+  });
+
   it('toggles ready for the actor and increments revision', () => {
     const result = applyGameSyncEvent(createState(), {
       id: 'evt-1',
@@ -1251,6 +1314,61 @@ describe('gameSyncReducer', () => {
 
     expect(started.gameStatus).toBe('playing');
     expect(started.cards.every(card => !card.zone.startsWith('field-') || card.isFlipped === false)).toBe(true);
+  });
+
+  it('only normalizes field cards when the game starts and preserves other hidden zones', () => {
+    const state = createState({
+      revision: 13,
+      turnPlayer: 'guest',
+      guest: { ...initialState.guest, pp: 0, maxPp: 0 },
+      cards: [
+        {
+          id: 'field-hidden',
+          cardId: 'BP01-890',
+          name: 'Field Hidden',
+          image: '',
+          zone: 'field-guest',
+          owner: 'guest',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'ex-hidden',
+          cardId: 'BP01-891',
+          name: 'EX Hidden',
+          image: '',
+          zone: 'ex-guest',
+          owner: 'guest',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'deck-hidden',
+          cardId: 'BP01-892',
+          name: 'Deck Hidden',
+          image: '',
+          zone: 'mainDeck-guest',
+          owner: 'guest',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    const started = applyGameSyncEvent(state, {
+      id: 'evt-start-normalize-scope',
+      type: 'START_GAME',
+      actor: 'host',
+    });
+
+    expect(started.cards.find(c => c.id === 'field-hidden')?.isFlipped).toBe(false);
+    expect(started.cards.find(c => c.id === 'ex-hidden')?.isFlipped).toBe(true);
+    expect(started.cards.find(c => c.id === 'deck-hidden')?.isFlipped).toBe(true);
+    expect(started.guest.pp).toBe(1);
+    expect(started.guest.maxPp).toBe(1);
   });
 
   it('applies turn-order, undo, and spawn-token events', () => {
