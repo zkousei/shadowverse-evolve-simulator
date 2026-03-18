@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Play, PenTool, Sword, Users } from 'lucide-react';
 
+const APP_VERSION = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '0.0.0';
+
 const Home: React.FC = () => {
   const navigate = useNavigate();
   const [roomId, setRoomId] = useState('');
@@ -135,6 +137,9 @@ const Home: React.FC = () => {
       </div>
 
       <div style={{ position: 'fixed', bottom: '1rem', textAlign: 'center', maxWidth: '800px', padding: '0 1rem' }}>
+        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.4rem', letterSpacing: '0.04em' }}>
+          Version {APP_VERSION}
+        </p>
         <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
           当サイトに使用しているカード画像は、Shadowverse EVOLVE公式サイト(https://shadowverse-evolve.com/)より、ガイドラインに従って転載しております。該当画像の再利用（転載・配布等）は禁止しております。© Cygames, Inc. ©bushiroad All Rights Reserved.
         </p>
