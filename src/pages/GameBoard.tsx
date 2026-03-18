@@ -50,6 +50,8 @@ const GameBoard: React.FC = () => {
   const searchTargetRole = searchZone ? getZoneOwner(searchZone.id) ?? role : role;
   const currentTurnLabel = gameState.turnPlayer === bottomRole ? bottomLabel : topLabel;
   const canUndoTurn = canUndoLastTurn(gameState, lastGameState, role, isSoloMode);
+  const isBottomTurnActive = gameState.gameStatus === 'playing' && gameState.turnPlayer === bottomRole;
+  const isTopTurnActive = gameState.gameStatus === 'playing' && gameState.turnPlayer === topRole;
   const sidePanelWidth = 220;
   const topPanelWidth = 188;
   const sideZoneWidth = 120;
@@ -92,6 +94,19 @@ const GameBoard: React.FC = () => {
     flexDirection: 'column',
     gap: '0.35rem'
   };
+  const activeBoardSectionStyle = (isActive: boolean): React.CSSProperties => ({
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.5rem',
+    width: '100%',
+    alignItems: 'center',
+    padding: '0.55rem 0.6rem',
+    borderRadius: '16px',
+    border: isActive ? '1px solid rgba(34, 211, 238, 0.38)' : '1px solid transparent',
+    background: isActive ? 'linear-gradient(180deg, rgba(34, 211, 238, 0.08), rgba(15, 23, 42, 0.02))' : 'transparent',
+    boxShadow: isActive ? '0 0 0 1px rgba(34, 211, 238, 0.12), 0 0 28px rgba(34, 211, 238, 0.14)' : 'none',
+    transition: 'all 0.2s ease'
+  });
 
   React.useEffect(() => {
     let isActive = true;
@@ -784,18 +799,44 @@ const GameBoard: React.FC = () => {
 
           {/* Turn Management */}
           {gameState.gameStatus === 'playing' && (
-            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', background: 'var(--bg-overlay)', padding: '0.5rem 1rem', borderRadius: '4px' }}>
-              <span style={{ color: isSoloMode || gameState.turnPlayer === role ? 'var(--vivid-green-cyan)' : 'var(--vivid-red)' }}>
+            <div style={{
+              display: 'flex',
+              gap: '1rem',
+              alignItems: 'center',
+              background: isBottomTurnActive
+                ? 'linear-gradient(90deg, rgba(0, 208, 132, 0.18), rgba(17, 24, 39, 0.92))'
+                : 'var(--bg-overlay)',
+              padding: '0.55rem 1rem',
+              borderRadius: '10px',
+              border: isBottomTurnActive ? '1px solid rgba(0, 208, 132, 0.28)' : '1px solid transparent',
+              boxShadow: isBottomTurnActive ? '0 0 18px rgba(0, 208, 132, 0.16)' : 'none',
+              transition: 'all 0.2s ease'
+            }}>
+              <span style={{
+                color: isSoloMode || gameState.turnPlayer === role ? 'var(--vivid-green-cyan)' : 'var(--vivid-red)',
+                fontSize: isBottomTurnActive ? '1rem' : '0.92rem',
+                fontWeight: 900,
+                letterSpacing: '0.06em',
+                textShadow: isBottomTurnActive ? '0 0 12px rgba(0, 208, 132, 0.35)' : 'none'
+              }}>
                 {isSoloMode
                   ? `${currentTurnLabel.toUpperCase()} TURN`
                   : gameState.turnPlayer === role ? "YOUR TURN" : "OPPONENT'S TURN"}
               </span>
-              <span className="Garamond">TURN {gameState.turnCount}</span>
+              <span className="Garamond" style={{ fontSize: isBottomTurnActive ? '1.08rem' : undefined }}>
+                TURN {gameState.turnCount}
+              </span>
               <select
                 value={gameState.phase}
                 onChange={(e) => setPhase(e.target.value as 'Start' | 'Main' | 'End')}
                 disabled={!isSoloMode && gameState.turnPlayer !== role}
-                style={{ padding: '0.2rem', borderRadius: '4px', background: 'black', color: 'white' }}
+                style={{
+                  padding: '0.2rem',
+                  borderRadius: '4px',
+                  background: 'black',
+                  color: 'white',
+                  border: isBottomTurnActive ? '1px solid rgba(0, 208, 132, 0.35)' : undefined
+                }}
               >
                 <option value="Start">Start Phase</option>
                 <option value="Main">Main Phase</option>
@@ -871,7 +912,7 @@ const GameBoard: React.FC = () => {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'url("https://shadowverse-evolve.com/wordpress/wp-content/themes/shadowverse-evolve-release_v0/assets/images/common/bg.jpg")', backgroundSize: 'cover', backgroundPosition: 'center', borderRadius: 'var(--radius-lg)', padding: '1rem', overflowY: 'auto', alignItems: 'center' }}>
 
           {/* OPPONENT BOARD */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', opacity: 0.9 }}>
+          <div style={{ ...activeBoardSectionStyle(isSoloMode && isTopTurnActive), opacity: 0.9 }}>
             {isSoloMode ? (
               <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: '1rem', alignItems: 'flex-start', width: '100%', maxWidth: '1568px', justifyContent: 'center' }}>
                 <div style={{ width: `${topPanelWidth}px`, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(0,0,0,0.8)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
@@ -1087,7 +1128,7 @@ const GameBoard: React.FC = () => {
           <hr style={{ borderColor: 'rgba(255,255,255,0.1)', margin: '1rem 0' }} />
 
           {/* MY BOARD */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%', alignItems: 'center' }}>
+          <div style={activeBoardSectionStyle(isBottomTurnActive)}>
 	            <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: '1rem', alignItems: 'flex-start', width: '100%', maxWidth: '1568px', justifyContent: 'center' }}>
                 <div />
 	              <div style={{ width: `${boardContentWidth}px`, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.65rem', alignItems: 'flex-start' }}>
