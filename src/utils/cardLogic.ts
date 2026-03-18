@@ -144,6 +144,21 @@ const collectStackIds = (cards: CardInstance[], cardId: string): Set<string> => 
   return stackIds;
 };
 
+const syncStackTapState = (
+  cards: CardInstance[],
+  rootId: string,
+  isTapped: boolean
+): CardInstance[] => {
+  const stackIds = collectStackIds(cards, rootId);
+  if (stackIds.size === 0) return cards;
+
+  return cards.map(card => (
+    stackIds.has(card.id)
+      ? { ...card, isTapped }
+      : card
+  ));
+};
+
 /**
  * Moves a card to a new zone and places it at the END of the array (Rightmost/Bottom).
  * This is used for Field, Hand, EX Area, Cemetery, Banish, and Bottom of Deck.
@@ -424,9 +439,17 @@ export const applyDrop = (
     return removeTokenAndAttachments(cards, cardId);
   }
 
-  return resolution.shouldPlaceAtFront
+  const movedCards = resolution.shouldPlaceAtFront
     ? moveCardToFront(cards, cardId, resolution.moveOptions)
     : moveCardToEnd(cards, cardId, resolution.moveOptions);
+
+  if (resolution.moveOptions.attachedTo) {
+    const sourceCard = cards.find(card => card.id === cardId);
+    if (!sourceCard) return movedCards;
+    return syncStackTapState(movedCards, resolution.moveOptions.attachedTo, sourceCard.isTapped);
+  }
+
+  return movedCards;
 };
 
 export const modifyCardCounter = (

@@ -35,6 +35,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onInspectCard
 
   const isStack = layout === 'stack';
   const displayLabel = label.replace(/^(My|Opponent|Player 1|Player 2)\s+/, '');
+  const hasCardOnTop = React.useCallback((cardId: string) => cards.some(card => card.attachedTo === cardId), [cards]);
 
   return (
     <div
@@ -156,6 +157,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onInspectCard
                       isHidden={hideCards}
                       isLocked={lockCards || (isProtected && viewerRole !== 'all' && card.owner !== viewerRole)}
                       quickActionsDisabled={disableQuickActionsForCard?.(card)}
+                      disableCombatAndCounterControls={hasCardOnTop(card.id)}
                       debugIndex={isDebug ? index : undefined}
                     />
                     {attachments.map((attachedCard, i) => (
@@ -181,6 +183,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onInspectCard
                           isHidden={hideCards}
                           isLocked={lockCards || (isProtected && viewerRole !== 'all' && attachedCard.owner !== viewerRole)}
                           quickActionsDisabled={disableQuickActionsForCard?.(attachedCard)}
+                          disableCombatAndCounterControls={hasCardOnTop(attachedCard.id)}
                           debugIndex={isDebug ? i : undefined}
                         />
                       </div>
@@ -214,6 +217,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onInspectCard
                 isHidden={hideCards}
                 isLocked={lockCards || (isProtected && viewerRole !== 'all' && card.owner !== viewerRole)}
                 quickActionsDisabled={disableQuickActionsForCard?.(card)}
+                disableCombatAndCounterControls={hasCardOnTop(card.id)}
                 debugIndex={isDebug ? topLevelCards.indexOf(card) : undefined}
               />
               {attachments.map((attachedCard, i) => (
@@ -239,6 +243,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onInspectCard
                     isHidden={hideCards}
                     isLocked={lockCards || (isProtected && viewerRole !== 'all' && attachedCard.owner !== viewerRole)}
                     quickActionsDisabled={disableQuickActionsForCard?.(attachedCard)}
+                    disableCombatAndCounterControls={hasCardOnTop(attachedCard.id)}
                     debugIndex={isDebug ? i : undefined}
                   />
                 </div>

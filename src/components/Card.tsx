@@ -49,10 +49,11 @@ interface Props {
   isHidden?: boolean; // if true, STRICTLY render card back only
   isLocked?: boolean; // if true, prevent dragging and operating (opponent's hand/deck/ex)
   quickActionsDisabled?: boolean;
+  disableCombatAndCounterControls?: boolean;
   debugIndex?: number;
 }
 
-const Card: React.FC<Props> = ({ card, baseStats, displayCounters, hideCurrentStats, highlightTone, onInspect, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, isHidden, isLocked, quickActionsDisabled, debugIndex }) => {
+const Card: React.FC<Props> = ({ card, baseStats, displayCounters, hideCurrentStats, highlightTone, onInspect, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, isHidden, isLocked, quickActionsDisabled, disableCombatAndCounterControls, debugIndex }) => {
   const inspectPointerStartRef = React.useRef<{ x: number; y: number } | null>(null);
   const isInteractionLocked = isLocked || card.isLeaderCard || card.zone.startsWith('leader-');
   const { attributes, listeners, setNodeRef: setDraggableRef, transform } = useDraggable({
@@ -158,6 +159,7 @@ const Card: React.FC<Props> = ({ card, baseStats, displayCounters, hideCurrentSt
         e.preventDefault();
         inspectPointerStartRef.current = null;
         if (isInteractionLocked) return;
+        if (disableCombatAndCounterControls) return;
         onTap?.(card.id);
       }}
     >
@@ -278,7 +280,7 @@ const Card: React.FC<Props> = ({ card, baseStats, displayCounters, hideCurrentSt
                   </button>
                 </div>
               )}
-              {onModifyCounter && !card.zone.startsWith('hand') && (
+              {onModifyCounter && !card.zone.startsWith('hand') && !disableCombatAndCounterControls && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onModifyCounter(card.id, 'atk', 1); }} style={{ background: '#3b82f6', color: '#fff', padding: '2px', fontSize: '10px', borderRadius: '2px' }}>+A</button>
@@ -290,7 +292,7 @@ const Card: React.FC<Props> = ({ card, baseStats, displayCounters, hideCurrentSt
                   </div>
                 </div>
               )}
-              {onModifyGenericCounter && isStatDisplayZone && (
+              {onModifyGenericCounter && isStatDisplayZone && !disableCombatAndCounterControls && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '4px', width: '100%' }}>
                   <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onModifyGenericCounter(card.id, 1); }} style={{ background: '#0f766e', color: '#fff', padding: '2px 4px', fontSize: '10px', borderRadius: '2px', width: '100%' }}>+C</button>
                   <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onModifyGenericCounter(card.id, -1); }} style={{ background: '#7f1d1d', color: '#fff', padding: '2px 4px', fontSize: '10px', borderRadius: '2px', width: '100%' }}>-C</button>
@@ -306,7 +308,7 @@ const Card: React.FC<Props> = ({ card, baseStats, displayCounters, hideCurrentSt
                   <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onReturnEvolve(card.id); }} style={{ background: 'var(--accent-primary)', color: 'black', border: '1px solid var(--accent-primary)', padding: '2px 4px', fontSize: '10px', borderRadius: '2px', width: '100%', fontWeight: 'bold' }}>To Evolve Deck</button>
                 </div>
               )}
-              {onTap && (
+              {onTap && !disableCombatAndCounterControls && (
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '4px', marginTop: '2px' }}>
                   <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onTap(card.id); }} style={{ background: card.isTapped ? '#fbbf24' : '#64748b', color: 'black', border: '1px solid #fff', padding: '4px 4px', fontSize: '11px', borderRadius: '4px', width: '100%', fontWeight: 'bold' }}>
                     {card.isTapped ? 'STAND' : 'REST'}

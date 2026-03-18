@@ -320,6 +320,27 @@ describe('CardLogic utils', () => {
       expect(moved?.isFlipped).toBe(false);
     });
 
+    it('should sync the whole stack to the top card tap state when stacking onto a rested card', () => {
+      const restedBase = { ...createMockCard('base', 'field-host'), isTapped: true };
+      const standingTop = { ...createMockCard('top', 'field-host'), isTapped: false };
+
+      const result = CardLogic.applyDrop([restedBase, standingTop], 'top', 'base');
+
+      expect(result.find(c => c.id === 'base')?.isTapped).toBe(false);
+      expect(result.find(c => c.id === 'top')?.isTapped).toBe(false);
+      expect(result.find(c => c.id === 'top')?.attachedTo).toBe('base');
+    });
+
+    it('should sync the whole stack to the top card tap state when stacking a rested card onto a standing card', () => {
+      const standingBase = { ...createMockCard('base', 'field-host'), isTapped: false };
+      const restedTop = { ...createMockCard('top', 'field-host'), isTapped: true };
+
+      const result = CardLogic.applyDrop([standingBase, restedTop], 'top', 'base');
+
+      expect(result.find(c => c.id === 'base')?.isTapped).toBe(true);
+      expect(result.find(c => c.id === 'top')?.isTapped).toBe(true);
+    });
+
     it('should reset counters when a field card is dragged to a non-field zone', () => {
       const fieldCard = { ...createMockCard('field-1', 'field-host'), counters: { atk: 2, hp: -1 }, genericCounter: 2 };
       const cemetery = createMockCard('cem', 'cemetery-host');

@@ -116,6 +116,52 @@ describe('Card', () => {
     expect(onModifyGenericCounter).toHaveBeenNthCalledWith(2, 'card-1', -1);
   });
 
+  it('hides combat and counter controls for lower stacked cards while keeping move shortcuts', () => {
+    const onTap = vi.fn();
+    const onAttack = vi.fn();
+    const onModifyCounter = vi.fn();
+    const onModifyGenericCounter = vi.fn();
+    const onSendToBottom = vi.fn();
+    const onBanish = vi.fn();
+    const onCemetery = vi.fn();
+
+    render(
+      <Card
+        card={createCard()}
+        onTap={onTap}
+        onAttack={onAttack}
+        onModifyCounter={onModifyCounter}
+        onModifyGenericCounter={onModifyGenericCounter}
+        onSendToBottom={onSendToBottom}
+        onBanish={onBanish}
+        onCemetery={onCemetery}
+        disableCombatAndCounterControls={true}
+      />
+    );
+
+    expect(screen.queryByText('REST')).not.toBeInTheDocument();
+    expect(screen.queryByText('Attack')).not.toBeInTheDocument();
+    expect(screen.queryByText('+A')).not.toBeInTheDocument();
+    expect(screen.queryByText('-A')).not.toBeInTheDocument();
+    expect(screen.queryByText('+H')).not.toBeInTheDocument();
+    expect(screen.queryByText('-H')).not.toBeInTheDocument();
+    expect(screen.queryByText('+C')).not.toBeInTheDocument();
+    expect(screen.queryByText('-C')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('↓Bot'));
+    fireEvent.click(screen.getByText('Cemetery'));
+    fireEvent.click(screen.getByText('Banish'));
+    fireEvent.contextMenu(screen.getByAltText('Test Card').closest('.game-card') as HTMLElement);
+
+    expect(onSendToBottom).toHaveBeenCalledWith('card-1');
+    expect(onCemetery).toHaveBeenCalledWith('card-1');
+    expect(onBanish).toHaveBeenCalledWith('card-1');
+    expect(onTap).not.toHaveBeenCalled();
+    expect(onAttack).not.toHaveBeenCalled();
+    expect(onModifyCounter).not.toHaveBeenCalled();
+    expect(onModifyGenericCounter).not.toHaveBeenCalled();
+  });
+
   it('calls inspect handler for visible public cards only', () => {
     const onInspect = vi.fn();
     const { rerender } = render(
