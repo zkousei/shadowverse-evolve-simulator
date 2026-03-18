@@ -589,6 +589,67 @@ describe('CardLogic utils', () => {
       expect(result[0].zone).toBe('field-guest');
     });
 
+    it('should send main-deck spells from hand to cemetery when played', () => {
+      const card = { ...createMockCard('spell-1', 'hand-host'), baseCardType: 'spell' as const };
+
+      const result = CardLogic.playCardToField([card], 'spell-1', 'host');
+
+      expect(result[0].zone).toBe('cemetery-host');
+    });
+
+    it('should send main-deck spells from ex to cemetery when played', () => {
+      const card = {
+        ...createMockCard('spell-ex', 'ex-host'),
+        baseCardType: 'spell' as const,
+        counters: { atk: 2, hp: -1 },
+        genericCounter: 1,
+      };
+
+      const result = CardLogic.playCardToField([card], 'spell-ex', 'host');
+
+      expect(result[0].zone).toBe('cemetery-host');
+      expect(result[0].counters).toEqual({ atk: 0, hp: 0 });
+      expect(result[0].genericCounter).toBe(0);
+    });
+
+    it('should still move evolve-deck spells to field', () => {
+      const card = {
+        ...createMockCard('evo-spell', 'ex-host'),
+        baseCardType: 'spell' as const,
+        isEvolveCard: true,
+      };
+
+      const result = CardLogic.playCardToField([card], 'evo-spell', 'host');
+
+      expect(result[0].zone).toBe('field-host');
+    });
+
+    it('should remove token spells when played from ex', () => {
+      const card = {
+        ...createMockCard('token-spell', 'ex-host'),
+        cardId: 'token-spell',
+        baseCardType: 'spell' as const,
+        isTokenCard: true,
+      };
+
+      const result = CardLogic.playCardToField([card], 'token-spell', 'host');
+
+      expect(result).toEqual([]);
+    });
+
+    it('should still move token equipment to field', () => {
+      const card = {
+        ...createMockCard('token-equip', 'ex-host'),
+        cardId: 'token-equip',
+        baseCardType: 'amulet' as const,
+        isTokenCard: true,
+      };
+
+      const result = CardLogic.playCardToField([card], 'token-equip', 'host');
+
+      expect(result[0].zone).toBe('field-host');
+    });
+
     it('should preserve counters when moving a card from ex to field', () => {
       const card = { ...createMockCard('ex-field', 'ex-host'), counters: { atk: 3, hp: -2 }, genericCounter: 2 };
       const result = CardLogic.playCardToField([card], 'ex-field', 'host');

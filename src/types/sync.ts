@@ -52,6 +52,7 @@ export type SharedUiEffect =
   | { type: 'COIN_FLIP_RESULT'; actor: PlayerRole; result: 'HEADS (表)' | 'TAILS (裏)' }
   | { type: 'DICE_ROLL_RESULT'; actor: PlayerRole; value: number }
   | { type: 'STARTER_DECIDED'; actor: PlayerRole; starter: PlayerRole; manual: boolean }
+  | { type: 'CARD_PLAYED'; actor: PlayerRole; cardId: string; cardName: string; mode: 'play' | 'playToField' }
   | { type: 'REVEAL_TOP_DECK_CARDS'; actor: PlayerRole; cards: PublicCardView[] }
   | { type: 'REVEAL_SEARCHED_CARD_TO_HAND'; actor: PlayerRole; cards: PublicCardView[] }
   | { type: 'ATTACK_DECLARED'; actor: PlayerRole; attackerCardId: string; attackerName: string; target: AttackTargetView };

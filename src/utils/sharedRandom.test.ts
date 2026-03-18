@@ -55,6 +55,14 @@ describe('sharedRandom', () => {
     )).toBe('Opponent declared an attack');
   });
 
+  it('formats card played announcements as a shared UI message fallback', () => {
+    expect(formatSharedUiMessage(
+      { type: 'CARD_PLAYED', actor: 'host', cardId: 'spell-1', cardName: 'Fire Chain', mode: 'play' },
+      'guest',
+      false
+    )).toBe('Opponent played Fire Chain');
+  });
+
   it('formats starter decision messages for random and manual choices', () => {
     expect(formatSharedUiMessage(
       { type: 'STARTER_DECIDED', actor: 'host', starter: 'guest', manual: false },

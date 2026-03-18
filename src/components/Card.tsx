@@ -1,6 +1,7 @@
 import React from 'react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import type { BaseCardStats } from '../utils/cardStats';
+import { isMainDeckSpellCard, type RuntimeBaseCardType } from '../utils/cardType';
 
 export interface CardInstance {
   id: string; // unique instance id
@@ -17,6 +18,7 @@ export interface CardInstance {
   isEvolveCard?: boolean; // Rule flag to prevent Evolve cards mixing into Main deck
   isLeaderCard?: boolean;
   isTokenCard?: boolean;
+  baseCardType?: RuntimeBaseCardType | null;
 }
 
 export interface CardInspectAnchor {
@@ -89,6 +91,8 @@ const Card: React.FC<Props> = ({ card, baseStats, displayCounters, hideCurrentSt
   const isStatDisplayZone = card.zone.startsWith('field-') || card.zone.startsWith('ex-');
   const effectiveDisplayCounters = displayCounters ?? card.counters;
   const genericCounterValue = card.genericCounter ?? 0;
+  const isNormalSpellPlay = isMainDeckSpellCard(card);
+  const playActionLabel = isNormalSpellPlay ? 'Play' : 'Play to Field';
   const currentStats = !hideCurrentStats && isStatDisplayZone && !isHidden && !card.isFlipped && baseStats
     ? {
         atk: baseStats.atk + effectiveDisplayCounters.atk,
@@ -260,14 +264,14 @@ const Card: React.FC<Props> = ({ card, baseStats, displayCounters, hideCurrentSt
                 background: 'rgba(0,0,0,0.6)', opacity: 0, transition: 'opacity 0.2s ease',
                 borderRadius: '4px'
               }}>
-              {onPlayToField && card.zone.startsWith('hand') && (
+              {onPlayToField && (card.zone.startsWith('hand') || card.zone.startsWith('ex-')) && (
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '4px', marginBottom: '2px' }}>
                   <button
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={(e) => { e.stopPropagation(); onPlayToField(card.id); }}
                     style={{ background: '#3b82f6', color: 'white', border: '1px solid #fff', padding: '4px 4px', fontSize: '11px', borderRadius: '4px', width: '100%', fontWeight: 'bold' }}
                   >
-                    Play to Field
+                    {playActionLabel}
                   </button>
                 </div>
               )}

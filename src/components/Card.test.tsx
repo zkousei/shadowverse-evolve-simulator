@@ -186,6 +186,49 @@ describe('Card', () => {
     expect(screen.queryByText('Play to Field')).not.toBeInTheDocument();
   });
 
+  it('labels main-deck spells as Play in hand and ex zones', () => {
+    const onPlayToField = vi.fn();
+    const { rerender } = render(
+      <Card
+        card={createCard({ zone: 'hand-host', counters: { atk: 0, hp: 0 }, baseCardType: 'spell' })}
+        onPlayToField={onPlayToField}
+      />
+    );
+
+    expect(screen.getByText('Play')).toBeInTheDocument();
+    expect(screen.queryByText('Play to Field')).not.toBeInTheDocument();
+
+    rerender(
+      <Card
+        card={createCard({ zone: 'ex-host', counters: { atk: 0, hp: 0 }, baseCardType: 'spell' })}
+        onPlayToField={onPlayToField}
+      />
+    );
+
+    expect(screen.getByText('Play')).toBeInTheDocument();
+  });
+
+  it('labels token spells as Play and token equipment as Play to Field', () => {
+    const onPlayToField = vi.fn();
+    const { rerender } = render(
+      <Card
+        card={createCard({ zone: 'ex-host', counters: { atk: 0, hp: 0 }, baseCardType: 'spell', isTokenCard: true })}
+        onPlayToField={onPlayToField}
+      />
+    );
+
+    expect(screen.getByText('Play')).toBeInTheDocument();
+
+    rerender(
+      <Card
+        card={createCard({ zone: 'ex-host', counters: { atk: 0, hp: 0 }, baseCardType: 'amulet', isTokenCard: true })}
+        onPlayToField={onPlayToField}
+      />
+    );
+
+    expect(screen.getByText('Play to Field')).toBeInTheDocument();
+  });
+
   it('shows current stats for field cards when base stats are available', () => {
     render(
       <Card

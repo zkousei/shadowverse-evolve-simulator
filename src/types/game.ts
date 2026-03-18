@@ -1,10 +1,12 @@
 import { type CardInstance } from '../components/Card';
+import type { RuntimeBaseCardType } from '../utils/cardType';
 
 export type PlayerRole = 'host' | 'guest';
 export interface TokenOption {
   cardId: string;
   name: string;
   image: string;
+  baseCardType?: RuntimeBaseCardType | null;
 }
 
 export interface PlayerHUD {
