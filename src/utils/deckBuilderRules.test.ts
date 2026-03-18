@@ -3,6 +3,7 @@ import { CLASS } from '../models/class';
 import type { DeckRuleConfig } from '../models/deckRule';
 import type { DeckBuilderCardData } from '../models/deckBuilderCard';
 import {
+  canAddCardToDeckState,
   canAddCardToSection,
   getAllowedSections,
   getDeckLimit,
@@ -34,6 +35,13 @@ const neutralCard: DeckBuilderCardData = {
   class: 'ニュートラル',
 };
 
+const variantMainCard: DeckBuilderCardData = {
+  ...mainCard,
+  id: 'BP01-099',
+  rarity: 'PR',
+  product_name: 'Promo Pack',
+};
+
 const witchCard: DeckBuilderCardData = {
   ...mainCard,
   id: 'BP01-003',
@@ -55,6 +63,84 @@ const evolveCard: DeckBuilderCardData = {
   class: 'ロイヤル',
   type: 'フォロワー・アドバンス',
   card_kind_normalized: 'advance_follower',
+  deck_section: 'evolve',
+  is_token: false,
+  is_evolve_card: true,
+  is_deck_build_legal: true,
+};
+
+const rapidFireCard: DeckBuilderCardData = {
+  id: 'BP11-045',
+  name: 'ラピッドファイア',
+  image: '/rapid-fire.png',
+  class: 'ウィッチ',
+  type: 'スペル',
+  card_kind_normalized: 'spell',
+  deck_section: 'main',
+  is_token: false,
+  is_evolve_card: false,
+  is_deck_build_legal: true,
+};
+
+const onionArmyCard: DeckBuilderCardData = {
+  id: 'BP09-049',
+  name: 'オニオン軍団',
+  image: '/onion-army.png',
+  class: 'ウィッチ',
+  type: 'フォロワー',
+  card_kind_normalized: 'follower',
+  deck_section: 'main',
+  is_token: false,
+  is_evolve_card: false,
+  is_deck_build_legal: true,
+};
+
+const bannedConstructedCard: DeckBuilderCardData = {
+  id: 'BP12-044',
+  name: '運命への反逆',
+  image: '/betrayal.png',
+  class: 'ウィッチ',
+  type: 'スペル',
+  card_kind_normalized: 'spell',
+  deck_section: 'main',
+  is_token: false,
+  is_evolve_card: false,
+  is_deck_build_legal: true,
+};
+
+const limitedConstructedWitchCard: DeckBuilderCardData = {
+  id: 'BP03-048',
+  name: 'お菓子の家',
+  image: '/candy-house.png',
+  class: 'ウィッチ',
+  type: 'アミュレット',
+  card_kind_normalized: 'amulet',
+  deck_section: 'main',
+  is_token: false,
+  is_evolve_card: false,
+  is_deck_build_legal: true,
+};
+
+const limitedCrossoverMainCard: DeckBuilderCardData = {
+  id: 'BP14-022',
+  name: '天下の大泥棒・ジエモン',
+  image: '/jiemon-main.png',
+  class: 'ロイヤル',
+  type: 'フォロワー',
+  card_kind_normalized: 'follower',
+  deck_section: 'main',
+  is_token: false,
+  is_evolve_card: false,
+  is_deck_build_legal: true,
+};
+
+const limitedCrossoverEvolveCard: DeckBuilderCardData = {
+  id: 'BP14-023',
+  name: '天下の大泥棒・ジエモン',
+  image: '/jiemon-evolve.png',
+  class: 'ロイヤル',
+  type: 'フォロワー・エボルヴ',
+  card_kind_normalized: 'evolve_follower',
   deck_section: 'evolve',
   is_token: false,
   is_evolve_card: true,
@@ -125,6 +211,14 @@ const crossoverRule: DeckRuleConfig = {
   selectedClasses: [CLASS.ROYAL, CLASS.WITCH],
 };
 
+const constructedWitchRule: DeckRuleConfig = {
+  format: 'constructed',
+  identityType: 'class',
+  selectedClass: CLASS.WITCH,
+  selectedTitle: null,
+  selectedClasses: [null, null],
+};
+
 describe('deckBuilderRules', () => {
   it('returns the allowed deck section for each card', () => {
     expect(getAllowedSections(mainCard)).toEqual(['main']);
@@ -140,6 +234,90 @@ describe('deckBuilderRules', () => {
     expect(canAddCardToSection(evolveCard, 'main')).toBe(false);
     expect(canAddCardToSection(royalLeaderCard, 'leader')).toBe(true);
     expect(canAddCardToSection(tokenCard, 'main')).toBe(false);
+  });
+
+  it('prevents adding more than three effective copies per main or evolve deck', () => {
+    expect(canAddCardToDeckState(mainCard, 'main', {
+      mainDeck: [mainCard, variantMainCard, { ...variantMainCard, id: 'BP01-100' }],
+      evolveDeck: [],
+      leaderCards: [],
+      tokenDeck: [],
+    }, constructedRoyalRule)).toBe(false);
+
+    expect(canAddCardToDeckState(evolveCard, 'evolve', {
+      mainDeck: [],
+      evolveDeck: [evolveCard, { ...evolveCard, id: 'EV01-002' }, { ...evolveCard, id: 'EV01-003' }],
+      leaderCards: [],
+      tokenDeck: [],
+    }, constructedRoyalRule)).toBe(false);
+  });
+
+  it('allows ability-based copy limit exceptions for matching cards', () => {
+    const rapidFireDeck = {
+      mainDeck: Array.from({ length: 5 }, (_, index) => ({ ...rapidFireCard, id: `BP11-0${45 + index}` })),
+      evolveDeck: [],
+      leaderCards: [],
+      tokenDeck: [],
+    };
+    expect(canAddCardToDeckState(rapidFireCard, 'main', rapidFireDeck, crossoverRule)).toBe(true);
+
+    const fullRapidFireDeck = {
+      ...rapidFireDeck,
+      mainDeck: [...rapidFireDeck.mainDeck, { ...rapidFireCard, id: 'BP11-P12' }],
+    };
+    expect(canAddCardToDeckState(rapidFireCard, 'main', fullRapidFireDeck, crossoverRule)).toBe(false);
+
+    const onionArmyDeck = {
+      mainDeck: Array.from({ length: 49 }, (_, index) => ({ ...onionArmyCard, id: `BP09-${100 + index}` })),
+      evolveDeck: [],
+      leaderCards: [],
+      tokenDeck: [],
+    };
+    expect(canAddCardToDeckState(onionArmyCard, 'main', onionArmyDeck, crossoverRule)).toBe(true);
+  });
+
+  it('applies policy bans and restrictions per format', () => {
+    expect(canAddCardToDeckState(bannedConstructedCard, 'main', {
+      mainDeck: [],
+      evolveDeck: [],
+      leaderCards: [royalLeaderCard],
+      tokenDeck: [],
+    }, constructedWitchRule)).toBe(false);
+
+    expect(canAddCardToDeckState(limitedConstructedWitchCard, 'main', {
+      mainDeck: [],
+      evolveDeck: [],
+      leaderCards: [witchLeaderCard],
+      tokenDeck: [],
+    }, constructedWitchRule)).toBe(true);
+
+    expect(canAddCardToDeckState(limitedConstructedWitchCard, 'main', {
+      mainDeck: [limitedConstructedWitchCard],
+      evolveDeck: [],
+      leaderCards: [witchLeaderCard],
+      tokenDeck: [],
+    }, constructedWitchRule)).toBe(false);
+
+    expect(canAddCardToDeckState(limitedCrossoverMainCard, 'main', {
+      mainDeck: [],
+      evolveDeck: [],
+      leaderCards: [royalLeaderCard, witchLeaderCard],
+      tokenDeck: [],
+    }, crossoverRule)).toBe(true);
+
+    expect(canAddCardToDeckState(limitedCrossoverMainCard, 'main', {
+      mainDeck: [limitedCrossoverMainCard],
+      evolveDeck: [],
+      leaderCards: [royalLeaderCard, witchLeaderCard],
+      tokenDeck: [],
+    }, crossoverRule)).toBe(false);
+
+    expect(canAddCardToDeckState(limitedCrossoverEvolveCard, 'evolve', {
+      mainDeck: [limitedCrossoverMainCard],
+      evolveDeck: [limitedCrossoverEvolveCard, { ...limitedCrossoverEvolveCard, id: 'BP14-P06' }],
+      leaderCards: [royalLeaderCard, witchLeaderCard],
+      tokenDeck: [],
+    }, crossoverRule)).toBe(true);
   });
 
   it('applies constructed class and title restrictions when adding cards', () => {
@@ -187,6 +365,47 @@ describe('deckBuilderRules', () => {
 
     expect(sanitizedMain).toEqual([mainCard]);
     expect(sanitizedEvolve).toEqual([evolveCard]);
+  });
+
+  it('sanitizes imported duplicate variants beyond the effective three-copy limit', () => {
+    const duplicateMainCards = [
+      mainCard,
+      variantMainCard,
+      { ...variantMainCard, id: 'BP01-100' },
+      { ...variantMainCard, id: 'BP01-101' },
+    ];
+
+    const sanitizedMain = sanitizeImportedSection(duplicateMainCards, duplicateMainCards, 'main', constructedRoyalRule);
+    expect(sanitizedMain).toHaveLength(3);
+  });
+
+  it('keeps ability-based extra copies during import sanitize', () => {
+    const rapidFireCopies = Array.from({ length: 7 }, (_, index) => ({
+      ...rapidFireCard,
+      id: `BP11-RF-${index + 1}`,
+    }));
+
+    const sanitizedMain = sanitizeImportedSection(rapidFireCopies, rapidFireCopies, 'main', crossoverRule);
+    expect(sanitizedMain).toHaveLength(6);
+  });
+
+  it('drops banned cards and trims limited cards during import sanitize', () => {
+    const sanitizedMain = sanitizeImportedSection(
+      [
+        bannedConstructedCard,
+        limitedConstructedWitchCard,
+        { ...limitedConstructedWitchCard, id: 'PR-121' },
+      ],
+      [
+        bannedConstructedCard,
+        limitedConstructedWitchCard,
+        { ...limitedConstructedWitchCard, id: 'PR-121' },
+      ],
+      'main',
+      constructedWitchRule
+    );
+
+    expect(sanitizedMain).toEqual([limitedConstructedWitchCard]);
   });
 
   it('sanitizes imported deck states for both new and legacy leader formats', () => {
@@ -254,7 +473,7 @@ describe('deckBuilderRules', () => {
 
   it('builds readable validation messages for export blocking issues', () => {
     const messages = getDeckValidationMessages({
-      mainDeck: [mainCard],
+      mainDeck: [mainCard, variantMainCard, { ...variantMainCard, id: 'BP01-100' }, { ...variantMainCard, id: 'BP01-101' }],
       evolveDeck: [],
       leaderCards: [],
       tokenDeck: [],
@@ -262,8 +481,49 @@ describe('deckBuilderRules', () => {
 
     expect(messages).toEqual(
       expect.arrayContaining([
-        'Main Deck must contain at least 40 cards (1/40).',
+        'Main Deck must contain at least 40 cards (4/40).',
         'This constructed deck requires exactly 1 leader (0/1).',
+        'Main Deck contains too many copies of Main Card (4/3).',
+      ])
+    );
+  });
+
+  it('reports ability-based copy limit overruns with the effective limit', () => {
+    const messages = getDeckValidationMessages({
+      mainDeck: Array.from({ length: 7 }, (_, index) => ({
+        ...rapidFireCard,
+        id: `BP11-RF-${index + 1}`,
+      })),
+      evolveDeck: [],
+      leaderCards: [royalLeaderCard, witchLeaderCard],
+      tokenDeck: [],
+    }, crossoverRule);
+
+    expect(messages).toEqual(
+      expect.arrayContaining([
+        'Main Deck must contain at least 40 cards (7/40).',
+        'Main Deck contains too many copies of ラピッドファイア (7/6).',
+      ])
+    );
+  });
+
+  it('reports banned and limited policy cards with readable messages', () => {
+    const messages = getDeckValidationMessages({
+      mainDeck: [
+        bannedConstructedCard,
+        limitedConstructedWitchCard,
+        { ...limitedConstructedWitchCard, id: 'PR-121' },
+      ],
+      evolveDeck: [],
+      leaderCards: [witchLeaderCard],
+      tokenDeck: [],
+    }, constructedWitchRule);
+
+    expect(messages).toEqual(
+      expect.arrayContaining([
+        'Main Deck must contain at least 40 cards (3/40).',
+        '運命への反逆 is banned in constructed.',
+        'お菓子の家 is limited to 1 copy in constructed (2/1).',
       ])
     );
   });

@@ -156,3 +156,17 @@ npm run cards:audit
 
 ### 手順 5: アプリへの反映
 スクリプトの実行と監査が完了したら、ブラウザのゲーム画面を**リロード**するだけです。Deck Builder と GameBoard の両方で、更新済みのカードデータがそのまま参照されます。
+
+---
+
+## 📝 デッキ制限ルールの更新手順
+
+DeckBuilder では、カード固有の枚数特例と、構築戦 / クロスオーバーごとの禁止・制限を静的データで管理しています。
+
+- カード能力由来の特例
+- 禁止 / 制限改定
+- 更新後の確認方法
+
+は、以下の管理者向けドキュメントにまとめています。
+
+- [`./docs/deck-restrictions-maintenance.md`](./docs/deck-restrictions-maintenance.md)

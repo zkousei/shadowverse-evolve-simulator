@@ -1,8 +1,10 @@
 import { CLASS, type CardClass } from '../models/class';
 import type { CardKindNormalized, DeckSection } from '../models/cardClassification';
-import type { DeckBuilderCardData } from '../models/deckBuilderCard';
+import { getDisplayDedupKey, type DeckBuilderCardData } from '../models/deckBuilderCard';
+import type { RestrictionFormat, RestrictionSource } from '../models/deckRestriction';
 import { createEmptyDeckState, type DeckState } from '../models/deckState';
 import type { DeckRuleConfig } from '../models/deckRule';
+import { DEFAULT_COPY_LIMIT_PER_CARD, getEffectiveDeckRestriction } from './deckRestrictionRules';
 
 export type DeckTargetSection = 'main' | 'evolve' | 'leader' | 'token';
 
@@ -13,7 +15,8 @@ type DeckValidationIssueCode =
   | 'main-deck-too-small'
   | 'rule-not-configured'
   | 'invalid-leader-count'
-  | 'invalid-crossover-leader-classes';
+  | 'invalid-crossover-leader-classes'
+  | 'too-many-copies';
 
 export type DeckValidationIssue = {
   code: DeckValidationIssueCode;
@@ -21,6 +24,9 @@ export type DeckValidationIssue = {
   cardId?: string;
   expected?: number;
   actual?: number;
+  dedupeKey?: string;
+  restrictionSource?: RestrictionSource;
+  restrictionFormat?: RestrictionFormat;
 };
 
 const DEFAULT_RULE_CONFIG: DeckRuleConfig = {
@@ -182,6 +188,53 @@ export const canAddCardToSection = (
   && isCardAllowedInSectionByRule(card, targetSection, ruleConfig)
 );
 
+const getSectionCards = (deckState: DeckState, targetSection: DeckTargetSection): DeckBuilderCardData[] => {
+  switch (targetSection) {
+    case 'main':
+      return deckState.mainDeck;
+    case 'evolve':
+      return deckState.evolveDeck;
+    case 'leader':
+      return deckState.leaderCards;
+    case 'token':
+      return deckState.tokenDeck;
+  }
+};
+
+const getCardCopyLimit = (
+  card: DeckBuilderCardData,
+  targetSection: DeckTargetSection,
+  ruleConfig: DeckRuleConfig = DEFAULT_RULE_CONFIG
+): number => {
+  if (targetSection !== 'main' && targetSection !== 'evolve') {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  return getEffectiveDeckRestriction(card, targetSection, ruleConfig).copyLimit;
+};
+
+const countCopiesInSection = (
+  cards: DeckBuilderCardData[],
+  targetCard: DeckBuilderCardData
+): number => {
+  const dedupeKey = getDisplayDedupKey(targetCard);
+  return cards.filter(card => getDisplayDedupKey(card) === dedupeKey).length;
+};
+
+export const canAddCardToDeckState = (
+  card: DeckBuilderCardData,
+  targetSection: DeckTargetSection,
+  deckState: DeckState,
+  ruleConfig: DeckRuleConfig = DEFAULT_RULE_CONFIG
+): boolean => {
+  if (!canAddCardToSection(card, targetSection, ruleConfig)) return false;
+
+  const copyLimit = getCardCopyLimit(card, targetSection, ruleConfig);
+  if (!Number.isFinite(copyLimit)) return true;
+
+  return countCopiesInSection(getSectionCards(deckState, targetSection), card) < copyLimit;
+};
+
 const resolveImportedCard = (
   importedCard: DeckBuilderCardData,
   cardCatalogById: Map<string, DeckBuilderCardData>
@@ -195,10 +248,19 @@ export const sanitizeImportedSection = (
 ): DeckBuilderCardData[] => {
   const cardCatalogById = new Map(availableCards.map(card => [card.id, card]));
   const limit = getDeckLimit(targetSection, ruleConfig);
+  const copyCounts = new Map<string, number>();
 
   return importedCards
     .map(card => resolveImportedCard(card, cardCatalogById))
     .filter(card => canAddCardToSection(card, targetSection, ruleConfig))
+    .filter(card => {
+      const copyLimit = getCardCopyLimit(card, targetSection, ruleConfig);
+      if (!Number.isFinite(copyLimit)) return true;
+      const dedupeKey = getDisplayDedupKey(card);
+      const nextCount = (copyCounts.get(dedupeKey) ?? 0) + 1;
+      copyCounts.set(dedupeKey, nextCount);
+      return nextCount <= copyLimit;
+    })
     .slice(0, Number.isFinite(limit) ? limit : undefined);
 };
 
@@ -231,6 +293,41 @@ export const validateDeckState = (
         issues.push({ code: 'invalid-rule', deck, cardId: card.id });
       }
     });
+
+    if (deck === 'main' || deck === 'evolve') {
+      const copyCounts = new Map<string, { count: number; cardId: string }>();
+
+      cards.forEach(card => {
+        const dedupeKey = getDisplayDedupKey(card);
+        const current = copyCounts.get(dedupeKey);
+        if (current) {
+          current.count += 1;
+        } else {
+          copyCounts.set(dedupeKey, { count: 1, cardId: card.id });
+        }
+      });
+
+      copyCounts.forEach(({ count, cardId }, dedupeKey) => {
+        const representativeCard = cards.find(card => getDisplayDedupKey(card) === dedupeKey);
+        const restriction = representativeCard
+          ? getEffectiveDeckRestriction(representativeCard, deck, ruleConfig)
+          : { copyLimit: DEFAULT_COPY_LIMIT_PER_CARD, source: 'default' as const };
+        const copyLimit = restriction.copyLimit;
+
+        if (count > copyLimit) {
+          issues.push({
+            code: 'too-many-copies',
+            deck,
+            cardId,
+            dedupeKey,
+            expected: copyLimit,
+            actual: count,
+            restrictionSource: restriction.source,
+            restrictionFormat: restriction.format,
+          });
+        }
+      });
+    }
   });
 
   if (ruleConfig.format === 'constructed' || ruleConfig.format === 'crossover') {
@@ -353,6 +450,29 @@ export const getDeckValidationMessages = (
             ? deckState.leaderCards.length
             : deckState.tokenDeck.length;
       messages.push(`${DECK_LABELS[issue.deck]} exceeds its limit (${deckSize}/${getDeckLimit(issue.deck, ruleConfig)}).`);
+    });
+
+  issues
+    .filter((issue): issue is DeckValidationIssue & { code: 'too-many-copies'; deck: DeckTargetSection; expected: number; actual: number; cardId: string } =>
+      issue.code === 'too-many-copies'
+      && issue.deck !== undefined
+      && issue.expected !== undefined
+      && issue.actual !== undefined
+      && issue.cardId !== undefined
+    )
+    .forEach(issue => {
+      const cardName = getCardNameFromDeckState(deckState, issue.cardId);
+      if (issue.restrictionSource === 'policy-banned' && issue.restrictionFormat) {
+        messages.push(`${cardName ?? 'This card'} is banned in ${issue.restrictionFormat}.`);
+        return;
+      }
+
+      if (issue.restrictionSource === 'policy-limited' && issue.restrictionFormat) {
+        messages.push(`${cardName ?? 'This card'} is limited to 1 copy in ${issue.restrictionFormat} (${issue.actual}/1).`);
+        return;
+      }
+
+      messages.push(`${DECK_LABELS[issue.deck]} contains too many copies of ${cardName ?? 'a card'} (${issue.actual}/${issue.expected}).`);
     });
 
   issues
