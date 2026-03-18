@@ -5,7 +5,7 @@ import type { CardInspectAnchor, CardInstance } from '../components/Card';
 import CardSearchModal from '../components/CardSearchModal';
 import TopDeckModal from '../components/TopDeckModal';
 import { useGameBoardLogic } from '../hooks/useGameBoardLogic';
-import { canImportDeck, canUndoLastTurn } from '../utils/gameRules';
+import { canImportDeck, canUndoLastTurn, isHandCardMovementLocked } from '../utils/gameRules';
 import { getPlayerLabel, getZoneOwner } from '../utils/soloMode';
 import type { PlayerRole, TokenOption } from '../types/game';
 import { buildCardStatLookup, type CardStatLookup } from '../utils/cardStats';
@@ -40,6 +40,7 @@ const GameBoard: React.FC = () => {
   const [selectedInspectorAnchor, setSelectedInspectorAnchor] = React.useState<CardInspectAnchor | null>(null);
   const inspectorRef = React.useRef<HTMLDivElement | null>(null);
   const viewerRole = isSoloMode ? 'all' : role;
+  const isPreparingHandMoveLocked = isHandCardMovementLocked(gameState);
   const topRole = (isSoloMode ? 'guest' : role === 'host' ? 'guest' : 'host') as PlayerRole;
   const bottomRole = (isSoloMode ? 'host' : role) as PlayerRole;
   const canImportTopDeck = canImportDeck(gameState, topRole);
@@ -838,6 +839,7 @@ const GameBoard: React.FC = () => {
                         layout="horizontal"
                         onInspectCard={handleInspectCard}
                         isProtected={true}
+                        lockCards={isPreparingHandMoveLocked}
                         viewerRole={viewerRole}
                         onModifyCounter={handleModifyCounter}
                         onModifyGenericCounter={handleModifyGenericCounter}
@@ -940,6 +942,7 @@ const GameBoard: React.FC = () => {
                         layout="horizontal"
                         onInspectCard={handleInspectCard}
                         isProtected={true}
+                        lockCards={isPreparingHandMoveLocked}
                         viewerRole={viewerRole}
                         containerStyle={{ minHeight: '150px' }}
                       />
@@ -1038,7 +1041,7 @@ const GameBoard: React.FC = () => {
 	                </div>
 
 	                <div style={{ width: `${boardContentWidth}px`, minHeight: '160px', position: 'relative' }}>
-                    <Zone id={`hand-${bottomRole}`} label={`${bottomLabel} Hand`} cards={getCards(`hand-${bottomRole}`)} onInspectCard={handleInspectCard} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} isProtected={true} viewerRole={viewerRole} containerStyle={{ minHeight: '160px' }} isDebug={isDebug} />
+                    <Zone id={`hand-${bottomRole}`} label={`${bottomLabel} Hand`} cards={getCards(`hand-${bottomRole}`)} onInspectCard={handleInspectCard} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} isProtected={true} lockCards={isPreparingHandMoveLocked} viewerRole={viewerRole} containerStyle={{ minHeight: '160px' }} isDebug={isDebug} />
 
                     {gameState.gameStatus === 'preparing' && gameState[bottomRole].initialHandDrawn && !gameState[bottomRole].mulliganUsed && (
                       <button

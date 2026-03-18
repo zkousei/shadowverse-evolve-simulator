@@ -21,12 +21,13 @@ interface Props {
   hideCards?: boolean; // e.g. opponent hand
   layout?: 'horizontal' | 'stack';
   isProtected?: boolean; // if true, opponent cannot operate cards in this zone
+  lockCards?: boolean; // if true, disable drag and quick controls for cards in this zone
   viewerRole?: PlayerRole | 'all'; // current player's role
   containerStyle?: React.CSSProperties;
   isDebug?: boolean;
 }
 
-const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onInspectCard, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, hideCards, layout = 'horizontal', isProtected, viewerRole, containerStyle, isDebug }) => {
+const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onInspectCard, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, hideCards, layout = 'horizontal', isProtected, lockCards, viewerRole, containerStyle, isDebug }) => {
   const { isOver, setNodeRef } = useDroppable({ id });
 
   const isStack = layout === 'stack';
@@ -148,7 +149,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onInspectCard
                       onCemetery={onCemetery}
                       onPlayToField={onPlayToField}
                       isHidden={hideCards}
-                      isLocked={isProtected && viewerRole !== 'all' && card.owner !== viewerRole}
+                      isLocked={lockCards || (isProtected && viewerRole !== 'all' && card.owner !== viewerRole)}
                       debugIndex={isDebug ? index : undefined}
                     />
                     {attachments.map((attachedCard, i) => (
@@ -170,7 +171,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onInspectCard
                           onCemetery={onCemetery}
                           onPlayToField={onPlayToField}
                           isHidden={hideCards}
-                          isLocked={isProtected && viewerRole !== 'all' && attachedCard.owner !== viewerRole}
+                          isLocked={lockCards || (isProtected && viewerRole !== 'all' && attachedCard.owner !== viewerRole)}
                           debugIndex={isDebug ? i : undefined}
                         />
                       </div>
@@ -200,7 +201,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onInspectCard
                 onCemetery={onCemetery}
                 onPlayToField={onPlayToField}
                 isHidden={hideCards}
-                isLocked={isProtected && viewerRole !== 'all' && card.owner !== viewerRole}
+                isLocked={lockCards || (isProtected && viewerRole !== 'all' && card.owner !== viewerRole)}
                 debugIndex={isDebug ? topLevelCards.indexOf(card) : undefined}
               />
               {attachments.map((attachedCard, i) => (
@@ -222,7 +223,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onInspectCard
                     onCemetery={onCemetery}
                     onPlayToField={onPlayToField}
                     isHidden={hideCards}
-                    isLocked={isProtected && viewerRole !== 'all' && attachedCard.owner !== viewerRole}
+                    isLocked={lockCards || (isProtected && viewerRole !== 'all' && attachedCard.owner !== viewerRole)}
                     debugIndex={isDebug ? i : undefined}
                   />
                 </div>

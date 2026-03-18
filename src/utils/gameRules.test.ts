@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { initialState } from '../types/game';
-import { canImportDeck, canUndoLastTurn } from './gameRules';
+import { canImportDeck, canUndoLastTurn, isHandCardMovementLocked } from './gameRules';
 
 describe('gameRules', () => {
   describe('canImportDeck', () => {
@@ -69,6 +69,19 @@ describe('gameRules', () => {
         gameStatus: 'playing',
         turnPlayer: 'host',
       }, initialState, 'host', false)).toBe(false);
+    });
+  });
+
+  describe('isHandCardMovementLocked', () => {
+    it('locks hand card movement while preparing', () => {
+      expect(isHandCardMovementLocked(initialState)).toBe(true);
+    });
+
+    it('unlocks hand card movement after the game starts', () => {
+      expect(isHandCardMovementLocked({
+        ...initialState,
+        gameStatus: 'playing',
+      })).toBe(false);
     });
   });
 });

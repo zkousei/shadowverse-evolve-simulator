@@ -10,6 +10,10 @@ export const canImportDeck = (
   return !player.initialHandDrawn && !player.mulliganUsed && !player.isReady;
 };
 
+export const isHandCardMovementLocked = (
+  state: SyncState
+): boolean => state.gameStatus === 'preparing';
+
 export const canUndoLastTurn = (
   state: SyncState,
   lastGameState: SyncState | null,

@@ -1,7 +1,7 @@
 import type { SyncState } from '../types/game';
 import type { GameSyncEvent } from '../types/sync';
 import * as CardLogic from './cardLogic';
-import { canImportDeck } from './gameRules';
+import { canImportDeck, isHandCardMovementLocked } from './gameRules';
 
 type EventRequester = GameSyncEvent['actor'];
 
@@ -55,6 +55,15 @@ const isPreparingMainDeckFieldSet = (
   const card = state.cards.find(c => c.id === cardId);
   if (!card) return false;
   return card.zone === `mainDeck-${actor}` && destination === `field-${actor}`;
+};
+
+const isPreparingHandMovementBlocked = (
+  state: SyncState,
+  cardId: string
+): boolean => {
+  if (!isHandCardMovementLocked(state)) return false;
+  const card = state.cards.find(c => c.id === cardId);
+  return card?.zone.startsWith('hand-') ?? false;
 };
 
 export const applyGameSyncEvent = (
@@ -156,6 +165,7 @@ export const applyGameSyncEvent = (
     }
 
     case 'MOVE_CARD': {
+      if (isPreparingHandMovementBlocked(state, event.cardId)) return state;
       if (isPreparingMainDeckDragBlocked(state, event.cardId)) return state;
       if (isPreparingEvolveDeckMoveBlocked(state, event.cardId)) return state;
       const nextCards = CardLogic.applyDrop(state.cards, event.cardId, event.overId);
@@ -227,6 +237,7 @@ export const applyGameSyncEvent = (
     }
 
     case 'SEND_TO_BOTTOM': {
+      if (isPreparingHandMovementBlocked(state, event.cardId)) return state;
       const nextCards = CardLogic.sendCardToBottom(state.cards, event.cardId);
       if (nextCards === state.cards) return state;
       return bumpRevision({
@@ -236,6 +247,7 @@ export const applyGameSyncEvent = (
     }
 
     case 'BANISH_CARD': {
+      if (isPreparingHandMovementBlocked(state, event.cardId)) return state;
       const nextCards = CardLogic.banishCard(state.cards, event.cardId);
       if (nextCards === state.cards) return state;
       return bumpRevision({
@@ -245,6 +257,7 @@ export const applyGameSyncEvent = (
     }
 
     case 'SEND_TO_CEMETERY': {
+      if (isPreparingHandMovementBlocked(state, event.cardId)) return state;
       const nextCards = CardLogic.sendCardToCemetery(state.cards, event.cardId);
       if (nextCards === state.cards) return state;
       return bumpRevision({
@@ -263,6 +276,7 @@ export const applyGameSyncEvent = (
     }
 
     case 'PLAY_TO_FIELD': {
+      if (isPreparingHandMovementBlocked(state, event.cardId)) return state;
       const nextCards = CardLogic.playCardToField(state.cards, event.cardId, event.actor);
       if (nextCards === state.cards) return state;
       return bumpRevision({

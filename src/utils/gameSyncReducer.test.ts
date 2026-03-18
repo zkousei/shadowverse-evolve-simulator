@@ -192,6 +192,65 @@ describe('gameSyncReducer', () => {
     expect(deniedShuffle).toBe(state);
   });
 
+  it('blocks moving a hand card to the field while preparing', () => {
+    const state = createState({
+      revision: 8,
+      gameStatus: 'preparing',
+      cards: [
+        {
+          id: 'hand-host-card',
+          cardId: 'BP01-020',
+          name: 'Opening Hand Card',
+          image: '',
+          zone: 'hand-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    const result = applyGameSyncEvent(state, {
+      id: 'evt-preparing-hand-play-blocked',
+      type: 'PLAY_TO_FIELD',
+      actor: 'host',
+      cardId: 'hand-host-card',
+    });
+
+    expect(result).toBe(state);
+  });
+
+  it('blocks dragging a hand card during preparation', () => {
+    const state = createState({
+      revision: 9,
+      gameStatus: 'preparing',
+      cards: [
+        {
+          id: 'hand-host-card',
+          cardId: 'BP01-021',
+          name: 'Opening Hand Card',
+          image: '',
+          zone: 'hand-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    const result = applyGameSyncEvent(state, {
+      id: 'evt-preparing-hand-drag-blocked',
+      type: 'MOVE_CARD',
+      actor: 'host',
+      cardId: 'hand-host-card',
+      overId: 'field-host',
+    });
+
+    expect(result).toBe(state);
+  });
+
   it('toggles ready for the actor and increments revision', () => {
     const result = applyGameSyncEvent(createState(), {
       id: 'evt-1',
@@ -959,7 +1018,10 @@ describe('gameSyncReducer', () => {
     });
     expect(extracted.cards.find(c => c.id === 'deck-card')?.zone).toBe('hand-host');
 
-    const played = applyGameSyncEvent(extracted, {
+    const played = applyGameSyncEvent({
+      ...extracted,
+      gameStatus: 'playing',
+    }, {
       id: 'evt-15',
       type: 'PLAY_TO_FIELD',
       actor: 'host',
