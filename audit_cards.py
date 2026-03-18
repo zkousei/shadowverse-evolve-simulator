@@ -3,6 +3,8 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Iterable
 
+from card_metadata import CARD_KIND_BY_TYPE, DECK_SECTION_BY_CARD_KIND, normalize_card_kind
+
 
 CARD_DATA_PATH = Path("public/cards_detailed.json")
 ICON_ONLY_PATTERN = r"^\[[^\]]+\]$"
@@ -87,6 +89,50 @@ def collect_truncated_abilities(cards: list[dict]) -> list[dict]:
     ]
 
 
+def collect_unknown_types(cards: list[dict]) -> list[dict]:
+    return [
+        card for card in cards
+        if card.get("type") and normalize_card_kind(card.get("type")) is None
+    ]
+
+
+def collect_missing_classification(cards: list[dict]) -> list[dict]:
+    return [
+        card for card in cards
+        if card.get("type")
+        and (
+            "card_kind_normalized" not in card
+            or "deck_section" not in card
+            or "is_token" not in card
+            or "is_evolve_card" not in card
+            or "is_deck_build_legal" not in card
+        )
+    ]
+
+
+def collect_inconsistent_classification(cards: list[dict]) -> list[dict]:
+    inconsistent = []
+    for card in cards:
+        normalized_kind = normalize_card_kind(card.get("type"))
+        if not normalized_kind:
+            continue
+
+        expected_section = DECK_SECTION_BY_CARD_KIND[normalized_kind]
+        expected_is_token = expected_section == "token"
+        expected_is_evolve = expected_section == "evolve"
+        expected_is_legal = expected_section != "neither"
+
+        if (
+            card.get("card_kind_normalized") != normalized_kind
+            or card.get("deck_section") != expected_section
+            or card.get("is_token") != expected_is_token
+            or card.get("is_evolve_card") != expected_is_evolve
+            or card.get("is_deck_build_legal") != expected_is_legal
+        ):
+            inconsistent.append(card)
+    return inconsistent
+
+
 def bucket_by_prefix(cards: list[dict]) -> dict[str, int]:
     counts: defaultdict[str, int] = defaultdict(int)
     for card in cards:
@@ -125,6 +171,11 @@ def main() -> int:
             "subtype",
             "rarity",
             "product_name",
+            "card_kind_normalized",
+            "deck_section",
+            "is_token",
+            "is_evolve_card",
+            "is_deck_build_legal",
             "cost",
             "atk",
             "hp",
@@ -140,12 +191,18 @@ def main() -> int:
     numeric_issues = collect_numeric_format_issues(cards)
     icon_only = collect_icon_only_abilities(cards)
     truncated = collect_truncated_abilities(cards)
+    unknown_types = collect_unknown_types(cards)
+    missing_classification = collect_missing_classification(cards)
+    inconsistent_classification = collect_inconsistent_classification(cards)
 
     print("[Anomalies]")
     print(f"Duplicate ids: {len(duplicate_ids)}")
     print(f"Missing required fields: {len(missing_required)}")
     print(f"Missing core details: {len(missing_core)}")
     print(f"Numeric format issues: {len(numeric_issues)}")
+    print(f"Unknown card types: {len(unknown_types)}")
+    print(f"Missing classification: {len(missing_classification)}")
+    print(f"Inconsistent classification: {len(inconsistent_classification)}")
     print(f"Icon-only ability_text: {len(icon_only)}")
     print(f"Likely truncated ability_text: {len(truncated)}")
     print()
@@ -174,11 +231,31 @@ def main() -> int:
             print(f"{card.get('id')}\t{card.get('name')}\t{card.get('ability_text')}")
         print()
 
+    if unknown_types:
+        print("[Unknown Type Samples]")
+        for card in unknown_types[:10]:
+            print(f"{card.get('id')}\t{card.get('name')}\t{card.get('type')}")
+        print()
+
+    if inconsistent_classification:
+        print("[Inconsistent Classification Samples]")
+        for card in inconsistent_classification[:10]:
+            print(
+                f"{card.get('id')}\t{card.get('name')}\t"
+                f"type={card.get('type')}\t"
+                f"kind={card.get('card_kind_normalized')}\t"
+                f"section={card.get('deck_section')}"
+            )
+        print()
+
     problems = any((
         duplicate_ids,
         missing_required,
         missing_core,
         numeric_issues,
+        unknown_types,
+        missing_classification,
+        inconsistent_classification,
         icon_only,
         truncated,
     ))

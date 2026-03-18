@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import Peer, { type DataConnection } from 'peerjs';
 import { type DragEndEvent } from '@dnd-kit/core';
 import { type CardInstance } from '../components/Card';
-import { type PlayerRole, type SyncState, initialState } from '../types/game';
+import { type PlayerRole, type SyncState, type TokenOption, initialState } from '../types/game';
 import { type GameSyncEvent, type PublicCardView, type SharedUiEffect, type SyncMessage } from '../types/sync';
 import { uuid } from '../utils/helpers';
 import * as CardLogic from '../utils/cardLogic';
@@ -40,7 +40,7 @@ type DispatchableGameSyncEvent =
   | { type: 'DRAW_INITIAL_HAND'; actor?: PlayerRole }
   | { type: 'EXECUTE_MULLIGAN'; actor?: PlayerRole; selectedIds: string[] }
   | { type: 'RESOLVE_TOP_DECK'; actor?: PlayerRole; results: CardLogic.TopDeckResult[] }
-  | { type: 'IMPORT_DECK'; actor?: PlayerRole; cards: CardInstance[] }
+  | { type: 'IMPORT_DECK'; actor?: PlayerRole; cards: CardInstance[]; tokenOptions?: TokenOption[] }
   | { type: 'SET_INITIAL_TURN_ORDER'; actor?: PlayerRole; starter: PlayerRole; manual: boolean }
   | { type: 'UNDO_LAST_TURN'; actor?: PlayerRole; previousState: SyncState }
   | { type: 'SPAWN_TOKEN'; actor?: PlayerRole; token: CardInstance };
@@ -69,6 +69,11 @@ export const useGameBoardLogic = () => {
   const [mulliganOrder, setMulliganOrder] = useState<string[]>([]);
   const [isMulliganModalOpen, setIsMulliganModalOpen] = useState(false);
   const [topDeckCards, setTopDeckCards] = useState<CardInstance[]>([]);
+  const defaultTokenOption = useRef<TokenOption>({
+    cardId: 'token',
+    name: 'Token',
+    image: 'https://shadowverse-evolve.com/wordpress/wp-content/themes/shadowverse-evolve-release_v0/assets/images/common/ogp.jpg',
+  });
 
   const peerRef = useRef<Peer | null>(null);
   const connRef = useRef<DataConnection | null>(null);
@@ -519,30 +524,78 @@ export const useGameBoardLogic = () => {
       try {
         const data = JSON.parse(e.target?.result as string);
         const newCards: CardInstance[] = [];
-        const shuffledMain = [...(data.mainDeck || [])].sort(() => Math.random() - 0.5);
+        const tokenOptionsById = new Map<string, TokenOption>();
+        const shuffledMain = [...(data.mainDeck || [])]
+          .filter((c: any) => !c.deck_section || c.deck_section === 'main')
+          .sort(() => Math.random() - 0.5);
         shuffledMain.forEach((c: any) => {
           newCards.push({
             id: uuid(), cardId: c.id, name: c.name, image: c.image,
             zone: `mainDeck-${targetRole}`, owner: targetRole, isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 }, genericCounter: 0
           });
         });
-        (data.evolveDeck || []).forEach((c: any) => {
+        (data.evolveDeck || [])
+          .filter((c: any) => !c.deck_section || c.deck_section === 'evolve')
+          .forEach((c: any) => {
           newCards.push({
             id: uuid(), cardId: c.id, name: c.name, image: c.image,
             zone: `evolveDeck-${targetRole}`, owner: targetRole, isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 }, genericCounter: 0, isEvolveCard: true
           });
         });
-        dispatchGameEvent({ type: 'IMPORT_DECK', actor: targetRole, cards: newCards });
+
+        if (data.leaderCard?.deck_section === 'leader') {
+          newCards.push({
+            id: uuid(),
+            cardId: data.leaderCard.id,
+            name: data.leaderCard.name,
+            image: data.leaderCard.image,
+            zone: `leader-${targetRole}`,
+            owner: targetRole,
+            isTapped: false,
+            isFlipped: false,
+            counters: { atk: 0, hp: 0 },
+            genericCounter: 0,
+            isLeaderCard: true,
+          });
+        }
+
+        (data.tokenDeck || [])
+          .filter((c: any) => c.deck_section === 'token')
+          .forEach((c: any) => {
+            if (!tokenOptionsById.has(c.id)) {
+              tokenOptionsById.set(c.id, {
+                cardId: c.id,
+                name: c.name,
+                image: c.image,
+              });
+            }
+          });
+
+        dispatchGameEvent({
+          type: 'IMPORT_DECK',
+          actor: targetRole,
+          cards: newCards,
+          tokenOptions: Array.from(tokenOptionsById.values()),
+        });
       } catch (err) { alert("Failed to parse deck JSON."); }
     };
     reader.readAsText(file);
   };
 
-  const spawnToken = (targetRole: PlayerRole = role) => {
+  const spawnToken = (targetRole: PlayerRole = role, tokenOption?: TokenOption) => {
+    const selectedToken = tokenOption ?? defaultTokenOption.current;
     const newCard: CardInstance = {
-      id: uuid(), cardId: 'token', name: 'Token', 
-      image: 'https://shadowverse-evolve.com/wordpress/wp-content/themes/shadowverse-evolve-release_v0/assets/images/common/ogp.jpg',
-      zone: `ex-${targetRole}`, owner: targetRole, isTapped: false, isFlipped: false, counters: { atk: 1, hp: 1 }, genericCounter: 0
+      id: uuid(),
+      cardId: selectedToken.cardId,
+      name: selectedToken.name,
+      image: selectedToken.image,
+      zone: `ex-${targetRole}`,
+      owner: targetRole,
+      isTapped: false,
+      isFlipped: false,
+      counters: selectedToken.cardId === 'token' ? { atk: 1, hp: 1 } : { atk: 0, hp: 0 },
+      genericCounter: 0,
+      isTokenCard: true,
     };
     dispatchGameEvent({ type: 'SPAWN_TOKEN', actor: targetRole, token: newCard });
   };
@@ -596,6 +649,10 @@ export const useGameBoardLogic = () => {
   };
 
   const getCards = (zone: string) => gameState.cards.filter(c => c.zone === zone);
+  const getTokenOptions = (targetRole: PlayerRole) => [
+    defaultTokenOption.current,
+    ...gameState.tokenOptions[targetRole],
+  ];
 
   return {
     room, mode, isSoloMode, isHost, role, status, gameState, searchZone, setSearchZone,
@@ -607,7 +664,7 @@ export const useGameBoardLogic = () => {
     drawCard, handleExtractCard, confirmResetGame, handleDeckUpload, spawnToken,
     handleModifyCounter, handleModifyGenericCounter, handleDragEnd, toggleTap, handleFlipCard, handleSendToBottom,
     handleBanish, handlePlayToField, handleSendToCemetery, handleReturnEvolve, handleShuffleDeck,
-    getCards, lastGameState, millCard,
+    getCards, getTokenOptions, lastGameState, millCard,
     topDeckCards, handleLookAtTop, handleResolveTopDeck, setTopDeckCards,
     isDebug
   };

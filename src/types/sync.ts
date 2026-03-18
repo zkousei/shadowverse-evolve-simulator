@@ -1,5 +1,5 @@
 import type { CardInstance } from '../components/Card';
-import type { PlayerRole, SyncState } from './game';
+import type { PlayerRole, SyncState, TokenOption } from './game';
 import type { TopDeckResult } from '../utils/cardLogic';
 
 export interface PublicCardView {
@@ -34,7 +34,7 @@ export type GameSyncEvent =
   | { id: string; type: 'DRAW_INITIAL_HAND'; actor: PlayerRole }
   | { id: string; type: 'EXECUTE_MULLIGAN'; actor: PlayerRole; selectedIds: string[] }
   | { id: string; type: 'RESOLVE_TOP_DECK'; actor: PlayerRole; results: TopDeckResult[] }
-  | { id: string; type: 'IMPORT_DECK'; actor: PlayerRole; cards: CardInstance[] }
+  | { id: string; type: 'IMPORT_DECK'; actor: PlayerRole; cards: CardInstance[]; tokenOptions?: TokenOption[] }
   | { id: string; type: 'SET_INITIAL_TURN_ORDER'; actor: PlayerRole; starter: PlayerRole; manual: boolean }
   | { id: string; type: 'UNDO_LAST_TURN'; actor: PlayerRole; previousState: SyncState }
   | { id: string; type: 'SPAWN_TOKEN'; actor: PlayerRole; token: CardInstance };

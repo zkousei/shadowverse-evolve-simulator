@@ -130,11 +130,11 @@ export const applyGameSyncEvent = (
     case 'RESET_GAME': {
       if (!isHostRequester(requester)) return state;
       const resetCards = state.cards
-        .filter(c => c.cardId !== 'token')
+        .filter(c => !c.isTokenCard && c.cardId !== 'token')
         .map(c => ({
           ...c,
-          zone: CardLogic.getDeckZone(c),
-          isFlipped: true,
+          zone: c.isLeaderCard ? `leader-${c.owner}` : CardLogic.getDeckZone(c),
+          isFlipped: c.isLeaderCard ? false : true,
           isTapped: false,
           attachedTo: undefined,
           counters: { atk: 0, hp: 0 },
@@ -150,6 +150,7 @@ export const applyGameSyncEvent = (
         turnCount: 1,
         phase: 'Start',
         gameStatus: 'preparing',
+        tokenOptions: state.tokenOptions,
         revision: state.revision + 1,
       };
     }
@@ -379,6 +380,10 @@ export const applyGameSyncEvent = (
           initialHandDrawn: false,
           mulliganUsed: false,
           isReady: false,
+        },
+        tokenOptions: {
+          ...state.tokenOptions,
+          [event.actor]: event.tokenOptions ?? [],
         },
         cards: nextCards,
       });

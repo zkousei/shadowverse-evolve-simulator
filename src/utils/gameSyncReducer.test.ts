@@ -211,6 +211,10 @@ describe('gameSyncReducer', () => {
     const state = createState({
       revision: 8,
       gameStatus: 'playing',
+      tokenOptions: {
+        host: [{ cardId: 'token-host', name: 'Host Token', image: '/host-token.png' }],
+        guest: [],
+      },
       cards: [
         {
           id: 'main-1',
@@ -236,6 +240,19 @@ describe('gameSyncReducer', () => {
           isEvolveCard: true,
         },
         {
+          id: 'leader-1',
+          cardId: 'LD01-001',
+          name: 'Leader Card',
+          image: '',
+          zone: 'leader-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 2, hp: 3 },
+          genericCounter: 4,
+          isLeaderCard: true,
+        },
+        {
           id: 'token-1',
           cardId: 'token',
           name: 'Token',
@@ -245,6 +262,19 @@ describe('gameSyncReducer', () => {
           isTapped: false,
           isFlipped: false,
           counters: { atk: 1, hp: 1 },
+          isTokenCard: true,
+        },
+        {
+          id: 'custom-token-1',
+          cardId: 'TK01-001',
+          name: 'Custom Token',
+          image: '',
+          zone: 'ex-guest',
+          owner: 'guest',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+          isTokenCard: true,
         },
       ],
     });
@@ -256,10 +286,78 @@ describe('gameSyncReducer', () => {
     });
 
     expect(result.gameStatus).toBe('preparing');
-    expect(result.cards).toHaveLength(2);
+    expect(result.cards).toHaveLength(3);
     expect(result.cards.find(c => c.id === 'main-1')?.zone).toBe('mainDeck-host');
     expect(result.cards.find(c => c.id === 'evo-1')?.zone).toBe('evolveDeck-guest');
+    expect(result.cards.find(c => c.id === 'leader-1')).toMatchObject({
+      zone: 'leader-host',
+      isFlipped: false,
+      isTapped: false,
+      counters: { atk: 0, hp: 0 },
+      genericCounter: 0,
+    });
+    expect(result.tokenOptions.host).toEqual([{ cardId: 'token-host', name: 'Host Token', image: '/host-token.png' }]);
     expect(result.revision).toBe(9);
+  });
+
+  it('imports leader cards and token options with the deck', () => {
+    const result = applyGameSyncEvent(createState({
+      revision: 2,
+      cards: [
+        {
+          id: 'old-main',
+          cardId: 'BP01-010',
+          name: 'Old Main',
+          image: '',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    }), {
+      id: 'evt-import-leader',
+      type: 'IMPORT_DECK',
+      actor: 'host',
+      cards: [
+        {
+          id: 'new-main',
+          cardId: 'BP01-011',
+          name: 'New Main',
+          image: '',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'new-leader',
+          cardId: 'LD01-001',
+          name: 'Leader',
+          image: '',
+          zone: 'leader-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+          isLeaderCard: true,
+        },
+      ],
+      tokenOptions: [
+        { cardId: 'TK01-001', name: 'Knight Token', image: '/knight.png' },
+      ],
+    });
+
+    expect(result.cards.map(c => c.id)).toEqual(['new-main', 'new-leader']);
+    expect(result.cards.find(c => c.id === 'new-leader')?.zone).toBe('leader-host');
+    expect(result.tokenOptions.host).toEqual([
+      { cardId: 'TK01-001', name: 'Knight Token', image: '/knight.png' },
+    ]);
+    expect(result.host.initialHandDrawn).toBe(false);
+    expect(result.host.mulliganUsed).toBe(false);
+    expect(result.host.isReady).toBe(false);
   });
 
   it('applies move-card events through the shared drop rules', () => {

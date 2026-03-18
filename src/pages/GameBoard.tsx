@@ -6,7 +6,7 @@ import TopDeckModal from '../components/TopDeckModal';
 import { useGameBoardLogic } from '../hooks/useGameBoardLogic';
 import { canImportDeck, canUndoLastTurn } from '../utils/gameRules';
 import { getPlayerLabel, getZoneOwner } from '../utils/soloMode';
-import type { PlayerRole } from '../types/game';
+import type { PlayerRole, TokenOption } from '../types/game';
 import { buildCardStatLookup, type CardStatLookup } from '../utils/cardStats';
 
 const GameBoard: React.FC = () => {
@@ -20,13 +20,14 @@ const GameBoard: React.FC = () => {
     drawCard, handleExtractCard, confirmResetGame, handleDeckUpload, spawnToken,
     handleModifyCounter, handleModifyGenericCounter, handleDragEnd, toggleTap, handleFlipCard, handleSendToBottom,
     handleBanish, handlePlayToField, handleSendToCemetery, handleReturnEvolve, handleShuffleDeck,
-    getCards, lastGameState, millCard,
+    getCards, getTokenOptions, lastGameState, millCard,
     topDeckCards, handleLookAtTop, handleResolveTopDeck, setTopDeckCards,
     isDebug
   } = useGameBoardLogic();
 
   const [isTopNInputOpen, setIsTopNInputOpen] = React.useState(false);
   const [topNValue, setTopNValue] = React.useState(3);
+  const [tokenSpawnTargetRole, setTokenSpawnTargetRole] = React.useState<PlayerRole | null>(null);
   const [showUndoConfirm, setShowUndoConfirm] = React.useState(false);
   const [topDeckTargetRole, setTopDeckTargetRole] = React.useState<PlayerRole>('host');
   const [mulliganTargetRole, setMulliganTargetRole] = React.useState<PlayerRole>('host');
@@ -46,9 +47,9 @@ const GameBoard: React.FC = () => {
   const topPanelWidth = 188;
   const sideZoneWidth = 120;
   const centerZoneWidth = 800;
-  const boardContentWidth = sideZoneWidth * 2 + centerZoneWidth;
-  const topRowColumns = `${sideZoneWidth}px ${centerZoneWidth}px ${sideZoneWidth}px`;
-  const middleRowColumns = `${sideZoneWidth}px ${centerZoneWidth}px ${sideZoneWidth}px`;
+  const boardContentWidth = sideZoneWidth * 3 + centerZoneWidth;
+  const topBoardColumns = `${sideZoneWidth}px ${centerZoneWidth}px ${sideZoneWidth}px ${sideZoneWidth}px`;
+  const bottomBoardColumns = `${sideZoneWidth}px ${sideZoneWidth}px ${centerZoneWidth}px ${sideZoneWidth}px`;
   const boardShellColumns = `${topPanelWidth}px ${boardContentWidth}px ${sidePanelWidth}px`;
   const soloMulliganButtonStyle: React.CSSProperties = {
     position: 'absolute',
@@ -91,6 +92,28 @@ const GameBoard: React.FC = () => {
     setMulliganTargetRole(targetRole);
     startMulligan();
   };
+
+  const openTokenSpawnModal = (targetRole: PlayerRole) => {
+    setTokenSpawnTargetRole(targetRole);
+  };
+
+  const handleTokenSpawn = (token: TokenOption) => {
+    if (!tokenSpawnTargetRole) return;
+    spawnToken(tokenSpawnTargetRole, token);
+    setTokenSpawnTargetRole(null);
+  };
+
+  const renderLeaderZone = (playerRole: PlayerRole, label: string) => (
+    <Zone
+      id={`leader-${playerRole}`}
+      label={`${label} Leader`}
+      cards={getCards(`leader-${playerRole}`)}
+      layout="stack"
+      viewerRole={viewerRole}
+      containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }}
+      isDebug={isDebug}
+    />
+  );
 
   const renderZoneActions = (
     menuId: string,
@@ -470,7 +493,7 @@ const GameBoard: React.FC = () => {
           {/* OPPONENT BOARD */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', opacity: 0.9 }}>
             {isSoloMode ? (
-              <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: '1rem', alignItems: 'flex-start', width: '100%', maxWidth: '1448px', justifyContent: 'center' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: '1rem', alignItems: 'flex-start', width: '100%', maxWidth: '1568px', justifyContent: 'center' }}>
                 <div style={{ width: `${topPanelWidth}px`, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(0,0,0,0.8)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
                   <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'white', marginBottom: '0.25rem' }}>{topLabel} Controls</div>
                   <label
@@ -500,14 +523,14 @@ const GameBoard: React.FC = () => {
                     Mill {topLabel}
                   </button>
                   {renderEndTurnButton(topRole, topLabel, '#fbbf24')}
-                  <button onClick={() => spawnToken(topRole)} className="glass-panel" style={{ padding: '0.5rem', background: '#7c3aed' }}>
+                  <button onClick={() => openTokenSpawnModal(topRole)} className="glass-panel" style={{ padding: '0.5rem', background: '#7c3aed' }}>
                     Spawn {topLabel} Token
                   </button>
                   {renderPlayerTracker(topRole, topLabel)}
                 </div>
 
                 <div style={{ width: `${boardContentWidth}px`, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.65rem', alignItems: 'flex-start' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: topRowColumns, gap: '0.75rem', width: `${boardContentWidth}px`, alignItems: 'start' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: topBoardColumns, gap: '0.75rem', width: `${boardContentWidth}px`, alignItems: 'start' }}>
                     <div />
                     <div style={{ width: `${centerZoneWidth}px`, minHeight: '150px', position: 'relative' }}>
                       <Zone
@@ -533,9 +556,10 @@ const GameBoard: React.FC = () => {
                       )}
                     </div>
                     <div />
+                    <div />
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: middleRowColumns, gap: '0.75rem', width: `${boardContentWidth}px`, alignItems: 'start' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: topBoardColumns, gap: '0.75rem', width: `${boardContentWidth}px`, alignItems: 'start' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <Zone id={`cemetery-${topRole}`} label={`${topLabel} Cemetery`} cards={getCards(`cemetery-${topRole}`)} layout="stack" viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
                       <button onClick={() => setSearchZone({ id: `cemetery-${topRole}`, title: `${topLabel} Cemetery` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
@@ -555,14 +579,15 @@ const GameBoard: React.FC = () => {
                       onCemetery={handleSendToCemetery}
                       onPlayToField={(cardId) => handlePlayToField(cardId, topRole)}
                       containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: '150px', flex: 'none', width: `${centerZoneWidth}px` }}
-                    />
+                      />
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <Zone id={`banish-${topRole}`} label={`${topLabel} Banish`} cards={getCards(`banish-${topRole}`)} layout="stack" viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
                       <button onClick={() => setSearchZone({ id: `banish-${topRole}`, title: `${topLabel} Banish` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
                     </div>
+                    <div />
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: topRowColumns, gap: '0.75rem', width: `${boardContentWidth}px`, alignItems: 'start' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: topBoardColumns, gap: '0.75rem', width: `${boardContentWidth}px`, alignItems: 'start' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <Zone id={`mainDeck-${topRole}`} label={`${topLabel} Main Deck`} cards={getCards(`mainDeck-${topRole}`)} layout="stack" isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
                       {renderZoneActions(`mainDeck-${topRole}`, [
@@ -592,18 +617,19 @@ const GameBoard: React.FC = () => {
                       <Zone id={`evolveDeck-${topRole}`} label={`${topLabel} Evolve Deck`} cards={getCards(`evolveDeck-${topRole}`)} layout="stack" isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
                       <button onClick={() => setSearchZone({ id: `evolveDeck-${topRole}`, title: `${topLabel} Evolve Deck` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
                     </div>
+                    {renderLeaderZone(topRole, topLabel)}
                   </div>
                 </div>
                 <div />
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: '1rem', alignItems: 'flex-start', width: '100%', maxWidth: '1448px', justifyContent: 'center' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: '1rem', alignItems: 'flex-start', width: '100%', maxWidth: '1568px', justifyContent: 'center' }}>
                 <div style={{ width: `${topPanelWidth}px`, alignSelf: 'end' }}>
                   {renderReadOnlyStatusPanel(topRole, topLabel)}
                 </div>
 
                 <div style={{ width: `${boardContentWidth}px`, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.65rem', alignItems: 'flex-start' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: topRowColumns, gap: '0.75rem', width: `${boardContentWidth}px`, alignItems: 'start' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: topBoardColumns, gap: '0.75rem', width: `${boardContentWidth}px`, alignItems: 'start' }}>
                     <div />
                     <div style={{ width: `${centerZoneWidth}px`, display: 'flex', justifyContent: 'center' }}>
                       <Zone
@@ -618,9 +644,10 @@ const GameBoard: React.FC = () => {
                       />
                     </div>
                     <div />
+                    <div />
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: middleRowColumns, gap: '0.75rem', width: `${boardContentWidth}px`, alignItems: 'start' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: topBoardColumns, gap: '0.75rem', width: `${boardContentWidth}px`, alignItems: 'start' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <Zone id={`cemetery-${topRole}`} label={`${topLabel} Cemetery`} cards={getCards(`cemetery-${topRole}`)} layout="stack" viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
                       <button onClick={() => setSearchZone({ id: `cemetery-${topRole}`, title: `${topLabel} Cemetery` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
@@ -638,9 +665,10 @@ const GameBoard: React.FC = () => {
                       <Zone id={`banish-${topRole}`} label={`${topLabel} Banish`} cards={getCards(`banish-${topRole}`)} layout="stack" viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
                       <button onClick={() => setSearchZone({ id: `banish-${topRole}`, title: `${topLabel} Banish` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
                     </div>
+                    <div />
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: topRowColumns, gap: '0.75rem', width: `${boardContentWidth}px`, alignItems: 'start' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: topBoardColumns, gap: '0.75rem', width: `${boardContentWidth}px`, alignItems: 'start' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <Zone id={`mainDeck-${topRole}`} label={`${topLabel} Main Deck`} cards={getCards(`mainDeck-${topRole}`)} layout="stack" isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
                     </div>
@@ -660,6 +688,7 @@ const GameBoard: React.FC = () => {
                       <Zone id={`evolveDeck-${topRole}`} label={`${topLabel} Evolve Deck`} cards={getCards(`evolveDeck-${topRole}`)} layout="stack" isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
                       <button onClick={() => setSearchZone({ id: `evolveDeck-${topRole}`, title: `${topLabel} Evolve Deck` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
                     </div>
+                    {renderLeaderZone(topRole, topLabel)}
                   </div>
                 </div>
                 <div />
@@ -671,10 +700,11 @@ const GameBoard: React.FC = () => {
 
           {/* MY BOARD */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%', alignItems: 'center' }}>
-	            <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: '1rem', alignItems: 'flex-start', width: '100%', maxWidth: '1448px', justifyContent: 'center' }}>
+	            <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: '1rem', alignItems: 'flex-start', width: '100%', maxWidth: '1568px', justifyContent: 'center' }}>
                 <div />
 	              <div style={{ width: `${boardContentWidth}px`, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.65rem', alignItems: 'flex-start' }}>
-	                <div style={{ display: 'grid', gridTemplateColumns: topRowColumns, gap: '0.75rem', width: `${boardContentWidth}px`, alignItems: 'start' }}>
+	                <div style={{ display: 'grid', gridTemplateColumns: bottomBoardColumns, gap: '0.75rem', width: `${boardContentWidth}px`, alignItems: 'start' }}>
+                  {renderLeaderZone(bottomRole, bottomLabel)}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <Zone id={`evolveDeck-${bottomRole}`} label={`${bottomLabel} Evolve Deck`} cards={getCards(`evolveDeck-${bottomRole}`)} layout="stack" isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
                     <button onClick={() => setSearchZone({ id: `evolveDeck-${bottomRole}`, title: `${bottomLabel} Evolve Deck` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
@@ -690,7 +720,8 @@ const GameBoard: React.FC = () => {
                   </div>
                 </div>
 
-	                <div style={{ display: 'grid', gridTemplateColumns: middleRowColumns, gap: '0.75rem', width: `${boardContentWidth}px`, alignItems: 'start' }}>
+	                <div style={{ display: 'grid', gridTemplateColumns: bottomBoardColumns, gap: '0.75rem', width: `${boardContentWidth}px`, alignItems: 'start' }}>
+                  <div />
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <Zone id={`banish-${bottomRole}`} label={`${bottomLabel} Banish`} cards={getCards(`banish-${bottomRole}`)} layout="stack" onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onCemetery={handleSendToCemetery} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
                     <button onClick={() => setSearchZone({ id: `banish-${bottomRole}`, title: `${bottomLabel} Banish` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
@@ -781,7 +812,7 @@ const GameBoard: React.FC = () => {
                     END TURN
                   </button>
                 )}
-                <button onClick={() => spawnToken(bottomRole)} className="glass-panel" style={{ padding: '0.5rem', background: 'var(--accent-secondary)' }}>
+                <button onClick={() => openTokenSpawnModal(bottomRole)} className="glass-panel" style={{ padding: '0.5rem', background: 'var(--accent-secondary)' }}>
                   Spawn {bottomLabel} Token
                 </button>
                 <button onClick={() => setShowResetConfirm(true)} className="glass-panel" style={{ padding: '0.5rem', background: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', fontWeight: 'bold' }}>
@@ -889,6 +920,50 @@ const GameBoard: React.FC = () => {
         onConfirm={(results) => handleResolveTopDeck(results, topDeckTargetRole)}
         onCancel={() => setTopDeckCards([])}
       />
+
+      {tokenSpawnTargetRole && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 4500 }}>
+          <div style={{ background: 'var(--bg-surface)', padding: '2rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', width: 'min(920px, 92vw)' }}>
+            <h3 style={{ marginBottom: '1rem', color: 'white', textAlign: 'center' }}>Select Token</h3>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+              {getTokenOptions(tokenSpawnTargetRole).map((token) => (
+                <button
+                  key={`${token.cardId}-${token.name}`}
+                  onClick={() => handleTokenSpawn(token)}
+                  style={{
+                    width: '140px',
+                    background: 'transparent',
+                    border: '1px solid var(--border-light)',
+                    borderRadius: '10px',
+                    padding: '0.6rem',
+                    color: 'white',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.5rem',
+                    alignItems: 'center'
+                  }}
+                >
+                  <img
+                    src={token.image}
+                    alt={token.name}
+                    style={{ width: '100px', height: '140px', objectFit: 'cover', borderRadius: '6px' }}
+                  />
+                  <span style={{ fontSize: '0.78rem', lineHeight: 1.35, textAlign: 'center' }}>{token.name}</span>
+                </button>
+              ))}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <button
+                onClick={() => setTokenSpawnTargetRole(null)}
+                style={{ padding: '0.5rem 1.5rem', background: '#333', color: 'white', borderRadius: '4px', cursor: 'pointer', border: 'none' }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {isTopNInputOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 5000 }}>

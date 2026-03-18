@@ -231,6 +231,10 @@ describe('CardLogic utils', () => {
       const card = createMockCard('n1', 'field-host');
       expect(CardLogic.getDeckZone(card)).toBe('mainDeck-host');
     });
+    it('should return leader zone for leader cards', () => {
+      const card = { ...createMockCard('leader-1', 'leader-host'), isLeaderCard: true };
+      expect(CardLogic.getDeckZone(card)).toBe('leader-host');
+    });
   });
 
   describe('resolveMoveDestination', () => {
@@ -353,6 +357,65 @@ describe('CardLogic utils', () => {
       expect(result.find(c => c.id === 'base')?.zone).toBe('cemetery-host');
       expect(result.find(c => c.id === 'evo')?.zone).toBe('evolveDeck-host');
       expect(result.find(c => c.id === 'evo')?.attachedTo).toBeUndefined();
+    });
+
+    it('should prevent moving leader cards or dropping onto leader zones', () => {
+      const leaderCard = { ...createMockCard('leader-1', 'leader-host'), isLeaderCard: true };
+      const fieldCard = createMockCard('field-1', 'field-host');
+      const cards = [leaderCard, fieldCard];
+
+      expect(CardLogic.applyDrop(cards, 'leader-1', 'field-1')).toBe(cards);
+      expect(CardLogic.applyDrop(cards, 'field-1', 'leader-1')).toBe(cards);
+    });
+  });
+
+  describe('leader restrictions', () => {
+    it('should ignore counter, tap, flip, and zone operations for leader cards', () => {
+      const leaderCard = {
+        ...createMockCard('leader-1', 'leader-host'),
+        isLeaderCard: true,
+        genericCounter: 0,
+      };
+      const cards = [leaderCard];
+
+      expect(CardLogic.modifyCardCounter(cards, 'leader-1', 'atk', 1)).toBe(cards);
+      expect(CardLogic.modifyGenericCounter(cards, 'leader-1', 1)).toBe(cards);
+      expect(CardLogic.toggleTapStack(cards, 'leader-1')).toBe(cards);
+      expect(CardLogic.toggleFlip(cards, 'leader-1')).toBe(cards);
+      expect(CardLogic.sendCardToBottom(cards, 'leader-1')).toBe(cards);
+      expect(CardLogic.banishCard(cards, 'leader-1')).toBe(cards);
+      expect(CardLogic.sendCardToCemetery(cards, 'leader-1')).toBe(cards);
+      expect(CardLogic.returnEvolveCard(cards, 'leader-1')).toBe(cards);
+      expect(CardLogic.playCardToField(cards, 'leader-1', 'host')).toBe(cards);
+      expect(CardLogic.extractCard(cards, 'leader-1', 'host')).toBe(cards);
+    });
+  });
+
+  describe('custom token handling', () => {
+    it('should remove custom tokens when moved into private zones', () => {
+      const token = {
+        ...createMockCard('custom-token-1', 'field-host'),
+        cardId: 'TK01-001',
+        isTokenCard: true,
+      };
+      const cemetery = createMockCard('cem-1', 'cemetery-host');
+
+      const result = CardLogic.applyDrop([token, cemetery], 'custom-token-1', 'cem-1');
+
+      expect(result).toEqual([cemetery]);
+    });
+
+    it('should remove custom tokens on banish, cemetery, and send to bottom', () => {
+      const token = {
+        ...createMockCard('custom-token-1', 'ex-host'),
+        cardId: 'TK01-001',
+        isTokenCard: true,
+      };
+      const cards = [token];
+
+      expect(CardLogic.sendCardToBottom(cards, 'custom-token-1')).toEqual([]);
+      expect(CardLogic.banishCard(cards, 'custom-token-1')).toEqual([]);
+      expect(CardLogic.sendCardToCemetery(cards, 'custom-token-1')).toEqual([]);
     });
   });
 
