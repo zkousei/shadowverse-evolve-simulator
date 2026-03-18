@@ -72,6 +72,26 @@ const GameBoard: React.FC = () => {
     boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
     border: '2px solid black'
   };
+  const preparationStepStyle = (isDone: boolean): React.CSSProperties => ({
+    padding: '0.35rem 0.7rem',
+    borderRadius: '999px',
+    border: `1px solid ${isDone ? 'rgba(16, 185, 129, 0.5)' : 'rgba(255,255,255,0.12)'}`,
+    background: isDone ? 'rgba(16, 185, 129, 0.16)' : 'rgba(255,255,255,0.05)',
+    color: isDone ? '#d1fae5' : '#cbd5e1',
+    fontSize: '0.78rem',
+    fontWeight: 'bold'
+  });
+  const preparationStatusCardStyle: React.CSSProperties = {
+    flex: 1,
+    minWidth: '220px',
+    background: 'rgba(15, 23, 42, 0.55)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: '10px',
+    padding: '0.7rem 0.8rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.35rem'
+  };
 
   React.useEffect(() => {
     let isActive = true;
@@ -784,6 +804,68 @@ const GameBoard: React.FC = () => {
             </div>
           )}
         </div>
+
+        {gameState.gameStatus === 'preparing' && (
+          <div
+            style={{
+              background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(59, 130, 246, 0.12))',
+              border: '1px solid rgba(250, 204, 21, 0.22)',
+              borderRadius: 'var(--radius-md)',
+              padding: '0.9rem 1rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.8rem'
+            }}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+              <div style={{ color: '#fde68a', fontWeight: 900, fontSize: '0.95rem', letterSpacing: '0.03em' }}>
+                Preparing Game
+              </div>
+              <div style={{ color: '#e5e7eb', fontSize: '0.84rem', lineHeight: 1.5 }}>
+                Draw your opening four cards, finish mulligan and Ready, choose who goes first before starting, then press `START GAME`.
+                Hand cards cannot be moved to other zones during preparation.
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.55rem', flexWrap: 'wrap' }}>
+              <span style={preparationStepStyle(gameState.host.initialHandDrawn && gameState.guest.initialHandDrawn)}>
+                1. Draw Opening Hands
+              </span>
+              <span style={preparationStepStyle(gameState.host.isReady && gameState.guest.isReady)}>
+                2. Mulligan and Ready
+              </span>
+              <span style={preparationStepStyle(gameState.host.isReady && gameState.guest.isReady)}>
+                3. START GAME
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <div style={preparationStatusCardStyle}>
+                <div style={{ color: '#f8fafc', fontWeight: 'bold', fontSize: '0.82rem' }}>
+                  {isSoloMode ? 'Player 1' : 'Host'}
+                </div>
+                <div style={{ color: '#cbd5e1', fontSize: '0.76rem' }}>
+                  Opening Hand: {gameState.host.initialHandDrawn ? 'Done' : 'Pending'}
+                </div>
+                <div style={{ color: '#cbd5e1', fontSize: '0.76rem' }}>
+                  Ready: {gameState.host.isReady ? 'Done' : 'Pending'}
+                </div>
+              </div>
+
+              <div style={preparationStatusCardStyle}>
+                <div style={{ color: '#f8fafc', fontWeight: 'bold', fontSize: '0.82rem' }}>
+                  {isSoloMode ? 'Player 2' : 'Guest'}
+                </div>
+                <div style={{ color: '#cbd5e1', fontSize: '0.76rem' }}>
+                  Opening Hand: {gameState.guest.initialHandDrawn ? 'Done' : 'Pending'}
+                </div>
+                <div style={{ color: '#cbd5e1', fontSize: '0.76rem' }}>
+                  Ready: {gameState.guest.isReady ? 'Done' : 'Pending'}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Board Playmat */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'url("https://shadowverse-evolve.com/wordpress/wp-content/themes/shadowverse-evolve-release_v0/assets/images/common/bg.jpg")', backgroundSize: 'cover', backgroundPosition: 'center', borderRadius: 'var(--radius-lg)', padding: '1rem', overflowY: 'auto', alignItems: 'center' }}>
