@@ -157,4 +157,158 @@ describe('CardSearchModal', () => {
     expect(screen.queryByText('Add to EX Area')).not.toBeInTheDocument();
   });
 
+  it('shows a compact detail popover when a card is clicked', () => {
+    render(
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Main Deck"
+        cards={[createCard({ name: 'First Card' })]}
+        cardDetailLookup={{
+          'BP01-001': {
+            id: 'BP01-001',
+            name: 'First Card',
+            image: '/test.png',
+            className: 'ロイヤル',
+            title: 'Sample',
+            type: 'フォロワー',
+            subtype: '兵士',
+            cost: '2',
+            atk: 2,
+            hp: 3,
+            abilityText: 'Sample ability text',
+          },
+        }}
+        onExtractCard={vi.fn()}
+        viewerRole="host"
+      />
+    );
+
+    expect(screen.queryByTestId('search-card-detail-popover')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByAltText('First Card'));
+    expect(screen.getByTestId('search-card-detail-popover')).toHaveTextContent('Sample ability text');
+    expect(screen.getByTestId('search-card-grid')).toHaveStyle({ paddingBottom: '1.5rem' });
+  });
+
+  it('only reserves extra bottom space for the detail popover when the grid overflows', () => {
+    const cards = Array.from({ length: 12 }, (_, index) =>
+      createCard({
+        id: `card-${index + 1}`,
+        name: `Card ${index + 1}`,
+      })
+    );
+
+    render(
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Main Deck"
+        cards={cards}
+        cardDetailLookup={{
+          'BP01-001': {
+            id: 'BP01-001',
+            name: 'Card 1',
+            image: '/test.png',
+            className: 'ロイヤル',
+            title: 'Sample',
+            type: 'フォロワー',
+            subtype: '兵士',
+            cost: '2',
+            atk: 2,
+            hp: 3,
+            abilityText: 'Sample ability text',
+          },
+        }}
+        onExtractCard={vi.fn()}
+        viewerRole="host"
+      />
+    );
+
+    fireEvent.click(screen.getByAltText('Card 1'));
+
+    const grid = screen.getByTestId('search-card-grid');
+    Object.defineProperty(grid, 'scrollHeight', {
+      configurable: true,
+      value: 1200,
+    });
+    Object.defineProperty(grid, 'clientHeight', {
+      configurable: true,
+      value: 400,
+    });
+
+    fireEvent(window, new Event('resize'));
+
+    expect(grid).toHaveStyle({ paddingBottom: '11rem' });
+  });
+
+  it('closes the detail popover when clicking empty space in the modal', () => {
+    render(
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Main Deck"
+        cards={[createCard({ name: 'First Card' })]}
+        cardDetailLookup={{
+          'BP01-001': {
+            id: 'BP01-001',
+            name: 'First Card',
+            image: '/test.png',
+            className: 'ロイヤル',
+            title: 'Sample',
+            type: 'フォロワー',
+            subtype: '兵士',
+            cost: '2',
+            atk: 2,
+            hp: 3,
+            abilityText: 'Sample ability text',
+          },
+        }}
+        onExtractCard={vi.fn()}
+        viewerRole="host"
+      />
+    );
+
+    fireEvent.click(screen.getByAltText('First Card'));
+    expect(screen.getByTestId('search-card-detail-popover')).toBeInTheDocument();
+
+    fireEvent.pointerDown(screen.getByTestId('search-card-modal-panel'));
+    expect(screen.queryByTestId('search-card-detail-popover')).not.toBeInTheDocument();
+  });
+
+  it('does not open the detail popover when using an action button', () => {
+    const onExtractCard = vi.fn();
+
+    render(
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Main Deck"
+        cards={[createCard({ isEvolveCard: false, zone: 'mainDeck-host' })]}
+        cardDetailLookup={{
+          'BP01-001': {
+            id: 'BP01-001',
+            name: 'Test Card',
+            image: '/test.png',
+            className: 'ロイヤル',
+            title: 'Sample',
+            type: 'フォロワー',
+            subtype: '兵士',
+            cost: '2',
+            atk: 2,
+            hp: 3,
+            abilityText: 'Sample ability text',
+          },
+        }}
+        onExtractCard={onExtractCard}
+        viewerRole="host"
+        allowHandExtraction={true}
+      />
+    );
+
+    fireEvent.click(screen.getByText('Add to Hand'));
+
+    expect(onExtractCard).toHaveBeenCalledWith('card-1', 'hand-host');
+    expect(screen.queryByTestId('search-card-detail-popover')).not.toBeInTheDocument();
+  });
+
 });

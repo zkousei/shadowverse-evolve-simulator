@@ -1178,6 +1178,7 @@ const GameBoard: React.FC = () => {
         title={searchZone?.title || ''}
         allowHandExtraction={gameState.gameStatus === 'playing'}
         readOnly={searchZone?.id.startsWith('leader-') ?? false}
+        cardDetailLookup={cardDetailLookup}
         cards={searchZone ? (
           (searchZone.id.startsWith('evolveDeck-') && !isSoloMode && !searchZone.id.endsWith(role)
             ? getCards(searchZone.id).filter(c => !c.isFlipped)
