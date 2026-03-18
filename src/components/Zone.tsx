@@ -23,13 +23,14 @@ interface Props {
   layout?: 'horizontal' | 'stack';
   isProtected?: boolean; // if true, opponent cannot operate cards in this zone
   lockCards?: boolean; // if true, disable drag and quick controls for cards in this zone
+  disableQuickActionsForCard?: (card: CardInstance) => boolean;
   getHighlightTone?: (card: CardInstance) => 'attack-source' | 'attack-target' | undefined;
   viewerRole?: PlayerRole | 'all'; // current player's role
   containerStyle?: React.CSSProperties;
   isDebug?: boolean;
 }
 
-const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onInspectCard, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, hideCards, layout = 'horizontal', isProtected, lockCards, getHighlightTone, viewerRole, containerStyle, isDebug }) => {
+const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onInspectCard, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, hideCards, layout = 'horizontal', isProtected, lockCards, disableQuickActionsForCard, getHighlightTone, viewerRole, containerStyle, isDebug }) => {
   const { isOver, setNodeRef } = useDroppable({ id });
 
   const isStack = layout === 'stack';
@@ -154,6 +155,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onInspectCard
                       onPlayToField={onPlayToField}
                       isHidden={hideCards}
                       isLocked={lockCards || (isProtected && viewerRole !== 'all' && card.owner !== viewerRole)}
+                      quickActionsDisabled={disableQuickActionsForCard?.(card)}
                       debugIndex={isDebug ? index : undefined}
                     />
                     {attachments.map((attachedCard, i) => (
@@ -178,6 +180,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onInspectCard
                           onPlayToField={onPlayToField}
                           isHidden={hideCards}
                           isLocked={lockCards || (isProtected && viewerRole !== 'all' && attachedCard.owner !== viewerRole)}
+                          quickActionsDisabled={disableQuickActionsForCard?.(attachedCard)}
                           debugIndex={isDebug ? i : undefined}
                         />
                       </div>
@@ -210,6 +213,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onInspectCard
                 onPlayToField={onPlayToField}
                 isHidden={hideCards}
                 isLocked={lockCards || (isProtected && viewerRole !== 'all' && card.owner !== viewerRole)}
+                quickActionsDisabled={disableQuickActionsForCard?.(card)}
                 debugIndex={isDebug ? topLevelCards.indexOf(card) : undefined}
               />
               {attachments.map((attachedCard, i) => (
@@ -234,6 +238,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onInspectCard
                     onPlayToField={onPlayToField}
                     isHidden={hideCards}
                     isLocked={lockCards || (isProtected && viewerRole !== 'all' && attachedCard.owner !== viewerRole)}
+                    quickActionsDisabled={disableQuickActionsForCard?.(attachedCard)}
                     debugIndex={isDebug ? i : undefined}
                   />
                 </div>

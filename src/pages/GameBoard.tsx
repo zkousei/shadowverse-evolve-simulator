@@ -182,6 +182,12 @@ const GameBoard: React.FC = () => {
     return null;
   }, [attackSourceCard, cardStatLookup]);
 
+  const shouldDisableQuickActionsForAttackTarget = React.useCallback((card: CardInstance): boolean => {
+    if (!attackSourceCard) return false;
+    const opponentRole = attackSourceCard.owner === 'host' ? 'guest' : 'host';
+    return card.zone.startsWith(`field-${opponentRole}`) && !card.isLeaderCard;
+  }, [attackSourceCard]);
+
   const handleAttackTargetSelect = React.useCallback((target: AttackTarget) => {
     if (!attackSourceCard) return;
     handleDeclareAttack(attackSourceCard.id, target, attackSourceCard.owner);
@@ -1236,6 +1242,7 @@ const GameBoard: React.FC = () => {
                         onReturnEvolve={handleReturnEvolve}
                         onCemetery={handleSendToCemetery}
                         onPlayToField={(cardId) => handlePlayToField(cardId, topRole)}
+                        disableQuickActionsForCard={shouldDisableQuickActionsForAttackTarget}
                         viewerRole={viewerRole}
                         containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: '160px', width: `${centerZoneWidth}px`, flex: 'none' }}
                         isDebug={isDebug}
@@ -1312,6 +1319,7 @@ const GameBoard: React.FC = () => {
                         onTap={toggleTap}
                         onModifyCounter={handleModifyCounter}
                         onCemetery={handleSendToCemetery}
+                        disableQuickActionsForCard={shouldDisableQuickActionsForAttackTarget}
                         viewerRole={viewerRole}
                         containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: '160px', width: `${centerZoneWidth}px`, flex: 'none' }}
                         isDebug={isDebug}
@@ -1342,7 +1350,7 @@ const GameBoard: React.FC = () => {
                     <Zone id={`evolveDeck-${bottomRole}`} label={`${bottomLabel} Evolve Deck`} cards={getCards(`evolveDeck-${bottomRole}`)} layout="stack" onInspectCard={handleInspectCard} isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
                     <button onClick={() => setSearchZone({ id: `evolveDeck-${bottomRole}`, title: `${bottomLabel} Evolve Deck` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
                   </div>
-                  <Zone id={`field-${bottomRole}`} label={`${bottomLabel} Field`} cards={getCards(`field-${bottomRole}`)} cardStatLookup={cardStatLookup} getHighlightTone={getAttackHighlightTone} onInspectCard={handleInspectCard} onAttack={gameState.turnPlayer === bottomRole ? handleStartAttack : undefined} onTap={toggleTap} onModifyCounter={handleModifyCounter} onModifyGenericCounter={handleModifyGenericCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} viewerRole={viewerRole} containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: '160px', width: `${centerZoneWidth}px`, flex: 'none' }} isDebug={isDebug} />
+                  <Zone id={`field-${bottomRole}`} label={`${bottomLabel} Field`} cards={getCards(`field-${bottomRole}`)} cardStatLookup={cardStatLookup} getHighlightTone={getAttackHighlightTone} onInspectCard={handleInspectCard} onAttack={gameState.turnPlayer === bottomRole ? handleStartAttack : undefined} onTap={toggleTap} onModifyCounter={handleModifyCounter} onModifyGenericCounter={handleModifyGenericCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} disableQuickActionsForCard={shouldDisableQuickActionsForAttackTarget} viewerRole={viewerRole} containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: '160px', width: `${centerZoneWidth}px`, flex: 'none' }} isDebug={isDebug} />
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <Zone id={`mainDeck-${bottomRole}`} label={`${bottomLabel} Main Deck`} cards={getCards(`mainDeck-${bottomRole}`)} layout="stack" isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
                     {renderZoneActions(`mainDeck-${bottomRole}`, [

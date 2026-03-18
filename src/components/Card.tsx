@@ -48,10 +48,11 @@ interface Props {
   onPlayToField?: (id: string) => void;
   isHidden?: boolean; // if true, STRICTLY render card back only
   isLocked?: boolean; // if true, prevent dragging and operating (opponent's hand/deck/ex)
+  quickActionsDisabled?: boolean;
   debugIndex?: number;
 }
 
-const Card: React.FC<Props> = ({ card, baseStats, displayCounters, hideCurrentStats, highlightTone, onInspect, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, isHidden, isLocked, debugIndex }) => {
+const Card: React.FC<Props> = ({ card, baseStats, displayCounters, hideCurrentStats, highlightTone, onInspect, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, isHidden, isLocked, quickActionsDisabled, debugIndex }) => {
   const inspectPointerStartRef = React.useRef<{ x: number; y: number } | null>(null);
   const isInteractionLocked = isLocked || card.isLeaderCard || card.zone.startsWith('leader-');
   const { attributes, listeners, setNodeRef: setDraggableRef, transform } = useDraggable({
@@ -258,11 +259,13 @@ const Card: React.FC<Props> = ({ card, baseStats, displayCounters, hideCurrentSt
           {/* Quick Edit Overlay - Only show if not hidden AND not locked */}
           {!isHidden && !isInteractionLocked && (
             <div className="card-controls"
+              data-testid="card-controls"
               style={{
                 position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
                 display: 'flex', flexDirection: 'column', gap: '2px', padding: '4px',
                 background: 'rgba(0,0,0,0.6)', opacity: 0, transition: 'opacity 0.2s ease',
-                borderRadius: '4px'
+                borderRadius: '4px',
+                pointerEvents: quickActionsDisabled ? 'none' : undefined
               }}>
               {onPlayToField && (card.zone.startsWith('hand') || card.zone.startsWith('ex-')) && (
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '4px', marginBottom: '2px' }}>

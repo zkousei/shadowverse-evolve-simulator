@@ -252,6 +252,18 @@ describe('Card', () => {
     expect(screen.getByText('-1')).toBeInTheDocument();
   });
 
+  it('disables quick-action pointer events when requested', () => {
+    render(
+      <Card
+        card={createCard()}
+        onCemetery={vi.fn()}
+        quickActionsDisabled={true}
+      />
+    );
+
+    expect(screen.getByTestId('card-controls')).toHaveStyle({ pointerEvents: 'none' });
+  });
+
   it('does not show current stats for hand cards even if base stats are available', () => {
     render(
       <Card
