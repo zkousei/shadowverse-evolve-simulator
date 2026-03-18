@@ -11,6 +11,7 @@ export type DeckRuleConfig = {
   identityType: DeckIdentityType;
   selectedClass: CardClass | null;
   selectedTitle: string | null;
+  selectedClasses: [CardClass | null, CardClass | null];
 };
 
 export const createDefaultDeckRuleConfig = (): DeckRuleConfig => ({
@@ -18,7 +19,23 @@ export const createDefaultDeckRuleConfig = (): DeckRuleConfig => ({
   identityType: 'class',
   selectedClass: null,
   selectedTitle: null,
+  selectedClasses: [null, null],
 });
+
+const parseConstructedClass = (value: unknown): CardClass | null => (
+  typeof value === 'string' && CONSTRUCTED_CLASS_VALUES.includes(value as CardClass)
+    ? value as CardClass
+    : null
+);
+
+const parseSelectedClasses = (value: unknown): [CardClass | null, CardClass | null] => {
+  if (!Array.isArray(value)) return [null, null];
+
+  return [
+    parseConstructedClass(value[0]),
+    parseConstructedClass(value[1]),
+  ];
+};
 
 export const getImportedDeckRuleConfig = (data: Record<string, unknown>): DeckRuleConfig => {
   const format = data.rule;
@@ -30,15 +47,15 @@ export const getImportedDeckRuleConfig = (data: Record<string, unknown>): DeckRu
       identityType: 'class',
       selectedClass: null,
       selectedTitle: null,
+      selectedClasses: [null, null],
     };
   }
 
   return {
     format,
     identityType: identityType === 'title' ? 'title' : 'class',
-    selectedClass: typeof data.selectedClass === 'string' && CONSTRUCTED_CLASS_VALUES.includes(data.selectedClass as CardClass)
-      ? data.selectedClass as CardClass
-      : null,
+    selectedClass: parseConstructedClass(data.selectedClass),
     selectedTitle: typeof data.selectedTitle === 'string' ? data.selectedTitle : null,
+    selectedClasses: parseSelectedClasses(data.selectedClasses),
   };
 };

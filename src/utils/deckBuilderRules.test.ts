@@ -5,6 +5,7 @@ import type { DeckBuilderCardData } from '../models/deckBuilderCard';
 import {
   canAddCardToSection,
   getAllowedSections,
+  getDeckLimit,
   isCardAllowedByRule,
   isRuleConfigured,
   sanitizeImportedDeckState,
@@ -23,6 +24,27 @@ const mainCard: DeckBuilderCardData = {
   is_token: false,
   is_evolve_card: false,
   is_deck_build_legal: true,
+};
+
+const neutralCard: DeckBuilderCardData = {
+  ...mainCard,
+  id: 'BP01-002',
+  name: 'Neutral Card',
+  class: 'ニュートラル',
+};
+
+const witchCard: DeckBuilderCardData = {
+  ...mainCard,
+  id: 'BP01-003',
+  name: 'Witch Card',
+  class: 'ウィッチ',
+};
+
+const dragonCard: DeckBuilderCardData = {
+  ...mainCard,
+  id: 'BP01-004',
+  name: 'Dragon Card',
+  class: 'ドラゴン',
 };
 
 const evolveCard: DeckBuilderCardData = {
@@ -51,10 +73,10 @@ const tokenCard: DeckBuilderCardData = {
   is_deck_build_legal: true,
 };
 
-const leaderCard: DeckBuilderCardData = {
+const royalLeaderCard: DeckBuilderCardData = {
   id: 'LDR01-001',
-  name: 'Leader Card',
-  image: '/leader.png',
+  name: 'Royal Leader',
+  image: '/leader-royal.png',
   class: 'ロイヤル',
   type: 'リーダー',
   card_kind_normalized: 'leader',
@@ -62,6 +84,14 @@ const leaderCard: DeckBuilderCardData = {
   is_token: false,
   is_evolve_card: false,
   is_deck_build_legal: true,
+};
+
+const witchLeaderCard: DeckBuilderCardData = {
+  ...royalLeaderCard,
+  id: 'LDR01-002',
+  name: 'Witch Leader',
+  image: '/leader-witch.png',
+  class: 'ウィッチ',
 };
 
 const titleCard: DeckBuilderCardData = {
@@ -83,13 +113,22 @@ const constructedRoyalRule: DeckRuleConfig = {
   identityType: 'class',
   selectedClass: CLASS.ROYAL,
   selectedTitle: null,
+  selectedClasses: [null, null],
+};
+
+const crossoverRule: DeckRuleConfig = {
+  format: 'crossover',
+  identityType: 'class',
+  selectedClass: null,
+  selectedTitle: null,
+  selectedClasses: [CLASS.ROYAL, CLASS.WITCH],
 };
 
 describe('deckBuilderRules', () => {
   it('returns the allowed deck section for each card', () => {
     expect(getAllowedSections(mainCard)).toEqual(['main']);
     expect(getAllowedSections(evolveCard)).toEqual(['evolve']);
-    expect(getAllowedSections(leaderCard)).toEqual(['leader']);
+    expect(getAllowedSections(royalLeaderCard)).toEqual(['leader']);
     expect(getAllowedSections(tokenCard)).toEqual(['token']);
   });
 
@@ -98,29 +137,47 @@ describe('deckBuilderRules', () => {
     expect(canAddCardToSection(mainCard, 'evolve')).toBe(false);
     expect(canAddCardToSection(evolveCard, 'evolve')).toBe(true);
     expect(canAddCardToSection(evolveCard, 'main')).toBe(false);
-    expect(canAddCardToSection(leaderCard, 'leader')).toBe(true);
+    expect(canAddCardToSection(royalLeaderCard, 'leader')).toBe(true);
     expect(canAddCardToSection(tokenCard, 'main')).toBe(false);
   });
 
   it('applies constructed class and title restrictions when adding cards', () => {
     expect(isRuleConfigured(constructedRoyalRule)).toBe(true);
     expect(canAddCardToSection(mainCard, 'main', constructedRoyalRule)).toBe(true);
+    expect(canAddCardToSection(neutralCard, 'main', constructedRoyalRule)).toBe(true);
     expect(canAddCardToSection(evolveCard, 'evolve', constructedRoyalRule)).toBe(true);
-    expect(canAddCardToSection(leaderCard, 'leader', constructedRoyalRule)).toBe(true);
+    expect(canAddCardToSection(royalLeaderCard, 'leader', constructedRoyalRule)).toBe(true);
     expect(canAddCardToSection(tokenCard, 'token', constructedRoyalRule)).toBe(true);
-
-    const offClassCard = { ...mainCard, id: 'BP01-099', class: 'ドラゴン' as const };
-    expect(isCardAllowedByRule(offClassCard, constructedRoyalRule)).toBe(false);
+    expect(isCardAllowedByRule(dragonCard, constructedRoyalRule)).toBe(false);
 
     const constructedTitleRule: DeckRuleConfig = {
       format: 'constructed',
       identityType: 'title',
       selectedClass: null,
       selectedTitle: 'ウマ娘 プリティーダービー',
+      selectedClasses: [null, null],
     };
     expect(canAddCardToSection(titleCard, 'main', constructedTitleRule)).toBe(true);
     expect(canAddCardToSection(titleTokenCard, 'token', constructedTitleRule)).toBe(true);
     expect(isCardAllowedByRule(mainCard, constructedTitleRule)).toBe(false);
+  });
+
+  it('applies crossover restrictions to the selected classes, neutral cards, and tokens', () => {
+    expect(isRuleConfigured(crossoverRule)).toBe(true);
+    expect(getDeckLimit('leader', crossoverRule)).toBe(2);
+    expect(canAddCardToSection(mainCard, 'main', crossoverRule)).toBe(true);
+    expect(canAddCardToSection(witchCard, 'main', crossoverRule)).toBe(true);
+    expect(canAddCardToSection(neutralCard, 'main', crossoverRule)).toBe(true);
+    expect(canAddCardToSection(tokenCard, 'token', crossoverRule)).toBe(true);
+    expect(canAddCardToSection(royalLeaderCard, 'leader', crossoverRule)).toBe(true);
+    expect(canAddCardToSection(witchLeaderCard, 'leader', crossoverRule)).toBe(true);
+    expect(canAddCardToSection(dragonCard, 'main', crossoverRule)).toBe(false);
+
+    const duplicateClassRule: DeckRuleConfig = {
+      ...crossoverRule,
+      selectedClasses: [CLASS.ROYAL, CLASS.ROYAL],
+    };
+    expect(isRuleConfigured(duplicateClassRule)).toBe(false);
   });
 
   it('sanitizes imported deck sections against the current card catalog', () => {
@@ -131,27 +188,43 @@ describe('deckBuilderRules', () => {
     expect(sanitizedEvolve).toEqual([evolveCard]);
   });
 
-  it('sanitizes a full imported deck state including leader and token sections', () => {
-    const sanitizedDeck = sanitizeImportedDeckState({
-      mainDeck: [mainCard, evolveCard],
-      evolveDeck: [evolveCard, mainCard],
-      leaderCard,
-      tokenDeck: [tokenCard, mainCard],
-    }, [mainCard, evolveCard, leaderCard, tokenCard]);
+  it('sanitizes imported deck states for both new and legacy leader formats', () => {
+    const catalog = [
+      mainCard,
+      witchCard,
+      evolveCard,
+      royalLeaderCard,
+      witchLeaderCard,
+      tokenCard,
+      dragonCard,
+    ];
 
-    expect(sanitizedDeck).toEqual({
+    const sanitizedCrossoverDeck = sanitizeImportedDeckState({
+      mainDeck: [mainCard, dragonCard],
+      evolveDeck: [evolveCard],
+      leaderCards: [royalLeaderCard, witchLeaderCard],
+      tokenDeck: [tokenCard],
+    }, catalog, crossoverRule);
+
+    expect(sanitizedCrossoverDeck).toEqual({
       mainDeck: [mainCard],
       evolveDeck: [evolveCard],
-      leaderCard,
+      leaderCards: [royalLeaderCard, witchLeaderCard],
       tokenDeck: [tokenCard],
     });
+
+    const sanitizedLegacyDeck = sanitizeImportedDeckState({
+      leaderCard: royalLeaderCard,
+    }, catalog, constructedRoyalRule);
+
+    expect(sanitizedLegacyDeck.leaderCards).toEqual([royalLeaderCard]);
   });
 
   it('reports invalid deck placements and deck size overflow', () => {
     const issues = validateDeckState({
       mainDeck: [mainCard, evolveCard],
       evolveDeck: Array.from({ length: 11 }, () => evolveCard),
-      leaderCard: null,
+      leaderCards: [],
       tokenDeck: [],
     });
 
@@ -163,18 +236,17 @@ describe('deckBuilderRules', () => {
     );
   });
 
-  it('reports rule violations for cards that do not match the selected constructed identity', () => {
-    const offClassCard = { ...mainCard, id: 'BP01-099', class: 'ドラゴン' as const };
+  it('reports rule violations for cards that do not match the selected rule', () => {
     const issues = validateDeckState({
-      mainDeck: [mainCard, offClassCard],
+      mainDeck: [mainCard, dragonCard],
       evolveDeck: [],
-      leaderCard: null,
+      leaderCards: [royalLeaderCard, witchLeaderCard],
       tokenDeck: [],
-    }, constructedRoyalRule);
+    }, crossoverRule);
 
     expect(issues).toEqual(
       expect.arrayContaining([
-        { code: 'invalid-rule', deck: 'main', cardId: offClassCard.id },
+        { code: 'invalid-rule', deck: 'main', cardId: dragonCard.id },
       ])
     );
   });
