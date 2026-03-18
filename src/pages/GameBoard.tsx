@@ -349,42 +349,69 @@ const GameBoard: React.FC = () => {
   );
 
   const renderPlayerTracker = (playerRole: PlayerRole, label: string) => (
+    (() => {
+      const trackerAdjustButtonBaseStyle: React.CSSProperties = {
+        minWidth: '28px',
+        padding: '2px 8px',
+        borderRadius: '4px',
+        border: '1px solid',
+        color: '#f8fafc',
+        fontWeight: 'bold',
+        cursor: 'pointer',
+        boxShadow: '0 2px 6px rgba(0,0,0,0.22)'
+      };
+      const trackerIncreaseButtonStyle: React.CSSProperties = {
+        ...trackerAdjustButtonBaseStyle,
+        background: '#1d4ed8',
+        borderColor: '#60a5fa'
+      };
+      const trackerDecreaseButtonStyle: React.CSSProperties = {
+        ...trackerAdjustButtonBaseStyle,
+        background: '#7f1d1d',
+        borderColor: '#fca5a5'
+      };
+      const trackerButtonRowStyle: React.CSSProperties = {
+        display: 'flex',
+        gap: '0.35rem'
+      };
+
+      return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.8rem', padding: '0.6rem', background: 'rgba(255,255,255,0.04)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
       <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'white' }}>{label} Status</div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ color: '#ef4444', fontWeight: 'bold' }}>HP: {gameState[playerRole].hp}</span>
-        <div>
-          <button onClick={() => handleStatChange(playerRole, 'hp', 1)} style={{ padding: '2px 8px', background: 'var(--bg-surface)' }}>+</button>
-          <button onClick={() => handleStatChange(playerRole, 'hp', -1)} style={{ padding: '2px 8px', background: 'var(--bg-surface)' }}>-</button>
+        <div style={trackerButtonRowStyle}>
+          <button onClick={() => handleStatChange(playerRole, 'hp', 1)} style={trackerIncreaseButtonStyle}>+</button>
+          <button onClick={() => handleStatChange(playerRole, 'hp', -1)} style={trackerDecreaseButtonStyle}>-</button>
         </div>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ color: '#fbbf24', fontWeight: 'bold' }}>EP: {gameState[playerRole].ep}</span>
-        <div>
-          <button onClick={() => handleStatChange(playerRole, 'ep', 1)} style={{ padding: '2px 8px', background: 'var(--bg-surface)' }}>+</button>
-          <button onClick={() => handleStatChange(playerRole, 'ep', -1)} style={{ padding: '2px 8px', background: 'var(--bg-surface)' }}>-</button>
+        <div style={trackerButtonRowStyle}>
+          <button onClick={() => handleStatChange(playerRole, 'ep', 1)} style={trackerIncreaseButtonStyle}>+</button>
+          <button onClick={() => handleStatChange(playerRole, 'ep', -1)} style={trackerDecreaseButtonStyle}>-</button>
         </div>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ color: '#facc15', fontWeight: 'bold' }}>SEP: {gameState[playerRole].sep}</span>
-        <div>
-          <button onClick={() => handleStatChange(playerRole, 'sep', 1)} style={{ padding: '2px 8px', background: 'var(--bg-surface)' }}>+</button>
-          <button onClick={() => handleStatChange(playerRole, 'sep', -1)} style={{ padding: '2px 8px', background: 'var(--bg-surface)' }}>-</button>
+        <div style={trackerButtonRowStyle}>
+          <button onClick={() => handleStatChange(playerRole, 'sep', 1)} style={trackerIncreaseButtonStyle}>+</button>
+          <button onClick={() => handleStatChange(playerRole, 'sep', -1)} style={trackerDecreaseButtonStyle}>-</button>
         </div>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ color: '#fff', fontWeight: 'bold' }}>Combo: {gameState[playerRole].combo}</span>
-        <div>
-          <button onClick={() => handleStatChange(playerRole, 'combo', 1)} style={{ padding: '2px 8px', background: 'var(--bg-surface)' }}>+</button>
-          <button onClick={() => handleStatChange(playerRole, 'combo', -1)} style={{ padding: '2px 8px', background: 'var(--bg-surface)' }}>-</button>
+        <div style={trackerButtonRowStyle}>
+          <button onClick={() => handleStatChange(playerRole, 'combo', 1)} style={trackerIncreaseButtonStyle}>+</button>
+          <button onClick={() => handleStatChange(playerRole, 'combo', -1)} style={trackerDecreaseButtonStyle}>-</button>
         </div>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', padding: '0.6rem', background: 'rgba(59, 130, 246, 0.15)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
-            <button onClick={() => handleStatChange(playerRole, 'maxPp', 1)} style={{ width: '24px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', borderRadius: '2px', cursor: 'pointer', fontSize: '0.75rem', color: '#fff' }}>+</button>
+            <button onClick={() => handleStatChange(playerRole, 'maxPp', 1)} style={{ ...trackerIncreaseButtonStyle, width: '24px', height: '20px', minWidth: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, fontSize: '0.75rem' }}>+</button>
             <span style={{ fontSize: '0.6rem', color: '#93c5fd', fontWeight: 'bold' }}>MAX</span>
-            <button onClick={() => handleStatChange(playerRole, 'maxPp', -1)} style={{ width: '24px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', borderRadius: '2px', cursor: 'pointer', fontSize: '0.75rem', color: '#fff' }}>-</button>
+            <button onClick={() => handleStatChange(playerRole, 'maxPp', -1)} style={{ ...trackerDecreaseButtonStyle, width: '24px', height: '20px', minWidth: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, fontSize: '0.75rem' }}>-</button>
           </div>
           <div style={{ textAlign: 'center', flex: 1 }}>
             <div style={{ fontSize: '0.7rem', color: '#3b82f6', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '-2px' }}>Play Points</div>
@@ -401,6 +428,8 @@ const GameBoard: React.FC = () => {
         </div>
       </div>
     </div>
+      );
+    })()
   );
 
   const renderReadOnlyStatusPanel = (playerRole: PlayerRole, label: string) => (
