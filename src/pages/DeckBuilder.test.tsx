@@ -3,9 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import DeckBuilder from './DeckBuilder';
 
 const mockCards = [
-  { id: 'BP01-001', name: 'Alpha Knight', image: '/alpha.png', cost: '1', class: 'ロイヤル' },
-  { id: 'EV01-001', name: 'Evolve Angel', image: '/evolve.png', cost: '-', class: '-' },
-  { id: 'BP02-007', name: 'Beta Mage', image: '/beta.png', cost: '7', class: 'ウィッチ' },
+  { id: 'BP01-001', name: 'Alpha Knight', image: '/alpha.png', cost: '1', class: 'ロイヤル', rarity: 'LG', product_name: 'Booster Pack 1' },
+  { id: 'EV01-001', name: 'Evolve Angel', image: '/evolve.png', cost: '-', class: '-', rarity: 'PR', product_name: 'Extra Product' },
+  { id: 'BP02-007', name: 'Beta Mage', image: '/beta.png', cost: '7', class: 'ウィッチ', rarity: 'GR', product_name: 'Booster Pack 2' },
 ];
 
 describe('DeckBuilder', () => {
@@ -28,6 +28,9 @@ describe('DeckBuilder', () => {
     render(<DeckBuilder />);
     const classFilterGroup = screen.getByRole('group', { name: 'Class filter' });
     const costFilterGroup = screen.getByRole('group', { name: 'Cost filter' });
+    const expansionFilter = screen.getByRole('combobox', { name: 'Expansion filter' });
+    const rarityFilter = screen.getByRole('combobox', { name: 'Rarity filter' });
+    const productFilter = screen.getByRole('combobox', { name: 'Product filter' });
 
     expect(screen.getByText('Loading card database...')).toBeInTheDocument();
     expect(await screen.findByText('Alpha Knight')).toBeInTheDocument();
@@ -54,13 +57,31 @@ describe('DeckBuilder', () => {
 
     fireEvent.click(within(classFilterGroup).getByRole('button', { name: 'All' }));
     fireEvent.click(within(costFilterGroup).getByRole('button', { name: 'All' }));
-    fireEvent.change(screen.getByRole('combobox'), {
+    fireEvent.change(rarityFilter, {
+      target: { value: 'PR' },
+    });
+    expect(screen.getByText('Evolve Angel')).toBeInTheDocument();
+    expect(screen.queryByText('Alpha Knight')).not.toBeInTheDocument();
+
+    fireEvent.change(rarityFilter, {
+      target: { value: 'All' },
+    });
+    fireEvent.change(productFilter, {
+      target: { value: 'Booster Pack 1' },
+    });
+    expect(screen.getByText('Alpha Knight')).toBeInTheDocument();
+    expect(screen.queryByText('Beta Mage')).not.toBeInTheDocument();
+
+    fireEvent.change(productFilter, {
+      target: { value: 'All' },
+    });
+    fireEvent.change(expansionFilter, {
       target: { value: 'EV01' },
     });
     expect(screen.getByText('Evolve Angel')).toBeInTheDocument();
     expect(screen.queryByText('Alpha Knight')).not.toBeInTheDocument();
 
-    fireEvent.change(screen.getByRole('combobox'), {
+    fireEvent.change(expansionFilter, {
       target: { value: 'All' },
     });
     fireEvent.click(screen.getAllByTitle('Add to Main Deck')[0]);
@@ -93,6 +114,28 @@ describe('DeckBuilder', () => {
     expect(screen.queryByText('Beta Mage')).not.toBeInTheDocument();
     expect(screen.queryByText('Evolve Angel')).not.toBeInTheDocument();
     expect(within(classFilterGroup).getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('combines rarity and product filters with other filters', async () => {
+    render(<DeckBuilder />);
+
+    await screen.findByText('Alpha Knight');
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Rarity filter' }), {
+      target: { value: 'GR' },
+    });
+    expect(screen.getByText('Beta Mage')).toBeInTheDocument();
+    expect(screen.queryByText('Alpha Knight')).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Product filter' }), {
+      target: { value: 'Booster Pack 2' },
+    });
+    expect(screen.getByText('Beta Mage')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Product filter' }), {
+      target: { value: 'Booster Pack 1' },
+    });
+    expect(screen.queryByText('Beta Mage')).not.toBeInTheDocument();
   });
 
   it('exports a sanitized deck file', async () => {

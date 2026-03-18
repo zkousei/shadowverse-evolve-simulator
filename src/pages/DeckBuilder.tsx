@@ -1,31 +1,31 @@
 import React, { useEffect, useState } from 'react';
 import { Search, Plus, Minus, Download, Upload } from 'lucide-react';
 import { CLASS_FILTER_VALUES } from '../models/class';
-import type { CardClassValue, ClassFilter } from '../models/class';
-
-interface CardData {
-  id: string; // EXP-NUM format, e.g PCS01-001
-  name: string;
-  image: string;
-  class?: CardClassValue;
-  cost?: string; // '-' for Evolve cards
-}
+import type { ClassFilter } from '../models/class';
+import {
+  getAvailableExpansions,
+  getAvailableProductNames,
+  getAvailableRarities,
+  type DeckBuilderCardData,
+} from '../models/deckBuilderCard';
 
 const PAGE_SIZE = 50;
 const COST_FILTER_VALUES = ['All', '0', '1', '2', '3', '4', '5', '6', '7+'] as const;
 
 const DeckBuilder: React.FC = () => {
-  const [cards, setCards] = useState<CardData[]>([]);
+  const [cards, setCards] = useState<DeckBuilderCardData[]>([]);
   const [search, setSearch] = useState('');
   const [costFilter, setCostFilter] = useState('All');
   const [expansionFilter, setExpansionFilter] = useState('All');
   const [classFilter, setClassFilter] = useState<ClassFilter>('All');
+  const [rarityFilter, setRarityFilter] = useState('All');
+  const [productNameFilter, setProductNameFilter] = useState('All');
   const [page, setPage] = useState(0);
 
   const [deckName, setDeckName] = useState('My Deck');
 
-  const [mainDeck, setMainDeck] = useState<CardData[]>([]);
-  const [evolveDeck, setEvolveDeck] = useState<CardData[]>([]);
+  const [mainDeck, setMainDeck] = useState<DeckBuilderCardData[]>([]);
+  const [evolveDeck, setEvolveDeck] = useState<DeckBuilderCardData[]>([]);
 
   useEffect(() => {
     fetch('/cards_detailed.json')
@@ -35,7 +35,9 @@ const DeckBuilder: React.FC = () => {
   }, []);
 
   // Extract unique expansions (prefix before hyphen)
-  const expansions = Array.from(new Set(cards.map(c => c.id.split('-')[0]))).sort();
+  const expansions = getAvailableExpansions(cards);
+  const rarities = getAvailableRarities(cards);
+  const productNames = getAvailableProductNames(cards);
 
   const filteredCards = cards.filter(c => {
     // 1. Name Filter
@@ -61,12 +63,22 @@ const DeckBuilder: React.FC = () => {
       if (c.class !== classFilter) return false;
     }
 
+    // 5. Rarity Filter
+    if (rarityFilter !== 'All') {
+      if (c.rarity !== rarityFilter) return false;
+    }
+
+    // 6. Product Filter
+    if (productNameFilter !== 'All') {
+      if (c.product_name !== productNameFilter) return false;
+    }
+
     return true;
   });
   const paginatedCards = filteredCards.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
   const totalPages = Math.ceil(filteredCards.length / PAGE_SIZE) || 1;
 
-  const addToDeck = (card: CardData, isEvolve: boolean) => {
+  const addToDeck = (card: DeckBuilderCardData, isEvolve: boolean) => {
     if (isEvolve) {
       if (evolveDeck.length < 10) setEvolveDeck([...evolveDeck, card]);
     } else {
@@ -233,6 +245,7 @@ const DeckBuilder: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Set:</span>
             <select
+              aria-label="Expansion filter"
               value={expansionFilter}
               onChange={(e) => { setExpansionFilter(e.target.value); setPage(0); }}
               style={{
@@ -248,6 +261,55 @@ const DeckBuilder: React.FC = () => {
               <option value="All">All Expansions</option>
               {expansions.map(ex => (
                 <option key={ex} value={ex}>{ex}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Rarity Filter */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Rarity:</span>
+            <select
+              aria-label="Rarity filter"
+              value={rarityFilter}
+              onChange={(e) => { setRarityFilter(e.target.value); setPage(0); }}
+              style={{
+                padding: '0.5rem',
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--border-light)',
+                background: 'var(--bg-surface)',
+                color: 'var(--text-main)',
+                outline: 'none',
+                minWidth: '120px'
+              }}
+            >
+              <option value="All">All Rarities</option>
+              {rarities.map(rarity => (
+                <option key={rarity} value={rarity}>{rarity}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Product Filter */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Product:</span>
+            <select
+              aria-label="Product filter"
+              value={productNameFilter}
+              onChange={(e) => { setProductNameFilter(e.target.value); setPage(0); }}
+              style={{
+                padding: '0.5rem',
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--border-light)',
+                background: 'var(--bg-surface)',
+                color: 'var(--text-main)',
+                outline: 'none',
+                minWidth: '220px',
+                maxWidth: '320px'
+              }}
+            >
+              <option value="All">All Products</option>
+              {productNames.map(productName => (
+                <option key={productName} value={productName}>{productName}</option>
               ))}
             </select>
           </div>

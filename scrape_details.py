@@ -74,10 +74,16 @@ async def fetch_card_detail(session: aiohttp.ClientSession, card: dict) -> dict:
             dd = clean_text(dl.select_one("dd").get_text()) if dl.select_one("dd") else ""
             if dt == "クラス":
                 card["class"] = dd
+            elif dt == "タイトル":
+                card["title"] = dd
             elif dt == "カード種類":
                 card["type"] = dd
             elif dt == "タイプ":
                 card["subtype"] = dd
+            elif dt == "レアリティ":
+                card["rarity"] = dd
+            elif dt == "収録商品":
+                card["product_name"] = dd
 
     status_div = soup.select_one(".status")
     if status_div:
