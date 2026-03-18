@@ -8,6 +8,24 @@ const createState = (overrides: Partial<SyncState> = {}): SyncState => ({
 });
 
 describe('gameSyncReducer', () => {
+  it('treats shared coin and die events as no-ops for state', () => {
+    const state = createState({ revision: 9 });
+
+    const coinResult = applyGameSyncEvent(state, {
+      id: 'evt-shared-coin',
+      type: 'FLIP_SHARED_COIN',
+      actor: 'host',
+    });
+    expect(coinResult).toBe(state);
+
+    const dieResult = applyGameSyncEvent(state, {
+      id: 'evt-shared-die',
+      type: 'ROLL_SHARED_DIE',
+      actor: 'guest',
+    });
+    expect(dieResult).toBe(state);
+  });
+
   it('rejects host-only events from non-host requesters', () => {
     const startState = createState({
       revision: 3,

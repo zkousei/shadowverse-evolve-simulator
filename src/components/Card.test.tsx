@@ -77,6 +77,8 @@ describe('Card', () => {
     );
 
     fireEvent.click(screen.getByText('+A'));
+    fireEvent.click(screen.getByText('-A'));
+    fireEvent.click(screen.getByText('+H'));
     fireEvent.click(screen.getByText('-H'));
     fireEvent.click(screen.getByText('↓Bot'));
     fireEvent.click(screen.getByText('Cemetery'));
@@ -86,7 +88,9 @@ describe('Card', () => {
     fireEvent.contextMenu(screen.getByAltText('Test Card').closest('.game-card') as HTMLElement);
 
     expect(onModifyCounter).toHaveBeenNthCalledWith(1, 'card-1', 'atk', 1);
-    expect(onModifyCounter).toHaveBeenNthCalledWith(2, 'card-1', 'hp', -1);
+    expect(onModifyCounter).toHaveBeenNthCalledWith(2, 'card-1', 'atk', -1);
+    expect(onModifyCounter).toHaveBeenNthCalledWith(3, 'card-1', 'hp', 1);
+    expect(onModifyCounter).toHaveBeenNthCalledWith(4, 'card-1', 'hp', -1);
     expect(onSendToBottom).toHaveBeenCalledWith('card-1');
     expect(onCemetery).toHaveBeenCalledWith('card-1');
     expect(onBanish).toHaveBeenCalledWith('card-1');
@@ -121,6 +125,7 @@ describe('Card', () => {
       />
     );
 
+    fireEvent.pointerDown(screen.getByText('Play to Field'));
     fireEvent.click(screen.getByText('Play to Field'));
     expect(onPlayToField).toHaveBeenCalledWith('card-1');
     expect(screen.queryByText('+A')).not.toBeInTheDocument();
