@@ -124,7 +124,16 @@ let importedDeckPayload: Record<string, unknown> = {
   tokenDeck: [mockCards[6]],
 };
 
-const repeatCard = <T,>(card: T, count: number): T[] => Array.from({ length: count }, () => card);
+const createUniqueCards = (
+  template: (typeof mockCards)[number],
+  count: number,
+  overrides: Partial<(typeof mockCards)[number]> = {}
+) => Array.from({ length: count }, (_, index) => ({
+  ...template,
+  ...overrides,
+  id: `${template.id}-${index + 1}`,
+  name: `${template.name} ${index + 1}`,
+}));
 
 const stubFileReaderWithImportedDeck = () => {
   class MockFileReader {
@@ -359,6 +368,47 @@ describe('DeckBuilder', () => {
     expect(screen.queryByText('Beta Mage')).not.toBeInTheDocument();
   });
 
+  it('sorts my deck display by added order, cost, or card id', async () => {
+    importedDeckPayload = {
+      rule: 'other',
+      mainDeck: [mockCards[2], mockCards[0], mockCards[3]],
+      evolveDeck: [],
+      leaderCards: [],
+      tokenDeck: [],
+    };
+    stubFileReaderWithImportedDeck();
+
+    const { container } = render(<DeckBuilder />);
+    await screen.findByText('Alpha Knight');
+
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File(['{}'], 'Sorted Deck.json', { type: 'application/json' });
+    Object.defineProperty(fileInput, 'files', {
+      value: [file],
+      configurable: true,
+    });
+    fireEvent.change(fileInput);
+
+    const mainDeckSection = screen.getByRole('heading', { name: /^Main Deck/ }).nextElementSibling as HTMLElement;
+    const getMainDeckNames = () => within(mainDeckSection)
+      .getAllByText(/Alpha Knight|Beta Mage|Gamma Dragon/)
+      .map(node => node.textContent);
+
+    await waitFor(() => {
+      expect(getMainDeckNames()).toEqual(['Beta Mage', 'Alpha Knight', 'Gamma Dragon']);
+    });
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Deck sort' }), {
+      target: { value: 'cost' },
+    });
+    expect(getMainDeckNames()).toEqual(['Alpha Knight', 'Gamma Dragon', 'Beta Mage']);
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Deck sort' }), {
+      target: { value: 'id' },
+    });
+    expect(getMainDeckNames()).toEqual(['Alpha Knight', 'Beta Mage', 'Gamma Dragon']);
+  });
+
   it('supports crossover decks with two selected classes and two leaders', async () => {
     render(<DeckBuilder />);
 
@@ -407,6 +457,41 @@ describe('DeckBuilder', () => {
     expect(screen.getByText('This constructed deck requires exactly 1 leader (0/1).')).toBeInTheDocument();
   });
 
+  it('disables adding a fourth effective copy of the same card', async () => {
+    const duplicateAlpha = {
+      ...mockCards[0],
+      id: 'BP01-099',
+      image: '/alpha-variant.png',
+      rarity: 'PR',
+      product_name: 'Promo Pack',
+    };
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        json: vi.fn().mockResolvedValue([...mockCards, duplicateAlpha]),
+      } as unknown as Response)
+    );
+
+    render(<DeckBuilder />);
+    expect((await screen.findAllByText('Alpha Knight')).length).toBeGreaterThan(0);
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Constructed class' }), {
+      target: { value: 'ロイヤル' },
+    });
+
+    const alphaCard = screen.getAllByAltText('Alpha Knight')[0].closest('.glass-panel') as HTMLElement;
+    const addMainButton = within(alphaCard).getByTitle('Add to Main Deck');
+
+    fireEvent.click(addMainButton);
+    fireEvent.click(addMainButton);
+    fireEvent.click(addMainButton);
+
+    await waitFor(() => {
+      expect(addMainButton).toBeDisabled();
+    });
+  });
+
   it('exports a legal crossover deck file with selected classes and leader cards', async () => {
     const createObjectURL = vi.fn().mockReturnValue('blob:deck');
     const revokeObjectURL = vi.fn();
@@ -420,8 +505,19 @@ describe('DeckBuilder', () => {
       deckName: 'Imported Legal Crossover',
       rule: 'crossover',
       selectedClasses: ['ロイヤル', 'ウィッチ'],
-      mainDeck: repeatCard(mockCards[0], 40),
-      evolveDeck: repeatCard(mockCards[1], 10),
+      mainDeck: [
+        ...createUniqueCards(mockCards[0], 20),
+        ...createUniqueCards(mockCards[2], 20),
+      ],
+      evolveDeck: [
+        ...createUniqueCards(mockCards[1], 5),
+        ...createUniqueCards({ ...mockCards[1], id: 'EV02-001', name: 'Royal Evolve 2' }, 5, {
+          type: 'フォロワー・エボルヴ',
+          class: 'ロイヤル',
+          deck_section: 'evolve',
+          card_kind_normalized: 'evolve_follower',
+        }),
+      ],
       leaderCards: [mockCards[4], mockCards[5]],
       tokenDeck: [mockCards[6]],
     };

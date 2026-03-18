@@ -19,7 +19,7 @@ import {
 } from '../models/deckRule';
 import { createEmptyDeckState, type DeckState } from '../models/deckState';
 import {
-  canAddCardToSection,
+  canAddCardToDeckState,
   DECK_LIMITS,
   getDeckLimit,
   getAllowedSections,
@@ -71,6 +71,36 @@ const DECK_IDENTITY_LABELS: Record<DeckIdentityType, string> = {
   class: 'Class',
   title: 'Title',
 };
+const DECK_SORT_VALUES = ['added', 'cost', 'id'] as const;
+type DeckSortMode = typeof DECK_SORT_VALUES[number];
+const DECK_SORT_LABELS: Record<DeckSortMode, string> = {
+  added: 'Added Order',
+  cost: 'Cost',
+  id: 'Card ID',
+};
+
+const getCardCostSortValue = (card: DeckBuilderCardData): number => {
+  if (!card.cost || card.cost === '-') return Number.POSITIVE_INFINITY;
+  const parsed = Number.parseInt(card.cost, 10);
+  return Number.isNaN(parsed) ? Number.POSITIVE_INFINITY : parsed;
+};
+
+const sortDeckCardsForDisplay = (
+  cards: DeckBuilderCardData[],
+  sortMode: DeckSortMode
+): DeckBuilderCardData[] => {
+  if (sortMode === 'added') return cards;
+
+  return [...cards].sort((left, right) => {
+    if (sortMode === 'cost') {
+      const costDiff = getCardCostSortValue(left) - getCardCostSortValue(right);
+      if (costDiff !== 0) return costDiff;
+    }
+
+    return left.id.localeCompare(right.id, 'ja');
+  });
+};
+
 const DeckBuilder: React.FC = () => {
   const [cards, setCards] = useState<DeckBuilderCardData[]>([]);
   const [search, setSearch] = useState('');
@@ -86,6 +116,7 @@ const DeckBuilder: React.FC = () => {
   const [deckName, setDeckName] = useState('My Deck');
   const [deckRuleConfig, setDeckRuleConfig] = useState(createDefaultDeckRuleConfig());
   const [deckState, setDeckState] = useState<DeckState>(createEmptyDeckState());
+  const [deckSortMode, setDeckSortMode] = useState<DeckSortMode>('added');
 
   useEffect(() => {
     fetch('/cards_detailed.json')
@@ -154,6 +185,10 @@ const DeckBuilder: React.FC = () => {
   const totalPages = Math.ceil(displayCards.length / PAGE_SIZE) || 1;
   const { mainDeck, evolveDeck, leaderCards, tokenDeck } = deckState;
   const deckIssueMessages = getDeckValidationMessages(deckState, deckRuleConfig);
+  const sortedLeaderCards = sortDeckCardsForDisplay(leaderCards, deckSortMode);
+  const sortedMainDeck = sortDeckCardsForDisplay(mainDeck, deckSortMode);
+  const sortedEvolveDeck = sortDeckCardsForDisplay(evolveDeck, deckSortMode);
+  const sortedTokenDeck = sortDeckCardsForDisplay(tokenDeck, deckSortMode);
   const crossoverClassOptionsA = CONSTRUCTED_CLASS_VALUES.filter(
     cardClass => cardClass === deckRuleConfig.selectedClasses[0] || cardClass !== deckRuleConfig.selectedClasses[1]
   );
@@ -174,8 +209,15 @@ const DeckBuilder: React.FC = () => {
     setPage(0);
   };
 
+  const removeFirstCardById = (cards: DeckBuilderCardData[], cardId?: string): DeckBuilderCardData[] => {
+    if (!cardId) return cards;
+    const removeIndex = cards.findIndex(card => card.id === cardId);
+    if (removeIndex < 0) return cards;
+    return cards.filter((_, index) => index !== removeIndex);
+  };
+
   const addToDeck = (card: DeckBuilderCardData, targetSection: DeckTargetSection) => {
-    if (!canAddCardToSection(card, targetSection, deckRuleConfig)) return;
+    if (!canAddCardToDeckState(card, targetSection, deckState, deckRuleConfig)) return;
 
     setDeckState(current => {
       switch (targetSection) {
@@ -210,17 +252,17 @@ const DeckBuilder: React.FC = () => {
     });
   };
 
-  const removeFromDeck = (targetSection: DeckTargetSection, index?: number) => {
+  const removeFromDeck = (targetSection: DeckTargetSection, cardId?: string) => {
     setDeckState(current => {
       switch (targetSection) {
         case 'main':
-          return { ...current, mainDeck: current.mainDeck.filter((_, i) => i !== index) };
+          return { ...current, mainDeck: removeFirstCardById(current.mainDeck, cardId) };
         case 'evolve':
-          return { ...current, evolveDeck: current.evolveDeck.filter((_, i) => i !== index) };
+          return { ...current, evolveDeck: removeFirstCardById(current.evolveDeck, cardId) };
         case 'leader':
-          return { ...current, leaderCards: current.leaderCards.filter((_, i) => i !== index) };
+          return { ...current, leaderCards: removeFirstCardById(current.leaderCards, cardId) };
         case 'token':
-          return { ...current, tokenDeck: current.tokenDeck.filter((_, i) => i !== index) };
+          return { ...current, tokenDeck: removeFirstCardById(current.tokenDeck, cardId) };
       }
     });
   };
@@ -565,19 +607,19 @@ const DeckBuilder: React.FC = () => {
                           key={section}
                           type="button"
                           onClick={() => addToDeck(card, section)}
-                          disabled={!canAddCardToSection(card, section, deckRuleConfig)}
+                          disabled={!canAddCardToDeckState(card, section, deckState, deckRuleConfig)}
                           style={{
                             flex: section === 'token' ? '1 1 100%' : 1,
                             padding: '0.25rem',
-                            background: canAddCardToSection(card, section, deckRuleConfig) ? action.background : 'var(--bg-surface-elevated)',
+                            background: canAddCardToDeckState(card, section, deckState, deckRuleConfig) ? action.background : 'var(--bg-surface-elevated)',
                             borderRadius: '4px',
                             display: 'flex',
                             justifyContent: 'center',
                             color: '#fff',
                             fontSize: '0.75rem',
                             fontWeight: 700,
-                            opacity: canAddCardToSection(card, section, deckRuleConfig) ? 1 : 0.5,
-                            cursor: canAddCardToSection(card, section, deckRuleConfig) ? 'pointer' : 'not-allowed',
+                            opacity: canAddCardToDeckState(card, section, deckState, deckRuleConfig) ? 1 : 0.5,
+                            cursor: canAddCardToDeckState(card, section, deckState, deckRuleConfig) ? 'pointer' : 'not-allowed',
                           }}
                           title={action.title}
                         >
@@ -868,6 +910,27 @@ const DeckBuilder: React.FC = () => {
             )}
           </div>
 
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginBottom: '1.5rem' }}>
+            <label htmlFor="deck-sort" style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>My Deck Sort</label>
+            <select
+              id="deck-sort"
+              aria-label="Deck sort"
+              value={deckSortMode}
+              onChange={(e) => setDeckSortMode(e.target.value as DeckSortMode)}
+              style={{
+                padding: '0.5rem',
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--border-light)',
+                background: 'var(--bg-surface)',
+                color: 'var(--text-main)',
+              }}
+            >
+              {DECK_SORT_VALUES.map(sortMode => (
+                <option key={sortMode} value={sortMode}>{DECK_SORT_LABELS[sortMode]}</option>
+              ))}
+            </select>
+          </div>
+
           <h3 style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
             <span>Leader</span>
             <span style={{ color: leaderCards.length >= leaderLimit ? 'var(--brand-accent)' : 'var(--text-muted)' }}>
@@ -875,11 +938,16 @@ const DeckBuilder: React.FC = () => {
             </span>
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginBottom: '2rem' }}>
-            {leaderCards.length > 0 ? (
-              leaderCards.map((card, index) => (
-                <div key={`${card.id}-${index}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.25rem 0.5rem', background: 'var(--bg-surface)', borderRadius: '4px' }}>
-                  <span style={{ fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{card.name}</span>
-                  <button type="button" onClick={() => removeFromDeck('leader', index)} style={{ color: '#ef4444' }}><Minus size={16} /></button>
+            {sortedLeaderCards.length > 0 ? (
+              sortedLeaderCards.map((card, index) => (
+                <div key={`${card.id}-${index}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', padding: '0.25rem 0.5rem', background: 'var(--bg-surface)', borderRadius: '4px' }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{card.name}</div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {card.id} {card.cost ? `• Cost ${card.cost}` : ''}
+                    </div>
+                  </div>
+                  <button type="button" onClick={() => removeFromDeck('leader', card.id)} style={{ color: '#ef4444' }}><Minus size={16} /></button>
                 </div>
               ))
             ) : (
@@ -892,10 +960,15 @@ const DeckBuilder: React.FC = () => {
             <span style={{ color: mainDeck.length >= 40 ? 'var(--vivid-green-cyan)' : 'var(--text-muted)' }}>{mainDeck.length}/{DECK_LIMITS.main}</span>
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginBottom: '2rem' }}>
-            {mainDeck.map((c, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.25rem 0.5rem', background: 'var(--bg-surface)', borderRadius: '4px' }}>
-                <span style={{ fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
-                <button type="button" onClick={() => removeFromDeck('main', i)} style={{ color: '#ef4444' }}><Minus size={16} /></button>
+            {sortedMainDeck.map((c, i) => (
+              <div key={`${c.id}-${i}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', padding: '0.25rem 0.5rem', background: 'var(--bg-surface)', borderRadius: '4px' }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {c.id} {c.cost ? `• Cost ${c.cost}` : ''}
+                  </div>
+                </div>
+                <button type="button" onClick={() => removeFromDeck('main', c.id)} style={{ color: '#ef4444' }}><Minus size={16} /></button>
               </div>
             ))}
           </div>
@@ -905,10 +978,15 @@ const DeckBuilder: React.FC = () => {
             <span style={{ color: 'var(--text-muted)' }}>{evolveDeck.length}/{DECK_LIMITS.evolve}</span>
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-            {evolveDeck.map((c, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.25rem 0.5rem', background: 'var(--bg-surface)', borderRadius: '4px' }}>
-                <span style={{ fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
-                <button type="button" onClick={() => removeFromDeck('evolve', i)} style={{ color: '#ef4444' }}><Minus size={16} /></button>
+            {sortedEvolveDeck.map((c, i) => (
+              <div key={`${c.id}-${i}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', padding: '0.25rem 0.5rem', background: 'var(--bg-surface)', borderRadius: '4px' }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {c.id} {c.cost ? `• Cost ${c.cost}` : ''}
+                  </div>
+                </div>
+                <button type="button" onClick={() => removeFromDeck('evolve', c.id)} style={{ color: '#ef4444' }}><Minus size={16} /></button>
               </div>
             ))}
           </div>
@@ -918,10 +996,15 @@ const DeckBuilder: React.FC = () => {
             <span style={{ color: 'var(--text-muted)' }}>{tokenDeck.length}</span>
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-            {tokenDeck.map((c, i) => (
-              <div key={`${c.id}-${i}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.25rem 0.5rem', background: 'var(--bg-surface)', borderRadius: '4px' }}>
-                <span style={{ fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
-                <button type="button" onClick={() => removeFromDeck('token', i)} style={{ color: '#ef4444' }}><Minus size={16} /></button>
+            {sortedTokenDeck.map((c, i) => (
+              <div key={`${c.id}-${i}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', padding: '0.25rem 0.5rem', background: 'var(--bg-surface)', borderRadius: '4px' }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {c.id} {c.cost ? `• Cost ${c.cost}` : ''}
+                  </div>
+                </div>
+                <button type="button" onClick={() => removeFromDeck('token', c.id)} style={{ color: '#ef4444' }}><Minus size={16} /></button>
               </div>
             ))}
           </div>
