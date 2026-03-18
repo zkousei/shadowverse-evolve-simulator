@@ -36,6 +36,10 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onInspectCard
   const isStack = layout === 'stack';
   const displayLabel = label.replace(/^(My|Opponent|Player 1|Player 2)\s+/, '');
   const hasCardOnTop = React.useCallback((cardId: string) => cards.some(card => card.attachedTo === cardId), [cards]);
+  const validAttachedIds = new Set(
+    cards.filter(c => c.attachedTo && cards.some(parent => parent.id === c.attachedTo)).map(c => c.id)
+  );
+  const topLevelCards = cards.filter(c => !validAttachedIds.has(c.id));
 
   return (
     <div
@@ -89,7 +93,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onInspectCard
             border: 0
           }}
         >
-          {label} ({cards.length})
+          {label} ({topLevelCards.length})
         </span>
         <span
           style={{
@@ -116,17 +120,11 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onInspectCard
             textAlign: 'center'
           }}
         >
-          {cards.length}
+          {topLevelCards.length}
         </span>
       </div>
 
       {(() => {
-        // Only consider a card attached if its parent is also present in THIS zone
-        const validAttachedIds = new Set(
-          cards.filter(c => c.attachedTo && cards.some(parent => parent.id === c.attachedTo)).map(c => c.id)
-        );
-        const topLevelCards = cards.filter(c => !validAttachedIds.has(c.id));
-
         if (isStack && topLevelCards.length > 0) {
           return (
             <div style={{ position: 'relative', width: '100px', height: '140px' }}>

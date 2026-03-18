@@ -62,7 +62,7 @@ describe('Zone', () => {
 
     const renderedCards = screen.getAllByTestId('mock-card');
     expect(renderedCards).toHaveLength(3);
-    expect(screen.getByText('Field (3)')).toBeInTheDocument();
+    expect(screen.getByText('Field (2)')).toBeInTheDocument();
     expect(renderedCards.map(card => card.getAttribute('data-card-id'))).toEqual(['parent', 'child', 'orphan']);
   });
 
@@ -131,7 +131,7 @@ describe('Zone', () => {
     );
 
     expect(screen.getByText('Field')).toBeInTheDocument();
-    expect(screen.getByText('2')).toBeInTheDocument();
+    expect(screen.getByText('1')).toBeInTheDocument();
 
     const cards = screen.getAllByTestId('mock-card');
     expect(cards[0]).toHaveAttribute('data-locked', 'false');
