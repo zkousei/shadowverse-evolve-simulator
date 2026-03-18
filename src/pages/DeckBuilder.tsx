@@ -166,6 +166,18 @@ const DeckBuilder: React.FC = () => {
     })
     .filter((value): value is string => value !== null);
 
+  const resetLibraryFilters = () => {
+    setSearch('');
+    setCostFilter('All');
+    setExpansionFilter('All');
+    setClassFilter('All');
+    setRarityFilter('All');
+    setProductNameFilter('All');
+    setDeckSectionFilter('All');
+    setHideSameNameVariants(false);
+    setPage(0);
+  };
+
   const addToDeck = (card: DeckBuilderCardData, targetSection: DeckTargetSection) => {
     if (!canAddCardToSection(card, targetSection, deckRuleConfig)) return;
 
@@ -293,6 +305,22 @@ const DeckBuilder: React.FC = () => {
             />
             Hide same-name variants
           </label>
+
+          <button
+            type="button"
+            onClick={resetLibraryFilters}
+            style={{
+              padding: '0.5rem 0.75rem',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border-light)',
+              background: 'var(--bg-surface)',
+              color: 'var(--text-main)',
+              fontSize: '0.875rem',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Reset Filters
+          </button>
         </div>
 
         <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -552,7 +580,7 @@ const DeckBuilder: React.FC = () => {
 
       {/* Right: Deck Checklist */}
       <div className="glass-panel" style={{ width: '350px', display: 'flex', flexDirection: 'column', borderRight: 'none', borderTop: 'none', borderBottom: 'none', borderRadius: 0 }}>
-        <div style={{ padding: '0.5rem 1.5rem', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '0.5rem 1.5rem', borderBottom: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <input
             type="text"
             value={deckName}
@@ -565,14 +593,15 @@ const DeckBuilder: React.FC = () => {
               borderBottom: '2px solid transparent',
               color: 'var(--text-main)',
               outline: 'none',
-              width: '180px',
+              flex: 1,
+              minWidth: 0,
               transition: 'border-color 0.2s',
             }}
             onFocus={(e) => e.target.style.borderBottom = '2px solid var(--brand-accent)'}
             onBlur={(e) => e.target.style.borderBottom = '2px solid transparent'}
             placeholder="Deck Name"
           />
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'var(--bg-overlay)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontSize: '0.875rem' }}>
               <Upload size={14} /> Import
               <input type="file" accept=".json" onChange={handleImportDeck} style={{ display: 'none' }} />

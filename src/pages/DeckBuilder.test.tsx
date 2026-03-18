@@ -310,6 +310,31 @@ describe('DeckBuilder', () => {
     expect(screen.queryByText('Beta Mage')).not.toBeInTheDocument();
   });
 
+  it('resets card library filters without changing the deck rule settings', async () => {
+    render(<DeckBuilder />);
+
+    await screen.findByText('Alpha Knight');
+
+    fireEvent.change(screen.getByPlaceholderText('Search cards by name...'), {
+      target: { value: 'beta' },
+    });
+    fireEvent.click(within(screen.getByRole('group', { name: 'Deck section filter' })).getByRole('button', { name: 'Token' }));
+    fireEvent.click(screen.getByLabelText('Hide same-name variants'));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Constructed class' }), {
+      target: { value: 'ロイヤル' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset Filters' }));
+
+    expect(screen.getByPlaceholderText('Search cards by name...')).toHaveValue('');
+    expect(within(screen.getByRole('group', { name: 'Deck section filter' })).getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByLabelText('Hide same-name variants')).not.toBeChecked();
+    expect(screen.getByRole('combobox', { name: 'Constructed class' })).toHaveValue('ロイヤル');
+    expect(screen.getByText('Alpha Knight')).toBeInTheDocument();
+    expect(screen.queryByText('Beta Mage')).not.toBeInTheDocument();
+    expect(screen.getByText('Knight Token')).toBeInTheDocument();
+  });
+
   it('hides same-name variants only after applying the active filters', async () => {
     const duplicateAlpha = {
       ...mockCards[0],
