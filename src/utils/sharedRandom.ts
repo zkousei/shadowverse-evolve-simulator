@@ -50,6 +50,11 @@ export const formatSharedUiMessage = (
     return `${actorLabel} revealed from Search`;
   }
 
+  if (effect.type === 'ATTACK_DECLARED') {
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode);
+    return `${actorLabel} declared an attack`;
+  }
+
   const starterLabel = getSharedActorLabel(effect.starter, viewerRole, isSoloMode);
   const baseMessage = `${starterLabel} will go first!`;
   return effect.manual ? `Manually set: ${baseMessage}` : baseMessage;

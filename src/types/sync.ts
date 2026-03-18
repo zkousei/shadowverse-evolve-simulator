@@ -8,6 +8,14 @@ export interface PublicCardView {
   image: string;
 }
 
+export type AttackTarget =
+  | { type: 'card'; cardId: string }
+  | { type: 'leader'; player: PlayerRole };
+
+export type AttackTargetView =
+  | { type: 'card'; cardId: string; player: PlayerRole; name: string }
+  | { type: 'leader'; player: PlayerRole };
+
 export type GameSyncEvent =
   | { id: string; type: 'FLIP_SHARED_COIN'; actor: PlayerRole }
   | { id: string; type: 'ROLL_SHARED_DIE'; actor: PlayerRole }
@@ -37,14 +45,16 @@ export type GameSyncEvent =
   | { id: string; type: 'IMPORT_DECK'; actor: PlayerRole; cards: CardInstance[]; tokenOptions?: TokenOption[] }
   | { id: string; type: 'SET_INITIAL_TURN_ORDER'; actor: PlayerRole; starter: PlayerRole; manual: boolean }
   | { id: string; type: 'UNDO_LAST_TURN'; actor: PlayerRole; previousState: SyncState }
-  | { id: string; type: 'SPAWN_TOKEN'; actor: PlayerRole; token: CardInstance };
+  | { id: string; type: 'SPAWN_TOKEN'; actor: PlayerRole; token: CardInstance }
+  | { id: string; type: 'ATTACK_DECLARATION'; actor: PlayerRole; attackerCardId: string; target: AttackTarget };
 
 export type SharedUiEffect =
   | { type: 'COIN_FLIP_RESULT'; actor: PlayerRole; result: 'HEADS (表)' | 'TAILS (裏)' }
   | { type: 'DICE_ROLL_RESULT'; actor: PlayerRole; value: number }
   | { type: 'STARTER_DECIDED'; actor: PlayerRole; starter: PlayerRole; manual: boolean }
   | { type: 'REVEAL_TOP_DECK_CARDS'; actor: PlayerRole; cards: PublicCardView[] }
-  | { type: 'REVEAL_SEARCHED_CARD_TO_HAND'; actor: PlayerRole; cards: PublicCardView[] };
+  | { type: 'REVEAL_SEARCHED_CARD_TO_HAND'; actor: PlayerRole; cards: PublicCardView[] }
+  | { type: 'ATTACK_DECLARED'; actor: PlayerRole; attackerCardId: string; attackerName: string; target: AttackTargetView };
 
 export type SyncMessage =
   | { type: 'EVENT'; event: GameSyncEvent }

@@ -473,6 +473,21 @@ export const toggleTapStack = (
   return cards.map(c => stackIds.has(c.id) ? { ...c, isTapped: newIsTapped } : c);
 };
 
+export const tapStack = (
+  cards: CardInstance[],
+  cardId: string
+): CardInstance[] => {
+  const targetCard = cards.find(c => c.id === cardId);
+  if (!targetCard) return cards;
+  if (isLeaderCard(targetCard)) return cards;
+
+  const stackIds = collectStackIds(cards, cardId);
+  const shouldChange = cards.some(c => stackIds.has(c.id) && !c.isTapped);
+  if (!shouldChange) return cards;
+
+  return cards.map(c => stackIds.has(c.id) ? { ...c, isTapped: true } : c);
+};
+
 export const toggleFlip = (
   cards: CardInstance[],
   cardId: string
