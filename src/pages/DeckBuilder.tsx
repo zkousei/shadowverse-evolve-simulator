@@ -117,6 +117,7 @@ const DeckBuilder: React.FC = () => {
   const [deckRuleConfig, setDeckRuleConfig] = useState(createDefaultDeckRuleConfig());
   const [deckState, setDeckState] = useState<DeckState>(createEmptyDeckState());
   const [deckSortMode, setDeckSortMode] = useState<DeckSortMode>('added');
+  const [showResetDeckDialog, setShowResetDeckDialog] = useState(false);
 
   useEffect(() => {
     fetch('/cards_detailed.json')
@@ -265,6 +266,11 @@ const DeckBuilder: React.FC = () => {
           return { ...current, tokenDeck: removeFirstCardById(current.tokenDeck, cardId) };
       }
     });
+  };
+
+  const resetDeckContents = () => {
+    setDeckState(createEmptyDeckState());
+    setShowResetDeckDialog(false);
   };
 
   const exportDeck = () => {
@@ -931,6 +937,28 @@ const DeckBuilder: React.FC = () => {
             </select>
           </div>
 
+          <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
+            <button
+              type="button"
+              onClick={() => setShowResetDeckDialog(true)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'rgba(239, 68, 68, 0.12)',
+                color: '#fca5a5',
+                border: '1px solid rgba(248, 113, 113, 0.45)',
+                padding: '0.4rem 0.65rem',
+                borderRadius: 'var(--radius-md)',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Reset Deck
+            </button>
+          </div>
+
           <h3 style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
             <span>Leader</span>
             <span style={{ color: leaderCards.length >= leaderLimit ? 'var(--brand-accent)' : 'var(--text-muted)' }}>
@@ -1010,6 +1038,75 @@ const DeckBuilder: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {showResetDeckDialog && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Reset deck confirmation"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.72)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.5rem',
+            zIndex: 1000,
+          }}
+        >
+          <div
+            className="glass-panel"
+            style={{
+              width: '100%',
+              maxWidth: '420px',
+              padding: '1.25rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.75rem',
+            }}
+          >
+            <h3 style={{ margin: 0, color: '#fcd34d' }}>Reset Deck</h3>
+            <p style={{ margin: 0, color: 'var(--text-main)', lineHeight: 1.5 }}>
+              Clear the current Main Deck, Evolve Deck, Leader, and Token Deck contents?
+            </p>
+            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem', lineHeight: 1.5 }}>
+              Deck rule settings, deck name, and card library filters will stay as they are.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+              <button
+                type="button"
+                onClick={() => setShowResetDeckDialog(false)}
+                style={{
+                  padding: '0.5rem 0.9rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border-light)',
+                  background: 'var(--bg-surface)',
+                  color: 'var(--text-main)',
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={resetDeckContents}
+                style={{
+                  padding: '0.5rem 0.9rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid #dc2626',
+                  background: '#ef4444',
+                  color: '#fff',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Yes, Reset
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

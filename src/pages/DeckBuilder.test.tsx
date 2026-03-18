@@ -409,6 +409,43 @@ describe('DeckBuilder', () => {
     expect(getMainDeckNames()).toEqual(['Alpha Knight', 'Beta Mage', 'Gamma Dragon']);
   });
 
+  it('resets deck contents only after confirmation', async () => {
+    render(<DeckBuilder />);
+
+    await screen.findByText('Alpha Knight');
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Constructed class' }), {
+      target: { value: 'ロイヤル' },
+    });
+
+    fireEvent.click(within(screen.getByAltText('Alpha Knight').closest('.glass-panel') as HTMLElement).getByTitle('Add to Main Deck'));
+    fireEvent.click(within(screen.getByAltText('Evolve Angel').closest('.glass-panel') as HTMLElement).getByTitle('Add to Evolve Deck'));
+    fireEvent.click(within(screen.getByAltText('Leader Luna').closest('.glass-panel') as HTMLElement).getByTitle('Set as Leader'));
+    fireEvent.click(within(screen.getByAltText('Knight Token').closest('.glass-panel') as HTMLElement).getByTitle('Add to Token Deck'));
+
+    expect(screen.getByText('1/50')).toBeInTheDocument();
+    expect(screen.getByText('1/10')).toBeInTheDocument();
+    expect(screen.getByText('1/1')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset Deck' }));
+    expect(screen.getByRole('dialog', { name: 'Reset deck confirmation' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByRole('dialog', { name: 'Reset deck confirmation' })).not.toBeInTheDocument();
+    expect(screen.getByText('1/50')).toBeInTheDocument();
+    expect(screen.getByText('1/10')).toBeInTheDocument();
+    expect(screen.getByText('1/1')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset Deck' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, Reset' }));
+
+    expect(screen.queryByRole('dialog', { name: 'Reset deck confirmation' })).not.toBeInTheDocument();
+    expect(screen.getByText('0/50')).toBeInTheDocument();
+    expect(screen.getByText('0/10')).toBeInTheDocument();
+    expect(screen.getByText('0/1')).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Constructed class' })).toHaveValue('ロイヤル');
+  });
+
   it('supports crossover decks with two selected classes and two leaders', async () => {
     render(<DeckBuilder />);
 
