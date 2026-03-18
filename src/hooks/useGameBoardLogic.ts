@@ -14,6 +14,8 @@ import { createEventDeduper } from '../utils/eventDeduper';
 import { buildTopDeckRevealEffect } from '../utils/topDeckReveal';
 import { buildSingleCardRevealEffect } from '../utils/cardReveal';
 import { buildAttackDeclaredEffect, formatAttackEffect } from '../utils/attackUi';
+import { buildCardPlayedEffect, formatCardPlayedEffect } from '../utils/cardPlayUi';
+import { normalizeBaseCardType } from '../utils/cardType';
 
 type DispatchableGameSyncEvent =
   | { type: 'FLIP_SHARED_COIN'; actor?: PlayerRole }
@@ -63,6 +65,7 @@ export const useGameBoardLogic = () => {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [coinMessage, setCoinMessage] = useState<string | null>(null);
   const [turnMessage, setTurnMessage] = useState<string | null>(null);
+  const [cardPlayMessage, setCardPlayMessage] = useState<string | null>(null);
   const [attackMessage, setAttackMessage] = useState<string | null>(null);
   const [attackHistory, setAttackHistory] = useState<string[]>([]);
   const [attackVisual, setAttackVisual] = useState<Extract<SharedUiEffect, { type: 'ATTACK_DECLARED' }> | null>(null);
@@ -78,6 +81,7 @@ export const useGameBoardLogic = () => {
     cardId: 'token',
     name: 'Token',
     image: 'https://shadowverse-evolve.com/wordpress/wp-content/themes/shadowverse-evolve-release_v0/assets/images/common/ogp.jpg',
+    baseCardType: 'follower',
   });
 
   const peerRef = useRef<Peer | null>(null);
@@ -89,6 +93,7 @@ export const useGameBoardLogic = () => {
   const diceMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const revealedCardsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const attackMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cardPlayMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const processedEventDeduperRef = useRef(createEventDeduper());
 
   const applyLocalState = useCallback((newState: SyncState) => {
@@ -160,6 +165,13 @@ export const useGameBoardLogic = () => {
     }
   }, []);
 
+  const clearCardPlayMessageTimer = useCallback(() => {
+    if (cardPlayMessageTimeoutRef.current) {
+      clearTimeout(cardPlayMessageTimeoutRef.current);
+      cardPlayMessageTimeoutRef.current = null;
+    }
+  }, []);
+
   const playSharedUiEffect = useCallback((effect: SharedUiEffect) => {
     if (effect.type === 'COIN_FLIP_RESULT') {
       showTimedCoinMessage(formatSharedUiMessage(effect, role, isSoloMode), 3000);
@@ -211,6 +223,16 @@ export const useGameBoardLogic = () => {
       return;
     }
 
+    if (effect.type === 'CARD_PLAYED') {
+      clearCardPlayMessageTimer();
+      setCardPlayMessage(formatCardPlayedEffect(effect, role, isSoloMode));
+      cardPlayMessageTimeoutRef.current = setTimeout(() => {
+        setCardPlayMessage(null);
+        cardPlayMessageTimeoutRef.current = null;
+      }, 2600);
+      return;
+    }
+
     clearDiceTimers();
     clearCoinMessageTimer();
     setIsRollingDice(true);
@@ -241,7 +263,7 @@ export const useGameBoardLogic = () => {
       }, 800);
       diceFinalizeTimeoutRef.current = null;
     }, 900);
-  }, [clearAttackMessageTimer, clearCoinMessageTimer, clearDiceTimers, clearRevealedCardsTimer, isSoloMode, role, showTimedCoinMessage]);
+  }, [clearAttackMessageTimer, clearCardPlayMessageTimer, clearCoinMessageTimer, clearDiceTimers, clearRevealedCardsTimer, isSoloMode, role, showTimedCoinMessage]);
 
   const maybeApplySnapshot = useCallback((incomingState: SyncState, source: PlayerRole) => {
     const currentRevision = gameStateRef.current.revision;
@@ -320,6 +342,13 @@ export const useGameBoardLogic = () => {
       };
       playSharedUiEffect(effect);
       sendSharedUiEffect(effect);
+    }
+    if (event.type === 'PLAY_TO_FIELD') {
+      const effect = buildCardPlayedEffect(currentState.cards, event.actor, event.cardId);
+      if (effect) {
+        playSharedUiEffect(effect);
+        sendSharedUiEffect(effect);
+      }
     }
     if (event.type === 'ATTACK_DECLARATION') {
       const effect = buildAttackDeclaredEffect(currentState.cards, event.actor, event.attackerCardId, event.target);
@@ -430,11 +459,12 @@ export const useGameBoardLogic = () => {
   useEffect(() => {
     return () => {
       clearAttackMessageTimer();
+      clearCardPlayMessageTimer();
       clearCoinMessageTimer();
       clearDiceTimers();
       clearRevealedCardsTimer();
     };
-  }, [clearAttackMessageTimer, clearCoinMessageTimer, clearDiceTimers, clearRevealedCardsTimer]);
+  }, [clearAttackMessageTimer, clearCardPlayMessageTimer, clearCoinMessageTimer, clearDiceTimers, clearRevealedCardsTimer]);
 
   useEffect(() => {
     if (gameState.gameStatus !== 'playing') return;
@@ -566,7 +596,7 @@ export const useGameBoardLogic = () => {
         shuffledMain.forEach((c: any) => {
           newCards.push({
             id: uuid(), cardId: c.id, name: c.name, image: c.image,
-            zone: `mainDeck-${targetRole}`, owner: targetRole, isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 }, genericCounter: 0
+            zone: `mainDeck-${targetRole}`, owner: targetRole, isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 }, genericCounter: 0, baseCardType: normalizeBaseCardType(c.card_kind_normalized ?? c.type)
           });
         });
         (data.evolveDeck || [])
@@ -574,7 +604,7 @@ export const useGameBoardLogic = () => {
           .forEach((c: any) => {
           newCards.push({
             id: uuid(), cardId: c.id, name: c.name, image: c.image,
-            zone: `evolveDeck-${targetRole}`, owner: targetRole, isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 }, genericCounter: 0, isEvolveCard: true
+            zone: `evolveDeck-${targetRole}`, owner: targetRole, isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 }, genericCounter: 0, isEvolveCard: true, baseCardType: normalizeBaseCardType(c.card_kind_normalized ?? c.type)
           });
         });
 
@@ -599,6 +629,7 @@ export const useGameBoardLogic = () => {
               counters: { atk: 0, hp: 0 },
               genericCounter: 0,
               isLeaderCard: true,
+              baseCardType: normalizeBaseCardType(c.card_kind_normalized ?? c.type),
             });
           });
 
@@ -610,6 +641,7 @@ export const useGameBoardLogic = () => {
                 cardId: c.id,
                 name: c.name,
                 image: c.image,
+                baseCardType: normalizeBaseCardType(c.card_kind_normalized ?? c.type),
               });
             }
           });
@@ -639,6 +671,7 @@ export const useGameBoardLogic = () => {
       counters: selectedToken.cardId === 'token' ? { atk: 1, hp: 1 } : { atk: 0, hp: 0 },
       genericCounter: 0,
       isTokenCard: true,
+      baseCardType: selectedToken.baseCardType ?? null,
     };
     dispatchGameEvent({ type: 'SPAWN_TOKEN', actor: targetRole, token: newCard });
   };
@@ -707,7 +740,7 @@ export const useGameBoardLogic = () => {
 
   return {
     room, mode, isSoloMode, isHost, role, status, gameState, searchZone, setSearchZone,
-    showResetConfirm, setShowResetConfirm, coinMessage, turnMessage, attackMessage, attackHistory, attackVisual, revealedCardsOverlay,
+    showResetConfirm, setShowResetConfirm, coinMessage, turnMessage, cardPlayMessage, attackMessage, attackHistory, attackVisual, revealedCardsOverlay,
     isRollingDice, diceValue, mulliganOrder, isMulliganModalOpen, setIsMulliganModalOpen,
     handleStatChange, setPhase, endTurn, handleUndoTurn, handleSetInitialTurnOrder,
     handlePureCoinFlip, handleRollDice, handleStartGame, handleToggleReady,

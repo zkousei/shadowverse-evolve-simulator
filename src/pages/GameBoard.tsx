@@ -15,7 +15,7 @@ import { buildCardDetailLookup, formatAbilityText, type CardDetailLookup } from 
 const GameBoard: React.FC = () => {
   const {
     room, isSoloMode, isHost, role, status, gameState, searchZone, setSearchZone,
-    showResetConfirm, setShowResetConfirm, coinMessage, turnMessage, attackMessage, attackHistory, attackVisual, revealedCardsOverlay,
+    showResetConfirm, setShowResetConfirm, coinMessage, turnMessage, cardPlayMessage, attackMessage, attackHistory, attackVisual, revealedCardsOverlay,
     isRollingDice, diceValue, mulliganOrder, isMulliganModalOpen, setIsMulliganModalOpen,
     handleStatChange, setPhase, endTurn, handleUndoTurn, handleSetInitialTurnOrder,
     handlePureCoinFlip, handleRollDice, handleStartGame, handleToggleReady,
@@ -1652,6 +1652,29 @@ const GameBoard: React.FC = () => {
           letterSpacing: '8px'
         }}>
           {turnMessage}
+        </div>
+      )}
+
+      {cardPlayMessage && (
+        <div style={{
+          position: 'fixed',
+          top: '80px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'rgba(15, 23, 42, 0.96)',
+          color: '#eff6ff',
+          padding: '0.8rem 1.2rem',
+          borderRadius: '12px',
+          border: '1px solid rgba(59, 130, 246, 0.45)',
+          fontSize: '0.98rem',
+          fontWeight: 'bold',
+          zIndex: 1975,
+          boxShadow: '0 12px 28px rgba(0,0,0,0.32)',
+          pointerEvents: 'none',
+          textAlign: 'center',
+          maxWidth: 'min(90vw, 560px)'
+        }}>
+          {cardPlayMessage}
         </div>
       )}
 

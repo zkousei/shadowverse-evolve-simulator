@@ -221,6 +221,36 @@ describe('gameSyncReducer', () => {
     expect(result).toBe(state);
   });
 
+  it('sends main-deck spells to cemetery when PLAY_TO_FIELD is used during play', () => {
+    const state = createState({
+      revision: 8,
+      gameStatus: 'playing',
+      cards: [
+        {
+          id: 'spell-hand-card',
+          cardId: 'BP01-099',
+          name: 'Spell Card',
+          image: '',
+          zone: 'hand-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+          baseCardType: 'spell',
+        },
+      ],
+    });
+
+    const result = applyGameSyncEvent(state, {
+      id: 'evt-play-main-spell',
+      type: 'PLAY_TO_FIELD',
+      actor: 'host',
+      cardId: 'spell-hand-card',
+    });
+
+    expect(result.cards.find(c => c.id === 'spell-hand-card')?.zone).toBe('cemetery-host');
+  });
+
   it('blocks dragging a hand card during preparation', () => {
     const state = createState({
       revision: 9,

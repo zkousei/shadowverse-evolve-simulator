@@ -1,5 +1,6 @@
 import type { CardInstance } from '../components/Card';
 import type { SyncState } from '../types/game';
+import { isMainDeckSpellCard } from './cardType';
 
 /**
  * Pure logic for card state transitions.
@@ -597,6 +598,9 @@ export const playCardToField = (
   const targetCard = cards.find(c => c.id === cardId);
   if (!targetCard) return cards;
   if (isLeaderCard(targetCard)) return cards;
+  if (isMainDeckSpellCard(targetCard) && (targetCard.zone.startsWith('hand-') || targetCard.zone.startsWith('ex-'))) {
+    return sendCardToCemetery(cards, cardId);
+  }
 
   const destinationZone = `field-${role}`;
   return moveCardToEnd(cards, cardId, {

@@ -1,5 +1,6 @@
 import type { PlayerRole } from '../types/game';
 import type { SharedUiEffect } from '../types/sync';
+import { formatCardPlayedEffect } from './cardPlayUi';
 
 export const flipSharedCoin = (
   random: () => number = Math.random
@@ -53,6 +54,10 @@ export const formatSharedUiMessage = (
   if (effect.type === 'ATTACK_DECLARED') {
     const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode);
     return `${actorLabel} declared an attack`;
+  }
+
+  if (effect.type === 'CARD_PLAYED') {
+    return formatCardPlayedEffect(effect, viewerRole, isSoloMode);
   }
 
   const starterLabel = getSharedActorLabel(effect.starter, viewerRole, isSoloMode);
