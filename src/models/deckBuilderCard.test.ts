@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { getAvailableExpansions, getAvailableProductNames, getAvailableRarities, type DeckBuilderCardData } from './deckBuilderCard';
+import {
+  dedupeCardsByDisplayIdentity,
+  getAvailableExpansions,
+  getAvailableProductNames,
+  getAvailableRarities,
+  type DeckBuilderCardData,
+} from './deckBuilderCard';
 
 const cards: DeckBuilderCardData[] = [
   {
@@ -46,6 +52,46 @@ describe('deckBuilderCard helpers', () => {
       'コラボパック',
       'ブースターパック第1弾',
       'ブースターパック第2弾',
+    ]);
+  });
+
+  it('dedupes same-name variants for display while keeping distinct deck sections', () => {
+    const duplicatedCards: DeckBuilderCardData[] = [
+      {
+        id: 'BP01-001',
+        name: 'Alpha Knight',
+        image: '/alpha-base.png',
+        class: 'ロイヤル',
+        type: 'フォロワー',
+        rarity: 'LG',
+        product_name: 'Booster Pack 1',
+        deck_section: 'main',
+      },
+      {
+        id: 'PR-001',
+        name: 'Alpha Knight',
+        image: '/alpha-promo.png',
+        class: 'ロイヤル',
+        type: 'フォロワー',
+        rarity: 'PR',
+        product_name: 'Promo Pack',
+        deck_section: 'main',
+      },
+      {
+        id: 'EV01-001',
+        name: 'Alpha Knight',
+        image: '/alpha-evolve.png',
+        class: 'ロイヤル',
+        type: 'フォロワー・エボルヴ',
+        rarity: 'LG',
+        product_name: 'Booster Pack 1',
+        deck_section: 'evolve',
+      },
+    ];
+
+    expect(dedupeCardsByDisplayIdentity(duplicatedCards).map(card => card.id)).toEqual([
+      'BP01-001',
+      'EV01-001',
     ]);
   });
 });

@@ -101,6 +101,11 @@ const collectDescendantIds = (
 };
 
 const getZonePrefix = (zone: string): string => zone.split('-')[0];
+const isLeaderZone = (zone: string): boolean => zone.startsWith('leader-');
+const isLeaderCard = (card: CardInstance | undefined): boolean =>
+  Boolean(card?.isLeaderCard) || isLeaderZone(card?.zone ?? '');
+const isTokenCard = (card: CardInstance | undefined): boolean =>
+  Boolean(card?.isTokenCard) || card?.cardId === 'token';
 
 const findRootCard = (cards: CardInstance[], card: CardInstance): CardInstance => {
   let rootCard = card;
@@ -149,6 +154,7 @@ export const moveCardToEnd = (
 ): CardInstance[] => {
   const targetCard = cards.find(c => c.id === cardId);
   if (!targetCard) return cards;
+  if (isLeaderCard(targetCard)) return cards;
 
   const descendantIds = collectDescendantIds(cards, cardId);
   const otherCards = cards.filter(c => c.id !== cardId && !descendantIds.has(c.id));
@@ -200,6 +206,7 @@ export const moveCardToFront = (
 ): CardInstance[] => {
   const targetCard = cards.find(c => c.id === cardId);
   if (!targetCard) return cards;
+  if (isLeaderCard(targetCard)) return cards;
 
   const descendantIds = collectDescendantIds(cards, cardId);
   const otherCards = cards.filter(c => c.id !== cardId && !descendantIds.has(c.id));
@@ -302,6 +309,7 @@ export const millCard = (
  * Returns the natural deck zone for a given card (Main vs Evolve).
  */
 export const getDeckZone = (card: CardInstance): string => {
+  if (isLeaderCard(card)) return `leader-${card.owner}`;
   return card.isEvolveCard ? `evolveDeck-${card.owner}` : `mainDeck-${card.owner}`;
 };
 
@@ -313,6 +321,9 @@ export const resolveMoveDestination = (
   requestedZone: string
 ): string => {
   const requestedPrefix = getZonePrefix(requestedZone);
+  if (isLeaderCard(card) || requestedPrefix === 'leader') {
+    return getDeckZone(card);
+  }
 
   if (requestedPrefix === 'mainDeck' || requestedPrefix === 'evolveDeck') {
     return getDeckZone(card);
@@ -334,12 +345,14 @@ export const resolveDrop = (
 
   const activeCard = cards.find(c => c.id === cardId);
   if (!activeCard) return null;
+  if (isLeaderCard(activeCard)) return null;
 
   let targetZone = overId;
   let newAttachedTo: string | undefined;
 
   const overCard = cards.find(c => c.id === overId);
   if (overCard) {
+    if (isLeaderCard(overCard)) return null;
     if (overCard.zone.startsWith('field')) {
       targetZone = overCard.zone;
       newAttachedTo = findRootCard(cards, overCard).id;
@@ -347,6 +360,7 @@ export const resolveDrop = (
       targetZone = overCard.zone;
     }
   }
+  if (isLeaderZone(targetZone)) return null;
 
   const requestedPrefix = getZonePrefix(targetZone);
   const naturalDeckPrefix = getZonePrefix(getDeckZone(activeCard));
@@ -377,7 +391,7 @@ export const resolveDrop = (
     targetZone,
     isReturningToDeck,
     shouldPlaceAtFront,
-    shouldDeleteToken: activeCard.cardId === 'token' && isEnteringSafeZone,
+    shouldDeleteToken: isTokenCard(activeCard) && isEnteringSafeZone,
     moveOptions: {
       zone: targetZone,
       attachedTo: newAttachedTo,
@@ -421,7 +435,7 @@ export const modifyCardCounter = (
   delta: number
 ): CardInstance[] => {
   const targetCard = cards.find(c => c.id === cardId);
-  if (!targetCard || targetCard.zone.startsWith('hand')) return cards;
+  if (!targetCard || targetCard.zone.startsWith('hand') || isLeaderCard(targetCard)) return cards;
 
   return cards.map(c =>
     c.id === cardId ? { ...c, counters: { ...c.counters, [stat]: c.counters[stat] + delta } } : c
@@ -435,6 +449,7 @@ export const modifyGenericCounter = (
 ): CardInstance[] => {
   const targetCard = cards.find(c => c.id === cardId);
   if (!targetCard) return cards;
+  if (isLeaderCard(targetCard)) return cards;
   if (!(targetCard.zone.startsWith('field-') || targetCard.zone.startsWith('ex-'))) return cards;
 
   return cards.map(card =>
@@ -450,6 +465,7 @@ export const toggleTapStack = (
 ): CardInstance[] => {
   const targetCard = cards.find(c => c.id === cardId);
   if (!targetCard) return cards;
+  if (isLeaderCard(targetCard)) return cards;
 
   const stackIds = collectStackIds(cards, cardId);
   const newIsTapped = !targetCard.isTapped;
@@ -463,6 +479,7 @@ export const toggleFlip = (
 ): CardInstance[] => {
   const targetCard = cards.find(c => c.id === cardId);
   if (!targetCard) return cards;
+  if (isLeaderCard(targetCard)) return cards;
 
   return cards.map(c => c.id === cardId ? { ...c, isFlipped: !c.isFlipped } : c);
 };
@@ -481,7 +498,8 @@ export const sendCardToBottom = (
 ): CardInstance[] => {
   const targetCard = cards.find(c => c.id === cardId);
   if (!targetCard) return cards;
-  if (targetCard.cardId === 'token') return removeTokenAndAttachments(cards, cardId);
+  if (isLeaderCard(targetCard)) return cards;
+  if (isTokenCard(targetCard)) return removeTokenAndAttachments(cards, cardId);
 
   return moveCardToEnd(cards, cardId, {
     zone: getDeckZone(targetCard),
@@ -500,7 +518,8 @@ export const banishCard = (
 ): CardInstance[] => {
   const targetCard = cards.find(c => c.id === cardId);
   if (!targetCard) return cards;
-  if (targetCard.cardId === 'token') return removeTokenAndAttachments(cards, cardId);
+  if (isLeaderCard(targetCard)) return cards;
+  if (isTokenCard(targetCard)) return removeTokenAndAttachments(cards, cardId);
 
   const destinationZone = targetCard.isEvolveCard ? getDeckZone(targetCard) : `banish-${targetCard.owner}`;
   return moveCardToFront(cards, cardId, {
@@ -520,7 +539,8 @@ export const sendCardToCemetery = (
 ): CardInstance[] => {
   const targetCard = cards.find(c => c.id === cardId);
   if (!targetCard) return cards;
-  if (targetCard.cardId === 'token') return removeTokenAndAttachments(cards, cardId);
+  if (isLeaderCard(targetCard)) return cards;
+  if (isTokenCard(targetCard)) return removeTokenAndAttachments(cards, cardId);
 
   const destinationZone = targetCard.isEvolveCard ? getDeckZone(targetCard) : `cemetery-${targetCard.owner}`;
   return moveCardToFront(cards, cardId, {
@@ -540,7 +560,8 @@ export const returnEvolveCard = (
 ): CardInstance[] => {
   const targetCard = cards.find(c => c.id === cardId);
   if (!targetCard) return cards;
-  if (targetCard.cardId === 'token') return removeTokenAndAttachments(cards, cardId);
+  if (isLeaderCard(targetCard)) return cards;
+  if (isTokenCard(targetCard)) return removeTokenAndAttachments(cards, cardId);
 
   return moveCardToFront(cards, cardId, {
     zone: getDeckZone(targetCard),
@@ -560,6 +581,7 @@ export const playCardToField = (
 ): CardInstance[] => {
   const targetCard = cards.find(c => c.id === cardId);
   if (!targetCard) return cards;
+  if (isLeaderCard(targetCard)) return cards;
 
   const destinationZone = `field-${role}`;
   return moveCardToEnd(cards, cardId, {
@@ -580,6 +602,7 @@ export const extractCard = (
 ): CardInstance[] => {
   const targetCard = cards.find(c => c.id === cardId);
   if (!targetCard) return cards;
+  if (isLeaderCard(targetCard)) return cards;
 
   let destinationZone = targetCard.isEvolveCard ? `field-${role}` : `hand-${role}`;
   if (customDestination) destinationZone = customDestination;

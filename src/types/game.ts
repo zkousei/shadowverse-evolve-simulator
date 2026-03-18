@@ -1,6 +1,11 @@
 import { type CardInstance } from '../components/Card';
 
 export type PlayerRole = 'host' | 'guest';
+export interface TokenOption {
+  cardId: string;
+  name: string;
+  image: string;
+}
 
 export interface PlayerHUD {
   hp: number;
@@ -22,6 +27,7 @@ export interface SyncState {
   turnCount: number;
   phase: 'Start' | 'Main' | 'End';
   gameStatus: 'preparing' | 'playing';
+  tokenOptions: Record<PlayerRole, TokenOption[]>;
   revision: number;
 }
 
@@ -33,5 +39,9 @@ export const initialState: SyncState = {
   turnCount: 1,
   phase: 'Start',
   gameStatus: 'preparing',
+  tokenOptions: {
+    host: [],
+    guest: [],
+  },
   revision: 0
 };

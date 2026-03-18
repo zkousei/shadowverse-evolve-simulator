@@ -6,6 +6,7 @@ from typing import Optional
 
 import aiohttp
 from bs4 import BeautifulSoup
+from card_metadata import derive_card_metadata
 
 
 DETAIL_URL_TEMPLATE = "https://shadowverse-evolve.com/cardlist/?cardno={card_id}&view=text"
@@ -103,7 +104,7 @@ async def fetch_card_detail(session: aiohttp.ClientSession, card: dict) -> dict:
         if detail_text:
             card["ability_text"] = detail_text
 
-    return card
+    return derive_card_metadata(card)
 
 
 async def main() -> None:
@@ -134,6 +135,8 @@ async def main() -> None:
             for index in missing_indices:
                 cards[index] = await fetch_card_detail(session, cards[index])
             await asyncio.sleep(0.2)
+
+    cards = [derive_card_metadata(card) for card in cards]
 
     with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
         json.dump(cards, f, ensure_ascii=False, indent=2)

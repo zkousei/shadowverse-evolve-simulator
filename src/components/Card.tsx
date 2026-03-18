@@ -15,6 +15,8 @@ export interface CardInstance {
   genericCounter?: number;
   attachedTo?: string; // ID of the base card this evolve card is stacked on
   isEvolveCard?: boolean; // Rule flag to prevent Evolve cards mixing into Main deck
+  isLeaderCard?: boolean;
+  isTokenCard?: boolean;
 }
 
 interface Props {
@@ -36,10 +38,11 @@ interface Props {
 }
 
 const Card: React.FC<Props> = ({ card, baseStats, displayCounters, hideCurrentStats, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, isHidden, isLocked, debugIndex }) => {
+  const isInteractionLocked = isLocked || card.isLeaderCard || card.zone.startsWith('leader-');
   const { attributes, listeners, setNodeRef: setDraggableRef, transform } = useDraggable({
     id: card.id,
     data: { card },
-    disabled: isLocked
+    disabled: isInteractionLocked
   });
 
   const { isOver, setNodeRef: setDroppableRef } = useDroppable({
@@ -56,7 +59,7 @@ const Card: React.FC<Props> = ({ card, baseStats, displayCounters, hideCurrentSt
     // Translate x/y for the drag
     transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
     zIndex: transform ? 999 : 1,
-    cursor: isLocked ? 'default' : 'grab',
+    cursor: isInteractionLocked ? 'default' : 'grab',
     position: 'relative',
     width: '100px',
     height: '140px',
@@ -93,6 +96,7 @@ const Card: React.FC<Props> = ({ card, baseStats, displayCounters, hideCurrentSt
       {...attributes}
       onContextMenu={(e) => {
         e.preventDefault();
+        if (isInteractionLocked) return;
         onTap?.(card.id);
       }}
     >
@@ -192,7 +196,7 @@ const Card: React.FC<Props> = ({ card, baseStats, displayCounters, hideCurrentSt
           )}
 
           {/* Quick Edit Overlay - Only show if not hidden AND not locked */}
-          {!isHidden && !isLocked && (
+          {!isHidden && !isInteractionLocked && (
             <div className="card-controls"
               style={{
                 position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
