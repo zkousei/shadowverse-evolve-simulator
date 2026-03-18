@@ -51,6 +51,7 @@ const TYPE_TO_CARD_KIND: Record<string, CardKindNormalized> = {
   'イクイップメント・トークン': 'token_equipment',
   'フォロワー・アドバンス': 'advance_follower',
   'スペル・アドバンス': 'advance_spell',
+  'アミュレット・アドバンス': 'advance_amulet',
   'アミュレット・エボルヴ': 'evolve_amulet',
   'スペル・エボルヴ': 'evolve_spell',
 };
@@ -64,6 +65,7 @@ const CARD_KIND_TO_DECK_SECTION: Record<CardKindNormalized, DeckSection> = {
   evolve_spell: 'evolve',
   advance_follower: 'evolve',
   advance_spell: 'evolve',
+  advance_amulet: 'evolve',
   leader: 'leader',
   token_follower: 'token',
   token_spell: 'token',

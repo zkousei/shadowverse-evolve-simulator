@@ -65,6 +65,14 @@ class CardMetadataTest(unittest.TestCase):
             is_evolve_card=True,
             is_deck_build_legal=True,
         )
+        self.assertDerived(
+            "アミュレット・アドバンス",
+            card_kind_normalized="advance_amulet",
+            deck_section="evolve",
+            is_token=False,
+            is_evolve_card=True,
+            is_deck_build_legal=True,
+        )
 
     def test_special_sections(self) -> None:
         self.assertDerived(

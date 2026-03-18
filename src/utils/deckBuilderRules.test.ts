@@ -69,6 +69,19 @@ const evolveCard: DeckBuilderCardData = {
   is_deck_build_legal: true,
 };
 
+const advanceAmuletCard: DeckBuilderCardData = {
+  id: 'EV01-010',
+  name: 'Advance Amulet',
+  image: '/advance-amulet.png',
+  class: 'ロイヤル',
+  type: 'アミュレット・アドバンス',
+  card_kind_normalized: 'advance_amulet',
+  deck_section: 'evolve',
+  is_token: false,
+  is_evolve_card: true,
+  is_deck_build_legal: true,
+};
+
 const rapidFireCard: DeckBuilderCardData = {
   id: 'BP11-045',
   name: 'ラピッドファイア',
@@ -223,6 +236,7 @@ describe('deckBuilderRules', () => {
   it('returns the allowed deck section for each card', () => {
     expect(getAllowedSections(mainCard)).toEqual(['main']);
     expect(getAllowedSections(evolveCard)).toEqual(['evolve']);
+    expect(getAllowedSections(advanceAmuletCard)).toEqual(['evolve']);
     expect(getAllowedSections(royalLeaderCard)).toEqual(['leader']);
     expect(getAllowedSections(tokenCard)).toEqual(['token']);
   });
@@ -231,6 +245,7 @@ describe('deckBuilderRules', () => {
     expect(canAddCardToSection(mainCard, 'main')).toBe(true);
     expect(canAddCardToSection(mainCard, 'evolve')).toBe(false);
     expect(canAddCardToSection(evolveCard, 'evolve')).toBe(true);
+    expect(canAddCardToSection(advanceAmuletCard, 'evolve')).toBe(true);
     expect(canAddCardToSection(evolveCard, 'main')).toBe(false);
     expect(canAddCardToSection(royalLeaderCard, 'leader')).toBe(true);
     expect(canAddCardToSection(tokenCard, 'main')).toBe(false);

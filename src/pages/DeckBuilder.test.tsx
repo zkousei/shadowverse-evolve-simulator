@@ -181,6 +181,7 @@ describe('DeckBuilder', () => {
     render(<DeckBuilder />);
 
     const classFilterGroup = screen.getByRole('group', { name: 'Class filter' });
+    const cardTypeFilterGroup = screen.getByRole('group', { name: 'Card type filter' });
     const costFilterGroup = screen.getByRole('group', { name: 'Cost filter' });
     const deckSectionFilterGroup = screen.getByRole('group', { name: 'Deck section filter' });
     const expansionFilter = screen.getByRole('combobox', { name: 'Expansion filter' });
@@ -211,6 +212,13 @@ describe('DeckBuilder', () => {
     expect(within(classFilterGroup).getByRole('button', { name: 'ウィッチ' })).toHaveAttribute('aria-pressed', 'true');
 
     fireEvent.click(within(classFilterGroup).getByRole('button', { name: 'All' }));
+    fireEvent.click(within(cardTypeFilterGroup).getByRole('button', { name: 'Spell' }));
+    expect(screen.getByText('Beta Mage')).toBeInTheDocument();
+    expect(screen.queryByText('Alpha Knight')).not.toBeInTheDocument();
+    expect(screen.queryByText('Evolve Angel')).not.toBeInTheDocument();
+
+    fireEvent.click(within(classFilterGroup).getByRole('button', { name: 'All' }));
+    fireEvent.click(within(cardTypeFilterGroup).getByRole('button', { name: 'All' }));
     fireEvent.click(within(costFilterGroup).getByRole('button', { name: 'All' }));
     fireEvent.click(within(deckSectionFilterGroup).getByRole('button', { name: 'Leader' }));
     expect(screen.getByText('Leader Luna')).toBeInTheDocument();
@@ -277,15 +285,20 @@ describe('DeckBuilder', () => {
     await screen.findByText('Alpha Knight');
 
     const deckSectionFilterGroup = screen.getByRole('group', { name: 'Deck section filter' });
+    const cardTypeFilterGroup = screen.getByRole('group', { name: 'Card type filter' });
     fireEvent.click(within(deckSectionFilterGroup).getByRole('button', { name: 'Token' }));
     expect(screen.getByText('Knight Token')).toBeInTheDocument();
     expect(screen.queryByText('Alpha Knight')).not.toBeInTheDocument();
+
+    fireEvent.click(within(cardTypeFilterGroup).getByRole('button', { name: 'Amulet' }));
+    expect(screen.getByText('Knight Token')).toBeInTheDocument();
 
     fireEvent.change(screen.getByRole('combobox', { name: 'Rarity filter' }), {
       target: { value: 'PR' },
     });
     expect(screen.getByText('Knight Token')).toBeInTheDocument();
 
+    fireEvent.click(within(cardTypeFilterGroup).getByRole('button', { name: 'All' }));
     fireEvent.click(within(deckSectionFilterGroup).getByRole('button', { name: 'Leader' }));
     expect(screen.getByText('Leader Luna')).toBeInTheDocument();
     expect(screen.queryByText('Knight Token')).not.toBeInTheDocument();

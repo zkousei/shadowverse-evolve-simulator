@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Search, Plus, Minus, Download, Upload } from 'lucide-react';
 import { CLASS, CLASS_FILTER_VALUES, CLASS_VALUES, CONSTRUCTED_CLASS_VALUES } from '../models/class';
 import type { ClassFilter } from '../models/class';
+import { getBaseCardType } from '../models/cardClassification';
 import {
   dedupeCardsByDisplayIdentity,
   getAvailableExpansions,
@@ -35,6 +36,13 @@ import {
 const PAGE_SIZE = 50;
 const COST_FILTER_VALUES = ['All', '0', '1', '2', '3', '4', '5', '6', '7+'] as const;
 const DECK_SECTION_FILTER_VALUES = ['All', 'main', 'evolve', 'leader', 'token'] as const;
+const CARD_TYPE_FILTER_VALUES = ['All', 'follower', 'spell', 'amulet'] as const;
+const CARD_TYPE_FILTER_LABELS: Record<(typeof CARD_TYPE_FILTER_VALUES)[number], string> = {
+  All: 'All',
+  follower: 'Follower',
+  spell: 'Spell',
+  amulet: 'Amulet',
+};
 const DECK_SECTION_FILTER_LABELS: Record<(typeof DECK_SECTION_FILTER_VALUES)[number], string> = {
   All: 'All',
   main: 'Main',
@@ -136,6 +144,7 @@ const DeckBuilder: React.FC = () => {
   const [costFilter, setCostFilter] = useState('All');
   const [expansionFilter, setExpansionFilter] = useState('All');
   const [classFilter, setClassFilter] = useState<ClassFilter>('All');
+  const [cardTypeFilter, setCardTypeFilter] = useState<(typeof CARD_TYPE_FILTER_VALUES)[number]>('All');
   const [rarityFilter, setRarityFilter] = useState('All');
   const [productNameFilter, setProductNameFilter] = useState('All');
   const [subtypeSearch, setSubtypeSearch] = useState('');
@@ -194,23 +203,30 @@ const DeckBuilder: React.FC = () => {
       if (c.class !== classFilter) return false;
     }
 
-    // 5. Rarity Filter
+    // 5. Card Type Filter
+    if (cardTypeFilter !== 'All') {
+      if (getBaseCardType(c.card_kind_normalized) !== cardTypeFilter) {
+        return false;
+      }
+    }
+
+    // 6. Rarity Filter
     if (rarityFilter !== 'All') {
       if (c.rarity !== rarityFilter) return false;
     }
 
-    // 6. Product Filter
+    // 7. Product Filter
     if (productNameFilter !== 'All') {
       if (c.product_name !== productNameFilter) return false;
     }
 
-    // 7. Subtype Filter
+    // 8. Subtype Filter
     if (selectedSubtypeTags.length > 0) {
       const cardSubtypeTags = getSubtypeTags(c);
       if (!selectedSubtypeTags.some(tag => cardSubtypeTags.includes(tag))) return false;
     }
 
-    // 8. Deck Section Filter
+    // 9. Deck Section Filter
     if (deckSectionFilter !== 'All') {
       if (c.deck_section !== deckSectionFilter) return false;
     }
@@ -245,6 +261,7 @@ const DeckBuilder: React.FC = () => {
     setCostFilter('All');
     setExpansionFilter('All');
     setClassFilter('All');
+    setCardTypeFilter('All');
     setRarityFilter('All');
     setProductNameFilter('All');
     setSubtypeSearch('');
@@ -525,6 +542,43 @@ const DeckBuilder: React.FC = () => {
                 }}
               >
                 {cls}
+              </button>
+            ))}
+          </div>
+
+          <div
+            role="group"
+            aria-label="Card type filter"
+            style={{
+              display: 'flex',
+              background: 'var(--bg-surface)',
+              padding: '0.25rem',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border-light)',
+              flexWrap: 'wrap',
+              gap: '0.25rem',
+              alignItems: 'center',
+            }}
+          >
+            <span style={{ padding: '0.5rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+              Type:
+            </span>
+
+            {CARD_TYPE_FILTER_VALUES.map((cardType) => (
+              <button
+                key={cardType}
+                type="button"
+                aria-pressed={cardTypeFilter === cardType}
+                onClick={() => { setCardTypeFilter(cardType); setPage(0); }}
+                style={{
+                  padding: '0.25rem 0.75rem',
+                  borderRadius: '4px',
+                  background: cardTypeFilter === cardType ? 'var(--brand-accent)' : 'transparent',
+                  color: cardTypeFilter === cardType ? '#fff' : 'var(--text-main)',
+                  fontWeight: cardTypeFilter === cardType ? 'bold' : 'normal',
+                }}
+              >
+                {CARD_TYPE_FILTER_LABELS[cardType]}
               </button>
             ))}
           </div>
