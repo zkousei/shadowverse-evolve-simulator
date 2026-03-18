@@ -62,6 +62,12 @@ const ADD_ACTIONS: Record<DeckTargetSection, { title: string; label: React.React
     background: 'var(--vivid-green-cyan)',
   },
 };
+
+const DECK_SECTION_ADD_LABELS: Record<Exclude<DeckTargetSection, 'leader'>, string> = {
+  main: 'Add one copy to Main Deck',
+  evolve: 'Add one copy to Evolve Deck',
+  token: 'Add one copy to Token Deck',
+};
 const DECK_FORMAT_LABELS: Record<DeckFormat, string> = {
   constructed: 'Constructed',
   crossover: 'Crossover',
@@ -99,6 +105,27 @@ const sortDeckCardsForDisplay = (
 
     return left.id.localeCompare(right.id, 'ja');
   });
+};
+
+type DeckDisplayGroup = {
+  card: DeckBuilderCardData;
+  count: number;
+};
+
+const groupDeckCardsForDisplay = (cards: DeckBuilderCardData[]): DeckDisplayGroup[] => {
+  const groups: DeckDisplayGroup[] = [];
+
+  cards.forEach(card => {
+    const existingGroup = groups.find(group => group.card.id === card.id);
+    if (existingGroup) {
+      existingGroup.count += 1;
+      return;
+    }
+
+    groups.push({ card, count: 1 });
+  });
+
+  return groups;
 };
 
 const DeckBuilder: React.FC = () => {
@@ -190,6 +217,10 @@ const DeckBuilder: React.FC = () => {
   const sortedMainDeck = sortDeckCardsForDisplay(mainDeck, deckSortMode);
   const sortedEvolveDeck = sortDeckCardsForDisplay(evolveDeck, deckSortMode);
   const sortedTokenDeck = sortDeckCardsForDisplay(tokenDeck, deckSortMode);
+  const groupedLeaderCards = groupDeckCardsForDisplay(sortedLeaderCards);
+  const groupedMainDeck = groupDeckCardsForDisplay(sortedMainDeck);
+  const groupedEvolveDeck = groupDeckCardsForDisplay(sortedEvolveDeck);
+  const groupedTokenDeck = groupDeckCardsForDisplay(sortedTokenDeck);
   const crossoverClassOptionsA = CONSTRUCTED_CLASS_VALUES.filter(
     cardClass => cardClass === deckRuleConfig.selectedClasses[0] || cardClass !== deckRuleConfig.selectedClasses[1]
   );
@@ -210,9 +241,9 @@ const DeckBuilder: React.FC = () => {
     setPage(0);
   };
 
-  const removeFirstCardById = (cards: DeckBuilderCardData[], cardId?: string): DeckBuilderCardData[] => {
+  const removeLastCardById = (cards: DeckBuilderCardData[], cardId?: string): DeckBuilderCardData[] => {
     if (!cardId) return cards;
-    const removeIndex = cards.findIndex(card => card.id === cardId);
+    const removeIndex = cards.findLastIndex(card => card.id === cardId);
     if (removeIndex < 0) return cards;
     return cards.filter((_, index) => index !== removeIndex);
   };
@@ -257,13 +288,13 @@ const DeckBuilder: React.FC = () => {
     setDeckState(current => {
       switch (targetSection) {
         case 'main':
-          return { ...current, mainDeck: removeFirstCardById(current.mainDeck, cardId) };
+          return { ...current, mainDeck: removeLastCardById(current.mainDeck, cardId) };
         case 'evolve':
-          return { ...current, evolveDeck: removeFirstCardById(current.evolveDeck, cardId) };
+          return { ...current, evolveDeck: removeLastCardById(current.evolveDeck, cardId) };
         case 'leader':
-          return { ...current, leaderCards: removeFirstCardById(current.leaderCards, cardId) };
+          return { ...current, leaderCards: removeLastCardById(current.leaderCards, cardId) };
         case 'token':
-          return { ...current, tokenDeck: removeFirstCardById(current.tokenDeck, cardId) };
+          return { ...current, tokenDeck: removeLastCardById(current.tokenDeck, cardId) };
       }
     });
   };
@@ -966,16 +997,19 @@ const DeckBuilder: React.FC = () => {
             </span>
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginBottom: '2rem' }}>
-            {sortedLeaderCards.length > 0 ? (
-              sortedLeaderCards.map((card, index) => (
-                <div key={`${card.id}-${index}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', padding: '0.25rem 0.5rem', background: 'var(--bg-surface)', borderRadius: '4px' }}>
+            {groupedLeaderCards.length > 0 ? (
+              groupedLeaderCards.map(({ card, count }) => (
+                <div key={card.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', padding: '0.25rem 0.5rem', background: 'var(--bg-surface)', borderRadius: '4px' }}>
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{card.name}</div>
                     <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {card.id} {card.cost ? `• Cost ${card.cost}` : ''}
                     </div>
                   </div>
-                  <button type="button" onClick={() => removeFromDeck('leader', card.id)} style={{ color: '#ef4444' }}><Minus size={16} /></button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {count > 1 && <span style={{ color: 'var(--text-main)', fontSize: '0.75rem', minWidth: '2rem', textAlign: 'right', fontWeight: 600 }}>× {count}</span>}
+                    <button type="button" onClick={() => removeFromDeck('leader', card.id)} style={{ color: '#ef4444' }} title="Remove one leader"><Minus size={16} /></button>
+                  </div>
                 </div>
               ))
             ) : (
@@ -988,15 +1022,27 @@ const DeckBuilder: React.FC = () => {
             <span style={{ color: mainDeck.length >= 40 ? 'var(--vivid-green-cyan)' : 'var(--text-muted)' }}>{mainDeck.length}/{DECK_LIMITS.main}</span>
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginBottom: '2rem' }}>
-            {sortedMainDeck.map((c, i) => (
-              <div key={`${c.id}-${i}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', padding: '0.25rem 0.5rem', background: 'var(--bg-surface)', borderRadius: '4px' }}>
+            {groupedMainDeck.map(({ card, count }) => (
+              <div key={card.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', padding: '0.25rem 0.5rem', background: 'var(--bg-surface)', borderRadius: '4px' }}>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div>
+                  <div style={{ fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{card.name}</div>
                   <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {c.id} {c.cost ? `• Cost ${c.cost}` : ''}
+                    {card.id} {card.cost ? `• Cost ${card.cost}` : ''}
                   </div>
                 </div>
-                <button type="button" onClick={() => removeFromDeck('main', c.id)} style={{ color: '#ef4444' }}><Minus size={16} /></button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <button type="button" onClick={() => removeFromDeck('main', card.id)} style={{ color: '#ef4444' }} title="Remove one copy from Main Deck"><Minus size={16} /></button>
+                  <span style={{ color: 'var(--text-main)', fontSize: '0.75rem', minWidth: '2rem', textAlign: 'center', fontWeight: 600 }}>× {count}</span>
+                  <button
+                    type="button"
+                    onClick={() => addToDeck(card, 'main')}
+                    disabled={!canAddCardToDeckState(card, 'main', deckState, deckRuleConfig)}
+                    style={{ color: canAddCardToDeckState(card, 'main', deckState, deckRuleConfig) ? 'var(--vivid-green-cyan)' : 'var(--text-muted)' }}
+                    title={DECK_SECTION_ADD_LABELS.main}
+                  >
+                    <Plus size={16} />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -1006,15 +1052,27 @@ const DeckBuilder: React.FC = () => {
             <span style={{ color: 'var(--text-muted)' }}>{evolveDeck.length}/{DECK_LIMITS.evolve}</span>
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-            {sortedEvolveDeck.map((c, i) => (
-              <div key={`${c.id}-${i}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', padding: '0.25rem 0.5rem', background: 'var(--bg-surface)', borderRadius: '4px' }}>
+            {groupedEvolveDeck.map(({ card, count }) => (
+              <div key={card.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', padding: '0.25rem 0.5rem', background: 'var(--bg-surface)', borderRadius: '4px' }}>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div>
+                  <div style={{ fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{card.name}</div>
                   <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {c.id} {c.cost ? `• Cost ${c.cost}` : ''}
+                    {card.id} {card.cost ? `• Cost ${card.cost}` : ''}
                   </div>
                 </div>
-                <button type="button" onClick={() => removeFromDeck('evolve', c.id)} style={{ color: '#ef4444' }}><Minus size={16} /></button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <button type="button" onClick={() => removeFromDeck('evolve', card.id)} style={{ color: '#ef4444' }} title="Remove one copy from Evolve Deck"><Minus size={16} /></button>
+                  <span style={{ color: 'var(--text-main)', fontSize: '0.75rem', minWidth: '2rem', textAlign: 'center', fontWeight: 600 }}>× {count}</span>
+                  <button
+                    type="button"
+                    onClick={() => addToDeck(card, 'evolve')}
+                    disabled={!canAddCardToDeckState(card, 'evolve', deckState, deckRuleConfig)}
+                    style={{ color: canAddCardToDeckState(card, 'evolve', deckState, deckRuleConfig) ? 'var(--vivid-green-cyan)' : 'var(--text-muted)' }}
+                    title={DECK_SECTION_ADD_LABELS.evolve}
+                  >
+                    <Plus size={16} />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -1024,15 +1082,27 @@ const DeckBuilder: React.FC = () => {
             <span style={{ color: 'var(--text-muted)' }}>{tokenDeck.length}</span>
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-            {sortedTokenDeck.map((c, i) => (
-              <div key={`${c.id}-${i}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', padding: '0.25rem 0.5rem', background: 'var(--bg-surface)', borderRadius: '4px' }}>
+            {groupedTokenDeck.map(({ card, count }) => (
+              <div key={card.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', padding: '0.25rem 0.5rem', background: 'var(--bg-surface)', borderRadius: '4px' }}>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div>
+                  <div style={{ fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{card.name}</div>
                   <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {c.id} {c.cost ? `• Cost ${c.cost}` : ''}
+                    {card.id} {card.cost ? `• Cost ${card.cost}` : ''}
                   </div>
                 </div>
-                <button type="button" onClick={() => removeFromDeck('token', c.id)} style={{ color: '#ef4444' }}><Minus size={16} /></button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <button type="button" onClick={() => removeFromDeck('token', card.id)} style={{ color: '#ef4444' }} title="Remove one copy from Token Deck"><Minus size={16} /></button>
+                  <span style={{ color: 'var(--text-main)', fontSize: '0.75rem', minWidth: '2rem', textAlign: 'center', fontWeight: 600 }}>× {count}</span>
+                  <button
+                    type="button"
+                    onClick={() => addToDeck(card, 'token')}
+                    disabled={!canAddCardToDeckState(card, 'token', deckState, deckRuleConfig)}
+                    style={{ color: canAddCardToDeckState(card, 'token', deckState, deckRuleConfig) ? 'var(--vivid-green-cyan)' : 'var(--text-muted)' }}
+                    title={DECK_SECTION_ADD_LABELS.token}
+                  >
+                    <Plus size={16} />
+                  </button>
+                </div>
               </div>
             ))}
           </div>

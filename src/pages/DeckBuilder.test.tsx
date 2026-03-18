@@ -254,10 +254,10 @@ describe('DeckBuilder', () => {
     expect(within(evolveDeckSection).getByText('Evolve Angel')).toBeInTheDocument();
     expect(within(tokenDeckSection).getByText('Knight Token')).toBeInTheDocument();
 
-    fireEvent.click(within(leaderSection).getByRole('button'));
-    fireEvent.click(within(mainDeckSection).getByRole('button'));
-    fireEvent.click(within(evolveDeckSection).getByRole('button'));
-    fireEvent.click(within(tokenDeckSection).getByRole('button'));
+    fireEvent.click(within(leaderSection).getByTitle('Remove one leader'));
+    fireEvent.click(within(mainDeckSection).getByTitle('Remove one copy from Main Deck'));
+    fireEvent.click(within(evolveDeckSection).getByTitle('Remove one copy from Evolve Deck'));
+    fireEvent.click(within(tokenDeckSection).getByTitle('Remove one copy from Token Deck'));
 
     expect(screen.getByText('0/50')).toBeInTheDocument();
     expect(screen.getByText('0/10')).toBeInTheDocument();
@@ -444,6 +444,77 @@ describe('DeckBuilder', () => {
     expect(screen.getByText('0/10')).toBeInTheDocument();
     expect(screen.getByText('0/1')).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Constructed class' })).toHaveValue('ロイヤル');
+  });
+
+  it('groups identical card ids in my deck and shows their count', async () => {
+    render(<DeckBuilder />);
+
+    await screen.findByText('Alpha Knight');
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Constructed class' }), {
+      target: { value: 'ロイヤル' },
+    });
+
+    const alphaCard = screen.getByAltText('Alpha Knight').closest('.glass-panel') as HTMLElement;
+    const addMainButton = within(alphaCard).getByTitle('Add to Main Deck');
+
+    fireEvent.click(addMainButton);
+    fireEvent.click(addMainButton);
+    fireEvent.click(addMainButton);
+
+    const mainDeckSection = screen.getByRole('heading', { name: /^Main Deck/ }).nextElementSibling as HTMLElement;
+
+    expect(within(mainDeckSection).getAllByText('Alpha Knight')).toHaveLength(1);
+    expect(within(mainDeckSection).getByText('× 3')).toBeInTheDocument();
+
+    fireEvent.click(within(mainDeckSection).getByTitle('Remove one copy from Main Deck'));
+
+    expect(within(mainDeckSection).getByText('× 2')).toBeInTheDocument();
+  });
+
+  it('adds one more copy from grouped my deck controls when allowed', async () => {
+    render(<DeckBuilder />);
+
+    await screen.findByText('Alpha Knight');
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Constructed class' }), {
+      target: { value: 'ロイヤル' },
+    });
+
+    const alphaCard = screen.getByAltText('Alpha Knight').closest('.glass-panel') as HTMLElement;
+    fireEvent.click(within(alphaCard).getByTitle('Add to Main Deck'));
+
+    const mainDeckSection = screen.getByRole('heading', { name: /^Main Deck/ }).nextElementSibling as HTMLElement;
+    fireEvent.click(within(mainDeckSection).getByTitle('Add one copy to Main Deck'));
+
+    expect(within(mainDeckSection).getByText('× 2')).toBeInTheDocument();
+  });
+
+  it('keeps grouped row position stable in added order when removing the latest copy', async () => {
+    render(<DeckBuilder />);
+
+    await screen.findByText('Alpha Knight');
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Deck format' }), {
+      target: { value: 'other' },
+    });
+
+    fireEvent.click(within(screen.getByAltText('Alpha Knight').closest('.glass-panel') as HTMLElement).getByTitle('Add to Main Deck'));
+    fireEvent.click(within(screen.getByAltText('Beta Mage').closest('.glass-panel') as HTMLElement).getByTitle('Add to Main Deck'));
+    fireEvent.click(within(screen.getByAltText('Alpha Knight').closest('.glass-panel') as HTMLElement).getByTitle('Add to Main Deck'));
+
+    const mainDeckSection = screen.getByRole('heading', { name: /^Main Deck/ }).nextElementSibling as HTMLElement;
+    const getGroupedNames = () => within(mainDeckSection)
+      .getAllByText(/Alpha Knight|Beta Mage/)
+      .map(node => node.textContent);
+    const getAlphaRow = () => within(mainDeckSection).getByText('Alpha Knight').closest('div[style*="justify-content: space-between"]') as HTMLElement;
+
+    expect(getGroupedNames()).toEqual(['Alpha Knight', 'Beta Mage']);
+    expect(within(mainDeckSection).getByText('× 2')).toBeInTheDocument();
+
+    fireEvent.click(within(getAlphaRow()).getByTitle('Remove one copy from Main Deck'));
+
+    expect(getGroupedNames()).toEqual(['Alpha Knight', 'Beta Mage']);
   });
 
   it('supports crossover decks with two selected classes and two leaders', async () => {
