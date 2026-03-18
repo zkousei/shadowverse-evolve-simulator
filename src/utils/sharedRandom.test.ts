@@ -41,7 +41,7 @@ describe('sharedRandom', () => {
     )).toBe('Opponent revealed from Look Top');
 
     expect(formatSharedUiMessage(
-      { type: 'REVEAL_SEARCHED_CARD_TO_HAND', actor: 'host', card: { cardId: 'BP01-001', name: 'Alpha Knight', image: '' } },
+      { type: 'REVEAL_SEARCHED_CARD_TO_HAND', actor: 'host', cards: [{ cardId: 'BP01-001', name: 'Alpha Knight', image: '' }] },
       'guest',
       true
     )).toBe('Player 1 revealed from Search');
