@@ -6,12 +6,21 @@ import type { DeckRuleConfig } from '../models/deckRule';
 
 export type DeckTargetSection = 'main' | 'evolve' | 'leader' | 'token';
 
-type DeckValidationIssueCode = 'invalid-section' | 'limit-exceeded' | 'invalid-rule';
+type DeckValidationIssueCode =
+  | 'invalid-section'
+  | 'limit-exceeded'
+  | 'invalid-rule'
+  | 'main-deck-too-small'
+  | 'rule-not-configured'
+  | 'invalid-leader-count'
+  | 'invalid-crossover-leader-classes';
 
 export type DeckValidationIssue = {
   code: DeckValidationIssueCode;
-  deck: DeckTargetSection;
+  deck?: DeckTargetSection;
   cardId?: string;
+  expected?: number;
+  actual?: number;
 };
 
 const DEFAULT_RULE_CONFIG: DeckRuleConfig = {
@@ -224,7 +233,166 @@ export const validateDeckState = (
     });
   });
 
+  if (ruleConfig.format === 'constructed' || ruleConfig.format === 'crossover') {
+    if (deckState.mainDeck.length < 40) {
+      issues.push({
+        code: 'main-deck-too-small',
+        deck: 'main',
+        expected: 40,
+        actual: deckState.mainDeck.length,
+      });
+    }
+
+    if (!isRuleConfigured(ruleConfig)) {
+      issues.push({ code: 'rule-not-configured' });
+    }
+  }
+
+  if (ruleConfig.format === 'constructed' && deckState.leaderCards.length !== 1) {
+    issues.push({
+      code: 'invalid-leader-count',
+      deck: 'leader',
+      expected: 1,
+      actual: deckState.leaderCards.length,
+    });
+  }
+
+  if (ruleConfig.format === 'crossover') {
+    if (deckState.leaderCards.length !== 2) {
+      issues.push({
+        code: 'invalid-leader-count',
+        deck: 'leader',
+        expected: 2,
+        actual: deckState.leaderCards.length,
+      });
+    }
+
+    if (isRuleConfigured(ruleConfig) && deckState.leaderCards.length === 2) {
+      const [firstClass, secondClass] = ruleConfig.selectedClasses;
+      const leaderClasses = deckState.leaderCards
+        .map(card => card.class)
+        .filter((value): value is CardClass => value !== undefined && value !== '-' && value !== CLASS.NEUTRAL);
+
+      if (
+        !firstClass
+        || !secondClass
+        || leaderClasses.length !== 2
+        || !leaderClasses.includes(firstClass)
+        || !leaderClasses.includes(secondClass)
+      ) {
+        issues.push({
+          code: 'invalid-crossover-leader-classes',
+          deck: 'leader',
+        });
+      }
+    }
+  }
+
   return issues;
+};
+
+const DECK_LABELS: Record<DeckTargetSection, string> = {
+  main: 'Main Deck',
+  evolve: 'Evolve Deck',
+  leader: 'Leader',
+  token: 'Token Deck',
+};
+
+const getCardNameFromDeckState = (deckState: DeckState, cardId: string): string | null => {
+  const allCards = [
+    ...deckState.mainDeck,
+    ...deckState.evolveDeck,
+    ...deckState.leaderCards,
+    ...deckState.tokenDeck,
+  ];
+
+  return allCards.find(card => card.id === cardId)?.name ?? null;
+};
+
+const formatCardList = (names: string[]): string => {
+  const uniqueNames = Array.from(new Set(names));
+  const preview = uniqueNames.slice(0, 3).join(', ');
+  return uniqueNames.length > 3 ? `${preview}, ...` : preview;
+};
+
+export const getDeckValidationMessages = (
+  deckState: DeckState,
+  ruleConfig: DeckRuleConfig = DEFAULT_RULE_CONFIG
+): string[] => {
+  const issues = validateDeckState(deckState, ruleConfig);
+  const messages: string[] = [];
+
+  issues
+    .filter((issue): issue is DeckValidationIssue & { code: 'rule-not-configured' } => issue.code === 'rule-not-configured')
+    .forEach(() => {
+      if (ruleConfig.format === 'constructed') {
+        messages.push(
+          ruleConfig.identityType === 'title'
+            ? 'Constructed decks require a selected title.'
+            : 'Constructed decks require a selected class.'
+        );
+      } else if (ruleConfig.format === 'crossover') {
+        messages.push('Crossover decks require two different selected classes.');
+      }
+    });
+
+  issues
+    .filter((issue): issue is DeckValidationIssue & { code: 'main-deck-too-small'; actual: number; expected: number } => issue.code === 'main-deck-too-small' && issue.actual !== undefined && issue.expected !== undefined)
+    .forEach(issue => {
+      messages.push(`Main Deck must contain at least ${issue.expected} cards (${issue.actual}/${issue.expected}).`);
+    });
+
+  issues
+    .filter((issue): issue is DeckValidationIssue & { code: 'limit-exceeded'; deck: DeckTargetSection } => issue.code === 'limit-exceeded' && issue.deck !== undefined)
+    .forEach(issue => {
+      const deckSize = issue.deck === 'main'
+        ? deckState.mainDeck.length
+        : issue.deck === 'evolve'
+          ? deckState.evolveDeck.length
+          : issue.deck === 'leader'
+            ? deckState.leaderCards.length
+            : deckState.tokenDeck.length;
+      messages.push(`${DECK_LABELS[issue.deck]} exceeds its limit (${deckSize}/${getDeckLimit(issue.deck, ruleConfig)}).`);
+    });
+
+  issues
+    .filter((issue): issue is DeckValidationIssue & { code: 'invalid-leader-count'; expected: number; actual: number } => issue.code === 'invalid-leader-count' && issue.expected !== undefined && issue.actual !== undefined)
+    .forEach(issue => {
+      messages.push(`This ${ruleConfig.format} deck requires exactly ${issue.expected} leader${issue.expected > 1 ? 's' : ''} (${issue.actual}/${issue.expected}).`);
+    });
+
+  if (issues.some(issue => issue.code === 'invalid-crossover-leader-classes')) {
+    const [firstClass, secondClass] = ruleConfig.selectedClasses;
+    if (firstClass && secondClass) {
+      messages.push(`Leader cards must include one ${firstClass} leader and one ${secondClass} leader.`);
+    } else {
+      messages.push('Leader cards must match the selected crossover classes.');
+    }
+  }
+
+  (['invalid-section', 'invalid-rule'] as const).forEach(code => {
+    const groupedByDeck = new Map<DeckTargetSection, string[]>();
+
+    issues
+      .filter((issue): issue is DeckValidationIssue & { deck: DeckTargetSection; cardId: string } => issue.code === code && issue.deck !== undefined && issue.cardId !== undefined)
+      .forEach(issue => {
+        const cardName = getCardNameFromDeckState(deckState, issue.cardId);
+        if (!cardName) return;
+        const current = groupedByDeck.get(issue.deck) ?? [];
+        current.push(cardName);
+        groupedByDeck.set(issue.deck, current);
+      });
+
+    groupedByDeck.forEach((names, deck) => {
+      messages.push(
+        code === 'invalid-section'
+          ? `${DECK_LABELS[deck]} contains cards in the wrong section: ${formatCardList(names)}.`
+          : `${DECK_LABELS[deck]} contains cards that do not match the selected deck rule: ${formatCardList(names)}.`
+      );
+    });
+  });
+
+  return Array.from(new Set(messages));
 };
 
 type ImportedDeckState = Partial<DeckState> & {

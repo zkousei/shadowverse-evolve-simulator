@@ -124,6 +124,21 @@ let importedDeckPayload: Record<string, unknown> = {
   tokenDeck: [mockCards[6]],
 };
 
+const repeatCard = <T,>(card: T, count: number): T[] => Array.from({ length: count }, () => card);
+
+const stubFileReaderWithImportedDeck = () => {
+  class MockFileReader {
+    onload: ((event: ProgressEvent<FileReader>) => void) | null = null;
+
+    readAsText() {
+      const result = JSON.stringify(importedDeckPayload);
+      this.onload?.({ target: { result } } as ProgressEvent<FileReader>);
+    }
+  }
+
+  vi.stubGlobal('FileReader', MockFileReader as unknown as typeof FileReader);
+};
+
 describe('DeckBuilder', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -158,6 +173,7 @@ describe('DeckBuilder', () => {
     expect(screen.getByText('Loading card database...')).toBeInTheDocument();
     expect(await screen.findByText('Alpha Knight')).toBeInTheDocument();
     expect(screen.getByText('Select a class or title to enable constructed deck building.')).toBeInTheDocument();
+    expect(screen.getByText('Resolve these issues before exporting.')).toBeInTheDocument();
     expect(within(constructedClass).queryByRole('option', { name: 'ニュートラル' })).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByPlaceholderText('Search cards by name...'), {
@@ -376,10 +392,22 @@ describe('DeckBuilder', () => {
     const leaderSection = screen.getByRole('heading', { name: /^Leader/ }).nextElementSibling as HTMLElement;
     expect(within(leaderSection).getByText('Leader Luna')).toBeInTheDocument();
     expect(within(leaderSection).getByText('Leader Merlin')).toBeInTheDocument();
-    expect(screen.queryByText('Crossover decks require exactly 2 leaders, one for each selected class.')).not.toBeInTheDocument();
+    expect(screen.getByText('Main Deck must contain at least 40 cards (0/40).')).toBeInTheDocument();
   });
 
-  it('exports a crossover deck file with selected classes and leader cards', async () => {
+  it('disables export and shows deck issues while the deck is illegal', async () => {
+    render(<DeckBuilder />);
+
+    await screen.findByText('Alpha Knight');
+
+    const exportButton = screen.getByRole('button', { name: /Export/i });
+    expect(exportButton).toBeDisabled();
+    expect(screen.getByText('Constructed decks require a selected class.')).toBeInTheDocument();
+    expect(screen.getByText('Main Deck must contain at least 40 cards (0/40).')).toBeInTheDocument();
+    expect(screen.getByText('This constructed deck requires exactly 1 leader (0/1).')).toBeInTheDocument();
+  });
+
+  it('exports a legal crossover deck file with selected classes and leader cards', async () => {
     const createObjectURL = vi.fn().mockReturnValue('blob:deck');
     const revokeObjectURL = vi.fn();
     const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
@@ -388,21 +416,35 @@ describe('DeckBuilder', () => {
       revokeObjectURL,
     });
 
-    render(<DeckBuilder />);
-    await screen.findByText('Alpha Knight');
-    vi.useFakeTimers();
+    importedDeckPayload = {
+      deckName: 'Imported Legal Crossover',
+      rule: 'crossover',
+      selectedClasses: ['ロイヤル', 'ウィッチ'],
+      mainDeck: repeatCard(mockCards[0], 40),
+      evolveDeck: repeatCard(mockCards[1], 10),
+      leaderCards: [mockCards[4], mockCards[5]],
+      tokenDeck: [mockCards[6]],
+    };
+    stubFileReaderWithImportedDeck();
 
-    fireEvent.change(screen.getByRole('combobox', { name: 'Deck format' }), {
-      target: { value: 'crossover' },
+    const { container } = render(<DeckBuilder />);
+    await screen.findByText('Alpha Knight');
+
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File(['{}'], 'Legal Crossover.json', { type: 'application/json' });
+    Object.defineProperty(fileInput, 'files', {
+      value: [file],
+      configurable: true,
     });
-    fireEvent.change(screen.getByRole('combobox', { name: 'Crossover class A' }), {
-      target: { value: 'ロイヤル' },
+    fireEvent.change(fileInput);
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('Imported Legal Crossover')).toBeInTheDocument();
+      expect(screen.getByText('This deck is legal and ready to export.')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Export/i })).toBeEnabled();
     });
-    fireEvent.change(screen.getByRole('combobox', { name: 'Crossover class B' }), {
-      target: { value: 'ウィッチ' },
-    });
-    fireEvent.click(within(screen.getByAltText('Leader Luna').closest('.glass-panel') as HTMLElement).getByTitle('Set as Leader'));
-    fireEvent.click(within(screen.getByAltText('Leader Merlin').closest('.glass-panel') as HTMLElement).getByTitle('Set as Leader'));
+
+    vi.useFakeTimers();
     fireEvent.click(screen.getByRole('button', { name: /Export/i }));
 
     expect(createObjectURL).toHaveBeenCalled();
@@ -431,16 +473,7 @@ describe('DeckBuilder', () => {
       tokenDeck: [mockCards[6]],
     };
 
-    class MockFileReader {
-      onload: ((event: ProgressEvent<FileReader>) => void) | null = null;
-
-      readAsText() {
-        const result = JSON.stringify(importedDeckPayload);
-        this.onload?.({ target: { result } } as ProgressEvent<FileReader>);
-      }
-    }
-
-    vi.stubGlobal('FileReader', MockFileReader as unknown as typeof FileReader);
+    stubFileReaderWithImportedDeck();
 
     const { container } = render(<DeckBuilder />);
     await screen.findByText('Alpha Knight');
@@ -475,16 +508,7 @@ describe('DeckBuilder', () => {
       tokenDeck: [mockCards[0]],
     };
 
-    class MockFileReader {
-      onload: ((event: ProgressEvent<FileReader>) => void) | null = null;
-
-      readAsText() {
-        const result = JSON.stringify(importedDeckPayload);
-        this.onload?.({ target: { result } } as ProgressEvent<FileReader>);
-      }
-    }
-
-    vi.stubGlobal('FileReader', MockFileReader as unknown as typeof FileReader);
+    stubFileReaderWithImportedDeck();
 
     const { container } = render(<DeckBuilder />);
     await screen.findByText('Alpha Knight');
