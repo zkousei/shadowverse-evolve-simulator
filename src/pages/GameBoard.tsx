@@ -107,28 +107,51 @@ const GameBoard: React.FC = () => {
     label: string,
     side: 'left' | 'right',
     extraOffset = 0
-  ) => (
-    <div
-      style={{
-        position: 'absolute',
-        top: 0,
-        ...(side === 'left'
-          ? { right: `calc(100% + ${12 + extraOffset}px)` }
-          : { left: `calc(100% + ${12 + extraOffset}px)` }),
-        width: `${sideZoneWidth}px`,
-      }}
-    >
-      <Zone
-        id={`leader-${playerRole}`}
-        label={`${label} Leader`}
-        cards={getCards(`leader-${playerRole}`)}
-        layout="stack"
-        viewerRole={viewerRole}
-        containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }}
-        isDebug={isDebug}
-      />
-    </div>
-  );
+  ) => {
+    const leaderZoneId = `leader-${playerRole}`;
+    const leaderCards = getCards(leaderZoneId);
+
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          ...(side === 'left'
+            ? { right: `calc(100% + ${12 + extraOffset}px)` }
+            : { left: `calc(100% + ${12 + extraOffset}px)` }),
+          width: `${sideZoneWidth}px`,
+        }}
+      >
+        <Zone
+          id={leaderZoneId}
+          label={`${label} Leader`}
+          cards={leaderCards}
+          layout="stack"
+          viewerRole={viewerRole}
+          containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }}
+          isDebug={isDebug}
+        />
+        {leaderCards.length >= 2 && (
+          <button
+            onClick={() => setSearchZone({ id: leaderZoneId, title: `${label} Leader` })}
+            style={{
+              width: '100%',
+              marginTop: '4px',
+              fontSize: '0.75rem',
+              padding: '4px',
+              background: 'var(--bg-surface-elevated)',
+              border: '1px solid var(--border-light)',
+              color: 'white',
+              borderRadius: '4px',
+              cursor: 'pointer',
+            }}
+          >
+            Search
+          </button>
+        )}
+      </div>
+    );
+  };
 
   const renderZoneActions = (
     menuId: string,
@@ -918,6 +941,7 @@ const GameBoard: React.FC = () => {
         onClose={() => setSearchZone(null)}
         title={searchZone?.title || ''}
         allowHandExtraction={gameState.gameStatus === 'playing'}
+        readOnly={searchZone?.id.startsWith('leader-') ?? false}
         cards={searchZone ? (
           (searchZone.id.startsWith('evolveDeck-') && !isSoloMode && !searchZone.id.endsWith(role)
             ? getCards(searchZone.id).filter(c => !c.isFlipped)

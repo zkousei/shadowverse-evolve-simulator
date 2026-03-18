@@ -543,21 +543,29 @@ export const useGameBoardLogic = () => {
           });
         });
 
-        if (data.leaderCard?.deck_section === 'leader') {
-          newCards.push({
-            id: uuid(),
-            cardId: data.leaderCard.id,
-            name: data.leaderCard.name,
-            image: data.leaderCard.image,
-            zone: `leader-${targetRole}`,
-            owner: targetRole,
-            isTapped: false,
-            isFlipped: false,
-            counters: { atk: 0, hp: 0 },
-            genericCounter: 0,
-            isLeaderCard: true,
+        const importedLeaderCards = Array.isArray(data.leaderCards)
+          ? data.leaderCards
+          : data.leaderCard
+            ? [data.leaderCard]
+            : [];
+
+        importedLeaderCards
+          .filter((c: any) => c?.deck_section === 'leader')
+          .forEach((c: any) => {
+            newCards.push({
+              id: uuid(),
+              cardId: c.id,
+              name: c.name,
+              image: c.image,
+              zone: `leader-${targetRole}`,
+              owner: targetRole,
+              isTapped: false,
+              isFlipped: false,
+              counters: { atk: 0, hp: 0 },
+              genericCounter: 0,
+              isLeaderCard: true,
+            });
           });
-        }
 
         (data.tokenDeck || [])
           .filter((c: any) => c.deck_section === 'token')

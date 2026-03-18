@@ -12,9 +12,21 @@ interface CardSearchModalProps {
   viewerRole?: PlayerRole;
   targetRole?: PlayerRole;
   allowHandExtraction?: boolean;
+  readOnly?: boolean;
 }
 
-const CardSearchModal: React.FC<CardSearchModalProps> = ({ isOpen, onClose, title, cards, onExtractCard, onToggleFlip, viewerRole, targetRole, allowHandExtraction = true }) => {
+const CardSearchModal: React.FC<CardSearchModalProps> = ({
+  isOpen,
+  onClose,
+  title,
+  cards,
+  onExtractCard,
+  onToggleFlip,
+  viewerRole,
+  targetRole,
+  allowHandExtraction = true,
+  readOnly = false,
+}) => {
   if (!isOpen) return null;
 
   const isPreparingMainDeckSearch = !allowHandExtraction && title.includes('Main Deck');
@@ -80,7 +92,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({ isOpen, onClose, titl
 
                 {/* Overlay Controls - Visible on Hover via CSS */}
                 {/* Rule: Show controls if it's my card OR if it's a public zone (Cemetery/Banish) and I am searching */}
-                {(c.owner === viewerRole || title.includes('Cemetery') || title.includes('Banish')) && (
+                {!readOnly && (c.owner === viewerRole || title.includes('Cemetery') || title.includes('Banish')) && (
                   <div 
                     className="modal-card-controls"
                     style={{

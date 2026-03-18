@@ -138,4 +138,22 @@ describe('CardSearchModal', () => {
     fireEvent.click(screen.getByText('Set UNUSED'));
     expect(onToggleFlip).toHaveBeenCalledWith('card-1');
   });
+
+  it('hides action controls in read-only mode', () => {
+    render(
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Leader"
+        cards={[createCard({ zone: 'leader-host' })]}
+        onExtractCard={vi.fn()}
+        viewerRole="host"
+        readOnly={true}
+      />
+    );
+
+    expect(screen.queryByText('Play to Field')).not.toBeInTheDocument();
+    expect(screen.queryByText('Add to Hand')).not.toBeInTheDocument();
+    expect(screen.queryByText('Add to EX Area')).not.toBeInTheDocument();
+  });
 });

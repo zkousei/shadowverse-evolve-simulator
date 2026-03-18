@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Search, Plus, Minus, Download, Upload } from 'lucide-react';
-import { CLASS_FILTER_VALUES, CLASS_VALUES, CONSTRUCTED_CLASS_VALUES } from '../models/class';
+import { CLASS, CLASS_FILTER_VALUES, CLASS_VALUES, CONSTRUCTED_CLASS_VALUES } from '../models/class';
 import type { ClassFilter } from '../models/class';
 import {
   dedupeCardsByDisplayIdentity,
@@ -21,6 +21,7 @@ import { createEmptyDeckState, type DeckState } from '../models/deckState';
 import {
   canAddCardToSection,
   DECK_LIMITS,
+  getDeckLimit,
   getAllowedSections,
   isCardAllowedByRule,
   isRuleConfigured,
@@ -106,10 +107,12 @@ const DeckBuilder: React.FC = () => {
   const productNames = getAvailableProductNames(cards);
   const titles = getAvailableTitles(cards);
   const isConstructed = deckRuleConfig.format === 'constructed';
-  const isConstructedReady = isRuleConfigured(deckRuleConfig);
+  const isCrossover = deckRuleConfig.format === 'crossover';
+  const isRuleReady = isRuleConfigured(deckRuleConfig);
+  const leaderLimit = getDeckLimit('leader', deckRuleConfig);
 
   const filteredCards = cards.filter(c => {
-    if (isConstructed && isConstructedReady && !isCardAllowedByRule(c, deckRuleConfig)) return false;
+    if ((isConstructed || isCrossover) && isRuleReady && !isCardAllowedByRule(c, deckRuleConfig)) return false;
 
     // 1. Name Filter
     if (!c.name.toLowerCase().includes(search.toLowerCase())) return false;
@@ -156,7 +159,7 @@ const DeckBuilder: React.FC = () => {
     : filteredCards;
   const paginatedCards = displayCards.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
   const totalPages = Math.ceil(displayCards.length / PAGE_SIZE) || 1;
-  const { mainDeck, evolveDeck, leaderCard, tokenDeck } = deckState;
+  const { mainDeck, evolveDeck, leaderCards, tokenDeck } = deckState;
   const deckIssues = validateDeckState(deckState, deckRuleConfig);
   const ruleIssueCards = deckIssues
     .filter(issue => issue.code === 'invalid-rule')
@@ -165,6 +168,24 @@ const DeckBuilder: React.FC = () => {
       return card ? `${card.name} (${RULE_ISSUE_LABELS[issue.deck]})` : null;
     })
     .filter((value): value is string => value !== null);
+  const selectedCrossoverClasses = deckRuleConfig.selectedClasses.filter(
+    (value): value is typeof CONSTRUCTED_CLASS_VALUES[number] => value !== null
+  );
+  const crossoverClassOptionsA = CONSTRUCTED_CLASS_VALUES.filter(
+    cardClass => cardClass === deckRuleConfig.selectedClasses[0] || cardClass !== deckRuleConfig.selectedClasses[1]
+  );
+  const crossoverClassOptionsB = CONSTRUCTED_CLASS_VALUES.filter(
+    cardClass => cardClass === deckRuleConfig.selectedClasses[1] || cardClass !== deckRuleConfig.selectedClasses[0]
+  );
+  const crossoverLeaderClasses = leaderCards
+    .map(card => card.class)
+    .filter((value): value is typeof CONSTRUCTED_CLASS_VALUES[number] => value !== undefined && value !== CLASS.NEUTRAL && value !== '-');
+  const crossoverHasRequiredLeaders = (
+    isCrossover
+    && selectedCrossoverClasses.length === 2
+    && leaderCards.length === 2
+    && selectedCrossoverClasses.every(cardClass => crossoverLeaderClasses.includes(cardClass))
+  );
 
   const resetLibraryFilters = () => {
     setSearch('');
@@ -189,8 +210,25 @@ const DeckBuilder: React.FC = () => {
         case 'evolve':
           if (current.evolveDeck.length >= DECK_LIMITS.evolve) return current;
           return { ...current, evolveDeck: [...current.evolveDeck, card] };
-        case 'leader':
-          return { ...current, leaderCard: card };
+        case 'leader': {
+          if (deckRuleConfig.format === 'crossover') {
+            const leaderClass = card.class;
+
+            if (!leaderClass || leaderClass === CLASS.NEUTRAL || leaderClass === '-') return current;
+
+            const existingIndex = current.leaderCards.findIndex(leader => leader.class === leaderClass);
+            if (existingIndex >= 0) {
+              const nextLeaderCards = [...current.leaderCards];
+              nextLeaderCards[existingIndex] = card;
+              return { ...current, leaderCards: nextLeaderCards };
+            }
+
+            if (current.leaderCards.length >= leaderLimit) return current;
+            return { ...current, leaderCards: [...current.leaderCards, card] };
+          }
+
+          return { ...current, leaderCards: [card] };
+        }
         case 'token':
           return { ...current, tokenDeck: [...current.tokenDeck, card] };
       }
@@ -205,7 +243,7 @@ const DeckBuilder: React.FC = () => {
         case 'evolve':
           return { ...current, evolveDeck: current.evolveDeck.filter((_, i) => i !== index) };
         case 'leader':
-          return { ...current, leaderCard: null };
+          return { ...current, leaderCards: current.leaderCards.filter((_, i) => i !== index) };
         case 'token':
           return { ...current, tokenDeck: current.tokenDeck.filter((_, i) => i !== index) };
       }
@@ -219,6 +257,7 @@ const DeckBuilder: React.FC = () => {
       identityType: deckRuleConfig.identityType,
       selectedClass: deckRuleConfig.selectedClass,
       selectedTitle: deckRuleConfig.selectedTitle,
+      selectedClasses: deckRuleConfig.selectedClasses,
       ...deckState,
     }, null, 2);
 
@@ -259,8 +298,9 @@ const DeckBuilder: React.FC = () => {
           const nameMatch = file.name.match(/(.+)\.json$/i);
           if (nameMatch) setDeckName(nameMatch[1]);
         }
-        setDeckRuleConfig(getImportedDeckRuleConfig(data));
-        setDeckState(sanitizeImportedDeckState(data, cards));
+        const importedRuleConfig = getImportedDeckRuleConfig(data);
+        setDeckRuleConfig(importedRuleConfig);
+        setDeckState(sanitizeImportedDeckState(data, cards, importedRuleConfig));
       } catch (err) {
         alert("Failed to parse deck JSON.");
       }
@@ -630,6 +670,11 @@ const DeckBuilder: React.FC = () => {
                   setDeckRuleConfig(current => ({
                     ...current,
                     format: nextFormat,
+                    identityType: nextFormat === 'crossover' ? 'class' : current.identityType,
+                    selectedTitle: nextFormat === 'crossover' ? null : current.selectedTitle,
+                    selectedClasses: nextFormat === 'crossover' && current.selectedClasses.every(value => value === null) && current.selectedClass
+                      ? [current.selectedClass, null]
+                      : current.selectedClasses,
                   }));
                 }}
                 style={{
@@ -641,7 +686,7 @@ const DeckBuilder: React.FC = () => {
                 }}
               >
                 {DECK_FORMAT_VALUES.map(format => (
-                  <option key={format} value={format} disabled={format === 'crossover'}>
+                  <option key={format} value={format}>
                     {DECK_FORMAT_LABELS[format]}
                   </option>
                 ))}
@@ -743,13 +788,77 @@ const DeckBuilder: React.FC = () => {
             )}
 
             {deckRuleConfig.format === 'crossover' && (
-              <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                Crossover deck building is not implemented yet.
-              </p>
+              <>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                  <label htmlFor="crossover-class-a" style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Crossover Class A</label>
+                  <select
+                    id="crossover-class-a"
+                    aria-label="Crossover class A"
+                    value={deckRuleConfig.selectedClasses[0] ?? ''}
+                    onChange={(e) => setDeckRuleConfig(current => ({
+                      ...current,
+                      selectedClasses: [
+                        e.target.value === '' ? null : e.target.value as typeof CLASS_VALUES[number],
+                        current.selectedClasses[1],
+                      ],
+                    }))}
+                    style={{
+                      padding: '0.5rem',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid var(--border-light)',
+                      background: 'var(--bg-surface)',
+                      color: 'var(--text-main)',
+                    }}
+                    >
+                      <option value="">Select first class</option>
+                    {crossoverClassOptionsA.map(cardClass => (
+                      <option key={cardClass} value={cardClass}>{cardClass}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                  <label htmlFor="crossover-class-b" style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Crossover Class B</label>
+                  <select
+                    id="crossover-class-b"
+                    aria-label="Crossover class B"
+                    value={deckRuleConfig.selectedClasses[1] ?? ''}
+                    onChange={(e) => setDeckRuleConfig(current => ({
+                      ...current,
+                      selectedClasses: [
+                        current.selectedClasses[0],
+                        e.target.value === '' ? null : e.target.value as typeof CLASS_VALUES[number],
+                      ],
+                    }))}
+                    style={{
+                      padding: '0.5rem',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid var(--border-light)',
+                      background: 'var(--bg-surface)',
+                      color: 'var(--text-main)',
+                    }}
+                    >
+                      <option value="">Select second class</option>
+                    {crossoverClassOptionsB.map(cardClass => (
+                      <option key={cardClass} value={cardClass}>{cardClass}</option>
+                    ))}
+                  </select>
+                </div>
+              </>
             )}
-            {deckRuleConfig.format === 'constructed' && !isConstructedReady && (
+            {deckRuleConfig.format === 'constructed' && !isRuleReady && (
               <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem' }}>
                 Select a class or title to enable constructed deck building.
+              </p>
+            )}
+            {deckRuleConfig.format === 'crossover' && !isRuleReady && (
+              <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                Select two different classes to enable crossover deck building.
+              </p>
+            )}
+            {deckRuleConfig.format === 'crossover' && isRuleReady && !crossoverHasRequiredLeaders && (
+              <p style={{ margin: 0, color: '#f59e0b', fontSize: '0.875rem' }}>
+                Crossover decks require exactly 2 leaders, one for each selected class.
               </p>
             )}
             {ruleIssueCards.length > 0 && (
@@ -767,14 +876,18 @@ const DeckBuilder: React.FC = () => {
 
           <h3 style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
             <span>Leader</span>
-            <span style={{ color: leaderCard ? 'var(--brand-accent)' : 'var(--text-muted)' }}>{leaderCard ? '1/1' : '0/1'}</span>
+            <span style={{ color: leaderCards.length >= leaderLimit ? 'var(--brand-accent)' : 'var(--text-muted)' }}>
+              {leaderCards.length}/{leaderLimit}
+            </span>
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginBottom: '2rem' }}>
-            {leaderCard ? (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.25rem 0.5rem', background: 'var(--bg-surface)', borderRadius: '4px' }}>
-                <span style={{ fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{leaderCard.name}</span>
-                <button type="button" onClick={() => removeFromDeck('leader')} style={{ color: '#ef4444' }}><Minus size={16} /></button>
-              </div>
+            {leaderCards.length > 0 ? (
+              leaderCards.map((card, index) => (
+                <div key={`${card.id}-${index}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.25rem 0.5rem', background: 'var(--bg-surface)', borderRadius: '4px' }}>
+                  <span style={{ fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{card.name}</span>
+                  <button type="button" onClick={() => removeFromDeck('leader', index)} style={{ color: '#ef4444' }}><Minus size={16} /></button>
+                </div>
+              ))
             ) : (
               <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem' }}>No leader selected.</p>
             )}
