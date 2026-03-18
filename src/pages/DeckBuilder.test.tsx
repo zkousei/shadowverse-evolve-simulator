@@ -9,6 +9,7 @@ const mockCards = [
     image: '/alpha.png',
     cost: '1',
     class: 'ロイヤル',
+    title: 'Hero Tale',
     type: 'フォロワー',
     rarity: 'LG',
     product_name: 'Booster Pack 1',
@@ -23,7 +24,8 @@ const mockCards = [
     name: 'Evolve Angel',
     image: '/evolve.png',
     cost: '-',
-    class: '-',
+    class: 'ロイヤル',
+    title: 'Hero Tale',
     type: 'フォロワー・エボルヴ',
     rarity: 'PR',
     product_name: 'Extra Product',
@@ -39,6 +41,7 @@ const mockCards = [
     image: '/beta.png',
     cost: '7',
     class: 'ウィッチ',
+    title: 'Mage Tale',
     type: 'スペル',
     rarity: 'GR',
     product_name: 'Booster Pack 2',
@@ -53,7 +56,8 @@ const mockCards = [
     name: 'Leader Luna',
     image: '/leader.png',
     cost: '-',
-    class: '-',
+    class: 'ロイヤル',
+    title: 'Hero Tale',
     type: 'リーダー',
     rarity: 'PR',
     product_name: 'Leader Set',
@@ -68,7 +72,8 @@ const mockCards = [
     name: 'Knight Token',
     image: '/token.png',
     cost: '-',
-    class: '-',
+    class: 'ロイヤル',
+    title: 'Hero Tale',
     type: 'アミュレット・トークン',
     rarity: 'PR',
     product_name: 'Token Set',
@@ -81,6 +86,10 @@ const mockCards = [
 ];
 
 let importedDeckPayload: {
+  rule?: 'constructed' | 'crossover' | 'other';
+  identityType?: 'class' | 'title';
+  selectedClass?: string | null;
+  selectedTitle?: string | null;
   mainDeck?: typeof mockCards;
   evolveDeck?: typeof mockCards;
   leaderCard?: (typeof mockCards)[number];
@@ -122,10 +131,12 @@ describe('DeckBuilder', () => {
     const expansionFilter = screen.getByRole('combobox', { name: 'Expansion filter' });
     const rarityFilter = screen.getByRole('combobox', { name: 'Rarity filter' });
     const productFilter = screen.getByRole('combobox', { name: 'Product filter' });
+    const constructedClass = screen.getByRole('combobox', { name: 'Constructed class' });
 
     expect(screen.getByText('Loading card database...')).toBeInTheDocument();
     expect(await screen.findByText('Alpha Knight')).toBeInTheDocument();
     expect(screen.getByText('Evolve Angel')).toBeInTheDocument();
+    expect(screen.getByText('Select a class or title to enable constructed deck building.')).toBeInTheDocument();
 
     fireEvent.change(screen.getByPlaceholderText('Search cards by name...'), {
       target: { value: 'beta' },
@@ -188,6 +199,11 @@ describe('DeckBuilder', () => {
 
 	    expect(within(alphaCard).queryByTitle('Add to Evolve Deck')).not.toBeInTheDocument();
 	    expect(within(evolveCard).queryByTitle('Add to Main Deck')).not.toBeInTheDocument();
+      expect(within(alphaCard).getByTitle('Add to Main Deck')).toBeDisabled();
+
+      fireEvent.change(constructedClass, {
+        target: { value: 'ロイヤル' },
+      });
 
 	    fireEvent.click(within(alphaCard).getByTitle('Add to Main Deck'));
 	    fireEvent.click(within(evolveCard).getByTitle('Add to Evolve Deck'));
@@ -228,8 +244,8 @@ describe('DeckBuilder', () => {
     fireEvent.click(within(classFilterGroup).getByRole('button', { name: 'ロイヤル' }));
 
     expect(screen.getByText('Alpha Knight')).toBeInTheDocument();
+    expect(screen.getByText('Evolve Angel')).toBeInTheDocument();
     expect(screen.queryByText('Beta Mage')).not.toBeInTheDocument();
-    expect(screen.queryByText('Evolve Angel')).not.toBeInTheDocument();
     expect(within(classFilterGroup).getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'false');
   });
 
@@ -274,6 +290,23 @@ describe('DeckBuilder', () => {
     fireEvent.click(within(deckSectionFilterGroup).getByRole('button', { name: 'Leader' }));
     expect(screen.getByText('Leader Luna')).toBeInTheDocument();
     expect(screen.queryByText('Knight Token')).not.toBeInTheDocument();
+  });
+
+  it('filters the library by constructed title rules when a title identity is selected', async () => {
+    render(<DeckBuilder />);
+
+    await screen.findByText('Alpha Knight');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Title' }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Constructed title' }), {
+      target: { value: 'Hero Tale' },
+    });
+
+    expect(screen.getByText('Alpha Knight')).toBeInTheDocument();
+    expect(screen.getByText('Evolve Angel')).toBeInTheDocument();
+    expect(screen.getByText('Leader Luna')).toBeInTheDocument();
+    expect(screen.getByText('Knight Token')).toBeInTheDocument();
+    expect(screen.queryByText('Beta Mage')).not.toBeInTheDocument();
   });
 
   it('hides same-name variants only after applying the active filters', async () => {
@@ -325,6 +358,9 @@ describe('DeckBuilder', () => {
 
 	    const deckNameInput = screen.getByPlaceholderText('Deck Name');
 	    fireEvent.change(deckNameInput, { target: { value: 'My/Deck' } });
+      fireEvent.change(screen.getByRole('combobox', { name: 'Constructed class' }), {
+        target: { value: 'ロイヤル' },
+      });
 	    fireEvent.click(within(screen.getByAltText('Leader Luna').closest('.glass-panel') as HTMLElement).getByTitle('Set as Leader'));
 	    fireEvent.click(within(screen.getByAltText('Knight Token').closest('.glass-panel') as HTMLElement).getByTitle('Add to Token Deck'));
 	    fireEvent.click(screen.getByRole('button', { name: /Export/i }));
@@ -337,6 +373,9 @@ describe('DeckBuilder', () => {
 	    expect(appendedAnchor?.href).toBe('blob:deck');
 	    const exportedBlob = createObjectURL.mock.calls[0]?.[0] as Blob;
 	    const exportedDeck = JSON.parse(await exportedBlob.text());
+      expect(exportedDeck.rule).toBe('constructed');
+      expect(exportedDeck.identityType).toBe('class');
+      expect(exportedDeck.selectedClass).toBe('ロイヤル');
 	    expect(exportedDeck.leaderCard?.id).toBe('LDR01-001');
 	    expect(exportedDeck.tokenDeck).toEqual([expect.objectContaining({ id: 'TK01-001' })]);
 
@@ -345,6 +384,17 @@ describe('DeckBuilder', () => {
   });
 
   it('imports a deck from JSON and falls back to the file name when needed', async () => {
+    importedDeckPayload = {
+      rule: 'constructed',
+      identityType: 'class',
+      selectedClass: 'ロイヤル',
+      selectedTitle: null,
+      mainDeck: [mockCards[0]],
+      evolveDeck: [mockCards[1]],
+      leaderCard: mockCards[3],
+      tokenDeck: [mockCards[4]],
+    };
+
     class MockFileReader {
       onload: ((event: ProgressEvent<FileReader>) => void) | null = null;
 
@@ -375,6 +425,7 @@ describe('DeckBuilder', () => {
 	      expect(screen.getAllByText('Leader Luna')).toHaveLength(2);
 	      expect(screen.getAllByText('Knight Token')).toHaveLength(2);
 	    });
+      expect(screen.getByRole('combobox', { name: 'Constructed class' })).toHaveValue('ロイヤル');
 	  });
 
   it('sanitizes imported cards that are placed in the wrong deck section', async () => {

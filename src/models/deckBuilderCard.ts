@@ -48,6 +48,10 @@ export const getAvailableProductNames = (cards: DeckBuilderCardData[]): string[]
   uniqueSortedValues(cards.map(card => card.product_name))
 );
 
+export const getAvailableTitles = (cards: DeckBuilderCardData[]): string[] => (
+  uniqueSortedValues(cards.map(card => card.title))
+);
+
 export const getDisplayDedupKey = (card: DeckBuilderCardData): string => [
   card.name,
   card.deck_section ?? '',

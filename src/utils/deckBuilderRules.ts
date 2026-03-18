@@ -1,15 +1,24 @@
+import { CLASS, type CardClass } from '../models/class';
 import type { CardKindNormalized, DeckSection } from '../models/cardClassification';
 import type { DeckBuilderCardData } from '../models/deckBuilderCard';
 import { createEmptyDeckState, type DeckState } from '../models/deckState';
+import type { DeckRuleConfig } from '../models/deckRule';
 
 export type DeckTargetSection = 'main' | 'evolve' | 'leader' | 'token';
 
-type DeckValidationIssueCode = 'invalid-section' | 'limit-exceeded';
+type DeckValidationIssueCode = 'invalid-section' | 'limit-exceeded' | 'invalid-rule';
 
 export type DeckValidationIssue = {
   code: DeckValidationIssueCode;
   deck: DeckTargetSection;
   cardId?: string;
+};
+
+const DEFAULT_RULE_CONFIG: DeckRuleConfig = {
+  format: 'other',
+  identityType: 'class',
+  selectedClass: null,
+  selectedTitle: null,
 };
 
 const TYPE_TO_CARD_KIND: Record<string, CardKindNormalized> = {
@@ -75,10 +84,50 @@ export const getAllowedSections = (card: DeckBuilderCardData): DeckTargetSection
   return [];
 };
 
+export const isRuleConfigured = (ruleConfig: DeckRuleConfig): boolean => {
+  if (ruleConfig.format === 'other') return true;
+  if (ruleConfig.format === 'crossover') return false;
+
+  if (ruleConfig.identityType === 'class') return ruleConfig.selectedClass !== null;
+  return ruleConfig.selectedTitle !== null;
+};
+
+const matchesConstructedClassRule = (card: DeckBuilderCardData, selectedClass: CardClass): boolean => {
+  if (card.deck_section === 'token') return true;
+  return card.class === selectedClass || card.class === CLASS.NEUTRAL;
+};
+
+const matchesConstructedTitleRule = (card: DeckBuilderCardData, selectedTitle: string): boolean => (
+  card.title === selectedTitle
+);
+
+export const isCardAllowedByRule = (
+  card: DeckBuilderCardData,
+  ruleConfig: DeckRuleConfig = DEFAULT_RULE_CONFIG
+): boolean => {
+  if (ruleConfig.format === 'other') return true;
+  if (ruleConfig.format === 'crossover') return false;
+  if (!isRuleConfigured(ruleConfig)) return false;
+
+  if (ruleConfig.identityType === 'class' && ruleConfig.selectedClass) {
+    return matchesConstructedClassRule(card, ruleConfig.selectedClass);
+  }
+
+  if (ruleConfig.identityType === 'title' && ruleConfig.selectedTitle) {
+    return matchesConstructedTitleRule(card, ruleConfig.selectedTitle);
+  }
+
+  return false;
+};
+
 export const canAddCardToSection = (
   card: DeckBuilderCardData,
-  targetSection: DeckTargetSection
-): boolean => getAllowedSections(card).includes(targetSection);
+  targetSection: DeckTargetSection,
+  ruleConfig: DeckRuleConfig = DEFAULT_RULE_CONFIG
+): boolean => (
+  getAllowedSections(card).includes(targetSection)
+  && isCardAllowedByRule(card, ruleConfig)
+);
 
 const resolveImportedCard = (
   importedCard: DeckBuilderCardData,
@@ -99,9 +148,11 @@ export const sanitizeImportedSection = (
 };
 
 export const validateDeckState = (
-  deckState: DeckState
+  deckState: DeckState,
+  ruleConfig: DeckRuleConfig = DEFAULT_RULE_CONFIG
 ): DeckValidationIssue[] => {
   const issues: DeckValidationIssue[] = [];
+  const shouldValidateRule = ruleConfig.format === 'constructed' && isRuleConfigured(ruleConfig);
 
   const sectionCards: Record<DeckTargetSection, DeckBuilderCardData[]> = {
     main: deckState.mainDeck,
@@ -118,8 +169,10 @@ export const validateDeckState = (
     }
 
     cards.forEach(card => {
-      if (!canAddCardToSection(card, deck)) {
+      if (!getAllowedSections(card).includes(deck)) {
         issues.push({ code: 'invalid-section', deck, cardId: card.id });
+      } else if (shouldValidateRule && !isCardAllowedByRule(card, ruleConfig)) {
+        issues.push({ code: 'invalid-rule', deck, cardId: card.id });
       }
     });
   });
