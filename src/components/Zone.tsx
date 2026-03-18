@@ -1,6 +1,6 @@
 import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
-import Card, { type CardInstance } from './Card';
+import Card, { type CardInspectAnchor, type CardInstance } from './Card';
 import type { PlayerRole } from '../types/game';
 import type { CardStatLookup } from '../utils/cardStats';
 
@@ -9,6 +9,7 @@ interface Props {
   label: string;
   cards: CardInstance[];
   cardStatLookup?: CardStatLookup;
+  onInspectCard?: (card: CardInstance, anchor: CardInspectAnchor) => void;
   onTap?: (id: string) => void;
   onModifyCounter?: (id: string, stat: 'atk' | 'hp', delta: number) => void;
   onModifyGenericCounter?: (id: string, delta: number) => void;
@@ -25,7 +26,7 @@ interface Props {
   isDebug?: boolean;
 }
 
-const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, hideCards, layout = 'horizontal', isProtected, viewerRole, containerStyle, isDebug }) => {
+const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onInspectCard, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, hideCards, layout = 'horizontal', isProtected, viewerRole, containerStyle, isDebug }) => {
   const { isOver, setNodeRef } = useDroppable({ id });
 
   const isStack = layout === 'stack';
@@ -137,6 +138,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onTap, onModi
                       card={card}
                       baseStats={cardStatLookup?.[card.cardId]}
                       hideCurrentStats={attachments.length > 0}
+                      onInspect={onInspectCard}
                       onTap={onTap}
                       onModifyCounter={onModifyCounter}
                       onModifyGenericCounter={onModifyGenericCounter}
@@ -158,6 +160,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onTap, onModi
                             atk: card.counters.atk + attachedCard.counters.atk,
                             hp: card.counters.hp + attachedCard.counters.hp,
                           }}
+                          onInspect={onInspectCard}
                           onTap={onTap}
                           onModifyCounter={onModifyCounter}
                           onModifyGenericCounter={onModifyGenericCounter}
@@ -187,6 +190,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onTap, onModi
                 card={card}
                 baseStats={cardStatLookup?.[card.cardId]}
                 hideCurrentStats={attachments.length > 0}
+                onInspect={onInspectCard}
                 onTap={onTap}
                 onModifyCounter={onModifyCounter}
                 onModifyGenericCounter={onModifyGenericCounter}
@@ -208,6 +212,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onTap, onModi
                       atk: card.counters.atk + attachedCard.counters.atk,
                       hp: card.counters.hp + attachedCard.counters.hp,
                     }}
+                    onInspect={onInspectCard}
                     onTap={onTap}
                     onModifyCounter={onModifyCounter}
                     onModifyGenericCounter={onModifyGenericCounter}

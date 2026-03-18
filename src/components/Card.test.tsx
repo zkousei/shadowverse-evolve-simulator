@@ -116,6 +116,51 @@ describe('Card', () => {
     expect(onModifyGenericCounter).toHaveBeenNthCalledWith(2, 'card-1', -1);
   });
 
+  it('calls inspect handler for visible public cards only', () => {
+    const onInspect = vi.fn();
+    const { rerender } = render(
+      <Card
+        card={createCard()}
+        onInspect={onInspect}
+      />
+    );
+
+    fireEvent.pointerDown(screen.getByAltText('Test Card').closest('.game-card') as HTMLElement, { clientX: 10, clientY: 20, button: 0 });
+    fireEvent.pointerUp(screen.getByAltText('Test Card').closest('.game-card') as HTMLElement, { clientX: 10, clientY: 20, button: 0 });
+    expect(onInspect).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'card-1' }),
+      expect.objectContaining({
+        top: expect.any(Number),
+        left: expect.any(Number),
+        right: expect.any(Number),
+        bottom: expect.any(Number),
+      })
+    );
+
+    rerender(
+      <Card
+        card={createCard()}
+        onInspect={onInspect}
+        isHidden={true}
+      />
+    );
+
+    fireEvent.pointerDown(screen.getByAltText('Card Back').closest('.game-card') as HTMLElement, { clientX: 10, clientY: 20, button: 0 });
+    fireEvent.pointerUp(screen.getByAltText('Card Back').closest('.game-card') as HTMLElement, { clientX: 10, clientY: 20, button: 0 });
+    expect(onInspect).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <Card
+        card={createCard({ isFlipped: true })}
+        onInspect={onInspect}
+      />
+    );
+
+    fireEvent.pointerDown(screen.getByAltText('Card Back').closest('.game-card') as HTMLElement, { clientX: 10, clientY: 20, button: 0 });
+    fireEvent.pointerUp(screen.getByAltText('Card Back').closest('.game-card') as HTMLElement, { clientX: 10, clientY: 20, button: 0 });
+    expect(onInspect).toHaveBeenCalledTimes(1);
+  });
+
   it('shows the hand-only action and hides controls when locked', () => {
     const onPlayToField = vi.fn();
     const { rerender } = render(

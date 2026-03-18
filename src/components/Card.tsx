@@ -19,11 +19,21 @@ export interface CardInstance {
   isTokenCard?: boolean;
 }
 
+export interface CardInspectAnchor {
+  top: number;
+  left: number;
+  right: number;
+  bottom: number;
+  width: number;
+  height: number;
+}
+
 interface Props {
   card: CardInstance;
   baseStats?: BaseCardStats;
   displayCounters?: { atk: number; hp: number };
   hideCurrentStats?: boolean;
+  onInspect?: (card: CardInstance, anchor: CardInspectAnchor) => void;
   onTap?: (id: string) => void;
   onModifyCounter?: (id: string, stat: 'atk' | 'hp', delta: number) => void;
   onModifyGenericCounter?: (id: string, delta: number) => void;
@@ -37,7 +47,8 @@ interface Props {
   debugIndex?: number;
 }
 
-const Card: React.FC<Props> = ({ card, baseStats, displayCounters, hideCurrentStats, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, isHidden, isLocked, debugIndex }) => {
+const Card: React.FC<Props> = ({ card, baseStats, displayCounters, hideCurrentStats, onInspect, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, isHidden, isLocked, debugIndex }) => {
+  const inspectPointerStartRef = React.useRef<{ x: number; y: number } | null>(null);
   const isInteractionLocked = isLocked || card.isLeaderCard || card.zone.startsWith('leader-');
   const { attributes, listeners, setNodeRef: setDraggableRef, transform } = useDraggable({
     id: card.id,
@@ -94,8 +105,39 @@ const Card: React.FC<Props> = ({ card, baseStats, displayCounters, hideCurrentSt
       style={{ ...style, border: isOver ? '2px solid var(--vivid-green-cyan)' : 'none', borderRadius: '4px' }}
       {...listeners}
       {...attributes}
+      onPointerDownCapture={(event) => {
+        if (event.button !== 0) return;
+        if ((event.target as HTMLElement).closest('button')) return;
+        inspectPointerStartRef.current = { x: event.clientX, y: event.clientY };
+      }}
+      onPointerUpCapture={(event) => {
+        const pointerStart = inspectPointerStartRef.current;
+        inspectPointerStartRef.current = null;
+
+        if (!pointerStart) return;
+        if ((event.target as HTMLElement).closest('button')) return;
+        if (isHidden || card.isFlipped) return;
+
+        const deltaX = Math.abs(event.clientX - pointerStart.x);
+        const deltaY = Math.abs(event.clientY - pointerStart.y);
+        if (deltaX > 6 || deltaY > 6) return;
+
+        const rect = (event.currentTarget as HTMLDivElement).getBoundingClientRect();
+        onInspect?.(card, {
+          top: rect.top,
+          left: rect.left,
+          right: rect.right,
+          bottom: rect.bottom,
+          width: rect.width,
+          height: rect.height,
+        });
+      }}
+      onPointerCancel={() => {
+        inspectPointerStartRef.current = null;
+      }}
       onContextMenu={(e) => {
         e.preventDefault();
+        inspectPointerStartRef.current = null;
         if (isInteractionLocked) return;
         onTap?.(card.id);
       }}

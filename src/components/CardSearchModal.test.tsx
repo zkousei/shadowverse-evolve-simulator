@@ -156,4 +156,5 @@ describe('CardSearchModal', () => {
     expect(screen.queryByText('Add to Hand')).not.toBeInTheDocument();
     expect(screen.queryByText('Add to EX Area')).not.toBeInTheDocument();
   });
+
 });
