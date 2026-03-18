@@ -54,6 +54,7 @@ const GameBoard: React.FC = () => {
   const canUndoTurn = canUndoLastTurn(gameState, lastGameState, role, isSoloMode);
   const isBottomTurnActive = gameState.gameStatus === 'playing' && gameState.turnPlayer === bottomRole;
   const isTopTurnActive = gameState.gameStatus === 'playing' && gameState.turnPlayer === topRole;
+  const canResetGame = isSoloMode || isHost;
   const sidePanelWidth = 220;
   const topPanelWidth = 188;
   const sideZoneWidth = 120;
@@ -1448,9 +1449,11 @@ const GameBoard: React.FC = () => {
                 <button onClick={() => openTokenSpawnModal(bottomRole)} className="glass-panel" style={{ padding: '0.5rem', background: 'var(--accent-secondary)' }}>
                   Spawn {bottomLabel} Token
                 </button>
-                <button onClick={() => setShowResetConfirm(true)} className="glass-panel" style={{ padding: '0.5rem', background: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', fontWeight: 'bold' }}>
-                  Reset Game
-                </button>
+                {canResetGame && (
+                  <button onClick={() => setShowResetConfirm(true)} className="glass-panel" style={{ padding: '0.5rem', background: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', fontWeight: 'bold' }}>
+                    Reset Game
+                  </button>
+                )}
                 {renderPlayerTracker(bottomRole, bottomLabel)}
               </div>
             </div>
@@ -1750,7 +1753,7 @@ const GameBoard: React.FC = () => {
         </div>
       )}
 
-      {showResetConfirm && (
+      {showResetConfirm && canResetGame && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: 'var(--bg-surface-elevated)', padding: '2rem', borderRadius: 'var(--radius-md)', maxWidth: '400px', textAlign: 'center', border: '1px solid var(--border-light)' }}>
             <h3 style={{ margin: '0 0 1rem 0', color: '#fca5a5' }}>Reset Game</h3>
