@@ -158,6 +158,7 @@ const DeckBuilder: React.FC = () => {
   const [deckState, setDeckState] = useState<DeckState>(createEmptyDeckState());
   const [deckSortMode, setDeckSortMode] = useState<DeckSortMode>('added');
   const [showResetDeckDialog, setShowResetDeckDialog] = useState(false);
+  const [previewCard, setPreviewCard] = useState<DeckBuilderCardData | null>(null);
 
   useEffect(() => {
     fetch('/cards_detailed.json')
@@ -165,6 +166,19 @@ const DeckBuilder: React.FC = () => {
       .then(data => setCards(data))
       .catch(err => console.error("Could not load cards", err));
   }, []);
+
+  useEffect(() => {
+    if (!previewCard) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setPreviewCard(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [previewCard]);
 
   // Extract unique expansions (prefix before hyphen)
   const expansions = getAvailableExpansions(cards);
@@ -798,7 +812,21 @@ const DeckBuilder: React.FC = () => {
 
               return (
                 <div key={card.id} className="glass-panel" style={{ padding: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <img src={card.image} alt={card.name} style={{ width: '100%', borderRadius: '4px' }} loading="lazy" />
+                  <button
+                    type="button"
+                    aria-label={`Preview ${card.name}`}
+                    title={`Preview ${card.name}`}
+                    onClick={() => setPreviewCard(card)}
+                    style={{
+                      padding: 0,
+                      border: 'none',
+                      background: 'transparent',
+                      cursor: 'pointer',
+                      lineHeight: 0,
+                    }}
+                  >
+                    <img src={card.image} alt={card.name} style={{ width: '100%', borderRadius: '4px' }} loading="lazy" />
+                  </button>
                   <p style={{ fontSize: '0.75rem', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={card.name}>
                     {card.name}
                   </p>
@@ -1274,6 +1302,75 @@ const DeckBuilder: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {previewCard && (
+        <div
+          role="presentation"
+          onClick={() => setPreviewCard(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.82)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.5rem',
+            zIndex: 1000,
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${previewCard.name} preview`}
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              position: 'relative',
+              width: '100%',
+              maxWidth: '520px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '0.75rem',
+            }}
+          >
+            <button
+              type="button"
+              aria-label="Close card preview"
+              onClick={() => setPreviewCard(null)}
+              style={{
+                position: 'absolute',
+                top: '-0.5rem',
+                right: '-0.5rem',
+                width: '2rem',
+                height: '2rem',
+                borderRadius: '999px',
+                border: '1px solid rgba(255, 255, 255, 0.28)',
+                background: 'rgba(15, 23, 42, 0.92)',
+                color: '#fff',
+                fontSize: '1rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              ×
+            </button>
+            <img
+              src={previewCard.image}
+              alt={`${previewCard.name} enlarged`}
+              style={{
+                display: 'block',
+                maxWidth: '100%',
+                maxHeight: '90vh',
+                borderRadius: '12px',
+                boxShadow: '0 18px 50px rgba(0, 0, 0, 0.45)',
+              }}
+            />
+            <p style={{ margin: 0, color: '#fff', fontSize: '0.95rem', fontWeight: 600 }}>
+              {previewCard.name}
+            </p>
+          </div>
+        </div>
+      )}
 
       {showResetDeckDialog && (
         <div

@@ -310,6 +310,24 @@ describe('DeckBuilder', () => {
     expect(screen.queryByText('Leader Merlin')).not.toBeInTheDocument();
   });
 
+  it('opens a card preview modal from the card library and closes it', async () => {
+    render(<DeckBuilder />);
+
+    await screen.findByText('Alpha Knight');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Preview Alpha Knight' }));
+
+    expect(screen.getByRole('dialog', { name: 'Alpha Knight preview' })).toBeInTheDocument();
+    expect(screen.getByAltText('Alpha Knight enlarged')).toBeInTheDocument();
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('dialog', { name: 'Alpha Knight preview' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Preview Alpha Knight' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close card preview' }));
+    expect(screen.queryByRole('dialog', { name: 'Alpha Knight preview' })).not.toBeInTheDocument();
+  });
+
   it('filters the library by constructed title rules when a title identity is selected', async () => {
     render(<DeckBuilder />);
 
