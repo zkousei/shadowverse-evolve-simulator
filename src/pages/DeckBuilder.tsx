@@ -23,11 +23,11 @@ import {
   DECK_LIMITS,
   getDeckLimit,
   getAllowedSections,
+  getDeckValidationMessages,
   isCardAllowedByRule,
   isRuleConfigured,
   sanitizeImportedDeckState,
   type DeckTargetSection,
-  validateDeckState,
 } from '../utils/deckBuilderRules';
 
 const PAGE_SIZE = 50;
@@ -71,13 +71,6 @@ const DECK_IDENTITY_LABELS: Record<DeckIdentityType, string> = {
   class: 'Class',
   title: 'Title',
 };
-const RULE_ISSUE_LABELS: Record<DeckTargetSection, string> = {
-  main: 'Main Deck',
-  evolve: 'Evolve Deck',
-  leader: 'Leader',
-  token: 'Token Deck',
-};
-
 const DeckBuilder: React.FC = () => {
   const [cards, setCards] = useState<DeckBuilderCardData[]>([]);
   const [search, setSearch] = useState('');
@@ -160,32 +153,14 @@ const DeckBuilder: React.FC = () => {
   const paginatedCards = displayCards.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
   const totalPages = Math.ceil(displayCards.length / PAGE_SIZE) || 1;
   const { mainDeck, evolveDeck, leaderCards, tokenDeck } = deckState;
-  const deckIssues = validateDeckState(deckState, deckRuleConfig);
-  const ruleIssueCards = deckIssues
-    .filter(issue => issue.code === 'invalid-rule')
-    .map(issue => {
-      const card = cards.find(candidate => candidate.id === issue.cardId);
-      return card ? `${card.name} (${RULE_ISSUE_LABELS[issue.deck]})` : null;
-    })
-    .filter((value): value is string => value !== null);
-  const selectedCrossoverClasses = deckRuleConfig.selectedClasses.filter(
-    (value): value is typeof CONSTRUCTED_CLASS_VALUES[number] => value !== null
-  );
+  const deckIssueMessages = getDeckValidationMessages(deckState, deckRuleConfig);
   const crossoverClassOptionsA = CONSTRUCTED_CLASS_VALUES.filter(
     cardClass => cardClass === deckRuleConfig.selectedClasses[0] || cardClass !== deckRuleConfig.selectedClasses[1]
   );
   const crossoverClassOptionsB = CONSTRUCTED_CLASS_VALUES.filter(
     cardClass => cardClass === deckRuleConfig.selectedClasses[1] || cardClass !== deckRuleConfig.selectedClasses[0]
   );
-  const crossoverLeaderClasses = leaderCards
-    .map(card => card.class)
-    .filter((value): value is typeof CONSTRUCTED_CLASS_VALUES[number] => value !== undefined && value !== CLASS.NEUTRAL && value !== '-');
-  const crossoverHasRequiredLeaders = (
-    isCrossover
-    && selectedCrossoverClasses.length === 2
-    && leaderCards.length === 2
-    && selectedCrossoverClasses.every(cardClass => crossoverLeaderClasses.includes(cardClass))
-  );
+  const canExportDeck = deckIssueMessages.length === 0;
 
   const resetLibraryFilters = () => {
     setSearch('');
@@ -649,7 +624,19 @@ const DeckBuilder: React.FC = () => {
             <button
               type="button"
               onClick={exportDeck}
-              style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'var(--bg-surface-elevated)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)', fontSize: '0.875rem' }}
+              disabled={!canExportDeck}
+              title={canExportDeck ? 'Export deck' : 'Resolve deck issues before exporting'}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+                background: canExportDeck ? 'var(--bg-surface-elevated)' : 'var(--bg-surface)',
+                padding: '0.5rem 0.75rem',
+                borderRadius: 'var(--radius-md)',
+                fontSize: '0.875rem',
+                opacity: canExportDeck ? 1 : 0.5,
+                cursor: canExportDeck ? 'pointer' : 'not-allowed',
+              }}
             >
               <Download size={14} /> Export
             </button>
@@ -856,19 +843,22 @@ const DeckBuilder: React.FC = () => {
                 Select two different classes to enable crossover deck building.
               </p>
             )}
-            {deckRuleConfig.format === 'crossover' && isRuleReady && !crossoverHasRequiredLeaders && (
-              <p style={{ margin: 0, color: '#f59e0b', fontSize: '0.875rem' }}>
-                Crossover decks require exactly 2 leaders, one for each selected class.
-              </p>
-            )}
-            {ruleIssueCards.length > 0 && (
+            {deckIssueMessages.length > 0 && (
               <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: '0.75rem' }}>
-                <p style={{ margin: '0 0 0.5rem 0', color: '#f59e0b', fontSize: '0.875rem', fontWeight: 700 }}>
-                  {ruleIssueCards.length} card(s) do not match the selected deck rule.
+                <p style={{ margin: '0 0 0.5rem 0', color: '#ef4444', fontSize: '0.875rem', fontWeight: 700 }}>
+                  Resolve these issues before exporting.
                 </p>
-                <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.75rem' }}>
-                  {ruleIssueCards.slice(0, 3).join(', ')}
-                  {ruleIssueCards.length > 3 ? ', ...' : ''}
+                <ul style={{ margin: 0, paddingLeft: '1rem', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                  {deckIssueMessages.map(message => (
+                    <li key={message} style={{ marginBottom: '0.25rem' }}>{message}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {deckIssueMessages.length === 0 && (
+              <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: '0.75rem' }}>
+                <p style={{ margin: 0, color: 'var(--vivid-green-cyan)', fontSize: '0.875rem', fontWeight: 700 }}>
+                  This deck is legal and ready to export.
                 </p>
               </div>
             )}

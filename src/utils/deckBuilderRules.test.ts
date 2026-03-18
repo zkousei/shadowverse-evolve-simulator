@@ -6,6 +6,7 @@ import {
   canAddCardToSection,
   getAllowedSections,
   getDeckLimit,
+  getDeckValidationMessages,
   isCardAllowedByRule,
   isRuleConfigured,
   sanitizeImportedDeckState,
@@ -247,6 +248,22 @@ describe('deckBuilderRules', () => {
     expect(issues).toEqual(
       expect.arrayContaining([
         { code: 'invalid-rule', deck: 'main', cardId: dragonCard.id },
+      ])
+    );
+  });
+
+  it('builds readable validation messages for export blocking issues', () => {
+    const messages = getDeckValidationMessages({
+      mainDeck: [mainCard],
+      evolveDeck: [],
+      leaderCards: [],
+      tokenDeck: [],
+    }, constructedRoyalRule);
+
+    expect(messages).toEqual(
+      expect.arrayContaining([
+        'Main Deck must contain at least 40 cards (1/40).',
+        'This constructed deck requires exactly 1 leader (0/1).',
       ])
     );
   });
