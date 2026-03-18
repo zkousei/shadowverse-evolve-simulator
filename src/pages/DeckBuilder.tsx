@@ -7,6 +7,8 @@ import {
   getAvailableExpansions,
   getAvailableProductNames,
   getAvailableRarities,
+  getAvailableSubtypeTags,
+  getSubtypeTags,
   getAvailableTitles,
   type DeckBuilderCardData,
 } from '../models/deckBuilderCard';
@@ -136,6 +138,8 @@ const DeckBuilder: React.FC = () => {
   const [classFilter, setClassFilter] = useState<ClassFilter>('All');
   const [rarityFilter, setRarityFilter] = useState('All');
   const [productNameFilter, setProductNameFilter] = useState('All');
+  const [subtypeSearch, setSubtypeSearch] = useState('');
+  const [selectedSubtypeTags, setSelectedSubtypeTags] = useState<string[]>([]);
   const [deckSectionFilter, setDeckSectionFilter] = useState<(typeof DECK_SECTION_FILTER_VALUES)[number]>('All');
   const [hideSameNameVariants, setHideSameNameVariants] = useState(false);
   const [page, setPage] = useState(0);
@@ -157,6 +161,7 @@ const DeckBuilder: React.FC = () => {
   const expansions = getAvailableExpansions(cards);
   const rarities = getAvailableRarities(cards);
   const productNames = getAvailableProductNames(cards);
+  const subtypeTags = getAvailableSubtypeTags(cards);
   const titles = getAvailableTitles(cards);
   const isConstructed = deckRuleConfig.format === 'constructed';
   const isCrossover = deckRuleConfig.format === 'crossover';
@@ -199,7 +204,13 @@ const DeckBuilder: React.FC = () => {
       if (c.product_name !== productNameFilter) return false;
     }
 
-    // 7. Deck Section Filter
+    // 7. Subtype Filter
+    if (selectedSubtypeTags.length > 0) {
+      const cardSubtypeTags = getSubtypeTags(c);
+      if (!selectedSubtypeTags.some(tag => cardSubtypeTags.includes(tag))) return false;
+    }
+
+    // 8. Deck Section Filter
     if (deckSectionFilter !== 'All') {
       if (c.deck_section !== deckSectionFilter) return false;
     }
@@ -236,10 +247,32 @@ const DeckBuilder: React.FC = () => {
     setClassFilter('All');
     setRarityFilter('All');
     setProductNameFilter('All');
+    setSubtypeSearch('');
+    setSelectedSubtypeTags([]);
     setDeckSectionFilter('All');
     setHideSameNameVariants(false);
     setPage(0);
   };
+
+  const addSubtypeTag = (tag: string) => {
+    const normalizedTag = tag.trim();
+    if (!normalizedTag || !subtypeTags.includes(normalizedTag)) return;
+
+    setSelectedSubtypeTags(current => (
+      current.includes(normalizedTag) ? current : [...current, normalizedTag]
+    ));
+    setSubtypeSearch('');
+    setPage(0);
+  };
+
+  const removeSubtypeTag = (tag: string) => {
+    setSelectedSubtypeTags(current => current.filter(value => value !== tag));
+    setPage(0);
+  };
+
+  const filteredSubtypeOptions = subtypeSearch.trim().length > 0
+    ? subtypeTags.filter(tag => tag.toLowerCase().includes(subtypeSearch.trim().toLowerCase()))
+    : subtypeTags;
 
   const removeLastCardById = (cards: DeckBuilderCardData[], cardId?: string): DeckBuilderCardData[] => {
     if (!cardId) return cards;
@@ -595,6 +628,85 @@ const DeckBuilder: React.FC = () => {
                 <option key={productName} value={productName}>{productName}</option>
               ))}
             </select>
+          </div>
+
+          {/* Subtype Filter */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', minWidth: '240px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Subtype:</span>
+              <input
+                type="text"
+                aria-label="Subtype filter input"
+                list="subtype-filter-options"
+                placeholder="Search subtype..."
+                value={subtypeSearch}
+                onChange={(e) => setSubtypeSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addSubtypeTag(subtypeSearch);
+                  }
+                }}
+                style={{
+                  flex: 1,
+                  minWidth: '160px',
+                  padding: '0.5rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border-light)',
+                  background: 'var(--bg-surface)',
+                  color: 'var(--text-main)',
+                  outline: 'none',
+                }}
+              />
+              <datalist id="subtype-filter-options">
+                {filteredSubtypeOptions.map(tag => (
+                  <option key={tag} value={tag} />
+                ))}
+              </datalist>
+              <button
+                type="button"
+                onClick={() => addSubtypeTag(subtypeSearch)}
+                disabled={!subtypeSearch.trim() || !subtypeTags.includes(subtypeSearch.trim()) || selectedSubtypeTags.includes(subtypeSearch.trim())}
+                style={{
+                  padding: '0.5rem 0.75rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border-light)',
+                  background: 'var(--bg-surface)',
+                  color: 'var(--text-main)',
+                  cursor: 'pointer',
+                }}
+              >
+                Add
+              </button>
+            </div>
+
+            {selectedSubtypeTags.length > 0 && (
+              <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                {selectedSubtypeTags.map(tag => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => removeSubtypeTag(tag)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.3rem',
+                      padding: '0.25rem 0.5rem',
+                      borderRadius: '999px',
+                      border: '1px solid var(--border-light)',
+                      background: 'var(--bg-surface)',
+                      color: 'var(--text-main)',
+                      fontSize: '0.75rem',
+                      cursor: 'pointer',
+                    }}
+                    title={`Remove subtype filter ${tag}`}
+                  >
+                    <span>{tag}</span>
+                    <span style={{ color: 'var(--text-muted)' }}>×</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

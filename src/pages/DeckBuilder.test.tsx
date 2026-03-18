@@ -11,6 +11,7 @@ const mockCards = [
     class: 'ロイヤル',
     title: 'Hero Tale',
     type: 'フォロワー',
+    subtype: '兵士',
     rarity: 'LG',
     product_name: 'Booster Pack 1',
     card_kind_normalized: 'follower',
@@ -27,6 +28,7 @@ const mockCards = [
     class: 'ロイヤル',
     title: 'Hero Tale',
     type: 'フォロワー・エボルヴ',
+    subtype: '天使',
     rarity: 'UR',
     product_name: 'Extra Product',
     card_kind_normalized: 'evolve_follower',
@@ -43,6 +45,7 @@ const mockCards = [
     class: 'ウィッチ',
     title: 'Mage Tale',
     type: 'スペル',
+    subtype: '魔法使い・学院',
     rarity: 'GR',
     product_name: 'Booster Pack 2',
     card_kind_normalized: 'spell',
@@ -59,6 +62,7 @@ const mockCards = [
     class: 'ドラゴン',
     title: 'Dragon Tale',
     type: 'フォロワー',
+    subtype: '竜族',
     rarity: 'BR',
     product_name: 'Booster Pack 3',
     card_kind_normalized: 'follower',
@@ -75,6 +79,7 @@ const mockCards = [
     class: 'ロイヤル',
     title: 'Hero Tale',
     type: 'リーダー',
+    subtype: '指揮官',
     rarity: 'PR',
     product_name: 'Leader Set',
     card_kind_normalized: 'leader',
@@ -91,6 +96,7 @@ const mockCards = [
     class: 'ウィッチ',
     title: 'Mage Tale',
     type: 'リーダー',
+    subtype: '魔法使い',
     rarity: 'SL',
     product_name: 'Leader Set',
     card_kind_normalized: 'leader',
@@ -107,6 +113,7 @@ const mockCards = [
     class: 'ロイヤル',
     title: 'Hero Tale',
     type: 'アミュレット・トークン',
+    subtype: '兵士',
     rarity: 'PR',
     product_name: 'Token Set',
     card_kind_normalized: 'token_amulet',
@@ -309,6 +316,25 @@ describe('DeckBuilder', () => {
     expect(screen.queryByText('Leader Merlin')).not.toBeInTheDocument();
   });
 
+  it('filters cards by selected subtype tags with OR matching', async () => {
+    render(<DeckBuilder />);
+
+    await screen.findByText('Alpha Knight');
+
+    const subtypeInput = screen.getByLabelText('Subtype filter input');
+    fireEvent.change(subtypeInput, { target: { value: '兵士' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+    expect(screen.getByText('Alpha Knight')).toBeInTheDocument();
+    expect(screen.getByText('Knight Token')).toBeInTheDocument();
+    expect(screen.queryByText('Beta Mage')).not.toBeInTheDocument();
+
+    fireEvent.change(subtypeInput, { target: { value: '学院' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+    expect(screen.getByText('Beta Mage')).toBeInTheDocument();
+  });
+
   it('resets card library filters without changing the deck rule settings', async () => {
     render(<DeckBuilder />);
 
@@ -319,6 +345,10 @@ describe('DeckBuilder', () => {
     });
     fireEvent.click(within(screen.getByRole('group', { name: 'Deck section filter' })).getByRole('button', { name: 'Token' }));
     fireEvent.click(screen.getByLabelText('Hide same-name variants'));
+    fireEvent.change(screen.getByLabelText('Subtype filter input'), {
+      target: { value: '兵士' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
     fireEvent.change(screen.getByRole('combobox', { name: 'Constructed class' }), {
       target: { value: 'ロイヤル' },
     });
@@ -328,6 +358,7 @@ describe('DeckBuilder', () => {
     expect(screen.getByPlaceholderText('Search cards by name...')).toHaveValue('');
     expect(within(screen.getByRole('group', { name: 'Deck section filter' })).getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByLabelText('Hide same-name variants')).not.toBeChecked();
+    expect(screen.queryByTitle('Remove subtype filter 兵士')).not.toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Constructed class' })).toHaveValue('ロイヤル');
     expect(screen.getByText('Alpha Knight')).toBeInTheDocument();
     expect(screen.queryByText('Beta Mage')).not.toBeInTheDocument();

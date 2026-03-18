@@ -4,6 +4,8 @@ import {
   getAvailableExpansions,
   getAvailableProductNames,
   getAvailableRarities,
+  getAvailableSubtypeTags,
+  getSubtypeTags,
   getAvailableTitles,
   type DeckBuilderCardData,
 } from './deckBuilderCard';
@@ -16,6 +18,7 @@ const cards: DeckBuilderCardData[] = [
     title: '作品B',
     rarity: 'LG',
     product_name: 'ブースターパック第2弾',
+    subtype: '魔法使い・学院',
   },
   {
     id: 'BP01-001',
@@ -24,6 +27,7 @@ const cards: DeckBuilderCardData[] = [
     title: '作品A',
     rarity: '-',
     product_name: 'ブースターパック第1弾',
+    subtype: '兵士',
   },
   {
     id: 'BP01-099',
@@ -32,6 +36,7 @@ const cards: DeckBuilderCardData[] = [
     title: '作品A',
     rarity: 'GR',
     product_name: 'ブースターパック第1弾',
+    subtype: '-',
   },
   {
     id: 'CP02-001',
@@ -40,6 +45,7 @@ const cards: DeckBuilderCardData[] = [
     title: undefined,
     rarity: 'LG',
     product_name: 'コラボパック',
+    subtype: 'プリコネ・〈ジオ・ゲヘナ〉',
   },
 ];
 
@@ -62,6 +68,19 @@ describe('deckBuilderCard helpers', () => {
 
   it('collects unique titles in locale order and skips missing values', () => {
     expect(getAvailableTitles(cards)).toEqual(['作品A', '作品B']);
+  });
+
+  it('splits normal subtype values into searchable tags', () => {
+    expect(getSubtypeTags(cards[0])).toEqual(['魔法使い', '学院']);
+    expect(getSubtypeTags(cards[1])).toEqual(['兵士']);
+  });
+
+  it('keeps configured atomic subtype values intact', () => {
+    expect(getSubtypeTags(cards[3])).toEqual(['プリコネ', '〈ジオ・ゲヘナ〉']);
+  });
+
+  it('collects unique subtype tags in locale order', () => {
+    expect(getAvailableSubtypeTags(cards)).toEqual(['〈ジオ・ゲヘナ〉', 'プリコネ', '学院', '兵士', '魔法使い']);
   });
 
   it('dedupes same-name variants for display while keeping distinct deck sections', () => {
