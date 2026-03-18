@@ -54,7 +54,7 @@ const ADD_ACTIONS: Record<DeckTargetSection, { title: string; label: React.React
   leader: {
     title: 'Set as Leader',
     label: 'LEAD',
-    background: 'var(--brand-accent)',
+    background: '#f59e0b',
   },
   token: {
     title: 'Add to Token Deck',
@@ -630,11 +630,15 @@ const DeckBuilder: React.FC = () => {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.25rem',
-                background: canExportDeck ? 'var(--bg-surface-elevated)' : 'var(--bg-surface)',
+                background: canExportDeck ? '#3b82f6' : '#475569',
+                color: '#fff',
+                border: `1px solid ${canExportDeck ? '#2563eb' : '#64748b'}`,
                 padding: '0.5rem 0.75rem',
                 borderRadius: 'var(--radius-md)',
                 fontSize: '0.875rem',
-                opacity: canExportDeck ? 1 : 0.5,
+                fontWeight: 700,
+                boxShadow: canExportDeck ? '0 4px 12px rgba(37, 99, 235, 0.25)' : 'none',
+                opacity: canExportDeck ? 1 : 0.75,
                 cursor: canExportDeck ? 'pointer' : 'not-allowed',
               }}
             >
