@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import Zone from './Zone';
 import type { CardInstance } from './Card';
 
@@ -13,13 +13,16 @@ vi.mock('@dnd-kit/core', () => ({
 }));
 
 vi.mock('./Card', () => ({
-  default: ({ card, isHidden, isLocked, debugIndex }: { card: CardInstance; isHidden?: boolean; isLocked?: boolean; debugIndex?: number }) => (
+  default: ({ card, isHidden, isLocked, debugIndex, hideCurrentStats, displayCounters, baseStats }: { card: CardInstance; isHidden?: boolean; isLocked?: boolean; debugIndex?: number; hideCurrentStats?: boolean; displayCounters?: { atk: number; hp: number }; baseStats?: { atk: number; hp: number } }) => (
     <div
       data-testid="mock-card"
       data-card-id={card.id}
       data-hidden={String(Boolean(isHidden))}
       data-locked={String(Boolean(isLocked))}
       data-debug-index={debugIndex ?? ''}
+      data-hide-current-stats={String(Boolean(hideCurrentStats))}
+      data-display-counters={displayCounters ? `${displayCounters.atk}/${displayCounters.hp}` : ''}
+      data-base-stats={baseStats ? `${baseStats.atk}/${baseStats.hp}` : ''}
     >
       {card.name}
     </div>
@@ -40,6 +43,10 @@ const createCard = (id: string, overrides: Partial<CardInstance> = {}): CardInst
 });
 
 describe('Zone', () => {
+  beforeEach(() => {
+    droppableState.isOver = false;
+  });
+
   it('renders top-level cards and nested attachments without hiding orphan cards', () => {
     render(
       <Zone
@@ -105,5 +112,31 @@ describe('Zone', () => {
       backgroundColor: 'rgba(0, 208, 132, 0.1)',
     });
     droppableState.isOver = false;
+  });
+
+  it('strips player prefixes from labels and unlocks all cards for all-view mode', () => {
+    render(
+      <Zone
+        id="field-all"
+        label="Player 1 Field"
+        viewerRole="all"
+        isProtected={true}
+        containerStyle={{ minHeight: '220px' }}
+        cardStatLookup={{ parent: { atk: 2, hp: 3 } }}
+        cards={[
+          createCard('parent', { owner: 'guest' }),
+          createCard('attachment', { owner: 'guest', attachedTo: 'parent', counters: { atk: 1, hp: -1 } }),
+        ]}
+      />
+    );
+
+    expect(screen.getByText('Field')).toBeInTheDocument();
+    expect(screen.getByText('2')).toBeInTheDocument();
+
+    const cards = screen.getAllByTestId('mock-card');
+    expect(cards[0]).toHaveAttribute('data-locked', 'false');
+    expect(cards[0]).toHaveAttribute('data-hide-current-stats', 'true');
+    expect(cards[0]).toHaveAttribute('data-base-stats', '2/3');
+    expect(cards[1]).toHaveAttribute('data-display-counters', '1/-1');
   });
 });

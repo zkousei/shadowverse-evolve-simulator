@@ -50,4 +50,23 @@ describe('Home', () => {
     fireEvent.click(joinButton);
     expect(navigateMock).toHaveBeenCalledWith('/game?host=false&room=ROOM42');
   });
+
+  it('updates button and input styles on hover/focus and shows footer copy', () => {
+    render(<Home />);
+
+    const deckBuilderButton = screen.getByText('Deck Builder').closest('button') as HTMLButtonElement;
+    fireEvent.mouseOver(deckBuilderButton);
+    expect(deckBuilderButton.style.transform).toBe('translateY(-4px)');
+    fireEvent.mouseOut(deckBuilderButton);
+    expect(deckBuilderButton.style.transform).toBe('translateY(0)');
+
+    const roomInput = screen.getByPlaceholderText('Enter Room Code...') as HTMLInputElement;
+    fireEvent.focus(roomInput);
+    expect(roomInput.style.borderColor).toBe('var(--border-focus)');
+    fireEvent.blur(roomInput);
+    expect(roomInput.style.borderColor).toBe('var(--border-light)');
+
+    expect(screen.getByText('BETA')).toBeInTheDocument();
+    expect(screen.getByText(/転載しております/)).toBeInTheDocument();
+  });
 });
