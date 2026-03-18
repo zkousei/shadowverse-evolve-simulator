@@ -33,6 +33,20 @@ describe('sharedRandom', () => {
     )).toBe('You rolled: 4');
   });
 
+  it('formats reveal messages for both look-top and search effects', () => {
+    expect(formatSharedUiMessage(
+      { type: 'REVEAL_TOP_DECK_CARDS', actor: 'guest', cards: [] },
+      'host',
+      false
+    )).toBe('Opponent revealed from Look Top');
+
+    expect(formatSharedUiMessage(
+      { type: 'REVEAL_SEARCHED_CARD_TO_HAND', actor: 'host', card: { cardId: 'BP01-001', name: 'Alpha Knight', image: '' } },
+      'guest',
+      true
+    )).toBe('Player 1 revealed from Search');
+  });
+
   it('formats starter decision messages for random and manual choices', () => {
     expect(formatSharedUiMessage(
       { type: 'STARTER_DECIDED', actor: 'host', starter: 'guest', manual: false },

@@ -3,9 +3,11 @@ import { describe, expect, it, vi } from 'vitest';
 import Zone from './Zone';
 import type { CardInstance } from './Card';
 
+const droppableState = { isOver: false };
+
 vi.mock('@dnd-kit/core', () => ({
   useDroppable: () => ({
-    isOver: false,
+    isOver: droppableState.isOver,
     setNodeRef: vi.fn(),
   }),
 }));
@@ -81,5 +83,27 @@ describe('Zone', () => {
     expect(cards[1]).toHaveAttribute('data-hidden', 'true');
     expect(cards[1]).toHaveAttribute('data-locked', 'true');
     expect(cards[1]).toHaveAttribute('data-debug-index', '1');
+  });
+
+  it('renders attachments in horizontal layout and highlights the drop target', () => {
+    droppableState.isOver = true;
+    const { container } = render(
+      <Zone
+        id="field-host"
+        label="Field"
+        cards={[
+          createCard('parent'),
+          createCard('attachment-1', { attachedTo: 'parent' }),
+          createCard('attachment-2', { attachedTo: 'parent' }),
+        ]}
+      />
+    );
+
+    const cards = screen.getAllByTestId('mock-card');
+    expect(cards.map(card => card.getAttribute('data-card-id'))).toEqual(['parent', 'attachment-1', 'attachment-2']);
+    expect(container.firstChild).toHaveStyle({
+      backgroundColor: 'rgba(0, 208, 132, 0.1)',
+    });
+    droppableState.isOver = false;
   });
 });

@@ -2,15 +2,20 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import Card, { type CardInstance } from './Card';
 
+const dndState = {
+  transform: null as null | { x: number; y: number },
+  isOver: false,
+};
+
 vi.mock('@dnd-kit/core', () => ({
   useDraggable: () => ({
     attributes: {},
     listeners: {},
     setNodeRef: vi.fn(),
-    transform: null,
+    transform: dndState.transform,
   }),
   useDroppable: () => ({
-    isOver: false,
+    isOver: dndState.isOver,
     setNodeRef: vi.fn(),
   }),
 }));
@@ -29,6 +34,19 @@ const createCard = (overrides: Partial<CardInstance> = {}): CardInstance => ({
 });
 
 describe('Card', () => {
+  it('rotates tapped cards and combines rotation with drag transform', () => {
+    const { rerender } = render(<Card card={createCard({ isTapped: true })} />);
+    expect(screen.getByAltText('Test Card').closest('.game-card')).toHaveStyle({ transform: 'rotate(90deg)' });
+
+    dndState.transform = { x: 10, y: 20 };
+    rerender(<Card card={createCard({ isTapped: true })} />);
+    expect(screen.getByAltText('Test Card').closest('.game-card')).toHaveStyle({
+      transform: 'translate3d(10px, 20px, 0) rotate(90deg)',
+      transition: 'none',
+    });
+    dndState.transform = null;
+  });
+
   it('renders the card back when hidden or flipped', () => {
     const { rerender } = render(<Card card={createCard()} isHidden={true} />);
     expect(screen.getByAltText('Card Back')).toBeInTheDocument();
@@ -130,11 +148,43 @@ describe('Card', () => {
     expect(screen.queryByText('+1')).not.toBeInTheDocument();
   });
 
+  it('shows raw counter overlay when current stats are unavailable', () => {
+    render(
+      <Card
+        card={createCard({ counters: { atk: 1, hp: -1 } })}
+      />
+    );
+
+    expect(screen.getByText('+1')).toBeInTheDocument();
+    expect(screen.getByText('-1')).toBeInTheDocument();
+  });
+
   it('does not show current stats for hand cards even if base stats are available', () => {
     render(
       <Card
         card={createCard({ zone: 'hand-host', counters: { atk: 1, hp: -1 } })}
         baseStats={{ atk: 3, hp: 4 }}
+      />
+    );
+
+    expect(screen.queryByTestId('current-stats-badge')).not.toBeInTheDocument();
+  });
+
+  it('shows current stats for ex area cards but can suppress them when hidden', () => {
+    const { rerender } = render(
+      <Card
+        card={createCard({ zone: 'ex-host', counters: { atk: 2, hp: 0 } })}
+        baseStats={{ atk: 5, hp: 6 }}
+      />
+    );
+
+    expect(screen.getByTestId('current-stats-badge')).toHaveTextContent('7/6');
+
+    rerender(
+      <Card
+        card={createCard({ zone: 'ex-host', counters: { atk: 2, hp: 0 } })}
+        baseStats={{ atk: 5, hp: 6 }}
+        isHidden={true}
       />
     );
 
@@ -174,4 +224,24 @@ describe('Card', () => {
 
     expect(screen.getByTestId('generic-counter-badge')).toHaveTextContent('Counter2');
   });
+
+  it('hides the generic counter badge for hidden or flipped cards', () => {
+    const { rerender } = render(
+      <Card
+        card={createCard({ genericCounter: 2 })}
+        isHidden={true}
+      />
+    );
+
+    expect(screen.queryByTestId('generic-counter-badge')).not.toBeInTheDocument();
+
+    rerender(
+      <Card
+        card={createCard({ genericCounter: 2, isFlipped: true })}
+      />
+    );
+
+    expect(screen.queryByTestId('generic-counter-badge')).not.toBeInTheDocument();
+  });
+
 });
