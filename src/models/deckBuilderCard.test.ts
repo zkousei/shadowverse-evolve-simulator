@@ -4,6 +4,7 @@ import {
   getAvailableExpansions,
   getAvailableProductNames,
   getAvailableRarities,
+  getAvailableTitles,
   type DeckBuilderCardData,
 } from './deckBuilderCard';
 
@@ -12,6 +13,7 @@ const cards: DeckBuilderCardData[] = [
     id: 'BP02-010',
     name: 'Card A',
     image: '/a.png',
+    title: '作品B',
     rarity: 'LG',
     product_name: 'ブースターパック第2弾',
   },
@@ -19,6 +21,7 @@ const cards: DeckBuilderCardData[] = [
     id: 'BP01-001',
     name: 'Card B',
     image: '/b.png',
+    title: '作品A',
     rarity: '-',
     product_name: 'ブースターパック第1弾',
   },
@@ -26,6 +29,7 @@ const cards: DeckBuilderCardData[] = [
     id: 'BP01-099',
     name: 'Card C',
     image: '/c.png',
+    title: '作品A',
     rarity: 'GR',
     product_name: 'ブースターパック第1弾',
   },
@@ -33,6 +37,7 @@ const cards: DeckBuilderCardData[] = [
     id: 'CP02-001',
     name: 'Card D',
     image: '/d.png',
+    title: undefined,
     rarity: 'LG',
     product_name: 'コラボパック',
   },
@@ -53,6 +58,10 @@ describe('deckBuilderCard helpers', () => {
       'ブースターパック第1弾',
       'ブースターパック第2弾',
     ]);
+  });
+
+  it('collects unique titles in locale order and skips missing values', () => {
+    expect(getAvailableTitles(cards)).toEqual(['作品A', '作品B']);
   });
 
   it('dedupes same-name variants for display while keeping distinct deck sections', () => {

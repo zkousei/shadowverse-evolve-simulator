@@ -1,21 +1,32 @@
 import React, { useEffect, useState } from 'react';
 import { Search, Plus, Minus, Download, Upload } from 'lucide-react';
-import { CLASS_FILTER_VALUES } from '../models/class';
+import { CLASS_FILTER_VALUES, CLASS_VALUES, CONSTRUCTED_CLASS_VALUES } from '../models/class';
 import type { ClassFilter } from '../models/class';
 import {
   dedupeCardsByDisplayIdentity,
   getAvailableExpansions,
   getAvailableProductNames,
   getAvailableRarities,
+  getAvailableTitles,
   type DeckBuilderCardData,
 } from '../models/deckBuilderCard';
+import {
+  createDefaultDeckRuleConfig,
+  DECK_FORMAT_VALUES,
+  type DeckFormat,
+  type DeckIdentityType,
+  getImportedDeckRuleConfig,
+} from '../models/deckRule';
 import { createEmptyDeckState, type DeckState } from '../models/deckState';
 import {
   canAddCardToSection,
   DECK_LIMITS,
   getAllowedSections,
+  isCardAllowedByRule,
+  isRuleConfigured,
   sanitizeImportedDeckState,
   type DeckTargetSection,
+  validateDeckState,
 } from '../utils/deckBuilderRules';
 
 const PAGE_SIZE = 50;
@@ -50,6 +61,21 @@ const ADD_ACTIONS: Record<DeckTargetSection, { title: string; label: React.React
     background: 'var(--vivid-green-cyan)',
   },
 };
+const DECK_FORMAT_LABELS: Record<DeckFormat, string> = {
+  constructed: 'Constructed',
+  crossover: 'Crossover',
+  other: 'Other',
+};
+const DECK_IDENTITY_LABELS: Record<DeckIdentityType, string> = {
+  class: 'Class',
+  title: 'Title',
+};
+const RULE_ISSUE_LABELS: Record<DeckTargetSection, string> = {
+  main: 'Main Deck',
+  evolve: 'Evolve Deck',
+  leader: 'Leader',
+  token: 'Token Deck',
+};
 
 const DeckBuilder: React.FC = () => {
   const [cards, setCards] = useState<DeckBuilderCardData[]>([]);
@@ -64,6 +90,7 @@ const DeckBuilder: React.FC = () => {
   const [page, setPage] = useState(0);
 
   const [deckName, setDeckName] = useState('My Deck');
+  const [deckRuleConfig, setDeckRuleConfig] = useState(createDefaultDeckRuleConfig());
   const [deckState, setDeckState] = useState<DeckState>(createEmptyDeckState());
 
   useEffect(() => {
@@ -77,8 +104,13 @@ const DeckBuilder: React.FC = () => {
   const expansions = getAvailableExpansions(cards);
   const rarities = getAvailableRarities(cards);
   const productNames = getAvailableProductNames(cards);
+  const titles = getAvailableTitles(cards);
+  const isConstructed = deckRuleConfig.format === 'constructed';
+  const isConstructedReady = isRuleConfigured(deckRuleConfig);
 
   const filteredCards = cards.filter(c => {
+    if (isConstructed && isConstructedReady && !isCardAllowedByRule(c, deckRuleConfig)) return false;
+
     // 1. Name Filter
     if (!c.name.toLowerCase().includes(search.toLowerCase())) return false;
 
@@ -125,9 +157,17 @@ const DeckBuilder: React.FC = () => {
   const paginatedCards = displayCards.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
   const totalPages = Math.ceil(displayCards.length / PAGE_SIZE) || 1;
   const { mainDeck, evolveDeck, leaderCard, tokenDeck } = deckState;
+  const deckIssues = validateDeckState(deckState, deckRuleConfig);
+  const ruleIssueCards = deckIssues
+    .filter(issue => issue.code === 'invalid-rule')
+    .map(issue => {
+      const card = cards.find(candidate => candidate.id === issue.cardId);
+      return card ? `${card.name} (${RULE_ISSUE_LABELS[issue.deck]})` : null;
+    })
+    .filter((value): value is string => value !== null);
 
   const addToDeck = (card: DeckBuilderCardData, targetSection: DeckTargetSection) => {
-    if (!canAddCardToSection(card, targetSection)) return;
+    if (!canAddCardToSection(card, targetSection, deckRuleConfig)) return;
 
     setDeckState(current => {
       switch (targetSection) {
@@ -161,7 +201,14 @@ const DeckBuilder: React.FC = () => {
   };
 
   const exportDeck = () => {
-    const data = JSON.stringify({ deckName, ...deckState }, null, 2);
+    const data = JSON.stringify({
+      deckName,
+      rule: deckRuleConfig.format,
+      identityType: deckRuleConfig.identityType,
+      selectedClass: deckRuleConfig.selectedClass,
+      selectedTitle: deckRuleConfig.selectedTitle,
+      ...deckState,
+    }, null, 2);
 
     // Sanitize filename - allow alphanumeric, Japanese characters, underscores, hyphens
     const rawName = deckName.trim();
@@ -200,6 +247,7 @@ const DeckBuilder: React.FC = () => {
           const nameMatch = file.name.match(/(.+)\.json$/i);
           if (nameMatch) setDeckName(nameMatch[1]);
         }
+        setDeckRuleConfig(getImportedDeckRuleConfig(data));
         setDeckState(sanitizeImportedDeckState(data, cards));
       } catch (err) {
         alert("Failed to parse deck JSON.");
@@ -474,16 +522,19 @@ const DeckBuilder: React.FC = () => {
                           key={section}
                           type="button"
                           onClick={() => addToDeck(card, section)}
+                          disabled={!canAddCardToSection(card, section, deckRuleConfig)}
                           style={{
                             flex: section === 'token' ? '1 1 100%' : 1,
                             padding: '0.25rem',
-                            background: action.background,
+                            background: canAddCardToSection(card, section, deckRuleConfig) ? action.background : 'var(--bg-surface-elevated)',
                             borderRadius: '4px',
                             display: 'flex',
                             justifyContent: 'center',
                             color: '#fff',
                             fontSize: '0.75rem',
                             fontWeight: 700,
+                            opacity: canAddCardToSection(card, section, deckRuleConfig) ? 1 : 0.5,
+                            cursor: canAddCardToSection(card, section, deckRuleConfig) ? 'pointer' : 'not-allowed',
                           }}
                           title={action.title}
                         >
@@ -537,6 +588,154 @@ const DeckBuilder: React.FC = () => {
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
+          <h3 style={{ marginBottom: '0.5rem' }}>Deck Rule</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '2rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+              <label htmlFor="deck-format" style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Rule</label>
+              <select
+                id="deck-format"
+                aria-label="Deck format"
+                value={deckRuleConfig.format}
+                onChange={(e) => {
+                  const nextFormat = e.target.value as DeckFormat;
+                  setDeckRuleConfig(current => ({
+                    ...current,
+                    format: nextFormat,
+                  }));
+                }}
+                style={{
+                  padding: '0.5rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border-light)',
+                  background: 'var(--bg-surface)',
+                  color: 'var(--text-main)',
+                }}
+              >
+                {DECK_FORMAT_VALUES.map(format => (
+                  <option key={format} value={format} disabled={format === 'crossover'}>
+                    {DECK_FORMAT_LABELS[format]}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {deckRuleConfig.format === 'constructed' && (
+              <>
+                <div
+                  role="group"
+                  aria-label="Deck identity type"
+                  style={{
+                    display: 'flex',
+                    background: 'var(--bg-surface)',
+                    padding: '0.25rem',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--border-light)',
+                    gap: '0.25rem',
+                    alignItems: 'center',
+                  }}
+                >
+                  <span style={{ padding: '0.5rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                    Build by:
+                  </span>
+                  {(['class', 'title'] as const).map(identityType => (
+                    <button
+                      key={identityType}
+                      type="button"
+                      aria-pressed={deckRuleConfig.identityType === identityType}
+                      onClick={() => setDeckRuleConfig(current => ({
+                        ...current,
+                        identityType,
+                      }))}
+                      style={{
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: '4px',
+                        background: deckRuleConfig.identityType === identityType ? 'var(--brand-accent)' : 'transparent',
+                        color: deckRuleConfig.identityType === identityType ? '#fff' : 'var(--text-main)',
+                        fontWeight: deckRuleConfig.identityType === identityType ? 'bold' : 'normal',
+                      }}
+                    >
+                      {DECK_IDENTITY_LABELS[identityType]}
+                    </button>
+                  ))}
+                </div>
+
+                {deckRuleConfig.identityType === 'class' ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    <label htmlFor="constructed-class" style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Selected Class</label>
+                    <select
+                      id="constructed-class"
+                      aria-label="Constructed class"
+                      value={deckRuleConfig.selectedClass ?? ''}
+                      onChange={(e) => setDeckRuleConfig(current => ({
+                        ...current,
+                        selectedClass: e.target.value === '' ? null : e.target.value as typeof CLASS_VALUES[number],
+                      }))}
+                      style={{
+                        padding: '0.5rem',
+                        borderRadius: 'var(--radius-md)',
+                        border: '1px solid var(--border-light)',
+                        background: 'var(--bg-surface)',
+                        color: 'var(--text-main)',
+                      }}
+                    >
+                      <option value="">Select class</option>
+                      {CONSTRUCTED_CLASS_VALUES.map(cardClass => (
+                        <option key={cardClass} value={cardClass}>{cardClass}</option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    <label htmlFor="constructed-title" style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Selected Title</label>
+                    <select
+                      id="constructed-title"
+                      aria-label="Constructed title"
+                      value={deckRuleConfig.selectedTitle ?? ''}
+                      onChange={(e) => setDeckRuleConfig(current => ({
+                        ...current,
+                        selectedTitle: e.target.value === '' ? null : e.target.value,
+                      }))}
+                      style={{
+                        padding: '0.5rem',
+                        borderRadius: 'var(--radius-md)',
+                        border: '1px solid var(--border-light)',
+                        background: 'var(--bg-surface)',
+                        color: 'var(--text-main)',
+                      }}
+                    >
+                      <option value="">Select title</option>
+                      {titles.map(title => (
+                        <option key={title} value={title}>{title}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </>
+            )}
+
+            {deckRuleConfig.format === 'crossover' && (
+              <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                Crossover deck building is not implemented yet.
+              </p>
+            )}
+            {deckRuleConfig.format === 'constructed' && !isConstructedReady && (
+              <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                Select a class or title to enable constructed deck building.
+              </p>
+            )}
+            {ruleIssueCards.length > 0 && (
+              <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: '0.75rem' }}>
+                <p style={{ margin: '0 0 0.5rem 0', color: '#f59e0b', fontSize: '0.875rem', fontWeight: 700 }}>
+                  {ruleIssueCards.length} card(s) do not match the selected deck rule.
+                </p>
+                <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                  {ruleIssueCards.slice(0, 3).join(', ')}
+                  {ruleIssueCards.length > 3 ? ', ...' : ''}
+                </p>
+              </div>
+            )}
+          </div>
+
           <h3 style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
             <span>Leader</span>
             <span style={{ color: leaderCard ? 'var(--brand-accent)' : 'var(--text-muted)' }}>{leaderCard ? '1/1' : '0/1'}</span>

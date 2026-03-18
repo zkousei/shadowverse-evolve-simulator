@@ -18,6 +18,7 @@ export const CLASS_ORDER: (keyof typeof CLASS)[] = [
 
 // UI用（表示順固定の values）
 export const CLASS_VALUES: CardClass[] = CLASS_ORDER.map(k => CLASS[k]);
+export const CONSTRUCTED_CLASS_VALUES: CardClass[] = CLASS_VALUES.filter(value => value !== CLASS.NEUTRAL);
 
 // All込みの選択肢
 export const CLASS_FILTER_VALUES: readonly ClassFilter[] = ['All', ...CLASS_VALUES];
