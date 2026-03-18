@@ -10,6 +10,7 @@ interface Props {
   cards: CardInstance[];
   cardStatLookup?: CardStatLookup;
   onInspectCard?: (card: CardInstance, anchor: CardInspectAnchor) => void;
+  onAttack?: (id: string) => void;
   onTap?: (id: string) => void;
   onModifyCounter?: (id: string, stat: 'atk' | 'hp', delta: number) => void;
   onModifyGenericCounter?: (id: string, delta: number) => void;
@@ -22,12 +23,13 @@ interface Props {
   layout?: 'horizontal' | 'stack';
   isProtected?: boolean; // if true, opponent cannot operate cards in this zone
   lockCards?: boolean; // if true, disable drag and quick controls for cards in this zone
+  getHighlightTone?: (card: CardInstance) => 'attack-source' | 'attack-target' | undefined;
   viewerRole?: PlayerRole | 'all'; // current player's role
   containerStyle?: React.CSSProperties;
   isDebug?: boolean;
 }
 
-const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onInspectCard, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, hideCards, layout = 'horizontal', isProtected, lockCards, viewerRole, containerStyle, isDebug }) => {
+const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onInspectCard, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, hideCards, layout = 'horizontal', isProtected, lockCards, getHighlightTone, viewerRole, containerStyle, isDebug }) => {
   const { isOver, setNodeRef } = useDroppable({ id });
 
   const isStack = layout === 'stack';
@@ -139,7 +141,9 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onInspectCard
                       card={card}
                       baseStats={cardStatLookup?.[card.cardId]}
                       hideCurrentStats={attachments.length > 0}
+                      highlightTone={getHighlightTone?.(card)}
                       onInspect={onInspectCard}
+                      onAttack={onAttack}
                       onTap={onTap}
                       onModifyCounter={onModifyCounter}
                       onModifyGenericCounter={onModifyGenericCounter}
@@ -161,7 +165,9 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onInspectCard
                             atk: card.counters.atk + attachedCard.counters.atk,
                             hp: card.counters.hp + attachedCard.counters.hp,
                           }}
+                          highlightTone={getHighlightTone?.(attachedCard)}
                           onInspect={onInspectCard}
+                          onAttack={onAttack}
                           onTap={onTap}
                           onModifyCounter={onModifyCounter}
                           onModifyGenericCounter={onModifyGenericCounter}
@@ -191,7 +197,9 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onInspectCard
                 card={card}
                 baseStats={cardStatLookup?.[card.cardId]}
                 hideCurrentStats={attachments.length > 0}
+                highlightTone={getHighlightTone?.(card)}
                 onInspect={onInspectCard}
+                onAttack={onAttack}
                 onTap={onTap}
                 onModifyCounter={onModifyCounter}
                 onModifyGenericCounter={onModifyGenericCounter}
@@ -213,7 +221,9 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onInspectCard
                       atk: card.counters.atk + attachedCard.counters.atk,
                       hp: card.counters.hp + attachedCard.counters.hp,
                     }}
+                    highlightTone={getHighlightTone?.(attachedCard)}
                     onInspect={onInspectCard}
+                    onAttack={onAttack}
                     onTap={onTap}
                     onModifyCounter={onModifyCounter}
                     onModifyGenericCounter={onModifyGenericCounter}

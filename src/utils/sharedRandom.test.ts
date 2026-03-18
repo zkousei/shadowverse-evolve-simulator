@@ -47,6 +47,14 @@ describe('sharedRandom', () => {
     )).toBe('Player 1 revealed from Search');
   });
 
+  it('formats attack declarations as a shared UI message fallback', () => {
+    expect(formatSharedUiMessage(
+      { type: 'ATTACK_DECLARED', actor: 'guest', attackerCardId: 'attacker-1', attackerName: 'Knight', target: { type: 'leader', player: 'host' } },
+      'host',
+      false
+    )).toBe('Opponent declared an attack');
+  });
+
   it('formats starter decision messages for random and manual choices', () => {
     expect(formatSharedUiMessage(
       { type: 'STARTER_DECIDED', actor: 'host', starter: 'guest', manual: false },

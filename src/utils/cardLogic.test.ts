@@ -481,6 +481,18 @@ describe('CardLogic utils', () => {
     });
   });
 
+  describe('tapStack', () => {
+    it('should set the entire stack to tapped without toggling it back', () => {
+      const parent = createMockCard('parent', 'field-host');
+      const child = { ...createMockCard('child', 'field-host'), attachedTo: 'parent' };
+      const alreadyTappedGrandchild = { ...createMockCard('grandchild', 'field-host'), attachedTo: 'child', isTapped: true };
+
+      const result = CardLogic.tapStack([parent, child, alreadyTappedGrandchild], 'child');
+
+      expect(result.every(c => c.isTapped)).toBe(true);
+    });
+  });
+
   describe('toggleFlip', () => {
     it('should flip the targeted card only', () => {
       const first = createMockCard('c1', 'field-host');

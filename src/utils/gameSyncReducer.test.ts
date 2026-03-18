@@ -742,6 +742,49 @@ describe('gameSyncReducer', () => {
     expect(flipped.cards.find(c => c.id === 'child')?.isFlipped).toBe(false);
   });
 
+  it('declares attacks by tapping the attacker on the current turn', () => {
+    const state = createState({
+      revision: 4,
+      gameStatus: 'playing',
+      turnPlayer: 'host',
+      cards: [
+        {
+          id: 'attacker',
+          cardId: 'BP01-100',
+          name: 'Attacker',
+          image: '',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'target',
+          cardId: 'BP01-101',
+          name: 'Target',
+          image: '',
+          zone: 'field-guest',
+          owner: 'guest',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    const attacked = applyGameSyncEvent(state, {
+      id: 'evt-attack',
+      type: 'ATTACK_DECLARATION',
+      actor: 'host',
+      attackerCardId: 'attacker',
+      target: { type: 'card', cardId: 'target' },
+    });
+
+    expect(attacked.cards.find(c => c.id === 'attacker')?.isTapped).toBe(true);
+    expect(attacked.revision).toBe(5);
+  });
+
   it('blocks flip events for non-owned or non-evolve-deck cards', () => {
     const baseState = createState({
       revision: 4,

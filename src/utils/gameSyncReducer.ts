@@ -2,6 +2,7 @@ import type { SyncState } from '../types/game';
 import type { GameSyncEvent } from '../types/sync';
 import * as CardLogic from './cardLogic';
 import { canImportDeck, isHandCardMovementLocked } from './gameRules';
+import { canDeclareAttack } from './attackUi';
 
 type EventRequester = GameSyncEvent['actor'];
 
@@ -427,6 +428,19 @@ export const applyGameSyncEvent = (
     case 'SPAWN_TOKEN': {
       if (!isActorRequester(requester, event.actor)) return state;
       const nextCards = CardLogic.spawnTokenCard(state.cards, event.token);
+      return bumpRevision({
+        ...state,
+        cards: nextCards,
+      });
+    }
+
+    case 'ATTACK_DECLARATION': {
+      if (!isActorRequester(requester, event.actor)) return state;
+      if (!canDeclareAttack(state.cards, event.actor, event.attackerCardId, event.target, state.turnPlayer, state.gameStatus)) {
+        return state;
+      }
+      const nextCards = CardLogic.tapStack(state.cards, event.attackerCardId);
+      if (nextCards === state.cards) return state;
       return bumpRevision({
         ...state,
         cards: nextCards,

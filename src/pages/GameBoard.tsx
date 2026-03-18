@@ -8,20 +8,21 @@ import { useGameBoardLogic } from '../hooks/useGameBoardLogic';
 import { canImportDeck, canUndoLastTurn, isHandCardMovementLocked } from '../utils/gameRules';
 import { getPlayerLabel, getZoneOwner } from '../utils/soloMode';
 import type { PlayerRole, TokenOption } from '../types/game';
+import type { AttackTarget } from '../types/sync';
 import { buildCardStatLookup, type CardStatLookup } from '../utils/cardStats';
 import { buildCardDetailLookup, formatAbilityText, type CardDetailLookup } from '../utils/cardDetails';
 
 const GameBoard: React.FC = () => {
   const {
     room, isSoloMode, isHost, role, status, gameState, searchZone, setSearchZone,
-    showResetConfirm, setShowResetConfirm, coinMessage, turnMessage, revealedCardsOverlay,
+    showResetConfirm, setShowResetConfirm, coinMessage, turnMessage, attackMessage, attackHistory, attackVisual, revealedCardsOverlay,
     isRollingDice, diceValue, mulliganOrder, isMulliganModalOpen, setIsMulliganModalOpen,
     handleStatChange, setPhase, endTurn, handleUndoTurn, handleSetInitialTurnOrder,
     handlePureCoinFlip, handleRollDice, handleStartGame, handleToggleReady,
     handleDrawInitialHand, startMulligan, handleMulliganOrderSelect, executeMulligan,
     drawCard, handleExtractCard, confirmResetGame, handleDeckUpload, spawnToken,
     handleModifyCounter, handleModifyGenericCounter, handleDragEnd, toggleTap, handleFlipCard, handleSendToBottom,
-    handleBanish, handlePlayToField, handleSendToCemetery, handleReturnEvolve, handleShuffleDeck,
+    handleBanish, handlePlayToField, handleSendToCemetery, handleReturnEvolve, handleShuffleDeck, handleDeclareAttack,
     getCards, getTokenOptions, lastGameState, millCard,
     topDeckCards, handleLookAtTop, handleResolveTopDeck, setTopDeckCards,
     isDebug
@@ -38,6 +39,7 @@ const GameBoard: React.FC = () => {
   const [cardDetailLookup, setCardDetailLookup] = React.useState<CardDetailLookup>({});
   const [selectedInspectorCardId, setSelectedInspectorCardId] = React.useState<string | null>(null);
   const [selectedInspectorAnchor, setSelectedInspectorAnchor] = React.useState<CardInspectAnchor | null>(null);
+  const [attackSourceCardId, setAttackSourceCardId] = React.useState<string | null>(null);
   const inspectorRef = React.useRef<HTMLDivElement | null>(null);
   const viewerRole = isSoloMode ? 'all' : role;
   const isPreparingHandMoveLocked = isHandCardMovementLocked(gameState);
@@ -59,6 +61,35 @@ const GameBoard: React.FC = () => {
   const boardContentWidth = sideZoneWidth * 2 + centerZoneWidth;
   const boardColumns = `${sideZoneWidth}px ${centerZoneWidth}px ${sideZoneWidth}px`;
   const boardShellColumns = `${topPanelWidth}px ${boardContentWidth}px ${sidePanelWidth}px`;
+  const attackSourceCard = attackSourceCardId
+    ? gameState.cards.find(card => card.id === attackSourceCardId) ?? null
+    : null;
+  const attackLine = React.useMemo(() => {
+    if (!attackVisual || typeof document === 'undefined') return null;
+
+    const sourceElement = document.querySelector<HTMLElement>(`[data-card-id="${attackVisual.attackerCardId}"]`);
+    if (!sourceElement) return null;
+
+    const sourceRect = sourceElement.getBoundingClientRect();
+    const sourcePoint = {
+      x: sourceRect.left + sourceRect.width / 2,
+      y: sourceRect.top + sourceRect.height / 2,
+    };
+
+    const targetElement = attackVisual.target.type === 'card'
+      ? document.querySelector<HTMLElement>(`[data-card-id="${attackVisual.target.cardId}"]`)
+      : document.querySelector<HTMLElement>(`[data-leader-zone="leader-${attackVisual.target.player}"]`);
+
+    if (!targetElement) return null;
+
+    const targetRect = targetElement.getBoundingClientRect();
+    const targetPoint = {
+      x: targetRect.left + targetRect.width / 2,
+      y: targetRect.top + targetRect.height / 2,
+    };
+
+    return { sourcePoint, targetPoint };
+  }, [attackVisual]);
   const soloMulliganButtonStyle: React.CSSProperties = {
     position: 'absolute',
     top: '-10px',
@@ -135,7 +166,34 @@ const GameBoard: React.FC = () => {
     zone.startsWith('leader-')
   ), []);
 
+  const getAttackTargetFromCard = React.useCallback((card: CardInstance): AttackTarget | null => {
+    if (!attackSourceCard) return null;
+    const opponentRole = attackSourceCard.owner === 'host' ? 'guest' : 'host';
+
+    if (card.zone === `leader-${opponentRole}`) {
+      return { type: 'leader', player: opponentRole };
+    }
+
+    if (card.zone.startsWith(`field-${opponentRole}`) && !card.isLeaderCard && cardStatLookup[card.cardId]) {
+      return { type: 'card', cardId: card.id };
+    }
+
+    return null;
+  }, [attackSourceCard, cardStatLookup]);
+
+  const handleAttackTargetSelect = React.useCallback((target: AttackTarget) => {
+    if (!attackSourceCard) return;
+    handleDeclareAttack(attackSourceCard.id, target, attackSourceCard.owner);
+    setAttackSourceCardId(null);
+  }, [attackSourceCard, handleDeclareAttack]);
+
   const handleInspectCard = React.useCallback((card: CardInstance, anchor: CardInspectAnchor) => {
+    const attackTarget = getAttackTargetFromCard(card);
+    if (attackTarget) {
+      handleAttackTargetSelect(attackTarget);
+      return;
+    }
+
     if (!isInspectableZone(card.zone) || card.isFlipped) return;
 
     if (selectedInspectorCardId === card.id) {
@@ -146,7 +204,7 @@ const GameBoard: React.FC = () => {
 
     setSelectedInspectorCardId(card.id);
     setSelectedInspectorAnchor(anchor);
-  }, [isInspectableZone, selectedInspectorCardId]);
+  }, [getAttackTargetFromCard, handleAttackTargetSelect, isInspectableZone, selectedInspectorCardId]);
 
   React.useEffect(() => {
     if (!selectedInspectorCardId) return;
@@ -171,6 +229,45 @@ const GameBoard: React.FC = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedInspectorCardId]);
+
+  React.useEffect(() => {
+    if (!attackSourceCardId) return;
+
+    const sourceCard = gameState.cards.find(card => card.id === attackSourceCardId);
+    if (!sourceCard || sourceCard.isTapped || sourceCard.isFlipped || !sourceCard.zone.startsWith('field-') || gameState.gameStatus !== 'playing' || gameState.turnPlayer !== sourceCard.owner) {
+      setAttackSourceCardId(null);
+    }
+  }, [attackSourceCardId, gameState.cards, gameState.gameStatus, gameState.turnPlayer]);
+
+  React.useEffect(() => {
+    if (!attackSourceCardId) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setAttackSourceCardId(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [attackSourceCardId]);
+
+  React.useEffect(() => {
+    if (!attackSourceCardId) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (!target) return;
+      if (target.closest('.game-card')) return;
+      if (target.closest('button')) return;
+      if (target.closest('[data-leader-zone]')) return;
+
+      setAttackSourceCardId(null);
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown, true);
+    return () => document.removeEventListener('pointerdown', handlePointerDown, true);
+  }, [attackSourceCardId]);
 
   React.useEffect(() => {
     if (!selectedInspectorCardId) return;
@@ -267,6 +364,31 @@ const GameBoard: React.FC = () => {
     setTokenSpawnTargetRole(null);
   };
 
+  const handleStartAttack = React.useCallback((cardId: string) => {
+    const card = gameState.cards.find(entry => entry.id === cardId);
+    if (!card) return;
+    if (card.isTapped || card.isFlipped || card.isLeaderCard) return;
+    if (!cardStatLookup[card.cardId]) return;
+    if (gameState.gameStatus !== 'playing') return;
+    if (!card.zone.startsWith(`field-${card.owner}`)) return;
+    if (gameState.turnPlayer !== card.owner) return;
+
+    setSelectedInspectorCardId(null);
+    setSelectedInspectorAnchor(null);
+    setAttackSourceCardId(current => current === cardId ? null : cardId);
+  }, [cardStatLookup, gameState.cards, gameState.gameStatus, gameState.turnPlayer]);
+
+  const getAttackHighlightTone = React.useCallback((card: CardInstance): 'attack-source' | 'attack-target' | undefined => {
+    if (!attackSourceCard) return undefined;
+    if (card.id === attackSourceCard.id) return 'attack-source';
+
+    const opponentRole = attackSourceCard.owner === 'host' ? 'guest' : 'host';
+    if (card.zone === `leader-${opponentRole}`) return 'attack-target';
+    if (card.zone.startsWith(`field-${opponentRole}`) && !card.isLeaderCard && cardStatLookup[card.cardId]) return 'attack-target';
+
+    return undefined;
+  }, [attackSourceCard, cardStatLookup]);
+
   const renderLeaderZone = (
     playerRole: PlayerRole,
     label: string,
@@ -275,9 +397,11 @@ const GameBoard: React.FC = () => {
   ) => {
     const leaderZoneId = `leader-${playerRole}`;
     const leaderCards = getCards(leaderZoneId);
+    const isAttackTargetLeader = attackSourceCard ? attackSourceCard.owner !== playerRole : false;
 
     return (
       <div
+        data-leader-zone={leaderZoneId}
         style={{
           position: 'absolute',
           top: 0,
@@ -292,9 +416,15 @@ const GameBoard: React.FC = () => {
           label={`${label} Leader`}
           cards={leaderCards}
           layout="stack"
+          getHighlightTone={getAttackHighlightTone}
           onInspectCard={handleInspectCard}
           viewerRole={viewerRole}
-          containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }}
+          containerStyle={{
+            minWidth: `${sideZoneWidth}px`,
+            minHeight: '150px',
+            border: isAttackTargetLeader ? '2px solid rgba(250, 204, 21, 0.65)' : undefined,
+            boxShadow: isAttackTargetLeader ? '0 0 18px rgba(250, 204, 21, 0.18)' : undefined
+          }}
           isDebug={isDebug}
         />
         {leaderCards.length >= 2 && (
@@ -846,6 +976,44 @@ const GameBoard: React.FC = () => {
           )}
         </div>
 
+        {attackSourceCard && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '1rem',
+              background: 'rgba(249, 115, 22, 0.14)',
+              border: '1px solid rgba(249, 115, 22, 0.34)',
+              borderRadius: '10px',
+              padding: '0.7rem 0.9rem'
+            }}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.18rem' }}>
+              <div style={{ color: '#fdba74', fontWeight: 900, fontSize: '0.85rem', letterSpacing: '0.04em' }}>
+                ATTACK MODE
+              </div>
+              <div style={{ color: '#f8fafc', fontSize: '0.82rem' }}>
+                Select an enemy follower or leader for <strong>{attackSourceCard.name}</strong>.
+              </div>
+            </div>
+            <button
+              onClick={() => setAttackSourceCardId(null)}
+              style={{
+                padding: '0.35rem 0.8rem',
+                background: 'rgba(15, 23, 42, 0.9)',
+                border: '1px solid rgba(255,255,255,0.16)',
+                color: 'white',
+                borderRadius: '999px',
+                cursor: 'pointer',
+                fontWeight: 'bold'
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+
         {gameState.gameStatus === 'preparing' && (
           <div
             style={{
@@ -905,6 +1073,38 @@ const GameBoard: React.FC = () => {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {gameState.gameStatus === 'playing' && attackHistory.length > 0 && (
+          <div
+            style={{
+              alignSelf: 'flex-end',
+              width: 'min(320px, 100%)',
+              background: 'rgba(15, 23, 42, 0.88)',
+              border: '1px solid rgba(148, 163, 184, 0.22)',
+              borderRadius: '12px',
+              padding: '0.75rem 0.85rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.45rem'
+            }}
+          >
+            <div style={{ color: '#f8fafc', fontWeight: 800, fontSize: '0.8rem', letterSpacing: '0.03em' }}>
+              Recent Attacks
+            </div>
+            {attackHistory.map((entry, index) => (
+              <div
+                key={`${entry}-${index}`}
+                style={{
+                  color: index === 0 ? '#f8fafc' : '#cbd5e1',
+                  fontSize: '0.78rem',
+                  opacity: index === 0 ? 1 : 0.8
+                }}
+              >
+                {entry}
+              </div>
+            ))}
           </div>
         )}
 
@@ -1024,7 +1224,9 @@ const GameBoard: React.FC = () => {
                         label={`${topLabel} Field`}
                         cards={getCards(`field-${topRole}`)}
                         cardStatLookup={cardStatLookup}
+                        getHighlightTone={getAttackHighlightTone}
                         onInspectCard={handleInspectCard}
+                        onAttack={isSoloMode && gameState.turnPlayer === topRole ? handleStartAttack : undefined}
                         onTap={toggleTap}
                         onModifyCounter={handleModifyCounter}
                         onModifyGenericCounter={handleModifyGenericCounter}
@@ -1104,6 +1306,7 @@ const GameBoard: React.FC = () => {
                         label={`${topLabel} Field`}
                         cards={getCards(`field-${topRole}`)}
                         cardStatLookup={cardStatLookup}
+                        getHighlightTone={getAttackHighlightTone}
                         onInspectCard={handleInspectCard}
                         onTap={toggleTap}
                         onModifyCounter={handleModifyCounter}
@@ -1138,7 +1341,7 @@ const GameBoard: React.FC = () => {
                     <Zone id={`evolveDeck-${bottomRole}`} label={`${bottomLabel} Evolve Deck`} cards={getCards(`evolveDeck-${bottomRole}`)} layout="stack" onInspectCard={handleInspectCard} isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
                     <button onClick={() => setSearchZone({ id: `evolveDeck-${bottomRole}`, title: `${bottomLabel} Evolve Deck` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
                   </div>
-                  <Zone id={`field-${bottomRole}`} label={`${bottomLabel} Field`} cards={getCards(`field-${bottomRole}`)} cardStatLookup={cardStatLookup} onInspectCard={handleInspectCard} onTap={toggleTap} onModifyCounter={handleModifyCounter} onModifyGenericCounter={handleModifyGenericCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} viewerRole={viewerRole} containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: '160px', width: `${centerZoneWidth}px`, flex: 'none' }} isDebug={isDebug} />
+                  <Zone id={`field-${bottomRole}`} label={`${bottomLabel} Field`} cards={getCards(`field-${bottomRole}`)} cardStatLookup={cardStatLookup} getHighlightTone={getAttackHighlightTone} onInspectCard={handleInspectCard} onAttack={gameState.turnPlayer === bottomRole ? handleStartAttack : undefined} onTap={toggleTap} onModifyCounter={handleModifyCounter} onModifyGenericCounter={handleModifyGenericCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} viewerRole={viewerRole} containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: '160px', width: `${centerZoneWidth}px`, flex: 'none' }} isDebug={isDebug} />
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <Zone id={`mainDeck-${bottomRole}`} label={`${bottomLabel} Main Deck`} cards={getCards(`mainDeck-${bottomRole}`)} layout="stack" isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
                     {renderZoneActions(`mainDeck-${bottomRole}`, [
@@ -1447,6 +1650,69 @@ const GameBoard: React.FC = () => {
         }}>
           {turnMessage}
         </div>
+      )}
+
+      {attackMessage && (
+        <div style={{
+          position: 'fixed',
+          top: '27%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          background: 'rgba(15, 23, 42, 0.95)',
+          color: '#fdba74',
+          padding: '1rem 1.7rem',
+          borderRadius: '14px',
+          border: '2px solid rgba(249, 115, 22, 0.55)',
+          fontSize: '1rem',
+          fontWeight: 'bold',
+          zIndex: 1950,
+          boxShadow: '0 0 24px rgba(249,115,22,0.24)',
+          pointerEvents: 'none',
+          textAlign: 'center'
+        }}>
+          {attackMessage}
+        </div>
+      )}
+
+      {attackLine && (
+        <svg
+          width="100vw"
+          height="100vh"
+          viewBox={`0 0 ${window.innerWidth} ${window.innerHeight}`}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            pointerEvents: 'none',
+            zIndex: 1940,
+            overflow: 'visible'
+          }}
+        >
+          <defs>
+            <marker
+              id="attack-arrowhead"
+              markerWidth="12"
+              markerHeight="12"
+              refX="10"
+              refY="6"
+              orient="auto"
+            >
+              <path d="M0,0 L12,6 L0,12 z" fill="#fb923c" />
+            </marker>
+          </defs>
+          <line
+            x1={attackLine.sourcePoint.x}
+            y1={attackLine.sourcePoint.y}
+            x2={attackLine.targetPoint.x}
+            y2={attackLine.targetPoint.y}
+            stroke="#fdba74"
+            strokeWidth="4"
+            strokeLinecap="round"
+            markerEnd="url(#attack-arrowhead)"
+            style={{
+              filter: 'drop-shadow(0 0 10px rgba(249,115,22,0.55))'
+            }}
+          />
+        </svg>
       )}
 
       {revealedCardsOverlay && (

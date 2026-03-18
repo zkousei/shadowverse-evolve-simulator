@@ -4,7 +4,7 @@ import Peer, { type DataConnection } from 'peerjs';
 import { type DragEndEvent } from '@dnd-kit/core';
 import { type CardInstance } from '../components/Card';
 import { type PlayerRole, type SyncState, type TokenOption, initialState } from '../types/game';
-import { type GameSyncEvent, type PublicCardView, type SharedUiEffect, type SyncMessage } from '../types/sync';
+import { type AttackTarget, type GameSyncEvent, type PublicCardView, type SharedUiEffect, type SyncMessage } from '../types/sync';
 import { uuid } from '../utils/helpers';
 import * as CardLogic from '../utils/cardLogic';
 import { canImportDeck } from '../utils/gameRules';
@@ -13,6 +13,7 @@ import { flipSharedCoin, formatSharedUiMessage, getSharedActorLabel, rollSharedD
 import { createEventDeduper } from '../utils/eventDeduper';
 import { buildTopDeckRevealEffect } from '../utils/topDeckReveal';
 import { buildSingleCardRevealEffect } from '../utils/cardReveal';
+import { buildAttackDeclaredEffect, formatAttackEffect } from '../utils/attackUi';
 
 type DispatchableGameSyncEvent =
   | { type: 'FLIP_SHARED_COIN'; actor?: PlayerRole }
@@ -43,7 +44,8 @@ type DispatchableGameSyncEvent =
   | { type: 'IMPORT_DECK'; actor?: PlayerRole; cards: CardInstance[]; tokenOptions?: TokenOption[] }
   | { type: 'SET_INITIAL_TURN_ORDER'; actor?: PlayerRole; starter: PlayerRole; manual: boolean }
   | { type: 'UNDO_LAST_TURN'; actor?: PlayerRole; previousState: SyncState }
-  | { type: 'SPAWN_TOKEN'; actor?: PlayerRole; token: CardInstance };
+  | { type: 'SPAWN_TOKEN'; actor?: PlayerRole; token: CardInstance }
+  | { type: 'ATTACK_DECLARATION'; actor?: PlayerRole; attackerCardId: string; target: AttackTarget };
 
 export const useGameBoardLogic = () => {
   const [searchParams] = useSearchParams();
@@ -61,6 +63,9 @@ export const useGameBoardLogic = () => {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [coinMessage, setCoinMessage] = useState<string | null>(null);
   const [turnMessage, setTurnMessage] = useState<string | null>(null);
+  const [attackMessage, setAttackMessage] = useState<string | null>(null);
+  const [attackHistory, setAttackHistory] = useState<string[]>([]);
+  const [attackVisual, setAttackVisual] = useState<Extract<SharedUiEffect, { type: 'ATTACK_DECLARED' }> | null>(null);
   const [revealedCardsOverlay, setRevealedCardsOverlay] = useState<{ title: string; cards: PublicCardView[] } | null>(null);
   const [lastGameState, setLastGameState] = useState<SyncState | null>(null);
   const [isRollingDice, setIsRollingDice] = useState(false);
@@ -83,6 +88,7 @@ export const useGameBoardLogic = () => {
   const diceFinalizeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const diceMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const revealedCardsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const attackMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const processedEventDeduperRef = useRef(createEventDeduper());
 
   const applyLocalState = useCallback((newState: SyncState) => {
@@ -147,6 +153,13 @@ export const useGameBoardLogic = () => {
     }
   }, []);
 
+  const clearAttackMessageTimer = useCallback(() => {
+    if (attackMessageTimeoutRef.current) {
+      clearTimeout(attackMessageTimeoutRef.current);
+      attackMessageTimeoutRef.current = null;
+    }
+  }, []);
+
   const playSharedUiEffect = useCallback((effect: SharedUiEffect) => {
     if (effect.type === 'COIN_FLIP_RESULT') {
       showTimedCoinMessage(formatSharedUiMessage(effect, role, isSoloMode), 3000);
@@ -184,6 +197,20 @@ export const useGameBoardLogic = () => {
       return;
     }
 
+    if (effect.type === 'ATTACK_DECLARED') {
+      const formattedAttack = formatAttackEffect(effect, role, isSoloMode);
+      clearAttackMessageTimer();
+      setAttackMessage(formattedAttack.announcement);
+      setAttackVisual(effect);
+      setAttackHistory(previous => [formattedAttack.history, ...previous].slice(0, 3));
+      attackMessageTimeoutRef.current = setTimeout(() => {
+        setAttackMessage(null);
+        setAttackVisual(null);
+        attackMessageTimeoutRef.current = null;
+      }, 2200);
+      return;
+    }
+
     clearDiceTimers();
     clearCoinMessageTimer();
     setIsRollingDice(true);
@@ -214,7 +241,7 @@ export const useGameBoardLogic = () => {
       }, 800);
       diceFinalizeTimeoutRef.current = null;
     }, 900);
-  }, [clearCoinMessageTimer, clearDiceTimers, clearRevealedCardsTimer, isSoloMode, role, showTimedCoinMessage]);
+  }, [clearAttackMessageTimer, clearCoinMessageTimer, clearDiceTimers, clearRevealedCardsTimer, isSoloMode, role, showTimedCoinMessage]);
 
   const maybeApplySnapshot = useCallback((incomingState: SyncState, source: PlayerRole) => {
     const currentRevision = gameStateRef.current.revision;
@@ -293,6 +320,13 @@ export const useGameBoardLogic = () => {
       };
       playSharedUiEffect(effect);
       sendSharedUiEffect(effect);
+    }
+    if (event.type === 'ATTACK_DECLARATION') {
+      const effect = buildAttackDeclaredEffect(currentState.cards, event.actor, event.attackerCardId, event.target);
+      if (effect) {
+        playSharedUiEffect(effect);
+        sendSharedUiEffect(effect);
+      }
     }
   }, [applyLocalState, playSharedUiEffect, role, sendSharedUiEffect, sendSnapshot]);
 
@@ -395,11 +429,12 @@ export const useGameBoardLogic = () => {
 
   useEffect(() => {
     return () => {
+      clearAttackMessageTimer();
       clearCoinMessageTimer();
       clearDiceTimers();
       clearRevealedCardsTimer();
     };
-  }, [clearCoinMessageTimer, clearDiceTimers, clearRevealedCardsTimer]);
+  }, [clearAttackMessageTimer, clearCoinMessageTimer, clearDiceTimers, clearRevealedCardsTimer]);
 
   useEffect(() => {
     if (gameState.gameStatus !== 'playing') return;
@@ -644,6 +679,14 @@ export const useGameBoardLogic = () => {
     dispatchGameEvent({ type: 'PLAY_TO_FIELD', actor: targetRole, cardId });
   };
 
+  const handleDeclareAttack = (
+    attackerCardId: string,
+    target: AttackTarget,
+    targetRole?: PlayerRole
+  ) => {
+    dispatchGameEvent({ type: 'ATTACK_DECLARATION', actor: targetRole, attackerCardId, target });
+  };
+
   const handleSendToCemetery = (cardId: string) => {
     dispatchGameEvent({ type: 'SEND_TO_CEMETERY', cardId });
   };
@@ -664,14 +707,14 @@ export const useGameBoardLogic = () => {
 
   return {
     room, mode, isSoloMode, isHost, role, status, gameState, searchZone, setSearchZone,
-    showResetConfirm, setShowResetConfirm, coinMessage, turnMessage, revealedCardsOverlay,
+    showResetConfirm, setShowResetConfirm, coinMessage, turnMessage, attackMessage, attackHistory, attackVisual, revealedCardsOverlay,
     isRollingDice, diceValue, mulliganOrder, isMulliganModalOpen, setIsMulliganModalOpen,
     handleStatChange, setPhase, endTurn, handleUndoTurn, handleSetInitialTurnOrder,
     handlePureCoinFlip, handleRollDice, handleStartGame, handleToggleReady,
     handleDrawInitialHand, startMulligan, handleMulliganOrderSelect, executeMulligan,
     drawCard, handleExtractCard, confirmResetGame, handleDeckUpload, spawnToken,
     handleModifyCounter, handleModifyGenericCounter, handleDragEnd, toggleTap, handleFlipCard, handleSendToBottom,
-    handleBanish, handlePlayToField, handleSendToCemetery, handleReturnEvolve, handleShuffleDeck,
+    handleBanish, handlePlayToField, handleSendToCemetery, handleReturnEvolve, handleShuffleDeck, handleDeclareAttack,
     getCards, getTokenOptions, lastGameState, millCard,
     topDeckCards, handleLookAtTop, handleResolveTopDeck, setTopDeckCards,
     isDebug

@@ -33,7 +33,9 @@ interface Props {
   baseStats?: BaseCardStats;
   displayCounters?: { atk: number; hp: number };
   hideCurrentStats?: boolean;
+  highlightTone?: 'attack-source' | 'attack-target';
   onInspect?: (card: CardInstance, anchor: CardInspectAnchor) => void;
+  onAttack?: (id: string) => void;
   onTap?: (id: string) => void;
   onModifyCounter?: (id: string, stat: 'atk' | 'hp', delta: number) => void;
   onModifyGenericCounter?: (id: string, delta: number) => void;
@@ -47,7 +49,7 @@ interface Props {
   debugIndex?: number;
 }
 
-const Card: React.FC<Props> = ({ card, baseStats, displayCounters, hideCurrentStats, onInspect, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, isHidden, isLocked, debugIndex }) => {
+const Card: React.FC<Props> = ({ card, baseStats, displayCounters, hideCurrentStats, highlightTone, onInspect, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, isHidden, isLocked, debugIndex }) => {
   const inspectPointerStartRef = React.useRef<{ x: number; y: number } | null>(null);
   const isInteractionLocked = isLocked || card.isLeaderCard || card.zone.startsWith('leader-');
   const { attributes, listeners, setNodeRef: setDraggableRef, transform } = useDraggable({
@@ -97,12 +99,24 @@ const Card: React.FC<Props> = ({ card, baseStats, displayCounters, hideCurrentSt
     !card.zone.startsWith('hand') &&
     (card.counters.atk !== 0 || card.counters.hp !== 0) &&
     !currentStats;
+  const highlightStyle: React.CSSProperties | undefined = highlightTone === 'attack-source'
+    ? {
+        border: '2px solid rgba(34, 211, 238, 0.9)',
+        boxShadow: '0 0 0 2px rgba(34, 211, 238, 0.28), 0 0 18px rgba(34, 211, 238, 0.32)'
+      }
+    : highlightTone === 'attack-target'
+      ? {
+          border: '2px solid rgba(250, 204, 21, 0.9)',
+          boxShadow: '0 0 0 2px rgba(250, 204, 21, 0.22), 0 0 18px rgba(250, 204, 21, 0.24)'
+        }
+      : undefined;
 
   return (
     <div
       ref={setRefs}
+      data-card-id={card.id}
       className="game-card"
-      style={{ ...style, border: isOver ? '2px solid var(--vivid-green-cyan)' : 'none', borderRadius: '4px' }}
+      style={{ ...style, border: isOver ? '2px solid var(--vivid-green-cyan)' : highlightStyle?.border ?? 'none', boxShadow: highlightStyle?.boxShadow, borderRadius: '4px' }}
       {...listeners}
       {...attributes}
       onPointerDownCapture={(event) => {
@@ -290,6 +304,15 @@ const Card: React.FC<Props> = ({ card, baseStats, displayCounters, hideCurrentSt
                   <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onTap(card.id); }} style={{ background: card.isTapped ? '#fbbf24' : '#64748b', color: 'black', border: '1px solid #fff', padding: '4px 4px', fontSize: '11px', borderRadius: '4px', width: '100%', fontWeight: 'bold' }}>
                     {card.isTapped ? 'STAND' : 'REST'}
                   </button>
+                  {onAttack && card.zone.startsWith('field-') && !card.isTapped && Boolean(baseStats) && (
+                    <button
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => { e.stopPropagation(); onAttack(card.id); }}
+                      style={{ background: '#f97316', color: 'white', border: '1px solid #fdba74', padding: '4px 4px', fontSize: '11px', borderRadius: '4px', width: '100%', fontWeight: 'bold' }}
+                    >
+                      Attack
+                    </button>
+                  )}
                 </div>
               )}
             </div>
