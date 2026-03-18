@@ -3530,6 +3530,11 @@
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP18/bp18-u07.png"
   },
   {
+    "id": "BP18-SEP",
+    "name": "六銘伝を統べる者達",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP18/bp18-sep.png"
+  },
+  {
     "id": "BP17-001",
     "name": "深緑の弓使い・アリサ",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP17/bp17-001.png"
@@ -16625,6 +16630,11 @@
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-004.png"
   },
   {
+    "id": "BP09-005",
+    "name": "深緑の純心・ポーラ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-005.png"
+  },
+  {
     "id": "BP09-006",
     "name": "翠嵐の斧使い",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-006.png"
@@ -16688,6 +16698,11 @@
     "id": "BP09-018",
     "name": "空の指揮官・セリア",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-018.png"
+  },
+  {
+    "id": "BP09-019",
+    "name": "希望の戦術家・セリア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-019.png"
   },
   {
     "id": "BP09-020",
@@ -16785,6 +16800,11 @@
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-038.png"
   },
   {
+    "id": "BP09-039",
+    "name": "マナリアの白竜",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-039.png"
+  },
+  {
     "id": "BP09-040",
     "name": "キングスノーマン",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-040.png"
@@ -16865,6 +16885,11 @@
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-055.png"
   },
   {
+    "id": "BP09-056",
+    "name": "聖竜・リントヴルム",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-056.png"
+  },
+  {
     "id": "BP09-057",
     "name": "竜鎧の戦士",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-057.png"
@@ -16928,6 +16953,11 @@
     "id": "BP09-069",
     "name": "闇夜の姫・ヴァンピィ",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-069.png"
+  },
+  {
+    "id": "BP09-070",
+    "name": "カインドクイーン・ヴァンピィ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-070.png"
   },
   {
     "id": "BP09-071",
@@ -17023,6 +17053,11 @@
     "id": "BP09-089",
     "name": "ケリュネイア",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-089.png"
+  },
+  {
+    "id": "BP09-090",
+    "name": "明転の牝鹿・ケリュネイア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-090.png"
   },
   {
     "id": "BP09-091",
@@ -17180,6 +17215,11 @@
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-p01.png"
   },
   {
+    "id": "BP09-P02",
+    "name": "深緑の純心・ポーラ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-p02.png"
+  },
+  {
     "id": "BP09-P03",
     "name": "森羅の怒り",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-p03.png"
@@ -17225,6 +17265,11 @@
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-p11.png"
   },
   {
+    "id": "BP09-P12",
+    "name": "マナリアの白竜",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-p12.png"
+  },
+  {
     "id": "BP09-P13",
     "name": "オニオン軍団の長・バーゼント",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-p13.png"
@@ -17243,6 +17288,11 @@
     "id": "BP09-P16",
     "name": "リントヴルム",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-p16.png"
+  },
+  {
+    "id": "BP09-P17",
+    "name": "聖竜・リントヴルム",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-p17.png"
   },
   {
     "id": "BP09-P18",
@@ -17290,6 +17340,11 @@
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-p26.png"
   },
   {
+    "id": "BP09-P27",
+    "name": "明転の牝鹿・ケリュネイア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-p27.png"
+  },
+  {
     "id": "BP09-P28",
     "name": "宝石の巫女",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-p28.png"
@@ -17335,6 +17390,11 @@
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-sl04.png"
   },
   {
+    "id": "BP09-SL05",
+    "name": "希望の戦術家・セリア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-sl05.png"
+  },
+  {
     "id": "BP09-SL06",
     "name": "スパルタクス",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-sl06.png"
@@ -17373,6 +17433,11 @@
     "id": "BP09-SL13",
     "name": "闇夜の姫・ヴァンピィ",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-sl13.png"
+  },
+  {
+    "id": "BP09-SL14",
+    "name": "カインドクイーン・ヴァンピィ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-sl14.png"
   },
   {
     "id": "BP09-SL15",
@@ -17528,6 +17593,11 @@
     "id": "BP08-002",
     "name": "人形の少女・オーキス",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP08/bp08-002.png"
+  },
+  {
+    "id": "BP08-003",
+    "name": "決意の人形・オーキス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP08/bp08-003_front.png"
   },
   {
     "id": "BP08-004",
@@ -18263,6 +18333,11 @@
     "id": "BP08-SL02",
     "name": "人形の少女・オーキス",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP08/bp08-sl02.png"
+  },
+  {
+    "id": "BP08-SL03",
+    "name": "決意の人形・オーキス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP08/bp08-sl03_front.png"
   },
   {
     "id": "BP08-SL04",
@@ -19480,7 +19555,7 @@
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CSD02c/csd02c-ld01.png"
   },
   {
-    "id": "CSD02c-LD%E2%93%8801",
+    "id": "CSD02c-LDⓈ01",
     "name": "〔ステージオブマジック〕本田未央",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CSD02c/csd02c-lds01.png"
   },
@@ -19640,7 +19715,7 @@
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CSD02b/csd02b-ld01.png"
   },
   {
-    "id": "CSD02b-LD%E2%93%8801",
+    "id": "CSD02b-LDⓈ01",
     "name": "〔ステージオブマジック〕渋谷凛",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CSD02b/csd02b-lds01.png"
   },
@@ -19800,7 +19875,7 @@
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CSD02a/csd02a-ld01.png"
   },
   {
-    "id": "CSD02a-LD%E2%93%8801",
+    "id": "CSD02a-LDⓈ01",
     "name": "〔ステージオブマジック〕島村卯月",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CSD02a/csd02a-lds01.png"
   },
@@ -21855,12 +21930,12 @@
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP06/bp06-ld02.png"
   },
   {
-    "id": "BP06-LD%E2%93%8801",
+    "id": "BP06-LDⓈ01",
     "name": "博衣こより",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP06/bp06-lds01.png"
   },
   {
-    "id": "BP06-LD%E2%93%8802",
+    "id": "BP06-LDⓈ02",
     "name": "沙花叉クロヱ",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP06/bp06-lds02.png"
   },
@@ -23995,7 +24070,7 @@
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP04/bp04-ld10.png"
   },
   {
-    "id": "BP04-LD%E2%93%8801",
+    "id": "BP04-LDⓈ01",
     "name": "ルルーシュ・ランペルージ",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP04/bp04-lds01.png"
   },
@@ -24985,7 +25060,7 @@
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP03/bp03-ld05.png"
   },
   {
-    "id": "BP03-LD%E2%93%8801",
+    "id": "BP03-LDⓈ01",
     "name": "壱百満天原サロメ",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP03/bp03-lds01.png"
   },
@@ -32170,6 +32245,11 @@
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/pr-403.png"
   },
   {
+    "id": "PR-404",
+    "name": "SEP",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-404.png"
+  },
+  {
     "id": "PR-405",
     "name": "森の弓使い・アリサ",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-405.png"
@@ -32488,6 +32568,11 @@
     "id": "PR-468",
     "name": "美麗なる術式",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-468.png"
+  },
+  {
+    "id": "PR-469",
+    "name": "SEP",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-469.png"
   },
   {
     "id": "PR-470",
