@@ -351,6 +351,23 @@ describe('CardLogic utils', () => {
       expect(result.find(c => c.id === 'field-1')?.genericCounter).toBe(0);
     });
 
+    it('should untap a rested field card when dragged to the ex area', () => {
+      const fieldCard = {
+        ...createMockCard('field-1', 'field-host'),
+        isTapped: true,
+        counters: { atk: 2, hp: -1 },
+        genericCounter: 2
+      };
+      const exCard = createMockCard('ex-1', 'ex-host');
+
+      const result = CardLogic.applyDrop([fieldCard, exCard], 'field-1', 'ex-1');
+
+      expect(result.find(c => c.id === 'field-1')?.zone).toBe('ex-host');
+      expect(result.find(c => c.id === 'field-1')?.isTapped).toBe(false);
+      expect(result.find(c => c.id === 'field-1')?.counters).toEqual({ atk: 0, hp: 0 });
+      expect(result.find(c => c.id === 'field-1')?.genericCounter).toBe(0);
+    });
+
     it('should preserve counters when an ex card is dragged to the field', () => {
       const exCard = { ...createMockCard('ex-1', 'ex-host'), counters: { atk: 2, hp: -1 }, genericCounter: 2 };
       const fieldCard = createMockCard('field-1', 'field-host');

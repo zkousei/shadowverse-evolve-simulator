@@ -401,6 +401,7 @@ export const resolveDrop = (
   const isEnteringSafeZone = ['mainDeck', 'evolveDeck', 'hand', 'cemetery', 'banish'].includes(baseZonePrefix);
   const isReturningToDeck = baseZonePrefix === 'mainDeck' || baseZonePrefix === 'evolveDeck';
   const isEnteringHand = baseZonePrefix === 'hand';
+  const isEnteringEx = baseZonePrefix === 'ex';
   const shouldPlaceAtFront = isReturningToDeck || baseZonePrefix === 'cemetery' || baseZonePrefix === 'banish';
 
   return {
@@ -419,7 +420,7 @@ export const resolveDrop = (
             : ['field', 'ex', 'cemetery', 'banish', 'hand'].includes(baseZonePrefix)
               ? false
               : activeCard.isFlipped,
-      isTapped: isEnteringSafeZone ? false : activeCard.isTapped,
+      isTapped: isEnteringSafeZone || isEnteringEx ? false : activeCard.isTapped,
       counters: isEnteringHand ? { atk: 0, hp: 0 } : getCountersForMove(activeCard, targetZone),
       genericCounter: getGenericCounterForMove(activeCard, targetZone),
       preserveAttachment: !isEnteringSafeZone,
