@@ -8,9 +8,11 @@ import {
   createDeckSnapshot,
   DECK_BUILDER_DRAFT_KEY,
   deleteSavedDeck,
+  duplicateSavedDeck,
   getSavedDeckById,
   listSavedDecks,
   loadDraft,
+  renameSavedDeck,
   restoreDraftToSnapshot,
   restoreSavedDeckToSnapshot,
   saveDeck,
@@ -158,5 +160,50 @@ describe('deckStorage', () => {
     deleteSavedDeck(saved.id);
     expect(getSavedDeckById(saved.id)).toBeNull();
     expect(listSavedDecks()).toEqual([]);
+  });
+
+  it('duplicates saved decks with a new id and copied sections', () => {
+    const saved = saveDeck({
+      name: 'Base Deck',
+      ruleConfig: otherRuleConfig,
+      deckState: {
+        mainDeck: [mockCards[0], mockCards[0]],
+        evolveDeck: [mockCards[1]],
+        leaderCards: [],
+        tokenDeck: [],
+      },
+    });
+
+    vi.setSystemTime(new Date('2026-03-20T02:00:00.000Z'));
+
+    const duplicated = duplicateSavedDeck(saved.id);
+
+    expect(duplicated).not.toBeNull();
+    expect(duplicated?.id).not.toBe(saved.id);
+    expect(duplicated?.name).toBe('Base Deck copy');
+    expect(duplicated?.createdAt).toBe('2026-03-20T02:00:00.000Z');
+    expect(duplicated?.updatedAt).toBe('2026-03-20T02:00:00.000Z');
+    expect(duplicated?.sections).toEqual(saved.sections);
+    expect(listSavedDecks()).toHaveLength(2);
+    expect(listSavedDecks()[0].id).toBe(duplicated?.id);
+    expect(duplicateSavedDeck('missing-id')).toBeNull();
+  });
+
+  it('renames saved decks with normalized names and returns null for missing ids', () => {
+    const saved = saveDeck({
+      name: 'Rename Me',
+      ruleConfig: otherRuleConfig,
+      deckState: createEmptyDeckState(),
+    });
+
+    vi.setSystemTime(new Date('2026-03-20T03:00:00.000Z'));
+
+    const renamed = renameSavedDeck(saved.id, '   ');
+
+    expect(renamed).not.toBeNull();
+    expect(renamed?.name).toBe('My Deck');
+    expect(renamed?.updatedAt).toBe('2026-03-20T03:00:00.000Z');
+    expect(getSavedDeckById(saved.id)?.name).toBe('My Deck');
+    expect(renameSavedDeck('missing-id', 'Ignored')).toBeNull();
   });
 });

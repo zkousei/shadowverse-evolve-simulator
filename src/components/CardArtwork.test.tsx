@@ -90,4 +90,38 @@ describe('CardArtwork', () => {
     expect(screen.getByText('TOKEN')).toBeInTheDocument();
     expect(screen.getByText('EQUIPMENT')).toBeInTheDocument();
   });
+
+  it('renders the dummy card back when requested', () => {
+    render(
+      <CardArtwork
+        image="/ignored.png"
+        alt="Hidden Card"
+        isBack={true}
+      />
+    );
+
+    expect(screen.getByLabelText('Card Back')).toBeInTheDocument();
+    expect(screen.getByText('Shadowverse Evolve')).toBeInTheDocument();
+    expect(screen.getByText('Card Back')).toBeInTheDocument();
+  });
+
+  it('renders leader fallback styling and placeholder stats when details are sparse', () => {
+    render(
+      <CardArtwork
+        image="/leader.png"
+        alt="Leader Card"
+        isLeaderCard={true}
+        detail={{
+          name: 'Leader Card',
+          cost: '-',
+          atk: null,
+          hp: null,
+          type: 'Leader',
+        }}
+      />
+    );
+
+    expect(screen.getByText('LEADER')).toBeInTheDocument();
+    expect(screen.getAllByText('-').length).toBeGreaterThanOrEqual(3);
+  });
 });
