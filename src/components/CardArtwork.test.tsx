@@ -115,7 +115,7 @@ describe('CardArtwork', () => {
           name: 'Leader Card',
           cost: '-',
           atk: null,
-          hp: undefined,
+          hp: null,
           type: 'Leader',
         }}
       />
