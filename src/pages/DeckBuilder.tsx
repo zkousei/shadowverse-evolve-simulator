@@ -211,6 +211,9 @@ const formatSavedDeckUpdatedAt = (value: string): string => {
   }
 };
 
+const DEFAULT_DECK_NAME = 'My Deck';
+const resolveDeckName = (value: string) => value.trim() || DEFAULT_DECK_NAME;
+
 const DeckBuilder: React.FC = () => {
   const [cards, setCards] = useState<DeckBuilderCardData[]>([]);
   const [search, setSearch] = useState('');
@@ -226,7 +229,7 @@ const DeckBuilder: React.FC = () => {
   const [hideSameNameVariants, setHideSameNameVariants] = useState(false);
   const [page, setPage] = useState(0);
 
-  const [deckName, setDeckName] = useState('My Deck');
+  const [deckName, setDeckName] = useState('');
   const [deckRuleConfig, setDeckRuleConfig] = useState(createDefaultDeckRuleConfig());
   const [deckState, setDeckState] = useState<DeckState>(createEmptyDeckState());
   const [deckSortMode, setDeckSortMode] = useState<DeckSortMode>('added');
@@ -376,7 +379,7 @@ const DeckBuilder: React.FC = () => {
     cardClass => cardClass === deckRuleConfig.selectedClasses[1] || cardClass !== deckRuleConfig.selectedClasses[0]
   );
   const canExportDeck = deckIssueMessages.length === 0;
-  const currentSnapshot = createDeckSnapshot(deckName, deckRuleConfig, deckState);
+  const currentSnapshot = createDeckSnapshot(resolveDeckName(deckName), deckRuleConfig, deckState);
   const pristineSnapshot = React.useMemo(() => createPristineDeckSnapshot(createDefaultDeckRuleConfig()), []);
   const savedDeckCount = savedDecks.length;
   const hasReachedSoftLimit = hasReachedSoftSavedDeckLimit(savedDeckCount);
@@ -417,7 +420,7 @@ const DeckBuilder: React.FC = () => {
     const timeoutId = window.setTimeout(() => {
       saveDraft({
         selectedDeckId: selectedSavedDeckId,
-        name: deckName,
+        name: resolveDeckName(deckName),
         ruleConfig: deckRuleConfig,
         deckState,
       });
@@ -433,7 +436,7 @@ const DeckBuilder: React.FC = () => {
   const handleDiscardDraft = () => {
     clearDraft();
     const defaultRuleConfig = createDefaultDeckRuleConfig();
-    setDeckName('My Deck');
+    setDeckName('');
     setDeckRuleConfig(defaultRuleConfig);
     setDeckState(createEmptyDeckState());
     setSelectedSavedDeckId(null);
@@ -586,7 +589,7 @@ const DeckBuilder: React.FC = () => {
       }, 200);
     };
 
-    downloadDeckJson(deckName, deckRuleConfig, deckState);
+    downloadDeckJson(resolveDeckName(deckName), deckRuleConfig, deckState);
   };
 
   const handleImportDeck = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -623,7 +626,7 @@ const DeckBuilder: React.FC = () => {
       return;
     }
 
-    const snapshot = createDeckSnapshot(deckName, deckRuleConfig, deckState);
+    const snapshot = createDeckSnapshot(resolveDeckName(deckName), deckRuleConfig, deckState);
     const savedDeck = saveDeck({
       id: saveAsNew ? undefined : (selectedSavedDeckId ?? undefined),
       name: snapshot.name,
@@ -1158,50 +1161,73 @@ const DeckBuilder: React.FC = () => {
       {/* Right: Deck Checklist */}
       <div className="glass-panel" style={{ width: '350px', display: 'flex', flexDirection: 'column', borderRight: 'none', borderTop: 'none', borderBottom: 'none', borderRadius: 0 }}>
         <div style={{ padding: '0.75rem 1.5rem', borderBottom: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <input
-              type="text"
-              value={deckName}
-              onChange={(e) => setDeckName(e.target.value)}
-              style={{
-                fontSize: '1.5rem',
-                fontWeight: 'bold',
-                background: 'transparent',
-                border: 'none',
-                borderBottom: '2px solid transparent',
-                color: 'var(--text-main)',
-                outline: 'none',
-                flex: 1,
-                minWidth: 0,
-                transition: 'border-color 0.2s',
-              }}
-              onFocus={(e) => e.target.style.borderBottom = '2px solid var(--brand-accent)'}
-              onBlur={(e) => e.target.style.borderBottom = '2px solid transparent'}
-              placeholder="Deck Name"
-            />
-            <button
-              type="button"
-              onClick={() => handleSaveDeck(false)}
-              disabled={!canSaveCurrentDeck}
-              title={canSaveCurrentDeck ? 'Save deck' : `My Decks limit reached (${HARD_SAVED_DECK_LIMIT}). Delete or export older decks before creating a new saved deck.`}
-              style={{
-                flexShrink: 0,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.25rem',
-                background: canSaveCurrentDeck ? 'var(--accent-primary)' : '#475569',
-                color: '#fff',
-                border: `1px solid ${canSaveCurrentDeck ? 'rgba(255,255,255,0.12)' : '#64748b'}`,
-                padding: '0.5rem 0.75rem',
-                borderRadius: 'var(--radius-md)',
-                fontSize: '0.875rem',
-                fontWeight: 700,
-                cursor: canSaveCurrentDeck ? 'pointer' : 'not-allowed',
-                opacity: canSaveCurrentDeck ? 1 : 0.75,
-              }}
-            >
-              Save
-            </button>
+          <div style={{ color: 'var(--text-muted)', fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+            Deck Name
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <input
+                type="text"
+                value={deckName}
+                onChange={(e) => setDeckName(e.target.value)}
+                style={{
+                  fontSize: '1.5rem',
+                  fontWeight: 'bold',
+                  background: 'rgba(15, 23, 42, 0.45)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  borderBottom: '2px solid rgba(255,255,255,0.16)',
+                  borderRadius: 'var(--radius-md)',
+                  color: 'var(--text-main)',
+                  outline: 'none',
+                  width: '100%',
+                  minWidth: 0,
+                  transition: 'border-color 0.2s, box-shadow 0.2s, background 0.2s',
+                  padding: '0.7rem 0.85rem',
+                  flex: 1,
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = 'rgba(255,255,255,0.22)';
+                  e.target.style.borderBottom = '2px solid var(--brand-accent)';
+                  e.target.style.boxShadow = '0 0 0 3px rgba(14, 165, 233, 0.12)';
+                  e.target.style.background = 'rgba(15, 23, 42, 0.7)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'rgba(255,255,255,0.12)';
+                  e.target.style.borderBottom = '2px solid rgba(255,255,255,0.16)';
+                  e.target.style.boxShadow = 'none';
+                  e.target.style.background = 'rgba(15, 23, 42, 0.45)';
+                }}
+                placeholder="Deck Name"
+              />
+              <button
+                type="button"
+                onClick={() => handleSaveDeck(false)}
+                disabled={!canSaveCurrentDeck}
+                title={canSaveCurrentDeck ? 'Save deck' : `My Decks limit reached (${HARD_SAVED_DECK_LIMIT}). Delete or export older decks before creating a new saved deck.`}
+                style={{
+                  flexShrink: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                  background: canSaveCurrentDeck ? 'var(--accent-primary)' : '#475569',
+                  color: '#fff',
+                  border: `1px solid ${canSaveCurrentDeck ? 'rgba(255,255,255,0.12)' : '#64748b'}`,
+                  padding: '0.5rem 0.75rem',
+                  borderRadius: 'var(--radius-md)',
+                  fontSize: '0.875rem',
+                  fontWeight: 700,
+                  cursor: canSaveCurrentDeck ? 'pointer' : 'not-allowed',
+                  opacity: canSaveCurrentDeck ? 1 : 0.75,
+                }}
+              >
+                Save
+              </button>
+            </div>
+            {deckName.trim() === '' && (
+              <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                If left blank, the deck will be saved as {DEFAULT_DECK_NAME}.
+              </div>
+            )}
           </div>
 
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
