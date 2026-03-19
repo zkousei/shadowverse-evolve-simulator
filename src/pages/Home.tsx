@@ -44,37 +44,6 @@ const Home: React.FC = () => {
           The unofficial digital sandbox tabletop. Build your deck and duel your friends directly via Peer-to-Peer without any servers.
         </p>
 
-        {IS_DUMMY_CARD_ART_BUILD && (
-          <div
-            className="glass-panel"
-            style={{
-              padding: '1.25rem 1.5rem',
-              marginBottom: '2rem',
-              textAlign: 'left',
-              border: '1px solid rgba(245, 158, 11, 0.35)',
-              background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(15, 23, 42, 0.55))'
-            }}
-          >
-            <h2 style={{ margin: '0 0 0.6rem 0', fontSize: '1rem', color: '#fbbf24' }}>
-              Dummy Card Art Build
-            </h2>
-            <p style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-main)', lineHeight: '1.6' }}>
-              このサイトでは現在カード画像がダミー表示になっています。実際のカード画像を使いたい場合は、
-              {' '}
-              <a
-                href="https://github.com/zkousei/shadowverse-evolve-simulator"
-                target="_blank"
-                rel="noreferrer"
-                style={{ color: '#fcd34d', fontWeight: 700, textDecoration: 'underline' }}
-              >
-                GitHub
-              </a>
-              {' '}
-              からソースをダウンロードしてローカルで実行してください。ローカル実行でも P2P 対戦は可能です。
-            </p>
-          </div>
-        )}
-
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
           
           <button 
@@ -167,6 +136,32 @@ const Home: React.FC = () => {
             </button>
           </form>
         </div>
+
+        {IS_DUMMY_CARD_ART_BUILD && (
+          <p
+            style={{
+              margin: '1rem auto 0',
+              maxWidth: '700px',
+              fontSize: '0.78rem',
+              color: 'var(--text-muted)',
+              lineHeight: '1.6',
+              textAlign: 'center'
+            }}
+          >
+            このサイトでは現在カード画像がダミー表示になっています。実際のカード画像を使いたい場合は
+            {' '}
+            <a
+              href="https://github.com/zkousei/shadowverse-evolve-simulator"
+              target="_blank"
+              rel="noreferrer"
+              style={{ color: '#cbd5e1', textDecoration: 'underline' }}
+            >
+              GitHub
+            </a>
+            {' '}
+            からソースをダウンロードしてローカルで実行してください。ローカル実行でも P2P 対戦は可能です。
+          </p>
+        )}
       </div>
 
       <div style={{ position: 'fixed', bottom: '1rem', textAlign: 'center', maxWidth: '800px', padding: '0 1rem' }}>
