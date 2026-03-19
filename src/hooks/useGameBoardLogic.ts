@@ -156,6 +156,7 @@ export const useGameBoardLogic = () => {
   const setupConnectionRef = useRef<(conn: DataConnection) => void>(() => undefined);
   const gameStateRef = useRef<SyncState>(initialState);
   const savedSessionCandidateRef = useRef<SavedHostSession | null>(null);
+  const awaitingInitialSnapshotRef = useRef(false);
   const activeConnectionTokenRef = useRef<string | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const snapshotRequestTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -367,6 +368,13 @@ export const useGameBoardLogic = () => {
   }, [clearAttackMessageTimer, clearCardPlayMessageTimer, clearCoinMessageTimer, clearDiceTimers, clearRevealedCardsTimer, isSoloMode, role, showTimedCoinMessage]);
 
   const maybeApplySnapshot = useCallback((incomingState: SyncState, source: PlayerRole) => {
+    if (!isHost && source === 'host' && awaitingInitialSnapshotRef.current) {
+      awaitingInitialSnapshotRef.current = false;
+      applyLocalState(incomingState);
+      setLastGameState(null);
+      return;
+    }
+
     const currentRevision = gameStateRef.current.revision;
     if (incomingState.revision < currentRevision) return;
     if (incomingState.revision === currentRevision && !(source === 'host' && !isHost)) return;
@@ -565,6 +573,7 @@ export const useGameBoardLogic = () => {
         return;
       }
 
+      awaitingInitialSnapshotRef.current = true;
       setStatus('Connected to host. Syncing latest game state...');
       requestSnapshotWithRetry(conn, token);
     });
@@ -605,6 +614,7 @@ export const useGameBoardLogic = () => {
       connRef.current = null;
       activeConnectionTokenRef.current = null;
       clearSnapshotRequestTimer();
+      awaitingInitialSnapshotRef.current = false;
 
       if (isHost) {
         setConnectionState('disconnected');
@@ -619,6 +629,7 @@ export const useGameBoardLogic = () => {
       connRef.current = null;
       activeConnectionTokenRef.current = null;
       clearSnapshotRequestTimer();
+      awaitingInitialSnapshotRef.current = false;
 
       if (isHost) {
         setConnectionState('disconnected');
@@ -749,6 +760,7 @@ export const useGameBoardLogic = () => {
     return () => {
       clearReconnectTimer();
       clearSnapshotRequestTimer();
+      awaitingInitialSnapshotRef.current = false;
       activeConnectionTokenRef.current = null;
       connRef.current = null;
       peer.destroy();

@@ -270,6 +270,67 @@ describe('useGameBoardLogic P2P reconnect', () => {
     expect(peer.connect).toHaveBeenCalledTimes(2);
   });
 
+  it('accepts the first snapshot from a new host connection even when the revision goes backwards', () => {
+    renderHarness('/game?host=false&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const firstConn = peer.connections[0];
+    act(() => {
+      firstConn.open = true;
+      firstConn.emit('open');
+      firstConn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: {
+          host: { hp: 13, pp: 4, maxPp: 5, ep: 2, sep: 1, combo: 1, initialHandDrawn: true, mulliganUsed: true, isReady: true },
+          guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: true, mulliganUsed: false, isReady: false },
+          cards: [],
+          turnPlayer: 'host',
+          turnCount: 3,
+          phase: 'Main',
+          gameStatus: 'playing',
+          tokenOptions: { host: [], guest: [] },
+          revision: 7,
+        },
+      });
+    });
+
+    expect(screen.getByTestId('host-hp')).toHaveTextContent('13');
+
+    act(() => {
+      firstConn.emit('close');
+      vi.advanceTimersByTime(1000);
+    });
+
+    const secondConn = peer.connections[1];
+    act(() => {
+      secondConn.open = true;
+      secondConn.emit('open');
+      secondConn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: {
+          host: { hp: 20, pp: 0, maxPp: 0, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          cards: [],
+          turnPlayer: 'host',
+          turnCount: 1,
+          phase: 'Start',
+          gameStatus: 'preparing',
+          tokenOptions: { host: [], guest: [] },
+          revision: 0,
+        },
+      });
+    });
+
+    expect(screen.getByTestId('host-hp')).toHaveTextContent('20');
+    expect(screen.getByTestId('status')).toHaveTextContent('Connected to host! Game ready.');
+  });
+
   it('responds to snapshot requests as host and ignores stale connection closes', () => {
     renderHarness('/game?host=true&room=ROOM123');
 
