@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Play, PenTool, Sword, Users } from 'lucide-react';
 import { isDummyCardArtEnabled } from '../utils/cardArtMode';
+import { generateRoomCode } from '../utils/roomCode';
 
 const APP_VERSION = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '0.0.0';
 const IS_DUMMY_CARD_ART_BUILD = isDummyCardArtEnabled();
@@ -11,9 +12,7 @@ const Home: React.FC = () => {
   const [roomId, setRoomId] = useState('');
 
   const handleCreateRoom = () => {
-    // Generate a quick ID
-    const newRoom = Math.random().toString(36).substring(2, 8).toUpperCase();
-    navigate(`/game?host=true&room=${newRoom}`);
+    navigate(`/game?host=true&room=${generateRoomCode()}`);
   };
 
   const handleJoinRoom = (e: React.FormEvent) => {
