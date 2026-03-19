@@ -41,6 +41,7 @@ const GameBoard: React.FC = () => {
   const [selectedInspectorCardId, setSelectedInspectorCardId] = React.useState<string | null>(null);
   const [selectedInspectorAnchor, setSelectedInspectorAnchor] = React.useState<CardInspectAnchor | null>(null);
   const [attackSourceCardId, setAttackSourceCardId] = React.useState<string | null>(null);
+  const [isRoomCopied, setIsRoomCopied] = React.useState(false);
   const inspectorRef = React.useRef<HTMLDivElement | null>(null);
   const viewerRole = isSoloMode ? 'all' : role;
   const isPreparingHandMoveLocked = isHandCardMovementLocked(gameState);
@@ -91,6 +92,30 @@ const GameBoard: React.FC = () => {
   const attackSourceCard = attackSourceCardId
     ? gameState.cards.find(card => card.id === attackSourceCardId) ?? null
     : null;
+
+  const handleCopyRoomId = React.useCallback(async () => {
+    if (!room) return;
+
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(room);
+      } else if (typeof document !== 'undefined') {
+        const input = document.createElement('input');
+        input.value = room;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+      } else {
+        return;
+      }
+
+      setIsRoomCopied(true);
+      window.setTimeout(() => setIsRoomCopied(false), 1800);
+    } catch {
+      setIsRoomCopied(false);
+    }
+  }, [room]);
 
   React.useEffect(() => {
     if (isSoloMode || connectionState === 'connected') return;
@@ -836,6 +861,26 @@ const GameBoard: React.FC = () => {
               {isSoloMode ? 'Mode' : 'Room'}:{' '}
               <strong>{isSoloMode ? 'Solo Play Beta' : room}</strong>
             </span>
+            {!isSoloMode && (
+              <button
+                type="button"
+                onClick={handleCopyRoomId}
+                style={{
+                  padding: '0.28rem 0.55rem',
+                  background: isRoomCopied ? 'rgba(16, 185, 129, 0.18)' : '#334155',
+                  color: isRoomCopied ? '#d1fae5' : 'white',
+                  border: `1px solid ${isRoomCopied ? 'rgba(16, 185, 129, 0.38)' : 'rgba(255,255,255,0.14)'}`,
+                  borderRadius: '999px',
+                  cursor: 'pointer',
+                  fontSize: '0.72rem',
+                  fontWeight: 'bold',
+                  transition: 'all 0.2s ease'
+                }}
+                title="Copy room ID"
+              >
+                {isRoomCopied ? 'Copied' : 'Copy'}
+              </button>
+            )}
             {isSoloMode && (
               <span style={{
                 fontSize: '0.75rem',
