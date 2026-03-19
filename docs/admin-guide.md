@@ -42,7 +42,39 @@ npm run dev
 
 終了時は、起動したターミナルで `Ctrl + C` を押します。
 
-## 4. 管理者向けドキュメント一覧
+### ダミー画像版をローカル確認する
+
+```bash
+npm run dev:dummy
+```
+
+## 4. Vercel デプロイ設定
+
+Vercel で公開する版をダミー画像表示にしたい場合は、Environment Variables に次を設定してください。
+
+必須:
+
+- `VITE_CARD_ART_MODE=dummy`
+
+任意:
+
+- `APP_VERSION=v0.0.4`
+
+推奨設定:
+
+- Build Command: `npm run build`
+- Framework Preset: `Vite`
+
+補足:
+
+- `VITE_CARD_ART_MODE=dummy`
+  - 公開版のカード画像をダミー表示に切り替えます
+- `APP_VERSION=v0.0.4`
+  - Home 画面の version 表示に使います
+  - ダミー画像への切り替えには影響しません
+- ローカルは env 未設定のままで `official` 表示になります
+
+## 5. 管理者向けドキュメント一覧
 
 ### カードデータ / 制限ルール
 
@@ -59,7 +91,7 @@ npm run dev
 - [`./gameboard-user-guide.md`](./gameboard-user-guide.md)
   - 実際の画面操作を確認したいときの利用者向けガイド
 
-## 5. カードデータ更新の基本手順
+## 6. カードデータ更新の基本手順
 
 ```bash
 python3 scraper.py
@@ -69,7 +101,7 @@ npm run cards:audit
 
 更新後はブラウザをリロードすると、Deck Builder と GameBoard の両方に反映されます。
 
-## 6. デッキ制限ルール更新の基本手順
+## 7. デッキ制限ルール更新の基本手順
 
 更新対象:
 - 能力由来の枚数特例
@@ -77,7 +109,7 @@ npm run cards:audit
 
 詳細は [`./deck-restrictions-maintenance.md`](./deck-restrictions-maintenance.md) を参照してください。
 
-## 7. 変更後の最低限の確認
+## 8. 変更後の最低限の確認
 
 ```bash
 npm test -- --run src/utils/deckBuilderRules.test.ts src/pages/DeckBuilder.test.tsx src/models/deckBuilderCard.test.ts
