@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Play, PenTool, Sword, Users } from 'lucide-react';
+import { isDummyCardArtEnabled } from '../utils/cardArtMode';
 
 const APP_VERSION = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '0.0.0';
+const IS_DUMMY_CARD_ART_BUILD = isDummyCardArtEnabled();
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
@@ -41,6 +43,37 @@ const Home: React.FC = () => {
         <p style={{ fontSize: '1.25rem', color: 'var(--text-muted)', marginBottom: '3rem' }}>
           The unofficial digital sandbox tabletop. Build your deck and duel your friends directly via Peer-to-Peer without any servers.
         </p>
+
+        {IS_DUMMY_CARD_ART_BUILD && (
+          <div
+            className="glass-panel"
+            style={{
+              padding: '1.25rem 1.5rem',
+              marginBottom: '2rem',
+              textAlign: 'left',
+              border: '1px solid rgba(245, 158, 11, 0.35)',
+              background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(15, 23, 42, 0.55))'
+            }}
+          >
+            <h2 style={{ margin: '0 0 0.6rem 0', fontSize: '1rem', color: '#fbbf24' }}>
+              Dummy Card Art Build
+            </h2>
+            <p style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-main)', lineHeight: '1.6' }}>
+              このサイトでは現在カード画像がダミー表示になっています。実際のカード画像を使いたい場合は、
+              {' '}
+              <a
+                href="https://github.com/zkousei/shadowverse-evolve-simulator"
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: '#fcd34d', fontWeight: 700, textDecoration: 'underline' }}
+              >
+                GitHub
+              </a>
+              {' '}
+              からソースをダウンロードしてローカルで実行してください。ローカル実行でも P2P 対戦は可能です。
+            </p>
+          </div>
+        )}
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
           
