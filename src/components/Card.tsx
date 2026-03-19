@@ -2,6 +2,8 @@ import React from 'react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import type { BaseCardStats } from '../utils/cardStats';
 import { isMainDeckSpellCard, type RuntimeBaseCardType } from '../utils/cardType';
+import type { CardDetail } from '../utils/cardDetails';
+import CardArtwork from './CardArtwork';
 
 export interface CardInstance {
   id: string; // unique instance id
@@ -33,6 +35,7 @@ export interface CardInspectAnchor {
 interface Props {
   card: CardInstance;
   baseStats?: BaseCardStats;
+  detail?: Pick<CardDetail, 'name' | 'cost' | 'atk' | 'hp' | 'type'>;
   displayCounters?: { atk: number; hp: number };
   hideCurrentStats?: boolean;
   highlightTone?: 'attack-source' | 'attack-target';
@@ -53,7 +56,7 @@ interface Props {
   debugIndex?: number;
 }
 
-const Card: React.FC<Props> = ({ card, baseStats, displayCounters, hideCurrentStats, highlightTone, onInspect, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, isHidden, isLocked, quickActionsDisabled, disableCombatAndCounterControls, debugIndex }) => {
+const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideCurrentStats, highlightTone, onInspect, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, isHidden, isLocked, quickActionsDisabled, disableCombatAndCounterControls, debugIndex }) => {
   const inspectPointerStartRef = React.useRef<{ x: number; y: number } | null>(null);
   const isInteractionLocked = isLocked || card.isLeaderCard || card.zone.startsWith('leader-');
   const { attributes, listeners, setNodeRef: setDraggableRef, transform } = useDraggable({
@@ -164,17 +167,28 @@ const Card: React.FC<Props> = ({ card, baseStats, displayCounters, hideCurrentSt
       }}
     >
       {(isHidden || card.isFlipped) ? (
-        <img
-          src="/card_back.png"
-          alt="Card Back"
+        <CardArtwork
+          image={card.image}
+          alt={card.name}
+          isBack={true}
+          detail={detail}
+          baseCardType={card.baseCardType}
+          isLeaderCard={card.isLeaderCard}
+          isTokenCard={card.isTokenCard}
+          isEvolveCard={card.isEvolveCard}
           style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px', boxShadow: 'var(--shadow-sm)' }}
           draggable={false}
         />
       ) : (
         <>
-          <img
-            src={card.image}
+          <CardArtwork
+            image={card.image}
             alt={card.name}
+            detail={detail}
+            baseCardType={card.baseCardType}
+            isLeaderCard={card.isLeaderCard}
+            isTokenCard={card.isTokenCard}
+            isEvolveCard={card.isEvolveCard}
             style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px', boxShadow: 'var(--shadow-sm)' }}
             draggable={false}
           />

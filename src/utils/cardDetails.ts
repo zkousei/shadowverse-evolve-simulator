@@ -6,6 +6,7 @@ export interface CardDetail {
   title: string;
   type: string;
   subtype: string;
+  cardKindNormalized?: string;
   cost: string;
   atk: number | null;
   hp: number | null;
@@ -22,6 +23,7 @@ interface CardDetailSource {
   title?: string;
   type?: string;
   subtype?: string;
+  card_kind_normalized?: string;
   cost?: string;
   atk?: string;
   hp?: string;
@@ -48,6 +50,7 @@ export const buildCardDetailLookup = (cards: CardDetailSource[]): CardDetailLook
       title: card.title ?? '',
       type: card.type ?? '',
       subtype: card.subtype ?? '',
+      cardKindNormalized: card.card_kind_normalized ?? '',
       cost: card.cost ?? '-',
       atk: parseNumericStat(card.atk),
       hp: parseNumericStat(card.hp),

@@ -2,6 +2,7 @@ import React from 'react';
 import type { CardInstance } from './Card';
 import type { PlayerRole } from '../types/game';
 import { formatAbilityText, type CardDetailLookup } from '../utils/cardDetails';
+import CardArtwork from './CardArtwork';
 
 interface CardSearchModalProps {
   isOpen: boolean;
@@ -183,10 +184,16 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
                   boxShadow: selectedCardId === c.id ? '0 0 0 3px rgba(56,189,248,0.18)' : 'none'
                 }}
               >
-                <img
-                  src={c.image}
+                <CardArtwork
+                  image={c.image}
                   alt={c.name}
+                  detail={cardDetailLookup[c.cardId]}
+                  baseCardType={c.baseCardType}
+                  isLeaderCard={c.isLeaderCard}
+                  isTokenCard={c.isTokenCard}
+                  isEvolveCard={c.isEvolveCard}
                   style={{ width: '100%', borderRadius: '4px', display: 'block', filter: isUsed ? 'grayscale(80%)' : 'none' }}
+                  draggable={false}
                 />
 
                 {isUsed && (
