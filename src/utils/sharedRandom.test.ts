@@ -31,6 +31,60 @@ describe('sharedRandom', () => {
       'host',
       false
     )).toBe('You rolled: 4');
+
+    expect(formatSharedUiMessage(
+      { type: 'RESET_GAME_COMPLETED', actor: 'guest' },
+      'host',
+      false
+    )).toBe('Opponent reset the game');
+
+    expect(formatSharedUiMessage(
+      { type: 'SHUFFLE_DECK_COMPLETED', actor: 'host' },
+      'guest',
+      false
+    )).toBe('Opponent shuffled the deck');
+
+    expect(formatSharedUiMessage(
+      { type: 'DRAW_CARD_COMPLETED', actor: 'host' },
+      'guest',
+      false
+    )).toBe('Opponent drew a card');
+
+    expect(formatSharedUiMessage(
+      { type: 'MILL_CARD_COMPLETED', actor: 'guest', cardName: 'Aurelia' },
+      'host',
+      false
+    )).toBe('Opponent milled Aurelia');
+
+    expect(formatSharedUiMessage(
+      { type: 'SEARCHED_CARD_PLACED', actor: 'host', destination: 'ex', cardName: 'Drive Point' },
+      'guest',
+      false
+    )).toBe('Opponent added Drive Point from Search to EX Area');
+
+    expect(formatSharedUiMessage(
+      { type: 'CEMETERY_CARD_TO_HAND', actor: 'guest', cardName: 'Aurelia' },
+      'host',
+      false
+    )).toBe('Opponent added Aurelia from Cemetery to hand');
+
+    expect(formatSharedUiMessage(
+      { type: 'EVOLVE_CARD_PLACED', actor: 'guest', cardName: 'Dragon Warrior' },
+      'host',
+      false
+    )).toBe('Opponent played to field Dragon Warrior from Evolve Deck');
+
+    expect(formatSharedUiMessage(
+      { type: 'EVOLVE_USAGE_TOGGLED', actor: 'guest', cardName: 'Dragon Warrior', isUsed: true },
+      'host',
+      false
+    )).toBe('Opponent set Dragon Warrior to USED');
+
+    expect(formatSharedUiMessage(
+      { type: 'BANISHED_CARD_TO_HAND', actor: 'guest', cardName: 'Aurelia' },
+      'host',
+      false
+    )).toBe('Opponent added Aurelia from Banish to hand');
   });
 
   it('formats reveal messages for both look-top and search effects', () => {
@@ -45,6 +99,23 @@ describe('sharedRandom', () => {
       'guest',
       true
     )).toBe('Player 1 revealed from Search');
+
+    expect(formatSharedUiMessage(
+      {
+        type: 'LOOK_TOP_RESOLVED',
+        actor: 'guest',
+        totalCount: 4,
+        topCount: 1,
+        bottomCount: 2,
+        handCount: 1,
+        revealedHandCards: ['Aurelia'],
+        fieldCards: [],
+        exCards: ['Drive Point'],
+        cemeteryCards: ['Fire Chain'],
+      },
+      'host',
+      false
+    )).toBe('Opponent resolved Look Top 4\nRevealed to Hand: Aurelia\nBottom: 2\nTop: 1\nHand: 1\nEX: Drive Point\nCemetery: Fire Chain');
   });
 
   it('formats attack declarations as a shared UI message fallback', () => {

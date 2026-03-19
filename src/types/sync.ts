@@ -52,6 +52,30 @@ export type SharedUiEffect =
   | { type: 'COIN_FLIP_RESULT'; actor: PlayerRole; result: 'HEADS (表)' | 'TAILS (裏)' }
   | { type: 'DICE_ROLL_RESULT'; actor: PlayerRole; value: number }
   | { type: 'STARTER_DECIDED'; actor: PlayerRole; starter: PlayerRole; manual: boolean }
+  | { type: 'RESET_GAME_COMPLETED'; actor: PlayerRole }
+  | { type: 'SHUFFLE_DECK_COMPLETED'; actor: PlayerRole }
+  | { type: 'DRAW_CARD_COMPLETED'; actor: PlayerRole }
+  | { type: 'MILL_CARD_COMPLETED'; actor: PlayerRole; cardName: string }
+  | { type: 'SEARCHED_CARD_TO_HAND'; actor: PlayerRole }
+  | { type: 'SEARCHED_CARD_PLACED'; actor: PlayerRole; destination: 'field' | 'ex'; cardName?: string }
+  | { type: 'CEMETERY_CARD_TO_HAND'; actor: PlayerRole; cardName: string }
+  | { type: 'CEMETERY_CARD_PLACED'; actor: PlayerRole; destination: 'field' | 'ex'; cardName: string }
+  | { type: 'EVOLVE_CARD_PLACED'; actor: PlayerRole; cardName: string }
+  | { type: 'EVOLVE_USAGE_TOGGLED'; actor: PlayerRole; cardName: string; isUsed: boolean }
+  | { type: 'BANISHED_CARD_TO_HAND'; actor: PlayerRole; cardName: string }
+  | { type: 'BANISHED_CARD_PLACED'; actor: PlayerRole; destination: 'field' | 'ex'; cardName: string }
+  | {
+      type: 'LOOK_TOP_RESOLVED';
+      actor: PlayerRole;
+      totalCount: number;
+      topCount: number;
+      bottomCount: number;
+      handCount: number;
+      revealedHandCards: string[];
+      fieldCards: string[];
+      exCards: string[];
+      cemeteryCards: string[];
+    }
   | { type: 'CARD_PLAYED'; actor: PlayerRole; cardId: string; cardName: string; mode: 'play' | 'playToField' }
   | { type: 'REVEAL_TOP_DECK_CARDS'; actor: PlayerRole; cards: PublicCardView[] }
   | { type: 'REVEAL_SEARCHED_CARD_TO_HAND'; actor: PlayerRole; cards: PublicCardView[] }

@@ -16,7 +16,7 @@ import CardArtwork from '../components/CardArtwork';
 const GameBoard: React.FC = () => {
   const {
     room, isSoloMode, isHost, role, status, connectionState, canInteract, attemptReconnect, gameState, savedSessionCandidate, resumeSavedSession, discardSavedSession, searchZone, setSearchZone,
-    showResetConfirm, setShowResetConfirm, coinMessage, turnMessage, cardPlayMessage, attackMessage, attackHistory, attackVisual, revealedCardsOverlay,
+    showResetConfirm, setShowResetConfirm, coinMessage, turnMessage, cardPlayMessage, attackMessage, eventHistory, attackVisual, revealedCardsOverlay,
     isRollingDice, diceValue, mulliganOrder, isMulliganModalOpen, setIsMulliganModalOpen,
     handleStatChange, setPhase, endTurn, handleUndoTurn, handleSetInitialTurnOrder,
     handlePureCoinFlip, handleRollDice, handleStartGame, handleToggleReady,
@@ -1292,7 +1292,7 @@ const GameBoard: React.FC = () => {
           </div>
         )}
 
-        {gameState.gameStatus === 'playing' && attackHistory.length > 0 && (
+        {gameState.gameStatus === 'playing' && eventHistory.length > 0 && (
           <div
             style={{
               alignSelf: 'flex-end',
@@ -1307,15 +1307,17 @@ const GameBoard: React.FC = () => {
             }}
           >
             <div style={{ color: '#f8fafc', fontWeight: 800, fontSize: '0.8rem', letterSpacing: '0.03em' }}>
-              Recent Attacks
+              Recent Events
             </div>
-            {attackHistory.map((entry, index) => (
+            {eventHistory.map((entry, index) => (
               <div
                 key={`${entry}-${index}`}
                 style={{
                   color: index === 0 ? '#f8fafc' : '#cbd5e1',
                   fontSize: '0.78rem',
-                  opacity: index === 0 ? 1 : 0.8
+                  opacity: index === 0 ? 1 : 0.8,
+                  whiteSpace: 'pre-wrap',
+                  lineHeight: 1.35
                 }}
               >
                 {entry}
@@ -2013,6 +2015,32 @@ const GameBoard: React.FC = () => {
               </div>
             ))}
           </div>
+          {revealedCardsOverlay.summaryLines && revealedCardsOverlay.summaryLines.length > 0 && (
+            <div style={{
+              marginTop: '1rem',
+              paddingTop: '0.9rem',
+              borderTop: '1px solid rgba(153, 246, 228, 0.22)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.35rem',
+              alignItems: 'center'
+            }}>
+              {revealedCardsOverlay.summaryLines.map((line) => (
+                <div
+                  key={line}
+                  style={{
+                    color: '#e2e8f0',
+                    fontSize: '0.82rem',
+                    lineHeight: 1.35,
+                    textAlign: 'center',
+                    whiteSpace: 'pre-wrap'
+                  }}
+                >
+                  {line}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
