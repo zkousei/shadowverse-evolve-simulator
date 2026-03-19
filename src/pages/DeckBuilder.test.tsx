@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import DeckBuilder from './DeckBuilder';
-import { saveDeck, saveDraft } from '../utils/deckStorage';
+import { listSavedDecks, loadDraft, saveDeck, saveDraft } from '../utils/deckStorage';
 import type { DeckBuilderCardData } from '../models/deckBuilderCard';
 import type { DeckRuleConfig } from '../models/deckRule';
 
@@ -536,6 +536,131 @@ describe('DeckBuilder', () => {
     expect(screen.getByRole('combobox', { name: 'Constructed class' })).toHaveValue('ロイヤル');
   }, 10000);
 
+  it('prompts before restoring a previous session and restores only after Continue', async () => {
+    saveDraft({
+      selectedDeckId: null,
+      name: 'Draft Resume Test',
+      ruleConfig: otherRuleConfig,
+      deckState: {
+        mainDeck: [mockCards[0]],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [],
+      },
+    });
+
+    render(<DeckBuilder />);
+    await screen.findByText('Alpha Knight');
+
+    expect(await screen.findByRole('dialog', { name: 'Resume previous session' })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Deck Name')).toHaveValue('');
+
+    const mainDeckSection = screen.getByRole('heading', { name: /^Main Deck/ }).nextElementSibling as HTMLElement;
+    expect(within(mainDeckSection).queryByText('Alpha Knight')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('Draft Resume Test')).toBeInTheDocument();
+    });
+    expect(screen.getByText('Session restored from this browser')).toBeInTheDocument();
+    expect(within(mainDeckSection).getByText('Alpha Knight')).toBeInTheDocument();
+  });
+
+  it('discards a previous session when Start Fresh is chosen from the restore prompt', async () => {
+    saveDraft({
+      selectedDeckId: null,
+      name: 'Discard Me',
+      ruleConfig: otherRuleConfig,
+      deckState: {
+        mainDeck: [mockCards[0]],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [],
+      },
+    });
+
+    render(<DeckBuilder />);
+    await screen.findByText('Alpha Knight');
+
+    const resumeDialog = await screen.findByRole('dialog', { name: 'Resume previous session' });
+    fireEvent.click(within(resumeDialog).getByRole('button', { name: 'Start Fresh' }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Resume previous session' })).not.toBeInTheDocument();
+    });
+    expect(screen.getByPlaceholderText('Deck Name')).toHaveValue('');
+    expect(loadDraft()).toBeNull();
+  });
+
+  it('restores a loaded saved deck on the next visit after confirmation', async () => {
+    saveDeck({
+      name: 'Loaded Session Deck',
+      ruleConfig: otherRuleConfig,
+      deckState: {
+        mainDeck: [mockCards[0]],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [],
+      },
+    });
+
+    const { unmount } = render(<DeckBuilder />);
+    await screen.findByText('Alpha Knight');
+
+    fireEvent.click(screen.getByRole('button', { name: 'My Decks' }));
+    const myDecksDialog = screen.getByRole('dialog', { name: 'My Decks' });
+    fireEvent.click(within(myDecksDialog).getByRole('button', { name: 'Load' }));
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('Loaded Session Deck')).toBeInTheDocument();
+    });
+
+    await waitFor(() => {
+      expect(loadDraft()).not.toBeNull();
+    });
+    unmount();
+
+    render(<DeckBuilder />);
+    await screen.findByText('Alpha Knight');
+
+    expect(await screen.findByRole('dialog', { name: 'Resume previous session' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('Loaded Session Deck')).toBeInTheDocument();
+    });
+  });
+
+  it('reset builder clears the current builder state and removes the saved session', async () => {
+    const { unmount } = render(<DeckBuilder />);
+    await screen.findByText('Alpha Knight');
+
+    fireEvent.change(screen.getByPlaceholderText('Deck Name'), {
+      target: { value: 'Builder Reset Test' },
+    });
+
+    await waitFor(() => {
+      expect(loadDraft()).not.toBeNull();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset Builder' }));
+    expect(screen.getByRole('dialog', { name: 'Reset builder confirmation' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, Reset' }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Reset builder confirmation' })).not.toBeInTheDocument();
+    });
+    expect(screen.getByPlaceholderText('Deck Name')).toHaveValue('');
+    expect(screen.getByRole('combobox', { name: 'Deck format' })).toHaveValue('constructed');
+    expect(loadDraft()).toBeNull();
+
+    unmount();
+    render(<DeckBuilder />);
+    await screen.findByText('Alpha Knight');
+    expect(screen.queryByRole('dialog', { name: 'Resume previous session' })).not.toBeInTheDocument();
+  });
+
   it('groups identical card ids in my deck and shows their count', async () => {
     render(<DeckBuilder />);
 
@@ -837,6 +962,7 @@ describe('DeckBuilder', () => {
     fireEvent.click(within(screen.getByAltText('Alpha Knight').closest('.glass-panel') as HTMLElement).getByTitle('Add to Main Deck'));
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
+    expect(screen.getByText('"Saved Royal" was saved.')).toBeInTheDocument();
     expect(screen.getByText('Saved')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'My Decks' }));
@@ -860,6 +986,56 @@ describe('DeckBuilder', () => {
     const mainDeckSection = screen.getByRole('heading', { name: /^Main Deck/ }).nextElementSibling as HTMLElement;
     expect(within(mainDeckSection).getByText('Alpha Knight')).toBeInTheDocument();
     expect(within(mainDeckSection).queryByText('Beta Mage')).not.toBeInTheDocument();
+  });
+
+  it('rejects saving a completely pristine builder state and shows a warning', async () => {
+    render(<DeckBuilder />);
+    await screen.findByText('Alpha Knight');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(screen.getByText('The builder is empty. Add cards or adjust the setup before saving.')).toBeInTheDocument();
+    expect(listSavedDecks()).toHaveLength(0);
+    expect(screen.getByText('Not saved to My Decks')).toBeInTheDocument();
+  });
+
+  it('keeps the status as Not saved to My Decks for an edited builder that has never been saved', async () => {
+    render(<DeckBuilder />);
+    await screen.findByText('Alpha Knight');
+
+    fireEvent.change(screen.getByPlaceholderText('Deck Name'), {
+      target: { value: 'Unsaved Builder' },
+    });
+
+    expect(screen.getByText('Not saved to My Decks')).toBeInTheDocument();
+    expect(screen.queryByText('Unsaved changes')).not.toBeInTheDocument();
+  });
+
+  it('can detach a saved deck into an unsaved copy without clearing the current contents', async () => {
+    render(<DeckBuilder />);
+    await screen.findByText('Alpha Knight');
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Deck format' }), {
+      target: { value: 'other' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('Deck Name'), {
+      target: { value: 'Detach Test' },
+    });
+    fireEvent.click(within(screen.getByAltText('Alpha Knight').closest('.glass-panel') as HTMLElement).getByTitle('Add to Main Deck'));
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(screen.getByText('Saved')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Make Unsaved Copy' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Make Unsaved Copy' }));
+
+    expect(screen.getByText('The current deck is now an unsaved copy.')).toBeInTheDocument();
+    expect(screen.getByText('Not saved to My Decks')).toBeInTheDocument();
+    expect(screen.queryByText('Saved')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Make Unsaved Copy' })).not.toBeInTheDocument();
+
+    const mainDeckSection = screen.getByRole('heading', { name: /^Main Deck/ }).nextElementSibling as HTMLElement;
+    expect(within(mainDeckSection).getByText('Alpha Knight')).toBeInTheDocument();
   });
 
   it('keeps the My Decks modal open when load is canceled', async () => {
@@ -965,7 +1141,7 @@ describe('DeckBuilder', () => {
     expect(screen.getByText('Updated At Limit')).toBeInTheDocument();
   });
 
-  it('restores an unsaved draft from localStorage after the card catalog loads', async () => {
+  it('keeps a saved draft pending until the user confirms restoration', async () => {
     saveDraft({
       selectedDeckId: null,
       name: 'Restored Draft',
@@ -986,9 +1162,12 @@ describe('DeckBuilder', () => {
 
     render(<DeckBuilder />);
 
+    expect(await screen.findByRole('dialog', { name: 'Resume previous session' })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Deck Name')).toHaveValue('');
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
       expect(screen.getByDisplayValue('Restored Draft')).toBeInTheDocument();
-      expect(screen.getByText('Draft restored from this browser')).toBeInTheDocument();
+      expect(screen.getByText('Session restored from this browser')).toBeInTheDocument();
       expect(screen.getByText('1/50')).toBeInTheDocument();
     });
   });

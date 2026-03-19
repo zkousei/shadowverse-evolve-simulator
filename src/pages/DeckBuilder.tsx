@@ -55,6 +55,12 @@ import {
 } from '../utils/deckStorage';
 import CardArtwork from '../components/CardArtwork';
 
+type PendingDraftRestore = {
+  snapshot: DeckBuilderSnapshot;
+  selectedDeckId: string | null;
+  baselineSnapshot: DeckBuilderSnapshot | null;
+};
+
 const PAGE_SIZE = 50;
 const COST_FILTER_VALUES = ['All', '0', '1', '2', '3', '4', '5', '6', '7+'] as const;
 const DECK_SECTION_FILTER_VALUES = ['All', 'main', 'evolve', 'leader', 'token'] as const;
@@ -214,6 +220,11 @@ const formatSavedDeckUpdatedAt = (value: string): string => {
 const DEFAULT_DECK_NAME = 'My Deck';
 const resolveDeckName = (value: string) => value.trim() || DEFAULT_DECK_NAME;
 
+type SaveFeedback = {
+  kind: 'success' | 'warning';
+  message: string;
+};
+
 const DeckBuilder: React.FC = () => {
   const [cards, setCards] = useState<DeckBuilderCardData[]>([]);
   const [search, setSearch] = useState('');
@@ -242,8 +253,11 @@ const DeckBuilder: React.FC = () => {
   const [savedDeckSearch, setSavedDeckSearch] = useState('');
   const [draftRestored, setDraftRestored] = useState(false);
   const [hasInitializedDraft, setHasInitializedDraft] = useState(false);
+  const [pendingDraftRestore, setPendingDraftRestore] = useState<PendingDraftRestore | null>(null);
   const [pendingDeleteDeckId, setPendingDeleteDeckId] = useState<string | null>(null);
   const [pendingLoadDeckId, setPendingLoadDeckId] = useState<string | null>(null);
+  const [showResetBuilderDialog, setShowResetBuilderDialog] = useState(false);
+  const [saveFeedback, setSaveFeedback] = useState<SaveFeedback | null>(null);
 
   useEffect(() => {
     fetch('/cards_detailed.json')
@@ -280,12 +294,14 @@ const DeckBuilder: React.FC = () => {
       ? restoreSavedDeckToSnapshot(savedDeck, cards).snapshot
       : null;
 
-    setDeckName(restoredDraft.snapshot.name);
-    setDeckRuleConfig(restoredDraft.snapshot.ruleConfig);
-    setDeckState(sanitizeImportedDeckState(restoredDraft.snapshot.deckState, cards, restoredDraft.snapshot.ruleConfig));
-    setSelectedSavedDeckId(savedDeck?.id ?? null);
-    setSavedBaselineSnapshot(baselineSnapshot);
-    setDraftRestored(true);
+    setPendingDraftRestore({
+      snapshot: {
+        ...restoredDraft.snapshot,
+        deckState: sanitizeImportedDeckState(restoredDraft.snapshot.deckState, cards, restoredDraft.snapshot.ruleConfig),
+      },
+      selectedDeckId: savedDeck?.id ?? null,
+      baselineSnapshot,
+    });
     setHasInitializedDraft(true);
   }, [cards, hasInitializedDraft]);
 
@@ -390,11 +406,10 @@ const DeckBuilder: React.FC = () => {
   const isDirty = savedBaselineSnapshot
     ? !areDeckSnapshotsEqual(currentSnapshot, savedBaselineSnapshot)
     : !areDeckSnapshotsEqual(currentSnapshot, pristineSnapshot);
-  const saveStateMessage = draftRestored
-    ? 'Draft restored from this browser'
-    : selectedSavedDeckId
-      ? (isDirty ? 'Unsaved changes' : 'Saved')
-      : (isDirty ? 'Unsaved changes' : 'Not saved to My Decks');
+  const hasBuilderState = !areDeckSnapshotsEqual(currentSnapshot, pristineSnapshot);
+  const saveStateMessage = selectedSavedDeckId
+    ? (isDirty ? 'Unsaved changes' : 'Saved')
+    : 'Not saved to My Decks';
   const filteredSavedDecks = React.useMemo(() => (
     savedDecks
       .filter(deck => deck.name.toLowerCase().includes(savedDeckSearch.trim().toLowerCase()))
@@ -415,7 +430,12 @@ const DeckBuilder: React.FC = () => {
   ), [cards, savedDeckSearch, savedDecks]);
 
   useEffect(() => {
-    if (cards.length === 0 || !hasInitializedDraft) return;
+    if (cards.length === 0 || !hasInitializedDraft || pendingDraftRestore) return;
+
+    if (!hasBuilderState) {
+      clearDraft();
+      return;
+    }
 
     const timeoutId = window.setTimeout(() => {
       saveDraft({
@@ -427,14 +447,23 @@ const DeckBuilder: React.FC = () => {
     }, 400);
 
     return () => window.clearTimeout(timeoutId);
-  }, [cards.length, deckName, deckRuleConfig, deckState, hasInitializedDraft, selectedSavedDeckId]);
+  }, [cards.length, deckName, deckRuleConfig, deckState, hasBuilderState, hasInitializedDraft, pendingDraftRestore, selectedSavedDeckId]);
+
+  useEffect(() => {
+    if (!saveFeedback) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setSaveFeedback(null);
+    }, 2400);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [saveFeedback]);
 
   const refreshSavedDecks = () => {
     setSavedDecks(listSavedDecks());
   };
 
-  const handleDiscardDraft = () => {
-    clearDraft();
+  const resetBuilderState = () => {
     const defaultRuleConfig = createDefaultDeckRuleConfig();
     setDeckName('');
     setDeckRuleConfig(defaultRuleConfig);
@@ -442,6 +471,24 @@ const DeckBuilder: React.FC = () => {
     setSelectedSavedDeckId(null);
     setSavedBaselineSnapshot(null);
     setDraftRestored(false);
+    setPendingDraftRestore(null);
+  };
+
+  const handleStartFresh = () => {
+    clearDraft();
+    resetBuilderState();
+  };
+
+  const handleContinueDraftRestore = () => {
+    if (!pendingDraftRestore) return;
+
+    setDeckName(pendingDraftRestore.snapshot.name);
+    setDeckRuleConfig(pendingDraftRestore.snapshot.ruleConfig);
+    setDeckState(pendingDraftRestore.snapshot.deckState);
+    setSelectedSavedDeckId(pendingDraftRestore.selectedDeckId);
+    setSavedBaselineSnapshot(pendingDraftRestore.baselineSnapshot);
+    setDraftRestored(true);
+    setPendingDraftRestore(null);
   };
 
   const resetLibraryFilters = () => {
@@ -554,6 +601,12 @@ const DeckBuilder: React.FC = () => {
     setShowResetDeckDialog(false);
   };
 
+  const resetBuilder = () => {
+    clearDraft();
+    resetBuilderState();
+    setShowResetBuilderDialog(false);
+  };
+
   const exportDeck = () => {
     const downloadDeckJson = (name: string, ruleConfig: typeof deckRuleConfig, nextDeckState: DeckState) => {
       const data = JSON.stringify({
@@ -612,6 +665,7 @@ const DeckBuilder: React.FC = () => {
         setSelectedSavedDeckId(null);
         setSavedBaselineSnapshot(null);
         setDraftRestored(false);
+        setPendingDraftRestore(null);
       } catch (err) {
         alert("Failed to parse deck JSON.");
       }
@@ -622,6 +676,14 @@ const DeckBuilder: React.FC = () => {
   };
 
   const handleSaveDeck = (saveAsNew = false) => {
+    if (!hasBuilderState) {
+      setSaveFeedback({
+        kind: 'warning',
+        message: 'The builder is empty. Add cards or adjust the setup before saving.',
+      });
+      return;
+    }
+
     if ((saveAsNew || selectedSavedDeckId === null) && !canCreateNewSavedDeck) {
       return;
     }
@@ -638,7 +700,22 @@ const DeckBuilder: React.FC = () => {
     setSelectedSavedDeckId(savedDeck.id);
     setSavedBaselineSnapshot(createDeckSnapshot(savedDeck.name, snapshot.ruleConfig, snapshot.deckState));
     setDraftRestored(false);
+    setPendingDraftRestore(null);
+    setSaveFeedback({
+      kind: 'success',
+      message: saveAsNew ? `"${savedDeck.name}" was saved as a new deck.` : `"${savedDeck.name}" was saved.`,
+    });
     refreshSavedDecks();
+  };
+
+  const handleMakeUnsavedCopy = () => {
+    setSelectedSavedDeckId(null);
+    setSavedBaselineSnapshot(null);
+    setDraftRestored(false);
+    setSaveFeedback({
+      kind: 'success',
+      message: 'The current deck is now an unsaved copy.',
+    });
   };
 
   const handleLoadSavedDeck = (deckId: string) => {
@@ -652,6 +729,7 @@ const DeckBuilder: React.FC = () => {
     setSelectedSavedDeckId(savedDeck.id);
     setSavedBaselineSnapshot(restoredDeck.snapshot);
     setDraftRestored(false);
+    setPendingDraftRestore(null);
     setIsMyDecksOpen(false);
     setPendingLoadDeckId(null);
   };
@@ -712,6 +790,37 @@ const DeckBuilder: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
+      {saveFeedback && (
+        <div
+          role={saveFeedback.kind === 'warning' ? 'alert' : 'status'}
+          aria-live="polite"
+          style={{
+            position: 'fixed',
+            top: '1.25rem',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 1250,
+            minWidth: 'min(32rem, calc(100vw - 2rem))',
+            maxWidth: 'min(36rem, calc(100vw - 2rem))',
+            padding: '0.8rem 1rem',
+            borderRadius: 'var(--radius-md)',
+            border: saveFeedback.kind === 'warning'
+              ? '1px solid rgba(248, 113, 113, 0.45)'
+              : '1px solid rgba(103, 232, 249, 0.35)',
+            background: saveFeedback.kind === 'warning'
+              ? 'rgba(127, 29, 29, 0.92)'
+              : 'rgba(8, 47, 73, 0.92)',
+            color: '#fff',
+            fontSize: '0.9rem',
+            fontWeight: 600,
+            boxShadow: '0 12px 30px rgba(15, 23, 42, 0.38)',
+            textAlign: 'center',
+          }}
+        >
+          {saveFeedback.message}
+        </div>
+      )}
+
       {/* Left: Card Database */}
       <div style={{ flex: 1, padding: '2rem', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
         <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>Card Library</h1>
@@ -1223,6 +1332,27 @@ const DeckBuilder: React.FC = () => {
                 Save
               </button>
             </div>
+            {selectedSavedDeckId && (
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  onClick={handleMakeUnsavedCopy}
+                  title="Keep the current deck as a local working copy without tracking the saved deck."
+                  style={{
+                    padding: '0.35rem 0.65rem',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--border-light)',
+                    background: 'var(--bg-surface)',
+                    color: 'var(--text-main)',
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Make Unsaved Copy
+                </button>
+              </div>
+            )}
             {deckName.trim() === '' && (
               <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
                 If left blank, the deck will be saved as {DEFAULT_DECK_NAME}.
@@ -1293,34 +1423,21 @@ const DeckBuilder: React.FC = () => {
             </div>
           </div>
 
-          <div style={{ minHeight: '1rem', color: draftRestored ? '#fcd34d' : 'var(--text-muted)', fontSize: '0.75rem' }}>
-            {saveStateMessage}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', minHeight: '1.9rem' }}>
+            <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+              {saveStateMessage}
+            </div>
+            {draftRestored && (
+              <div style={{ color: '#fcd34d', fontSize: '0.75rem' }}>
+                Session restored from this browser
+              </div>
+            )}
           </div>
           {hasReachedSoftLimit && (
             <div style={{ color: hasReachedHardLimit ? '#fca5a5' : '#fcd34d', fontSize: '0.75rem', lineHeight: 1.5 }}>
               {hasReachedHardLimit
                 ? `My Decks has reached the browser limit (${HARD_SAVED_DECK_LIMIT}). Delete or export older decks before creating a new saved deck.`
                 : `My Decks already has ${savedDeckCount} saved decks in this browser. Consider exporting or deleting older decks before it reaches ${HARD_SAVED_DECK_LIMIT}.`}
-            </div>
-          )}
-          {draftRestored && (
-            <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-              <button
-                type="button"
-                onClick={handleDiscardDraft}
-                style={{
-                  padding: '0.4rem 0.7rem',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid rgba(248, 113, 113, 0.35)',
-                  background: 'rgba(239, 68, 68, 0.10)',
-                  color: '#fca5a5',
-                  fontSize: '0.78rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-              >
-                Start Fresh
-              </button>
             </div>
           )}
         </div>
@@ -1567,7 +1684,7 @@ const DeckBuilder: React.FC = () => {
             </select>
           </div>
 
-          <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
+          <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'flex-end', gap: '0.6rem', flexWrap: 'wrap' }}>
             <button
               type="button"
               onClick={() => setShowResetDeckDialog(true)}
@@ -1586,6 +1703,25 @@ const DeckBuilder: React.FC = () => {
               }}
             >
               Reset Deck
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowResetBuilderDialog(true)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'rgba(239, 68, 68, 0.18)',
+                color: '#fecaca',
+                border: '1px solid rgba(248, 113, 113, 0.55)',
+                padding: '0.4rem 0.65rem',
+                borderRadius: 'var(--radius-md)',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              Reset Builder
             </button>
           </div>
 
@@ -2291,6 +2427,145 @@ const DeckBuilder: React.FC = () => {
                 }}
               >
                 Yes, Reset
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showResetBuilderDialog && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Reset builder confirmation"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.72)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.5rem',
+            zIndex: 1000,
+          }}
+        >
+          <div
+            className="glass-panel"
+            style={{
+              width: '100%',
+              maxWidth: '420px',
+              padding: '1.25rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.75rem',
+            }}
+          >
+            <h3 style={{ margin: 0, color: '#fca5a5' }}>Reset Builder</h3>
+            <p style={{ margin: 0, color: 'var(--text-main)', lineHeight: 1.5 }}>
+              Clear the current deck contents, deck name, and rule settings?
+            </p>
+            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem', lineHeight: 1.5 }}>
+              This also discards the saved Deck Builder session for this browser.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+              <button
+                type="button"
+                onClick={() => setShowResetBuilderDialog(false)}
+                style={{
+                  padding: '0.5rem 0.9rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border-light)',
+                  background: 'var(--bg-surface)',
+                  color: 'var(--text-main)',
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={resetBuilder}
+                style={{
+                  padding: '0.5rem 0.9rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid #dc2626',
+                  background: '#ef4444',
+                  color: '#fff',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Yes, Reset
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {pendingDraftRestore && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Resume previous session"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.72)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.5rem',
+            zIndex: 1200,
+          }}
+        >
+          <div
+            className="glass-panel"
+            style={{
+              width: '100%',
+              maxWidth: '440px',
+              padding: '1.25rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.75rem',
+            }}
+          >
+            <h3 style={{ margin: 0, color: '#fcd34d' }}>Resume Previous Session</h3>
+            <p style={{ margin: 0, color: 'var(--text-main)', lineHeight: 1.5 }}>
+              Restore the last Deck Builder session from this browser?
+            </p>
+            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem', lineHeight: 1.5 }}>
+              Continue to reopen the previous builder state, or start fresh with an empty deck builder.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+              <button
+                type="button"
+                onClick={handleStartFresh}
+                style={{
+                  padding: '0.5rem 0.9rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid rgba(248, 113, 113, 0.35)',
+                  background: 'rgba(239, 68, 68, 0.10)',
+                  color: '#fca5a5',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Start Fresh
+              </button>
+              <button
+                type="button"
+                onClick={handleContinueDraftRestore}
+                style={{
+                  padding: '0.5rem 0.9rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'var(--accent-primary)',
+                  color: '#fff',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Continue
               </button>
             </div>
           </div>
