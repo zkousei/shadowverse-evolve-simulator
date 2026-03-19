@@ -28,8 +28,16 @@ const Home: React.FC = () => {
   };
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
-      <div className="animate-fade-in" style={{ textAlign: 'center', maxWidth: '600px', width: '100%' }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh', padding: '2rem' }}>
+      <div
+        className="animate-fade-in"
+        style={{
+          textAlign: 'center',
+          maxWidth: '600px',
+          width: '100%',
+          margin: 'auto',
+        }}
+      >
         <h1 style={{ 
           fontSize: '3.5rem', 
           marginBottom: '1rem',
@@ -167,7 +175,7 @@ const Home: React.FC = () => {
 
       </div>
 
-      <div style={{ position: 'fixed', bottom: '1rem', textAlign: 'center', maxWidth: '800px', padding: '0 1rem' }}>
+      <div style={{ textAlign: 'center', maxWidth: '800px', width: '100%', margin: '2rem auto 0', padding: '0 1rem' }}>
         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.4rem', letterSpacing: '0.04em' }}>
           Version {APP_VERSION}
         </p>
