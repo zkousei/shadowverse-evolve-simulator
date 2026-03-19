@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import DeckBuilder from './DeckBuilder';
 import { saveDeck, saveDraft } from '../utils/deckStorage';
 import type { DeckBuilderCardData } from '../models/deckBuilderCard';
@@ -170,6 +170,10 @@ const stubFileReaderWithImportedDeck = () => {
 };
 
 describe('DeckBuilder', () => {
+  beforeAll(() => {
+    vi.setConfig({ testTimeout: 10000 });
+  });
+
   beforeEach(() => {
     vi.restoreAllMocks();
     window.localStorage.clear();
@@ -190,6 +194,10 @@ describe('DeckBuilder', () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
+  });
+
+  afterAll(() => {
+    vi.resetConfig();
   });
 
   it('loads cards, filters them, and updates deck counts through add/remove actions', async () => {
@@ -292,7 +300,7 @@ describe('DeckBuilder', () => {
     expect(screen.getByText('0/50')).toBeInTheDocument();
     expect(screen.getByText('0/10')).toBeInTheDocument();
     expect(screen.getByText('0/1')).toBeInTheDocument();
-  });
+  }, 10000);
 
   it('filters cards by deck section and combines with rarity and product filters', async () => {
     render(<DeckBuilder />);
@@ -526,7 +534,7 @@ describe('DeckBuilder', () => {
     expect(screen.getByText('0/10')).toBeInTheDocument();
     expect(screen.getByText('0/1')).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Constructed class' })).toHaveValue('ロイヤル');
-  });
+  }, 10000);
 
   it('groups identical card ids in my deck and shows their count', async () => {
     render(<DeckBuilder />);

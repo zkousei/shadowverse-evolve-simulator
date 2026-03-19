@@ -145,4 +145,38 @@ describe('TopDeckModal', () => {
       { cardId: 'c1', action: 'bottom', order: 3 },
     ]);
   });
+
+  it('reorders top cards backward and preserves non-deck assignments when unassigning', () => {
+    const onConfirm = vi.fn();
+    render(
+      <TopDeckModal
+        isOpen={true}
+        cards={[createCard('c1'), createCard('c2'), createCard('c3')]}
+        onConfirm={onConfirm}
+        onCancel={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getAllByText('山上 (Top)')[0]);
+    fireEvent.click(screen.getByAltText('Card c1'));
+    fireEvent.click(screen.getByAltText('Card c2'));
+
+    fireEvent.click(screen.getAllByText('場 (Field)')[0]);
+    fireEvent.click(screen.getByAltText('Card c3'));
+
+    const backwardButton = screen.getByLabelText('山上 (Top) order backward for Card c2');
+    expect(screen.getByLabelText('山上 (Top) order backward for Card c1')).toBeDisabled();
+
+    fireEvent.click(backwardButton);
+    fireEvent.click(document.querySelector('img[src="/c2.png"]') as Element);
+    fireEvent.click(screen.getAllByText('山上 (Top)')[0]);
+    fireEvent.click(screen.getByAltText('Card c2'));
+    fireEvent.click(screen.getByText('CONFIRM'));
+
+    expect(onConfirm).toHaveBeenCalledWith([
+      { cardId: 'c3', action: 'field', order: undefined },
+      { cardId: 'c1', action: 'top', order: 1 },
+      { cardId: 'c2', action: 'top', order: 2 },
+    ]);
+  });
 });

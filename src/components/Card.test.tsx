@@ -207,6 +207,23 @@ describe('Card', () => {
     expect(onInspect).toHaveBeenCalledTimes(1);
   });
 
+  it('clears inspect state on pointer cancel so a later pointer up does not inspect', () => {
+    const onInspect = vi.fn();
+    render(
+      <Card
+        card={createCard()}
+        onInspect={onInspect}
+      />
+    );
+
+    const cardElement = screen.getByAltText('Test Card').closest('.game-card') as HTMLElement;
+    fireEvent.pointerDown(cardElement, { clientX: 10, clientY: 20, button: 0 });
+    fireEvent.pointerCancel(cardElement);
+    fireEvent.pointerUp(cardElement, { clientX: 10, clientY: 20, button: 0 });
+
+    expect(onInspect).not.toHaveBeenCalled();
+  });
+
   it('shows the hand-only action and hides controls when locked', () => {
     const onPlayToField = vi.fn();
     const { rerender } = render(
@@ -393,6 +410,32 @@ describe('Card', () => {
     );
 
     expect(screen.queryByTestId('generic-counter-badge')).not.toBeInTheDocument();
+  });
+
+  it('fires the attack action only for ready field cards with base stats', () => {
+    const onAttack = vi.fn();
+    const { rerender } = render(
+      <Card
+        card={createCard({ zone: 'field-host', isTapped: false })}
+        baseStats={{ atk: 3, hp: 4 }}
+        onTap={vi.fn()}
+        onAttack={onAttack}
+      />
+    );
+
+    fireEvent.pointerDown(screen.getByText('Attack'));
+    fireEvent.click(screen.getByText('Attack'));
+    expect(onAttack).toHaveBeenCalledWith('card-1');
+
+    rerender(
+      <Card
+        card={createCard({ zone: 'field-host', isTapped: true })}
+        baseStats={{ atk: 3, hp: 4 }}
+        onTap={vi.fn()}
+        onAttack={onAttack}
+      />
+    );
+    expect(screen.queryByText('Attack')).not.toBeInTheDocument();
   });
 
 });
