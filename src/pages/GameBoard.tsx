@@ -56,6 +56,17 @@ const GameBoard: React.FC = () => {
   const isBottomTurnActive = gameState.gameStatus === 'playing' && gameState.turnPlayer === bottomRole;
   const isTopTurnActive = gameState.gameStatus === 'playing' && gameState.turnPlayer === topRole;
   const canResetGame = isSoloMode || isHost;
+  const isGuestConnectionBlocked = !isSoloMode && !isHost && !canInteract;
+  const connectionBadgeTone = connectionState === 'connected'
+    ? { label: 'Connected', background: 'rgba(16, 185, 129, 0.18)', border: 'rgba(16, 185, 129, 0.38)', color: '#d1fae5' }
+    : connectionState === 'reconnecting' || connectionState === 'connecting'
+      ? { label: 'Reconnecting', background: 'rgba(245, 158, 11, 0.18)', border: 'rgba(245, 158, 11, 0.38)', color: '#fde68a' }
+      : { label: 'Disconnected', background: 'rgba(239, 68, 68, 0.18)', border: 'rgba(239, 68, 68, 0.38)', color: '#fecaca' };
+  const interactionBlockedTitle = isGuestConnectionBlocked
+    ? (connectionState === 'connecting' || connectionState === 'reconnecting'
+      ? 'Reconnecting to host. Please wait.'
+      : 'Connection to host is required.')
+    : undefined;
   const sidePanelWidth = 220;
   const topPanelWidth = 188;
   const sideZoneWidth = 120;
@@ -669,12 +680,13 @@ const GameBoard: React.FC = () => {
 
   const renderEndTurnButton = (playerRole: PlayerRole, label: string, background: string) => {
     const isCurrentTurn = gameState.turnPlayer === playerRole;
-    const isEnabled = gameState.gameStatus === 'playing' && isCurrentTurn;
+    const isEnabled = gameState.gameStatus === 'playing' && isCurrentTurn && canInteract;
 
     return (
       <button
         onClick={() => endTurn(playerRole)}
         disabled={!isEnabled}
+        title={!isEnabled ? interactionBlockedTitle ?? 'Available during your turn only.' : undefined}
         className="glass-panel"
         style={{
           padding: '0.5rem',
@@ -822,11 +834,28 @@ const GameBoard: React.FC = () => {
                 BETA
               </span>
             )}
+            {!isSoloMode && (
+              <span
+                style={{
+                  padding: '0.22rem 0.55rem',
+                  borderRadius: '999px',
+                  border: `1px solid ${connectionBadgeTone.border}`,
+                  background: connectionBadgeTone.background,
+                  color: connectionBadgeTone.color,
+                  fontSize: '0.72rem',
+                  fontWeight: 'bold',
+                  letterSpacing: '0.02em'
+                }}
+              >
+                {connectionBadgeTone.label}
+              </span>
+            )}
             <span style={{ color: status.includes('ready') ? 'var(--vivid-green-cyan)' : 'var(--text-muted)' }}>{status}</span>
             {!isSoloMode && !isHost && connectionState !== 'connected' && (
               <button
                 onClick={attemptReconnect}
                 disabled={connectionState === 'connecting'}
+                title={connectionState === 'connecting' ? 'Attempting to reconnect to host.' : 'Retry the connection now.'}
                 style={{
                   padding: '0.3rem 0.6rem',
                   background: '#334155',
@@ -1033,6 +1062,23 @@ const GameBoard: React.FC = () => {
           )}
         </div>
 
+        {isGuestConnectionBlocked && (
+          <div
+            style={{
+              marginTop: '-0.35rem',
+              background: 'rgba(245, 158, 11, 0.12)',
+              border: '1px solid rgba(245, 158, 11, 0.32)',
+              color: '#fde68a',
+              borderRadius: '10px',
+              padding: '0.6rem 0.85rem',
+              fontSize: '0.82rem',
+              fontWeight: 600
+            }}
+          >
+            Reconnecting to host. Actions are temporarily locked until the latest state is synced.
+          </div>
+        )}
+
         {attackSourceCard && (
           <div
             style={{
@@ -1194,10 +1240,10 @@ const GameBoard: React.FC = () => {
                       disabled={!canImportTopDeck}
                     />
                   </label>
-                  <button onClick={() => drawCard(topRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing'} style={{ padding: '0.5rem', background: '#6366f1', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' ? 'pointer' : 'not-allowed' }}>
+                  <button onClick={() => drawCard(topRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing' || !canInteract} title={gameState.gameStatus !== 'playing' || !canInteract ? interactionBlockedTitle ?? 'Available during the game only.' : undefined} style={{ padding: '0.5rem', background: '#6366f1', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' && canInteract ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' && canInteract ? 'pointer' : 'not-allowed' }}>
                     Draw {topLabel}
                   </button>
-                  <button onClick={() => millCard(topRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing'} style={{ padding: '0.5rem', background: '#475569', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' ? 'pointer' : 'not-allowed' }}>
+                  <button onClick={() => millCard(topRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing' || !canInteract} title={gameState.gameStatus !== 'playing' || !canInteract ? interactionBlockedTitle ?? 'Available during the game only.' : undefined} style={{ padding: '0.5rem', background: '#475569', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' && canInteract ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' && canInteract ? 'pointer' : 'not-allowed' }}>
                     Mill {topLabel}
                   </button>
                   {renderEndTurnButton(topRole, topLabel, '#fbbf24')}
@@ -1242,7 +1288,7 @@ const GameBoard: React.FC = () => {
                   <div style={{ display: 'grid', gridTemplateColumns: boardColumns, gap: '0.75rem', width: `${boardContentWidth}px`, alignItems: 'start' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <Zone id={`cemetery-${topRole}`} label={`${topLabel} Cemetery`} cards={getCards(`cemetery-${topRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" onInspectCard={handleInspectCard} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
-                      <button onClick={() => openSearchZone(`cemetery-${topRole}`, `${topLabel} Cemetery`)} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
+                      <button onClick={() => openSearchZone(`cemetery-${topRole}`, `${topLabel} Cemetery`)} title={interactionBlockedTitle} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: canInteract ? 'pointer' : 'not-allowed' }}>Search</button>
                     </div>
                     <Zone
                       id={`ex-${topRole}`}
@@ -1264,7 +1310,7 @@ const GameBoard: React.FC = () => {
                       />
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <Zone id={`banish-${topRole}`} label={`${topLabel} Banish`} cards={getCards(`banish-${topRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" onInspectCard={handleInspectCard} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
-                      <button onClick={() => openSearchZone(`banish-${topRole}`, `${topLabel} Banish`)} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
+                      <button onClick={() => openSearchZone(`banish-${topRole}`, `${topLabel} Banish`)} title={interactionBlockedTitle} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: canInteract ? 'pointer' : 'not-allowed' }}>Search</button>
                     </div>
                   </div>
 
@@ -1302,7 +1348,7 @@ const GameBoard: React.FC = () => {
                       />
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <Zone id={`evolveDeck-${topRole}`} label={`${topLabel} Evolve Deck`} cards={getCards(`evolveDeck-${topRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" onInspectCard={handleInspectCard} isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
-                        <button onClick={() => openSearchZone(`evolveDeck-${topRole}`, `${topLabel} Evolve Deck`)} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
+                        <button onClick={() => openSearchZone(`evolveDeck-${topRole}`, `${topLabel} Evolve Deck`)} title={interactionBlockedTitle} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: canInteract ? 'pointer' : 'not-allowed' }}>Search</button>
                       </div>
                     </div>
                     {renderLeaderZone(topRole, topLabel, 'right', 20)}
@@ -1404,7 +1450,7 @@ const GameBoard: React.FC = () => {
                   <div style={{ display: 'grid', gridTemplateColumns: boardColumns, gap: '0.75rem', width: `${boardContentWidth}px`, alignItems: 'start' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <Zone id={`evolveDeck-${bottomRole}`} label={`${bottomLabel} Evolve Deck`} cards={getCards(`evolveDeck-${bottomRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" onInspectCard={handleInspectCard} isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
-                    <button onClick={() => openSearchZone(`evolveDeck-${bottomRole}`, `${bottomLabel} Evolve Deck`)} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
+                    <button onClick={() => openSearchZone(`evolveDeck-${bottomRole}`, `${bottomLabel} Evolve Deck`)} title={interactionBlockedTitle} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: canInteract ? 'pointer' : 'not-allowed' }}>Search</button>
                   </div>
                   <Zone id={`field-${bottomRole}`} label={`${bottomLabel} Field`} cards={getCards(`field-${bottomRole}`)} cardStatLookup={cardStatLookup} cardDetailLookup={cardDetailLookup} getHighlightTone={getAttackHighlightTone} onInspectCard={handleInspectCard} onAttack={gameState.turnPlayer === bottomRole ? handleStartAttack : undefined} onTap={toggleTap} onModifyCounter={handleModifyCounter} onModifyGenericCounter={handleModifyGenericCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} disableQuickActionsForCard={shouldDisableQuickActionsForAttackTarget} viewerRole={viewerRole} containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: '160px', width: `${centerZoneWidth}px`, flex: 'none' }} isDebug={isDebug} />
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -1422,12 +1468,12 @@ const GameBoard: React.FC = () => {
 	                <div style={{ display: 'grid', gridTemplateColumns: boardColumns, gap: '0.75rem', width: `${boardContentWidth}px`, alignItems: 'start' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <Zone id={`banish-${bottomRole}`} label={`${bottomLabel} Banish`} cards={getCards(`banish-${bottomRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" onInspectCard={handleInspectCard} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onCemetery={handleSendToCemetery} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
-                    <button onClick={() => openSearchZone(`banish-${bottomRole}`, `${bottomLabel} Banish`)} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
+                    <button onClick={() => openSearchZone(`banish-${bottomRole}`, `${bottomLabel} Banish`)} title={interactionBlockedTitle} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: canInteract ? 'pointer' : 'not-allowed' }}>Search</button>
                   </div>
 	                  <Zone id={`ex-${bottomRole}`} label={`${bottomLabel} EX Area`} cards={getCards(`ex-${bottomRole}`)} cardStatLookup={cardStatLookup} cardDetailLookup={cardDetailLookup} onInspectCard={handleInspectCard} onModifyCounter={handleModifyCounter} onModifyGenericCounter={handleModifyGenericCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} viewerRole={viewerRole} containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: '150px', flex: 'none', width: `${centerZoneWidth}px` }} isDebug={isDebug} />
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <Zone id={`cemetery-${bottomRole}`} label={`${bottomLabel} Cemetery`} cards={getCards(`cemetery-${bottomRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" onInspectCard={handleInspectCard} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onCemetery={handleSendToCemetery} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
-                    <button onClick={() => openSearchZone(`cemetery-${bottomRole}`, `${bottomLabel} Cemetery`)} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
+                    <button onClick={() => openSearchZone(`cemetery-${bottomRole}`, `${bottomLabel} Cemetery`)} title={interactionBlockedTitle} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: canInteract ? 'pointer' : 'not-allowed' }}>Search</button>
                   </div>
 	                </div>
 
@@ -1497,10 +1543,10 @@ const GameBoard: React.FC = () => {
                     />
                   </label>
                 )}
-                <button onClick={() => drawCard(bottomRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing'} style={{ padding: '0.5rem', background: 'var(--accent-primary)', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' ? 'pointer' : 'not-allowed' }}>
+                <button onClick={() => drawCard(bottomRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing' || !canInteract} title={gameState.gameStatus !== 'playing' || !canInteract ? interactionBlockedTitle ?? 'Available during the game only.' : undefined} style={{ padding: '0.5rem', background: 'var(--accent-primary)', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' && canInteract ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' && canInteract ? 'pointer' : 'not-allowed' }}>
                   Draw {bottomLabel}
                 </button>
-                <button onClick={() => millCard(bottomRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing'} style={{ padding: '0.5rem', background: '#475569', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' ? 'pointer' : 'not-allowed' }}>
+                <button onClick={() => millCard(bottomRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing' || !canInteract} title={gameState.gameStatus !== 'playing' || !canInteract ? interactionBlockedTitle ?? 'Available during the game only.' : undefined} style={{ padding: '0.5rem', background: '#475569', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' && canInteract ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' && canInteract ? 'pointer' : 'not-allowed' }}>
                   Mill {bottomLabel}
                 </button>
                 {isSoloMode ? (
