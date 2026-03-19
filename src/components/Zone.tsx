@@ -3,12 +3,14 @@ import { useDroppable } from '@dnd-kit/core';
 import Card, { type CardInspectAnchor, type CardInstance } from './Card';
 import type { PlayerRole } from '../types/game';
 import type { CardStatLookup } from '../utils/cardStats';
+import type { CardDetailLookup } from '../utils/cardDetails';
 
 interface Props {
   id: string;
   label: string;
   cards: CardInstance[];
   cardStatLookup?: CardStatLookup;
+  cardDetailLookup?: CardDetailLookup;
   onInspectCard?: (card: CardInstance, anchor: CardInspectAnchor) => void;
   onAttack?: (id: string) => void;
   onTap?: (id: string) => void;
@@ -30,7 +32,7 @@ interface Props {
   isDebug?: boolean;
 }
 
-const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onInspectCard, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, hideCards, layout = 'horizontal', isProtected, lockCards, disableQuickActionsForCard, getHighlightTone, viewerRole, containerStyle, isDebug }) => {
+const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLookup, onInspectCard, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, hideCards, layout = 'horizontal', isProtected, lockCards, disableQuickActionsForCard, getHighlightTone, viewerRole, containerStyle, isDebug }) => {
   const { isOver, setNodeRef } = useDroppable({ id });
 
   const isStack = layout === 'stack';
@@ -140,6 +142,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onInspectCard
                     <Card
                       card={card}
                       baseStats={cardStatLookup?.[card.cardId]}
+                      detail={cardDetailLookup?.[card.cardId]}
                       hideCurrentStats={attachments.length > 0}
                       highlightTone={getHighlightTone?.(card)}
                       onInspect={onInspectCard}
@@ -163,6 +166,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onInspectCard
                         <Card
                           card={attachedCard}
                           baseStats={cardStatLookup?.[attachedCard.cardId]}
+                          detail={cardDetailLookup?.[attachedCard.cardId]}
                           displayCounters={{
                             atk: card.counters.atk + attachedCard.counters.atk,
                             hp: card.counters.hp + attachedCard.counters.hp,
@@ -200,6 +204,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onInspectCard
               <Card
                 card={card}
                 baseStats={cardStatLookup?.[card.cardId]}
+                detail={cardDetailLookup?.[card.cardId]}
                 hideCurrentStats={attachments.length > 0}
                 highlightTone={getHighlightTone?.(card)}
                 onInspect={onInspectCard}
@@ -223,6 +228,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, onInspectCard
                   <Card
                     card={attachedCard}
                     baseStats={cardStatLookup?.[attachedCard.cardId]}
+                    detail={cardDetailLookup?.[attachedCard.cardId]}
                     displayCounters={{
                       atk: card.counters.atk + attachedCard.counters.atk,
                       hp: card.counters.hp + attachedCard.counters.hp,

@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import type { CardInstance } from './Card';
+import CardArtwork from './CardArtwork';
+import type { CardDetailLookup } from '../utils/cardDetails';
 
 export type TopDeckAction = 'hand' | 'revealedHand' | 'field' | 'ex' | 'cemetery' | 'top' | 'bottom';
 
 interface TopDeckModalProps {
   isOpen: boolean;
   cards: CardInstance[];
+  cardDetailLookup?: CardDetailLookup;
   onConfirm: (results: { cardId: string, action: TopDeckAction, order?: number }[]) => void;
   onCancel: () => void;
 }
@@ -16,7 +19,7 @@ interface AssignedCard {
   order?: number;
 }
 
-const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, onConfirm, onCancel }) => {
+const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLookup = {}, onConfirm, onCancel }) => {
   const [pendingCards, setPendingCards] = useState<CardInstance[]>([]);
   const [assignedCards, setAssignedCards] = useState<AssignedCard[]>([]);
   const [currentAction, setCurrentAction] = useState<TopDeckAction>('top');
@@ -134,7 +137,17 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, onConfirm, o
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', minHeight: '180px', background: 'rgba(255,255,255,0.02)', padding: '1.5rem', borderRadius: '12px', border: '1px dashed #30363d' }}>
               {pendingCards.map(card => (
                 <div key={card.id} onClick={() => handleAssign(card)} style={{ cursor: 'pointer', transition: 'transform 0.2s' }}>
-                  <img src={card.image} alt={card.name} style={{ width: '120px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }} />
+                  <CardArtwork
+                    image={card.image}
+                    alt={card.name}
+                    detail={cardDetailLookup[card.cardId]}
+                    baseCardType={card.baseCardType}
+                    isLeaderCard={card.isLeaderCard}
+                    isTokenCard={card.isTokenCard}
+                    isEvolveCard={card.isEvolveCard}
+                    style={{ width: '120px', height: '168px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}
+                    draggable={false}
+                  />
                 </div>
               ))}
               {pendingCards.length === 0 && <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#484f58', fontStyle: 'italic' }}>All cards assigned.</div>}
@@ -162,7 +175,17 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, onConfirm, o
                   <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                     {group.map(a => (
                       <div key={a.card.id} onClick={() => handleUnassign(a.card.id)} style={{ position: 'relative', cursor: 'pointer' }}>
-                        <img src={a.card.image} style={{ height: isOrdered ? '90px' : '75px', borderRadius: '6px', border: currentAction === btn.id ? `2px solid ${btn.color}` : 'none' }} />
+                        <CardArtwork
+                          image={a.card.image}
+                          alt={a.card.name}
+                          detail={cardDetailLookup[a.card.cardId]}
+                          baseCardType={a.card.baseCardType}
+                          isLeaderCard={a.card.isLeaderCard}
+                          isTokenCard={a.card.isTokenCard}
+                          isEvolveCard={a.card.isEvolveCard}
+                          style={{ width: isOrdered ? '64px' : '53px', height: isOrdered ? '90px' : '75px', borderRadius: '6px', border: currentAction === btn.id ? `2px solid ${btn.color}` : 'none' }}
+                          draggable={false}
+                        />
                         {isOrdered && (
                           <div style={{
                             position: 'absolute', bottom: '-6px', right: '-6px', 

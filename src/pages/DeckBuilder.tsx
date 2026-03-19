@@ -33,6 +33,7 @@ import {
   type DeckTargetSection,
 } from '../utils/deckBuilderRules';
 import { buildCardDetailLookup, formatAbilityText } from '../utils/cardDetails';
+import CardArtwork from '../components/CardArtwork';
 
 const PAGE_SIZE = 50;
 const COST_FILTER_VALUES = ['All', '0', '1', '2', '3', '4', '5', '6', '7+'] as const;
@@ -137,6 +138,13 @@ const groupDeckCardsForDisplay = (cards: DeckBuilderCardData[]): DeckDisplayGrou
   });
 
   return groups;
+};
+
+const parseNullableStat = (value?: string): number | null => {
+  if (!value || value === '-') return null;
+
+  const parsed = Number.parseInt(value, 10);
+  return Number.isNaN(parsed) ? null : parsed;
 };
 
 const DeckBuilder: React.FC = () => {
@@ -839,7 +847,17 @@ const DeckBuilder: React.FC = () => {
                       lineHeight: 0,
                     }}
                   >
-                    <img src={card.image} alt={card.name} style={{ width: '100%', borderRadius: '4px' }} loading="lazy" />
+                    <CardArtwork
+                      image={card.image}
+                      alt={card.name}
+                      detail={cardDetailLookup[card.id]}
+                      baseCardType={getBaseCardType(card.card_kind_normalized)}
+                      isLeaderCard={card.deck_section === 'leader'}
+                      isTokenCard={card.deck_section === 'token' || card.is_token}
+                      isEvolveCard={card.is_evolve_card}
+                      style={{ width: '100%', borderRadius: '4px' }}
+                      draggable={false}
+                    />
                   </button>
                   <p style={{ fontSize: '0.75rem', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={card.name}>
                     {card.name}
@@ -1391,13 +1409,30 @@ const DeckBuilder: React.FC = () => {
             </div>
 
             <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'flex-start', marginBottom: '0.25rem' }}>
-              <img
-                src={previewDetail?.image || previewCard.image}
+              <CardArtwork
+                image={previewDetail?.image || previewCard.image}
                 alt={`${previewCard.name} enlarged`}
+                detail={previewDetail ?? {
+                  id: previewCard.id,
+                  name: previewCard.name,
+                  image: previewCard.image,
+                  className: previewCard.class ?? '',
+                  title: previewCard.title ?? '',
+                  type: previewCard.type ?? '',
+                  subtype: previewCard.subtype ?? '',
+                  cost: previewCard.cost ?? '-',
+                  atk: parseNullableStat(previewCard.atk),
+                  hp: parseNullableStat(previewCard.hp),
+                  abilityText: previewCard.ability_text ?? '',
+                }}
+                baseCardType={getBaseCardType(previewCard.card_kind_normalized)}
+                isLeaderCard={previewCard.deck_section === 'leader'}
+                isTokenCard={previewCard.deck_section === 'token' || previewCard.is_token}
+                isEvolveCard={previewCard.is_evolve_card}
                 style={{
                   width: '160px',
                   maxWidth: '40vw',
-                  height: 'auto',
+                  height: '224px',
                   borderRadius: '10px',
                   boxShadow: '0 8px 20px rgba(0,0,0,0.32)',
                   flexShrink: 0,
