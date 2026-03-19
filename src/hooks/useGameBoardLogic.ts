@@ -267,6 +267,13 @@ export const useGameBoardLogic = () => {
     }
   }, []);
 
+  const clearAttackUiState = useCallback(() => {
+    clearAttackMessageTimer();
+    setAttackMessage(null);
+    setAttackVisual(null);
+    setAttackHistory([]);
+  }, [clearAttackMessageTimer]);
+
   const clearCardPlayMessageTimer = useCallback(() => {
     if (cardPlayMessageTimeoutRef.current) {
       clearTimeout(cardPlayMessageTimeoutRef.current);
@@ -795,16 +802,21 @@ export const useGameBoardLogic = () => {
   }, [applyLocalState, isDebug]);
 
   useEffect(() => {
+    if (gameState.gameStatus !== 'preparing') return;
+    clearAttackUiState();
+  }, [clearAttackUiState, gameState.gameStatus]);
+
+  useEffect(() => {
     return () => {
       clearReconnectTimer();
       clearSnapshotRequestTimer();
-      clearAttackMessageTimer();
+      clearAttackUiState();
       clearCardPlayMessageTimer();
       clearCoinMessageTimer();
       clearDiceTimers();
       clearRevealedCardsTimer();
     };
-  }, [clearAttackMessageTimer, clearCardPlayMessageTimer, clearCoinMessageTimer, clearDiceTimers, clearReconnectTimer, clearRevealedCardsTimer, clearSnapshotRequestTimer]);
+  }, [clearAttackUiState, clearCardPlayMessageTimer, clearCoinMessageTimer, clearDiceTimers, clearReconnectTimer, clearRevealedCardsTimer, clearSnapshotRequestTimer]);
 
   useEffect(() => {
     if (gameState.gameStatus !== 'playing') return;
