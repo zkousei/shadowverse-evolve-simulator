@@ -15,7 +15,7 @@ import CardArtwork from '../components/CardArtwork';
 
 const GameBoard: React.FC = () => {
   const {
-    room, isSoloMode, isHost, role, status, gameState, searchZone, setSearchZone,
+    room, isSoloMode, isHost, role, status, connectionState, canInteract, attemptReconnect, gameState, searchZone, setSearchZone,
     showResetConfirm, setShowResetConfirm, coinMessage, turnMessage, cardPlayMessage, attackMessage, attackHistory, attackVisual, revealedCardsOverlay,
     isRollingDice, diceValue, mulliganOrder, isMulliganModalOpen, setIsMulliganModalOpen,
     handleStatChange, setPhase, endTurn, handleUndoTurn, handleSetInitialTurnOrder,
@@ -66,6 +66,19 @@ const GameBoard: React.FC = () => {
   const attackSourceCard = attackSourceCardId
     ? gameState.cards.find(card => card.id === attackSourceCardId) ?? null
     : null;
+
+  React.useEffect(() => {
+    if (isSoloMode || connectionState === 'connected') return;
+
+    setIsTopNInputOpen(false);
+    setTokenSpawnTargetRole(null);
+    setShowUndoConfirm(false);
+    setActiveZoneActions(null);
+    setSelectedInspectorCardId(null);
+    setSelectedInspectorAnchor(null);
+    setAttackSourceCardId(null);
+  }, [connectionState, isSoloMode]);
+
   const attackLine = React.useMemo(() => {
     if (!attackVisual || typeof document === 'undefined') return null;
 
@@ -353,16 +366,19 @@ const GameBoard: React.FC = () => {
   }, [selectedInspectorAnchor]);
 
   const openTopDeckModal = (targetRole: PlayerRole) => {
+    if (!canInteract) return;
     setTopDeckTargetRole(targetRole);
     setIsTopNInputOpen(true);
   };
 
   const openMulliganModal = (targetRole: PlayerRole) => {
+    if (!canInteract) return;
     setMulliganTargetRole(targetRole);
     startMulligan();
   };
 
   const openTokenSpawnModal = (targetRole: PlayerRole) => {
+    if (!canInteract) return;
     setTokenSpawnTargetRole(targetRole);
   };
 
@@ -373,6 +389,7 @@ const GameBoard: React.FC = () => {
   };
 
   const handleStartAttack = React.useCallback((cardId: string) => {
+    if (!canInteract) return;
     const card = gameState.cards.find(entry => entry.id === cardId);
     if (!card) return;
     if (card.isTapped || card.isFlipped || card.isLeaderCard) return;
@@ -384,7 +401,12 @@ const GameBoard: React.FC = () => {
     setSelectedInspectorCardId(null);
     setSelectedInspectorAnchor(null);
     setAttackSourceCardId(current => current === cardId ? null : cardId);
-  }, [cardStatLookup, gameState.cards, gameState.gameStatus, gameState.turnPlayer]);
+  }, [canInteract, cardStatLookup, gameState.cards, gameState.gameStatus, gameState.turnPlayer]);
+
+  const openSearchZone = React.useCallback((id: string, title: string) => {
+    if (!canInteract) return;
+    setSearchZone({ id, title });
+  }, [canInteract, setSearchZone]);
 
   const getAttackHighlightTone = React.useCallback((card: CardInstance): 'attack-source' | 'attack-target' | undefined => {
     if (!attackSourceCard) return undefined;
@@ -438,7 +460,7 @@ const GameBoard: React.FC = () => {
         />
         {leaderCards.length >= 2 && (
           <button
-            onClick={() => setSearchZone({ id: leaderZoneId, title: `${label} Leader` })}
+            onClick={() => openSearchZone(leaderZoneId, `${label} Leader`)}
             style={{
               width: '100%',
               marginTop: '4px',
@@ -774,7 +796,10 @@ const GameBoard: React.FC = () => {
   };
 
   return (
-    <DndContext onDragEnd={handleDragEnd}>
+    <DndContext onDragEnd={(event) => {
+      if (!canInteract) return;
+      handleDragEnd(event);
+    }}>
       <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', height: '100%', gap: '1rem', overflow: 'hidden' }}>
 
         {/* Header bar */}
@@ -798,6 +823,24 @@ const GameBoard: React.FC = () => {
               </span>
             )}
             <span style={{ color: status.includes('ready') ? 'var(--vivid-green-cyan)' : 'var(--text-muted)' }}>{status}</span>
+            {!isSoloMode && !isHost && connectionState !== 'connected' && (
+              <button
+                onClick={attemptReconnect}
+                disabled={connectionState === 'connecting'}
+                style={{
+                  padding: '0.3rem 0.6rem',
+                  background: '#334155',
+                  color: 'white',
+                  border: '1px solid rgba(255,255,255,0.14)',
+                  borderRadius: '4px',
+                  cursor: connectionState === 'connecting' ? 'not-allowed' : 'pointer',
+                  fontSize: '0.75rem',
+                  opacity: connectionState === 'connecting' ? 0.6 : 1
+                }}
+              >
+                {connectionState === 'reconnecting' ? 'Reconnect Now' : 'Reconnect'}
+              </button>
+            )}
 
             {gameState.gameStatus === 'preparing' ? (
               <div style={{ display: 'flex', gap: '0.4rem' }}>
@@ -1199,7 +1242,7 @@ const GameBoard: React.FC = () => {
                   <div style={{ display: 'grid', gridTemplateColumns: boardColumns, gap: '0.75rem', width: `${boardContentWidth}px`, alignItems: 'start' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <Zone id={`cemetery-${topRole}`} label={`${topLabel} Cemetery`} cards={getCards(`cemetery-${topRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" onInspectCard={handleInspectCard} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
-                      <button onClick={() => setSearchZone({ id: `cemetery-${topRole}`, title: `${topLabel} Cemetery` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
+                      <button onClick={() => openSearchZone(`cemetery-${topRole}`, `${topLabel} Cemetery`)} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
                     </div>
                     <Zone
                       id={`ex-${topRole}`}
@@ -1221,7 +1264,7 @@ const GameBoard: React.FC = () => {
                       />
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <Zone id={`banish-${topRole}`} label={`${topLabel} Banish`} cards={getCards(`banish-${topRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" onInspectCard={handleInspectCard} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
-                      <button onClick={() => setSearchZone({ id: `banish-${topRole}`, title: `${topLabel} Banish` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
+                      <button onClick={() => openSearchZone(`banish-${topRole}`, `${topLabel} Banish`)} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
                     </div>
                   </div>
 
@@ -1230,7 +1273,7 @@ const GameBoard: React.FC = () => {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <Zone id={`mainDeck-${topRole}`} label={`${topLabel} Main Deck`} cards={getCards(`mainDeck-${topRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
                         {renderZoneActions(`mainDeck-${topRole}`, [
-                          { label: 'Search', onClick: () => setSearchZone({ id: `mainDeck-${topRole}`, title: `${topLabel} Main Deck` }) },
+                          { label: 'Search', onClick: () => openSearchZone(`mainDeck-${topRole}`, `${topLabel} Main Deck`) },
                           { label: 'Shuffle', onClick: () => handleShuffleDeck(topRole) },
                           { label: 'Look Top (N)', onClick: () => openTopDeckModal(topRole), tone: 'accent' }
                         ], 'up')}
@@ -1259,7 +1302,7 @@ const GameBoard: React.FC = () => {
                       />
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <Zone id={`evolveDeck-${topRole}`} label={`${topLabel} Evolve Deck`} cards={getCards(`evolveDeck-${topRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" onInspectCard={handleInspectCard} isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
-                        <button onClick={() => setSearchZone({ id: `evolveDeck-${topRole}`, title: `${topLabel} Evolve Deck` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
+                        <button onClick={() => openSearchZone(`evolveDeck-${topRole}`, `${topLabel} Evolve Deck`)} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
                       </div>
                     </div>
                     {renderLeaderZone(topRole, topLabel, 'right', 20)}
@@ -1297,7 +1340,7 @@ const GameBoard: React.FC = () => {
                   <div style={{ display: 'grid', gridTemplateColumns: boardColumns, gap: '0.75rem', width: `${boardContentWidth}px`, alignItems: 'start' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <Zone id={`cemetery-${topRole}`} label={`${topLabel} Cemetery`} cards={getCards(`cemetery-${topRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" onInspectCard={handleInspectCard} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
-                      <button onClick={() => setSearchZone({ id: `cemetery-${topRole}`, title: `${topLabel} Cemetery` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
+                      <button onClick={() => openSearchZone(`cemetery-${topRole}`, `${topLabel} Cemetery`)} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
                     </div>
                     <Zone
                       id={`ex-${topRole}`}
@@ -1312,7 +1355,7 @@ const GameBoard: React.FC = () => {
                     />
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <Zone id={`banish-${topRole}`} label={`${topLabel} Banish`} cards={getCards(`banish-${topRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" onInspectCard={handleInspectCard} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
-                      <button onClick={() => setSearchZone({ id: `banish-${topRole}`, title: `${topLabel} Banish` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
+                      <button onClick={() => openSearchZone(`banish-${topRole}`, `${topLabel} Banish`)} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
                     </div>
                   </div>
 
@@ -1339,7 +1382,7 @@ const GameBoard: React.FC = () => {
                       />
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <Zone id={`evolveDeck-${topRole}`} label={`${topLabel} Evolve Deck`} cards={getCards(`evolveDeck-${topRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" onInspectCard={handleInspectCard} isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
-                        <button onClick={() => setSearchZone({ id: `evolveDeck-${topRole}`, title: `${topLabel} Evolve Deck` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
+                        <button onClick={() => openSearchZone(`evolveDeck-${topRole}`, `${topLabel} Evolve Deck`)} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
                       </div>
                     </div>
                     {renderLeaderZone(topRole, topLabel, 'right', 20)}
@@ -1361,13 +1404,13 @@ const GameBoard: React.FC = () => {
                   <div style={{ display: 'grid', gridTemplateColumns: boardColumns, gap: '0.75rem', width: `${boardContentWidth}px`, alignItems: 'start' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <Zone id={`evolveDeck-${bottomRole}`} label={`${bottomLabel} Evolve Deck`} cards={getCards(`evolveDeck-${bottomRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" onInspectCard={handleInspectCard} isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
-                    <button onClick={() => setSearchZone({ id: `evolveDeck-${bottomRole}`, title: `${bottomLabel} Evolve Deck` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
+                    <button onClick={() => openSearchZone(`evolveDeck-${bottomRole}`, `${bottomLabel} Evolve Deck`)} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
                   </div>
                   <Zone id={`field-${bottomRole}`} label={`${bottomLabel} Field`} cards={getCards(`field-${bottomRole}`)} cardStatLookup={cardStatLookup} cardDetailLookup={cardDetailLookup} getHighlightTone={getAttackHighlightTone} onInspectCard={handleInspectCard} onAttack={gameState.turnPlayer === bottomRole ? handleStartAttack : undefined} onTap={toggleTap} onModifyCounter={handleModifyCounter} onModifyGenericCounter={handleModifyGenericCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} disableQuickActionsForCard={shouldDisableQuickActionsForAttackTarget} viewerRole={viewerRole} containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: '160px', width: `${centerZoneWidth}px`, flex: 'none' }} isDebug={isDebug} />
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <Zone id={`mainDeck-${bottomRole}`} label={`${bottomLabel} Main Deck`} cards={getCards(`mainDeck-${bottomRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
                     {renderZoneActions(`mainDeck-${bottomRole}`, [
-                      { label: 'Search', onClick: () => setSearchZone({ id: `mainDeck-${bottomRole}`, title: `${bottomLabel} Main Deck` }) },
+                      { label: 'Search', onClick: () => openSearchZone(`mainDeck-${bottomRole}`, `${bottomLabel} Main Deck`) },
                       { label: 'Shuffle', onClick: () => handleShuffleDeck(bottomRole) },
                       { label: 'Look Top (N)', onClick: () => openTopDeckModal(bottomRole), tone: 'accent' }
                     ])}
@@ -1379,12 +1422,12 @@ const GameBoard: React.FC = () => {
 	                <div style={{ display: 'grid', gridTemplateColumns: boardColumns, gap: '0.75rem', width: `${boardContentWidth}px`, alignItems: 'start' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <Zone id={`banish-${bottomRole}`} label={`${bottomLabel} Banish`} cards={getCards(`banish-${bottomRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" onInspectCard={handleInspectCard} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onCemetery={handleSendToCemetery} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
-                    <button onClick={() => setSearchZone({ id: `banish-${bottomRole}`, title: `${bottomLabel} Banish` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
+                    <button onClick={() => openSearchZone(`banish-${bottomRole}`, `${bottomLabel} Banish`)} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
                   </div>
 	                  <Zone id={`ex-${bottomRole}`} label={`${bottomLabel} EX Area`} cards={getCards(`ex-${bottomRole}`)} cardStatLookup={cardStatLookup} cardDetailLookup={cardDetailLookup} onInspectCard={handleInspectCard} onModifyCounter={handleModifyCounter} onModifyGenericCounter={handleModifyGenericCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} viewerRole={viewerRole} containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: '150px', flex: 'none', width: `${centerZoneWidth}px` }} isDebug={isDebug} />
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <Zone id={`cemetery-${bottomRole}`} label={`${bottomLabel} Cemetery`} cards={getCards(`cemetery-${bottomRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" onInspectCard={handleInspectCard} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onCemetery={handleSendToCemetery} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
-                    <button onClick={() => setSearchZone({ id: `cemetery-${bottomRole}`, title: `${bottomLabel} Cemetery` })} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
+                    <button onClick={() => openSearchZone(`cemetery-${bottomRole}`, `${bottomLabel} Cemetery`)} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
                   </div>
 	                </div>
 
