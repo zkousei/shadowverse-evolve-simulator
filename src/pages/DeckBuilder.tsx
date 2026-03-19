@@ -33,6 +33,26 @@ import {
   type DeckTargetSection,
 } from '../utils/deckBuilderRules';
 import { buildCardDetailLookup, formatAbilityText } from '../utils/cardDetails';
+import {
+  areDeckSnapshotsEqual,
+  clearDraft,
+  createDeckSnapshot,
+  createPristineDeckSnapshot,
+  deleteSavedDeck,
+  duplicateSavedDeck,
+  getSavedDeckById,
+  HARD_SAVED_DECK_LIMIT,
+  hasReachedHardSavedDeckLimit,
+  hasReachedSoftSavedDeckLimit,
+  listSavedDecks,
+  loadDraft,
+  restoreDraftToSnapshot,
+  restoreSavedDeckToSnapshot,
+  saveDeck,
+  saveDraft,
+  type DeckBuilderSnapshot,
+  type SavedDeckRecordV1,
+} from '../utils/deckStorage';
 import CardArtwork from '../components/CardArtwork';
 
 const PAGE_SIZE = 50;
@@ -147,6 +167,50 @@ const parseNullableStat = (value?: string): number | null => {
   return Number.isNaN(parsed) ? null : parsed;
 };
 
+const formatSavedDeckRuleSummary = (deck: SavedDeckRecordV1): string => {
+  if (deck.ruleConfig.format === 'constructed') {
+    if (deck.ruleConfig.identityType === 'title' && deck.ruleConfig.selectedTitle) {
+      return `Constructed / Title: ${deck.ruleConfig.selectedTitle}`;
+    }
+
+    return `Constructed / Class: ${deck.ruleConfig.selectedClass ?? 'Unselected'}`;
+  }
+
+  if (deck.ruleConfig.format === 'crossover') {
+    const [firstClass, secondClass] = deck.ruleConfig.selectedClasses;
+    return `Crossover / ${firstClass ?? '?'} + ${secondClass ?? '?'}`;
+  }
+
+  return 'Other';
+};
+
+const formatSavedDeckCountSummary = (deck: SavedDeckRecordV1): string => {
+  const countCards = (section: SavedDeckRecordV1['sections'][keyof SavedDeckRecordV1['sections']]) => (
+    section.reduce((total, ref) => total + ref.count, 0)
+  );
+
+  return [
+    `Main ${countCards(deck.sections.main)}`,
+    `Evolve ${countCards(deck.sections.evolve)}`,
+    `Leader ${countCards(deck.sections.leader)}`,
+    `Token ${countCards(deck.sections.token)}`,
+  ].join(' / ');
+};
+
+const formatSavedDeckUpdatedAt = (value: string): string => {
+  try {
+    return new Intl.DateTimeFormat('ja-JP', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date(value));
+  } catch {
+    return value;
+  }
+};
+
 const DeckBuilder: React.FC = () => {
   const [cards, setCards] = useState<DeckBuilderCardData[]>([]);
   const [search, setSearch] = useState('');
@@ -168,6 +232,15 @@ const DeckBuilder: React.FC = () => {
   const [deckSortMode, setDeckSortMode] = useState<DeckSortMode>('added');
   const [showResetDeckDialog, setShowResetDeckDialog] = useState(false);
   const [previewCard, setPreviewCard] = useState<DeckBuilderCardData | null>(null);
+  const [savedDecks, setSavedDecks] = useState<SavedDeckRecordV1[]>(() => listSavedDecks());
+  const [selectedSavedDeckId, setSelectedSavedDeckId] = useState<string | null>(null);
+  const [savedBaselineSnapshot, setSavedBaselineSnapshot] = useState<DeckBuilderSnapshot | null>(null);
+  const [isMyDecksOpen, setIsMyDecksOpen] = useState(false);
+  const [savedDeckSearch, setSavedDeckSearch] = useState('');
+  const [draftRestored, setDraftRestored] = useState(false);
+  const [hasInitializedDraft, setHasInitializedDraft] = useState(false);
+  const [pendingDeleteDeckId, setPendingDeleteDeckId] = useState<string | null>(null);
+  const [pendingLoadDeckId, setPendingLoadDeckId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/cards_detailed.json')
@@ -188,6 +261,30 @@ const DeckBuilder: React.FC = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [previewCard]);
+
+  useEffect(() => {
+    if (cards.length === 0 || hasInitializedDraft) return;
+
+    const draft = loadDraft();
+    if (!draft) {
+      setHasInitializedDraft(true);
+      return;
+    }
+
+    const restoredDraft = restoreDraftToSnapshot(draft, cards);
+    const savedDeck = draft.selectedDeckId ? getSavedDeckById(draft.selectedDeckId) : null;
+    const baselineSnapshot = savedDeck
+      ? restoreSavedDeckToSnapshot(savedDeck, cards).snapshot
+      : null;
+
+    setDeckName(restoredDraft.snapshot.name);
+    setDeckRuleConfig(restoredDraft.snapshot.ruleConfig);
+    setDeckState(sanitizeImportedDeckState(restoredDraft.snapshot.deckState, cards, restoredDraft.snapshot.ruleConfig));
+    setSelectedSavedDeckId(savedDeck?.id ?? null);
+    setSavedBaselineSnapshot(baselineSnapshot);
+    setDraftRestored(true);
+    setHasInitializedDraft(true);
+  }, [cards, hasInitializedDraft]);
 
   // Extract unique expansions (prefix before hyphen)
   const expansions = getAvailableExpansions(cards);
@@ -279,6 +376,70 @@ const DeckBuilder: React.FC = () => {
     cardClass => cardClass === deckRuleConfig.selectedClasses[1] || cardClass !== deckRuleConfig.selectedClasses[0]
   );
   const canExportDeck = deckIssueMessages.length === 0;
+  const currentSnapshot = createDeckSnapshot(deckName, deckRuleConfig, deckState);
+  const pristineSnapshot = React.useMemo(() => createPristineDeckSnapshot(createDefaultDeckRuleConfig()), []);
+  const savedDeckCount = savedDecks.length;
+  const hasReachedSoftLimit = hasReachedSoftSavedDeckLimit(savedDeckCount);
+  const hasReachedHardLimit = hasReachedHardSavedDeckLimit(savedDeckCount);
+  const wouldCreateNewSavedDeck = selectedSavedDeckId === null;
+  const canCreateNewSavedDeck = !hasReachedHardLimit;
+  const canSaveCurrentDeck = !wouldCreateNewSavedDeck || canCreateNewSavedDeck;
+  const isDirty = savedBaselineSnapshot
+    ? !areDeckSnapshotsEqual(currentSnapshot, savedBaselineSnapshot)
+    : !areDeckSnapshotsEqual(currentSnapshot, pristineSnapshot);
+  const saveStateMessage = draftRestored
+    ? 'Draft restored from this browser'
+    : selectedSavedDeckId
+      ? (isDirty ? 'Unsaved changes' : 'Saved')
+      : (isDirty ? 'Unsaved changes' : 'Not saved to My Decks');
+  const filteredSavedDecks = React.useMemo(() => (
+    savedDecks
+      .filter(deck => deck.name.toLowerCase().includes(savedDeckSearch.trim().toLowerCase()))
+      .map(savedDeck => {
+        const restoredDeck = restoreSavedDeckToSnapshot(savedDeck, cards);
+        const sanitizedDeckState = sanitizeImportedDeckState(
+          restoredDeck.snapshot.deckState,
+          cards,
+          restoredDeck.snapshot.ruleConfig
+        );
+        const savedDeckIssues = getDeckValidationMessages(sanitizedDeckState, restoredDeck.snapshot.ruleConfig);
+
+        return {
+          savedDeck,
+          canExport: savedDeckIssues.length === 0,
+        };
+      })
+  ), [cards, savedDeckSearch, savedDecks]);
+
+  useEffect(() => {
+    if (cards.length === 0 || !hasInitializedDraft) return;
+
+    const timeoutId = window.setTimeout(() => {
+      saveDraft({
+        selectedDeckId: selectedSavedDeckId,
+        name: deckName,
+        ruleConfig: deckRuleConfig,
+        deckState,
+      });
+    }, 400);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [cards.length, deckName, deckRuleConfig, deckState, hasInitializedDraft, selectedSavedDeckId]);
+
+  const refreshSavedDecks = () => {
+    setSavedDecks(listSavedDecks());
+  };
+
+  const handleDiscardDraft = () => {
+    clearDraft();
+    const defaultRuleConfig = createDefaultDeckRuleConfig();
+    setDeckName('My Deck');
+    setDeckRuleConfig(defaultRuleConfig);
+    setDeckState(createEmptyDeckState());
+    setSelectedSavedDeckId(null);
+    setSavedBaselineSnapshot(null);
+    setDraftRestored(false);
+  };
 
   const resetLibraryFilters = () => {
     setSearch('');
@@ -391,37 +552,41 @@ const DeckBuilder: React.FC = () => {
   };
 
   const exportDeck = () => {
-    const data = JSON.stringify({
-      deckName,
-      rule: deckRuleConfig.format,
-      identityType: deckRuleConfig.identityType,
-      selectedClass: deckRuleConfig.selectedClass,
-      selectedTitle: deckRuleConfig.selectedTitle,
-      selectedClasses: deckRuleConfig.selectedClasses,
-      ...deckState,
-    }, null, 2);
+    const downloadDeckJson = (name: string, ruleConfig: typeof deckRuleConfig, nextDeckState: DeckState) => {
+      const data = JSON.stringify({
+        deckName: name,
+        rule: ruleConfig.format,
+        identityType: ruleConfig.identityType,
+        selectedClass: ruleConfig.selectedClass,
+        selectedTitle: ruleConfig.selectedTitle,
+        selectedClasses: ruleConfig.selectedClasses,
+        ...nextDeckState,
+      }, null, 2);
 
-    // Sanitize filename - allow alphanumeric, Japanese characters, underscores, hyphens
-    const rawName = deckName.trim();
-    const safeName = rawName.length > 0
-      ? rawName.replace(/[^\w\u3000-\u303F\u3040-\u309F\u30A0-\u30FF\uFF00-\uFFEF\u4E00-\u9FAF\-]/g, '_')
-      : 'shadowverse_deck';
+      // Sanitize filename - allow alphanumeric, Japanese characters, underscores, hyphens
+      const rawName = name.trim();
+      const safeName = rawName.length > 0
+        ? rawName.replace(/[^\w\u3000-\u303F\u3040-\u309F\u30A0-\u30FF\uFF00-\uFFEF\u4E00-\u9FAF\-]/g, '_')
+        : 'shadowverse_deck';
 
-    const blob = new Blob([data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
 
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${safeName}.json`;
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${safeName}.json`;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
 
-    // Delay revoke to ensure download starts
-    setTimeout(() => {
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }, 200);
+      // Delay revoke to ensure download starts
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 200);
+    };
+
+    downloadDeckJson(deckName, deckRuleConfig, deckState);
   };
 
   const handleImportDeck = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -441,6 +606,9 @@ const DeckBuilder: React.FC = () => {
         const importedRuleConfig = getImportedDeckRuleConfig(data);
         setDeckRuleConfig(importedRuleConfig);
         setDeckState(sanitizeImportedDeckState(data, cards, importedRuleConfig));
+        setSelectedSavedDeckId(null);
+        setSavedBaselineSnapshot(null);
+        setDraftRestored(false);
       } catch (err) {
         alert("Failed to parse deck JSON.");
       }
@@ -448,6 +616,95 @@ const DeckBuilder: React.FC = () => {
     reader.readAsText(file);
     // Reset input so the same file can be uploaded again if needed
     event.target.value = '';
+  };
+
+  const handleSaveDeck = (saveAsNew = false) => {
+    if ((saveAsNew || selectedSavedDeckId === null) && !canCreateNewSavedDeck) {
+      return;
+    }
+
+    const snapshot = createDeckSnapshot(deckName, deckRuleConfig, deckState);
+    const savedDeck = saveDeck({
+      id: saveAsNew ? undefined : (selectedSavedDeckId ?? undefined),
+      name: snapshot.name,
+      ruleConfig: snapshot.ruleConfig,
+      deckState: snapshot.deckState,
+    });
+
+    setDeckName(savedDeck.name);
+    setSelectedSavedDeckId(savedDeck.id);
+    setSavedBaselineSnapshot(createDeckSnapshot(savedDeck.name, snapshot.ruleConfig, snapshot.deckState));
+    setDraftRestored(false);
+    refreshSavedDecks();
+  };
+
+  const handleLoadSavedDeck = (deckId: string) => {
+    const savedDeck = getSavedDeckById(deckId);
+    if (!savedDeck) return;
+
+    const restoredDeck = restoreSavedDeckToSnapshot(savedDeck, cards);
+    setDeckName(restoredDeck.snapshot.name);
+    setDeckRuleConfig(restoredDeck.snapshot.ruleConfig);
+    setDeckState(sanitizeImportedDeckState(restoredDeck.snapshot.deckState, cards, restoredDeck.snapshot.ruleConfig));
+    setSelectedSavedDeckId(savedDeck.id);
+    setSavedBaselineSnapshot(restoredDeck.snapshot);
+    setDraftRestored(false);
+    setIsMyDecksOpen(false);
+    setPendingLoadDeckId(null);
+  };
+
+  const handleDeleteSavedDeck = (deckId: string) => {
+    const savedDeck = getSavedDeckById(deckId);
+    if (!savedDeck) return;
+    deleteSavedDeck(deckId);
+    if (selectedSavedDeckId === deckId) {
+      setSelectedSavedDeckId(null);
+      setSavedBaselineSnapshot(null);
+    }
+    refreshSavedDecks();
+    setPendingDeleteDeckId(null);
+  };
+
+  const pendingDeleteDeck = pendingDeleteDeckId ? getSavedDeckById(pendingDeleteDeckId) : null;
+  const pendingLoadDeck = pendingLoadDeckId ? getSavedDeckById(pendingLoadDeckId) : null;
+
+  const handleDuplicateSavedDeck = (deckId: string) => {
+    if (!canCreateNewSavedDeck) return;
+    if (!duplicateSavedDeck(deckId)) return;
+    refreshSavedDecks();
+  };
+
+  const handleExportSavedDeck = (deckId: string) => {
+    const savedDeck = getSavedDeckById(deckId);
+    if (!savedDeck) return;
+
+    const restoredDeck = restoreSavedDeckToSnapshot(savedDeck, cards);
+    const data = JSON.stringify({
+      deckName: restoredDeck.snapshot.name,
+      rule: restoredDeck.snapshot.ruleConfig.format,
+      identityType: restoredDeck.snapshot.ruleConfig.identityType,
+      selectedClass: restoredDeck.snapshot.ruleConfig.selectedClass,
+      selectedTitle: restoredDeck.snapshot.ruleConfig.selectedTitle,
+      selectedClasses: restoredDeck.snapshot.ruleConfig.selectedClasses,
+      ...restoredDeck.snapshot.deckState,
+    }, null, 2);
+
+    const rawName = restoredDeck.snapshot.name.trim();
+    const safeName = rawName.length > 0
+      ? rawName.replace(/[^\w\u3000-\u303F\u3040-\u309F\u30A0-\u30FF\uFF00-\uFFEF\u4E00-\u9FAF\-]/g, '_')
+      : 'shadowverse_deck';
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `${safeName}.json`;
+    anchor.style.display = 'none';
+    document.body.appendChild(anchor);
+    anchor.click();
+    setTimeout(() => {
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+    }, 200);
   };
 
   return (
@@ -900,56 +1157,146 @@ const DeckBuilder: React.FC = () => {
 
       {/* Right: Deck Checklist */}
       <div className="glass-panel" style={{ width: '350px', display: 'flex', flexDirection: 'column', borderRight: 'none', borderTop: 'none', borderBottom: 'none', borderRadius: 0 }}>
-        <div style={{ padding: '0.5rem 1.5rem', borderBottom: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <input
-            type="text"
-            value={deckName}
-            onChange={(e) => setDeckName(e.target.value)}
-            style={{
-              fontSize: '1.5rem',
-              fontWeight: 'bold',
-              background: 'transparent',
-              border: 'none',
-              borderBottom: '2px solid transparent',
-              color: 'var(--text-main)',
-              outline: 'none',
-              flex: 1,
-              minWidth: 0,
-              transition: 'border-color 0.2s',
-            }}
-            onFocus={(e) => e.target.style.borderBottom = '2px solid var(--brand-accent)'}
-            onBlur={(e) => e.target.style.borderBottom = '2px solid transparent'}
-            placeholder="Deck Name"
-          />
-          <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'var(--bg-overlay)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontSize: '0.875rem' }}>
-              <Upload size={14} /> Import
-              <input type="file" accept=".json" onChange={handleImportDeck} style={{ display: 'none' }} />
-            </label>
+        <div style={{ padding: '0.75rem 1.5rem', borderBottom: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <input
+              type="text"
+              value={deckName}
+              onChange={(e) => setDeckName(e.target.value)}
+              style={{
+                fontSize: '1.5rem',
+                fontWeight: 'bold',
+                background: 'transparent',
+                border: 'none',
+                borderBottom: '2px solid transparent',
+                color: 'var(--text-main)',
+                outline: 'none',
+                flex: 1,
+                minWidth: 0,
+                transition: 'border-color 0.2s',
+              }}
+              onFocus={(e) => e.target.style.borderBottom = '2px solid var(--brand-accent)'}
+              onBlur={(e) => e.target.style.borderBottom = '2px solid transparent'}
+              placeholder="Deck Name"
+            />
             <button
               type="button"
-              onClick={exportDeck}
-              disabled={!canExportDeck}
-              title={canExportDeck ? 'Export deck' : 'Resolve deck issues before exporting'}
+              onClick={() => handleSaveDeck(false)}
+              disabled={!canSaveCurrentDeck}
+              title={canSaveCurrentDeck ? 'Save deck' : `My Decks limit reached (${HARD_SAVED_DECK_LIMIT}). Delete or export older decks before creating a new saved deck.`}
               style={{
+                flexShrink: 0,
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.25rem',
-                background: canExportDeck ? '#3b82f6' : '#475569',
+                background: canSaveCurrentDeck ? 'var(--accent-primary)' : '#475569',
                 color: '#fff',
-                border: `1px solid ${canExportDeck ? '#2563eb' : '#64748b'}`,
+                border: `1px solid ${canSaveCurrentDeck ? 'rgba(255,255,255,0.12)' : '#64748b'}`,
                 padding: '0.5rem 0.75rem',
                 borderRadius: 'var(--radius-md)',
                 fontSize: '0.875rem',
                 fontWeight: 700,
-                boxShadow: canExportDeck ? '0 4px 12px rgba(37, 99, 235, 0.25)' : 'none',
-                opacity: canExportDeck ? 1 : 0.75,
-                cursor: canExportDeck ? 'pointer' : 'not-allowed',
+                cursor: canSaveCurrentDeck ? 'pointer' : 'not-allowed',
+                opacity: canSaveCurrentDeck ? 1 : 0.75,
               }}
             >
-              <Download size={14} /> Export
+              Save
             </button>
           </div>
+
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', minWidth: 0 }}>
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                Storage
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsMyDecksOpen(true)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.25rem',
+                  background: 'var(--bg-overlay)',
+                  color: 'var(--text-main)',
+                  border: '1px solid var(--border-light)',
+                  padding: '0.45rem 0.75rem',
+                  borderRadius: 'var(--radius-md)',
+                  fontSize: '0.875rem',
+                  cursor: 'pointer',
+                  minWidth: '110px',
+                }}
+              >
+                My Decks
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', minWidth: 0 }}>
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                File
+              </span>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'var(--bg-overlay)', padding: '0.45rem 0.75rem', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontSize: '0.875rem', border: '1px solid var(--border-light)' }}>
+                  <Upload size={14} /> Import
+                  <input type="file" accept=".json" onChange={handleImportDeck} style={{ display: 'none' }} />
+                </label>
+                <button
+                  type="button"
+                  onClick={exportDeck}
+                  disabled={!canExportDeck}
+                  title={canExportDeck ? 'Export deck' : 'Resolve deck issues before exporting'}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                    background: canExportDeck ? '#3b82f6' : '#475569',
+                    color: '#fff',
+                    border: `1px solid ${canExportDeck ? '#2563eb' : '#64748b'}`,
+                    padding: '0.45rem 0.75rem',
+                    borderRadius: 'var(--radius-md)',
+                    fontSize: '0.875rem',
+                    fontWeight: 700,
+                    boxShadow: canExportDeck ? '0 4px 12px rgba(37, 99, 235, 0.25)' : 'none',
+                    opacity: canExportDeck ? 1 : 0.75,
+                    cursor: canExportDeck ? 'pointer' : 'not-allowed',
+                  }}
+                >
+                  <Download size={14} /> Export
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ minHeight: '1rem', color: draftRestored ? '#fcd34d' : 'var(--text-muted)', fontSize: '0.75rem' }}>
+            {saveStateMessage}
+          </div>
+          {hasReachedSoftLimit && (
+            <div style={{ color: hasReachedHardLimit ? '#fca5a5' : '#fcd34d', fontSize: '0.75rem', lineHeight: 1.5 }}>
+              {hasReachedHardLimit
+                ? `My Decks has reached the browser limit (${HARD_SAVED_DECK_LIMIT}). Delete or export older decks before creating a new saved deck.`
+                : `My Decks already has ${savedDeckCount} saved decks in this browser. Consider exporting or deleting older decks before it reaches ${HARD_SAVED_DECK_LIMIT}.`}
+            </div>
+          )}
+          {draftRestored && (
+            <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+              <button
+                type="button"
+                onClick={handleDiscardDraft}
+                style={{
+                  padding: '0.4rem 0.7rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid rgba(248, 113, 113, 0.35)',
+                  background: 'rgba(239, 68, 68, 0.10)',
+                  color: '#fca5a5',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Start Fresh
+              </button>
+            </div>
+          )}
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
@@ -1334,6 +1681,380 @@ const DeckBuilder: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {isMyDecksOpen && (
+        <div
+          role="presentation"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              setIsMyDecksOpen(false);
+            }
+          }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.78)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem',
+            zIndex: 1000,
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="My Decks"
+            onClick={(event) => event.stopPropagation()}
+            className="glass-panel"
+            style={{
+              width: 'min(720px, calc(100vw - 32px))',
+              maxHeight: 'min(80vh, 760px)',
+              padding: '1rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.85rem',
+              overflow: 'hidden',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
+              <div>
+                <h3 style={{ margin: 0 }}>My Decks</h3>
+                <p style={{ margin: '0.25rem 0 0 0', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                  Saved in this browser
+                </p>
+                <p style={{ margin: '0.35rem 0 0 0', color: '#fcd34d', fontSize: '0.78rem', lineHeight: 1.5, maxWidth: '38rem' }}>
+                  My Decks is stored in this browser only. To keep a durable backup or move decks to another device, use Export and save the JSON file.
+                </p>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end', flexShrink: 0 }}>
+                <button
+                  type="button"
+                  onClick={() => setIsMyDecksOpen(false)}
+                  style={{
+                    padding: '0.45rem 0.75rem',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--border-light)',
+                    background: 'var(--bg-surface)',
+                    color: 'var(--text-main)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSaveDeck(true)}
+                  disabled={!canCreateNewSavedDeck}
+                  title={canCreateNewSavedDeck ? 'Save current deck as a new saved deck' : `My Decks limit reached (${HARD_SAVED_DECK_LIMIT}). Delete or export older decks before creating a new saved deck.`}
+                  style={{
+                    padding: '0.45rem 0.75rem',
+                    borderRadius: 'var(--radius-md)',
+                    border: `1px solid ${canCreateNewSavedDeck ? 'rgba(255,255,255,0.12)' : '#64748b'}`,
+                    background: canCreateNewSavedDeck ? 'var(--accent-secondary)' : '#475569',
+                    color: '#fff',
+                    fontWeight: 700,
+                    cursor: canCreateNewSavedDeck ? 'pointer' : 'not-allowed',
+                    opacity: canCreateNewSavedDeck ? 1 : 0.75,
+                  }}
+                >
+                  Save As New
+                </button>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <input
+                type="text"
+                value={savedDeckSearch}
+                onChange={(event) => setSavedDeckSearch(event.target.value)}
+                placeholder="Search by deck name..."
+                aria-label="Search saved decks"
+                style={{
+                  flex: 1,
+                  minWidth: '220px',
+                  padding: '0.65rem 0.8rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border-light)',
+                  background: 'var(--bg-surface)',
+                  color: 'var(--text-main)',
+                  outline: 'none',
+                }}
+              />
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                {filteredSavedDecks.length} decks
+              </span>
+            </div>
+
+            <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingRight: '0.25rem' }}>
+              {filteredSavedDecks.length === 0 ? (
+                <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: '1rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+                  No saved decks yet. Build a deck and press Save to keep it in this browser.
+                </div>
+              ) : (
+                filteredSavedDecks.map(({ savedDeck, canExport }) => (
+                      <div
+                        key={savedDeck.id}
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          gap: '1rem',
+                          padding: '0.9rem',
+                          borderRadius: 'var(--radius-md)',
+                          background: 'var(--bg-surface)',
+                          border: savedDeck.id === selectedSavedDeckId
+                            ? '1px solid rgba(56, 189, 248, 0.5)'
+                            : '1px solid rgba(255,255,255,0.06)',
+                          flexWrap: 'wrap',
+                        }}
+                      >
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>{savedDeck.name}</div>
+                            {savedDeck.id === selectedSavedDeckId && (
+                              <span style={{ fontSize: '0.72rem', color: '#67e8f9', border: '1px solid rgba(103, 232, 249, 0.35)', borderRadius: '999px', padding: '0.12rem 0.45rem' }}>
+                                Current
+                              </span>
+                            )}
+                            {!canExport && (
+                              <span style={{ fontSize: '0.72rem', color: '#fca5a5', border: '1px solid rgba(248, 113, 113, 0.35)', borderRadius: '999px', padding: '0.12rem 0.45rem' }}>
+                                Illegal deck
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '0.25rem' }}>
+                            {formatSavedDeckRuleSummary(savedDeck)}
+                          </div>
+                          <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '0.15rem' }}>
+                            {formatSavedDeckCountSummary(savedDeck)}
+                          </div>
+                          <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '0.15rem' }}>
+                            Updated {formatSavedDeckUpdatedAt(savedDeck.updatedAt)}
+                          </div>
+                          {!canExport && (
+                            <div style={{ color: '#fca5a5', fontSize: '0.75rem', marginTop: '0.3rem', lineHeight: 1.5 }}>
+                              Resolve deck issues after loading before exporting.
+                            </div>
+                          )}
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'flex-end' }}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (isDirty) {
+                                setPendingLoadDeckId(savedDeck.id);
+                                return;
+                              }
+
+                              handleLoadSavedDeck(savedDeck.id);
+                            }}
+                            style={{
+                              padding: '0.45rem 0.7rem',
+                              borderRadius: 'var(--radius-md)',
+                              border: '1px solid rgba(255,255,255,0.08)',
+                              background: 'var(--accent-primary)',
+                              color: '#fff',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            Load
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDuplicateSavedDeck(savedDeck.id)}
+                            disabled={!canCreateNewSavedDeck}
+                            title={canCreateNewSavedDeck ? 'Duplicate saved deck' : `My Decks limit reached (${HARD_SAVED_DECK_LIMIT}). Delete or export older decks before duplicating.`}
+                            style={{
+                              padding: '0.45rem 0.7rem',
+                              borderRadius: 'var(--radius-md)',
+                              border: '1px solid var(--border-light)',
+                              background: canCreateNewSavedDeck ? 'var(--bg-overlay)' : 'var(--bg-surface-elevated)',
+                              color: canCreateNewSavedDeck ? 'var(--text-main)' : 'var(--text-muted)',
+                              cursor: canCreateNewSavedDeck ? 'pointer' : 'not-allowed',
+                              opacity: canCreateNewSavedDeck ? 1 : 0.7,
+                            }}
+                          >
+                            Duplicate
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleExportSavedDeck(savedDeck.id)}
+                            disabled={!canExport}
+                            title={canExport ? 'Export saved deck' : 'Resolve deck issues after loading before exporting'}
+                            style={{
+                              padding: '0.45rem 0.7rem',
+                              borderRadius: 'var(--radius-md)',
+                              border: '1px solid var(--border-light)',
+                              background: canExport ? 'var(--bg-overlay)' : 'var(--bg-surface-elevated)',
+                              color: canExport ? 'var(--text-main)' : 'var(--text-muted)',
+                              cursor: canExport ? 'pointer' : 'not-allowed',
+                              opacity: canExport ? 1 : 0.7,
+                            }}
+                          >
+                            Export
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setPendingDeleteDeckId(savedDeck.id)}
+                            style={{
+                              padding: '0.45rem 0.7rem',
+                              borderRadius: 'var(--radius-md)',
+                              border: '1px solid rgba(248, 113, 113, 0.45)',
+                              background: 'rgba(239, 68, 68, 0.12)',
+                              color: '#fca5a5',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {pendingLoadDeck && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Load saved deck confirmation"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.72)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.5rem',
+            zIndex: 1100,
+          }}
+        >
+          <div
+            className="glass-panel"
+            style={{
+              width: '100%',
+              maxWidth: '420px',
+              padding: '1.25rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.75rem',
+            }}
+          >
+            <h3 style={{ margin: 0, color: '#fcd34d' }}>Load Saved Deck</h3>
+            <p style={{ margin: 0, color: 'var(--text-main)', lineHeight: 1.5 }}>
+              Replace the current unsaved changes with "{pendingLoadDeck.name}"?
+            </p>
+            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem', lineHeight: 1.5 }}>
+              Your current unsaved edits in Deck Builder will be replaced.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+              <button
+                type="button"
+                onClick={() => setPendingLoadDeckId(null)}
+                style={{
+                  padding: '0.5rem 0.9rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border-light)',
+                  background: 'var(--bg-surface)',
+                  color: 'var(--text-main)',
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => handleLoadSavedDeck(pendingLoadDeck.id)}
+                style={{
+                  padding: '0.5rem 0.9rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'var(--accent-primary)',
+                  color: '#fff',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Load
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {pendingDeleteDeck && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Delete saved deck confirmation"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.72)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.5rem',
+            zIndex: 1100,
+          }}
+        >
+          <div
+            className="glass-panel"
+            style={{
+              width: '100%',
+              maxWidth: '420px',
+              padding: '1.25rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.75rem',
+            }}
+          >
+            <h3 style={{ margin: 0, color: '#fca5a5' }}>Delete Saved Deck</h3>
+            <p style={{ margin: 0, color: 'var(--text-main)', lineHeight: 1.5 }}>
+              Delete "{pendingDeleteDeck.name}" from My Decks on this browser?
+            </p>
+            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem', lineHeight: 1.5 }}>
+              This only removes the saved copy in this browser. Exported JSON files are not affected.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+              <button
+                type="button"
+                onClick={() => setPendingDeleteDeckId(null)}
+                style={{
+                  padding: '0.5rem 0.9rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border-light)',
+                  background: 'var(--bg-surface)',
+                  color: 'var(--text-main)',
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDeleteSavedDeck(pendingDeleteDeck.id)}
+                style={{
+                  padding: '0.5rem 0.9rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid #dc2626',
+                  background: '#ef4444',
+                  color: '#fff',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {previewCard && (
         <div

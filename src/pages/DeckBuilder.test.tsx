@@ -1,8 +1,11 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import DeckBuilder from './DeckBuilder';
+import { saveDeck, saveDraft } from '../utils/deckStorage';
+import type { DeckBuilderCardData } from '../models/deckBuilderCard';
+import type { DeckRuleConfig } from '../models/deckRule';
 
-const mockCards = [
+const mockCards: DeckBuilderCardData[] = [
   {
     id: 'BP01-001',
     name: 'Alpha Knight',
@@ -134,6 +137,14 @@ let importedDeckPayload: Record<string, unknown> = {
   tokenDeck: [mockCards[6]],
 };
 
+const otherRuleConfig: DeckRuleConfig = {
+  format: 'other',
+  identityType: 'class',
+  selectedClass: null,
+  selectedTitle: null,
+  selectedClasses: [null, null],
+};
+
 const createUniqueCards = (
   template: (typeof mockCards)[number],
   count: number,
@@ -161,6 +172,7 @@ const stubFileReaderWithImportedDeck = () => {
 describe('DeckBuilder', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    window.localStorage.clear();
     importedDeckPayload = {
       mainDeck: [mockCards[0]],
       evolveDeck: [mockCards[1]],
@@ -801,5 +813,198 @@ describe('DeckBuilder', () => {
       expect(screen.getByText('0/10')).toBeInTheDocument();
       expect(screen.getByText('0/1')).toBeInTheDocument();
     });
+  });
+
+  it('saves a deck to My Decks and reloads it without changing import or export behavior', async () => {
+    render(<DeckBuilder />);
+    await screen.findByText('Alpha Knight');
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Deck format' }), {
+      target: { value: 'other' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('Deck Name'), {
+      target: { value: 'Saved Royal' },
+    });
+
+    fireEvent.click(within(screen.getByAltText('Alpha Knight').closest('.glass-panel') as HTMLElement).getByTitle('Add to Main Deck'));
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(screen.getByText('Saved')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'My Decks' }));
+    expect(screen.getByRole('dialog', { name: 'My Decks' })).toBeInTheDocument();
+    expect(screen.getByText('Saved Royal')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByPlaceholderText('Deck Name'), {
+      target: { value: 'Saved Royal Edited' },
+    });
+    fireEvent.click(within(screen.getByAltText('Beta Mage').closest('.glass-panel') as HTMLElement).getByTitle('Add to Main Deck'));
+    expect(screen.getByText('Unsaved changes')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Load' }));
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Load saved deck confirmation' })).getByRole('button', { name: 'Load' }));
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('Saved Royal')).toBeInTheDocument();
+      expect(screen.getByText('Saved')).toBeInTheDocument();
+    });
+
+    const mainDeckSection = screen.getByRole('heading', { name: /^Main Deck/ }).nextElementSibling as HTMLElement;
+    expect(within(mainDeckSection).getByText('Alpha Knight')).toBeInTheDocument();
+    expect(within(mainDeckSection).queryByText('Beta Mage')).not.toBeInTheDocument();
+  });
+
+  it('keeps the My Decks modal open when load is canceled', async () => {
+    render(<DeckBuilder />);
+    await screen.findByText('Alpha Knight');
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Deck format' }), {
+      target: { value: 'other' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('Deck Name'), {
+      target: { value: 'Load Source' },
+    });
+    fireEvent.click(within(screen.getByAltText('Alpha Knight').closest('.glass-panel') as HTMLElement).getByTitle('Add to Main Deck'));
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    fireEvent.change(screen.getByPlaceholderText('Deck Name'), {
+      target: { value: 'Unsaved Edit' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'My Decks' }));
+    const modal = screen.getByRole('dialog', { name: 'My Decks' });
+    fireEvent.click(within(modal).getByRole('button', { name: 'Load' }));
+
+    expect(screen.getByRole('dialog', { name: 'Load saved deck confirmation' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(screen.getByRole('dialog', { name: 'My Decks' })).toBeInTheDocument();
+    expect(screen.getByText('Load Source')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Unsaved Edit')).toBeInTheDocument();
+  });
+
+  it('disables export from My Decks for an illegal saved deck', async () => {
+    render(<DeckBuilder />);
+    await screen.findByText('Alpha Knight');
+
+    fireEvent.change(screen.getByPlaceholderText('Deck Name'), {
+      target: { value: 'Illegal Saved Deck' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'My Decks' }));
+    const modal = screen.getByRole('dialog', { name: 'My Decks' });
+
+    expect(within(modal).getByText('Illegal deck')).toBeInTheDocument();
+    expect(within(modal).getByText('Resolve deck issues after loading before exporting.')).toBeInTheDocument();
+    expect(within(modal).getByRole('button', { name: 'Export' })).toBeDisabled();
+  });
+
+  it('blocks initial Save when My Decks reaches the hard limit', async () => {
+    for (let index = 0; index < 200; index += 1) {
+      saveDeck({
+        name: `Saved Deck ${index + 1}`,
+        ruleConfig: otherRuleConfig,
+        deckState: {
+          mainDeck: [],
+          evolveDeck: [],
+          leaderCards: [],
+          tokenDeck: [],
+        },
+      });
+    }
+
+    render(<DeckBuilder />);
+    await screen.findByText('Alpha Knight');
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Deck format' }), {
+      target: { value: 'other' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('Deck Name'), {
+      target: { value: 'Should Not Save' },
+    });
+
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+    expect(screen.getByText(/My Decks has reached the browser limit \(200\)/i)).toBeInTheDocument();
+  });
+
+  it('still allows overwriting an existing saved deck at the hard limit', async () => {
+    for (let index = 0; index < 200; index += 1) {
+      saveDeck({
+        name: `Saved Deck ${index + 1}`,
+        ruleConfig: otherRuleConfig,
+        deckState: {
+          mainDeck: index === 0 ? [mockCards[0]] : [],
+          evolveDeck: [],
+          leaderCards: [],
+          tokenDeck: [],
+        },
+      });
+    }
+
+    render(<DeckBuilder />);
+    await screen.findByText('Alpha Knight');
+
+    fireEvent.click(screen.getByRole('button', { name: 'My Decks' }));
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'My Decks' })).getAllByRole('button', { name: 'Load' })[0]);
+
+    fireEvent.change(screen.getByPlaceholderText('Deck Name'), {
+      target: { value: 'Updated At Limit' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'My Decks' }));
+    expect(screen.getByText('Updated At Limit')).toBeInTheDocument();
+  });
+
+  it('restores an unsaved draft from localStorage after the card catalog loads', async () => {
+    saveDraft({
+      selectedDeckId: null,
+      name: 'Restored Draft',
+      ruleConfig: {
+        format: 'other',
+        identityType: 'class',
+        selectedClass: null,
+        selectedTitle: null,
+        selectedClasses: [null, null],
+      },
+      deckState: {
+        mainDeck: [mockCards[0]],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [],
+      },
+    });
+
+    render(<DeckBuilder />);
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('Restored Draft')).toBeInTheDocument();
+      expect(screen.getByText('Draft restored from this browser')).toBeInTheDocument();
+      expect(screen.getByText('1/50')).toBeInTheDocument();
+    });
+  });
+
+  it('keeps the My Decks modal open when delete is canceled', async () => {
+    render(<DeckBuilder />);
+    await screen.findByText('Alpha Knight');
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Deck format' }), {
+      target: { value: 'other' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('Deck Name'), {
+      target: { value: 'Do Not Delete' },
+    });
+    fireEvent.click(within(screen.getByAltText('Alpha Knight').closest('.glass-panel') as HTMLElement).getByTitle('Add to Main Deck'));
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'My Decks' }));
+    const modal = screen.getByRole('dialog', { name: 'My Decks' });
+    fireEvent.click(within(modal).getByRole('button', { name: 'Delete' }));
+    expect(screen.getByRole('dialog', { name: 'Delete saved deck confirmation' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(screen.getByRole('dialog', { name: 'My Decks' })).toBeInTheDocument();
+    expect(screen.getByText('Do Not Delete')).toBeInTheDocument();
   });
 });
