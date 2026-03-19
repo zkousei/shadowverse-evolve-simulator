@@ -1411,6 +1411,125 @@ describe('gameSyncReducer', () => {
     expect(result).toBe(state);
   });
 
+  it('replaces the actor deck cleanly across repeated imports', () => {
+    const state = createState({
+      revision: 12,
+      cards: [
+        {
+          id: 'old-main-host',
+          cardId: 'BP01-001',
+          name: 'Old Main',
+          image: '',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'old-hand-host',
+          cardId: 'BP01-002',
+          name: 'Old Hand',
+          image: '',
+          zone: 'hand-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'old-field-host',
+          cardId: 'BP01-003',
+          name: 'Old Field',
+          image: '',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 1, hp: 2 },
+        },
+        {
+          id: 'guest-main',
+          cardId: 'BP01-101',
+          name: 'Guest Main',
+          image: '',
+          zone: 'mainDeck-guest',
+          owner: 'guest',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    const firstImport = applyGameSyncEvent(state, {
+      id: 'evt-import-repeat-1',
+      type: 'IMPORT_DECK',
+      actor: 'host',
+      cards: [
+        {
+          id: 'first-main-host',
+          cardId: 'BP02-001',
+          name: 'First Main',
+          image: '',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'first-leader-host',
+          cardId: 'BP02-LD1',
+          name: 'First Leader',
+          image: '',
+          zone: 'leader-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          isLeaderCard: true,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    expect(firstImport.cards.map(card => card.id)).toEqual(
+      expect.arrayContaining(['first-main-host', 'first-leader-host', 'guest-main'])
+    );
+    expect(firstImport.cards.map(card => card.id)).not.toEqual(
+      expect.arrayContaining(['old-main-host', 'old-hand-host', 'old-field-host'])
+    );
+
+    const secondImport = applyGameSyncEvent(firstImport, {
+      id: 'evt-import-repeat-2',
+      type: 'IMPORT_DECK',
+      actor: 'host',
+      cards: [
+        {
+          id: 'second-main-host',
+          cardId: 'BP03-001',
+          name: 'Second Main',
+          image: '',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    expect(secondImport.cards.map(card => card.id)).toEqual(
+      expect.arrayContaining(['second-main-host', 'guest-main'])
+    );
+    expect(secondImport.cards.map(card => card.id)).not.toEqual(
+      expect.arrayContaining(['first-main-host', 'first-leader-host'])
+    );
+    expect(secondImport.host.initialHandDrawn).toBe(false);
+    expect(secondImport.host.mulliganUsed).toBe(false);
+    expect(secondImport.host.isReady).toBe(false);
+  });
+
   it('forces all field cards face-up when the game starts', () => {
     const state = createState({
       revision: 12,

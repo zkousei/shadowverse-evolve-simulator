@@ -11,7 +11,52 @@ import type { PlayerRole, TokenOption } from '../types/game';
 import type { AttackTarget } from '../types/sync';
 import { buildCardStatLookup, type CardStatLookup } from '../utils/cardStats';
 import { buildCardDetailLookup, formatAbilityText, type CardDetailLookup } from '../utils/cardDetails';
+import type { DeckBuilderCardData } from '../models/deckBuilderCard';
+import { listSavedDecks, restoreSavedDeckToSnapshot, type SavedDeckRecordV1 } from '../utils/deckStorage';
+import { getDeckValidationMessages, sanitizeImportedDeckState } from '../utils/deckBuilderRules';
 import CardArtwork from '../components/CardArtwork';
+
+type LegalSavedDeckOption = {
+  deck: SavedDeckRecordV1;
+  deckData: {
+    mainDeck: DeckBuilderCardData[];
+    evolveDeck: DeckBuilderCardData[];
+    leaderCards: DeckBuilderCardData[];
+    tokenDeck: DeckBuilderCardData[];
+  };
+  summary: string;
+  counts: string;
+};
+
+const formatSavedDeckRuleSummary = (deck: SavedDeckRecordV1): string => {
+  if (deck.ruleConfig.format === 'constructed') {
+    if (deck.ruleConfig.identityType === 'title' && deck.ruleConfig.selectedTitle) {
+      return `Constructed / Title: ${deck.ruleConfig.selectedTitle}`;
+    }
+
+    return `Constructed / Class: ${deck.ruleConfig.selectedClass ?? 'Unselected'}`;
+  }
+
+  if (deck.ruleConfig.format === 'crossover') {
+    const [firstClass, secondClass] = deck.ruleConfig.selectedClasses;
+    return `Crossover / ${firstClass ?? '?'} + ${secondClass ?? '?'}`;
+  }
+
+  return 'Other';
+};
+
+const formatSavedDeckCounts = (deck: SavedDeckRecordV1): string => {
+  const countSection = (section: SavedDeckRecordV1['sections'][keyof SavedDeckRecordV1['sections']]) => (
+    section.reduce((total, ref) => total + ref.count, 0)
+  );
+
+  return [
+    `Main ${countSection(deck.sections.main)}`,
+    `Evolve ${countSection(deck.sections.evolve)}`,
+    `Leader ${countSection(deck.sections.leader)}`,
+    `Token ${countSection(deck.sections.token)}`,
+  ].join(' / ');
+};
 
 const GameBoard: React.FC = () => {
   const {
@@ -21,7 +66,7 @@ const GameBoard: React.FC = () => {
     handleStatChange, setPhase, endTurn, handleUndoTurn, handleSetInitialTurnOrder,
     handlePureCoinFlip, handleRollDice, handleStartGame, handleToggleReady,
     handleDrawInitialHand, startMulligan, handleMulliganOrderSelect, executeMulligan,
-    drawCard, handleExtractCard, confirmResetGame, handleDeckUpload, spawnToken,
+    drawCard, handleExtractCard, confirmResetGame, handleDeckUpload, importDeckData, spawnToken,
     handleModifyCounter, handleModifyGenericCounter, handleDragEnd, toggleTap, handleFlipCard, handleSendToBottom,
     handleBanish, handlePlayToField, handleSendToCemetery, handleReturnEvolve, handleShuffleDeck, handleDeclareAttack,
     getCards, getTokenOptions, lastGameState, millCard,
@@ -38,17 +83,25 @@ const GameBoard: React.FC = () => {
   const [activeZoneActions, setActiveZoneActions] = React.useState<string | null>(null);
   const [cardStatLookup, setCardStatLookup] = React.useState<CardStatLookup>({});
   const [cardDetailLookup, setCardDetailLookup] = React.useState<CardDetailLookup>({});
+  const [allCards, setAllCards] = React.useState<DeckBuilderCardData[]>([]);
+  const [savedDeckOptions, setSavedDeckOptions] = React.useState<LegalSavedDeckOption[]>([]);
+  const [savedDeckSearch, setSavedDeckSearch] = React.useState('');
+  const [savedDeckImportTargetRole, setSavedDeckImportTargetRole] = React.useState<PlayerRole | null>(null);
   const [selectedInspectorCardId, setSelectedInspectorCardId] = React.useState<string | null>(null);
   const [selectedInspectorAnchor, setSelectedInspectorAnchor] = React.useState<CardInspectAnchor | null>(null);
   const [attackSourceCardId, setAttackSourceCardId] = React.useState<string | null>(null);
   const [isRoomCopied, setIsRoomCopied] = React.useState(false);
   const inspectorRef = React.useRef<HTMLDivElement | null>(null);
+  const canOpenSavedDeckPicker = allCards.length > 0;
   const viewerRole = isSoloMode ? 'all' : role;
   const isPreparingHandMoveLocked = isHandCardMovementLocked(gameState);
   const topRole = (isSoloMode ? 'guest' : role === 'host' ? 'guest' : 'host') as PlayerRole;
   const bottomRole = (isSoloMode ? 'host' : role) as PlayerRole;
   const canImportTopDeck = canImportDeck(gameState, topRole);
   const canImportBottomDeck = canImportDeck(gameState, bottomRole);
+  const savedDeckPickerUnavailableTitle = !canOpenSavedDeckPicker
+    ? 'Loading card catalog... Please wait a moment.'
+    : 'Available while preparing decks before the game starts.';
   const topLabel = getPlayerLabel(topRole, isSoloMode, 'My', 'Opponent', role);
   const bottomLabel = getPlayerLabel(bottomRole, isSoloMode, 'My', 'Opponent', role);
   const searchTargetRole = searchZone ? getZoneOwner(searchZone.id) ?? role : role;
@@ -211,6 +264,7 @@ const GameBoard: React.FC = () => {
       .then(res => res.json())
       .then(data => {
         if (!isActive) return;
+        setAllCards(data);
         setCardStatLookup(buildCardStatLookup(data));
         setCardDetailLookup(buildCardDetailLookup(data));
       })
@@ -220,6 +274,67 @@ const GameBoard: React.FC = () => {
       isActive = false;
     };
   }, []);
+
+  const refreshSavedDeckOptions = React.useCallback(() => {
+    if (allCards.length === 0) {
+      setSavedDeckOptions([]);
+      return;
+    }
+
+    const legalDecks = listSavedDecks()
+      .map(deck => {
+        const restored = restoreSavedDeckToSnapshot(deck, allCards);
+        if (restored.missingCardIds.length > 0) return null;
+
+        const sanitizedDeckState = sanitizeImportedDeckState(
+          restored.snapshot.deckState,
+          allCards,
+          restored.snapshot.ruleConfig
+        );
+        const issues = getDeckValidationMessages(sanitizedDeckState, restored.snapshot.ruleConfig);
+        if (issues.length > 0) return null;
+
+        return {
+          deck,
+          deckData: {
+            mainDeck: sanitizedDeckState.mainDeck,
+            evolveDeck: sanitizedDeckState.evolveDeck,
+            leaderCards: sanitizedDeckState.leaderCards,
+            tokenDeck: sanitizedDeckState.tokenDeck,
+          },
+          summary: formatSavedDeckRuleSummary(deck),
+          counts: formatSavedDeckCounts(deck),
+        } satisfies LegalSavedDeckOption;
+      })
+      .filter((value): value is LegalSavedDeckOption => value !== null);
+
+    setSavedDeckOptions(legalDecks);
+  }, [allCards]);
+
+  const openSavedDeckPicker = React.useCallback((targetRole: PlayerRole) => {
+    if (allCards.length === 0) return;
+    if (!canImportDeck(gameState, targetRole)) return;
+    refreshSavedDeckOptions();
+    setSavedDeckSearch('');
+    setSavedDeckImportTargetRole(targetRole);
+  }, [allCards.length, gameState, refreshSavedDeckOptions]);
+
+  const closeSavedDeckPicker = React.useCallback(() => {
+    setSavedDeckImportTargetRole(null);
+    setSavedDeckSearch('');
+  }, []);
+
+  const handleSavedDeckImport = React.useCallback((option: LegalSavedDeckOption) => {
+    if (!savedDeckImportTargetRole) return;
+    if (!canImportDeck(gameState, savedDeckImportTargetRole)) return;
+
+    importDeckData(option.deckData, savedDeckImportTargetRole);
+    closeSavedDeckPicker();
+  }, [closeSavedDeckPicker, gameState, importDeckData, savedDeckImportTargetRole]);
+
+  const filteredSavedDeckOptions = React.useMemo(() => (
+    savedDeckOptions.filter(option => option.deck.name.toLowerCase().includes(savedDeckSearch.trim().toLowerCase()))
+  ), [savedDeckOptions, savedDeckSearch]);
 
   const isInspectableZone = React.useCallback((zone: string) => (
     zone.startsWith('hand-') ||
@@ -846,6 +961,141 @@ const GameBoard: React.FC = () => {
     );
   };
 
+  const renderSavedDeckPicker = () => {
+    if (!savedDeckImportTargetRole) return null;
+
+    const targetLabel = getPlayerLabel(savedDeckImportTargetRole, isSoloMode, 'My', 'Opponent', role);
+
+    return (
+      <div
+        role="presentation"
+        onClick={(event) => {
+          if (event.target === event.currentTarget) {
+            closeSavedDeckPicker();
+          }
+        }}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(15, 23, 42, 0.78)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1rem',
+          zIndex: 1000,
+        }}
+      >
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Load from My Decks"
+          onClick={(event) => event.stopPropagation()}
+          className="glass-panel"
+          style={{
+            width: 'min(720px, calc(100vw - 32px))',
+            maxHeight: 'min(80vh, 760px)',
+            padding: '1rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.85rem',
+            overflow: 'hidden',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
+            <div>
+              <h3 style={{ margin: 0 }}>Load from My Decks</h3>
+              <p style={{ margin: '0.25rem 0 0 0', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                Legal saved decks for {targetLabel}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={closeSavedDeckPicker}
+              style={{
+                padding: '0.45rem 0.75rem',
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--border-light)',
+                background: 'var(--bg-surface)',
+                color: 'var(--text-main)',
+                cursor: 'pointer',
+              }}
+            >
+              Close
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            <input
+              type="text"
+              value={savedDeckSearch}
+              onChange={(event) => setSavedDeckSearch(event.target.value)}
+              placeholder="Search by deck name..."
+              aria-label="Search saved decks"
+              style={{
+                flex: 1,
+                minWidth: '220px',
+                padding: '0.65rem 0.8rem',
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--border-light)',
+                background: 'var(--bg-surface)',
+                color: 'var(--text-main)',
+                outline: 'none',
+              }}
+            />
+            <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+              {filteredSavedDeckOptions.length} decks
+            </span>
+          </div>
+
+          <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingRight: '0.25rem' }}>
+            {filteredSavedDeckOptions.length === 0 ? (
+              <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: '1rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+                No legal saved decks are available in this browser.
+              </div>
+            ) : (
+              filteredSavedDeckOptions.map(option => (
+                <div
+                  key={option.deck.id}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    gap: '1rem',
+                    padding: '0.9rem',
+                    borderRadius: 'var(--radius-md)',
+                    background: 'var(--bg-surface)',
+                    border: '1px solid rgba(255,255,255,0.06)',
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>{option.deck.name}</div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '0.25rem' }}>{option.summary}</div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '0.15rem' }}>{option.counts}</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleSavedDeckImport(option)}
+                    style={{
+                      padding: '0.45rem 0.7rem',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      background: 'var(--accent-primary)',
+                      color: '#fff',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Load
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <DndContext onDragEnd={(event) => {
       if (!canInteract) return;
@@ -1355,6 +1605,33 @@ const GameBoard: React.FC = () => {
                       disabled={!canImportTopDeck}
                     />
                   </label>
+                  <button
+                    type="button"
+                    className="glass-panel"
+                    onClick={() => openSavedDeckPicker(topRole)}
+                    disabled={!canImportTopDeck || !canOpenSavedDeckPicker}
+                    title={!canImportTopDeck || !canOpenSavedDeckPicker ? savedDeckPickerUnavailableTitle : undefined}
+                    style={{
+                      padding: '0.5rem',
+                      background: canImportTopDeck && canOpenSavedDeckPicker
+                        ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.9), rgba(5, 150, 105, 0.9))'
+                        : 'rgba(34, 197, 94, 0.18)',
+                      border: canImportTopDeck && canOpenSavedDeckPicker
+                        ? '1px solid rgba(110, 231, 183, 0.45)'
+                        : '1px solid var(--border-light)',
+                      color: '#f8fafc',
+                      fontWeight: 700,
+                      textAlign: 'center',
+                      cursor: canImportTopDeck && canOpenSavedDeckPicker ? 'pointer' : 'not-allowed',
+                      fontSize: '0.875rem',
+                      boxShadow: canImportTopDeck && canOpenSavedDeckPicker
+                        ? '0 8px 18px rgba(5, 150, 105, 0.28)'
+                        : 'none',
+                      opacity: canImportTopDeck && canOpenSavedDeckPicker ? 1 : 0.5
+                    }}
+                  >
+                    Load {topLabel} from My Decks
+                  </button>
                   <button onClick={() => drawCard(topRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing' || !canInteract} title={gameState.gameStatus !== 'playing' || !canInteract ? interactionBlockedTitle ?? 'Available during the game only.' : undefined} style={{ padding: '0.5rem', background: '#6366f1', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' && canInteract ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' && canInteract ? 'pointer' : 'not-allowed' }}>
                     Draw {topLabel}
                   </button>
@@ -1616,47 +1893,105 @@ const GameBoard: React.FC = () => {
               <div style={{ width: `${sidePanelWidth}px`, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(0,0,0,0.8)', padding: '1rem', borderRadius: 'var(--radius-md)', marginLeft: '1.25rem' }}>
                 <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'white', marginBottom: '0.25rem' }}>{bottomLabel} Controls</div>
                 {isSoloMode ? (
-                  <label
-                    className="glass-panel"
-                    style={{
-                      padding: '0.5rem',
-                      background: 'var(--bg-surface-elevated)',
-                      textAlign: 'center',
-                      cursor: canImportBottomDeck ? 'pointer' : 'not-allowed',
-                      fontSize: '0.875rem',
-                      opacity: canImportBottomDeck ? 1 : 0.5
-                    }}
-                  >
-                    Import {bottomLabel} Deck
-                    <input
-                      type="file"
-                      accept=".json"
-                      style={{ display: 'none' }}
-                      onChange={(event) => handleDeckUpload(event, bottomRole)}
-                      disabled={!canImportBottomDeck}
-                    />
-                  </label>
+                  <>
+                    <label
+                      className="glass-panel"
+                      style={{
+                        padding: '0.5rem',
+                        background: 'var(--bg-surface-elevated)',
+                        textAlign: 'center',
+                        cursor: canImportBottomDeck ? 'pointer' : 'not-allowed',
+                        fontSize: '0.875rem',
+                        opacity: canImportBottomDeck ? 1 : 0.5
+                      }}
+                    >
+                      Import {bottomLabel} Deck
+                      <input
+                        type="file"
+                        accept=".json"
+                        style={{ display: 'none' }}
+                        onChange={(event) => handleDeckUpload(event, bottomRole)}
+                        disabled={!canImportBottomDeck}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      className="glass-panel"
+                      onClick={() => openSavedDeckPicker(bottomRole)}
+                      disabled={!canImportBottomDeck || !canOpenSavedDeckPicker}
+                      title={!canImportBottomDeck || !canOpenSavedDeckPicker ? savedDeckPickerUnavailableTitle : undefined}
+                      style={{
+                        padding: '0.5rem',
+                        background: canImportBottomDeck && canOpenSavedDeckPicker
+                          ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.9), rgba(5, 150, 105, 0.9))'
+                          : 'rgba(34, 197, 94, 0.18)',
+                        border: canImportBottomDeck && canOpenSavedDeckPicker
+                          ? '1px solid rgba(110, 231, 183, 0.45)'
+                          : '1px solid var(--border-light)',
+                        color: '#f8fafc',
+                        fontWeight: 700,
+                        textAlign: 'center',
+                        cursor: canImportBottomDeck && canOpenSavedDeckPicker ? 'pointer' : 'not-allowed',
+                        fontSize: '0.875rem',
+                        boxShadow: canImportBottomDeck && canOpenSavedDeckPicker
+                          ? '0 8px 18px rgba(5, 150, 105, 0.28)'
+                          : 'none',
+                        opacity: canImportBottomDeck && canOpenSavedDeckPicker ? 1 : 0.5
+                      }}
+                    >
+                      Load {bottomLabel} from My Decks
+                    </button>
+                  </>
                 ) : (
-                  <label
-                    className="glass-panel"
-                    style={{
-                      padding: '0.5rem',
-                      background: 'var(--bg-surface-elevated)',
-                      textAlign: 'center',
-                      cursor: canImportBottomDeck ? 'pointer' : 'not-allowed',
-                      fontSize: '0.875rem',
-                      opacity: canImportBottomDeck ? 1 : 0.5
-                    }}
-                  >
-                    Import Deck (.json)
-                    <input
-                      type="file"
-                      accept=".json"
-                      style={{ display: 'none' }}
-                      onChange={(event) => handleDeckUpload(event, bottomRole)}
-                      disabled={!canImportBottomDeck}
-                    />
-                  </label>
+                  <>
+                    <label
+                      className="glass-panel"
+                      style={{
+                        padding: '0.5rem',
+                        background: 'var(--bg-surface-elevated)',
+                        textAlign: 'center',
+                        cursor: canImportBottomDeck ? 'pointer' : 'not-allowed',
+                        fontSize: '0.875rem',
+                        opacity: canImportBottomDeck ? 1 : 0.5
+                      }}
+                    >
+                      Import Deck (.json)
+                      <input
+                        type="file"
+                        accept=".json"
+                        style={{ display: 'none' }}
+                        onChange={(event) => handleDeckUpload(event, bottomRole)}
+                        disabled={!canImportBottomDeck}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      className="glass-panel"
+                      onClick={() => openSavedDeckPicker(bottomRole)}
+                      disabled={!canImportBottomDeck || !canOpenSavedDeckPicker}
+                      title={!canImportBottomDeck || !canOpenSavedDeckPicker ? savedDeckPickerUnavailableTitle : undefined}
+                      style={{
+                        padding: '0.5rem',
+                        background: canImportBottomDeck && canOpenSavedDeckPicker
+                          ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.9), rgba(5, 150, 105, 0.9))'
+                          : 'rgba(34, 197, 94, 0.18)',
+                        border: canImportBottomDeck && canOpenSavedDeckPicker
+                          ? '1px solid rgba(110, 231, 183, 0.45)'
+                          : '1px solid var(--border-light)',
+                        color: '#f8fafc',
+                        fontWeight: 700,
+                        textAlign: 'center',
+                        cursor: canImportBottomDeck && canOpenSavedDeckPicker ? 'pointer' : 'not-allowed',
+                        fontSize: '0.875rem',
+                        boxShadow: canImportBottomDeck && canOpenSavedDeckPicker
+                          ? '0 8px 18px rgba(5, 150, 105, 0.28)'
+                          : 'none',
+                        opacity: canImportBottomDeck && canOpenSavedDeckPicker ? 1 : 0.5
+                      }}
+                    >
+                      Load from My Decks
+                    </button>
+                  </>
                 )}
                 <button onClick={() => drawCard(bottomRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing' || !canInteract} title={gameState.gameStatus !== 'playing' || !canInteract ? interactionBlockedTitle ?? 'Available during the game only.' : undefined} style={{ padding: '0.5rem', background: 'var(--accent-primary)', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' && canInteract ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' && canInteract ? 'pointer' : 'not-allowed' }}>
                   Draw {bottomLabel}
@@ -2123,6 +2458,7 @@ const GameBoard: React.FC = () => {
         </div>
       )}
 
+      {renderSavedDeckPicker()}
       {renderCardInspector()}
     </DndContext>
   );
