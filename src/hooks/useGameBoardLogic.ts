@@ -58,6 +58,14 @@ type SavedHostSession = {
   state: SyncState;
 };
 
+type ImportableDeckData = {
+  mainDeck?: Array<Record<string, any>>;
+  evolveDeck?: Array<Record<string, any>>;
+  leaderCards?: Array<Record<string, any>>;
+  leaderCard?: Record<string, any>;
+  tokenDeck?: Array<Record<string, any>>;
+};
+
 const APP_VERSION = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '0.0.0';
 const getHostSessionStorageKey = (room: string) => `sv-evolve:host-session:${room}`;
 const SNAPSHOT_REQUEST_TIMEOUT_MS = 2000;
@@ -1231,6 +1239,94 @@ export const useGameBoardLogic = () => {
     dispatchGameEvent({ type: 'RESET_GAME' });
   };
 
+  const importDeckData = (data: ImportableDeckData, targetRole: PlayerRole = role) => {
+    const newCards: CardInstance[] = [];
+    const tokenOptionsById = new Map<string, TokenOption>();
+    const shuffledMain = [...(data.mainDeck || [])]
+      .filter((c: any) => !c.deck_section || c.deck_section === 'main')
+      .sort(() => Math.random() - 0.5);
+
+    shuffledMain.forEach((c: any) => {
+      newCards.push({
+        id: uuid(),
+        cardId: c.id,
+        name: c.name,
+        image: c.image,
+        zone: `mainDeck-${targetRole}`,
+        owner: targetRole,
+        isTapped: false,
+        isFlipped: true,
+        counters: { atk: 0, hp: 0 },
+        genericCounter: 0,
+        baseCardType: normalizeBaseCardType(c.card_kind_normalized ?? c.type)
+      });
+    });
+
+    (data.evolveDeck || [])
+      .filter((c: any) => !c.deck_section || c.deck_section === 'evolve')
+      .forEach((c: any) => {
+        newCards.push({
+          id: uuid(),
+          cardId: c.id,
+          name: c.name,
+          image: c.image,
+          zone: `evolveDeck-${targetRole}`,
+          owner: targetRole,
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+          genericCounter: 0,
+          isEvolveCard: true,
+          baseCardType: normalizeBaseCardType(c.card_kind_normalized ?? c.type)
+        });
+      });
+
+    const importedLeaderCards = Array.isArray(data.leaderCards)
+      ? data.leaderCards
+      : data.leaderCard
+        ? [data.leaderCard]
+        : [];
+
+    importedLeaderCards
+      .filter((c: any) => c?.deck_section === 'leader')
+      .forEach((c: any) => {
+        newCards.push({
+          id: uuid(),
+          cardId: c.id,
+          name: c.name,
+          image: c.image,
+          zone: `leader-${targetRole}`,
+          owner: targetRole,
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+          genericCounter: 0,
+          isLeaderCard: true,
+          baseCardType: normalizeBaseCardType(c.card_kind_normalized ?? c.type),
+        });
+      });
+
+    (data.tokenDeck || [])
+      .filter((c: any) => c.deck_section === 'token')
+      .forEach((c: any) => {
+        if (!tokenOptionsById.has(c.id)) {
+          tokenOptionsById.set(c.id, {
+            cardId: c.id,
+            name: c.name,
+            image: c.image,
+            baseCardType: normalizeBaseCardType(c.card_kind_normalized ?? c.type),
+          });
+        }
+      });
+
+    dispatchGameEvent({
+      type: 'IMPORT_DECK',
+      actor: targetRole,
+      cards: newCards,
+      tokenOptions: Array.from(tokenOptionsById.values()),
+    });
+  };
+
   const handleDeckUpload = (event: React.ChangeEvent<HTMLInputElement>, targetRole: PlayerRole = role) => {
     if (!isSoloMode && !isHost && connectionState !== 'connected') {
       event.target.value = '';
@@ -1246,71 +1342,8 @@ export const useGameBoardLogic = () => {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const data = JSON.parse(e.target?.result as string);
-        const newCards: CardInstance[] = [];
-        const tokenOptionsById = new Map<string, TokenOption>();
-        const shuffledMain = [...(data.mainDeck || [])]
-          .filter((c: any) => !c.deck_section || c.deck_section === 'main')
-          .sort(() => Math.random() - 0.5);
-        shuffledMain.forEach((c: any) => {
-          newCards.push({
-            id: uuid(), cardId: c.id, name: c.name, image: c.image,
-            zone: `mainDeck-${targetRole}`, owner: targetRole, isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 }, genericCounter: 0, baseCardType: normalizeBaseCardType(c.card_kind_normalized ?? c.type)
-          });
-        });
-        (data.evolveDeck || [])
-          .filter((c: any) => !c.deck_section || c.deck_section === 'evolve')
-          .forEach((c: any) => {
-          newCards.push({
-            id: uuid(), cardId: c.id, name: c.name, image: c.image,
-            zone: `evolveDeck-${targetRole}`, owner: targetRole, isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 }, genericCounter: 0, isEvolveCard: true, baseCardType: normalizeBaseCardType(c.card_kind_normalized ?? c.type)
-          });
-        });
-
-        const importedLeaderCards = Array.isArray(data.leaderCards)
-          ? data.leaderCards
-          : data.leaderCard
-            ? [data.leaderCard]
-            : [];
-
-        importedLeaderCards
-          .filter((c: any) => c?.deck_section === 'leader')
-          .forEach((c: any) => {
-            newCards.push({
-              id: uuid(),
-              cardId: c.id,
-              name: c.name,
-              image: c.image,
-              zone: `leader-${targetRole}`,
-              owner: targetRole,
-              isTapped: false,
-              isFlipped: false,
-              counters: { atk: 0, hp: 0 },
-              genericCounter: 0,
-              isLeaderCard: true,
-              baseCardType: normalizeBaseCardType(c.card_kind_normalized ?? c.type),
-            });
-          });
-
-        (data.tokenDeck || [])
-          .filter((c: any) => c.deck_section === 'token')
-          .forEach((c: any) => {
-            if (!tokenOptionsById.has(c.id)) {
-              tokenOptionsById.set(c.id, {
-                cardId: c.id,
-                name: c.name,
-                image: c.image,
-                baseCardType: normalizeBaseCardType(c.card_kind_normalized ?? c.type),
-              });
-            }
-          });
-
-        dispatchGameEvent({
-          type: 'IMPORT_DECK',
-          actor: targetRole,
-          cards: newCards,
-          tokenOptions: Array.from(tokenOptionsById.values()),
-        });
+        const data = JSON.parse(e.target?.result as string) as ImportableDeckData;
+        importDeckData(data, targetRole);
       } catch (err) { alert("Failed to parse deck JSON."); }
     };
     reader.readAsText(file);
@@ -1405,7 +1438,7 @@ export const useGameBoardLogic = () => {
     handleStatChange, setPhase, endTurn, handleUndoTurn, handleSetInitialTurnOrder,
     handlePureCoinFlip, handleRollDice, handleStartGame, handleToggleReady,
     handleDrawInitialHand, startMulligan, handleMulliganOrderSelect, executeMulligan,
-    drawCard, handleExtractCard, confirmResetGame, handleDeckUpload, spawnToken,
+    drawCard, handleExtractCard, confirmResetGame, handleDeckUpload, importDeckData, spawnToken,
     handleModifyCounter, handleModifyGenericCounter, handleDragEnd, toggleTap, handleFlipCard, handleSendToBottom,
     handleBanish, handlePlayToField, handleSendToCemetery, handleReturnEvolve, handleShuffleDeck, handleDeclareAttack,
     getCards, getTokenOptions, lastGameState, millCard,
