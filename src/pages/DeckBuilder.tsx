@@ -32,6 +32,7 @@ import {
   sanitizeImportedDeckState,
   type DeckTargetSection,
 } from '../utils/deckBuilderRules';
+import { buildCardDetailLookup, formatAbilityText } from '../utils/cardDetails';
 
 const PAGE_SIZE = 50;
 const COST_FILTER_VALUES = ['All', '0', '1', '2', '3', '4', '5', '6', '7+'] as const;
@@ -186,6 +187,7 @@ const DeckBuilder: React.FC = () => {
   const productNames = getAvailableProductNames(cards);
   const subtypeTags = getAvailableSubtypeTags(cards);
   const titles = getAvailableTitles(cards);
+  const cardDetailLookup = React.useMemo(() => buildCardDetailLookup(cards), [cards]);
   const isConstructed = deckRuleConfig.format === 'constructed';
   const isCrossover = deckRuleConfig.format === 'crossover';
   const isRuleReady = isRuleConfigured(deckRuleConfig);
@@ -304,6 +306,18 @@ const DeckBuilder: React.FC = () => {
   const filteredSubtypeOptions = subtypeSearch.trim().length > 0
     ? subtypeTags.filter(tag => tag.toLowerCase().includes(subtypeSearch.trim().toLowerCase()))
     : subtypeTags;
+  const previewDetail = previewCard ? cardDetailLookup[previewCard.id] ?? null : null;
+  const previewPrimaryMeta = [
+    previewDetail?.className,
+    previewDetail?.title,
+  ].filter(Boolean).join(' / ');
+  const previewSecondaryMeta = [
+    previewDetail?.type,
+    previewDetail?.subtype,
+  ].filter(Boolean).join(' / ');
+  const previewStats = previewDetail && previewDetail.atk !== null && previewDetail.hp !== null
+    ? `${previewDetail.atk} / ${previewDetail.hp}`
+    : null;
 
   const removeLastCardById = (cards: DeckBuilderCardData[], cardId?: string): DeckBuilderCardData[] => {
     if (!cardId) return cards;
@@ -1326,11 +1340,15 @@ const DeckBuilder: React.FC = () => {
             style={{
               position: 'relative',
               width: '100%',
-              maxWidth: '520px',
+              maxWidth: '720px',
               display: 'flex',
               flexDirection: 'column',
-              alignItems: 'center',
               gap: '0.75rem',
+              background: 'rgba(15, 23, 42, 0.98)',
+              border: '1px solid rgba(255,255,255,0.12)',
+              borderRadius: '16px',
+              boxShadow: '0 18px 50px rgba(0, 0, 0, 0.45)',
+              padding: '1rem',
             }}
           >
             <button
@@ -1354,20 +1372,76 @@ const DeckBuilder: React.FC = () => {
             >
               ×
             </button>
-            <img
-              src={previewCard.image}
-              alt={`${previewCard.name} enlarged`}
-              style={{
-                display: 'block',
-                maxWidth: '100%',
-                maxHeight: '90vh',
-                borderRadius: '12px',
-                boxShadow: '0 18px 50px rgba(0, 0, 0, 0.45)',
-              }}
-            />
-            <p style={{ margin: 0, color: '#fff', fontSize: '0.95rem', fontWeight: 600 }}>
-              {previewCard.name}
-            </p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.6rem', marginBottom: '0.25rem', paddingRight: '2rem' }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ color: '#f8fafc', fontWeight: 800, fontSize: '1rem', lineHeight: 1.35 }}>
+                  {previewDetail?.name || previewCard.name}
+                </div>
+                {previewPrimaryMeta && (
+                  <div style={{ color: '#cbd5e1', fontSize: '0.76rem', marginTop: '0.18rem', lineHeight: 1.45 }}>
+                    {previewPrimaryMeta}
+                  </div>
+                )}
+                {previewSecondaryMeta && (
+                  <div style={{ color: '#94a3b8', fontSize: '0.74rem', marginTop: '0.1rem', lineHeight: 1.45 }}>
+                    {previewSecondaryMeta}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', marginBottom: '0.4rem' }}>
+              <img
+                src={previewDetail?.image || previewCard.image}
+                alt={`${previewCard.name} enlarged`}
+                style={{
+                  width: '180px',
+                  maxWidth: '40vw',
+                  height: 'auto',
+                  borderRadius: '10px',
+                  boxShadow: '0 8px 20px rgba(0,0,0,0.32)',
+                  flexShrink: 0,
+                }}
+              />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', minWidth: 0, flex: 1 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '60px 1fr', gap: '0.16rem 0.45rem', color: '#e2e8f0', fontSize: '0.78rem' }}>
+                  <span style={{ color: '#94a3b8' }}>ID</span>
+                  <span>{previewCard.id}</span>
+                  <span style={{ color: '#94a3b8' }}>Cost</span>
+                  <span>{previewDetail?.cost || previewCard.cost || '-'}</span>
+                  {previewStats && (
+                    <>
+                      <span style={{ color: '#94a3b8' }}>Stats</span>
+                      <span>{previewStats}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '0.75rem' }}>
+              <div style={{ color: '#f8fafc', fontWeight: 700, fontSize: '0.82rem', marginBottom: '0.45rem' }}>
+                Ability Text
+              </div>
+              <div
+                style={{
+                  whiteSpace: 'pre-wrap',
+                  color: '#e5e7eb',
+                  fontSize: '0.78rem',
+                  lineHeight: 1.65,
+                  background: 'rgba(15, 23, 42, 0.76)',
+                  borderRadius: '10px',
+                  padding: '0.75rem',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  maxHeight: '32vh',
+                  overflowY: 'auto',
+                }}
+              >
+                {previewDetail?.abilityText
+                  ? formatAbilityText(previewDetail.abilityText)
+                  : 'このカードの詳細テキストは見つかりませんでした。'}
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -14,6 +14,9 @@ const mockCards = [
     subtype: '兵士',
     rarity: 'LG',
     product_name: 'Booster Pack 1',
+    atk: '2',
+    hp: '2',
+    ability_text: '[ファンファーレ] テスト能力。',
     card_kind_normalized: 'follower',
     deck_section: 'main',
     is_token: false,
@@ -317,8 +320,13 @@ describe('DeckBuilder', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Preview Alpha Knight' }));
 
-    expect(screen.getByRole('dialog', { name: 'Alpha Knight preview' })).toBeInTheDocument();
-    expect(screen.getByAltText('Alpha Knight enlarged')).toBeInTheDocument();
+    const previewDialog = screen.getByRole('dialog', { name: 'Alpha Knight preview' });
+    expect(previewDialog).toBeInTheDocument();
+    expect(within(previewDialog).getByAltText('Alpha Knight enlarged')).toBeInTheDocument();
+    expect(within(previewDialog).getByText('Ability Text')).toBeInTheDocument();
+    expect(within(previewDialog).getByText('BP01-001')).toBeInTheDocument();
+    expect(within(previewDialog).getByText('2 / 2')).toBeInTheDocument();
+    expect(within(previewDialog).getByText('[ファンファーレ] テスト能力。')).toBeInTheDocument();
 
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(screen.queryByRole('dialog', { name: 'Alpha Knight preview' })).not.toBeInTheDocument();
