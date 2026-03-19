@@ -36,6 +36,8 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
   const { isOver, setNodeRef } = useDroppable({ id });
 
   const isStack = layout === 'stack';
+  const isFieldZone = id.startsWith('field-');
+  const isExZone = id.startsWith('ex-');
   const displayLabel = label.replace(/^(My|Opponent|Player 1|Player 2)\s+/, '');
   const hasCardOnTop = React.useCallback((cardId: string) => cards.some(card => card.attachedTo === cardId), [cards]);
   const validAttachedIds = new Set(
@@ -56,7 +58,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
         position: 'relative',
         display: 'flex',
         flexDirection: isStack ? 'column' : 'row',
-        gap: '0.5rem',
+        gap: isStack ? '0.5rem' : isFieldZone ? '1.9rem' : isExZone ? '1rem' : '0.5rem',
         flexWrap: isStack ? 'nowrap' : 'wrap',
         alignItems: isStack ? 'center' : 'flex-start',
         transition: 'var(--transition-fast)',
