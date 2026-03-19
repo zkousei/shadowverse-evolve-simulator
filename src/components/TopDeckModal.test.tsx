@@ -118,4 +118,31 @@ describe('TopDeckModal', () => {
       { cardId: 'c1', action: 'revealedHand', order: undefined },
     ]);
   });
+
+  it('reorders bottom cards within the assigned bucket', () => {
+    const onConfirm = vi.fn();
+    render(
+      <TopDeckModal
+        isOpen={true}
+        cards={[createCard('c1'), createCard('c2'), createCard('c3')]}
+        onConfirm={onConfirm}
+        onCancel={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getAllByText('山下 (Bottom)')[0]);
+    fireEvent.click(screen.getByAltText('Card c1'));
+    fireEvent.click(screen.getByAltText('Card c2'));
+    fireEvent.click(screen.getByAltText('Card c3'));
+
+    fireEvent.click(screen.getByLabelText('山下 (Bottom) order forward for Card c1'));
+    fireEvent.click(screen.getByLabelText('山下 (Bottom) order forward for Card c1'));
+    fireEvent.click(screen.getByText('CONFIRM'));
+
+    expect(onConfirm).toHaveBeenCalledWith([
+      { cardId: 'c2', action: 'bottom', order: 1 },
+      { cardId: 'c3', action: 'bottom', order: 2 },
+      { cardId: 'c1', action: 'bottom', order: 3 },
+    ]);
+  });
 });

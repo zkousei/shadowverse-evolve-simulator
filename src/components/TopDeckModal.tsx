@@ -70,7 +70,52 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
     setPendingCards(prev => [...prev, target.card]);
   };
 
-  const getGroup = (action: TopDeckAction) => assignedCards.filter(a => a.action === action);
+  const reorderAssignedDeckCards = (action: 'top' | 'bottom', cardId: string, direction: 'backward' | 'forward') => {
+    setAssignedCards(prev => {
+      const bucket = prev
+        .filter(a => a.action === action)
+        .sort((a, b) => (a.order || 0) - (b.order || 0));
+      const currentIndex = bucket.findIndex(a => a.card.id === cardId);
+      if (currentIndex === -1) return prev;
+
+      const targetIndex = direction === 'backward' ? currentIndex - 1 : currentIndex + 1;
+      if (targetIndex < 0 || targetIndex >= bucket.length) return prev;
+
+      const reorderedBucket = [...bucket];
+      [reorderedBucket[currentIndex], reorderedBucket[targetIndex]] = [reorderedBucket[targetIndex], reorderedBucket[currentIndex]];
+      const nextOrderMap = new Map(reorderedBucket.map((entry, index) => [entry.card.id, index + 1]));
+
+      return prev.map(entry => {
+        if (entry.action !== action) return entry;
+        const nextOrder = nextOrderMap.get(entry.card.id);
+        return nextOrder ? { ...entry, order: nextOrder } : entry;
+      });
+    });
+  };
+
+  const getGroup = (action: TopDeckAction) => {
+    const group = assignedCards.filter(a => a.action === action);
+    if (action === 'top' || action === 'bottom') {
+      return [...group].sort((a, b) => (a.order || 0) - (b.order || 0));
+    }
+    return group;
+  };
+
+  const getConfirmResults = () => {
+    const orderedDeckAssignments = assignedCards
+      .filter(a => a.action === 'top' || a.action === 'bottom')
+      .sort((a, b) => {
+        if (a.action !== b.action) return 0;
+        return (a.order || 0) - (b.order || 0);
+      });
+    const nonOrderedAssignments = assignedCards.filter(a => a.action !== 'top' && a.action !== 'bottom');
+
+    return [...nonOrderedAssignments, ...orderedDeckAssignments].map(a => ({
+      cardId: a.card.id,
+      action: a.action,
+      order: a.order,
+    }));
+  };
 
   const actionButtons: { id: TopDeckAction; label: string; color: string }[] = [
     { id: 'field', label: '場 (Field)', color: '#f59e0b' },
@@ -161,6 +206,7 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
             {actionButtons.map(btn => {
               const group = getGroup(btn.id);
               const isOrdered = btn.id === 'top' || btn.id === 'bottom';
+              const orderedAction: 'top' | 'bottom' | null = isOrdered ? (btn.id as 'top' | 'bottom') : null;
               
               return (
                 <div key={btn.id} style={{ 
@@ -187,15 +233,82 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
                           draggable={false}
                         />
                         {isOrdered && (
-                          <div style={{
-                            position: 'absolute', bottom: '-6px', right: '-6px', 
-                            background: btn.color,
-                            color: 'white', width: '20px', height: '20px', borderRadius: '50%',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '0.8rem', fontWeight: 'bold', border: '1px solid #0d1117'
-                          }}>
-                            {a.order}
-                          </div>
+                          <>
+                            <div style={{
+                              position: 'absolute', bottom: '-6px', right: '-6px', 
+                              background: btn.color,
+                              color: 'white', width: '20px', height: '20px', borderRadius: '50%',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: '0.8rem', fontWeight: 'bold', border: '1px solid #0d1117'
+                            }}>
+                              {a.order}
+                            </div>
+                            <div
+                              style={{
+                                position: 'absolute',
+                                top: '-10px',
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                                display: 'flex',
+                                gap: '4px',
+                                background: 'rgba(13, 17, 23, 0.92)',
+                                border: '1px solid #30363d',
+                                borderRadius: '999px',
+                                padding: '3px 5px',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.35)'
+                              }}
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              <button
+                                type="button"
+                                aria-label={`${btn.label} order backward for ${a.card.name}`}
+                                disabled={(a.order || 0) <= 1}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  if (!orderedAction) return;
+                                  reorderAssignedDeckCards(orderedAction, a.card.id, 'backward');
+                                }}
+                                style={{
+                                  border: 'none',
+                                  background: (a.order || 0) <= 1 ? '#21262d' : '#30363d',
+                                  color: (a.order || 0) <= 1 ? '#6b7280' : '#f0f6fc',
+                                  borderRadius: '999px',
+                                  width: '22px',
+                                  height: '22px',
+                                  cursor: (a.order || 0) <= 1 ? 'not-allowed' : 'pointer',
+                                  fontWeight: 'bold',
+                                  fontSize: '0.85rem',
+                                  padding: 0
+                                }}
+                              >
+                                ←
+                              </button>
+                              <button
+                                type="button"
+                                aria-label={`${btn.label} order forward for ${a.card.name}`}
+                                disabled={(a.order || 0) >= group.length}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  if (!orderedAction) return;
+                                  reorderAssignedDeckCards(orderedAction, a.card.id, 'forward');
+                                }}
+                                style={{
+                                  border: 'none',
+                                  background: (a.order || 0) >= group.length ? '#21262d' : '#30363d',
+                                  color: (a.order || 0) >= group.length ? '#6b7280' : '#f0f6fc',
+                                  borderRadius: '999px',
+                                  width: '22px',
+                                  height: '22px',
+                                  cursor: (a.order || 0) >= group.length ? 'not-allowed' : 'pointer',
+                                  fontWeight: 'bold',
+                                  fontSize: '0.85rem',
+                                  padding: 0
+                                }}
+                              >
+                                →
+                              </button>
+                            </div>
+                          </>
                         )}
                         {!isOrdered && (
                           <div style={{
@@ -223,7 +336,7 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
           </div>
           <button
             disabled={!allAssigned}
-            onClick={() => onConfirm(assignedCards.map(a => ({ cardId: a.card.id, action: a.action, order: a.order })))}
+            onClick={() => onConfirm(getConfirmResults())}
             style={{
               background: allAssigned ? '#238636' : '#21262d',
               color: allAssigned ? '#fff' : '#484f58',
