@@ -31,6 +31,24 @@ describe('sharedRandom', () => {
       'host',
       false
     )).toBe('You rolled: 4');
+
+    expect(formatSharedUiMessage(
+      { type: 'RESET_GAME_COMPLETED', actor: 'guest' },
+      'host',
+      false
+    )).toBe('Opponent reset the game');
+
+    expect(formatSharedUiMessage(
+      { type: 'SHUFFLE_DECK_COMPLETED', actor: 'host' },
+      'guest',
+      false
+    )).toBe('Opponent shuffled the deck');
+
+    expect(formatSharedUiMessage(
+      { type: 'MILL_CARD_COMPLETED', actor: 'guest', cardName: 'Aurelia' },
+      'host',
+      false
+    )).toBe('Opponent milled Aurelia');
   });
 
   it('formats reveal messages for both look-top and search effects', () => {

@@ -342,6 +342,36 @@ export const useGameBoardLogic = () => {
       return;
     }
 
+    if (effect.type === 'RESET_GAME_COMPLETED') {
+      clearCardPlayMessageTimer();
+      setCardPlayMessage(formatSharedUiMessage(effect, role, isSoloMode));
+      cardPlayMessageTimeoutRef.current = setTimeout(() => {
+        setCardPlayMessage(null);
+        cardPlayMessageTimeoutRef.current = null;
+      }, 2600);
+      return;
+    }
+
+    if (effect.type === 'SHUFFLE_DECK_COMPLETED') {
+      clearCardPlayMessageTimer();
+      setCardPlayMessage(formatSharedUiMessage(effect, role, isSoloMode));
+      cardPlayMessageTimeoutRef.current = setTimeout(() => {
+        setCardPlayMessage(null);
+        cardPlayMessageTimeoutRef.current = null;
+      }, 2600);
+      return;
+    }
+
+    if (effect.type === 'MILL_CARD_COMPLETED') {
+      clearCardPlayMessageTimer();
+      setCardPlayMessage(formatSharedUiMessage(effect, role, isSoloMode));
+      cardPlayMessageTimeoutRef.current = setTimeout(() => {
+        setCardPlayMessage(null);
+        cardPlayMessageTimeoutRef.current = null;
+      }, 2600);
+      return;
+    }
+
     clearDiceTimers();
     clearCoinMessageTimer();
     setIsRollingDice(true);
@@ -462,6 +492,34 @@ export const useGameBoardLogic = () => {
     if (event.type === 'PLAY_TO_FIELD') {
       const effect = buildCardPlayedEffect(currentState.cards, event.actor, event.cardId);
       if (effect) {
+        playSharedUiEffect(effect);
+        sendSharedUiEffect(effect);
+      }
+    }
+    if (event.type === 'RESET_GAME') {
+      const effect: SharedUiEffect = {
+        type: 'RESET_GAME_COMPLETED',
+        actor: event.actor,
+      };
+      playSharedUiEffect(effect);
+      sendSharedUiEffect(effect);
+    }
+    if (event.type === 'SHUFFLE_DECK') {
+      const effect: SharedUiEffect = {
+        type: 'SHUFFLE_DECK_COMPLETED',
+        actor: event.actor,
+      };
+      playSharedUiEffect(effect);
+      sendSharedUiEffect(effect);
+    }
+    if (event.type === 'MILL_CARD') {
+      const milledCard = currentState.cards.find(card => card.zone === `mainDeck-${event.actor}`);
+      if (milledCard) {
+        const effect: SharedUiEffect = {
+          type: 'MILL_CARD_COMPLETED',
+          actor: event.actor,
+          cardName: milledCard.name,
+        };
         playSharedUiEffect(effect);
         sendSharedUiEffect(effect);
       }

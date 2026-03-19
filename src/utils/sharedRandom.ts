@@ -41,6 +41,21 @@ export const formatSharedUiMessage = (
     return `${actorLabel} rolled: ${effect.value}`;
   }
 
+  if (effect.type === 'RESET_GAME_COMPLETED') {
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode);
+    return `${actorLabel} reset the game`;
+  }
+
+  if (effect.type === 'SHUFFLE_DECK_COMPLETED') {
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode);
+    return `${actorLabel} shuffled the deck`;
+  }
+
+  if (effect.type === 'MILL_CARD_COMPLETED') {
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode);
+    return `${actorLabel} milled ${effect.cardName}`;
+  }
+
   if (effect.type === 'REVEAL_TOP_DECK_CARDS') {
     const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode);
     return `${actorLabel} revealed from Look Top`;
