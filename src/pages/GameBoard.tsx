@@ -15,7 +15,7 @@ import CardArtwork from '../components/CardArtwork';
 
 const GameBoard: React.FC = () => {
   const {
-    room, isSoloMode, isHost, role, status, connectionState, canInteract, attemptReconnect, gameState, searchZone, setSearchZone,
+    room, isSoloMode, isHost, role, status, connectionState, canInteract, attemptReconnect, gameState, savedSessionCandidate, resumeSavedSession, discardSavedSession, searchZone, setSearchZone,
     showResetConfirm, setShowResetConfirm, coinMessage, turnMessage, cardPlayMessage, attackMessage, attackHistory, attackVisual, revealedCardsOverlay,
     isRollingDice, diceValue, mulliganOrder, isMulliganModalOpen, setIsMulliganModalOpen,
     handleStatChange, setPhase, endTurn, handleUndoTurn, handleSetInitialTurnOrder,
@@ -67,6 +67,20 @@ const GameBoard: React.FC = () => {
       ? 'Reconnecting to host. Please wait.'
       : 'Connection to host is required.')
     : undefined;
+  const savedSessionTimestamp = React.useMemo(() => {
+    if (!savedSessionCandidate) return null;
+
+    try {
+      return new Date(savedSessionCandidate.savedAt).toLocaleString('ja-JP', {
+        hour: '2-digit',
+        minute: '2-digit',
+        month: 'numeric',
+        day: 'numeric',
+      });
+    } catch {
+      return savedSessionCandidate.savedAt;
+    }
+  }, [savedSessionCandidate]);
   const sidePanelWidth = 220;
   const topPanelWidth = 188;
   const sideZoneWidth = 120;
@@ -1076,6 +1090,60 @@ const GameBoard: React.FC = () => {
             }}
           >
             Reconnecting to host. Actions are temporarily locked until the latest state is synced.
+          </div>
+        )}
+
+        {!isSoloMode && isHost && savedSessionCandidate && (
+          <div
+            style={{
+              marginTop: '-0.35rem',
+              background: 'rgba(59, 130, 246, 0.12)',
+              border: '1px solid rgba(59, 130, 246, 0.32)',
+              color: '#dbeafe',
+              borderRadius: '10px',
+              padding: '0.75rem 0.9rem',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: '1rem',
+              flexWrap: 'wrap'
+            }}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+              <strong style={{ fontSize: '0.88rem' }}>Previous host session found for this room.</strong>
+              <span style={{ fontSize: '0.78rem', color: '#bfdbfe' }}>
+                {savedSessionTimestamp ? `${savedSessionTimestamp} の状態から復帰できます。` : '直前の盤面を復帰できます。'}
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
+              <button
+                onClick={discardSavedSession}
+                style={{
+                  padding: '0.45rem 0.9rem',
+                  background: 'transparent',
+                  color: '#e2e8f0',
+                  border: '1px solid rgba(255,255,255,0.18)',
+                  borderRadius: '6px',
+                  cursor: 'pointer'
+                }}
+              >
+                Discard
+              </button>
+              <button
+                onClick={resumeSavedSession}
+                style={{
+                  padding: '0.45rem 0.9rem',
+                  background: '#3b82f6',
+                  color: 'white',
+                  border: '1px solid #2563eb',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontWeight: 'bold'
+                }}
+              >
+                Resume Previous Session
+              </button>
+            </div>
           </div>
         )}
 

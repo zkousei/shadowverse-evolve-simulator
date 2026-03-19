@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import * as PeerJsModule from 'peerjs';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -101,13 +101,29 @@ const mockPeerJs = (PeerJsModule as unknown as {
 }).__mockPeerJs;
 
 function HookHarness() {
-  const { status, connectionState, canInteract } = useGameBoardLogic();
+  const {
+    status,
+    connectionState,
+    canInteract,
+    gameState,
+    savedSessionCandidate,
+    resumeSavedSession,
+    discardSavedSession,
+  } = useGameBoardLogic();
 
   return (
     <div>
       <div data-testid="status">{status}</div>
       <div data-testid="connection-state">{connectionState}</div>
       <div data-testid="can-interact">{String(canInteract)}</div>
+      <div data-testid="host-hp">{gameState.host.hp}</div>
+      <div data-testid="saved-session">{savedSessionCandidate ? savedSessionCandidate.room : 'none'}</div>
+      {savedSessionCandidate && (
+        <>
+          <button onClick={resumeSavedSession}>Resume Saved Session</button>
+          <button onClick={discardSavedSession}>Discard Saved Session</button>
+        </>
+      )}
     </div>
   );
 }
@@ -122,6 +138,7 @@ describe('useGameBoardLogic P2P reconnect', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     mockPeerJs.reset();
+    window.sessionStorage.clear();
   });
 
   afterEach(() => {
@@ -181,6 +198,78 @@ describe('useGameBoardLogic P2P reconnect', () => {
     expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
   });
 
+  it('retries snapshot requests when the host does not respond yet', () => {
+    renderHarness('/game?host=false&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const conn = peer.connections[0];
+    act(() => {
+      conn.open = true;
+      conn.emit('open');
+    });
+
+    expect(conn.send).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      vi.advanceTimersByTime(2000);
+    });
+
+    expect(conn.send).toHaveBeenCalledTimes(2);
+    expect(screen.getByTestId('status')).toHaveTextContent('Waiting for host session restore... retrying sync.');
+
+    act(() => {
+      conn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: {
+          host: { hp: 20, pp: 0, maxPp: 0, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          cards: [],
+          turnPlayer: 'host',
+          turnCount: 1,
+          phase: 'Start',
+          gameStatus: 'preparing',
+          tokenOptions: { host: [], guest: [] },
+          revision: 1,
+        },
+      });
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(4000);
+    });
+
+    expect(conn.send).toHaveBeenCalledTimes(2);
+    expect(screen.getByTestId('status')).toHaveTextContent('Connected to host! Game ready.');
+  });
+
+  it('falls back to reconnecting after snapshot retries are exhausted', () => {
+    renderHarness('/game?host=false&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const conn = peer.connections[0];
+    act(() => {
+      conn.open = true;
+      conn.emit('open');
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(6000);
+    });
+
+    expect(conn.send).toHaveBeenCalledTimes(3);
+    expect(screen.getByTestId('status')).toHaveTextContent('Connecting to host...');
+    expect(peer.connect).toHaveBeenCalledTimes(2);
+  });
+
   it('responds to snapshot requests as host and ignores stale connection closes', () => {
     renderHarness('/game?host=true&room=ROOM123');
 
@@ -223,5 +312,72 @@ describe('useGameBoardLogic P2P reconnect', () => {
       source: 'host',
     }));
     expect(screen.getByTestId('status')).toHaveTextContent('Guest connected! Game ready.');
+  });
+
+  it('loads a saved host session candidate and restores it when requested', () => {
+    window.sessionStorage.setItem('sv-evolve:host-session:ROOM123', JSON.stringify({
+      room: 'ROOM123',
+      savedAt: '2026-03-19T10:00:00.000Z',
+      appVersion: '0.0.0',
+      state: {
+        host: { hp: 13, pp: 4, maxPp: 5, ep: 2, sep: 1, combo: 1, initialHandDrawn: true, mulliganUsed: true, isReady: true },
+        guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: true, mulliganUsed: false, isReady: false },
+        cards: [],
+        turnPlayer: 'host',
+        turnCount: 3,
+        phase: 'Main',
+        gameStatus: 'playing',
+        tokenOptions: { host: [], guest: [] },
+        revision: 7,
+      },
+    }));
+
+    renderHarness('/game?host=true&room=ROOM123');
+
+    expect(screen.getByTestId('saved-session')).toHaveTextContent('ROOM123');
+    expect(screen.getByTestId('host-hp')).toHaveTextContent('20');
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Resume Saved Session' }));
+    });
+
+    expect(screen.getByTestId('saved-session')).toHaveTextContent('none');
+    expect(screen.getByTestId('host-hp')).toHaveTextContent('13');
+    expect(JSON.parse(window.sessionStorage.getItem('sv-evolve:host-session:ROOM123') ?? '{}').state.host.hp).toBe(13);
+  });
+
+  it('allows the host to discard a saved session and does not surface it to guests', () => {
+    window.sessionStorage.setItem('sv-evolve:host-session:ROOM123', JSON.stringify({
+      room: 'ROOM123',
+      savedAt: '2026-03-19T10:00:00.000Z',
+      appVersion: '0.0.0',
+      state: {
+        host: { hp: 11, pp: 1, maxPp: 1, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+        guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+        cards: [],
+        turnPlayer: 'host',
+        turnCount: 1,
+        phase: 'Start',
+        gameStatus: 'preparing',
+        tokenOptions: { host: [], guest: [] },
+        revision: 2,
+      },
+    }));
+
+    const { unmount } = renderHarness('/game?host=true&room=ROOM123');
+
+    expect(screen.getByTestId('saved-session')).toHaveTextContent('ROOM123');
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Discard Saved Session' }));
+    });
+
+    expect(screen.getByTestId('saved-session')).toHaveTextContent('none');
+    expect(window.sessionStorage.getItem('sv-evolve:host-session:ROOM123')).toBeTruthy();
+
+    unmount();
+
+    renderHarness('/game?host=false&room=ROOM123');
+    expect(screen.getByTestId('saved-session')).toHaveTextContent('none');
   });
 });
