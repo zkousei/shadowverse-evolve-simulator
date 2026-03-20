@@ -313,6 +313,17 @@ export const deleteSavedDeck = (id: string): void => {
   writeSavedDecks(nextDecks);
 };
 
+export const deleteAllSavedDecks = (): void => {
+  writeSavedDecks([]);
+};
+
+export const deleteSavedDecks = (ids: string[]): void => {
+  if (ids.length === 0) return;
+  const selectedIds = new Set(ids);
+  const nextDecks = listSavedDecks().filter(deck => !selectedIds.has(deck.id));
+  writeSavedDecks(nextDecks);
+};
+
 export const duplicateSavedDeck = (id: string): SavedDeckRecordV1 | null => {
   const existingDeck = getSavedDeckById(id);
   if (!existingDeck) return null;

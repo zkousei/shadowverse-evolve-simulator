@@ -38,7 +38,9 @@ import {
   clearDraft,
   createDeckSnapshot,
   createPristineDeckSnapshot,
+  deleteAllSavedDecks,
   deleteSavedDeck,
+  deleteSavedDecks,
   duplicateSavedDeck,
   getSavedDeckById,
   HARD_SAVED_DECK_LIMIT,
@@ -255,9 +257,13 @@ const DeckBuilder: React.FC = () => {
   const [hasInitializedDraft, setHasInitializedDraft] = useState(false);
   const [pendingDraftRestore, setPendingDraftRestore] = useState<PendingDraftRestore | null>(null);
   const [pendingDeleteDeckId, setPendingDeleteDeckId] = useState<string | null>(null);
+  const [showDeleteAllSavedDecksDialog, setShowDeleteAllSavedDecksDialog] = useState(false);
+  const [showDeleteSelectedSavedDecksDialog, setShowDeleteSelectedSavedDecksDialog] = useState(false);
   const [pendingLoadDeckId, setPendingLoadDeckId] = useState<string | null>(null);
   const [showResetBuilderDialog, setShowResetBuilderDialog] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState<SaveFeedback | null>(null);
+  const [isSavedDeckSelectMode, setIsSavedDeckSelectMode] = useState(false);
+  const [selectedSavedDeckIds, setSelectedSavedDeckIds] = useState<string[]>([]);
 
   useEffect(() => {
     fetch('/cards_detailed.json')
@@ -428,6 +434,12 @@ const DeckBuilder: React.FC = () => {
         };
       })
   ), [cards, savedDeckSearch, savedDecks]);
+  const shownSavedDeckIds = React.useMemo(
+    () => filteredSavedDecks.map(({ savedDeck }) => savedDeck.id),
+    [filteredSavedDecks]
+  );
+  const areAllShownSavedDecksSelected = shownSavedDeckIds.length > 0
+    && shownSavedDeckIds.every(id => selectedSavedDeckIds.includes(id));
 
   useEffect(() => {
     if (cards.length === 0 || !hasInitializedDraft || pendingDraftRestore) return;
@@ -461,6 +473,11 @@ const DeckBuilder: React.FC = () => {
 
   const refreshSavedDecks = () => {
     setSavedDecks(listSavedDecks());
+  };
+
+  const clearSavedDeckSelection = () => {
+    setIsSavedDeckSelectMode(false);
+    setSelectedSavedDeckIds([]);
   };
 
   const resetBuilderState = () => {
@@ -744,6 +761,60 @@ const DeckBuilder: React.FC = () => {
     }
     refreshSavedDecks();
     setPendingDeleteDeckId(null);
+  };
+
+  const handleDeleteAllSavedDecks = () => {
+    deleteAllSavedDecks();
+    if (selectedSavedDeckId !== null) {
+      setSelectedSavedDeckId(null);
+      setSavedBaselineSnapshot(null);
+    }
+    refreshSavedDecks();
+    setPendingDeleteDeckId(null);
+    setPendingLoadDeckId(null);
+    clearSavedDeckSelection();
+    setShowDeleteAllSavedDecksDialog(false);
+  };
+
+  const handleDeleteSelectedSavedDecks = () => {
+    if (selectedSavedDeckIds.length === 0) return;
+
+    deleteSavedDecks(selectedSavedDeckIds);
+    if (selectedSavedDeckId !== null && selectedSavedDeckIds.includes(selectedSavedDeckId)) {
+      setSelectedSavedDeckId(null);
+      setSavedBaselineSnapshot(null);
+    }
+    refreshSavedDecks();
+    setPendingDeleteDeckId(null);
+    setPendingLoadDeckId(null);
+    clearSavedDeckSelection();
+    setShowDeleteSelectedSavedDecksDialog(false);
+  };
+
+  const toggleSavedDeckSelection = (deckId: string) => {
+    setSelectedSavedDeckIds(current => (
+      current.includes(deckId)
+        ? current.filter(id => id !== deckId)
+        : [...current, deckId]
+    ));
+  };
+
+  const handleToggleShownSavedDeckSelection = () => {
+    if (shownSavedDeckIds.length === 0) return;
+
+    if (areAllShownSavedDecksSelected) {
+      setSelectedSavedDeckIds(current => current.filter(id => !shownSavedDeckIds.includes(id)));
+      return;
+    }
+
+    setSelectedSavedDeckIds(current => (
+      Array.from(new Set([...current, ...shownSavedDeckIds]))
+    ));
+  };
+
+  const handleCloseMyDecks = () => {
+    setIsMyDecksOpen(false);
+    clearSavedDeckSelection();
   };
 
   const pendingDeleteDeck = pendingDeleteDeckId ? getSavedDeckById(pendingDeleteDeckId) : null;
@@ -1849,7 +1920,7 @@ const DeckBuilder: React.FC = () => {
           role="presentation"
           onClick={(event) => {
             if (event.target === event.currentTarget) {
-              setIsMyDecksOpen(false);
+              handleCloseMyDecks();
             }
           }}
           style={{
@@ -1892,7 +1963,7 @@ const DeckBuilder: React.FC = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end', flexShrink: 0 }}>
                 <button
                   type="button"
-                  onClick={() => setIsMyDecksOpen(false)}
+                  onClick={handleCloseMyDecks}
                   style={{
                     padding: '0.45rem 0.75rem',
                     borderRadius: 'var(--radius-md)',
@@ -1922,6 +1993,46 @@ const DeckBuilder: React.FC = () => {
                 >
                   Save As New
                 </button>
+                {filteredSavedDecks.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isSavedDeckSelectMode) {
+                        clearSavedDeckSelection();
+                        return;
+                      }
+                      setIsSavedDeckSelectMode(true);
+                    }}
+                    style={{
+                      padding: '0.45rem 0.75rem',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid var(--border-light)',
+                      background: isSavedDeckSelectMode ? 'var(--bg-overlay)' : 'var(--bg-surface)',
+                      color: 'var(--text-main)',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {isSavedDeckSelectMode ? 'Cancel Selection' : 'Select'}
+                  </button>
+                )}
+                {savedDecks.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteAllSavedDecksDialog(true)}
+                    style={{
+                      padding: '0.45rem 0.75rem',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid rgba(248, 113, 113, 0.45)',
+                      background: 'rgba(239, 68, 68, 0.12)',
+                      color: '#fca5a5',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Delete All
+                  </button>
+                )}
               </div>
             </div>
 
@@ -1948,6 +2059,59 @@ const DeckBuilder: React.FC = () => {
               </span>
             </div>
 
+            {isSavedDeckSelectMode && filteredSavedDecks.length > 0 && (
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  flexWrap: 'wrap',
+                  padding: '0.75rem 0.9rem',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'rgba(15, 23, 42, 0.45)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                }}
+              >
+                <span style={{ color: 'var(--text-main)', fontSize: '0.85rem', fontWeight: 700 }}>
+                  {selectedSavedDeckIds.length} selected
+                </span>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
+                    onClick={handleToggleShownSavedDeckSelection}
+                    style={{
+                      padding: '0.45rem 0.7rem',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid var(--border-light)',
+                      background: 'var(--bg-overlay)',
+                      color: 'var(--text-main)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {areAllShownSavedDecksSelected ? 'Clear Selection' : 'Select All Shown'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteSelectedSavedDecksDialog(true)}
+                    disabled={selectedSavedDeckIds.length === 0}
+                    style={{
+                      padding: '0.45rem 0.7rem',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid rgba(248, 113, 113, 0.45)',
+                      background: selectedSavedDeckIds.length > 0 ? 'rgba(239, 68, 68, 0.12)' : 'var(--bg-surface-elevated)',
+                      color: selectedSavedDeckIds.length > 0 ? '#fca5a5' : 'var(--text-muted)',
+                      cursor: selectedSavedDeckIds.length > 0 ? 'pointer' : 'not-allowed',
+                      fontWeight: 700,
+                      opacity: selectedSavedDeckIds.length > 0 ? 1 : 0.7,
+                    }}
+                  >
+                    Delete Selected
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingRight: '0.25rem' }}>
               {filteredSavedDecks.length === 0 ? (
                 <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: '1rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
@@ -1970,6 +2134,23 @@ const DeckBuilder: React.FC = () => {
                           flexWrap: 'wrap',
                         }}
                       >
+                        {isSavedDeckSelectMode && (
+                          <label
+                            style={{
+                              display: 'flex',
+                              alignItems: 'flex-start',
+                              justifyContent: 'center',
+                              paddingTop: '0.2rem',
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              aria-label={`Select ${savedDeck.name}`}
+                              checked={selectedSavedDeckIds.includes(savedDeck.id)}
+                              onChange={() => toggleSavedDeckSelection(savedDeck.id)}
+                            />
+                          </label>
+                        )}
                         <div style={{ minWidth: 0, flex: 1 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                             <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>{savedDeck.name}</div>
@@ -2001,76 +2182,84 @@ const DeckBuilder: React.FC = () => {
                         </div>
 
                         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'flex-end' }}>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (isDirty) {
-                                setPendingLoadDeckId(savedDeck.id);
-                                return;
-                              }
+                          {isSavedDeckSelectMode ? (
+                            <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', paddingTop: '0.35rem' }}>
+                              Select decks to delete them in bulk.
+                            </span>
+                          ) : (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (isDirty) {
+                                    setPendingLoadDeckId(savedDeck.id);
+                                    return;
+                                  }
 
-                              handleLoadSavedDeck(savedDeck.id);
-                            }}
-                            style={{
-                              padding: '0.45rem 0.7rem',
-                              borderRadius: 'var(--radius-md)',
-                              border: '1px solid rgba(255,255,255,0.08)',
-                              background: 'var(--accent-primary)',
-                              color: '#fff',
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                            }}
-                          >
-                            Load
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDuplicateSavedDeck(savedDeck.id)}
-                            disabled={!canCreateNewSavedDeck}
-                            title={canCreateNewSavedDeck ? 'Duplicate saved deck' : `My Decks limit reached (${HARD_SAVED_DECK_LIMIT}). Delete or export older decks before duplicating.`}
-                            style={{
-                              padding: '0.45rem 0.7rem',
-                              borderRadius: 'var(--radius-md)',
-                              border: '1px solid var(--border-light)',
-                              background: canCreateNewSavedDeck ? 'var(--bg-overlay)' : 'var(--bg-surface-elevated)',
-                              color: canCreateNewSavedDeck ? 'var(--text-main)' : 'var(--text-muted)',
-                              cursor: canCreateNewSavedDeck ? 'pointer' : 'not-allowed',
-                              opacity: canCreateNewSavedDeck ? 1 : 0.7,
-                            }}
-                          >
-                            Duplicate
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleExportSavedDeck(savedDeck.id)}
-                            disabled={!canExport}
-                            title={canExport ? 'Export saved deck' : 'Resolve deck issues after loading before exporting'}
-                            style={{
-                              padding: '0.45rem 0.7rem',
-                              borderRadius: 'var(--radius-md)',
-                              border: '1px solid var(--border-light)',
-                              background: canExport ? 'var(--bg-overlay)' : 'var(--bg-surface-elevated)',
-                              color: canExport ? 'var(--text-main)' : 'var(--text-muted)',
-                              cursor: canExport ? 'pointer' : 'not-allowed',
-                              opacity: canExport ? 1 : 0.7,
-                            }}
-                          >
-                            Export
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setPendingDeleteDeckId(savedDeck.id)}
-                            style={{
-                              padding: '0.45rem 0.7rem',
-                              borderRadius: 'var(--radius-md)',
-                              border: '1px solid rgba(248, 113, 113, 0.45)',
-                              background: 'rgba(239, 68, 68, 0.12)',
-                              color: '#fca5a5',
-                              cursor: 'pointer',
-                            }}
-                          >
-                            Delete
-                          </button>
+                                  handleLoadSavedDeck(savedDeck.id);
+                                }}
+                                style={{
+                                  padding: '0.45rem 0.7rem',
+                                  borderRadius: 'var(--radius-md)',
+                                  border: '1px solid rgba(255,255,255,0.08)',
+                                  background: 'var(--accent-primary)',
+                                  color: '#fff',
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                Load
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDuplicateSavedDeck(savedDeck.id)}
+                                disabled={!canCreateNewSavedDeck}
+                                title={canCreateNewSavedDeck ? 'Duplicate saved deck' : `My Decks limit reached (${HARD_SAVED_DECK_LIMIT}). Delete or export older decks before duplicating.`}
+                                style={{
+                                  padding: '0.45rem 0.7rem',
+                                  borderRadius: 'var(--radius-md)',
+                                  border: '1px solid var(--border-light)',
+                                  background: canCreateNewSavedDeck ? 'var(--bg-overlay)' : 'var(--bg-surface-elevated)',
+                                  color: canCreateNewSavedDeck ? 'var(--text-main)' : 'var(--text-muted)',
+                                  cursor: canCreateNewSavedDeck ? 'pointer' : 'not-allowed',
+                                  opacity: canCreateNewSavedDeck ? 1 : 0.7,
+                                }}
+                              >
+                                Duplicate
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleExportSavedDeck(savedDeck.id)}
+                                disabled={!canExport}
+                                title={canExport ? 'Export saved deck' : 'Resolve deck issues after loading before exporting'}
+                                style={{
+                                  padding: '0.45rem 0.7rem',
+                                  borderRadius: 'var(--radius-md)',
+                                  border: '1px solid var(--border-light)',
+                                  background: canExport ? 'var(--bg-overlay)' : 'var(--bg-surface-elevated)',
+                                  color: canExport ? 'var(--text-main)' : 'var(--text-muted)',
+                                  cursor: canExport ? 'pointer' : 'not-allowed',
+                                  opacity: canExport ? 1 : 0.7,
+                                }}
+                              >
+                                Export
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setPendingDeleteDeckId(savedDeck.id)}
+                                style={{
+                                  padding: '0.45rem 0.7rem',
+                                  borderRadius: 'var(--radius-md)',
+                                  border: '1px solid rgba(248, 113, 113, 0.45)',
+                                  background: 'rgba(239, 68, 68, 0.12)',
+                                  color: '#fca5a5',
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                Delete
+                              </button>
+                            </>
+                          )}
                         </div>
                       </div>
                 ))
@@ -2212,6 +2401,144 @@ const DeckBuilder: React.FC = () => {
                 }}
               >
                 Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteSelectedSavedDecksDialog && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Delete selected saved decks confirmation"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.72)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.5rem',
+            zIndex: 1100,
+          }}
+        >
+          <div
+            className="glass-panel"
+            style={{
+              width: '100%',
+              maxWidth: '440px',
+              padding: '1.25rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.75rem',
+            }}
+          >
+            <h3 style={{ margin: 0, color: '#fca5a5' }}>Delete Selected Saved Decks</h3>
+            <p style={{ margin: 0, color: 'var(--text-main)', lineHeight: 1.5 }}>
+              Delete {selectedSavedDeckIds.length} selected saved decks from My Decks on this browser?
+            </p>
+            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem', lineHeight: 1.5 }}>
+              This keeps the current DeckBuilder contents as they are. Exported JSON files are not affected.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+              <button
+                type="button"
+                onClick={() => setShowDeleteSelectedSavedDecksDialog(false)}
+                style={{
+                  padding: '0.5rem 0.9rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border-light)',
+                  background: 'var(--bg-surface)',
+                  color: 'var(--text-main)',
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteSelectedSavedDecks}
+                style={{
+                  padding: '0.5rem 0.9rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid #dc2626',
+                  background: '#ef4444',
+                  color: '#fff',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Delete Selected
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteAllSavedDecksDialog && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Delete all saved decks confirmation"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.72)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.5rem',
+            zIndex: 1100,
+          }}
+        >
+          <div
+            className="glass-panel"
+            style={{
+              width: '100%',
+              maxWidth: '440px',
+              padding: '1.25rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.75rem',
+            }}
+          >
+            <h3 style={{ margin: 0, color: '#fca5a5' }}>Delete All Saved Decks</h3>
+            <p style={{ margin: 0, color: 'var(--text-main)', lineHeight: 1.5 }}>
+              Delete all {savedDecks.length} saved decks from My Decks on this browser?
+            </p>
+            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem', lineHeight: 1.5 }}>
+              This keeps the current DeckBuilder contents as they are. Exported JSON files are not affected.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+              <button
+                type="button"
+                onClick={() => setShowDeleteAllSavedDecksDialog(false)}
+                style={{
+                  padding: '0.5rem 0.9rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border-light)',
+                  background: 'var(--bg-surface)',
+                  color: 'var(--text-main)',
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteAllSavedDecks}
+                style={{
+                  padding: '0.5rem 0.9rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid #dc2626',
+                  background: '#ef4444',
+                  color: '#fff',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Delete All
               </button>
             </div>
           </div>
