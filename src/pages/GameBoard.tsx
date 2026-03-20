@@ -137,7 +137,7 @@ const GameBoard: React.FC = () => {
   }, [savedSessionCandidate]);
   const sidePanelWidth = 220;
   const topPanelWidth = 188;
-  const sideZoneWidth = 120;
+  const sideZoneWidth = 140;
   const centerZoneWidth = 800;
   const boardContentWidth = sideZoneWidth * 2 + centerZoneWidth;
   const boardColumns = `${sideZoneWidth}px ${centerZoneWidth}px ${sideZoneWidth}px`;

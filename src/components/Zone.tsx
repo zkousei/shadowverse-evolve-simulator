@@ -104,9 +104,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
             fontSize: '0.72rem',
             fontWeight: 'bold',
             color: 'white',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis'
+            whiteSpace: 'normal',
           }}
         >
           {displayLabel}
