@@ -23,20 +23,27 @@ function AppNavigation() {
   const location = useLocation();
   const playMenuRef = React.useRef<HTMLDivElement | null>(null);
   const [isPlayMenuOpen, setIsPlayMenuOpen] = React.useState(false);
+  const langMenuRef = React.useRef<HTMLDivElement | null>(null);
+  const [isLangMenuOpen, setIsLangMenuOpen] = React.useState(false);
   const [roomId, setRoomId] = React.useState('');
 
   React.useEffect(() => {
-    if (!isPlayMenuOpen) return undefined;
+    if (!isPlayMenuOpen && !isLangMenuOpen) return undefined;
 
     const handlePointerDown = (event: MouseEvent) => {
-      if (!playMenuRef.current?.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (isPlayMenuOpen && !playMenuRef.current?.contains(target)) {
         setIsPlayMenuOpen(false);
+      }
+      if (isLangMenuOpen && !langMenuRef.current?.contains(target)) {
+        setIsLangMenuOpen(false);
       }
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setIsPlayMenuOpen(false);
+        setIsLangMenuOpen(false);
       }
     };
 
@@ -46,10 +53,11 @@ function AppNavigation() {
       window.removeEventListener('mousedown', handlePointerDown);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isPlayMenuOpen]);
+  }, [isPlayMenuOpen, isLangMenuOpen]);
 
   React.useEffect(() => {
     setIsPlayMenuOpen(false);
+    setIsLangMenuOpen(false);
     setRoomId('');
   }, [location.pathname, location.search]);
 
@@ -69,9 +77,9 @@ function AppNavigation() {
 
   const { t, i18n } = useTranslation();
 
-  const toggleLanguage = () => {
-    const nextLang = i18n.language === 'en' ? 'ja' : 'en';
-    i18n.changeLanguage(nextLang);
+  const handleLanguageChange = (lang: string) => {
+    i18n.changeLanguage(lang);
+    setIsLangMenuOpen(false);
   };
 
   return (
@@ -188,22 +196,89 @@ function AppNavigation() {
           </div>
         )}
       </div>
-      <button
-        type="button"
-        onClick={toggleLanguage}
-        style={{
-          padding: '0.4rem 0.75rem',
-          borderRadius: 'var(--radius-md)',
-          border: '1px solid var(--border-light)',
-          background: 'var(--bg-surface-elevated)',
-          color: 'var(--text-main)',
-          fontSize: '0.85rem',
-          fontWeight: 'bold',
-          cursor: 'pointer',
-        }}
-      >
-        {i18n.language === 'en' ? '日本語' : 'English'}
-      </button>
+      <div ref={langMenuRef} style={{ position: 'relative' }}>
+        <button
+          type="button"
+          onClick={() => setIsLangMenuOpen(current => !current)}
+          aria-haspopup="listbox"
+          aria-expanded={isLangMenuOpen}
+          style={{
+            padding: '0.45rem 0.75rem',
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid var(--border-light)',
+            background: 'var(--bg-surface-elevated)',
+            color: 'var(--text-main)',
+            fontSize: '0.85rem',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            transition: 'border-color var(--transition-fast)',
+          }}
+        >
+          <span>{i18n.language === 'en' ? 'English' : '日本語'}</span>
+          <svg
+            width="10"
+            height="6"
+            viewBox="0 0 10 6"
+            fill="none"
+            style={{ transform: isLangMenuOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }}
+          >
+            <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+        {isLangMenuOpen && (
+          <div
+            role="listbox"
+            className="glass-panel"
+            style={{
+              position: 'absolute',
+              top: 'calc(100% + 0.5rem)',
+              right: 0,
+              minWidth: '120px',
+              padding: '0.4rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.2rem',
+              zIndex: 1000,
+              background: 'rgba(26, 29, 36, 0.96)',
+              boxShadow: 'var(--shadow-md)',
+            }}
+          >
+            {[
+              { code: 'en', label: 'English' },
+              { code: 'ja', label: '日本語' },
+            ].map(lang => (
+              <button
+                key={lang.code}
+                type="button"
+                role="option"
+                aria-selected={i18n.language === lang.code}
+                onClick={() => handleLanguageChange(lang.code)}
+                style={{
+                  padding: '0.5rem 0.75rem',
+                  borderRadius: 'var(--radius-md)',
+                  color: i18n.language === lang.code ? 'var(--text-main)' : 'var(--text-muted)',
+                  background: i18n.language === lang.code ? 'rgba(59, 130, 246, 0.15)' : 'none',
+                  textAlign: 'left',
+                  fontSize: '0.85rem',
+                  fontWeight: i18n.language === lang.code ? 700 : 400,
+                  transition: 'all var(--transition-fast)',
+                }}
+                onMouseEnter={e => {
+                  if (i18n.language !== lang.code) e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                }}
+                onMouseLeave={e => {
+                  if (i18n.language !== lang.code) e.currentTarget.style.background = 'none';
+                }}
+              >
+                {lang.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </nav>
   );
 }
