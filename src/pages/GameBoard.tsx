@@ -2192,6 +2192,7 @@ const GameBoard: React.FC = () => {
         isOpen={searchZone !== null}
         onClose={() => setSearchZone(null)}
         title={searchZone?.title || ''}
+        zoneId={searchZone?.id}
         allowHandExtraction={gameState.gameStatus === 'playing'}
         readOnly={searchZone?.id.startsWith('leader-') ?? false}
         cardDetailLookup={cardDetailLookup}
