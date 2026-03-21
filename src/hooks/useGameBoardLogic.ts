@@ -180,6 +180,11 @@ export const useGameBoardLogic = () => {
   const cardPlayMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const turnMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingLookTopSummaryLinesRef = useRef<string[] | null>(null);
+  // Tracks whether the Look Top reveal overlay is currently open.
+  // Used inside playSharedUiEffect WITHOUT being a React dep so that
+  // setRevealedCardsOverlay does NOT cascade into setupConnection -> PeerJS
+  // useEffect -> peer.destroy() (which caused the transient reconnection bug).
+  const revealTopIsActiveRef = useRef(false);
   const processedEventDeduperRef = useRef(createEventDeduper());
 
   const applyLocalState = useCallback((newState: SyncState) => {
@@ -220,8 +225,8 @@ export const useGameBoardLogic = () => {
     setTopDeckCards([]);
   }, []);
 
-  const sendSnapshot = useCallback((state: SyncState, source: PlayerRole) => {
-    sendMessage({ type: 'STATE_SNAPSHOT', state, source });
+  const sendSnapshot = useCallback((state: SyncState, source: PlayerRole, effects?: SharedUiEffect[]) => {
+    sendMessage({ type: 'STATE_SNAPSHOT', state, source, pendingEffects: effects?.length ? effects : undefined });
   }, [sendMessage]);
 
   const sendSnapshotToCurrentConnection = useCallback((state: SyncState, source: PlayerRole) => {
@@ -359,12 +364,14 @@ export const useGameBoardLogic = () => {
       clearRevealedCardsTimer();
       const pendingSummary = pendingLookTopSummaryLinesRef.current ?? [];
       pendingLookTopSummaryLinesRef.current = null;
+      revealTopIsActiveRef.current = true;
       setRevealedCardsOverlay({
         title: `${getSharedActorLabel(effect.actor, role, isSoloMode)} revealed from Look Top`,
         cards: effect.cards,
         summaryLines: pendingSummary,
       });
       revealedCardsTimeoutRef.current = setTimeout(() => {
+        revealTopIsActiveRef.current = false;
         setRevealedCardsOverlay(null);
         revealedCardsTimeoutRef.current = null;
       }, 5000);
@@ -488,7 +495,7 @@ export const useGameBoardLogic = () => {
     if (effect.type === 'LOOK_TOP_RESOLVED') {
       const summaryLines = formatSharedUiMessage(effect, role, isSoloMode).split('\n').filter(Boolean);
       pushEventHistory(summaryLines.join('\n'));
-      if (revealedCardsOverlay?.title.includes('revealed from Look Top')) {
+      if (revealTopIsActiveRef.current) {
         // Overlay is already open — update it with the summary.
         setRevealedCardsOverlay((previous) => {
           if (!previous || !previous.title.includes('revealed from Look Top')) return previous;
@@ -540,7 +547,7 @@ export const useGameBoardLogic = () => {
       }, 800);
       diceFinalizeTimeoutRef.current = null;
     }, 900);
-  }, [clearAttackMessageTimer, clearCoinMessageTimer, clearDiceTimers, clearRevealedCardsTimer, isSoloMode, pushEventHistory, revealedCardsOverlay, role, showTimedCardPlayMessage, showTimedCoinMessage]);
+  }, [clearAttackMessageTimer, clearCoinMessageTimer, clearDiceTimers, clearRevealedCardsTimer, isSoloMode, pushEventHistory, role, showTimedCardPlayMessage, showTimedCoinMessage]);
 
   const maybeApplySnapshot = useCallback((incomingState: SyncState, source: PlayerRole) => {
     if (!isHost && source === 'host' && awaitingInitialSnapshotRef.current) {
@@ -594,19 +601,24 @@ export const useGameBoardLogic = () => {
     const nextState = applyGameSyncEvent(currentState, event, requester);
     if (nextState === currentState) return;
     applyLocalState(nextState);
-    sendSnapshot(nextState, role);
 
     if (event.type === 'RESOLVE_TOP_DECK') {
+      // Embed SharedUiEffects into the snapshot so everything is sent in one
+      // WebRTC message instead of three, eliminating data-channel congestion.
+      const pendingEffects: SharedUiEffect[] = [];
       const revealEffect = buildTopDeckRevealEffect(currentState.cards, event.actor, event.results);
       if (revealEffect) {
         playSharedUiEffect(revealEffect);
-        sendSharedUiEffect(revealEffect);
+        pendingEffects.push(revealEffect);
       }
       const summaryEffect = buildTopDeckSummaryEffect(currentState.cards, event.actor, event.results);
       if (summaryEffect) {
         playSharedUiEffect(summaryEffect);
-        sendSharedUiEffect(summaryEffect);
+        pendingEffects.push(summaryEffect);
       }
+      sendSnapshot(nextState, role, pendingEffects);
+    } else {
+      sendSnapshot(nextState, role);
     }
 
     if (event.type === 'EXTRACT_CARD' && event.revealToOpponent && event.destination?.startsWith('hand-')) {
@@ -917,6 +929,12 @@ export const useGameBoardLogic = () => {
       if (data.type === 'STATE_SNAPSHOT') {
         clearSnapshotRequestTimer();
         maybeApplySnapshot(data.state, data.source);
+        // Play any SharedUiEffects that were piggybacked onto this snapshot.
+        if (data.pendingEffects) {
+          for (const effect of data.pendingEffects) {
+            playSharedUiEffect(effect);
+          }
+        }
         if (!isHost && data.source === 'host') {
           resetTransientUiState();
           setStatus('Connected to host! Game ready.');

@@ -84,5 +84,5 @@ export type SharedUiEffect =
 export type SyncMessage =
   | { type: 'EVENT'; event: GameSyncEvent }
   | { type: 'REQUEST_SNAPSHOT'; lastKnownRevision: number; source: PlayerRole }
-  | { type: 'STATE_SNAPSHOT'; state: SyncState; source: PlayerRole }
+  | { type: 'STATE_SNAPSHOT'; state: SyncState; source: PlayerRole; pendingEffects?: SharedUiEffect[] }
   | { type: 'SHARED_UI_EFFECT'; effect: SharedUiEffect };
