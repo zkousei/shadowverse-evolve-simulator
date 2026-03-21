@@ -9,12 +9,14 @@ export const getZoneOwner = (zoneId: string): PlayerRole | null => {
 export const getPlayerLabel = (
   role: PlayerRole,
   isSoloMode: boolean,
-  fallbackSelf: string,
-  fallbackOpponent: string,
-  currentRole: PlayerRole
+  selfLabel: string,
+  opponentLabel: string,
+  currentRole: PlayerRole,
+  player1Label: string,
+  player2Label: string
 ): string => {
   if (!isSoloMode) {
-    return role === currentRole ? fallbackSelf : fallbackOpponent;
+    return role === currentRole ? selfLabel : opponentLabel;
   }
-  return role === 'host' ? 'Player 1' : 'Player 2';
+  return role === 'host' ? player1Label : player2Label;
 };

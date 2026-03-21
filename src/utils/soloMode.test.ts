@@ -9,12 +9,12 @@ describe('soloMode helpers', () => {
   });
 
   it('returns solo labels as player numbers', () => {
-    expect(getPlayerLabel('host', true, 'My', 'Opponent', 'host')).toBe('Player 1');
-    expect(getPlayerLabel('guest', true, 'My', 'Opponent', 'host')).toBe('Player 2');
+    expect(getPlayerLabel('host', true, 'My', 'Opponent', 'host', 'Player 1', 'Player 2')).toBe('Player 1');
+    expect(getPlayerLabel('guest', true, 'My', 'Opponent', 'host', 'Player 1', 'Player 2')).toBe('Player 2');
   });
 
   it('returns p2p labels relative to the current role', () => {
-    expect(getPlayerLabel('host', false, 'My', 'Opponent', 'host')).toBe('My');
-    expect(getPlayerLabel('guest', false, 'My', 'Opponent', 'host')).toBe('Opponent');
+    expect(getPlayerLabel('host', false, 'My', 'Opponent', 'host', 'Player 1', 'Player 2')).toBe('My');
+    expect(getPlayerLabel('guest', false, 'My', 'Opponent', 'host', 'Player 1', 'Player 2')).toBe('Opponent');
   });
 });

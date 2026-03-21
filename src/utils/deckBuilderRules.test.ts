@@ -496,9 +496,9 @@ describe('deckBuilderRules', () => {
 
     expect(messages).toEqual(
       expect.arrayContaining([
-        'Main Deck must contain at least 40 cards (4/40).',
-        'This constructed deck requires exactly 1 leader (0/1).',
-        'Main Deck contains too many copies of Main Card (4/3).',
+        { id: 'deckBuilder.validation.mainDeckTooSmall', params: { actual: 4, expected: 40 } },
+        { id: 'deckBuilder.validation.invalidLeaderCount', params: { format: 'constructed', actual: 0, expected: 1 } },
+        { id: 'deckBuilder.validation.tooManyCopies', params: { deckI18nKey: 'deckBuilder.deckArea.mainDeck', cardName: 'Main Card', actual: 4, expected: 3 } },
       ])
     );
   });
@@ -516,8 +516,8 @@ describe('deckBuilderRules', () => {
 
     expect(messages).toEqual(
       expect.arrayContaining([
-        'Main Deck must contain at least 40 cards (7/40).',
-        'Main Deck contains too many copies of ラピッドファイア (7/6).',
+        { id: 'deckBuilder.validation.mainDeckTooSmall', params: { actual: 7, expected: 40 } },
+        { id: 'deckBuilder.validation.tooManyCopies', params: { deckI18nKey: 'deckBuilder.deckArea.mainDeck', cardName: 'ラピッドファイア', actual: 7, expected: 6 } },
       ])
     );
   });
@@ -536,9 +536,9 @@ describe('deckBuilderRules', () => {
 
     expect(messages).toEqual(
       expect.arrayContaining([
-        'Main Deck must contain at least 40 cards (3/40).',
-        '運命への反逆 is banned in constructed.',
-        'お菓子の家 is limited to 1 copy in constructed (2/1).',
+        { id: 'deckBuilder.validation.mainDeckTooSmall', params: { actual: 3, expected: 40 } },
+        { id: 'deckBuilder.validation.banned', params: { cardName: '運命への反逆', format: 'constructed' } },
+        { id: 'deckBuilder.validation.limited', params: { cardName: 'お菓子の家', format: 'constructed', actual: 2 } },
       ])
     );
   });

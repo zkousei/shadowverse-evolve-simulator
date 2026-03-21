@@ -499,7 +499,6 @@ export const useGameBoardLogic = () => {
       } else {
         const message = summaryLines.join('\n');
         showTimedCardPlayMessage(message, 3200);
-        pushEventHistory(message);
       }
       return;
     }

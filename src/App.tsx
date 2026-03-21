@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Home from './pages/Home';
 import DeckBuilder from './pages/DeckBuilder';
 import GameBoard from './pages/GameBoard';
@@ -66,6 +67,13 @@ function AppNavigation() {
     navigate(`/game?host=false&room=${roomId.trim()}`);
   };
 
+  const { t, i18n } = useTranslation();
+
+  const toggleLanguage = () => {
+    const nextLang = i18n.language === 'en' ? 'ja' : 'en';
+    i18n.changeLanguage(nextLang);
+  };
+
   return (
     <nav style={{
       padding: '1rem 2rem',
@@ -79,8 +87,8 @@ function AppNavigation() {
       <div style={{ fontFamily: 'Outfit', fontSize: '1.25rem', fontWeight: 'bold', marginRight: 'auto' }}>
         Shadowverse Evolve Tabletop
       </div>
-      <Link to="/" style={navLinkStyle}>Home</Link>
-      <Link to="/deck-builder" style={navLinkStyle}>Deck Builder</Link>
+      <Link to="/" style={navLinkStyle}>{t('nav.home')}</Link>
+      <Link to="/deck-builder" style={navLinkStyle}>{t('nav.deckBuilder')}</Link>
       <div ref={playMenuRef} style={{ position: 'relative' }}>
         <button
           type="button"
@@ -89,7 +97,7 @@ function AppNavigation() {
           aria-expanded={isPlayMenuOpen}
           style={menuButtonStyle}
         >
-          Play
+          {t('nav.play')}
         </button>
         {isPlayMenuOpen && (
           <div
@@ -123,7 +131,7 @@ function AppNavigation() {
                 fontWeight: 700,
               }}
             >
-              Solo
+              {t('nav.solo')}
             </button>
             <button
               type="button"
@@ -138,11 +146,11 @@ function AppNavigation() {
                 fontWeight: 700,
               }}
             >
-              Host Game
+              {t('nav.hostGame')}
             </button>
             <form onSubmit={handleJoinRoom} style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
               <label htmlFor="global-play-room-code" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                Join Game
+                {t('nav.joinGame')}
               </label>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <input
@@ -150,7 +158,7 @@ function AppNavigation() {
                   type="text"
                   value={roomId}
                   onChange={(event) => setRoomId(event.target.value)}
-                  placeholder="Room Code"
+                  placeholder={t('nav.roomCode')}
                   style={{
                     flex: 1,
                     minWidth: 0,
@@ -173,13 +181,29 @@ function AppNavigation() {
                     fontWeight: 700,
                   }}
                 >
-                  Join
+                  {t('nav.join')}
                 </button>
               </div>
             </form>
           </div>
         )}
       </div>
+      <button
+        type="button"
+        onClick={toggleLanguage}
+        style={{
+          padding: '0.4rem 0.75rem',
+          borderRadius: 'var(--radius-md)',
+          border: '1px solid var(--border-light)',
+          background: 'var(--bg-surface-elevated)',
+          color: 'var(--text-main)',
+          fontSize: '0.85rem',
+          fontWeight: 'bold',
+          cursor: 'pointer',
+        }}
+      >
+        {i18n.language === 'en' ? '日本語' : 'English'}
+      </button>
     </nav>
   );
 }

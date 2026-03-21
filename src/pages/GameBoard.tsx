@@ -1,5 +1,6 @@
 import React from 'react';
 import { DndContext } from '@dnd-kit/core';
+import { useTranslation } from 'react-i18next';
 import Zone from '../components/Zone';
 import type { CardInspectAnchor, CardInstance } from '../components/Card';
 import CardSearchModal from '../components/CardSearchModal';
@@ -28,37 +29,38 @@ type LegalSavedDeckOption = {
   counts: string;
 };
 
-const formatSavedDeckRuleSummary = (deck: SavedDeckRecordV1): string => {
+const formatSavedDeckRuleSummary = (deck: SavedDeckRecordV1, t: any): string => {
   if (deck.ruleConfig.format === 'constructed') {
     if (deck.ruleConfig.identityType === 'title' && deck.ruleConfig.selectedTitle) {
-      return `Constructed / Title: ${deck.ruleConfig.selectedTitle}`;
+      return t('gameBoard.deckRules.constructedTitle', { title: deck.ruleConfig.selectedTitle });
     }
 
-    return `Constructed / Class: ${deck.ruleConfig.selectedClass ?? 'Unselected'}`;
+    return t('gameBoard.deckRules.constructedClass', { class: deck.ruleConfig.selectedClass ?? t('gameBoard.deckRules.unselected') });
   }
 
   if (deck.ruleConfig.format === 'crossover') {
     const [firstClass, secondClass] = deck.ruleConfig.selectedClasses;
-    return `Crossover / ${firstClass ?? '?'} + ${secondClass ?? '?'}`;
+    return t('gameBoard.deckRules.crossover', { firstClass: firstClass ?? '?', secondClass: secondClass ?? '?' });
   }
 
-  return 'Other';
+  return t('gameBoard.deckRules.other');
 };
 
-const formatSavedDeckCounts = (deck: SavedDeckRecordV1): string => {
+const formatSavedDeckCounts = (deck: SavedDeckRecordV1, t: any): string => {
   const countSection = (section: SavedDeckRecordV1['sections'][keyof SavedDeckRecordV1['sections']]) => (
     section.reduce((total, ref) => total + ref.count, 0)
   );
 
   return [
-    `Main ${countSection(deck.sections.main)}`,
-    `Evolve ${countSection(deck.sections.evolve)}`,
-    `Leader ${countSection(deck.sections.leader)}`,
-    `Token ${countSection(deck.sections.token)}`,
+    `${t('gameBoard.deckRules.main')} ${countSection(deck.sections.main)}`,
+    `${t('gameBoard.deckRules.evolve')} ${countSection(deck.sections.evolve)}`,
+    `${t('gameBoard.deckRules.leader')} ${countSection(deck.sections.leader)}`,
+    `${t('gameBoard.deckRules.token')} ${countSection(deck.sections.token)}`,
   ].join(' / ');
 };
 
 const GameBoard: React.FC = () => {
+  const { t } = useTranslation();
   const {
     room, isSoloMode, isHost, role, status, connectionState, canInteract, attemptReconnect, gameState, savedSessionCandidate, resumeSavedSession, discardSavedSession, searchZone, setSearchZone,
     showResetConfirm, setShowResetConfirm, coinMessage, turnMessage, cardPlayMessage, attackMessage, eventHistory, attackVisual, revealedCardsOverlay,
@@ -100,10 +102,26 @@ const GameBoard: React.FC = () => {
   const canImportTopDeck = canImportDeck(gameState, topRole);
   const canImportBottomDeck = canImportDeck(gameState, bottomRole);
   const savedDeckPickerUnavailableTitle = !canOpenSavedDeckPicker
-    ? 'Loading card catalog... Please wait a moment.'
-    : 'Available while preparing decks before the game starts.';
-  const topLabel = getPlayerLabel(topRole, isSoloMode, 'My', 'Opponent', role);
-  const bottomLabel = getPlayerLabel(bottomRole, isSoloMode, 'My', 'Opponent', role);
+    ? t('gameBoard.status.loadingCatalog')
+    : t('gameBoard.status.availableBeforeStart');
+  const topLabel = getPlayerLabel(
+    topRole,
+    isSoloMode,
+    t('common.labels.self'),
+    t('common.labels.opponent'),
+    role,
+    t('common.labels.player1'),
+    t('common.labels.player2')
+  );
+  const bottomLabel = getPlayerLabel(
+    bottomRole,
+    isSoloMode,
+    t('common.labels.self'),
+    t('common.labels.opponent'),
+    role,
+    t('common.labels.player1'),
+    t('common.labels.player2')
+  );
   const searchTargetRole = searchZone ? getZoneOwner(searchZone.id) ?? role : role;
   const currentTurnLabel = gameState.turnPlayer === bottomRole ? bottomLabel : topLabel;
   const canUndoTurn = canUndoLastTurn(gameState, lastGameState, role, isSoloMode);
@@ -112,20 +130,20 @@ const GameBoard: React.FC = () => {
   const canResetGame = isSoloMode || isHost;
   const isGuestConnectionBlocked = !isSoloMode && !isHost && !canInteract;
   const connectionBadgeTone = connectionState === 'connected'
-    ? { label: 'Connected', background: 'rgba(16, 185, 129, 0.18)', border: 'rgba(16, 185, 129, 0.38)', color: '#d1fae5' }
+    ? { label: t('gameBoard.status.connected'), background: 'rgba(16, 185, 129, 0.18)', border: 'rgba(16, 185, 129, 0.38)', color: '#d1fae5' }
     : connectionState === 'reconnecting' || connectionState === 'connecting'
-      ? { label: 'Reconnecting', background: 'rgba(245, 158, 11, 0.18)', border: 'rgba(245, 158, 11, 0.38)', color: '#fde68a' }
-      : { label: 'Disconnected', background: 'rgba(239, 68, 68, 0.18)', border: 'rgba(239, 68, 68, 0.38)', color: '#fecaca' };
+      ? { label: t('gameBoard.status.reconnecting'), background: 'rgba(245, 158, 11, 0.18)', border: 'rgba(245, 158, 11, 0.38)', color: '#fde68a' }
+      : { label: t('gameBoard.status.disconnected'), background: 'rgba(239, 68, 68, 0.18)', border: 'rgba(239, 68, 68, 0.38)', color: '#fecaca' };
   const interactionBlockedTitle = isGuestConnectionBlocked
     ? (connectionState === 'connecting' || connectionState === 'reconnecting'
-      ? 'Reconnecting to host. Please wait.'
-      : 'Connection to host is required.')
+      ? t('gameBoard.status.reconnectingTitle')
+      : t('gameBoard.status.connectionRequired'))
     : undefined;
   const savedSessionTimestamp = React.useMemo(() => {
     if (!savedSessionCandidate) return null;
 
     try {
-      return new Date(savedSessionCandidate.savedAt).toLocaleString('ja-JP', {
+      return new Date(savedSessionCandidate.savedAt).toLocaleString(undefined, {
         hour: '2-digit',
         minute: '2-digit',
         month: 'numeric',
@@ -302,14 +320,14 @@ const GameBoard: React.FC = () => {
             leaderCards: sanitizedDeckState.leaderCards,
             tokenDeck: sanitizedDeckState.tokenDeck,
           },
-          summary: formatSavedDeckRuleSummary(deck),
-          counts: formatSavedDeckCounts(deck),
+          summary: formatSavedDeckRuleSummary(deck, t),
+          counts: formatSavedDeckCounts(deck, t),
         } satisfies LegalSavedDeckOption;
       })
       .filter((value): value is LegalSavedDeckOption => value !== null);
 
     setSavedDeckOptions(legalDecks);
-  }, [allCards]);
+  }, [allCards, t]);
 
   const openSavedDeckPicker = React.useCallback((targetRole: PlayerRole) => {
     if (allCards.length === 0) return;
@@ -608,7 +626,7 @@ const GameBoard: React.FC = () => {
       >
         <Zone
           id={leaderZoneId}
-          label={`${label} Leader`}
+          label={t('gameBoard.board.leaderLabel', { label })}
           cards={leaderCards}
           cardDetailLookup={cardDetailLookup}
           layout="stack"
@@ -625,7 +643,7 @@ const GameBoard: React.FC = () => {
         />
         {leaderCards.length >= 2 && (
           <button
-            onClick={() => openSearchZone(leaderZoneId, `${label} Leader`)}
+            onClick={() => openSearchZone(leaderZoneId, t('gameBoard.board.leaderLabel', { label }))}
             style={{
               width: '100%',
               marginTop: '4px',
@@ -638,7 +656,7 @@ const GameBoard: React.FC = () => {
               cursor: 'pointer',
             }}
           >
-            Search
+            {t('gameBoard.board.search')}
           </button>
         )}
       </div>
@@ -666,7 +684,7 @@ const GameBoard: React.FC = () => {
           zIndex: 61
         }}
       >
-        Actions
+        {t('gameBoard.board.actions')}
       </button>
       {activeZoneActions === menuId && (
         <div style={{
@@ -739,30 +757,30 @@ const GameBoard: React.FC = () => {
 
       return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.8rem', padding: '0.6rem', background: 'rgba(255,255,255,0.04)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
-      <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'white' }}>{label} Status</div>
+      <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'white' }}>{t('gameBoard.board.statusLabel', { label })}</div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ color: '#ef4444', fontWeight: 'bold' }}>HP: {gameState[playerRole].hp}</span>
+        <span style={{ color: '#ef4444', fontWeight: 'bold' }}>{t('gameBoard.board.stats.hp')}: {gameState[playerRole].hp}</span>
         <div style={trackerButtonRowStyle}>
           <button onClick={() => handleStatChange(playerRole, 'hp', 1)} style={trackerIncreaseButtonStyle}>+</button>
           <button onClick={() => handleStatChange(playerRole, 'hp', -1)} style={trackerDecreaseButtonStyle}>-</button>
         </div>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ color: '#fbbf24', fontWeight: 'bold' }}>EP: {gameState[playerRole].ep}</span>
+        <span style={{ color: '#fbbf24', fontWeight: 'bold' }}>{t('gameBoard.board.stats.ep')}: {gameState[playerRole].ep}</span>
         <div style={trackerButtonRowStyle}>
           <button onClick={() => handleStatChange(playerRole, 'ep', 1)} style={trackerIncreaseButtonStyle}>+</button>
           <button onClick={() => handleStatChange(playerRole, 'ep', -1)} style={trackerDecreaseButtonStyle}>-</button>
         </div>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ color: '#facc15', fontWeight: 'bold' }}>SEP: {gameState[playerRole].sep}</span>
+        <span style={{ color: '#facc15', fontWeight: 'bold' }}>{t('gameBoard.board.stats.sep')}: {gameState[playerRole].sep}</span>
         <div style={trackerButtonRowStyle}>
           <button onClick={() => handleStatChange(playerRole, 'sep', 1)} style={trackerIncreaseButtonStyle}>+</button>
           <button onClick={() => handleStatChange(playerRole, 'sep', -1)} style={trackerDecreaseButtonStyle}>-</button>
         </div>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ color: '#fff', fontWeight: 'bold' }}>Combo: {gameState[playerRole].combo}</span>
+        <span style={{ color: '#fff', fontWeight: 'bold' }}>{t('gameBoard.board.stats.combo')}: {gameState[playerRole].combo}</span>
         <div style={trackerButtonRowStyle}>
           <button onClick={() => handleStatChange(playerRole, 'combo', 1)} style={trackerIncreaseButtonStyle}>+</button>
           <button onClick={() => handleStatChange(playerRole, 'combo', -1)} style={trackerDecreaseButtonStyle}>-</button>
@@ -772,11 +790,11 @@ const GameBoard: React.FC = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
             <button onClick={() => handleStatChange(playerRole, 'maxPp', 1)} style={{ ...trackerIncreaseButtonStyle, width: '24px', height: '20px', minWidth: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, fontSize: '0.75rem' }}>+</button>
-            <span style={{ fontSize: '0.6rem', color: '#93c5fd', fontWeight: 'bold' }}>MAX</span>
+            <span style={{ fontSize: '0.6rem', color: '#93c5fd', fontWeight: 'bold' }}>{t('gameBoard.board.stats.max')}</span>
             <button onClick={() => handleStatChange(playerRole, 'maxPp', -1)} style={{ ...trackerDecreaseButtonStyle, width: '24px', height: '20px', minWidth: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, fontSize: '0.75rem' }}>-</button>
           </div>
           <div style={{ textAlign: 'center', flex: 1 }}>
-            <div style={{ fontSize: '0.7rem', color: '#3b82f6', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '-2px' }}>Play Points</div>
+            <div style={{ fontSize: '0.7rem', color: '#3b82f6', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '-2px' }}>{t('gameBoard.board.stats.playPoints')}</div>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '2px' }}>
               <span style={{ color: '#3b82f6', fontWeight: '900', fontSize: '1.75rem' }}>{gameState[playerRole].pp}</span>
               <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '1rem', fontWeight: 'bold' }}>/</span>
@@ -807,7 +825,7 @@ const GameBoard: React.FC = () => {
       border: '1px solid rgba(255,255,255,0.12)'
     }}>
       <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#fff' }}>
-        {label} Status
+        {t('gameBoard.board.statusLabel', { label })}
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', fontSize: '0.95rem' }}>
         <span>HP</span>
@@ -840,7 +858,7 @@ const GameBoard: React.FC = () => {
       <button
         onClick={() => endTurn(playerRole)}
         disabled={!isEnabled}
-        title={!isEnabled ? interactionBlockedTitle ?? 'Available during your turn only.' : undefined}
+        title={!isEnabled ? interactionBlockedTitle ?? t('gameBoard.board.endTurnDisabled') : undefined}
         className="glass-panel"
         style={{
           padding: '0.5rem',
@@ -851,7 +869,7 @@ const GameBoard: React.FC = () => {
           cursor: isEnabled ? 'pointer' : 'not-allowed'
         }}
       >
-        End {label} Turn
+        {t('gameBoard.board.endTurn', { label })}
       </button>
     );
   };
@@ -899,7 +917,7 @@ const GameBoard: React.FC = () => {
               fontWeight: 'bold'
             }}
           >
-            Close
+            {t('gameBoard.inspector.close')}
           </button>
         </div>
 
@@ -923,13 +941,13 @@ const GameBoard: React.FC = () => {
           />
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', minWidth: 0, flex: 1 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '60px 1fr', gap: '0.16rem 0.45rem', color: '#e2e8f0', fontSize: '0.76rem' }}>
-              <span style={{ color: '#94a3b8' }}>ID</span>
+              <span style={{ color: '#94a3b8' }}>{t('gameBoard.inspector.id')}</span>
               <span>{selectedInspectorCard.cardId}</span>
-              <span style={{ color: '#94a3b8' }}>Cost</span>
+              <span style={{ color: '#94a3b8' }}>{t('gameBoard.inspector.cost')}</span>
               <span>{detail?.cost || '-'}</span>
               {inspectorStats && (
                 <>
-                  <span style={{ color: '#94a3b8' }}>Stats</span>
+                  <span style={{ color: '#94a3b8' }}>{t('gameBoard.inspector.stats')}</span>
                   <span>{inspectorStats}</span>
                 </>
               )}
@@ -942,7 +960,7 @@ const GameBoard: React.FC = () => {
           paddingTop: '0.75rem'
         }}>
           <div style={{ color: '#f8fafc', fontWeight: 700, fontSize: '0.82rem', marginBottom: '0.45rem' }}>
-            Ability Text
+            {t('gameBoard.inspector.abilityText')}
           </div>
           <div style={{
             whiteSpace: 'pre-wrap',
@@ -954,7 +972,7 @@ const GameBoard: React.FC = () => {
             padding: '0.75rem',
             border: '1px solid rgba(255,255,255,0.08)'
           }}>
-            {detail?.abilityText ? formatAbilityText(detail.abilityText) : 'このカードの詳細テキストは見つかりませんでした。'}
+            {detail?.abilityText ? formatAbilityText(detail.abilityText) : t('gameBoard.inspector.noAbilityText')}
           </div>
         </div>
       </div>
@@ -964,7 +982,15 @@ const GameBoard: React.FC = () => {
   const renderSavedDeckPicker = () => {
     if (!savedDeckImportTargetRole) return null;
 
-    const targetLabel = getPlayerLabel(savedDeckImportTargetRole, isSoloMode, 'My', 'Opponent', role);
+    const targetLabel = getPlayerLabel(
+      savedDeckImportTargetRole,
+      isSoloMode,
+      t('common.labels.self'),
+      t('common.labels.opponent'),
+      role,
+      t('common.labels.player1'),
+      t('common.labels.player2')
+    );
 
     return (
       <div
@@ -988,7 +1014,7 @@ const GameBoard: React.FC = () => {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Load from My Decks"
+          aria-label={t('gameBoard.deckPicker.title')}
           onClick={(event) => event.stopPropagation()}
           className="glass-panel"
           style={{
@@ -1003,9 +1029,9 @@ const GameBoard: React.FC = () => {
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
             <div>
-              <h3 style={{ margin: 0 }}>Load from My Decks</h3>
+              <h3 style={{ margin: 0 }}>{t('gameBoard.deckPicker.title')}</h3>
               <p style={{ margin: '0.25rem 0 0 0', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                Legal saved decks for {targetLabel}
+                {t('gameBoard.deckPicker.subtitle', { label: targetLabel })}
               </p>
             </div>
             <button
@@ -1020,7 +1046,7 @@ const GameBoard: React.FC = () => {
                 cursor: 'pointer',
               }}
             >
-              Close
+              {t('gameBoard.deckPicker.close')}
             </button>
           </div>
 
@@ -1029,8 +1055,8 @@ const GameBoard: React.FC = () => {
               type="text"
               value={savedDeckSearch}
               onChange={(event) => setSavedDeckSearch(event.target.value)}
-              placeholder="Search by deck name..."
-              aria-label="Search saved decks"
+              placeholder={t('gameBoard.deckPicker.searchPlaceholder')}
+              aria-label={t('gameBoard.deckPicker.searchAria')}
               style={{
                 flex: 1,
                 minWidth: '220px',
@@ -1043,14 +1069,14 @@ const GameBoard: React.FC = () => {
               }}
             />
             <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-              {filteredSavedDeckOptions.length} decks
+              {t('gameBoard.deckPicker.deckCount', { count: filteredSavedDeckOptions.length })}
             </span>
           </div>
 
           <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingRight: '0.25rem' }}>
             {filteredSavedDeckOptions.length === 0 ? (
               <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: '1rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-                No legal saved decks are available in this browser.
+                {t('gameBoard.deckPicker.noDecks')}
               </div>
             ) : (
               filteredSavedDeckOptions.map(option => (
@@ -1085,7 +1111,7 @@ const GameBoard: React.FC = () => {
                       cursor: 'pointer',
                     }}
                   >
-                    Load
+                    {t('gameBoard.deckPicker.load')}
                   </button>
                 </div>
               ))
@@ -1108,8 +1134,8 @@ const GameBoard: React.FC = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-surface)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)' }}>
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
             <span>
-              {isSoloMode ? 'Mode' : 'Room'}:{' '}
-              <strong>{isSoloMode ? 'Solo Play Beta' : room}</strong>
+              {isSoloMode ? t('gameBoard.header.mode') : t('gameBoard.header.room')}:{' '}
+              <strong>{isSoloMode ? t('gameBoard.header.soloPlayBeta') : room}</strong>
             </span>
             {!isSoloMode && (
               <button
@@ -1126,9 +1152,9 @@ const GameBoard: React.FC = () => {
                   fontWeight: 'bold',
                   transition: 'all 0.2s ease'
                 }}
-                title="Copy room ID"
+                title={t('gameBoard.room.copyAria')}
               >
-                {isRoomCopied ? 'Copied' : 'Copy'}
+                {isRoomCopied ? t('gameBoard.room.copied') : t('gameBoard.room.copy')}
               </button>
             )}
             {isSoloMode && (
@@ -1164,7 +1190,7 @@ const GameBoard: React.FC = () => {
               <button
                 onClick={attemptReconnect}
                 disabled={connectionState === 'connecting'}
-                title={connectionState === 'connecting' ? 'Attempting to reconnect to host.' : 'Retry the connection now.'}
+                title={connectionState === 'connecting' ? t('gameBoard.header.reconnectMessageConnecting') : t('gameBoard.header.reconnectMessageRetry')}
                 style={{
                   padding: '0.3rem 0.6rem',
                   background: '#334155',
@@ -1176,7 +1202,7 @@ const GameBoard: React.FC = () => {
                   opacity: connectionState === 'connecting' ? 0.6 : 1
                 }}
               >
-                {connectionState === 'reconnecting' ? 'Reconnect Now' : 'Reconnect'}
+                {connectionState === 'reconnecting' ? t('gameBoard.header.reconnectNow') : t('gameBoard.header.reconnect')}
               </button>
             )}
 
@@ -1187,28 +1213,28 @@ const GameBoard: React.FC = () => {
                   disabled={!isHost && !isSoloMode}
                   style={{ padding: '0.3rem 0.5rem', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', opacity: (isHost || isSoloMode) ? 1 : 0.5 }}
                 >
-                  🪙 Decide Turn Order (Random)
+                  {t('gameBoard.controls.decideTurnOrder')}
                 </button>
                 <button
                   onClick={() => handleSetInitialTurnOrder(bottomRole)}
                   disabled={!isHost && !isSoloMode}
                   style={{ padding: '0.3rem 0.5rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', opacity: (isHost || isSoloMode) ? 1 : 0.5 }}
                 >
-                  {isSoloMode ? 'Player 1 1st' : 'Me 1st'}
+                  {isSoloMode ? t('gameBoard.controls.p1First') : t('gameBoard.controls.meFirst')}
                 </button>
                 <button
                   onClick={() => handleSetInitialTurnOrder(topRole)}
                   disabled={!isHost && !isSoloMode}
                   style={{ padding: '0.3rem 0.5rem', background: '#6366f1', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', opacity: (isHost || isSoloMode) ? 1 : 0.5 }}
                 >
-                  {isSoloMode ? 'Player 2 1st' : 'Opp 1st'}
+                  {isSoloMode ? t('gameBoard.controls.p2First') : t('gameBoard.controls.oppFirst')}
                 </button>
                 {!gameState[bottomRole].initialHandDrawn && (
                   <button
                     onClick={() => handleDrawInitialHand(bottomRole)}
                     style={{ padding: '0.3rem 0.6rem', background: '#3b82f6', color: 'white', fontWeight: 'bold', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
                   >
-                    🃏 Draw Hand (4)
+                    {t('gameBoard.controls.drawHand')}
                   </button>
                 )}
 
@@ -1222,7 +1248,7 @@ const GameBoard: React.FC = () => {
                       fontWeight: 'bold', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem'
                     }}
                   >
-                    {gameState[bottomRole].isReady ? '✕ Cancel Ready' : `✅ ${isSoloMode ? 'Player 1 Ready' : 'Ready (準備完了)'}`}
+                    {gameState[bottomRole].isReady ? t('gameBoard.controls.cancelReady') : (isSoloMode ? t('gameBoard.controls.p1Ready') : t('gameBoard.controls.ready'))}
                   </button>
                 )}
                 {isSoloMode && !gameState[topRole].initialHandDrawn && (
@@ -1230,7 +1256,7 @@ const GameBoard: React.FC = () => {
                     onClick={() => handleDrawInitialHand(topRole)}
                     style={{ padding: '0.3rem 0.6rem', background: '#6366f1', color: 'white', fontWeight: 'bold', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
                   >
-                    🃏 Draw P2 Hand (4)
+                    {t('gameBoard.controls.drawP2Hand')}
                   </button>
                 )}
                 {isSoloMode && gameState[topRole].initialHandDrawn && (
@@ -1243,7 +1269,7 @@ const GameBoard: React.FC = () => {
                       fontWeight: 'bold', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem'
                     }}
                   >
-                    {gameState[topRole].isReady ? '✕ Cancel P2 Ready' : '✅ Player 2 Ready'}
+                    {gameState[topRole].isReady ? t('gameBoard.controls.cancelP2Ready') : t('gameBoard.controls.p2Ready')}
                   </button>
                 )}
                 <button
@@ -1265,20 +1291,20 @@ const GameBoard: React.FC = () => {
                   onMouseOver={(e) => { if ((isHost || isSoloMode) && gameState.host.isReady && gameState.guest.isReady) e.currentTarget.style.filter = 'brightness(1.1)'; }}
                   onMouseOut={(e) => e.currentTarget.style.filter = 'none'}
                 >
-                  ▶ START GAME
+                  {t('gameBoard.controls.startGame')}
                 </button>
 
                 <div style={{ display: 'flex', gap: '0.8rem', marginLeft: '0.5rem', borderLeft: '1px solid var(--border-light)', paddingLeft: '0.8rem' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', fontSize: '0.65rem', alignItems: 'center' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>{isSoloMode ? 'PLAYER 1' : 'HOST'}</span>
+                    <span style={{ color: 'var(--text-muted)' }}>{isSoloMode ? t('gameBoard.controls.p1') : t('gameBoard.controls.host')}</span>
                     <span style={{ color: gameState.host.isReady ? 'var(--vivid-green-cyan)' : '#ef4444', fontWeight: 'bold' }}>
-                      {gameState.host.isReady ? 'READY' : (gameState.host.initialHandDrawn ? 'DECIDING' : 'WAITING')}
+                      {gameState.host.isReady ? t('gameBoard.controls.statusReady') : (gameState.host.initialHandDrawn ? t('gameBoard.controls.statusDeciding') : t('gameBoard.controls.statusWaiting'))}
                     </span>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', fontSize: '0.65rem', alignItems: 'center' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>{isSoloMode ? 'PLAYER 2' : 'GUEST'}</span>
+                    <span style={{ color: 'var(--text-muted)' }}>{isSoloMode ? t('gameBoard.controls.p2') : t('gameBoard.controls.guest')}</span>
                     <span style={{ color: gameState.guest.isReady ? 'var(--vivid-green-cyan)' : '#ef4444', fontWeight: 'bold' }}>
-                      {gameState.guest.isReady ? 'READY' : (gameState.guest.initialHandDrawn ? 'DECIDING' : 'WAITING')}
+                      {gameState.guest.isReady ? t('gameBoard.controls.statusReady') : (gameState.guest.initialHandDrawn ? t('gameBoard.controls.statusDeciding') : t('gameBoard.controls.statusWaiting'))}
                     </span>
                   </div>
                 </div>
@@ -1289,13 +1315,13 @@ const GameBoard: React.FC = () => {
                   onClick={handlePureCoinFlip}
                   style={{ padding: '0.3rem 0.6rem', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer', fontSize: '0.875rem' }}
                 >
-                  🪙 Toss Coin
+                  {t('gameBoard.controls.tossCoin')}
                 </button>
                 <button
                   onClick={handleRollDice}
                   style={{ padding: '0.3rem 0.6rem', background: '#8b5cf6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 'bold' }}
                 >
-                  🎲 Roll Dice
+                  {t('gameBoard.controls.rollDice')}
                 </button>
               </>
             )}
@@ -1317,7 +1343,7 @@ const GameBoard: React.FC = () => {
                   gap: '4px'
                 }}
               >
-                <span style={{ fontSize: '1rem' }}>↺</span> UNDO LAST END TURN
+                {t('gameBoard.turn.undo')}
               </button>
             )}
           </div>
@@ -1345,11 +1371,11 @@ const GameBoard: React.FC = () => {
                 textShadow: isBottomTurnActive ? '0 0 12px rgba(0, 208, 132, 0.35)' : 'none'
               }}>
                 {isSoloMode
-                  ? `${currentTurnLabel.toUpperCase()} TURN`
-                  : gameState.turnPlayer === role ? "YOUR TURN" : "OPPONENT'S TURN"}
+                  ? t('gameBoard.turn.p1', { label: currentTurnLabel.toUpperCase() })
+                  : gameState.turnPlayer === role ? t('gameBoard.turn.your') : t('gameBoard.turn.opponent')}
               </span>
               <span className="Garamond" style={{ fontSize: isBottomTurnActive ? '1.08rem' : undefined }}>
-                TURN {gameState.turnCount}
+                {t('gameBoard.turn.count', { count: gameState.turnCount })}
               </span>
               <select
                 value={gameState.phase}
@@ -1363,9 +1389,9 @@ const GameBoard: React.FC = () => {
                   border: isBottomTurnActive ? '1px solid rgba(0, 208, 132, 0.35)' : undefined
                 }}
               >
-                <option value="Start">Start Phase</option>
-                <option value="Main">Main Phase</option>
-                <option value="End">End Phase</option>
+                <option value="Start">{t('gameBoard.turn.phaseStart')}</option>
+                <option value="Main">{t('gameBoard.turn.phaseMain')}</option>
+                <option value="End">{t('gameBoard.turn.phaseEnd')}</option>
               </select>
             </div>
           )}
@@ -1384,7 +1410,7 @@ const GameBoard: React.FC = () => {
               fontWeight: 600
             }}
           >
-            Reconnecting to host. Actions are temporarily locked until the latest state is synced.
+            {t('gameBoard.alerts.reconnectingLocked')}
           </div>
         )}
 
@@ -1405,9 +1431,9 @@ const GameBoard: React.FC = () => {
             }}
           >
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-              <strong style={{ fontSize: '0.88rem' }}>Previous host session found for this room.</strong>
+              <strong style={{ fontSize: '0.88rem' }}>{t('gameBoard.alerts.previousSession')}</strong>
               <span style={{ fontSize: '0.78rem', color: '#bfdbfe' }}>
-                {savedSessionTimestamp ? `${savedSessionTimestamp} の状態から復帰できます。` : '直前の盤面を復帰できます。'}
+                {savedSessionTimestamp ? t('gameBoard.alerts.previousSessionTime', { time: savedSessionTimestamp }) : t('gameBoard.alerts.previousSessionUnknown')}
               </span>
             </div>
             <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
@@ -1422,7 +1448,7 @@ const GameBoard: React.FC = () => {
                   cursor: 'pointer'
                 }}
               >
-                Discard
+                {t('gameBoard.alerts.discard')}
               </button>
               <button
                 onClick={resumeSavedSession}
@@ -1436,7 +1462,7 @@ const GameBoard: React.FC = () => {
                   fontWeight: 'bold'
                 }}
               >
-                Resume Previous Session
+                {t('gameBoard.alerts.resume')}
               </button>
             </div>
           </div>
@@ -1457,10 +1483,10 @@ const GameBoard: React.FC = () => {
           >
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.18rem' }}>
               <div style={{ color: '#fdba74', fontWeight: 900, fontSize: '0.85rem', letterSpacing: '0.04em' }}>
-                ATTACK MODE
+                {t('gameBoard.alerts.attackMode')}
               </div>
               <div style={{ color: '#f8fafc', fontSize: '0.82rem' }}>
-                Select an enemy follower or leader for <strong>{attackSourceCard.name}</strong>.
+                {t('gameBoard.alerts.attackSelect')}<strong>{attackSourceCard.name}</strong>.
               </div>
             </div>
             <button
@@ -1494,48 +1520,47 @@ const GameBoard: React.FC = () => {
           >
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
               <div style={{ color: '#fde68a', fontWeight: 900, fontSize: '0.95rem', letterSpacing: '0.03em' }}>
-                Preparing Game
+                {t('gameBoard.preparation.title')}
               </div>
-              <div style={{ color: '#e5e7eb', fontSize: '0.84rem', lineHeight: 1.5 }}>
-                Draw your opening four cards, finish mulligan and Ready, choose who goes first before starting, then press `START GAME`.
-                Hand cards cannot be moved to other zones during preparation.
+              <div style={{ color: '#e5e7eb', fontSize: '0.84rem', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                {t('gameBoard.preparation.description')}
               </div>
             </div>
 
             <div style={{ display: 'flex', gap: '0.55rem', flexWrap: 'wrap' }}>
               <span style={preparationStepStyle(gameState.host.initialHandDrawn && gameState.guest.initialHandDrawn)}>
-                1. Draw Opening Hands
+                {t('gameBoard.preparation.step1')}
               </span>
               <span style={preparationStepStyle(gameState.host.isReady && gameState.guest.isReady)}>
-                2. Mulligan and Ready
+                {t('gameBoard.preparation.step2')}
               </span>
               <span style={preparationStepStyle(gameState.host.isReady && gameState.guest.isReady)}>
-                3. START GAME
+                {t('gameBoard.preparation.step3')}
               </span>
             </div>
 
             <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
               <div style={preparationStatusCardStyle}>
                 <div style={{ color: '#f8fafc', fontWeight: 'bold', fontSize: '0.82rem' }}>
-                  {isSoloMode ? 'Player 1' : 'Host'}
+                  {isSoloMode ? t('gameBoard.controls.p1') : t('gameBoard.controls.host')}
                 </div>
                 <div style={{ color: '#cbd5e1', fontSize: '0.76rem' }}>
-                  Opening Hand: {gameState.host.initialHandDrawn ? 'Done' : 'Pending'}
+                  {t('gameBoard.preparation.openingHand')} {gameState.host.initialHandDrawn ? t('gameBoard.preparation.done') : t('gameBoard.preparation.pending')}
                 </div>
                 <div style={{ color: '#cbd5e1', fontSize: '0.76rem' }}>
-                  Ready: {gameState.host.isReady ? 'Done' : 'Pending'}
+                  {t('gameBoard.preparation.ready')} {gameState.host.isReady ? t('gameBoard.preparation.done') : t('gameBoard.preparation.pending')}
                 </div>
               </div>
 
               <div style={preparationStatusCardStyle}>
                 <div style={{ color: '#f8fafc', fontWeight: 'bold', fontSize: '0.82rem' }}>
-                  {isSoloMode ? 'Player 2' : 'Guest'}
+                  {isSoloMode ? t('gameBoard.controls.p2') : t('gameBoard.controls.guest')}
                 </div>
                 <div style={{ color: '#cbd5e1', fontSize: '0.76rem' }}>
-                  Opening Hand: {gameState.guest.initialHandDrawn ? 'Done' : 'Pending'}
+                  {t('gameBoard.preparation.openingHand')} {gameState.guest.initialHandDrawn ? t('gameBoard.preparation.done') : t('gameBoard.preparation.pending')}
                 </div>
                 <div style={{ color: '#cbd5e1', fontSize: '0.76rem' }}>
-                  Ready: {gameState.guest.isReady ? 'Done' : 'Pending'}
+                  {t('gameBoard.preparation.ready')} {gameState.guest.isReady ? t('gameBoard.preparation.done') : t('gameBoard.preparation.pending')}
                 </div>
               </div>
             </div>
@@ -1557,7 +1582,7 @@ const GameBoard: React.FC = () => {
             }}
           >
             <div style={{ color: '#f8fafc', fontWeight: 800, fontSize: '0.8rem', letterSpacing: '0.03em' }}>
-              Recent Events
+              {t('gameBoard.alerts.recentEvents')}
             </div>
             {eventHistory.map((entry, index) => (
               <div
@@ -1584,7 +1609,7 @@ const GameBoard: React.FC = () => {
             {isSoloMode ? (
               <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: '1rem', alignItems: 'flex-start', width: '100%', maxWidth: '1568px', justifyContent: 'center' }}>
                 <div style={{ width: `${topPanelWidth}px`, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(0,0,0,0.8)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
-                  <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'white', marginBottom: '0.25rem' }}>{topLabel} Controls</div>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'white', marginBottom: '0.25rem' }}>{t('gameBoard.zones.controls', { label: topLabel })}</div>
                   <label
                     className="glass-panel"
                     style={{
@@ -1596,7 +1621,7 @@ const GameBoard: React.FC = () => {
                       opacity: canImportTopDeck ? 1 : 0.5
                     }}
                   >
-                    Import {topLabel} Deck
+                    {t('gameBoard.zones.importDeck', { label: topLabel })}
                     <input
                       type="file"
                       accept=".json"
@@ -1630,17 +1655,17 @@ const GameBoard: React.FC = () => {
                       opacity: canImportTopDeck && canOpenSavedDeckPicker ? 1 : 0.5
                     }}
                   >
-                    Load {topLabel} from My Decks
+                    {t('gameBoard.zones.loadFromMyDecks', { label: topLabel })}
                   </button>
                   <button onClick={() => drawCard(topRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing' || !canInteract} title={gameState.gameStatus !== 'playing' || !canInteract ? interactionBlockedTitle ?? 'Available during the game only.' : undefined} style={{ padding: '0.5rem', background: '#6366f1', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' && canInteract ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' && canInteract ? 'pointer' : 'not-allowed' }}>
-                    Draw {topLabel}
+                    {t('gameBoard.zones.draw', { label: topLabel })}
                   </button>
                   <button onClick={() => millCard(topRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing' || !canInteract} title={gameState.gameStatus !== 'playing' || !canInteract ? interactionBlockedTitle ?? 'Available during the game only.' : undefined} style={{ padding: '0.5rem', background: '#475569', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' && canInteract ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' && canInteract ? 'pointer' : 'not-allowed' }}>
-                    Mill {topLabel}
+                    {t('gameBoard.zones.mill', { label: topLabel })}
                   </button>
                   {renderEndTurnButton(topRole, topLabel, '#fbbf24')}
                   <button onClick={() => openTokenSpawnModal(topRole)} className="glass-panel" style={{ padding: '0.5rem', background: '#7c3aed' }}>
-                    Spawn {topLabel} Token
+                    {t('gameBoard.zones.spawnToken', { label: topLabel })}
                   </button>
                   {renderPlayerTracker(topRole, topLabel)}
                 </div>
@@ -1651,7 +1676,7 @@ const GameBoard: React.FC = () => {
                     <div style={{ width: `${centerZoneWidth}px`, minHeight: '150px', position: 'relative' }}>
                       <Zone
                         id={`hand-${topRole}`}
-                        label={`${topLabel} Hand`}
+                        label={t('gameBoard.zones.hand', { label: topLabel })}
                         cards={getCards(`hand-${topRole}`)}
                         cardDetailLookup={cardDetailLookup}
                         hideCards={false}
@@ -1670,7 +1695,7 @@ const GameBoard: React.FC = () => {
                       />
                       {gameState.gameStatus === 'preparing' && gameState[topRole].initialHandDrawn && !gameState[topRole].mulliganUsed && (
                         <button onClick={() => openMulliganModal(topRole)} style={soloMulliganButtonStyle}>
-                          🔄 Mulligan ({topLabel})
+                          {t('gameBoard.preparation.mulliganButton', { label: topLabel })}
                         </button>
                       )}
                     </div>
@@ -1679,12 +1704,12 @@ const GameBoard: React.FC = () => {
 
                   <div style={{ display: 'grid', gridTemplateColumns: boardColumns, gap: '0.75rem', width: `${boardContentWidth}px`, alignItems: 'start' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <Zone id={`cemetery-${topRole}`} label={`${topLabel} Cemetery`} cards={getCards(`cemetery-${topRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" onInspectCard={handleInspectCard} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
-                      <button onClick={() => openSearchZone(`cemetery-${topRole}`, `${topLabel} Cemetery`)} title={interactionBlockedTitle} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: canInteract ? 'pointer' : 'not-allowed' }}>Search</button>
+                      <Zone id={`cemetery-${topRole}`} label={t('gameBoard.zones.cemetery', { label: topLabel })} cards={getCards(`cemetery-${topRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" onInspectCard={handleInspectCard} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
+                      <button onClick={() => openSearchZone(`cemetery-${topRole}`, t('gameBoard.zones.cemetery', { label: topLabel }))} title={interactionBlockedTitle} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: canInteract ? 'pointer' : 'not-allowed' }}>{t('gameBoard.zones.search')}</button>
                     </div>
                     <Zone
                       id={`ex-${topRole}`}
-                      label={`${topLabel} EX Area`}
+                      label={t('gameBoard.zones.exArea', { label: topLabel })}
                       cards={getCards(`ex-${topRole}`)}
                       cardStatLookup={cardStatLookup}
                       cardDetailLookup={cardDetailLookup}
@@ -1701,24 +1726,24 @@ const GameBoard: React.FC = () => {
                       containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: '150px', flex: 'none', width: `${centerZoneWidth}px` }}
                       />
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <Zone id={`banish-${topRole}`} label={`${topLabel} Banish`} cards={getCards(`banish-${topRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" onInspectCard={handleInspectCard} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
-                      <button onClick={() => openSearchZone(`banish-${topRole}`, `${topLabel} Banish`)} title={interactionBlockedTitle} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: canInteract ? 'pointer' : 'not-allowed' }}>Search</button>
+                      <Zone id={`banish-${topRole}`} label={t('gameBoard.zones.banish', { label: topLabel })} cards={getCards(`banish-${topRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" onInspectCard={handleInspectCard} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
+                      <button onClick={() => openSearchZone(`banish-${topRole}`, t('gameBoard.zones.banish', { label: topLabel }))} title={interactionBlockedTitle} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: canInteract ? 'pointer' : 'not-allowed' }}>{t('gameBoard.zones.search')}</button>
                     </div>
                   </div>
 
                   <div style={{ position: 'relative', width: `${boardContentWidth}px`, overflow: 'visible' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: boardColumns, gap: '0.75rem', width: `${boardContentWidth}px`, alignItems: 'start' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <Zone id={`mainDeck-${topRole}`} label={`${topLabel} Main Deck`} cards={getCards(`mainDeck-${topRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
+                        <Zone id={`mainDeck-${topRole}`} label={t('gameBoard.zones.mainDeck', { label: topLabel })} cards={getCards(`mainDeck-${topRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
                         {renderZoneActions(`mainDeck-${topRole}`, [
-                          { label: 'Search', onClick: () => openSearchZone(`mainDeck-${topRole}`, `${topLabel} Main Deck`) },
-                          { label: 'Shuffle', onClick: () => handleShuffleDeck(topRole) },
-                          { label: 'Look Top (N)', onClick: () => openTopDeckModal(topRole), tone: 'accent' }
+                          { label: t('gameBoard.zones.search'), onClick: () => openSearchZone(`mainDeck-${topRole}`, t('gameBoard.zones.mainDeck', { label: topLabel })) },
+                          { label: t('gameBoard.zones.shuffle'), onClick: () => handleShuffleDeck(topRole) },
+                          { label: t('gameBoard.zones.lookTop'), onClick: () => openTopDeckModal(topRole), tone: 'accent' }
                         ], 'up')}
                       </div>
                       <Zone
                         id={`field-${topRole}`}
-                        label={`${topLabel} Field`}
+                        label={t('gameBoard.zones.field', { label: topLabel })}
                         cards={getCards(`field-${topRole}`)}
                         cardStatLookup={cardStatLookup}
                         cardDetailLookup={cardDetailLookup}
@@ -1739,8 +1764,8 @@ const GameBoard: React.FC = () => {
                         isDebug={isDebug}
                       />
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <Zone id={`evolveDeck-${topRole}`} label={`${topLabel} Evolve Deck`} cards={getCards(`evolveDeck-${topRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" onInspectCard={handleInspectCard} isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
-                        <button onClick={() => openSearchZone(`evolveDeck-${topRole}`, `${topLabel} Evolve Deck`)} title={interactionBlockedTitle} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: canInteract ? 'pointer' : 'not-allowed' }}>Search</button>
+                        <Zone id={`evolveDeck-${topRole}`} label={t('gameBoard.zones.evolveDeck', { label: topLabel })} cards={getCards(`evolveDeck-${topRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" onInspectCard={handleInspectCard} isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
+                        <button onClick={() => openSearchZone(`evolveDeck-${topRole}`, t('gameBoard.zones.evolveDeck', { label: topLabel }))} title={interactionBlockedTitle} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: canInteract ? 'pointer' : 'not-allowed' }}>{t('gameBoard.zones.search')}</button>
                       </div>
                     </div>
                     {renderLeaderZone(topRole, topLabel, 'right', 20)}
@@ -1760,7 +1785,7 @@ const GameBoard: React.FC = () => {
                     <div style={{ width: `${centerZoneWidth}px`, display: 'flex', justifyContent: 'center' }}>
                       <Zone
                         id={`hand-${topRole}`}
-                        label={`${topLabel} Hand`}
+                        label={t('gameBoard.zones.hand', { label: topLabel })}
                         cards={getCards(`hand-${topRole}`)}
                         cardDetailLookup={cardDetailLookup}
                         hideCards={true}
@@ -1777,12 +1802,12 @@ const GameBoard: React.FC = () => {
 
                   <div style={{ display: 'grid', gridTemplateColumns: boardColumns, gap: '0.75rem', width: `${boardContentWidth}px`, alignItems: 'start' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <Zone id={`cemetery-${topRole}`} label={`${topLabel} Cemetery`} cards={getCards(`cemetery-${topRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" onInspectCard={handleInspectCard} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
-                      <button onClick={() => openSearchZone(`cemetery-${topRole}`, `${topLabel} Cemetery`)} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
+                      <Zone id={`cemetery-${topRole}`} label={t('gameBoard.zones.cemetery', { label: topLabel })} cards={getCards(`cemetery-${topRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" onInspectCard={handleInspectCard} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
+                      <button onClick={() => openSearchZone(`cemetery-${topRole}`, t('gameBoard.zones.cemetery', { label: topLabel }))} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>{t('gameBoard.zones.search')}</button>
                     </div>
                     <Zone
                       id={`ex-${topRole}`}
-                      label={`${topLabel} EX Area`}
+                      label={t('gameBoard.zones.exArea', { label: topLabel })}
                       cards={getCards(`ex-${topRole}`)}
                       cardStatLookup={cardStatLookup}
                       cardDetailLookup={cardDetailLookup}
@@ -1792,19 +1817,19 @@ const GameBoard: React.FC = () => {
                       containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: '150px', flex: 'none', width: `${centerZoneWidth}px` }}
                     />
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <Zone id={`banish-${topRole}`} label={`${topLabel} Banish`} cards={getCards(`banish-${topRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" onInspectCard={handleInspectCard} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
-                      <button onClick={() => openSearchZone(`banish-${topRole}`, `${topLabel} Banish`)} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
+                      <Zone id={`banish-${topRole}`} label={t('gameBoard.zones.banish', { label: topLabel })} cards={getCards(`banish-${topRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" onInspectCard={handleInspectCard} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
+                      <button onClick={() => openSearchZone(`banish-${topRole}`, t('gameBoard.zones.banish', { label: topLabel }))} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>{t('gameBoard.zones.search')}</button>
                     </div>
                   </div>
 
                   <div style={{ position: 'relative', width: `${boardContentWidth}px`, overflow: 'visible' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: boardColumns, gap: '0.75rem', width: `${boardContentWidth}px`, alignItems: 'start' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <Zone id={`mainDeck-${topRole}`} label={`${topLabel} Main Deck`} cards={getCards(`mainDeck-${topRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
+                        <Zone id={`mainDeck-${topRole}`} label={t('gameBoard.zones.mainDeck', { label: topLabel })} cards={getCards(`mainDeck-${topRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
                       </div>
                       <Zone
                         id={`field-${topRole}`}
-                        label={`${topLabel} Field`}
+                        label={t('gameBoard.zones.field', { label: topLabel })}
                         cards={getCards(`field-${topRole}`)}
                         cardStatLookup={cardStatLookup}
                         cardDetailLookup={cardDetailLookup}
@@ -1819,8 +1844,8 @@ const GameBoard: React.FC = () => {
                         isDebug={isDebug}
                       />
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <Zone id={`evolveDeck-${topRole}`} label={`${topLabel} Evolve Deck`} cards={getCards(`evolveDeck-${topRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" onInspectCard={handleInspectCard} isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
-                        <button onClick={() => openSearchZone(`evolveDeck-${topRole}`, `${topLabel} Evolve Deck`)} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Search</button>
+                        <Zone id={`evolveDeck-${topRole}`} label={t('gameBoard.zones.evolveDeck', { label: topLabel })} cards={getCards(`evolveDeck-${topRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" onInspectCard={handleInspectCard} isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
+                        <button onClick={() => openSearchZone(`evolveDeck-${topRole}`, t('gameBoard.zones.evolveDeck', { label: topLabel }))} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>{t('common.buttons.search')}</button>
                       </div>
                     </div>
                     {renderLeaderZone(topRole, topLabel, 'right', 20)}
@@ -1841,16 +1866,16 @@ const GameBoard: React.FC = () => {
 	                <div style={{ position: 'relative', width: `${boardContentWidth}px`, overflow: 'visible' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: boardColumns, gap: '0.75rem', width: `${boardContentWidth}px`, alignItems: 'start' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <Zone id={`evolveDeck-${bottomRole}`} label={`${bottomLabel} Evolve Deck`} cards={getCards(`evolveDeck-${bottomRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" onInspectCard={handleInspectCard} isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
-                    <button onClick={() => openSearchZone(`evolveDeck-${bottomRole}`, `${bottomLabel} Evolve Deck`)} title={interactionBlockedTitle} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: canInteract ? 'pointer' : 'not-allowed' }}>Search</button>
+                    <Zone id={`evolveDeck-${bottomRole}`} label={t('gameBoard.zones.evolveDeck', { label: bottomLabel })} cards={getCards(`evolveDeck-${bottomRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" onInspectCard={handleInspectCard} isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
+                    <button onClick={() => openSearchZone(`evolveDeck-${bottomRole}`, t('gameBoard.zones.evolveDeck', { label: bottomLabel }))} title={interactionBlockedTitle} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: canInteract ? 'pointer' : 'not-allowed' }}>{t('common.buttons.search')}</button>
                   </div>
-                  <Zone id={`field-${bottomRole}`} label={`${bottomLabel} Field`} cards={getCards(`field-${bottomRole}`)} cardStatLookup={cardStatLookup} cardDetailLookup={cardDetailLookup} getHighlightTone={getAttackHighlightTone} onInspectCard={handleInspectCard} onAttack={gameState.turnPlayer === bottomRole ? handleStartAttack : undefined} onTap={toggleTap} onModifyCounter={handleModifyCounter} onModifyGenericCounter={handleModifyGenericCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} disableQuickActionsForCard={shouldDisableQuickActionsForAttackTarget} viewerRole={viewerRole} containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: '160px', width: `${centerZoneWidth}px`, flex: 'none' }} isDebug={isDebug} />
+                  <Zone id={`field-${bottomRole}`} label={t('gameBoard.zones.field', { label: bottomLabel })} cards={getCards(`field-${bottomRole}`)} cardStatLookup={cardStatLookup} cardDetailLookup={cardDetailLookup} getHighlightTone={getAttackHighlightTone} onInspectCard={handleInspectCard} onAttack={gameState.turnPlayer === bottomRole ? handleStartAttack : undefined} onTap={toggleTap} onModifyCounter={handleModifyCounter} onModifyGenericCounter={handleModifyGenericCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} disableQuickActionsForCard={shouldDisableQuickActionsForAttackTarget} viewerRole={viewerRole} containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: '160px', width: `${centerZoneWidth}px`, flex: 'none' }} isDebug={isDebug} />
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <Zone id={`mainDeck-${bottomRole}`} label={`${bottomLabel} Main Deck`} cards={getCards(`mainDeck-${bottomRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
+                    <Zone id={`mainDeck-${bottomRole}`} label={t('gameBoard.zones.mainDeck', { label: bottomLabel })} cards={getCards(`mainDeck-${bottomRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
                     {renderZoneActions(`mainDeck-${bottomRole}`, [
-                      { label: 'Search', onClick: () => openSearchZone(`mainDeck-${bottomRole}`, `${bottomLabel} Main Deck`) },
-                      { label: 'Shuffle', onClick: () => handleShuffleDeck(bottomRole) },
-                      { label: 'Look Top (N)', onClick: () => openTopDeckModal(bottomRole), tone: 'accent' }
+                      { label: t('gameBoard.zones.search'), onClick: () => openSearchZone(`mainDeck-${bottomRole}`, t('gameBoard.zones.mainDeck', { label: bottomLabel })) },
+                      { label: t('gameBoard.zones.shuffle'), onClick: () => handleShuffleDeck(bottomRole) },
+                      { label: t('gameBoard.zones.lookTop'), onClick: () => openTopDeckModal(bottomRole), tone: 'accent' }
                     ])}
                   </div>
                   </div>
@@ -1859,18 +1884,18 @@ const GameBoard: React.FC = () => {
 
 	                <div style={{ display: 'grid', gridTemplateColumns: boardColumns, gap: '0.75rem', width: `${boardContentWidth}px`, alignItems: 'start' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <Zone id={`banish-${bottomRole}`} label={`${bottomLabel} Banish`} cards={getCards(`banish-${bottomRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" onInspectCard={handleInspectCard} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onCemetery={handleSendToCemetery} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
-                    <button onClick={() => openSearchZone(`banish-${bottomRole}`, `${bottomLabel} Banish`)} title={interactionBlockedTitle} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: canInteract ? 'pointer' : 'not-allowed' }}>Search</button>
+                    <Zone id={`banish-${bottomRole}`} label={t('gameBoard.zones.banish', { label: bottomLabel })} cards={getCards(`banish-${bottomRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" onInspectCard={handleInspectCard} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onCemetery={handleSendToCemetery} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
+                    <button onClick={() => openSearchZone(`banish-${bottomRole}`, t('gameBoard.zones.banish', { label: bottomLabel }))} title={interactionBlockedTitle} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: canInteract ? 'pointer' : 'not-allowed' }}>{t('common.buttons.search')}</button>
                   </div>
-	                  <Zone id={`ex-${bottomRole}`} label={`${bottomLabel} EX Area`} cards={getCards(`ex-${bottomRole}`)} cardStatLookup={cardStatLookup} cardDetailLookup={cardDetailLookup} onInspectCard={handleInspectCard} onModifyCounter={handleModifyCounter} onModifyGenericCounter={handleModifyGenericCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} viewerRole={viewerRole} containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: '150px', flex: 'none', width: `${centerZoneWidth}px` }} isDebug={isDebug} />
+	                  <Zone id={`ex-${bottomRole}`} label={t('gameBoard.zones.exArea', { label: bottomLabel })} cards={getCards(`ex-${bottomRole}`)} cardStatLookup={cardStatLookup} cardDetailLookup={cardDetailLookup} onInspectCard={handleInspectCard} onModifyCounter={handleModifyCounter} onModifyGenericCounter={handleModifyGenericCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} viewerRole={viewerRole} containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: '150px', flex: 'none', width: `${centerZoneWidth}px` }} isDebug={isDebug} />
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <Zone id={`cemetery-${bottomRole}`} label={`${bottomLabel} Cemetery`} cards={getCards(`cemetery-${bottomRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" onInspectCard={handleInspectCard} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onCemetery={handleSendToCemetery} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
-                    <button onClick={() => openSearchZone(`cemetery-${bottomRole}`, `${bottomLabel} Cemetery`)} title={interactionBlockedTitle} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: canInteract ? 'pointer' : 'not-allowed' }}>Search</button>
+                    <Zone id={`cemetery-${bottomRole}`} label={t('gameBoard.zones.cemetery', { label: bottomLabel })} cards={getCards(`cemetery-${bottomRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" onInspectCard={handleInspectCard} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onCemetery={handleSendToCemetery} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
+                    <button onClick={() => openSearchZone(`cemetery-${bottomRole}`, t('gameBoard.zones.cemetery', { label: bottomLabel }))} title={interactionBlockedTitle} style={{ fontSize: '0.75rem', padding: '4px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: canInteract ? 'pointer' : 'not-allowed' }}>{t('common.buttons.search')}</button>
                   </div>
 	                </div>
 
 	                <div style={{ width: `${boardContentWidth}px`, minHeight: '160px', position: 'relative' }}>
-                    <Zone id={`hand-${bottomRole}`} label={`${bottomLabel} Hand`} cards={getCards(`hand-${bottomRole}`)} cardDetailLookup={cardDetailLookup} onInspectCard={handleInspectCard} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} isProtected={true} lockCards={isPreparingHandMoveLocked} viewerRole={viewerRole} containerStyle={{ minHeight: '160px' }} isDebug={isDebug} />
+                    <Zone id={`hand-${bottomRole}`} label={t('gameBoard.zones.hand', { label: bottomLabel })} cards={getCards(`hand-${bottomRole}`)} cardDetailLookup={cardDetailLookup} onInspectCard={handleInspectCard} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} isProtected={true} lockCards={isPreparingHandMoveLocked} viewerRole={viewerRole} containerStyle={{ minHeight: '160px' }} isDebug={isDebug} />
 
                     {gameState.gameStatus === 'preparing' && gameState[bottomRole].initialHandDrawn && !gameState[bottomRole].mulliganUsed && (
                       <button
@@ -1884,14 +1909,14 @@ const GameBoard: React.FC = () => {
                           border: '2px solid black'
                         }}
                       >
-                        {isSoloMode ? `🔄 Mulligan (${bottomLabel})` : '🔄 Mulligan (マリガンする)'}
+                        {t('game.mulligan_desc', { label: isSoloMode ? bottomLabel : t('game.mulligan_action') })}
                       </button>
                     )}
                 </div>
               </div>
 
               <div style={{ width: `${sidePanelWidth}px`, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(0,0,0,0.8)', padding: '1rem', borderRadius: 'var(--radius-md)', marginLeft: '1.25rem' }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'white', marginBottom: '0.25rem' }}>{bottomLabel} Controls</div>
+                <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'white', marginBottom: '0.25rem' }}>{t('gameBoard.zones.controls', { label: bottomLabel })}</div>
                 {isSoloMode ? (
                   <>
                     <label
@@ -1905,7 +1930,7 @@ const GameBoard: React.FC = () => {
                         opacity: canImportBottomDeck ? 1 : 0.5
                       }}
                     >
-                      Import {bottomLabel} Deck
+                      {t('gameBoard.zones.importDeck', { label: bottomLabel })}
                       <input
                         type="file"
                         accept=".json"
@@ -1939,7 +1964,7 @@ const GameBoard: React.FC = () => {
                         opacity: canImportBottomDeck && canOpenSavedDeckPicker ? 1 : 0.5
                       }}
                     >
-                      Load {bottomLabel} from My Decks
+                      {t('gameBoard.zones.loadFromMyDecks', { label: bottomLabel })}
                     </button>
                   </>
                 ) : (
@@ -1955,7 +1980,7 @@ const GameBoard: React.FC = () => {
                         opacity: canImportBottomDeck ? 1 : 0.5
                       }}
                     >
-                      Import Deck (.json)
+                      {t('gameBoard.zones.importDeckJson')}
                       <input
                         type="file"
                         accept=".json"
@@ -1989,29 +2014,29 @@ const GameBoard: React.FC = () => {
                         opacity: canImportBottomDeck && canOpenSavedDeckPicker ? 1 : 0.5
                       }}
                     >
-                      Load from My Decks
+                      {t('gameBoard.zones.loadFromMyDecksGeneric')}
                     </button>
                   </>
                 )}
-                <button onClick={() => drawCard(bottomRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing' || !canInteract} title={gameState.gameStatus !== 'playing' || !canInteract ? interactionBlockedTitle ?? 'Available during the game only.' : undefined} style={{ padding: '0.5rem', background: 'var(--accent-primary)', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' && canInteract ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' && canInteract ? 'pointer' : 'not-allowed' }}>
-                  Draw {bottomLabel}
+                <button onClick={() => drawCard(bottomRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing' || !canInteract} title={gameState.gameStatus !== 'playing' || !canInteract ? interactionBlockedTitle ?? t('gameBoard.board.availableDuringGameOnly') : undefined} style={{ padding: '0.5rem', background: 'var(--accent-primary)', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' && canInteract ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' && canInteract ? 'pointer' : 'not-allowed' }}>
+                  {t('gameBoard.zones.draw', { label: bottomLabel })}
                 </button>
-                <button onClick={() => millCard(bottomRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing' || !canInteract} title={gameState.gameStatus !== 'playing' || !canInteract ? interactionBlockedTitle ?? 'Available during the game only.' : undefined} style={{ padding: '0.5rem', background: '#475569', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' && canInteract ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' && canInteract ? 'pointer' : 'not-allowed' }}>
-                  Mill {bottomLabel}
+                <button onClick={() => millCard(bottomRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing' || !canInteract} title={gameState.gameStatus !== 'playing' || !canInteract ? interactionBlockedTitle ?? t('gameBoard.board.availableDuringGameOnly') : undefined} style={{ padding: '0.5rem', background: '#475569', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' && canInteract ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' && canInteract ? 'pointer' : 'not-allowed' }}>
+                  {t('gameBoard.zones.mill', { label: bottomLabel })}
                 </button>
                 {isSoloMode ? (
                   renderEndTurnButton(bottomRole, bottomLabel, '#f59e0b')
                 ) : (gameState.turnPlayer === role && gameState.gameStatus === 'playing') && (
                   <button onClick={() => endTurn()} className="glass-panel" style={{ padding: '0.5rem', background: '#f59e0b', color: 'black', fontWeight: 'bold' }}>
-                    END TURN
+                    {t('gameBoard.board.endTurnSelf')}
                   </button>
                 )}
                 <button onClick={() => openTokenSpawnModal(bottomRole)} className="glass-panel" style={{ padding: '0.5rem', background: 'var(--accent-secondary)' }}>
-                  Spawn {bottomLabel} Token
+                  {t('gameBoard.zones.spawnToken', { label: bottomLabel })}
                 </button>
                 {canResetGame && (
                   <button onClick={() => setShowResetConfirm(true)} className="glass-panel" style={{ padding: '0.5rem', background: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', fontWeight: 'bold' }}>
-                    Reset Game
+                    {t('gameBoard.controls.resetGame')}
                   </button>
                 )}
                 {renderPlayerTracker(bottomRole, bottomLabel)}
@@ -2026,10 +2051,10 @@ const GameBoard: React.FC = () => {
       {isMulliganModalOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
           <div style={{ background: 'var(--bg-surface)', padding: '2rem', borderRadius: 'var(--radius-lg)', maxWidth: '800px', width: '90%', textAlign: 'center', border: '1px solid var(--border-light)' }}>
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: 'var(--accent-primary)' }}>Mulligan: Select Return Order</h2>
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: 'var(--accent-primary)' }}>{t('game.mulligan_title')}</h2>
             <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-              Select cards in the order you want to put them on the <strong>bottom</strong> of your deck.<br />
-              (The 4th selection will be at the absolute bottom.)
+              {t('game.mulligan_instructions')}<br />
+              {t('game.mulligan_disclaimer')}
             </p>
 
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginBottom: '2rem', flexWrap: 'wrap' }}>
@@ -2082,7 +2107,7 @@ const GameBoard: React.FC = () => {
                 onClick={() => setIsMulliganModalOpen(false)}
                 style={{ padding: '0.6rem 1.5rem', background: 'transparent', border: '1px solid var(--border-light)', color: 'var(--text-main)', borderRadius: '4px', cursor: 'pointer' }}
               >
-                Cancel
+                {t('common.buttons.cancel')}
               </button>
               <button
                 onClick={() => executeMulligan(mulliganTargetRole)}
@@ -2096,7 +2121,7 @@ const GameBoard: React.FC = () => {
                   boxShadow: mulliganOrder.length === 4 ? '0 0 10px rgba(0, 208, 132, 0.3)' : 'none'
                 }}
               >
-                Exchange (Mulligan)
+                {t('game.mulligan_exchange')}
               </button>
             </div>
           </div>
@@ -2133,7 +2158,7 @@ const GameBoard: React.FC = () => {
       {tokenSpawnTargetRole && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 4500 }}>
           <div style={{ background: 'var(--bg-surface)', padding: '2rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', width: 'min(920px, 92vw)' }}>
-            <h3 style={{ marginBottom: '1rem', color: 'white', textAlign: 'center' }}>Select Token</h3>
+            <h3 style={{ marginBottom: '1rem', color: 'white', textAlign: 'center' }}>{t('gameBoard.modals.tokenSpawn.title')}</h3>
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
               {getTokenOptions(tokenSpawnTargetRole).map((token) => (
                 <button
@@ -2171,7 +2196,7 @@ const GameBoard: React.FC = () => {
                 onClick={() => setTokenSpawnTargetRole(null)}
                 style={{ padding: '0.5rem 1.5rem', background: '#333', color: 'white', borderRadius: '4px', cursor: 'pointer', border: 'none' }}
               >
-                Cancel
+                {t('common.buttons.cancel')}
               </button>
             </div>
           </div>
@@ -2181,7 +2206,7 @@ const GameBoard: React.FC = () => {
       {isTopNInputOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 5000 }}>
           <div style={{ background: 'var(--bg-surface)', padding: '2rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', textAlign: 'center' }}>
-            <h3 style={{ marginBottom: '1rem', color: 'white' }}>How many cards to look at?</h3>
+            <h3 style={{ marginBottom: '1rem', color: 'white' }}>{t('gameBoard.modals.topN.title')}</h3>
             <input 
               type="number" 
               value={topNValue} 
@@ -2190,11 +2215,11 @@ const GameBoard: React.FC = () => {
               style={{ padding: '0.5rem', borderRadius: '4px', background: 'black', color: 'white', border: '1px solid #444', fontSize: '1.25rem', textAlign: 'center', width: '80px', marginBottom: '1.5rem' }}
             />
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-              <button onClick={() => setIsTopNInputOpen(false)} style={{ padding: '0.5rem 1.5rem', background: '#333', color: 'white', borderRadius: '4px', cursor: 'pointer', border: 'none' }}>Cancel</button>
+              <button onClick={() => setIsTopNInputOpen(false)} style={{ padding: '0.5rem 1.5rem', background: '#333', color: 'white', borderRadius: '4px', cursor: 'pointer', border: 'none' }}>{t('common.buttons.cancel')}</button>
               <button onClick={() => {
                 handleLookAtTop(topNValue, topDeckTargetRole);
                 setIsTopNInputOpen(false);
-              }} style={{ padding: '0.5rem 1.5rem', background: 'var(--accent-primary)', color: 'white', borderRadius: '4px', cursor: 'pointer', border: 'none', fontWeight: 'bold' }}>Look</button>
+              }} style={{ padding: '0.5rem 1.5rem', background: 'var(--accent-primary)', color: 'white', borderRadius: '4px', cursor: 'pointer', border: 'none', fontWeight: 'bold' }}>{t('gameBoard.modals.topN.confirm')}</button>
             </div>
           </div>
         </div>
@@ -2382,11 +2407,11 @@ const GameBoard: React.FC = () => {
       {showResetConfirm && canResetGame && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: 'var(--bg-surface-elevated)', padding: '2rem', borderRadius: 'var(--radius-md)', maxWidth: '400px', textAlign: 'center', border: '1px solid var(--border-light)' }}>
-            <h3 style={{ margin: '0 0 1rem 0', color: '#fca5a5' }}>Reset Game</h3>
-            <p style={{ margin: '0 0 2rem 0', color: 'var(--text-secondary)' }}>Are you sure you want to reset the game to its initial state? All cards will return to their starting decks.</p>
+            <h3 style={{ margin: '0 0 1rem 0', color: '#fca5a5' }}>{t('gameBoard.modals.resetGame.title')}</h3>
+            <p style={{ margin: '0 0 2rem 0', color: 'var(--text-secondary)' }}>{t('gameBoard.modals.resetGame.description')}</p>
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-              <button onClick={() => setShowResetConfirm(false)} style={{ padding: '0.5rem 1rem', background: 'var(--bg-surface)', border: '1px solid var(--border-light)', color: 'white', cursor: 'pointer', borderRadius: '4px' }}>Cancel</button>
-              <button onClick={confirmResetGame} style={{ padding: '0.5rem 1rem', background: '#ef4444', border: 'none', color: 'white', cursor: 'pointer', borderRadius: '4px', fontWeight: 'bold' }}>Yes, Reset</button>
+              <button onClick={() => setShowResetConfirm(false)} style={{ padding: '0.5rem 1rem', background: 'var(--bg-surface)', border: '1px solid var(--border-light)', color: 'white', cursor: 'pointer', borderRadius: '4px' }}>{t('common.buttons.cancel')}</button>
+              <button onClick={confirmResetGame} style={{ padding: '0.5rem 1rem', background: '#ef4444', border: 'none', color: 'white', cursor: 'pointer', borderRadius: '4px', fontWeight: 'bold' }}>{t('gameBoard.modals.resetGame.confirm')}</button>
             </div>
           </div>
         </div>
@@ -2395,16 +2420,16 @@ const GameBoard: React.FC = () => {
       {showUndoConfirm && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: 'var(--bg-surface-elevated)', padding: '2rem', borderRadius: 'var(--radius-md)', maxWidth: '420px', textAlign: 'center', border: '1px solid var(--border-light)' }}>
-            <h3 style={{ margin: '0 0 1rem 0', color: '#f9a8d4' }}>Undo Last End Turn</h3>
+            <h3 style={{ margin: '0 0 1rem 0', color: '#f9a8d4' }}>{t('gameBoard.modals.undoTurn.title')}</h3>
             <p style={{ margin: '0 0 2rem 0', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
-              相手のターン開始後の操作も取り消します。続けますか？
+              {t('gameBoard.modals.undoTurn.description')}
             </p>
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
               <button
                 onClick={() => setShowUndoConfirm(false)}
                 style={{ padding: '0.5rem 1rem', background: 'var(--bg-surface)', border: '1px solid var(--border-light)', color: 'white', cursor: 'pointer', borderRadius: '4px' }}
               >
-                Cancel
+                {t('common.buttons.cancel')}
               </button>
               <button
                 onClick={() => {
@@ -2413,7 +2438,7 @@ const GameBoard: React.FC = () => {
                 }}
                 style={{ padding: '0.5rem 1rem', background: '#ec4899', border: 'none', color: 'white', cursor: 'pointer', borderRadius: '4px', fontWeight: 'bold' }}
               >
-                Yes, Undo
+                {t('gameBoard.modals.undoTurn.confirm')}
               </button>
             </div>
           </div>

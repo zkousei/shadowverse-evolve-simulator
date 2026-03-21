@@ -390,11 +390,16 @@ export const validateDeckState = (
   return issues;
 };
 
-const DECK_LABELS: Record<DeckTargetSection, string> = {
-  main: 'Main Deck',
-  evolve: 'Evolve Deck',
-  leader: 'Leader',
-  token: 'Token Deck',
+const DECK_KEYS: Record<DeckTargetSection, string> = {
+  main: 'deckBuilder.deckArea.mainDeck',
+  evolve: 'deckBuilder.deckArea.evolveDeck',
+  leader: 'deckBuilder.deckArea.leader',
+  token: 'deckBuilder.deckArea.tokenDeck',
+};
+
+export type DeckValidationMessage = {
+  id: string;
+  params?: Record<string, string | number>;
 };
 
 const getCardNameFromDeckState = (deckState: DeckState, cardId: string): string | null => {
@@ -417,28 +422,31 @@ const formatCardList = (names: string[]): string => {
 export const getDeckValidationMessages = (
   deckState: DeckState,
   ruleConfig: DeckRuleConfig = DEFAULT_RULE_CONFIG
-): string[] => {
+): DeckValidationMessage[] => {
   const issues = validateDeckState(deckState, ruleConfig);
-  const messages: string[] = [];
+  const messages: DeckValidationMessage[] = [];
 
   issues
     .filter((issue): issue is DeckValidationIssue & { code: 'rule-not-configured' } => issue.code === 'rule-not-configured')
     .forEach(() => {
       if (ruleConfig.format === 'constructed') {
-        messages.push(
-          ruleConfig.identityType === 'title'
-            ? 'Constructed decks require a selected title.'
-            : 'Constructed decks require a selected class.'
-        );
+        messages.push({
+          id: ruleConfig.identityType === 'title'
+            ? 'deckBuilder.validation.requireTitle'
+            : 'deckBuilder.validation.requireClass'
+        });
       } else if (ruleConfig.format === 'crossover') {
-        messages.push('Crossover decks require two different selected classes.');
+        messages.push({ id: 'deckBuilder.validation.requireCrossoverClasses' });
       }
     });
 
   issues
     .filter((issue): issue is DeckValidationIssue & { code: 'main-deck-too-small'; actual: number; expected: number } => issue.code === 'main-deck-too-small' && issue.actual !== undefined && issue.expected !== undefined)
     .forEach(issue => {
-      messages.push(`Main Deck must contain at least ${issue.expected} cards (${issue.actual}/${issue.expected}).`);
+      messages.push({
+        id: 'deckBuilder.validation.mainDeckTooSmall',
+        params: { expected: issue.expected, actual: issue.actual }
+      });
     });
 
   issues
@@ -451,7 +459,10 @@ export const getDeckValidationMessages = (
           : issue.deck === 'leader'
             ? deckState.leaderCards.length
             : deckState.tokenDeck.length;
-      messages.push(`${DECK_LABELS[issue.deck]} exceeds its limit (${deckSize}/${getDeckLimit(issue.deck, ruleConfig)}).`);
+      messages.push({
+        id: 'deckBuilder.validation.limitExceeded',
+        params: { deckI18nKey: DECK_KEYS[issue.deck], actual: deckSize, expected: getDeckLimit(issue.deck, ruleConfig) }
+      });
     });
 
   issues
@@ -465,30 +476,47 @@ export const getDeckValidationMessages = (
     .forEach(issue => {
       const cardName = getCardNameFromDeckState(deckState, issue.cardId);
       if (issue.restrictionSource === 'policy-banned' && issue.restrictionFormat) {
-        messages.push(`${cardName ?? 'This card'} is banned in ${issue.restrictionFormat}.`);
+        messages.push({
+          id: 'deckBuilder.validation.banned',
+          params: { cardName: cardName ?? 'This card', format: issue.restrictionFormat }
+        });
         return;
       }
 
       if (issue.restrictionSource === 'policy-limited' && issue.restrictionFormat) {
-        messages.push(`${cardName ?? 'This card'} is limited to 1 copy in ${issue.restrictionFormat} (${issue.actual}/1).`);
+        messages.push({
+          id: 'deckBuilder.validation.limited',
+          params: { cardName: cardName ?? 'This card', format: issue.restrictionFormat, actual: issue.actual }
+        });
         return;
       }
 
-      messages.push(`${DECK_LABELS[issue.deck]} contains too many copies of ${cardName ?? 'a card'} (${issue.actual}/${issue.expected}).`);
+      messages.push({
+        id: 'deckBuilder.validation.tooManyCopies',
+        params: { deckI18nKey: DECK_KEYS[issue.deck], cardName: cardName ?? 'a card', actual: issue.actual, expected: issue.expected }
+      });
     });
 
   issues
     .filter((issue): issue is DeckValidationIssue & { code: 'invalid-leader-count'; expected: number; actual: number } => issue.code === 'invalid-leader-count' && issue.expected !== undefined && issue.actual !== undefined)
     .forEach(issue => {
-      messages.push(`This ${ruleConfig.format} deck requires exactly ${issue.expected} leader${issue.expected > 1 ? 's' : ''} (${issue.actual}/${issue.expected}).`);
+      messages.push({
+        id: 'deckBuilder.validation.invalidLeaderCount',
+        params: { format: ruleConfig.format, expected: issue.expected, actual: issue.actual }
+      });
     });
 
   if (issues.some(issue => issue.code === 'invalid-crossover-leader-classes')) {
     const [firstClass, secondClass] = ruleConfig.selectedClasses;
     if (firstClass && secondClass) {
-      messages.push(`Leader cards must include one ${firstClass} leader and one ${secondClass} leader.`);
+      messages.push({
+        id: 'deckBuilder.validation.crossoverLeaderClassesInclude',
+        params: { firstClass, secondClass }
+      });
     } else {
-      messages.push('Leader cards must match the selected crossover classes.');
+      messages.push({
+        id: 'deckBuilder.validation.crossoverLeaderClassesMatch'
+      });
     }
   }
 
@@ -506,15 +534,22 @@ export const getDeckValidationMessages = (
       });
 
     groupedByDeck.forEach((names, deck) => {
-      messages.push(
-        code === 'invalid-section'
-          ? `${DECK_LABELS[deck]} contains cards in the wrong section: ${formatCardList(names)}.`
-          : `${DECK_LABELS[deck]} contains cards that do not match the selected deck rule: ${formatCardList(names)}.`
-      );
+      messages.push({
+        id: code === 'invalid-section' ? 'deckBuilder.validation.invalidSection' : 'deckBuilder.validation.invalidRule',
+        params: { deckI18nKey: DECK_KEYS[deck], cardList: formatCardList(names) }
+      });
     });
   });
 
-  return Array.from(new Set(messages));
+  const uniqueMessages = new Map<string, DeckValidationMessage>();
+  messages.forEach(msg => {
+    const key = msg.id + JSON.stringify(msg.params ?? {});
+    if (!uniqueMessages.has(key)) {
+      uniqueMessages.set(key, msg);
+    }
+  });
+
+  return Array.from(uniqueMessages.values());
 };
 
 type ImportedDeckState = Partial<DeckState> & {

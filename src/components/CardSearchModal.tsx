@@ -3,6 +3,7 @@ import type { CardInstance } from './Card';
 import type { PlayerRole } from '../types/game';
 import { formatAbilityText, type CardDetailLookup } from '../utils/cardDetails';
 import CardArtwork from './CardArtwork';
+import { useTranslation } from 'react-i18next';
 
 interface CardSearchModalProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
   allowHandExtraction = true,
   readOnly = false,
 }) => {
+  const { t } = useTranslation();
   const [selectedCardId, setSelectedCardId] = React.useState<string | null>(null);
   const [reserveDetailSpace, setReserveDetailSpace] = React.useState(false);
   const modalPanelRef = React.useRef<HTMLDivElement | null>(null);
@@ -143,7 +145,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
               cursor: 'pointer'
             }}
           >
-            Close
+            {t('common.buttons.close')}
           </button>
         </div>
 
@@ -167,7 +169,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
             const canRevealToHand = canAddToHand && isMainDeckSearch;
             const canAddToEx = !isPreparingMainDeckSearch && !c.isEvolveCard;
             const canPlayToField = !isEvolveDeck || allowHandExtraction || isPreparingMainDeckSearch;
-            const playToFieldLabel = isPreparingMainDeckSearch ? 'Set Face-Down to Field' : 'Play to Field';
+            const playToFieldLabel = isPreparingMainDeckSearch ? t('gameBoard.modals.search.setFaceDown') : t('gameBoard.modals.search.playToField');
 
             return (
               <div
@@ -198,12 +200,12 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
 
                 {isUsed && (
                   <div style={{ position: 'absolute', top: 5, left: 5, background: '#ef4444', color: 'white', fontSize: '10px', fontWeight: 'bold', padding: '2px 4px', borderRadius: '4px', pointerEvents: 'none' }}>
-                    USED (Face-Up)
+                    {t('gameBoard.modals.search.used')}
                   </div>
                 )}
                 {isEvolveDeck && !isUsed && (
                   <div style={{ position: 'absolute', top: 5, left: 5, background: '#252a34', color: '#949db0', fontSize: '10px', fontWeight: 'bold', border: '1px solid gray', padding: '2px 4px', borderRadius: '4px', pointerEvents: 'none' }}>
-                    UNUSED (Face-Down)
+                    {t('gameBoard.modals.search.unused')}
                   </div>
                 )}
 
@@ -245,7 +247,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
                           cursor: allowHandExtraction ? 'pointer' : 'not-allowed'
                         }}
                       >
-                        Add to Hand
+                        {t('gameBoard.modals.search.addToHand')}
                       </button>
                     )}
                     {canRevealToHand && actionRole && (
@@ -261,7 +263,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
                           cursor: allowHandExtraction ? 'pointer' : 'not-allowed'
                         }}
                       >
-                        Reveal & Add to Hand
+                        {t('gameBoard.modals.search.revealAndAddToHand')}
                       </button>
                     )}
                     {canAddToEx && actionRole && (
@@ -277,7 +279,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
                           cursor: allowHandExtraction ? 'pointer' : 'not-allowed'
                         }}
                       >
-                        Add to EX Area
+                        {t('gameBoard.modals.search.addToEx')}
                       </button>
                     )}
 
@@ -293,7 +295,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
                           cursor: 'pointer', marginTop: '2px'
                         }}
                       >
-                        {c.isFlipped ? 'Set USED' : 'Set UNUSED'}
+                        {c.isFlipped ? t('gameBoard.modals.search.setUsed') : t('gameBoard.modals.search.setUnused')}
                       </button>
                     )}
                   </div>
@@ -303,7 +305,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
           })}
           {cards.length === 0 && (
             <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-              This zone is empty.
+              {t('gameBoard.modals.search.empty')}
             </div>
           )}
         </div>
@@ -344,7 +346,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
                 )}
                 {selectedCardStats && (
                   <div style={{ color: '#e2e8f0', fontSize: '0.68rem', marginTop: '0.12rem', lineHeight: 1.4 }}>
-                    Stats: {selectedCardStats}
+                    {t('gameBoard.modals.search.stats')}: {selectedCardStats}
                   </div>
                 )}
               </div>
@@ -361,7 +363,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
                   fontWeight: 'bold'
                 }}
               >
-                Close
+                {t('common.buttons.close')}
               </button>
             </div>
 
@@ -375,7 +377,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
             }}>
               {selectedCardDetail?.abilityText
                 ? formatAbilityText(selectedCardDetail.abilityText)
-                : 'このカードの詳細テキストは見つかりませんでした。'}
+                : t('gameBoard.modals.search.noDetailText')}
             </div>
           </div>
         )}

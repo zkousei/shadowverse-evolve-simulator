@@ -26,7 +26,7 @@ describe('TopDeckModal', () => {
       />
     );
 
-    expect(screen.queryByText('CONFIRM')).not.toBeInTheDocument();
+    expect(screen.queryByText('Confirm')).not.toBeInTheDocument();
   });
 
   it('assigns cards, tracks deck order, and confirms results', () => {
@@ -40,10 +40,10 @@ describe('TopDeckModal', () => {
       />
     );
 
-    const confirmButton = screen.getByText('CONFIRM');
+    const confirmButton = screen.getByText('Confirm');
     expect(confirmButton).toBeDisabled();
 
-    fireEvent.click(screen.getAllByText('山上 (Top)')[0]);
+    fireEvent.click(screen.getAllByText('Top of Deck')[0]);
     fireEvent.click(screen.getByAltText('Card c1'));
     fireEvent.click(screen.getByAltText('Card c2'));
 
@@ -110,9 +110,9 @@ describe('TopDeckModal', () => {
       />
     );
 
-    fireEvent.click(screen.getAllByText('公開して手札')[0]);
+    fireEvent.click(screen.getAllByText('Reveal to Hand')[0]);
     fireEvent.click(screen.getByAltText('Card c1'));
-    fireEvent.click(screen.getByText('CONFIRM'));
+    fireEvent.click(screen.getByText('Confirm'));
 
     expect(onConfirm).toHaveBeenCalledWith([
       { cardId: 'c1', action: 'revealedHand', order: undefined },
@@ -130,14 +130,14 @@ describe('TopDeckModal', () => {
       />
     );
 
-    fireEvent.click(screen.getAllByText('山下 (Bottom)')[0]);
+    fireEvent.click(screen.getAllByText('Bottom of Deck')[0]);
     fireEvent.click(screen.getByAltText('Card c1'));
     fireEvent.click(screen.getByAltText('Card c2'));
     fireEvent.click(screen.getByAltText('Card c3'));
 
-    fireEvent.click(screen.getByLabelText('山下 (Bottom) order forward for Card c1'));
-    fireEvent.click(screen.getByLabelText('山下 (Bottom) order forward for Card c1'));
-    fireEvent.click(screen.getByText('CONFIRM'));
+    fireEvent.click(screen.getByLabelText('Bottom of Deck order forward for Card c1'));
+    fireEvent.click(screen.getByLabelText('Bottom of Deck order forward for Card c1'));
+    fireEvent.click(screen.getByText('Confirm'));
 
     expect(onConfirm).toHaveBeenCalledWith([
       { cardId: 'c2', action: 'bottom', order: 1 },
@@ -157,21 +157,21 @@ describe('TopDeckModal', () => {
       />
     );
 
-    fireEvent.click(screen.getAllByText('山上 (Top)')[0]);
+    fireEvent.click(screen.getAllByText('Top of Deck')[0]);
     fireEvent.click(screen.getByAltText('Card c1'));
     fireEvent.click(screen.getByAltText('Card c2'));
 
-    fireEvent.click(screen.getAllByText('場 (Field)')[0]);
+    fireEvent.click(screen.getAllByText('Field')[0]);
     fireEvent.click(screen.getByAltText('Card c3'));
 
-    const backwardButton = screen.getByLabelText('山上 (Top) order backward for Card c2');
-    expect(screen.getByLabelText('山上 (Top) order backward for Card c1')).toBeDisabled();
+    const backwardButton = screen.getByLabelText('Top of Deck order backward for Card c2');
+    expect(screen.getByLabelText('Top of Deck order backward for Card c1')).toBeDisabled();
 
     fireEvent.click(backwardButton);
     fireEvent.click(document.querySelector('img[src="/c2.png"]') as Element);
-    fireEvent.click(screen.getAllByText('山上 (Top)')[0]);
+    fireEvent.click(screen.getAllByText('Top of Deck')[0]);
     fireEvent.click(screen.getByAltText('Card c2'));
-    fireEvent.click(screen.getByText('CONFIRM'));
+    fireEvent.click(screen.getByText('Confirm'));
 
     expect(onConfirm).toHaveBeenCalledWith([
       { cardId: 'c3', action: 'field', order: undefined },

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Play, PenTool, Sword, Users } from 'lucide-react';
 import { isDummyCardArtEnabled } from '../utils/cardArtMode';
 import { generateRoomCode } from '../utils/roomCode';
@@ -9,6 +10,7 @@ const IS_DUMMY_CARD_ART_BUILD = isDummyCardArtEnabled();
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [roomId, setRoomId] = useState('');
 
   const handleCreateRoom = () => {
@@ -45,10 +47,10 @@ const Home: React.FC = () => {
           WebkitTextFillColor: 'transparent',
           lineHeight: '1.1'
         }}>
-          Shadowverse Evolve
+          {t('home.title')}
         </h1>
         <p style={{ fontSize: '1.25rem', color: 'var(--text-muted)', marginBottom: '3rem' }}>
-          The unofficial digital sandbox tabletop. Build your deck and duel your friends directly via Peer-to-Peer without any servers.
+          {t('home.subtitle')}
         </p>
 
         {IS_DUMMY_CARD_ART_BUILD && (
@@ -63,7 +65,7 @@ const Home: React.FC = () => {
             }}
           >
             <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-main)', lineHeight: '1.6' }}>
-              このサイトでは現在カード画像がダミー表示になっています。実際のカード画像を使いたい場合は
+              {t('home.dummyArtWarning.part1')}
               {' '}
               <a
                 href="https://github.com/zkousei/shadowverse-evolve-simulator"
@@ -71,10 +73,10 @@ const Home: React.FC = () => {
                 rel="noreferrer"
                 style={{ color: '#fcd34d', textDecoration: 'underline' }}
               >
-                GitHub
+                {t('home.dummyArtWarning.link')}
               </a>
               {' '}
-              からソースをダウンロードしてローカルで実行してください。ローカル実行でも P2P 対戦は可能です。
+              {t('home.dummyArtWarning.part2')}
             </p>
           </div>
         )}
@@ -89,8 +91,8 @@ const Home: React.FC = () => {
             onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
           >
             <PenTool size={48} color="var(--accent-secondary)" />
-            <span style={{ fontSize: '1.125rem', fontWeight: 'bold' }}>Deck Builder</span>
-            <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Construct your 40-50 card deck</span>
+            <span style={{ fontSize: '1.125rem', fontWeight: 'bold' }}>{t('home.cards.deckBuilder.title')}</span>
+            <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>{t('home.cards.deckBuilder.desc')}</span>
           </button>
 
           <button 
@@ -101,8 +103,8 @@ const Home: React.FC = () => {
             onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
           >
             <Play size={48} color="var(--accent-primary)" />
-            <span style={{ fontSize: '1.125rem', fontWeight: 'bold' }}>Host Game</span>
-            <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Create a new P2P room</span>
+            <span style={{ fontSize: '1.125rem', fontWeight: 'bold' }}>{t('home.cards.hostGame.title')}</span>
+            <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>{t('home.cards.hostGame.desc')}</span>
           </button>
 
           <button 
@@ -123,22 +125,22 @@ const Home: React.FC = () => {
               padding: '0.2rem 0.45rem',
               borderRadius: '999px'
             }}>
-              BETA
+              {t('home.cards.soloPlay.badge')}
             </span>
             <Sword size={48} color="#f59e0b" />
-            <span style={{ fontSize: '1.125rem', fontWeight: 'bold' }}>Solo Play Beta</span>
-            <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Practice locally with 2 decks. This mode is still under active tuning.</span>
+            <span style={{ fontSize: '1.125rem', fontWeight: 'bold' }}>{t('home.cards.soloPlay.title')}</span>
+            <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>{t('home.cards.soloPlay.desc')}</span>
           </button>
         </div>
 
         <div className="glass-panel" style={{ padding: '2rem' }}>
           <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-            <Users size={24} /> Join Game
+            <Users size={24} /> {t('home.joinGame.title')}
           </h2>
           <form onSubmit={handleJoinRoom} style={{ display: 'flex', gap: '1rem' }}>
             <input 
               type="text" 
-              placeholder="Enter Room Code..." 
+              placeholder={t('home.joinGame.placeholder')} 
               value={roomId}
               onChange={(e) => setRoomId(e.target.value)}
               style={{
@@ -167,7 +169,7 @@ const Home: React.FC = () => {
                 transition: 'var(--transition-fast)'
               }}
             >
-              Join
+              {t('home.joinGame.button')}
             </button>
           </form>
         </div>
@@ -176,10 +178,10 @@ const Home: React.FC = () => {
 
       <div style={{ textAlign: 'center', maxWidth: '800px', width: '100%', margin: '2rem auto 0', padding: '0 1rem' }}>
         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.4rem', letterSpacing: '0.04em' }}>
-          Version {APP_VERSION}
+          {t('home.footer.version', { version: APP_VERSION })}
         </p>
         <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
-          当サイトに使用しているカード画像は、Shadowverse EVOLVE公式サイト(https://shadowverse-evolve.com/)より、ガイドラインに従って転載しております。該当画像の再利用（転載・配布等）は禁止しております。© Cygames, Inc. ©bushiroad All Rights Reserved.
+          {t('home.footer.copyright')}
         </p>
       </div>
     </div>
