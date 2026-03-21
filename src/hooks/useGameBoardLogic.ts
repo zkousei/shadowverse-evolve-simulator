@@ -47,6 +47,7 @@ type DispatchableGameSyncEvent =
   | { type: 'IMPORT_DECK'; actor?: PlayerRole; cards: CardInstance[]; tokenOptions?: TokenOption[] }
   | { type: 'SET_INITIAL_TURN_ORDER'; actor?: PlayerRole; starter: PlayerRole; manual: boolean }
   | { type: 'UNDO_LAST_TURN'; actor?: PlayerRole; previousState: SyncState }
+  | { type: 'UNDO_CARD_MOVE'; actor?: PlayerRole; previousState: SyncState }
   | { type: 'SPAWN_TOKEN'; actor?: PlayerRole; token: CardInstance }
   | { type: 'ATTACK_DECLARATION'; actor?: PlayerRole; attackerCardId: string; target: AttackTarget };
 
@@ -70,6 +71,19 @@ const APP_VERSION = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '0.0
 const getHostSessionStorageKey = (room: string) => `sv-evolve:host-session:${room}`;
 const SNAPSHOT_REQUEST_TIMEOUT_MS = 2000;
 const MAX_SNAPSHOT_REQUEST_RETRIES = 2;
+
+// Card-movement events that should be saved as an undoable checkpoint.
+const CARD_MOVE_EVENTS = new Set([
+  'MOVE_CARD', 'DRAW_CARD', 'MILL_CARD', 'EXTRACT_CARD',
+  'PLAY_TO_FIELD', 'SEND_TO_CEMETERY', 'BANISH_CARD',
+  'RETURN_EVOLVE', 'RESOLVE_TOP_DECK', 'SPAWN_TOKEN',
+]);
+
+// Events that invalidate a previously saved card-move undo checkpoint.
+const UNDO_CLEAR_EVENTS = new Set([
+  'END_TURN', 'RESET_GAME', 'DRAW_INITIAL_HAND', 'EXECUTE_MULLIGAN',
+  'START_GAME', 'UNDO_LAST_TURN', 'UNDO_CARD_MOVE',
+]);
 
 const isPlayerHud = (value: unknown): value is SyncState['host'] => (
   typeof value === 'object' &&
@@ -185,6 +199,9 @@ export const useGameBoardLogic = () => {
   // setRevealedCardsOverlay does NOT cascade into setupConnection -> PeerJS
   // useEffect -> peer.destroy() (which caused the transient reconnection bug).
   const revealTopIsActiveRef = useRef(false);
+  // Stores the game state immediately before the last card-move action so it
+  // can be restored via the undo button.  Only one level of undo is supported.
+  const undoableCardMoveStateRef = useRef<SyncState | null>(null);
   const processedEventDeduperRef = useRef(createEventDeduper());
 
   const applyLocalState = useCallback((newState: SyncState) => {
@@ -223,6 +240,9 @@ export const useGameBoardLogic = () => {
     setIsMulliganModalOpen(false);
     setMulliganOrder([]);
     setTopDeckCards([]);
+    // Clear any pending card-move undo checkpoint so stale pre-reconnect
+    // state cannot be restored after a reconnection or sync event.
+    undoableCardMoveStateRef.current = null;
   }, []);
 
   const sendSnapshot = useCallback((state: SyncState, source: PlayerRole, effects?: SharedUiEffect[]) => {
@@ -805,6 +825,13 @@ export const useGameBoardLogic = () => {
       actor: event.actor ?? role,
     } as GameSyncEvent;
 
+    // Save or clear the card-move undo checkpoint BEFORE dispatching.
+    if (CARD_MOVE_EVENTS.has(fullEvent.type)) {
+      undoableCardMoveStateRef.current = gameStateRef.current;
+    } else if (UNDO_CLEAR_EVENTS.has(fullEvent.type)) {
+      undoableCardMoveStateRef.current = null;
+    }
+
     if (isSoloMode || isHost) {
       applyAuthoritativeEvent(fullEvent, isSoloMode ? fullEvent.actor : role);
       return;
@@ -1247,6 +1274,14 @@ export const useGameBoardLogic = () => {
     setTopDeckCards([]);
   };
 
+  const handleUndoCardMove = () => {
+    const saved = undoableCardMoveStateRef.current;
+    if (!saved) return;
+    // Clear immediately so the button can't be double-clicked.
+    undoableCardMoveStateRef.current = null;
+    dispatchGameEvent({ type: 'UNDO_CARD_MOVE', previousState: saved });
+  };
+
   const handleExtractCard = (
     cardId: string,
     customDestination?: string,
@@ -1467,6 +1502,7 @@ export const useGameBoardLogic = () => {
     handleBanish, handlePlayToField, handleSendToCemetery, handleReturnEvolve, handleShuffleDeck, handleDeclareAttack,
     getCards, getTokenOptions, lastGameState, millCard,
     topDeckCards, handleLookAtTop, handleResolveTopDeck, setTopDeckCards,
+    handleUndoCardMove, undoableCardMoveStateRef,
     isDebug
   };
 };

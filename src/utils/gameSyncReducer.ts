@@ -425,6 +425,14 @@ export const applyGameSyncEvent = (
         revision: state.revision + 1,
       };
 
+    case 'UNDO_CARD_MOVE':
+      // Any actor can undo their own card move during their turn.
+      if (!isActorRequester(requester, event.actor)) return state;
+      return {
+        ...event.previousState,
+        revision: state.revision + 1,
+      };
+
     case 'SPAWN_TOKEN': {
       if (!isActorRequester(requester, event.actor)) return state;
       const nextCards = CardLogic.spawnTokenCard(state.cards, event.token);

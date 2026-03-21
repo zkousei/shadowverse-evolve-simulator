@@ -382,6 +382,7 @@
     },
     "turn": {
       "undo": "↺ UNDO LAST END TURN",
+      "undoMove": "↩ Undo Move",
       "p1": "{{label}} TURN",
       "your": "YOUR TURN",
       "opponent": "OPPONENT'S TURN",

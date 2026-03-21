@@ -73,6 +73,7 @@ const GameBoard: React.FC = () => {
     handleBanish, handlePlayToField, handleSendToCemetery, handleReturnEvolve, handleShuffleDeck, handleDeclareAttack,
     getCards, getTokenOptions, lastGameState, millCard,
     topDeckCards, handleLookAtTop, handleResolveTopDeck, setTopDeckCards,
+    handleUndoCardMove, undoableCardMoveStateRef,
     isDebug
   } = useGameBoardLogic();
 
@@ -2037,6 +2038,26 @@ const GameBoard: React.FC = () => {
                 {canResetGame && (
                   <button onClick={() => setShowResetConfirm(true)} className="glass-panel" style={{ padding: '0.5rem', background: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', fontWeight: 'bold' }}>
                     {t('gameBoard.controls.resetGame')}
+                  </button>
+                )}
+                 {gameState.gameStatus === 'playing' &&
+                  (isSoloMode ? gameState.turnPlayer === 'host' : gameState.turnPlayer === role) &&
+                  undoableCardMoveStateRef.current && (
+                  <button
+                    onClick={handleUndoCardMove}
+                    className="glass-panel"
+                    style={{
+                      padding: '0.5rem',
+                      background: '#f59e0b',
+                      color: 'black',
+                      fontWeight: 'bold',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.5rem'
+                    }}
+                  >
+                    {t('gameBoard.turn.undoMove')}
                   </button>
                 )}
                 {renderPlayerTracker(bottomRole, bottomLabel)}
