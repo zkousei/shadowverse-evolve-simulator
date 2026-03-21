@@ -2151,6 +2151,7 @@ const GameBoard: React.FC = () => {
         isOpen={topDeckCards.length > 0}
         cards={topDeckCards}
         cardDetailLookup={cardDetailLookup}
+        handCards={gameState.cards.filter(c => c.zone === `hand-${topDeckTargetRole}`)}
         onConfirm={(results) => handleResolveTopDeck(results, topDeckTargetRole)}
         onCancel={() => setTopDeckCards([])}
       />

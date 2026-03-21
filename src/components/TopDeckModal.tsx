@@ -10,6 +10,7 @@ interface TopDeckModalProps {
   isOpen: boolean;
   cards: CardInstance[];
   cardDetailLookup?: CardDetailLookup;
+  handCards?: CardInstance[];
   onConfirm: (results: { cardId: string, action: TopDeckAction, order?: number }[]) => void;
   onCancel: () => void;
 }
@@ -20,11 +21,12 @@ interface AssignedCard {
   order?: number;
 }
 
-const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLookup = {}, onConfirm, onCancel }) => {
+const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLookup = {}, handCards, onConfirm, onCancel }) => {
   const { t } = useTranslation();
   const [pendingCards, setPendingCards] = useState<CardInstance[]>([]);
   const [assignedCards, setAssignedCards] = useState<AssignedCard[]>([]);
   const [currentAction, setCurrentAction] = useState<TopDeckAction>('top');
+  const [isHandOpen, setIsHandOpen] = useState(true);
 
   useEffect(() => {
     if (isOpen) {
@@ -330,6 +332,45 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
             })}
           </div>
         </div>
+
+        {/* Hand Reference Strip */}
+        {handCards && handCards.length > 0 && (
+          <div style={{ background: '#161b22', borderTop: '1px solid #30363d' }}>
+            <button
+              onClick={() => setIsHandOpen(prev => !prev)}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '0.6rem 2rem', background: 'none', border: 'none', cursor: 'pointer',
+                color: '#8b949e', fontSize: '0.8rem', fontWeight: 600,
+              }}
+            >
+              <span>🃏 Your Hand ({handCards.length})</span>
+              <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>{isHandOpen ? '▲ hide' : '▼ show'}</span>
+            </button>
+            {isHandOpen && (
+              <div style={{
+                display: 'flex', gap: '8px', padding: '0.5rem 2rem 1rem',
+                overflowX: 'auto', alignItems: 'flex-end',
+              }}>
+                {handCards.map(card => (
+                  <div key={card.id} style={{ flexShrink: 0 }}>
+                    <CardArtwork
+                      image={card.image}
+                      alt={card.name}
+                      detail={cardDetailLookup[card.cardId]}
+                      baseCardType={card.baseCardType}
+                      isLeaderCard={card.isLeaderCard}
+                      isTokenCard={card.isTokenCard}
+                      isEvolveCard={card.isEvolveCard}
+                      style={{ width: '64px', height: '90px', borderRadius: '6px', boxShadow: '0 2px 8px rgba(0,0,0,0.5)' }}
+                      draggable={false}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Footer */}
         <div style={{ padding: '1.5rem 2rem', background: '#161b22', borderTop: '1px solid #30363d', textAlign: 'right', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
