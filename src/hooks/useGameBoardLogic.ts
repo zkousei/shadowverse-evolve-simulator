@@ -357,10 +357,12 @@ export const useGameBoardLogic = () => {
 
     if (effect.type === 'REVEAL_TOP_DECK_CARDS') {
       clearRevealedCardsTimer();
+      const pendingSummary = pendingLookTopSummaryLinesRef.current ?? [];
+      pendingLookTopSummaryLinesRef.current = null;
       setRevealedCardsOverlay({
         title: `${getSharedActorLabel(effect.actor, role, isSoloMode)} revealed from Look Top`,
         cards: effect.cards,
-        summaryLines: [],
+        summaryLines: pendingSummary,
       });
       revealedCardsTimeoutRef.current = setTimeout(() => {
         setRevealedCardsOverlay(null);
@@ -487,6 +489,7 @@ export const useGameBoardLogic = () => {
       const summaryLines = formatSharedUiMessage(effect, role, isSoloMode).split('\n').filter(Boolean);
       pushEventHistory(summaryLines.join('\n'));
       if (revealedCardsOverlay?.title.includes('revealed from Look Top')) {
+        // Overlay is already open — update it with the summary.
         setRevealedCardsOverlay((previous) => {
           if (!previous || !previous.title.includes('revealed from Look Top')) return previous;
           return {
@@ -494,9 +497,13 @@ export const useGameBoardLogic = () => {
             summaryLines,
           };
         });
-      } else if (revealedCardsTimeoutRef.current) {
+      } else if (effect.revealedHandCards.length > 0) {
+        // Reveal dialog is expected (revealedHand cards exist) but hasn't opened yet
+        // (summary arrived before the REVEAL_TOP_DECK_CARDS message due to network ordering).
+        // Buffer the summary so REVEAL_TOP_DECK_CARDS can pick it up when it arrives.
         pendingLookTopSummaryLinesRef.current = summaryLines;
       } else {
+        // No card images to reveal — just show a timed text message.
         const message = summaryLines.join('\n');
         showTimedCardPlayMessage(message, 3200);
       }
