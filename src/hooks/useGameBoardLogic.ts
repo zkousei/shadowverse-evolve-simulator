@@ -48,6 +48,7 @@ type DispatchableGameSyncEvent =
   | { type: 'SET_INITIAL_TURN_ORDER'; actor?: PlayerRole; starter: PlayerRole; manual: boolean }
   | { type: 'UNDO_LAST_TURN'; actor?: PlayerRole; previousState: SyncState }
   | { type: 'UNDO_CARD_MOVE'; actor?: PlayerRole; previousState: SyncState }
+  | { type: 'SET_REVEAL_HANDS_MODE'; actor?: PlayerRole; enabled: boolean }
   | { type: 'SPAWN_TOKEN'; actor?: PlayerRole; token: CardInstance }
   | { type: 'ATTACK_DECLARATION'; actor?: PlayerRole; attackerCardId: string; target: AttackTarget };
 
@@ -1471,6 +1472,10 @@ export const useGameBoardLogic = () => {
     dispatchGameEvent({ type: 'ATTACK_DECLARATION', actor: targetRole, attackerCardId, target });
   };
 
+  const handleSetRevealHandsMode = (enabled: boolean) => {
+    dispatchGameEvent({ type: 'SET_REVEAL_HANDS_MODE', enabled });
+  };
+
   const handleSendToCemetery = (cardId: string) => {
     dispatchGameEvent({ type: 'SEND_TO_CEMETERY', cardId });
   };
@@ -1500,6 +1505,7 @@ export const useGameBoardLogic = () => {
     drawCard, handleExtractCard, confirmResetGame, handleDeckUpload, importDeckData, spawnToken,
     handleModifyCounter, handleModifyGenericCounter, handleDragEnd, toggleTap, handleFlipCard, handleSendToBottom,
     handleBanish, handlePlayToField, handleSendToCemetery, handleReturnEvolve, handleShuffleDeck, handleDeclareAttack,
+    handleSetRevealHandsMode,
     getCards, getTokenOptions, lastGameState, millCard,
     topDeckCards, handleLookAtTop, handleResolveTopDeck, setTopDeckCards,
     handleUndoCardMove, undoableCardMoveStateRef,

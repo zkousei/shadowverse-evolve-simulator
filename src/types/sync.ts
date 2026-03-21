@@ -46,6 +46,7 @@ export type GameSyncEvent =
   | { id: string; type: 'SET_INITIAL_TURN_ORDER'; actor: PlayerRole; starter: PlayerRole; manual: boolean }
   | { id: string; type: 'UNDO_LAST_TURN'; actor: PlayerRole; previousState: SyncState }
   | { id: string; type: 'UNDO_CARD_MOVE'; actor: PlayerRole; previousState: SyncState }
+  | { id: string; type: 'SET_REVEAL_HANDS_MODE'; actor: PlayerRole; enabled: boolean }
   | { id: string; type: 'SPAWN_TOKEN'; actor: PlayerRole; token: CardInstance }
   | { id: string; type: 'ATTACK_DECLARATION'; actor: PlayerRole; attackerCardId: string; target: AttackTarget };
 

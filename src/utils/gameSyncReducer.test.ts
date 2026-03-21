@@ -313,6 +313,27 @@ describe('gameSyncReducer', () => {
     expect(allowed.revision).toBe(3);
   });
 
+  it('sets reveal hands mode and increments revision (host only)', () => {
+    const state = createState({ revealHandsMode: false, revision: 10 });
+
+    const denied = applyGameSyncEvent(state, {
+      id: 'evt-reveal-denied',
+      type: 'SET_REVEAL_HANDS_MODE',
+      actor: 'guest',
+      enabled: true,
+    }, 'guest');
+    expect(denied).toBe(state);
+
+    const allowed = applyGameSyncEvent(state, {
+      id: 'evt-reveal-allowed',
+      type: 'SET_REVEAL_HANDS_MODE',
+      actor: 'host',
+      enabled: true,
+    }, 'host');
+    expect(allowed.revealHandsMode).toBe(true);
+    expect(allowed.revision).toBe(11);
+  });
+
   it('ends turn, advances resources, and draws for the next player', () => {
     const state = createState({
       gameStatus: 'playing',

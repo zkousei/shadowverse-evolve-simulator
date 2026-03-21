@@ -409,6 +409,8 @@
       "step1": "1. Draw Opening Hands",
       "step2": "2. Mulligan and Ready",
       "step3": "3. START GAME",
+      "revealHandsMode": "Reveal Hands Mode",
+      "revealHandsModeDesc": "When ON, both players' hands are visible to each other",
       "openingHand": "Opening Hand:",
       "ready": "Ready:",
       "done": "Done",

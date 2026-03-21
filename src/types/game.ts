@@ -30,6 +30,7 @@ export interface SyncState {
   phase: 'Start' | 'Main' | 'End';
   gameStatus: 'preparing' | 'playing';
   tokenOptions: Record<PlayerRole, TokenOption[]>;
+  revealHandsMode: boolean;
   revision: number;
 }
 
@@ -45,5 +46,6 @@ export const initialState: SyncState = {
     host: [],
     guest: [],
   },
+  revealHandsMode: false,
   revision: 0
 };

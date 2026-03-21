@@ -96,6 +96,13 @@ export const applyGameSyncEvent = (
         phase: event.phase,
       });
 
+    case 'SET_REVEAL_HANDS_MODE':
+      if (requester !== 'host') return state;
+      return bumpRevision({
+        ...state,
+        revealHandsMode: event.enabled,
+      });
+
     case 'END_TURN': {
       if (!isActorRequester(requester, event.actor)) return state;
       if (state.gameStatus !== 'playing') return state;
