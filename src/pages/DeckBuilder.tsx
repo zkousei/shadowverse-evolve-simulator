@@ -18,7 +18,6 @@ import {
   createDefaultDeckRuleConfig,
   DECK_FORMAT_VALUES,
   type DeckFormat,
-  type DeckIdentityType,
   getImportedDeckRuleConfig,
 } from '../models/deckRule';
 import { createEmptyDeckState, type DeckState } from '../models/deckState';

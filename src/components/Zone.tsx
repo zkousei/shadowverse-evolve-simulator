@@ -1,6 +1,5 @@
 import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
-import { useTranslation } from 'react-i18next';
 import Card, { type CardInspectAnchor, type CardInstance } from './Card';
 import type { PlayerRole } from '../types/game';
 import type { CardStatLookup } from '../utils/cardStats';
@@ -35,7 +34,6 @@ interface Props {
 
 const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLookup, onInspectCard, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, hideCards, layout = 'horizontal', isProtected, lockCards, disableQuickActionsForCard, getHighlightTone, viewerRole, containerStyle, isDebug }) => {
   const { isOver, setNodeRef } = useDroppable({ id });
-  const { t } = useTranslation();
 
   const isStack = layout === 'stack';
   const isFieldZone = id.startsWith('field-');
