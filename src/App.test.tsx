@@ -10,6 +10,28 @@ vi.mock('./pages/DeckBuilder', () => ({
   default: () => <div>Mock Deck Builder</div>,
 }));
 
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string) => {
+      const translations: Record<string, string> = {
+        'nav.home': 'Home',
+        'nav.deckBuilder': 'Deck Builder',
+        'nav.play': 'Play',
+        'nav.solo': 'Solo',
+        'nav.hostGame': 'Host Game',
+        'nav.joinGame': 'Join Game',
+        'nav.join': 'Join',
+        'nav.roomCode': 'Room Code',
+      };
+      return translations[key] || key;
+    },
+    i18n: {
+      changeLanguage: vi.fn(),
+      language: 'en',
+    },
+  }),
+}));
+
 vi.mock('./pages/GameBoard', () => ({
   default: () => <div>Mock Game Board</div>,
 }));

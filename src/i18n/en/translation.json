@@ -1,0 +1,491 @@
+{
+  "deckBuilder": {
+    "deckArea": {
+      "actions": {
+        "exportDisabledTitle": "Resolve issues before exporting",
+        "exportTitle": "Export Deck",
+        "import": "Import",
+        "export": "Export",
+        "reset": "Reset",
+        "save": "Save",
+        "saveAsNew": "Save as New Deck",
+        "saved": "Saved",
+        "unsavedChanges": "Unsaved changes",
+        "notSaved": "Not saved to My Decks",
+        "makeUnsavedCopy": "Make Unsaved Copy",
+        "keepWorkingCopy": "Keep the current deck as a local working copy without tracking the saved deck.",
+        "removeLeader": "Remove one leader",
+        "removeMain": "Remove one copy from Main Deck",
+        "removeEvolve": "Remove one copy from Evolve Deck",
+        "removeToken": "Remove one copy from Token Deck"
+      },
+      "deckName": "Deck Name",
+      "defaultDeckName": "My Deck",
+      "deckNameHint": "If left blank, the deck will be saved as {{name}}.",
+      "myDeckSort": "My Deck Sort",
+      "storage": "Storage",
+      "file": "File",
+      "sort": {
+        "added": "Added Order",
+        "cost": "Cost",
+        "id": "Card ID"
+      },
+      "leader": "Leader",
+      "noLeader": "No leader selected.",
+      "mainDeck": "Main Deck",
+      "evolveDeck": "Evolve Deck",
+      "tokenDeck": "Token Deck"
+    },
+    "title": "Card Library",
+    "loading": "Loading card database...",
+    "status": {
+      "unsavedChanges": "Unsaved changes",
+      "saved": "Saved",
+      "notSaved": "Not saved to My Decks"
+    },
+    "alerts": {
+      "importFailed": "Failed to parse deck JSON.",
+      "emptyBuilder": "The builder is empty. Add cards or adjust the setup before saving.",
+      "saveAsNewSuccess": "\"{{name}}\" was saved as a new deck.",
+      "saveSuccess": "\"{{name}}\" was saved.",
+      "sessionRestored": "Session restored from this browser",
+      "limitReachedHard": "My Decks has reached the browser limit ({{limit}}). Delete or export older decks before creating a new saved deck.",
+      "limitReachedSoft": "My Decks already has {{count}} saved decks in this browser. Consider exporting or deleting older decks before it reaches {{limit}}."
+    },
+    "filters": {
+      "labels": {
+        "section": "Section",
+        "class": "Class",
+        "cost": "Cost",
+        "expansion": "Expansion",
+        "cardType": "Card Type",
+        "rarity": "Rarity",
+        "productName": "Product Name"
+      },
+      "searchCards": "Search cards by name...",
+      "allExpansions": "All Expansions",
+      "allRarities": "All Rarities",
+      "allProducts": "All Products",
+      "searchSubtype": "Search subtype...",
+      "reset": "Reset Filters",
+      "hideOriginalArts": "Hide duplicate arts",
+      "cardType": {
+        "all": "All",
+        "follower": "Follower",
+        "spell": "Spell",
+        "amulet": "Amulet"
+      },
+      "deckSection": {
+        "all": "All",
+        "main": "Main",
+        "evolve": "Evolve",
+        "leader": "Leader",
+        "token": "Token"
+      }
+    },
+    "deckRule": {
+      "title": "Deck Rule",
+      "ruleFormat": "Rule",
+      "formats": {
+        "constructed": "Constructed",
+        "crossover": "Crossover",
+        "other": "Other"
+      },
+      "identity": {
+        "type": "Build by:",
+        "class": "Class",
+        "title": "Title"
+      },
+      "selectedClass": "Selected Class",
+      "selectClass": "Select class",
+      "selectedTitle": "Selected Title",
+      "selectTitle": "Select title",
+      "crossoverClassA": "Crossover Class A",
+      "selectFirstClass": "Select first class",
+      "crossoverClassB": "Crossover Class B",
+      "selectSecondClass": "Select second class",
+      "promptConstructed": "Select a class or title to enable constructed deck building.",
+      "promptCrossover": "Select two different classes to enable crossover deck building.",
+      "resolveBeforeExport": "Resolve these issues before exporting."
+    },
+    "myDecks": {
+      "title": "My Decks",
+      "subtitle": "Saved in this browser",
+      "disclaimer": "My Decks is stored in this browser only. To keep a durable backup or move decks to another device, use Export and save the JSON file.",
+      "search": "Search by deck name...",
+      "count": "Total: {{count}} / {{max}}",
+      "startFresh": "Start Fresh Deck",
+      "deleteAll": "Delete All",
+      "deleteSelected": "Delete Selected",
+      "cancelSelection": "Cancel",
+      "selectMode": "Select Mode",
+      "noDecks": "No saved decks yet. Build a deck and press Save to keep it in this browser."
+    },
+    "addActions": {
+      "mainTitle": "Add to Main Deck",
+      "mainLabel": "Add one copy to Main Deck",
+      "evolveTitle": "Add to Evolve Deck",
+      "evolveLabel": "Add one copy to Evolve Deck",
+      "leaderTitle": "Set as Leader",
+      "tokenTitle": "Add to Token Deck",
+      "tokenLabel": "Add one copy to Token Deck"
+    },
+    "modals": {
+      "loadDeck": {
+        "title": "Load Saved Deck",
+        "desc": "Are you sure you want to load \"{{name}}\"? Current unsaved changes will be lost.",
+        "resume": "Resume Previous Session",
+        "resumeDesc": "You have a previous unsaved session for \"{{name}}\". Do you want to resume it?",
+        "resumeSessionDesc": "Restore the last Deck Builder session from this browser?",
+        "resumeSessionNote": "Continue to reopen the previous builder state, or start fresh with an empty deck builder.",
+        "resumeAria": "Resume previous session",
+        "startFresh": "Start Fresh",
+        "continue": "Continue",
+        "illegalDeck": "Illegal deck",
+        "updated": "Updated {{at}}",
+        "resolveIssues": "Resolve deck issues after loading before exporting.",
+        "deleteBulkHint": "Select decks to delete them in bulk."
+      },
+      "resetDeck": {
+        "title": "Reset Deck",
+        "desc": "Clear the current Main Deck, Evolve Deck, Leader, and Token Deck contents?",
+        "descNote": "Deck rule settings, deck name, and card library filters will stay as they are.",
+        "confirm": "Yes, Reset",
+        "aria": "Reset deck confirmation"
+      },
+      "resetBuilder": {
+        "title": "Reset Builder",
+        "desc": "Clear the current deck contents, deck name, and rule settings?",
+        "descNote": "This also discards the saved Deck Builder session for this browser.",
+        "confirm": "Yes, Reset",
+        "aria": "Reset builder confirmation"
+      },
+      "deleteDeck": {
+        "title": "Delete Saved Deck",
+        "desc": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone."
+      },
+      "deleteSelectedDecks": {
+        "title": "Delete Selected Saved Decks",
+        "desc": "Are you sure you want to delete the selected {{count}} decks? This action cannot be undone."
+      },
+      "deleteAllDecks": {
+        "title": "Delete All Saved Decks",
+        "desc": "Are you sure you want to delete all saved decks? This action cannot be undone."
+      },
+      "buttons": {
+        "cancel": "Cancel",
+        "load": "Load Deck",
+        "resume": "Resume",
+        "startFresh": "Start Fresh",
+        "delete": "Delete",
+        "clear": "Clear"
+      }
+    },
+    "preview": {
+      "id": "ID",
+      "cost": "Cost",
+      "stats": "Stats"
+    },
+    "validation": {
+      "requireTitle": "Constructed decks require a selected title.",
+      "requireClass": "Constructed decks require a selected class.",
+      "requireCrossoverClasses": "Crossover decks require two different selected classes.",
+      "mainDeckTooSmall": "Main Deck must contain at least {{expected}} cards ({{actual}}/{{expected}}).",
+      "limitExceeded": "{{deck}} exceeds its limit ({{actual}}/{{expected}}).",
+      "tooManyCopies": "{{deck}} contains too many copies of {{cardName}} ({{actual}}/{{expected}}).",
+      "banned": "{{cardName}} is banned in {{format}}.",
+      "limited": "{{cardName}} is limited to 1 copy in {{format}} ({{actual}}/1).",
+      "invalidLeaderCount": "This {{format}} deck requires exactly {{expected}} leader(s) ({{actual}}/{{expected}}).",
+      "crossoverLeaderClassesInclude": "Leader cards must include one {{firstClass}} leader and one {{secondClass}} leader.",
+      "crossoverLeaderClassesMatch": "Leader cards must match the selected crossover classes.",
+      "invalidSection": "{{deck}} contains cards in the wrong section: {{cardList}}.",
+      "invalidRule": "{{deck}} contains cards that do not match the selected deck rule: {{cardList}}."
+    }
+  },
+  "home": {
+    "title": "Shadowverse Evolve",
+    "subtitle": "The unofficial digital sandbox tabletop. Build your deck and duel your friends directly via Peer-to-Peer without any servers.",
+    "dummyArtWarning": {
+      "part1": "Card images are currently displayed as dummies on this site. If you want to use actual card images, please download the source from",
+      "link": "GitHub",
+      "part2": "and run it locally. P2P matches are possible even when running locally."
+    },
+    "cards": {
+      "deckBuilder": {
+        "title": "Deck Builder",
+        "desc": "Construct your 40-50 card deck"
+      },
+      "hostGame": {
+        "title": "Host Game",
+        "desc": "Create a new P2P room"
+      },
+      "soloPlay": {
+        "badge": "BETA",
+        "title": "Solo Play Beta",
+        "desc": "Practice locally with 2 decks. This mode is still under active tuning."
+      }
+    },
+    "joinGame": {
+      "title": "Join Game",
+      "placeholder": "Enter Room Code...",
+      "button": "Join"
+    },
+    "footer": {
+      "version": "Version {{version}}",
+      "copyright": "The card images used on this site are reproduced from the Shadowverse EVOLVE official website (https://shadowverse-evolve.com/) in accordance with their guidelines. Unauthorized reuse (reproduction, distribution, etc.) of these images is prohibited. © Cygames, Inc. ©bushiroad All Rights Reserved."
+    }
+  },
+  "nav": {
+    "home": "Home",
+    "deckBuilder": "Deck Builder",
+    "play": "Play",
+    "solo": "Solo",
+    "hostGame": "Host Game",
+    "joinGame": "Join Game",
+    "join": "Join",
+    "roomCode": "Room Code"
+  },
+  "common": {
+    "buttons": {
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "search": "Search",
+      "close": "Close"
+    },
+    "labels": {
+      "self": "My",
+      "opponent": "Opponent",
+      "player1": "Player 1",
+      "player2": "Player 2"
+    }
+  },
+  "zone": {
+    "mainDeck": "Main Deck",
+    "evolveDeck": "Evolve Deck",
+    "field": "Field",
+    "exArea": "EX Area",
+    "cemetery": "Cemetery",
+    "banish": "Banish",
+    "hand": "Hand",
+    "leader": "Leader"
+  },
+  "game": {
+    "mulligan_desc": "Mulligan ({{label}})",
+    "mulligan_title": "Mulligan: Select Return Order",
+    "mulligan_instructions": "Select cards in the order you want to put them on the bottom of your deck.",
+    "mulligan_disclaimer": "(The 4th selection will be at the absolute bottom.)",
+    "mulligan_confirm": "Confirm Mulligan",
+    "mulligan_reset": "Reset",
+    "mulligan_action": "Mulligan",
+    "mulligan_exchange": "Exchange (Mulligan)"
+  },
+  "gameBoard": {
+    "deckRules": {
+      "constructedTitle": "Constructed / Title: {{title}}",
+      "constructedClass": "Constructed / Class: {{class}}",
+      "unselected": "Unselected",
+      "crossover": "Crossover / {{firstClass}} + {{secondClass}}",
+      "other": "Other",
+      "main": "Main",
+      "evolve": "Evolve",
+      "leader": "Leader",
+      "token": "Token"
+    },
+    "status": {
+      "loadingCatalog": "Loading card catalog... Please wait a moment.",
+      "availableBeforeStart": "Available while preparing decks before the game starts.",
+      "connected": "Connected",
+      "reconnecting": "Reconnecting",
+      "disconnected": "Disconnected",
+      "reconnectingTitle": "Reconnecting to host. Please wait.",
+      "connectionRequired": "Connection to host is required."
+    },
+    "room": {
+      "host": "Host/P2P",
+      "p2p": "P2P",
+      "roomId": "Room ID",
+      "copyAria": "Copy Room ID",
+      "copy": "Copy",
+      "copied": "Copied"
+    },
+    "board": {
+      "leaderLabel": "{{label}} Leader",
+      "search": "Search",
+      "actions": "Actions",
+      "statusLabel": "{{label}} Status",
+      "stats": {
+        "max": "MAX",
+        "playPoints": "Play Points",
+        "hp": "HP",
+        "ep": "EP",
+        "sep": "SEP",
+        "combo": "Combo"
+      },
+      "endTurn": "End {{label}} Turn",
+      "endTurnSelf": "End Turn",
+      "endTurnDisabled": "Available during your turn only.",
+      "availableDuringGameOnly": "Available during the game only."
+    },
+    "inspector": {
+      "close": "Close",
+      "id": "ID",
+      "cost": "Cost",
+      "stats": "Stats",
+      "abilityText": "Ability Text",
+      "noAbilityText": "No detailed ability text found for this card."
+    },
+    "deckPicker": {
+      "title": "Load from My Decks",
+      "subtitle": "Legal saved decks for {{label}}",
+      "close": "Close",
+      "searchPlaceholder": "Search by deck name...",
+      "searchAria": "Search saved decks",
+      "deckCount": "{{count}} decks",
+      "noDecks": "No legal saved decks are available in this browser.",
+      "load": "Load"
+    },
+    "header": {
+      "mode": "Mode",
+      "room": "Room",
+      "soloPlayBeta": "Solo Play Beta",
+      "copied": "Copied",
+      "copy": "Copy",
+      "reconnectMessageConnecting": "Attempting to reconnect to host.",
+      "reconnectMessageRetry": "Retry the connection now.",
+      "reconnectNow": "Reconnect Now",
+      "reconnect": "Reconnect"
+    },
+    "controls": {
+      "decideTurnOrder": "🪙 Decide Turn Order (Random)",
+      "p1First": "Player 1 1st",
+      "meFirst": "Me 1st",
+      "p2First": "Player 2 1st",
+      "oppFirst": "Opp 1st",
+      "drawHand": "🃏 Draw Hand (4)",
+      "drawP2Hand": "🃏 Draw P2 Hand (4)",
+      "cancelReady": "✕ Cancel Ready",
+      "p1Ready": "✅ Player 1 Ready",
+      "ready": "✅ Ready (準備完了)",
+      "cancelP2Ready": "✕ Cancel P2 Ready",
+      "p2Ready": "✅ Player 2 Ready",
+      "startGame": "▶ START GAME",
+      "p1": "PLAYER 1",
+      "host": "HOST",
+      "p2": "PLAYER 2",
+      "guest": "GUEST",
+      "statusReady": "READY",
+      "statusDeciding": "DECIDING",
+      "statusWaiting": "WAITING",
+      "tossCoin": "🪙 Toss Coin",
+      "rollDice": "🎲 Roll Dice",
+      "resetGame": "Reset Game"
+    },
+    "turn": {
+      "undo": "↺ UNDO LAST END TURN",
+      "p1": "{{label}} TURN",
+      "your": "YOUR TURN",
+      "opponent": "OPPONENT'S TURN",
+      "count": "TURN {{count}}",
+      "phaseStart": "Start Phase",
+      "phaseMain": "Main Phase",
+      "phaseEnd": "End Phase"
+    },
+    "alerts": {
+      "reconnectingLocked": "Reconnecting to host. Actions are temporarily locked until the latest state is synced.",
+      "previousSession": "Previous host session found for this room.",
+      "previousSessionTime": "You can restore the state from {{time}}.",
+      "previousSessionUnknown": "You can restore the previous board state.",
+      "discard": "Discard",
+      "resume": "Resume Previous Session",
+      "attackMode": "ATTACK MODE",
+      "attackSelect": "Select an enemy follower or leader for ",
+      "cancel": "Cancel",
+      "recentEvents": "Recent Events"
+    },
+    "preparation": {
+      "title": "Preparing Game",
+      "description": "Draw your opening four cards, finish mulligan and Ready, choose who goes first before starting, then press `START GAME`.\nHand cards cannot be moved to other zones during preparation.",
+      "step1": "1. Draw Opening Hands",
+      "step2": "2. Mulligan and Ready",
+      "step3": "3. START GAME",
+      "openingHand": "Opening Hand:",
+      "ready": "Ready:",
+      "done": "Done",
+      "pending": "Pending",
+      "mulliganButton": "🔄 Mulligan ({{label}})"
+    },
+    "zones": {
+      "controls": "{{label}} Controls",
+      "importDeck": "Import {{label}} Deck",
+      "loadFromMyDecks": "Load {{label}} from My Decks",
+      "draw": "Draw {{label}}",
+      "mill": "Mill {{label}}",
+      "spawnToken": "Spawn {{label}} Token",
+      "hand": "{{label}} Hand",
+      "cemetery": "{{label}} Cemetery",
+      "exArea": "{{label}} EX Area",
+      "banish": "{{label}} Banish",
+      "mainDeck": "{{label}} Main Deck",
+      "evolveDeck": "{{label}} Evolve Deck",
+      "field": "{{label}} Field",
+      "search": "Search",
+      "shuffle": "Shuffle",
+      "lookTop": "Look Top (N)",
+      "importDeckJson": "Import Deck (.json)",
+      "loadFromMyDecksGeneric": "Load from My Decks"
+    },
+    "modals": {
+      "resetGame": {
+        "title": "Reset Game",
+        "description": "Are you sure you want to reset the game to its initial state? All cards will return to their starting decks.",
+        "confirm": "Yes, Reset"
+      },
+      "undoTurn": {
+        "title": "Undo Last End Turn",
+        "description": "This will rewind the board state to just before you ended your turn. Do you want to proceed?",
+        "confirm": "Yes, Undo"
+      },
+      "tokenSpawn": {
+        "title": "Select Token"
+      },
+      "topN": {
+        "title": "How many cards to look at?",
+        "confirm": "Look"
+      },
+      "search": {
+        "setFaceDown": "Set Face-Down to Field",
+        "playToField": "Play to Field",
+        "used": "USED (Face-Up)",
+        "unused": "UNUSED (Face-Down)",
+        "addToHand": "Add to Hand",
+        "revealAndAddToHand": "Reveal & Add to Hand",
+        "addToEx": "Add to EX Area",
+        "setUsed": "Set USED",
+        "setUnused": "Set UNUSED",
+        "empty": "This zone is empty.",
+        "stats": "Stats",
+        "noDetailText": "No detailed text was found for this card."
+      },
+      "topDeck": {
+        "title": "Look Top {{count}} Cards",
+        "instruction": "Tap cards to assign them to \"{{destination}}\".",
+        "assignTo": "Assign to:",
+        "pendingCards": "PENDING CARDS",
+        "allAssignedInline": "All cards assigned.",
+        "tapToReturn": "Tap card to return",
+        "empty": "Empty",
+        "remaining": "Remaining: {{count}} cards",
+        "allOrganized": "All cards organized.",
+        "destinations": {
+          "field": "Field",
+          "hand": "Hand",
+          "revealedHand": "Reveal to Hand",
+          "ex": "EX Area",
+          "bottom": "Bottom of Deck",
+          "top": "Top of Deck",
+          "cemetery": "Cemetery"
+        }
+      }
+    }
+  }
+}

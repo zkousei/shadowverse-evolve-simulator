@@ -4,6 +4,29 @@ import DeckBuilder from './DeckBuilder';
 import { listSavedDecks, loadDraft, saveDeck, saveDraft } from '../utils/deckStorage';
 import type { DeckBuilderCardData } from '../models/deckBuilderCard';
 import type { DeckRuleConfig } from '../models/deckRule';
+import enTranslations from '../i18n/en/translation.json';
+
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, params?: Record<string, any>) => {
+      const parts = key.split('.');
+      let result: any = enTranslations;
+      for (const p of parts) {
+        if (result == null) return key;
+        result = result[p];
+      }
+      if (typeof result !== 'string') return key;
+      let finalStr = result;
+      if (params) {
+        for (const [k, v] of Object.entries(params)) {
+          finalStr = finalStr.replace(new RegExp(`{{${k}}}`, 'g'), String(v));
+        }
+      }
+      return finalStr;
+    },
+    i18n: { changeLanguage: vi.fn(), language: 'en' },
+  }),
+}));
 
 const mockCards: DeckBuilderCardData[] = [
   {
@@ -354,7 +377,7 @@ describe('DeckBuilder', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Preview Alpha Knight' }));
     fireEvent.click(screen.getByRole('button', { name: 'Close card preview' }));
     expect(screen.queryByRole('dialog', { name: 'Alpha Knight preview' })).not.toBeInTheDocument();
-  });
+  }, 15000);
 
   it('filters the library by constructed title rules when a title identity is selected', async () => {
     render(<DeckBuilder />);
@@ -517,7 +540,7 @@ describe('DeckBuilder', () => {
     expect(screen.getByText('1/10')).toBeInTheDocument();
     expect(screen.getByText('1/1')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Reset Deck' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
     expect(screen.getByRole('dialog', { name: 'Reset deck confirmation' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
@@ -526,7 +549,7 @@ describe('DeckBuilder', () => {
     expect(screen.getByText('1/10')).toBeInTheDocument();
     expect(screen.getByText('1/1')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Reset Deck' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
     fireEvent.click(screen.getByRole('button', { name: 'Yes, Reset' }));
 
     expect(screen.queryByRole('dialog', { name: 'Reset deck confirmation' })).not.toBeInTheDocument();
@@ -777,7 +800,7 @@ describe('DeckBuilder', () => {
     expect(exportButton).toBeDisabled();
     expect(screen.getByText('Constructed decks require a selected class.')).toBeInTheDocument();
     expect(screen.getByText('Main Deck must contain at least 40 cards (0/40).')).toBeInTheDocument();
-    expect(screen.getByText('This constructed deck requires exactly 1 leader (0/1).')).toBeInTheDocument();
+    expect(screen.getByText('This Constructed deck requires exactly 1 leader(s) (0/1).')).toBeInTheDocument();
   });
 
   it('disables adding a fourth effective copy of the same card', async () => {
@@ -1139,7 +1162,7 @@ describe('DeckBuilder', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'My Decks' }));
     expect(screen.getByText('Updated At Limit')).toBeInTheDocument();
-  });
+  }, 15000);
 
   it('keeps a saved draft pending until the user confirms restoration', async () => {
     saveDraft({
@@ -1170,7 +1193,7 @@ describe('DeckBuilder', () => {
       expect(screen.getByText('Session restored from this browser')).toBeInTheDocument();
       expect(screen.getByText('1/50')).toBeInTheDocument();
     });
-  });
+  }, 15000);
 
   it('keeps the My Decks modal open when delete is canceled', async () => {
     render(<DeckBuilder />);

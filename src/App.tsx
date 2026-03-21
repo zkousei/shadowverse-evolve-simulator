@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Home from './pages/Home';
 import DeckBuilder from './pages/DeckBuilder';
 import GameBoard from './pages/GameBoard';
@@ -22,20 +23,27 @@ function AppNavigation() {
   const location = useLocation();
   const playMenuRef = React.useRef<HTMLDivElement | null>(null);
   const [isPlayMenuOpen, setIsPlayMenuOpen] = React.useState(false);
+  const langMenuRef = React.useRef<HTMLDivElement | null>(null);
+  const [isLangMenuOpen, setIsLangMenuOpen] = React.useState(false);
   const [roomId, setRoomId] = React.useState('');
 
   React.useEffect(() => {
-    if (!isPlayMenuOpen) return undefined;
+    if (!isPlayMenuOpen && !isLangMenuOpen) return undefined;
 
     const handlePointerDown = (event: MouseEvent) => {
-      if (!playMenuRef.current?.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (isPlayMenuOpen && !playMenuRef.current?.contains(target)) {
         setIsPlayMenuOpen(false);
+      }
+      if (isLangMenuOpen && !langMenuRef.current?.contains(target)) {
+        setIsLangMenuOpen(false);
       }
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setIsPlayMenuOpen(false);
+        setIsLangMenuOpen(false);
       }
     };
 
@@ -45,10 +53,11 @@ function AppNavigation() {
       window.removeEventListener('mousedown', handlePointerDown);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isPlayMenuOpen]);
+  }, [isPlayMenuOpen, isLangMenuOpen]);
 
   React.useEffect(() => {
     setIsPlayMenuOpen(false);
+    setIsLangMenuOpen(false);
     setRoomId('');
   }, [location.pathname, location.search]);
 
@@ -66,6 +75,13 @@ function AppNavigation() {
     navigate(`/game?host=false&room=${roomId.trim()}`);
   };
 
+  const { t, i18n } = useTranslation();
+
+  const handleLanguageChange = (lang: string) => {
+    i18n.changeLanguage(lang);
+    setIsLangMenuOpen(false);
+  };
+
   return (
     <nav style={{
       padding: '1rem 2rem',
@@ -79,8 +95,8 @@ function AppNavigation() {
       <div style={{ fontFamily: 'Outfit', fontSize: '1.25rem', fontWeight: 'bold', marginRight: 'auto' }}>
         Shadowverse Evolve Tabletop
       </div>
-      <Link to="/" style={navLinkStyle}>Home</Link>
-      <Link to="/deck-builder" style={navLinkStyle}>Deck Builder</Link>
+      <Link to="/" style={navLinkStyle}>{t('nav.home')}</Link>
+      <Link to="/deck-builder" style={navLinkStyle}>{t('nav.deckBuilder')}</Link>
       <div ref={playMenuRef} style={{ position: 'relative' }}>
         <button
           type="button"
@@ -89,7 +105,7 @@ function AppNavigation() {
           aria-expanded={isPlayMenuOpen}
           style={menuButtonStyle}
         >
-          Play
+          {t('nav.play')}
         </button>
         {isPlayMenuOpen && (
           <div
@@ -123,7 +139,7 @@ function AppNavigation() {
                 fontWeight: 700,
               }}
             >
-              Solo
+              {t('nav.solo')}
             </button>
             <button
               type="button"
@@ -138,11 +154,11 @@ function AppNavigation() {
                 fontWeight: 700,
               }}
             >
-              Host Game
+              {t('nav.hostGame')}
             </button>
             <form onSubmit={handleJoinRoom} style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
               <label htmlFor="global-play-room-code" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                Join Game
+                {t('nav.joinGame')}
               </label>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <input
@@ -150,7 +166,7 @@ function AppNavigation() {
                   type="text"
                   value={roomId}
                   onChange={(event) => setRoomId(event.target.value)}
-                  placeholder="Room Code"
+                  placeholder={t('nav.roomCode')}
                   style={{
                     flex: 1,
                     minWidth: 0,
@@ -173,10 +189,93 @@ function AppNavigation() {
                     fontWeight: 700,
                   }}
                 >
-                  Join
+                  {t('nav.join')}
                 </button>
               </div>
             </form>
+          </div>
+        )}
+      </div>
+      <div ref={langMenuRef} style={{ position: 'relative' }}>
+        <button
+          type="button"
+          onClick={() => setIsLangMenuOpen(current => !current)}
+          aria-haspopup="listbox"
+          aria-expanded={isLangMenuOpen}
+          style={{
+            padding: '0.45rem 0.75rem',
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid var(--border-light)',
+            background: 'var(--bg-surface-elevated)',
+            color: 'var(--text-main)',
+            fontSize: '0.85rem',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            transition: 'border-color var(--transition-fast)',
+          }}
+        >
+          <span>{i18n.language === 'en' ? 'English' : '日本語'}</span>
+          <svg
+            width="10"
+            height="6"
+            viewBox="0 0 10 6"
+            fill="none"
+            style={{ transform: isLangMenuOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }}
+          >
+            <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+        {isLangMenuOpen && (
+          <div
+            role="listbox"
+            className="glass-panel"
+            style={{
+              position: 'absolute',
+              top: 'calc(100% + 0.5rem)',
+              right: 0,
+              minWidth: '120px',
+              padding: '0.4rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.2rem',
+              zIndex: 1000,
+              background: 'rgba(26, 29, 36, 0.96)',
+              boxShadow: 'var(--shadow-md)',
+            }}
+          >
+            {[
+              { code: 'en', label: 'English' },
+              { code: 'ja', label: '日本語' },
+            ].map(lang => (
+              <button
+                key={lang.code}
+                type="button"
+                role="option"
+                aria-selected={i18n.language === lang.code}
+                onClick={() => handleLanguageChange(lang.code)}
+                style={{
+                  padding: '0.5rem 0.75rem',
+                  borderRadius: 'var(--radius-md)',
+                  color: i18n.language === lang.code ? 'var(--text-main)' : 'var(--text-muted)',
+                  background: i18n.language === lang.code ? 'rgba(59, 130, 246, 0.15)' : 'none',
+                  textAlign: 'left',
+                  fontSize: '0.85rem',
+                  fontWeight: i18n.language === lang.code ? 700 : 400,
+                  transition: 'all var(--transition-fast)',
+                }}
+                onMouseEnter={e => {
+                  if (i18n.language !== lang.code) e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                }}
+                onMouseLeave={e => {
+                  if (i18n.language !== lang.code) e.currentTarget.style.background = 'none';
+                }}
+              >
+                {lang.label}
+              </button>
+            ))}
           </div>
         )}
       </div>

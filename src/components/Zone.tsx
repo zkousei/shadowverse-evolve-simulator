@@ -38,7 +38,8 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
   const isStack = layout === 'stack';
   const isFieldZone = id.startsWith('field-');
   const isExZone = id.startsWith('ex-');
-  const displayLabel = label.replace(/^(My|Opponent|Player 1|Player 2)\s+/, '');
+
+  const displayLabel = label.replace(/^(My|Opponent|Player 1|Player 2|自分|相手|1P|2P)\s+/, '');
   const hasCardOnTop = React.useCallback((cardId: string) => cards.some(card => card.attachedTo === cardId), [cards]);
   const validAttachedIds = new Set(
     cards.filter(c => c.attachedTo && cards.some(parent => parent.id === c.attachedTo)).map(c => c.id)
@@ -104,7 +105,9 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
             fontSize: '0.72rem',
             fontWeight: 'bold',
             color: 'white',
-            whiteSpace: 'normal',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
           }}
         >
           {displayLabel}

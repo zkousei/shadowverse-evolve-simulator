@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { CardInstance } from './Card';
+import { useTranslation } from 'react-i18next';
 import CardArtwork from './CardArtwork';
 import type { CardDetailLookup } from '../utils/cardDetails';
 
@@ -20,6 +21,7 @@ interface AssignedCard {
 }
 
 const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLookup = {}, onConfirm, onCancel }) => {
+  const { t } = useTranslation();
   const [pendingCards, setPendingCards] = useState<CardInstance[]>([]);
   const [assignedCards, setAssignedCards] = useState<AssignedCard[]>([]);
   const [currentAction, setCurrentAction] = useState<TopDeckAction>('top');
@@ -118,13 +120,13 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
   };
 
   const actionButtons: { id: TopDeckAction; label: string; color: string }[] = [
-    { id: 'field', label: '場 (Field)', color: '#f59e0b' },
-    { id: 'hand', label: '手札 (Hand)', color: '#10b981' },
-    { id: 'revealedHand', label: '公開して手札', color: '#14b8a6' },
-    { id: 'ex', label: 'EXエリア', color: '#ec4899' },
-    { id: 'bottom', label: '山下 (Bottom)', color: '#8b5cf6' },
-    { id: 'top', label: '山上 (Top)', color: '#3b82f6' },
-    { id: 'cemetery', label: '墓地 (Grave)', color: '#64748b' },
+    { id: 'field', label: t('gameBoard.modals.topDeck.destinations.field'), color: '#f59e0b' },
+    { id: 'hand', label: t('gameBoard.modals.topDeck.destinations.hand'), color: '#10b981' },
+    { id: 'revealedHand', label: t('gameBoard.modals.topDeck.destinations.revealedHand'), color: '#14b8a6' },
+    { id: 'ex', label: t('gameBoard.modals.topDeck.destinations.ex'), color: '#ec4899' },
+    { id: 'bottom', label: t('gameBoard.modals.topDeck.destinations.bottom'), color: '#8b5cf6' },
+    { id: 'top', label: t('gameBoard.modals.topDeck.destinations.top'), color: '#3b82f6' },
+    { id: 'cemetery', label: t('gameBoard.modals.topDeck.destinations.cemetery'), color: '#64748b' },
   ];
 
   const allAssigned = pendingCards.length === 0;
@@ -142,17 +144,17 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
         {/* Header */}
         <div style={{ padding: '1rem 2rem', background: '#161b22', borderBottom: '1px solid #30363d', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h2 style={{ margin: 0, color: '#f0f6fc', fontSize: '1.3rem', fontWeight: 'bold' }}>Look Top {cards.length} Cards</h2>
+            <h2 style={{ margin: 0, color: '#f0f6fc', fontSize: '1.3rem', fontWeight: 'bold' }}>{t('gameBoard.modals.topDeck.title', { count: cards.length })}</h2>
             <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#8b949e' }}>
-              カードをタップして「{actionButtons.find(b => b.id === currentAction)?.label}」に仕分けてください。
+              {t('gameBoard.modals.topDeck.instruction', { destination: actionButtons.find(b => b.id === currentAction)?.label })}
             </p>
           </div>
-          <button onClick={onCancel} style={{ background: '#30363d', border: 'none', color: '#c9d1d9', padding: '0.5rem 1.2rem', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>Cancel</button>
+          <button onClick={onCancel} style={{ background: '#30363d', border: 'none', color: '#c9d1d9', padding: '0.5rem 1.2rem', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>{t('common.buttons.cancel')}</button>
         </div>
 
         {/* Action Toggle */}
         <div style={{ display: 'flex', gap: '8px', padding: '1rem 2rem', background: '#0d1117', borderBottom: '1px solid #21262d', flexWrap: 'wrap' }}>
-          <span style={{ alignSelf: 'center', fontSize: '0.9rem', color: '#8b949e', marginRight: '8px' }}>Assign to:</span>
+          <span style={{ alignSelf: 'center', fontSize: '0.9rem', color: '#8b949e', marginRight: '8px' }}>{t('gameBoard.modals.topDeck.assignTo')}</span>
           {actionButtons.map(btn => (
             <button
               key={btn.id}
@@ -177,7 +179,7 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
           <section>
             <h3 style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: '#8b949e', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b' }}></span>
-              PENDING CARDS (未処理)
+              {t('gameBoard.modals.topDeck.pendingCards')}
             </h3>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', minHeight: '180px', background: 'rgba(255,255,255,0.02)', padding: '1.5rem', borderRadius: '12px', border: '1px dashed #30363d' }}>
               {pendingCards.map(card => (
@@ -195,7 +197,7 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
                   />
                 </div>
               ))}
-              {pendingCards.length === 0 && <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#484f58', fontStyle: 'italic' }}>All cards assigned.</div>}
+              {pendingCards.length === 0 && <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#484f58', fontStyle: 'italic' }}>{t('gameBoard.modals.topDeck.allAssignedInline')}</div>}
             </div>
           </section>
 
@@ -216,7 +218,7 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
                 }}>
                   <h4 style={{ margin: '0 0 1rem 0', display: 'flex', justifyContent: 'space-between', color: isOrdered ? (btn.id === 'top' ? '#58a6ff' : '#bc8cff') : '#c9d1d9' }}>
                     <span>{btn.label}</span>
-                    <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>Tap card to return</span>
+                    <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>{t('gameBoard.modals.topDeck.tapToReturn')}</span>
                   </h4>
                   <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                     {group.map(a => (
@@ -321,7 +323,7 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
                         )}
                       </div>
                     ))}
-                    {group.length === 0 && <div style={{ fontSize: '0.8rem', color: '#484f58', display: 'flex', alignItems: 'center' }}>Empty</div>}
+                    {group.length === 0 && <div style={{ fontSize: '0.8rem', color: '#484f58', display: 'flex', alignItems: 'center' }}>{t('gameBoard.modals.topDeck.empty')}</div>}
                   </div>
                 </div>
               );
@@ -332,7 +334,7 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
         {/* Footer */}
         <div style={{ padding: '1.5rem 2rem', background: '#161b22', borderTop: '1px solid #30363d', textAlign: 'right', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ color: '#8b949e', fontSize: '0.9rem' }}>
-            {!allAssigned ? `Remaining: ${pendingCards.length} cards` : 'All cards organized.'}
+            {!allAssigned ? t('gameBoard.modals.topDeck.remaining', { count: pendingCards.length }) : t('gameBoard.modals.topDeck.allOrganized')}
           </div>
           <button
             disabled={!allAssigned}
@@ -346,7 +348,7 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
               boxShadow: allAssigned ? '0 4px 15px rgba(35, 134, 54, 0.4)' : 'none'
             }}
           >
-            CONFIRM
+            {t('common.buttons.confirm')}
           </button>
         </div>
       </div>

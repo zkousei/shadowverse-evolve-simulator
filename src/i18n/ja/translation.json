@@ -1,0 +1,461 @@
+{
+  "deckBuilder": {
+    "addActions": {
+      "evolveLabel": "エボルヴデッキに追加",
+      "mainLabel": "メインデッキに追加",
+      "tokenLabel": "トークンデッキに追加"
+    },
+    "deckArea": {
+      "actions": {
+        "exportDisabledTitle": "不備を解消してからエクスポートしてください",
+        "exportTitle": "デッキをエクスポート",
+        "keepWorkingCopy": "保存したデッキから切り離してコピーを編集",
+        "removeEvolve": "エボルヴデッキから1枚削除",
+        "removeLeader": "リーダーを削除",
+        "removeMain": "メインデッキから1枚削除",
+        "removeToken": "トークンデッキから1枚削除",
+        "save": "保存",
+        "saveAsNew": "新しく保存",
+        "import": "インポート",
+        "export": "エクスポート",
+        "reset": "リセット",
+        "makeUnsavedCopy": "未保存のコピーを作成"
+      },
+      "leader": "リーダー",
+      "myDeckSort": "デッキの並び順",
+      "noLeader": "リーダーが選択されていません。",
+      "tokenDeck": "トークンデッキ",
+      "mainDeck": "メインデッキ",
+      "evolveDeck": "エボルヴデッキ",
+      "leaderToken": "リーダー / トークン",
+      "defaultDeckName": "新規デッキ",
+      "deckNameHint": "デフォルト: {{name}}",
+      "storage": "保存先",
+      "file": "ファイル"
+    },
+    "deckRule": {
+      "crossoverClassA": "クロスオーバー クラスA",
+      "crossoverClassB": "クロスオーバー クラスB",
+      "identity": {
+        "type": "構築ルール:"
+      },
+      "ruleFormat": "ルール",
+      "selectClass": "クラスを選択",
+      "selectFirstClass": "メインクラスを選択",
+      "selectSecondClass": "サブクラスを選択",
+      "selectTitle": "称号を選択",
+      "selectedClass": "選択中のクラス",
+      "selectedTitle": "選択中の称号",
+      "title": "デッキ構築ルール",
+      "format": "フォーマット",
+      "unselected": "未選択",
+      "constructed": "構築戦 (Title)",
+      "class": "クラス戦",
+      "crossover": "クロスオーバー",
+      "other": "その他",
+      "titleIdentity": "称号設定",
+      "classIdentity": "クラス設定",
+      "crossoverFirst": "メインクラス",
+      "crossoverSecond": "サブクラス",
+      "promptConstructed": "構築戦(Title)またはクラス戦を有効にすると、デッキルールに基づいたフィルタリングが行われます。",
+      "promptCrossover": "クロスオーバーを有効にすると、2つのクラスのカードを使用できるようになります。",
+      "resolveBeforeExport": "エクスポートする前にデッキルールの不備を解消してください。"
+    },
+    "modals": {
+      "deleteAllDecks": {
+        "title": "すべての保存済みデッキを削除"
+      },
+      "deleteSelectedDecks": {
+        "title": "選択したデッキを削除"
+      },
+      "loadDeck": {
+        "continue": "再開する",
+        "deleteBulkHint": "デッキを選択して一括削除できます。",
+        "illegalDeck": "不正なデッキ",
+        "resolveIssues": "読み込み後に不備を解消してからエクスポートしてください。",
+        "resume": "前回のセッションを再開",
+        "resumeSessionDesc": "このブラウザで最後に編集していたデッキビルダーのセッションを復元しますか？",
+        "resumeSessionNote": "「再開する」を選ぶと前回の状態から続きを作成できます。「リセットして開始」を選ぶとまっさらな状態から始めます。",
+        "startFresh": "リセットして開始",
+        "title": "デッキを読み込む",
+        "message": "現在の編集内容は失われます。保存されていない変更がある場合は、先に保存することをお勧めします。続けますか？",
+        "confirm": "読み込む",
+        "cancel": "キャンセル",
+        "resumeAria": "以前のセッションを再開"
+      },
+      "resetBuilder": {
+        "aria": "ビルダーの終了確認",
+        "desc": "現在のデッキ内容、デッキ名、ルール設定をすべてクリアしますか？",
+        "descNote": "このブラウザに保存されている作業セッションも破棄されます。",
+        "title": "ビルダーをリセット",
+        "message": "現在の編集内容をすべてクリアします。よろしいですか？",
+        "confirm": "リセットする"
+      },
+      "resetDeck": {
+        "aria": "デッキのリセット確認",
+        "confirm": "はい、リセットします",
+        "desc": "現在のメインデッキ、エボルヴデッキ、リーダー、トークンデッキの内容をクリアしますか？",
+        "descNote": "ルール設定、デッキ名、カードの検索フィルターは保持されます。",
+        "title": "デッキをリセット"
+      },
+      "deleteDeck": {
+        "title": "デッキを削除",
+        "message": "デッキ「{{name}}」を削除してもよろしいですか？この操作は取り消せません。",
+        "confirm": "削除する"
+      }
+    },
+    "myDecks": {
+      "deleteAll": "すべて削除",
+      "deleteSelected": "選択したものを削除",
+      "search": "デッキ名で検索...",
+      "title": "マイデッキ",
+      "subtitle": "このブラウザのローカルストレージに保存されています",
+      "disclaimer": "※ブラウザのキャッシュをクリアすると削除される場合があります。重要なデッキはエクスポートしてバックアップしてください。",
+      "noDecks": "保存されたデッキはまだありません。",
+      "lastModified": "最終更新: {{date}}",
+      "current": "（編集中）",
+      "actions": {
+        "load": "読み込む",
+        "delete": "削除"
+      }
+    },
+    "preview": {
+      "cost": "コスト",
+      "id": "ID",
+      "stats": "ステータス"
+    },
+    "title": "カードライブラリ",
+    "loading": "カード情報を読み込み中です...",
+    "status": {
+      "unsavedChanges": "未保存の変更があります",
+      "saved": "保存済み",
+      "notSaved": "未保存"
+    },
+    "alerts": {
+      "importFailed": "デッキファイルの読み込みに失敗しました。",
+      "emptyBuilder": "ビルダーが空です。カードを追加するか設定を調整してから保存してください。",
+      "saveAsNewSuccess": "新しいデッキ「{{name}}」を保存しました。",
+      "saveSuccess": "デッキ「{{name}}」を保存しました。",
+      "sessionRestored": "ブラウザに保存されていたセッションを復元しました。",
+      "limitReachedHard": "保存可能なデッキ数の上限（{{limit}}）に達しました。新しいデッキを保存するには、古いデッキを削除またはエクスポートしてください。",
+      "limitReachedSoft": "現在 {{count}} 個のデッキが保存されています。上限（{{limit}}）に達する前に、古いデッキのエクスポートや削除を検討してください。"
+    },
+    "filters": {
+      "labels": {
+        "section": "セクション",
+        "class": "クラス",
+        "cost": "コスト",
+        "expansion": "エクスパンス",
+        "cardType": "カード種別",
+        "rarity": "レアリティ",
+        "productName": "商品名"
+      },
+      "searchCards": "カード名で検索...",
+      "allExpansions": "すべてのエクスパンション",
+      "allRarities": "すべてのレアリティ",
+      "allProducts": "すべての商品",
+      "searchSubtype": "サブタイプで検索...",
+      "reset": "フィルターをリセット",
+      "hideOriginalArts": "重複アートを非表示",
+      "cardType": {
+        "all": "すべて",
+        "follower": "フォロワー",
+        "spell": "スペル",
+        "amulet": "アミュレット"
+      },
+      "deckSection": {
+        "all": "すべて",
+        "main": "メイン",
+        "evolve": "エボルヴ",
+        "leader": "リーダー",
+        "token": "トークン"
+      }
+    }
+  },
+  "game": {
+    "mulligan_desc": "マリガン ({{label}})",
+    "mulligan_title": "マリガン: 戻す順番を選択",
+    "mulligan_instructions": "デッキの下に戻す順番でカードを選択してください。",
+    "mulligan_disclaimer": "（4枚目の選択が一番下になります）",
+    "mulligan_confirm": "マリガンを確定する",
+    "mulligan_reset": "リセット",
+    "mulligan_action": "マリガンする",
+    "mulligan_exchange": "交換 (マリガン)"
+  },
+  "common": {
+    "buttons": {
+      "cancel": "キャンセル",
+      "confirm": "確定",
+      "search": "検索",
+      "close": "閉じる"
+    },
+    "labels": {
+      "self": "自分",
+      "opponent": "相手",
+      "player1": "1P",
+      "player2": "2P"
+    }
+  },
+  "gameBoard": {
+    "deckRules": {
+      "constructedTitle": "構築戦 / タイトル: {{title}}",
+      "constructedClass": "構築戦 / クラス: {{class}}",
+      "unselected": "未選択",
+      "crossover": "クロスオーバー / {{firstClass}} + {{secondClass}}",
+      "other": "その他",
+      "main": "メイン",
+      "evolve": "エボルヴ",
+      "leader": "リーダー",
+      "token": "トークン"
+    },
+    "status": {
+      "loadingCatalog": "カード情報を読み込み中です。しばらくお待ちください。",
+      "availableBeforeStart": "ゲーム開始前のデッキ準備中に利用可能です。",
+      "connected": "接続完了",
+      "reconnecting": "再接続中",
+      "disconnected": "切断",
+      "reconnectingTitle": "ホストに再接続しています。しばらくお待ちください。",
+      "connectionRequired": "ホストへの接続が必要です。"
+    },
+    "room": {
+      "host": "ホスト/P2P",
+      "p2p": "P2P",
+      "roomId": "ルームID",
+      "copyAria": "ルームIDをコピー",
+      "copy": "コピー",
+      "copied": "コピー済み"
+    },
+    "board": {
+      "leaderLabel": "{{label}} リーダー",
+      "search": "検索",
+      "actions": "アクション",
+      "statusLabel": "{{label}} ステータス",
+      "stats": {
+        "max": "最大",
+        "playPoints": "PP",
+        "hp": "HP",
+        "ep": "EP",
+        "sep": "SEP",
+        "combo": "コンボ"
+      },
+      "endTurn": "{{label}} ターン終了",
+      "endTurnSelf": "ターン終了",
+      "endTurnDisabled": "自分のターン中のみ使用可能です。",
+      "availableDuringGameOnly": "対戦中のみ使用可能です。"
+    },
+    "inspector": {
+      "close": "閉じる",
+      "id": "ID",
+      "cost": "コスト",
+      "stats": "スタッツ",
+      "abilityText": "能力テキスト",
+      "noAbilityText": "このカードの詳細テキストは見つかりませんでした。"
+    },
+    "deckPicker": {
+      "title": "マイデッキから読み込む",
+      "subtitle": "{{label}} 用の選択可能なデッキ",
+      "close": "閉じる",
+      "searchPlaceholder": "デッキ名で検索...",
+      "searchAria": "保存されたデッキを検索",
+      "deckCount": "{{count}} デッキ",
+      "noDecks": "このブラウザに保存された、現在使用可能なデッキはありません。",
+      "load": "読み込む"
+    },
+    "header": {
+      "mode": "モード",
+      "room": "ルーム",
+      "soloPlayBeta": "ソロプレイ (ベータ)",
+      "copied": "コピーしました",
+      "copy": "コピー",
+      "reconnectMessageConnecting": "ホストに再接続を試みています。",
+      "reconnectMessageRetry": "接続を再試行します。",
+      "reconnectNow": "今すぐ再接続",
+      "reconnect": "再接続"
+    },
+    "controls": {
+      "decideTurnOrder": "🪙 順番を決める (ランダム)",
+      "p1First": "1P 先行",
+      "meFirst": "自分 先行",
+      "p2First": "2P 先行",
+      "oppFirst": "相手 先行",
+      "drawHand": "🃏 初期手札を引く (4枚)",
+      "drawP2Hand": "🃏 2P 初期手札を引く (4枚)",
+      "cancelReady": "✕ 準備完了をキャンセル",
+      "p1Ready": "✅ 1P 準備完了",
+      "ready": "✅ 準備完了",
+      "cancelP2Ready": "✕ 2P 準備完了をキャンセル",
+      "p2Ready": "✅ 2P 準備完了",
+      "startGame": "▶ ゲーム開始",
+      "p1": "1P",
+      "host": "ホスト",
+      "p2": "2P",
+      "guest": "ゲスト",
+      "statusReady": "準備完了",
+      "statusDeciding": "マリガン中",
+      "statusWaiting": "待機中",
+      "tossCoin": "🪙 コイントス",
+      "rollDice": "🎲 サイコロ",
+      "resetGame": "ゲームをリセット"
+    },
+    "turn": {
+      "undo": "↺ ターン終了を取り消す",
+      "p1": "{{label}} ターン",
+      "your": "あなたのターン",
+      "opponent": "相手のターン",
+      "count": "ターン {{count}}",
+      "phaseStart": "スタートフェイズ",
+      "phaseMain": "メインフェイズ",
+      "phaseEnd": "エンドフェイズ"
+    },
+    "alerts": {
+      "reconnectingLocked": "再接続中です。最新の状態が同期されるまで操作は一時的にロックされます。",
+      "previousSession": "このルームの以前のセッションデータが見つかりました。",
+      "previousSessionTime": "{{time}} の状態から復帰できます。",
+      "previousSessionUnknown": "直前の盤面を復帰できます。",
+      "discard": "破棄する",
+      "resume": "セッションを復帰する",
+      "attackMode": "攻撃モード",
+      "attackSelect": "攻撃目標となる相手フォロワーまたはリーダーを選択してください：",
+      "cancel": "キャンセル",
+      "recentEvents": "最近のイベント"
+    },
+    "preparation": {
+      "title": "ゲーム準備中",
+      "description": "初期手札を4枚引き、マリガンと準備完了を済ませ、先行・後攻を決めてから「START GAME」を押してください。\n準備中は手札のカードを他のゾーンに移動させることはできません。",
+      "step1": "1. 初期手札を引く",
+      "step2": "2. マリガンと準備完了",
+      "step3": "3. ゲーム開始",
+      "openingHand": "初期手札:",
+      "ready": "準備完了:",
+      "done": "完了",
+      "pending": "未完了",
+      "mulliganButton": "🔄 マリガン ({{label}})"
+    },
+    "zones": {
+      "controls": "{{label}} コントロール",
+      "importDeck": "{{label}} デッキのインポート",
+      "loadFromMyDecks": "マイデッキから {{label}} に読み込む",
+      "draw": "カードを引く ({{label}})",
+      "mill": "デッキトップを墓場に送る ({{label}})",
+      "spawnToken": "トークンを生成 ({{label}})",
+      "hand": "{{label}} 手札",
+      "cemetery": "{{label}} 墓場",
+      "exArea": "{{label}} EXエリア",
+      "banish": "{{label}} 消滅",
+      "mainDeck": "{{label}} デッキ",
+      "evolveDeck": "{{label}} エボルヴ",
+      "field": "{{label}} フィールド",
+      "search": "検索",
+      "shuffle": "シャッフル",
+      "lookTop": "上からN枚見る",
+      "importDeckJson": "デッキをインポート (.json)",
+      "loadFromMyDecksGeneric": "マイデッキから読み込む"
+    },
+    "modals": {
+      "resetGame": {
+        "title": "ゲームをリセット",
+        "description": "ゲームを初期状態にリセットしてもよろしいですか？すべてのカードは初期デッキに戻ります。",
+        "confirm": "はい、リセットします"
+      },
+      "undoTurn": {
+        "title": "ターン終了を取り消す",
+        "description": "相手のターン開始後の操作も取り消し、ターン終了前の状態に戻ります。続けますか？",
+        "confirm": "はい、取り消します"
+      },
+      "tokenSpawn": {
+        "title": "トークンを選択"
+      },
+      "topN": {
+        "title": "上から何枚見ますか？",
+        "confirm": "見る"
+      },
+      "search": {
+        "setFaceDown": "裏向きで場に出す",
+        "playToField": "場に出す",
+        "used": "使用済 (表)",
+        "unused": "未使用 (裏)",
+        "addToHand": "手札に加える",
+        "revealAndAddToHand": "公開して手札に加える",
+        "addToEx": "EXエリアに置く",
+        "setUsed": "使用済にする",
+        "setUnused": "未使用にする",
+        "empty": "このゾーンは空です",
+        "stats": "スタッツ",
+        "noDetailText": "このカードの詳細テキストは見つかりませんでした。"
+      },
+      "topDeck": {
+        "title": "上から {{count}} 枚を見る",
+        "instruction": "カードをタップして「{{destination}}」に仕分けてください。",
+        "assignTo": "移動先:",
+        "pendingCards": "未処理のカード",
+        "allAssignedInline": "すべてのカードを振り分けました。",
+        "tapToReturn": "タップして戻す",
+        "empty": "空",
+        "remaining": "残り: {{count}} 枚",
+        "allOrganized": "すべてのカードを振り分けました。",
+        "destinations": {
+          "field": "場 (Field)",
+          "hand": "手札 (Hand)",
+          "revealedHand": "公開して手札",
+          "ex": "EXエリア",
+          "bottom": "山下 (Bottom)",
+          "top": "山上 (Top)",
+          "cemetery": "墓地 (Grave)"
+        }
+      }
+    }
+  },
+  "home": {
+    "title": "Shadowverse Evolve",
+    "subtitle": "非公式のデジタルサンドボックステーブルトップ。サーバーレスのP2P通信でデッキを構築し、友人と対戦できます。",
+    "dummyArtWarning": {
+      "part1": "現在、カード画像はダミーとして表示されています。実際のカード画像を使用したい場合は、",
+      "link": "GitHub",
+      "part2": "からソースをダウンロードしてローカルで実行してください。ローカル実行時でもP2P対戦は可能です。"
+    },
+    "cards": {
+      "deckBuilder": {
+        "title": "デッキビルダー",
+        "desc": "40〜50枚のデッキを構築"
+      },
+      "hostGame": {
+        "title": "部屋を作成",
+        "desc": "新しいP2Pルームを作成"
+      },
+      "soloPlay": {
+        "badge": "ベータ",
+        "title": "ソロプレイ",
+        "desc": "2つのデッキを使ってローカルで練習できます。"
+      }
+    },
+    "joinGame": {
+      "title": "部屋に参加",
+      "placeholder": "ルームコードを入力...",
+      "button": "参加する"
+    },
+    "footer": {
+      "version": "バージョン {{version}}",
+      "copyright": "このサイトで使用されているカード画像は、ガイドラインに従ってShadowverse EVOLVE公式サイトから複製されたものです。無断転載は禁止されています。 © Cygames, Inc. ©bushiroad All Rights Reserved."
+    }
+  },
+  "nav": {
+    "home": "ホーム",
+    "deckBuilder": "デッキビルダー",
+    "play": "対戦",
+    "solo": "ソロ",
+    "hostGame": "部屋を作成",
+    "joinGame": "部屋に参加",
+    "join": "参加",
+    "roomCode": "ルームコード"
+  },
+  "zone": {
+    "mainDeck": "デッキ",
+    "evolveDeck": "エボルヴ",
+    "field": "フィールド",
+    "exArea": "EXエリア",
+    "cemetery": "墓場",
+    "banish": "消滅",
+    "hand": "手札",
+    "leader": "リーダー"
+  }
+}

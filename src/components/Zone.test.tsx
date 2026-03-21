@@ -12,6 +12,28 @@ vi.mock('@dnd-kit/core', () => ({
   }),
 }));
 
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string) => {
+      const translations: Record<string, string> = {
+        'zone.mainDeck': 'Main Deck',
+        'zone.evolveDeck': 'Evolve Deck',
+        'zone.field': 'Field',
+        'zone.exArea': 'EX Area',
+        'zone.cemetery': 'Cemetery',
+        'zone.banish': 'Banish',
+        'zone.hand': 'Hand',
+        'zone.leader': 'Leader',
+      };
+      return translations[key] || key;
+    },
+    i18n: {
+      changeLanguage: vi.fn(),
+      language: 'en',
+    },
+  }),
+}));
+
 vi.mock('./Card', () => ({
   default: ({ card, isHidden, isLocked, debugIndex, hideCurrentStats, displayCounters, baseStats }: { card: CardInstance; isHidden?: boolean; isLocked?: boolean; debugIndex?: number; hideCurrentStats?: boolean; displayCounters?: { atk: number; hp: number }; baseStats?: { atk: number; hp: number } }) => (
     <div
