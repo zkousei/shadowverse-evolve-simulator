@@ -10,8 +10,8 @@ import { canImportDeck, canUndoLastTurn, isHandCardMovementLocked } from '../uti
 import { getPlayerLabel, getZoneOwner } from '../utils/soloMode';
 import type { PlayerRole, TokenOption } from '../types/game';
 import type { AttackTarget } from '../types/sync';
-import { buildCardStatLookup, type CardStatLookup } from '../utils/cardStats';
-import { buildCardDetailLookup, formatAbilityText, type CardDetailLookup } from '../utils/cardDetails';
+import { type CardStatLookup } from '../utils/cardStats';
+import { formatAbilityText } from '../utils/cardDetails';
 import type { DeckBuilderCardData } from '../models/deckBuilderCard';
 import { listSavedDecks, restoreSavedDeckToSnapshot, type SavedDeckRecordV1 } from '../utils/deckStorage';
 import { getDeckValidationMessages, sanitizeImportedDeckState } from '../utils/deckBuilderRules';
@@ -568,7 +568,7 @@ const GameBoard: React.FC = () => {
     const card = gameState.cards.find(entry => entry.id === cardId);
     if (!card) return;
     if (card.isTapped || card.isFlipped || card.isLeaderCard) return;
-    if (card.baseCardType !== 'follower') return;
+    if (card.baseCardType !== 'follower' && !cardStatLookup[card.cardId]) return;
     if (gameState.gameStatus !== 'playing') return;
     if (!card.zone.startsWith(`field-${card.owner}`)) return;
     if (gameState.turnPlayer !== card.owner) return;
@@ -589,7 +589,7 @@ const GameBoard: React.FC = () => {
 
     const opponentRole = attackSourceCard.owner === 'host' ? 'guest' : 'host';
     if (card.zone === `leader-${opponentRole}`) return 'attack-target';
-    if (card.zone.startsWith(`field-${opponentRole}`) && !card.isLeaderCard && card.baseCardType === 'follower') return 'attack-target';
+    if (card.zone.startsWith(`field-${opponentRole}`) && !card.isLeaderCard && (card.baseCardType === 'follower' || !!cardStatLookup[card.cardId])) return 'attack-target';
 
     return undefined;
   }, [attackSourceCard, cardStatLookup]);

@@ -327,7 +327,7 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
                   <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onTap(card.id); }} style={{ background: card.isTapped ? '#fbbf24' : '#64748b', color: 'black', border: '1px solid #fff', padding: '4px 4px', fontSize: '11px', borderRadius: '4px', width: '100%', fontWeight: 'bold' }}>
                     {card.isTapped ? 'STAND' : 'REST'}
                   </button>
-                  {onAttack && card.zone.startsWith('field-') && !card.isTapped && card.baseCardType === 'follower' && (
+                  {onAttack && card.zone.startsWith('field-') && !card.isTapped && (card.baseCardType === 'follower' || !!baseStats) && (
                     <button
                       onPointerDown={(e) => e.stopPropagation()}
                       onClick={(e) => { e.stopPropagation(); onAttack(card.id); }}
