@@ -10,7 +10,6 @@ import { canImportDeck, canUndoLastTurn, isHandCardMovementLocked } from '../uti
 import { getPlayerLabel, getZoneOwner } from '../utils/soloMode';
 import type { PlayerRole, TokenOption } from '../types/game';
 import type { AttackTarget } from '../types/sync';
-import { type CardStatLookup } from '../utils/cardStats';
 import { formatAbilityText } from '../utils/cardDetails';
 import type { DeckBuilderCardData } from '../models/deckBuilderCard';
 import { listSavedDecks, restoreSavedDeckToSnapshot, type SavedDeckRecordV1 } from '../utils/deckStorage';

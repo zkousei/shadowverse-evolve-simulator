@@ -15,6 +15,31 @@ const createCard = (overrides: Partial<CardInstance>): CardInstance => ({
   ...overrides,
 });
 
+const t = (key: string, options?: any) => {
+  if (key === 'gameBoard.modals.shared.messages.attackAnnouncement') {
+    return `${options.attacker} attacks ${options.target}`;
+  }
+  if (key === 'gameBoard.modals.shared.messages.attackHistory') {
+    return `${options.attacker} -> ${options.target}`;
+  }
+  if (key === 'gameBoard.modals.shared.messages.leaderLabel') {
+    return `${options.owner} Leader`;
+  }
+  if (key === 'gameBoard.modals.shared.actor.you') {
+    return 'You';
+  }
+  if (key === 'gameBoard.modals.shared.actor.opponent') {
+    return 'Opponent';
+  }
+  if (key === 'gameBoard.modals.shared.actor.player1') {
+    return 'Player 1';
+  }
+  if (key === 'gameBoard.modals.shared.actor.player2') {
+    return 'Player 2';
+  }
+  return key;
+};
+
 describe('attackUi', () => {
   it('allows a current-turn field follower to attack an opposing field follower', () => {
     const cards = [
@@ -82,9 +107,9 @@ describe('attackUi', () => {
       throw new Error('Expected attack effect');
     }
 
-    const formatted = formatAttackEffect(effect, 'host', false);
-    expect(formatted.announcement).toBe('You: Quickblader attacks Opponent Aurelia');
-    expect(formatted.history).toBe('You: Quickblader -> Opponent Aurelia');
+    const formatted = formatAttackEffect(effect, 'host', false, t);
+    expect(formatted.announcement).toBe('You Quickblader attacks Opponent Aurelia');
+    expect(formatted.history).toBe('Quickblader -> Opponent Aurelia');
   });
 
   it('returns null when building an attack effect without a valid attacker or target', () => {
@@ -101,9 +126,9 @@ describe('attackUi', () => {
       attackerCardId: 'attacker',
       attackerName: 'Storm Rider',
       target: { type: 'leader', player: 'host' },
-    }, 'guest', true);
+    }, 'guest', true, t);
 
-    expect(formatted.announcement).toBe('Player 2: Storm Rider attacks Player 1 Leader');
-    expect(formatted.history).toBe('Player 2: Storm Rider -> Player 1 Leader');
+    expect(formatted.announcement).toBe('Player 2 Storm Rider attacks Player 1 Leader');
+    expect(formatted.history).toBe('Storm Rider -> Player 1 Leader');
   });
 });
