@@ -4,6 +4,79 @@ import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useGameBoardLogic } from './useGameBoardLogic';
 
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, options?: any) => {
+      const map: Record<string, string> = {
+        'gameBoard.status.initializing': 'Initializing P2P...',
+        'gameBoard.status.connectingToHost': 'Connecting to host...',
+        'gameBoard.status.syncTimedOut': 'Timed out waiting for host state. Reconnecting...',
+        'gameBoard.status.waitingForRestore': 'Waiting for host session restore... retrying sync.',
+        'gameBoard.status.guestConnectedReady': 'Guest connected! Game ready.',
+        'gameBoard.status.connectedHostSyncing': 'Connected to host. Syncing latest game state...',
+        'gameBoard.status.guestConnectedChooseResume': 'Guest connected. Choose whether to resume the saved session.',
+        'gameBoard.status.connectedHostReady': 'Connected to host! Game ready.',
+        'gameBoard.status.guestDisconnectedWaiting': 'Guest disconnected. Waiting for reconnection...',
+        'gameBoard.status.connectionErrorWaiting': 'Connection error. Waiting for guest...',
+        'gameBoard.status.sessionRestored': 'Saved host session restored.',
+        'gameBoard.status.startingFresh': 'Starting a fresh host session.',
+        'gameBoard.status.soloMode': 'Solo Mode',
+        'gameBoard.status.connectedWaitingGuest': 'Connected! Waiting for guest...',
+        'gameBoard.status.connectedJoiningRoom': 'Connected! Joining room...',
+        'gameBoard.status.disconnectedFromPeer': 'Disconnected from Peer server. Reopen room if needed.',
+        'gameBoard.status.p2pErrorWaiting': 'P2P error. Waiting for guest...',
+        'gameBoard.status.debugAutoStarted': '[DEBUG] Game auto-started. Both decks injected (20 cards each).',
+        'gameBoard.shared.actor.you': 'You',
+        'gameBoard.shared.actor.opponent': 'Opponent',
+        'gameBoard.shared.actor.player1': 'Player 1',
+        'gameBoard.shared.actor.player2': 'Player 2',
+        'gameBoard.shared.messages.lookTopResolved': '{{actor}} resolved Look Top {{count}}',
+        'gameBoard.shared.messages.lookTopDetail.revealedToHand': 'Revealed to Hand: {{cards}}',
+        'gameBoard.shared.messages.lookTopDetail.bottom': 'Bottom: {{count}}',
+        'gameBoard.shared.messages.lookTopDetail.top': 'Top: {{count}}',
+        'gameBoard.shared.messages.lookTopDetail.hand': 'Hand: {{count}}',
+        'gameBoard.shared.messages.lookTopDetail.field': 'Field: {{cards}}',
+        'gameBoard.shared.messages.lookTopDetail.ex': 'EX: {{cards}}',
+        'gameBoard.shared.messages.lookTopDetail.cemetery': 'Cemetery: {{cards}}',
+        'gameBoard.shared.messages.coinFlip': '{{actor}} flipped: {{result}}',
+        'gameBoard.shared.messages.diceRoll': '{{actor}} rolled: {{value}}',
+        'gameBoard.shared.messages.resetGame': '{{actor}} reset the game',
+        'gameBoard.shared.messages.shuffleDeck': '{{actor}} shuffled the deck',
+        'gameBoard.shared.messages.drawCard': '{{actor}} drew a card',
+        'gameBoard.shared.messages.millCard': '{{actor}} milled {{cardName}}',
+        'gameBoard.shared.messages.searchToHand': '{{actor}} added a card from Search to hand',
+        'gameBoard.shared.messages.searchPlayedField': '{{actor}} played to field {{cardName}} from Search',
+        'gameBoard.shared.messages.searchSetField': '{{actor}} set a card from Search to field',
+        'gameBoard.shared.messages.searchToEx': '{{actor}} added {{cardName}} from Search to EX Area',
+        'gameBoard.shared.messages.searchToExGeneric': '{{actor}} added a card from Search to EX Area',
+        'gameBoard.shared.messages.cemeteryToHand': '{{actor}} added {{cardName}} from Cemetery to hand',
+        'gameBoard.shared.messages.cemeteryPlayedField': '{{actor}} played to field {{cardName}} from Cemetery',
+        'gameBoard.shared.messages.cemeteryToEx': '{{actor}} added {{cardName}} from Cemetery to EX Area',
+        'gameBoard.shared.messages.evolvePlayedField': '{{actor}} played to field {{cardName}} from Evolve Deck',
+        'gameBoard.shared.messages.evolveSetUsed': '{{actor}} set {{cardName}} to USED',
+        'gameBoard.shared.messages.evolveSetUnused': '{{actor}} set {{cardName}} to UNUSED',
+        'gameBoard.shared.messages.banishToHand': '{{actor}} added {{cardName}} from Banish to hand',
+        'gameBoard.shared.messages.banishPlayedField': '{{actor}} played to field {{cardName}} from Banish',
+        'gameBoard.shared.messages.banishToEx': '{{actor}} added {{cardName}} from Banish to EX Area',
+        'gameBoard.shared.messages.revealLookTop': '{{actor}} revealed from Look Top',
+        'gameBoard.shared.messages.revealSearch': '{{actor}} revealed from Search',
+        'gameBoard.shared.messages.attackDeclared': '{{actor}} declared an attack',
+        'gameBoard.shared.messages.cardPlayed': '{{actor}} played {{cardName}}',
+        'gameBoard.shared.messages.cardPlayedToField': '{{actor}} played to field {{cardName}}',
+        'gameBoard.shared.messages.starterDecided': '{{actor}} will go first!',
+        'gameBoard.shared.messages.starterDecidedManual': 'Manually set: {{actor}} will go first!',
+      };
+      let value = map[key] || key;
+      if (options) {
+        Object.keys(options).forEach(k => {
+          value = value.replace(`{{${k}}}`, String(options[k]));
+        });
+      }
+      return value;
+    },
+  }),
+}));
+
 vi.mock('peerjs', () => ({
   ...(() => {
     type MockHandler<T = unknown> = (payload: T) => void;

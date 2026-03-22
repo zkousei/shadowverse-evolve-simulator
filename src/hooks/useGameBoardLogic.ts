@@ -1,6 +1,8 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import Peer, { type DataConnection } from 'peerjs';
+import { useTranslation } from 'react-i18next';
+import Peer from 'peerjs';
+import type { DataConnection } from 'peerjs';
 import { type DragEndEvent } from '@dnd-kit/core';
 import { type CardInstance } from '../components/Card';
 import { type PlayerRole, type SyncState, type TokenOption, initialState } from '../types/game';
@@ -11,6 +13,8 @@ import { canImportDeck } from '../utils/gameRules';
 import { applyGameSyncEvent } from '../utils/gameSyncReducer';
 import { flipSharedCoin, formatSharedUiMessage, getSharedActorLabel, rollSharedDie } from '../utils/sharedRandom';
 import { createEventDeduper } from '../utils/eventDeduper';
+import { buildCardStatLookup, type CardStatLookup } from '../utils/cardStats';
+import { buildCardDetailLookup, type CardDetailLookup } from '../utils/cardDetails';
 import { buildTopDeckRevealEffect } from '../utils/topDeckReveal';
 import { buildTopDeckSummaryEffect } from '../utils/topDeckSummary';
 import { buildSingleCardRevealEffect } from '../utils/cardReveal';
@@ -146,7 +150,8 @@ export const useGameBoardLogic = () => {
   const role = (isSoloMode ? 'host' : (isHost ? 'host' : 'guest')) as 'host' | 'guest';
   const isDebug = searchParams.get('debug') === 'true';
 
-  const [status, setStatus] = useState<string>('Initializing P2P...');
+  const { t } = useTranslation();
+  const [status, setStatus] = useState<string>(t('gameBoard.status.initializing'));
   const [connectionState, setConnectionState] = useState<ConnectionState>('idle');
   const [gameState, setGameState] = useState<SyncState>(initialState);
   const [savedSessionCandidate, setSavedSessionCandidate] = useState<SavedHostSession | null>(null);
@@ -161,10 +166,17 @@ export const useGameBoardLogic = () => {
   const [attackHistory, setAttackHistory] = useState<string[]>([]);
   const [eventHistory, setEventHistory] = useState<string[]>([]);
   const [attackVisual, setAttackVisual] = useState<Extract<SharedUiEffect, { type: 'ATTACK_DECLARED' }> | null>(null);
-  const [revealedCardsOverlay, setRevealedCardsOverlay] = useState<{ title: string; cards: PublicCardView[]; summaryLines?: string[] } | null>(null);
+  const [revealedCardsOverlay, setRevealedCardsOverlay] = useState<{
+    type: 'look-top' | 'search';
+    title: string;
+    cards: PublicCardView[];
+    summaryLines?: string[]
+  } | null>(null);
   const [lastGameState, setLastGameState] = useState<SyncState | null>(null);
   const [isRollingDice, setIsRollingDice] = useState(false);
   const [diceValue, setDiceValue] = useState<number | null>(null);
+  const [cardStatLookup, setCardStatLookup] = useState<CardStatLookup>({});
+  const [cardDetailLookup, setCardDetailLookup] = useState<CardDetailLookup>({});
 
   const [mulliganOrder, setMulliganOrder] = useState<string[]>([]);
   const [isMulliganModalOpen, setIsMulliganModalOpen] = useState(false);
@@ -362,7 +374,7 @@ export const useGameBoardLogic = () => {
     const summaryLines = pendingLookTopSummaryLinesRef.current;
     pendingLookTopSummaryLinesRef.current = null;
     setRevealedCardsOverlay((previous) => {
-      if (!previous || !previous.title.includes('revealed from Look Top')) return previous;
+      if (!previous || previous.type !== 'look-top') return previous;
       return {
         ...previous,
         summaryLines,
@@ -372,12 +384,12 @@ export const useGameBoardLogic = () => {
 
   const playSharedUiEffect = useCallback((effect: SharedUiEffect) => {
     if (effect.type === 'COIN_FLIP_RESULT') {
-      showTimedCoinMessage(formatSharedUiMessage(effect, role, isSoloMode), 3000);
+      showTimedCoinMessage(formatSharedUiMessage(effect, role, isSoloMode, t), 3000);
       return;
     }
 
     if (effect.type === 'STARTER_DECIDED') {
-      showTimedCoinMessage(formatSharedUiMessage(effect, role, isSoloMode), 4000);
+      showTimedCoinMessage(formatSharedUiMessage(effect, role, isSoloMode, t), 4000);
       return;
     }
 
@@ -386,8 +398,10 @@ export const useGameBoardLogic = () => {
       const pendingSummary = pendingLookTopSummaryLinesRef.current ?? [];
       pendingLookTopSummaryLinesRef.current = null;
       revealTopIsActiveRef.current = true;
+      const actorLabel = getSharedActorLabel(effect.actor, role, isSoloMode, t);
       setRevealedCardsOverlay({
-        title: `${getSharedActorLabel(effect.actor, role, isSoloMode)} revealed from Look Top`,
+        type: 'look-top',
+        title: t('gameBoard.modals.shared.messages.revealLookTop', { actor: actorLabel }),
         cards: effect.cards,
         summaryLines: pendingSummary,
       });
@@ -401,9 +415,12 @@ export const useGameBoardLogic = () => {
 
     if (effect.type === 'REVEAL_SEARCHED_CARD_TO_HAND') {
       clearRevealedCardsTimer();
-      pushEventHistory(`${getSharedActorLabel(effect.actor, role, isSoloMode)} revealed from Search: ${effect.cards.map((card) => card.name).join(', ')}`);
+      const actorLabel = getSharedActorLabel(effect.actor, role, isSoloMode, t);
+      const message = t('gameBoard.modals.shared.messages.revealSearch', { actor: actorLabel });
+      pushEventHistory(`${message}: ${effect.cards.map((card) => card.name).join(', ')}`);
       setRevealedCardsOverlay({
-        title: `${getSharedActorLabel(effect.actor, role, isSoloMode)} revealed from Search`,
+        type: 'search',
+        title: message,
         cards: effect.cards,
       });
       revealedCardsTimeoutRef.current = setTimeout(() => {
@@ -414,7 +431,7 @@ export const useGameBoardLogic = () => {
     }
 
     if (effect.type === 'ATTACK_DECLARED') {
-      const formattedAttack = formatAttackEffect(effect, role, isSoloMode);
+      const formattedAttack = formatAttackEffect(effect, role, isSoloMode, t);
       clearAttackMessageTimer();
       setAttackMessage(formattedAttack.announcement);
       setAttackVisual(effect);
@@ -429,70 +446,70 @@ export const useGameBoardLogic = () => {
     }
 
     if (effect.type === 'CARD_PLAYED') {
-      const message = formatCardPlayedEffect(effect, role, isSoloMode);
+      const message = formatCardPlayedEffect(effect, role, isSoloMode, t);
       showTimedCardPlayMessage(message, 2600);
       return;
     }
 
     if (effect.type === 'RESET_GAME_COMPLETED') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode);
+      const message = formatSharedUiMessage(effect, role, isSoloMode, t);
       showTimedCardPlayMessage(message, 2600);
       return;
     }
 
     if (effect.type === 'SHUFFLE_DECK_COMPLETED') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode);
+      const message = formatSharedUiMessage(effect, role, isSoloMode, t);
       showTimedCardPlayMessage(message, 2600);
       pushEventHistory(message);
       return;
     }
 
     if (effect.type === 'DRAW_CARD_COMPLETED') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode);
+      const message = formatSharedUiMessage(effect, role, isSoloMode, t);
       showTimedCardPlayMessage(message, 2600);
       return;
     }
 
     if (effect.type === 'MILL_CARD_COMPLETED') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode);
+      const message = formatSharedUiMessage(effect, role, isSoloMode, t);
       showTimedCardPlayMessage(message, 2600);
       return;
     }
 
     if (effect.type === 'SEARCHED_CARD_TO_HAND') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode);
+      const message = formatSharedUiMessage(effect, role, isSoloMode, t);
       showTimedCardPlayMessage(message, 2600);
       pushEventHistory(message);
       return;
     }
 
     if (effect.type === 'SEARCHED_CARD_PLACED') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode);
+      const message = formatSharedUiMessage(effect, role, isSoloMode, t);
       showTimedCardPlayMessage(message, 2600);
       return;
     }
 
     if (effect.type === 'CEMETERY_CARD_TO_HAND') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode);
+      const message = formatSharedUiMessage(effect, role, isSoloMode, t);
       showTimedCardPlayMessage(message, 2600);
       pushEventHistory(message);
       return;
     }
 
     if (effect.type === 'CEMETERY_CARD_PLACED') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode);
+      const message = formatSharedUiMessage(effect, role, isSoloMode, t);
       showTimedCardPlayMessage(message, 2600);
       return;
     }
 
     if (effect.type === 'EVOLVE_CARD_PLACED') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode);
+      const message = formatSharedUiMessage(effect, role, isSoloMode, t);
       showTimedCardPlayMessage(message, 2600);
       return;
     }
 
     if (effect.type === 'EVOLVE_USAGE_TOGGLED') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode);
+      const message = formatSharedUiMessage(effect, role, isSoloMode, t);
       showTimedCardPlayMessage(message, 2600);
       if (gameStateRef.current.gameStatus === 'playing') {
         pushEventHistory(message);
@@ -501,30 +518,23 @@ export const useGameBoardLogic = () => {
     }
 
     if (effect.type === 'BANISHED_CARD_TO_HAND') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode);
+      const message = formatSharedUiMessage(effect, role, isSoloMode, t);
       showTimedCardPlayMessage(message, 2600);
       pushEventHistory(message);
       return;
     }
 
     if (effect.type === 'BANISHED_CARD_PLACED') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode);
+      const message = formatSharedUiMessage(effect, role, isSoloMode, t);
       showTimedCardPlayMessage(message, 2600);
       return;
     }
 
     if (effect.type === 'LOOK_TOP_RESOLVED') {
-      const summaryLines = formatSharedUiMessage(effect, role, isSoloMode).split('\n').filter(Boolean);
+      const summaryLines = formatSharedUiMessage(effect, role, isSoloMode, t).split('\n').filter(Boolean);
       pushEventHistory(summaryLines.join('\n'));
-      if (revealTopIsActiveRef.current) {
+      if (revealedCardsOverlay && revealedCardsOverlay.type === 'look-top') {
         // Overlay is already open — update it with the summary.
-        setRevealedCardsOverlay((previous) => {
-          if (!previous || !previous.title.includes('revealed from Look Top')) return previous;
-          return {
-            ...previous,
-            summaryLines,
-          };
-        });
       } else if (effect.revealedHandCards.length > 0) {
         // Reveal dialog is expected (revealedHand cards exist) but hasn't opened yet
         // (summary arrived before the REVEAL_TOP_DECK_CARDS message due to network ordering).
@@ -560,7 +570,7 @@ export const useGameBoardLogic = () => {
         diceRollIntervalRef.current = null;
       }
       setDiceValue(effect.value);
-      showTimedCoinMessage(formatSharedUiMessage(effect, role, isSoloMode), 3000);
+      showTimedCoinMessage(formatSharedUiMessage(effect, role, isSoloMode, t), 3000);
       diceMessageTimeoutRef.current = setTimeout(() => {
         setIsRollingDice(false);
         setDiceValue(null);
@@ -847,7 +857,7 @@ export const useGameBoardLogic = () => {
     if (!peer) return;
 
     setConnectionState(current => current === 'connected' ? 'reconnecting' : 'connecting');
-    setStatus('Connecting to host...');
+    setStatus(t('gameBoard.status.connectingToHost'));
     const conn = peer.connect(`sv-evolve-${room}`);
     setupConnectionRef.current(conn);
   }, [isHost, isSoloMode, room]);
@@ -892,13 +902,13 @@ export const useGameBoardLogic = () => {
 
       if (snapshotRetryCountRef.current >= MAX_SNAPSHOT_REQUEST_RETRIES) {
         clearSnapshotRequestTimer();
-        setStatus('Timed out waiting for host state. Reconnecting...');
+        setStatus(t('gameBoard.status.syncTimedOut'));
         attemptReconnect();
         return;
       }
 
       snapshotRetryCountRef.current += 1;
-      setStatus('Waiting for host session restore... retrying sync.');
+      setStatus(t('gameBoard.status.waitingForRestore'));
       requestSnapshotWithRetry(conn, token);
     }, SNAPSHOT_REQUEST_TIMEOUT_MS);
   }, [attemptReconnect, clearSnapshotRequestTimer, isHost, isSoloMode, role]);
@@ -923,12 +933,12 @@ export const useGameBoardLogic = () => {
       setConnectionState('connected');
 
       if (isHost) {
-        setStatus('Guest connected! Game ready.');
+        setStatus(t('gameBoard.status.guestConnectedReady'));
         return;
       }
 
       awaitingInitialSnapshotRef.current = true;
-      setStatus('Connected to host. Syncing latest game state...');
+      setStatus(t('gameBoard.status.connectedHostSyncing'));
       requestSnapshotWithRetry(conn, token);
     });
     conn.on('data', (rawData: unknown) => {
@@ -943,7 +953,7 @@ export const useGameBoardLogic = () => {
       if (data.type === 'REQUEST_SNAPSHOT') {
         if (isHost) {
           if (savedSessionCandidateRef.current) {
-            setStatus('Guest connected. Choose whether to resume the saved session.');
+            setStatus(t('gameBoard.status.guestConnectedChooseResume'));
             return;
           }
           conn.send({ type: 'STATE_SNAPSHOT', state: gameStateRef.current, source: 'host' } satisfies SyncMessage);
@@ -965,7 +975,7 @@ export const useGameBoardLogic = () => {
         }
         if (!isHost && data.source === 'host') {
           resetTransientUiState();
-          setStatus('Connected to host! Game ready.');
+          setStatus(t('gameBoard.status.connectedHostReady'));
         }
       }
     });
@@ -978,7 +988,7 @@ export const useGameBoardLogic = () => {
 
       if (isHost) {
         setConnectionState('disconnected');
-        setStatus('Guest disconnected. Waiting for reconnection...');
+        setStatus(t('gameBoard.status.guestDisconnectedWaiting'));
         return;
       }
 
@@ -993,7 +1003,7 @@ export const useGameBoardLogic = () => {
 
       if (isHost) {
         setConnectionState('disconnected');
-        setStatus('Connection error. Waiting for guest...');
+        setStatus(t('gameBoard.status.connectionErrorWaiting'));
         return;
       }
 
@@ -1055,7 +1065,7 @@ export const useGameBoardLogic = () => {
     resetTransientUiState();
     setLastGameState(null);
     setSavedSessionCandidate(null);
-    setStatus('Saved host session restored.');
+    setStatus(t('gameBoard.status.sessionRestored'));
     sendSnapshotToCurrentConnection(savedSessionCandidate.state, 'host');
   }, [applyLocalState, resetTransientUiState, savedSessionCandidate, sendSnapshotToCurrentConnection]);
 
@@ -1065,13 +1075,13 @@ export const useGameBoardLogic = () => {
     }
 
     setSavedSessionCandidate(null);
-    setStatus('Starting a fresh host session.');
+    setStatus(t('gameBoard.status.startingFresh'));
     sendSnapshotToCurrentConnection(gameStateRef.current, 'host');
   }, [room, sendSnapshotToCurrentConnection]);
 
   useEffect(() => {
     if (isSoloMode) {
-      setStatus('Solo Mode');
+      setStatus(t('gameBoard.status.soloMode'));
       setConnectionState('connected');
       processedEventDeduperRef.current.reset();
       return;
@@ -1084,7 +1094,7 @@ export const useGameBoardLogic = () => {
     peerRef.current = peer;
 
     peer.on('open', () => {
-      setStatus(`Connected! ${isHost ? 'Waiting for guest...' : 'Joining room...'}`);
+      setStatus(t('gameBoard.status.' + (isHost ? 'connectedWaitingGuest' : 'connectedJoiningRoom')));
       if (isHost) {
         setConnectionState('disconnected');
       }
@@ -1101,7 +1111,7 @@ export const useGameBoardLogic = () => {
 
     peer.on('disconnected', () => {
       if (isHost) {
-        setStatus('Disconnected from Peer server. Reopen room if needed.');
+        setStatus(t('gameBoard.status.disconnectedFromPeer'));
         return;
       }
 
@@ -1110,7 +1120,7 @@ export const useGameBoardLogic = () => {
 
     peer.on('error', () => {
       if (isHost) {
-        setStatus('P2P error. Waiting for guest...');
+        setStatus(t('gameBoard.status.p2pErrorWaiting'));
         return;
       }
 
@@ -1151,8 +1161,24 @@ export const useGameBoardLogic = () => {
       turnPlayer: 'host',
     };
     applyLocalState(debugState);
-    setStatus('[DEBUG] Game auto-started. Both decks injected (20 cards each).');
+    setStatus(t('gameBoard.status.debugAutoStarted'));
   }, [applyLocalState, isDebug]);
+
+  useEffect(() => {
+    let isActive = true;
+    fetch('/cards_detailed.json')
+      .then(res => res.json())
+      .then(data => {
+        if (!isActive) return;
+        const statLookup = buildCardStatLookup(data);
+        const detailLookup = buildCardDetailLookup(data);
+        console.log('[DEBUG] Card lookups built:', Object.keys(statLookup).length, 'stats,', Object.keys(detailLookup).length, 'details');
+        setCardStatLookup(statLookup);
+        setCardDetailLookup(detailLookup);
+      })
+      .catch(err => console.error('Could not load card stats', err));
+    return () => { isActive = false; };
+  }, []);
 
   useEffect(() => {
     if (gameState.gameStatus !== 'preparing') return;
@@ -1498,6 +1524,7 @@ export const useGameBoardLogic = () => {
   return {
     room, mode, isSoloMode, isHost, role, status, connectionState, canInteract, attemptReconnect, gameState, savedSessionCandidate, resumeSavedSession, discardSavedSession, searchZone, setSearchZone,
     showResetConfirm, setShowResetConfirm, coinMessage, turnMessage, cardPlayMessage, attackMessage, attackHistory, eventHistory, attackVisual, revealedCardsOverlay,
+    cardStatLookup, cardDetailLookup,
     isRollingDice, diceValue, mulliganOrder, isMulliganModalOpen, setIsMulliganModalOpen,
     handleStatChange, setPhase, endTurn, handleUndoTurn, handleSetInitialTurnOrder,
     handlePureCoinFlip, handleRollDice, handleStartGame, handleToggleReady,

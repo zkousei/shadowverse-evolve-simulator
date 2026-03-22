@@ -2,6 +2,25 @@ import { describe, expect, it } from 'vitest';
 import type { CardInstance } from '../components/Card';
 import { buildCardPlayedEffect, formatCardPlayedEffect } from './cardPlayUi';
 
+const t = ((key: string, options?: any) => {
+  const map: Record<string, string> = {
+    'gameBoard.shared.actor.you': 'You',
+    'gameBoard.shared.actor.opponent': 'Opponent',
+    'gameBoard.shared.actor.player1': 'Player 1',
+    'gameBoard.shared.actor.player2': 'Player 2',
+    'gameBoard.shared.messages.cardPlayed': '{{actor}} played {{cardName}}',
+    'gameBoard.shared.messages.cardPlayedToField': '{{actor}} played to field {{cardName}}',
+  };
+
+  let value = map[key] || key;
+  if (options) {
+    Object.keys(options).forEach(k => {
+      value = value.replace(`{{${k}}}`, String(options[k]));
+    });
+  }
+  return value;
+}) as any;
+
 const createCard = (overrides: Partial<CardInstance>): CardInstance => ({
   id: 'card-1',
   cardId: 'BP01-001',
@@ -55,8 +74,8 @@ describe('cardPlayUi', () => {
       mode: 'play' as const,
     };
 
-    expect(formatCardPlayedEffect(effect, 'host', false)).toBe('Opponent played Fire Chain');
-    expect(formatCardPlayedEffect({ ...effect, mode: 'playToField' }, 'host', true)).toBe('Player 2 played to field Fire Chain');
+    expect(formatCardPlayedEffect(effect, 'host', false, t)).toBe('Opponent played Fire Chain');
+    expect(formatCardPlayedEffect({ ...effect, mode: 'playToField' }, 'host', true, t)).toBe('Player 2 played to field Fire Chain');
   });
 });
 

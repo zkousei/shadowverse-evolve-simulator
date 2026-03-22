@@ -959,23 +959,26 @@ const DeckBuilder: React.FC = () => {
               {t('deckBuilder.filters.labels.class')}:
             </span>
 
-            {CLASS_FILTER_VALUES.map((cls) => (
-              <button
-                key={cls}
-                type="button"
-                aria-pressed={classFilter === cls}
-                onClick={() => { setClassFilter(cls); setPage(0); }}
-                style={{
-                  padding: '0.25rem 0.75rem',
-                  borderRadius: '4px',
-                  background: classFilter === cls ? 'var(--brand-accent)' : 'transparent',
-                  color: classFilter === cls ? '#fff' : 'var(--text-main)',
-                  fontWeight: classFilter === cls ? 'bold' : 'normal',
-                }}
-              >
-                {cls}
-              </button>
-            ))}
+            {CLASS_FILTER_VALUES.map((cls) => {
+              const classKey = cls === 'All' ? 'all' : (Object.keys(CLASS).find(k => (CLASS as any)[k] === cls)?.toLowerCase() || 'all');
+              return (
+                <button
+                  key={cls}
+                  type="button"
+                  aria-pressed={classFilter === cls}
+                  onClick={() => { setClassFilter(cls); setPage(0); }}
+                  style={{
+                    padding: '0.25rem 0.75rem',
+                    borderRadius: '4px',
+                    background: classFilter === cls ? 'var(--brand-accent)' : 'transparent',
+                    color: classFilter === cls ? '#fff' : 'var(--text-main)',
+                    fontWeight: classFilter === cls ? 'bold' : 'normal',
+                  }}
+                >
+                  {t(`common.classes.${classKey}`)}
+                </button>
+              );
+            })}
           </div>
 
           <div
@@ -1569,9 +1572,14 @@ const DeckBuilder: React.FC = () => {
                       }}
                     >
                       <option value="">{t('deckBuilder.deckRule.selectClass')}</option>
-                      {CONSTRUCTED_CLASS_VALUES.map(cardClass => (
-                        <option key={cardClass} value={cardClass}>{cardClass}</option>
-                      ))}
+                      {CONSTRUCTED_CLASS_VALUES.map(cardClass => {
+                        const classKey = Object.keys(CLASS).find(k => (CLASS as any)[k] === cardClass)?.toLowerCase() || 'neutral';
+                        return (
+                          <option key={cardClass} value={cardClass}>
+                            {t(`common.classes.${classKey}`)}
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
                 ) : (
@@ -1627,9 +1635,14 @@ const DeckBuilder: React.FC = () => {
                     }}
                     >
                       <option value="">{t('deckBuilder.deckRule.selectFirstClass')}</option>
-                    {crossoverClassOptionsA.map(cardClass => (
-                      <option key={cardClass} value={cardClass}>{cardClass}</option>
-                    ))}
+                    {crossoverClassOptionsA.map(cardClass => {
+                      const classKey = Object.keys(CLASS).find(k => (CLASS as any)[k] === cardClass)?.toLowerCase() || 'neutral';
+                      return (
+                        <option key={cardClass} value={cardClass}>
+                          {t(`common.classes.${classKey}`)}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
 
@@ -1655,9 +1668,14 @@ const DeckBuilder: React.FC = () => {
                     }}
                     >
                       <option value="">{t('deckBuilder.deckRule.selectSecondClass')}</option>
-                    {crossoverClassOptionsB.map(cardClass => (
-                      <option key={cardClass} value={cardClass}>{cardClass}</option>
-                    ))}
+                    {crossoverClassOptionsB.map(cardClass => {
+                      const classKey = Object.keys(CLASS).find(k => (CLASS as any)[k] === cardClass)?.toLowerCase() || 'neutral';
+                      return (
+                        <option key={cardClass} value={cardClass}>
+                          {t(`common.classes.${classKey}`)}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
               </>

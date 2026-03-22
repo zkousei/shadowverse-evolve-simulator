@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next';
 import type { CardInstance } from '../components/Card';
 import type { PlayerRole } from '../types/game';
 import type { SharedUiEffect } from '../types/sync';
@@ -25,11 +26,12 @@ export const buildCardPlayedEffect = (
 export const formatCardPlayedEffect = (
   effect: Extract<SharedUiEffect, { type: 'CARD_PLAYED' }>,
   viewerRole: PlayerRole,
-  isSoloMode: boolean
+  isSoloMode: boolean,
+  t: TFunction
 ): string => {
-  const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode);
+  const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
   return effect.mode === 'play'
-    ? `${actorLabel} played ${effect.cardName}`
-    : `${actorLabel} played to field ${effect.cardName}`;
+    ? t('gameBoard.modals.shared.messages.cardPlayed', { actor: actorLabel, cardName: effect.cardName })
+    : t('gameBoard.modals.shared.messages.cardPlayedToField', { actor: actorLabel, cardName: effect.cardName });
 };
 

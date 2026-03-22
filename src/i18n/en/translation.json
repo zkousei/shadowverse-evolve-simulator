@@ -257,6 +257,16 @@
       "opponent": "Opponent",
       "player1": "Player 1",
       "player2": "Player 2"
+    },
+    "classes": {
+      "all": "All",
+      "elf": "Elf",
+      "royal": "Royal",
+      "witch": "Witch",
+      "dragon": "Dragon",
+      "nightmare": "Nightmare",
+      "bishop": "Bishop",
+      "neutral": "Neutral"
     }
   },
   "zone": {
@@ -298,7 +308,10 @@
       "reconnecting": "Reconnecting",
       "disconnected": "Disconnected",
       "reconnectingTitle": "Reconnecting to host. Please wait.",
-      "connectionRequired": "Connection to host is required."
+      "connectionRequired": "Connection to host is required.",
+      "connectedWaitingGuest": "Connected! Waiting for guest...",
+      "connectedJoiningRoom": "Connected! Joining room...",
+      "disconnectedFromPeer": "Disconnected from Peer server. Reopen room if needed."
     },
     "room": {
       "host": "Host/P2P",
@@ -470,15 +483,18 @@
         "noDetailText": "No detailed text was found for this card."
       },
       "topDeck": {
-        "title": "Look Top {{count}} Cards",
-        "instruction": "Tap cards to assign them to \"{{destination}}\".",
-        "assignTo": "Assign to:",
-        "pendingCards": "PENDING CARDS",
-        "allAssignedInline": "All cards assigned.",
-        "tapToReturn": "Tap card to return",
+        "title": "Look at Top {{count}} Cards",
+        "instruction": "Click a card to move it to: {{destination}}",
+        "assignTo": "Assign selected to:",
+        "pendingCards": "Cards to be Assigned",
+        "allAssignedInline": "All cards have been assigned.",
         "empty": "Empty",
-        "remaining": "Remaining: {{count}} cards",
-        "allOrganized": "All cards organized.",
+        "tapToReturn": "Tap card to move back",
+        "remaining": "{{count}} cards remaining to assign",
+        "allOrganized": "All cards organized",
+        "yourHand": "Your Hand ({{count}})",
+        "hide": "hide",
+        "show": "show",
         "destinations": {
           "field": "Field",
           "hand": "Hand",
@@ -487,6 +503,53 @@
           "bottom": "Bottom of Deck",
           "top": "Top of Deck",
           "cemetery": "Cemetery"
+        }
+      },
+      "shared": {
+        "actor": {
+          "you": "You",
+          "opponent": "Opponent",
+          "player1": "Player 1",
+          "player2": "Player 2"
+        },
+        "messages": {
+          "lookTopResolved": "{{actor}} resolved Look Top {{count}}",
+          "lookTopDetail": {
+            "revealedToHand": "Revealed to Hand: {{cards}}",
+            "bottom": "Bottom: {{count}}",
+            "top": "Top: {{count}}",
+            "hand": "Hand: {{count}}",
+            "field": "Field: {{cards}}",
+            "ex": "EX: {{cards}}",
+            "cemetery": "Cemetery: {{cards}}"
+          },
+          "coinFlip": "{{actor}} flipped: {{result}}",
+          "diceRoll": "{{actor}} rolled: {{value}}",
+          "resetGame": "{{actor}} reset the game",
+          "shuffleDeck": "{{actor}} shuffled the deck",
+          "drawCard": "{{actor}} drew a card",
+          "millCard": "{{actor}} milled {{cardName}}",
+          "searchToHand": "{{actor}} added a card from Search to hand",
+          "searchPlayedField": "{{actor}} played to field {{cardName}} from Search",
+          "searchSetField": "{{actor}} set a card from Search to field",
+          "searchToEx": "{{actor}} added {{cardName}} from Search to EX Area",
+          "searchToExGeneric": "{{actor}} added a card from Search to EX Area",
+          "cemeteryToHand": "{{actor}} added {{cardName}} from Cemetery to hand",
+          "cemeteryPlayedField": "{{actor}} played to field {{cardName}} from Cemetery",
+          "cemeteryToEx": "{{actor}} added {{cardName}} from Cemetery to EX Area",
+          "evolvePlayedField": "{{actor}} played to field {{cardName}} from Eボルヴ デッキ",
+          "evolveSetUsed": "{{actor}} set {{cardName}} to USED",
+          "evolveSetUnused": "{{actor}} set {{cardName}} to UNUSED",
+          "banishToHand": "{{actor}} added {{cardName}} from Banish to hand",
+          "banishPlayedField": "{{actor}} played to field {{cardName}} from Banish",
+          "banishToEx": "{{actor}} added {{cardName}} from Banish to EX Area",
+          "revealLookTop": "{{actor}} revealed from Look Top",
+          "revealSearch": "{{actor}} revealed from Search",
+          "attackDeclared": "{{actor}} declared an attack",
+          "cardPlayed": "{{actor}} played {{cardName}}",
+          "cardPlayedToField": "{{actor}} played to field {{cardName}}",
+          "starterDecided": "{{actor}} will go first!",
+          "starterDecidedManual": "Manually set: {{actor}} will go first!"
         }
       }
     }

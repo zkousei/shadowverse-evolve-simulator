@@ -13,7 +13,7 @@ export type AttackTarget =
   | { type: 'leader'; player: PlayerRole };
 
 export type AttackTargetView =
-  | { type: 'card'; cardId: string; player: PlayerRole; name: string }
+  | { type: 'card'; cardId: string; player: PlayerRole; name: string; isTokenCard?: boolean }
   | { type: 'leader'; player: PlayerRole };
 
 export type GameSyncEvent =

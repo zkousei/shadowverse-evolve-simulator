@@ -64,6 +64,7 @@ const GameBoard: React.FC = () => {
   const {
     room, isSoloMode, isHost, role, status, connectionState, canInteract, attemptReconnect, gameState, savedSessionCandidate, resumeSavedSession, discardSavedSession, searchZone, setSearchZone,
     showResetConfirm, setShowResetConfirm, coinMessage, turnMessage, cardPlayMessage, attackMessage, eventHistory, attackVisual, revealedCardsOverlay,
+    cardStatLookup, cardDetailLookup,
     isRollingDice, diceValue, mulliganOrder, isMulliganModalOpen, setIsMulliganModalOpen,
     handleStatChange, setPhase, endTurn, handleUndoTurn, handleSetInitialTurnOrder,
     handlePureCoinFlip, handleRollDice, handleStartGame, handleToggleReady,
@@ -85,8 +86,6 @@ const GameBoard: React.FC = () => {
   const [topDeckTargetRole, setTopDeckTargetRole] = React.useState<PlayerRole>('host');
   const [mulliganTargetRole, setMulliganTargetRole] = React.useState<PlayerRole>('host');
   const [activeZoneActions, setActiveZoneActions] = React.useState<string | null>(null);
-  const [cardStatLookup, setCardStatLookup] = React.useState<CardStatLookup>({});
-  const [cardDetailLookup, setCardDetailLookup] = React.useState<CardDetailLookup>({});
   const [allCards, setAllCards] = React.useState<DeckBuilderCardData[]>([]);
   const [savedDeckOptions, setSavedDeckOptions] = React.useState<LegalSavedDeckOption[]>([]);
   const [savedDeckSearch, setSavedDeckSearch] = React.useState('');
@@ -278,21 +277,12 @@ const GameBoard: React.FC = () => {
   });
 
   React.useEffect(() => {
-    let isActive = true;
-
     fetch('/cards_detailed.json')
       .then(res => res.json())
       .then(data => {
-        if (!isActive) return;
         setAllCards(data);
-        setCardStatLookup(buildCardStatLookup(data));
-        setCardDetailLookup(buildCardDetailLookup(data));
       })
-      .catch(err => console.error('Could not load card stats', err));
-
-    return () => {
-      isActive = false;
-    };
+      .catch(err => console.error('Could not load card details', err));
   }, []);
 
   const refreshSavedDeckOptions = React.useCallback(() => {
@@ -374,7 +364,7 @@ const GameBoard: React.FC = () => {
       return { type: 'leader', player: opponentRole };
     }
 
-    if (card.zone.startsWith(`field-${opponentRole}`) && !card.isLeaderCard && cardStatLookup[card.cardId]) {
+    if (card.zone.startsWith(`field-${opponentRole}`) && !card.isLeaderCard && (Boolean(cardStatLookup[card.cardId]) || card.isTokenCard)) {
       return { type: 'card', cardId: card.id };
     }
 
@@ -578,7 +568,7 @@ const GameBoard: React.FC = () => {
     const card = gameState.cards.find(entry => entry.id === cardId);
     if (!card) return;
     if (card.isTapped || card.isFlipped || card.isLeaderCard) return;
-    if (!cardStatLookup[card.cardId]) return;
+    if (card.baseCardType !== 'follower') return;
     if (gameState.gameStatus !== 'playing') return;
     if (!card.zone.startsWith(`field-${card.owner}`)) return;
     if (gameState.turnPlayer !== card.owner) return;
@@ -599,7 +589,7 @@ const GameBoard: React.FC = () => {
 
     const opponentRole = attackSourceCard.owner === 'host' ? 'guest' : 'host';
     if (card.zone === `leader-${opponentRole}`) return 'attack-target';
-    if (card.zone.startsWith(`field-${opponentRole}`) && !card.isLeaderCard && cardStatLookup[card.cardId]) return 'attack-target';
+    if (card.zone.startsWith(`field-${opponentRole}`) && !card.isLeaderCard && card.baseCardType === 'follower') return 'attack-target';
 
     return undefined;
   }, [attackSourceCard, cardStatLookup]);
@@ -1187,7 +1177,7 @@ const GameBoard: React.FC = () => {
                 {connectionBadgeTone.label}
               </span>
             )}
-            <span style={{ color: status.includes('ready') ? 'var(--vivid-green-cyan)' : 'var(--text-muted)' }}>{status}</span>
+            <span style={{ color: (status.includes('ready') || status.includes('完了') || status.includes('準備完了')) ? 'var(--vivid-green-cyan)' : 'var(--text-muted)' }}>{status}</span>
             {!isSoloMode && !isHost && connectionState !== 'connected' && (
               <button
                 onClick={attemptReconnect}

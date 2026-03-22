@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next';
 import type { PlayerRole } from '../types/game';
 import type { SharedUiEffect } from '../types/sync';
 import { formatCardPlayedEffect } from './cardPlayUi';
@@ -17,137 +18,156 @@ export const rollSharedDie = (
 export const getSharedActorLabel = (
   actor: PlayerRole,
   viewerRole: PlayerRole,
-  isSoloMode: boolean
+  isSoloMode: boolean,
+  t: TFunction
 ): string => {
   if (isSoloMode) {
-    return actor === 'host' ? 'Player 1' : 'Player 2';
+    return actor === 'host' ? t('gameBoard.modals.shared.actor.player1') : t('gameBoard.modals.shared.actor.player2');
   }
 
-  return actor === viewerRole ? 'You' : 'Opponent';
+  return actor === viewerRole ? t('gameBoard.modals.shared.actor.you') : t('gameBoard.modals.shared.actor.opponent');
 };
 
 export const formatSharedUiMessage = (
   effect: SharedUiEffect,
   viewerRole: PlayerRole,
-  isSoloMode: boolean
+  isSoloMode: boolean,
+  t: TFunction
 ): string => {
   if (effect.type === 'LOOK_TOP_RESOLVED') {
-    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode);
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
     const detailLines: string[] = [];
 
-    if (effect.revealedHandCards.length > 0) detailLines.push(`Revealed to Hand: ${effect.revealedHandCards.join(', ')}`);
-    if (effect.bottomCount > 0) detailLines.push(`Bottom: ${effect.bottomCount}`);
-    if (effect.topCount > 0) detailLines.push(`Top: ${effect.topCount}`);
-    if (effect.handCount > 0) detailLines.push(`Hand: ${effect.handCount}`);
-    if (effect.fieldCards.length > 0) detailLines.push(`Field: ${effect.fieldCards.join(', ')}`);
-    if (effect.exCards.length > 0) detailLines.push(`EX: ${effect.exCards.join(', ')}`);
-    if (effect.cemeteryCards.length > 0) detailLines.push(`Cemetery: ${effect.cemeteryCards.join(', ')}`);
+    if (effect.revealedHandCards.length > 0) {
+      detailLines.push(t('gameBoard.modals.shared.messages.lookTopDetail.revealedToHand', { cards: effect.revealedHandCards.join(', ') }));
+    }
+    if (effect.bottomCount > 0) {
+      detailLines.push(t('gameBoard.modals.shared.messages.lookTopDetail.bottom', { count: effect.bottomCount }));
+    }
+    if (effect.topCount > 0) {
+      detailLines.push(t('gameBoard.modals.shared.messages.lookTopDetail.top', { count: effect.topCount }));
+    }
+    if (effect.handCount > 0) {
+      detailLines.push(t('gameBoard.modals.shared.messages.lookTopDetail.hand', { count: effect.handCount }));
+    }
+    if (effect.fieldCards.length > 0) {
+      detailLines.push(t('gameBoard.modals.shared.messages.lookTopDetail.field', { cards: effect.fieldCards.join(', ') }));
+    }
+    if (effect.exCards.length > 0) {
+      detailLines.push(t('gameBoard.modals.shared.messages.lookTopDetail.ex', { cards: effect.exCards.join(', ') }));
+    }
+    if (effect.cemeteryCards.length > 0) {
+      detailLines.push(t('gameBoard.modals.shared.messages.lookTopDetail.cemetery', { cards: effect.cemeteryCards.join(', ') }));
+    }
 
-    return `${actorLabel} resolved Look Top ${effect.totalCount}${detailLines.length > 0 ? `\n${detailLines.join('\n')}` : ''}`;
+    const mainMessage = t('gameBoard.modals.shared.messages.lookTopResolved', { actor: actorLabel, count: effect.totalCount });
+    return `${mainMessage}${detailLines.length > 0 ? `\n${detailLines.join('\n')}` : ''}`;
   }
 
   if (effect.type === 'COIN_FLIP_RESULT') {
-    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode);
-    return `${actorLabel} flipped: ${effect.result}`;
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    return t('gameBoard.modals.shared.messages.coinFlip', { actor: actorLabel, result: effect.result });
   }
 
   if (effect.type === 'DICE_ROLL_RESULT') {
-    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode);
-    return `${actorLabel} rolled: ${effect.value}`;
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    return t('gameBoard.modals.shared.messages.diceRoll', { actor: actorLabel, value: effect.value });
   }
 
   if (effect.type === 'RESET_GAME_COMPLETED') {
-    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode);
-    return `${actorLabel} reset the game`;
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    return t('gameBoard.modals.shared.messages.resetGame', { actor: actorLabel });
   }
 
   if (effect.type === 'SHUFFLE_DECK_COMPLETED') {
-    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode);
-    return `${actorLabel} shuffled the deck`;
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    return t('gameBoard.modals.shared.messages.shuffleDeck', { actor: actorLabel });
   }
 
   if (effect.type === 'DRAW_CARD_COMPLETED') {
-    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode);
-    return `${actorLabel} drew a card`;
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    return t('gameBoard.modals.shared.messages.drawCard', { actor: actorLabel });
   }
 
   if (effect.type === 'MILL_CARD_COMPLETED') {
-    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode);
-    return `${actorLabel} milled ${effect.cardName}`;
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    return t('gameBoard.modals.shared.messages.millCard', { actor: actorLabel, cardName: effect.cardName });
   }
 
   if (effect.type === 'SEARCHED_CARD_TO_HAND') {
-    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode);
-    return `${actorLabel} added a card from Search to hand`;
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    return t('gameBoard.modals.shared.messages.searchToHand', { actor: actorLabel });
   }
 
   if (effect.type === 'SEARCHED_CARD_PLACED') {
-    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode);
-    return effect.destination === 'field'
-      ? (effect.cardName
-          ? `${actorLabel} played to field ${effect.cardName} from Search`
-          : `${actorLabel} set a card from Search to field`)
-      : (effect.cardName
-          ? `${actorLabel} added ${effect.cardName} from Search to EX Area`
-          : `${actorLabel} added a card from Search to EX Area`);
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    if (effect.destination === 'field') {
+      return effect.cardName
+        ? t('gameBoard.modals.shared.messages.searchPlayedField', { actor: actorLabel, cardName: effect.cardName })
+        : t('gameBoard.modals.shared.messages.searchSetField', { actor: actorLabel });
+    } else {
+      return effect.cardName
+        ? t('gameBoard.modals.shared.messages.searchToEx', { actor: actorLabel, cardName: effect.cardName })
+        : t('gameBoard.modals.shared.messages.searchToExGeneric', { actor: actorLabel });
+    }
   }
 
   if (effect.type === 'CEMETERY_CARD_TO_HAND') {
-    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode);
-    return `${actorLabel} added ${effect.cardName} from Cemetery to hand`;
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    return t('gameBoard.modals.shared.messages.cemeteryToHand', { actor: actorLabel, cardName: effect.cardName });
   }
 
   if (effect.type === 'CEMETERY_CARD_PLACED') {
-    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode);
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
     return effect.destination === 'field'
-      ? `${actorLabel} played to field ${effect.cardName} from Cemetery`
-      : `${actorLabel} added ${effect.cardName} from Cemetery to EX Area`;
+      ? t('gameBoard.modals.shared.messages.cemeteryPlayedField', { actor: actorLabel, cardName: effect.cardName })
+      : t('gameBoard.modals.shared.messages.cemeteryToEx', { actor: actorLabel, cardName: effect.cardName });
   }
 
   if (effect.type === 'EVOLVE_CARD_PLACED') {
-    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode);
-    return `${actorLabel} played to field ${effect.cardName} from Evolve Deck`;
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    return t('gameBoard.modals.shared.messages.evolvePlayedField', { actor: actorLabel, cardName: effect.cardName });
   }
 
   if (effect.type === 'EVOLVE_USAGE_TOGGLED') {
-    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode);
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
     return effect.isUsed
-      ? `${actorLabel} set ${effect.cardName} to USED`
-      : `${actorLabel} set ${effect.cardName} to UNUSED`;
+      ? t('gameBoard.modals.shared.messages.evolveSetUsed', { actor: actorLabel, cardName: effect.cardName })
+      : t('gameBoard.modals.shared.messages.evolveSetUnused', { actor: actorLabel, cardName: effect.cardName });
   }
 
   if (effect.type === 'BANISHED_CARD_TO_HAND') {
-    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode);
-    return `${actorLabel} added ${effect.cardName} from Banish to hand`;
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    return t('gameBoard.modals.shared.messages.banishToHand', { actor: actorLabel, cardName: effect.cardName });
   }
 
   if (effect.type === 'BANISHED_CARD_PLACED') {
-    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode);
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
     return effect.destination === 'field'
-      ? `${actorLabel} played to field ${effect.cardName} from Banish`
-      : `${actorLabel} added ${effect.cardName} from Banish to EX Area`;
+      ? t('gameBoard.modals.shared.messages.banishPlayedField', { actor: actorLabel, cardName: effect.cardName })
+      : t('gameBoard.modals.shared.messages.banishToEx', { actor: actorLabel, cardName: effect.cardName });
   }
 
   if (effect.type === 'REVEAL_TOP_DECK_CARDS') {
-    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode);
-    return `${actorLabel} revealed from Look Top`;
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    return t('gameBoard.modals.shared.messages.revealLookTop', { actor: actorLabel });
   }
 
   if (effect.type === 'REVEAL_SEARCHED_CARD_TO_HAND') {
-    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode);
-    return `${actorLabel} revealed from Search`;
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    return t('gameBoard.modals.shared.messages.revealSearch', { actor: actorLabel });
   }
 
   if (effect.type === 'ATTACK_DECLARED') {
-    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode);
-    return `${actorLabel} declared an attack`;
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    return t('gameBoard.modals.shared.messages.attackDeclared', { actor: actorLabel });
   }
 
   if (effect.type === 'CARD_PLAYED') {
-    return formatCardPlayedEffect(effect, viewerRole, isSoloMode);
+    return formatCardPlayedEffect(effect, viewerRole, isSoloMode, t);
   }
 
-  const starterLabel = getSharedActorLabel(effect.starter, viewerRole, isSoloMode);
-  const baseMessage = `${starterLabel} will go first!`;
-  return effect.manual ? `Manually set: ${baseMessage}` : baseMessage;
+  const starterLabel = getSharedActorLabel(effect.starter, viewerRole, isSoloMode, t);
+  const baseMessage = t('gameBoard.modals.shared.messages.starterDecided', { actor: starterLabel });
+  return effect.manual ? t('gameBoard.modals.shared.messages.starterDecidedManual', { actor: starterLabel }) : baseMessage;
 };

@@ -54,8 +54,11 @@ export const buildAttackDeclaredEffect = (
       cardId: targetCard.id,
       player: targetCard.owner,
       name: targetCard.name,
+      isTokenCard: targetCard.isTokenCard,
     };
   }
+
+  if (!targetView) return null;
 
   return {
     type: 'ATTACK_DECLARED',
@@ -69,27 +72,29 @@ export const buildAttackDeclaredEffect = (
 const getAttackTargetLabel = (
   target: AttackTargetView,
   viewerRole: PlayerRole,
-  isSoloMode: boolean
+  isSoloMode: boolean,
+  t: any
 ): string => {
   if (target.type === 'card') {
-    const ownerLabel = getSharedActorLabel(target.player, viewerRole, isSoloMode);
-    return isSoloMode ? `${ownerLabel} ${target.name}` : `${ownerLabel} ${target.name}`;
+    const ownerLabel = getSharedActorLabel(target.player, viewerRole, isSoloMode, t);
+    return `${ownerLabel} ${target.name}`;
   }
 
-  const leaderOwnerLabel = getSharedActorLabel(target.player, viewerRole, isSoloMode);
-  return `${leaderOwnerLabel} Leader`;
+  const leaderOwnerLabel = getSharedActorLabel(target.player, viewerRole, isSoloMode, t);
+  return t('gameBoard.modals.shared.messages.leaderLabel', { owner: leaderOwnerLabel });
 };
 
 export const formatAttackEffect = (
   effect: Extract<SharedUiEffect, { type: 'ATTACK_DECLARED' }>,
   viewerRole: PlayerRole,
-  isSoloMode: boolean
+  isSoloMode: boolean,
+  t: any
 ): { announcement: string; history: string } => {
-  const attackerOwnerLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode);
-  const targetLabel = getAttackTargetLabel(effect.target, viewerRole, isSoloMode);
+  const attackerOwnerLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+  const targetLabel = getAttackTargetLabel(effect.target, viewerRole, isSoloMode, t);
 
   return {
-    announcement: `${attackerOwnerLabel}: ${effect.attackerName} attacks ${targetLabel}`,
-    history: `${attackerOwnerLabel}: ${effect.attackerName} -> ${targetLabel}`,
+    announcement: t('gameBoard.modals.shared.messages.attackAnnouncement', { attacker: `${attackerOwnerLabel} ${effect.attackerName}`, target: targetLabel }),
+    history: t('gameBoard.modals.shared.messages.attackHistory', { attacker: effect.attackerName, target: targetLabel }),
   };
 };

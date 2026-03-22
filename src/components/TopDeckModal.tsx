@@ -344,8 +344,8 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
                 color: '#8b949e', fontSize: '0.8rem', fontWeight: 600,
               }}
             >
-              <span>🃏 Your Hand ({handCards.length})</span>
-              <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>{isHandOpen ? '▲ hide' : '▼ show'}</span>
+              <span>{t('gameBoard.modals.topDeck.yourHand', { count: handCards.length })}</span>
+              <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>{isHandOpen ? `▲ ${t('gameBoard.modals.topDeck.hide')}` : `▼ ${t('gameBoard.modals.topDeck.show')}`}</span>
             </button>
             {isHandOpen && (
               <div style={{

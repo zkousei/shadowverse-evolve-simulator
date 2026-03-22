@@ -194,6 +194,16 @@
       "opponent": "相手",
       "player1": "1P",
       "player2": "2P"
+    },
+    "classes": {
+      "all": "すべて",
+      "elf": "エルフ",
+      "royal": "ロイヤル",
+      "witch": "ウィッチ",
+      "dragon": "ドラゴン",
+      "nightmare": "ナイトメア",
+      "bishop": "ビショップ",
+      "neutral": "ニュートラル"
     }
   },
   "gameBoard": {
@@ -215,7 +225,28 @@
       "reconnecting": "再接続中",
       "disconnected": "切断",
       "reconnectingTitle": "ホストに再接続しています。しばらくお待ちください。",
-      "connectionRequired": "ホストへの接続が必要です。"
+      "connectionRequired": "ホストへの接続が必要です。",
+      "initializing": "P2Pを初期化中...",
+      "readyToJoin": "ルームへの入室準備ができました。",
+      "connectingToRoom": "ルームに接続中...",
+      "successfullyConnected": "ルームへの接続に成功しました。",
+      "connectingToHost": "ホストに接続中...",
+      "syncTimedOut": "ホストの状態取得がタイムアウトしました。再接続しています...",
+      "waitingForRestore": "ホストのセッション復元を待機中... 同期を再試行しています。",
+      "guestConnectedReady": "ゲストが接続しました！ゲームの準備が整いました。",
+      "connectedHostSyncing": "ホストに接続しました。最新のゲーム状態を同期中...",
+      "guestConnectedChooseResume": "ゲストが接続しました。保存されたセッションを復元するか選択してください。",
+      "connectedHostReady": "ホストに接続しました！ゲームの準備が整いました。",
+      "guestDisconnectedWaiting": "ゲストが切断されました。再接続を待機しています...",
+      "connectionErrorWaiting": "接続エラーが発生しました。ゲストを待機しています...",
+      "sessionRestored": "保存されたホストセッションが復元されました。",
+      "startingFresh": "新しいホストセッションを開始します。",
+      "soloMode": "ソロモード",
+      "connectedWaitingGuest": "接続完了！ゲストの入室を待機しています...",
+      "connectedJoiningRoom": "接続完了！ルームに入室しています...",
+      "disconnectedFromPeer": "Peerサーバーから切断されました。必要に応じてルームを再作成してください。",
+      "p2pErrorWaiting": "P2Pエラーが発生しました。ゲストを待機しています...",
+      "debugAutoStarted": "[DEBUG] ゲームを自動開始しました。両者のデッキが20枚ずつ注入されました。"
     },
     "room": {
       "host": "ホスト/P2P",
@@ -387,15 +418,18 @@
         "noDetailText": "このカードの詳細テキストは見つかりませんでした。"
       },
       "topDeck": {
-        "title": "上から {{count}} 枚を見る",
-        "instruction": "カードをタップして「{{destination}}」に仕分けてください。",
-        "assignTo": "移動先:",
-        "pendingCards": "未処理のカード",
-        "allAssignedInline": "すべてのカードを振り分けました。",
-        "tapToReturn": "タップして戻す",
-        "empty": "空",
-        "remaining": "残り: {{count}} 枚",
-        "allOrganized": "すべてのカードを振り分けました。",
+        "title": "デッキトップ{{count}}枚の確認",
+        "instruction": "カードをクリックして移動先を選択: {{destination}}",
+        "assignTo": "選択したカードの移動先:",
+        "pendingCards": "未割り当てのカード",
+        "allAssignedInline": "すべてのカードが割り当てられました。",
+        "empty": "対象なし",
+        "tapToReturn": "カードをタップして戻す",
+        "remaining": "残り{{count}}枚",
+        "allOrganized": "整理完了",
+        "yourHand": "手札 ({{count}})",
+        "hide": "隠す",
+        "show": "表示",
         "destinations": {
           "field": "場 (Field)",
           "hand": "手札 (Hand)",
@@ -404,6 +438,56 @@
           "bottom": "山下 (Bottom)",
           "top": "山上 (Top)",
           "cemetery": "墓地 (Grave)"
+        }
+      },
+      "shared": {
+        "actor": {
+          "you": "あなた",
+          "opponent": "相手",
+          "player1": "プレイヤー1",
+          "player2": "プレイヤー2"
+        },
+        "messages": {
+          "lookTopResolved": "{{actor}} が山札の上 {{count}} 枚を処理しました",
+          "lookTopDetail": {
+            "revealedToHand": "公開して手札へ: {{cards}}",
+            "bottom": "山札の下へ: {{count}}",
+            "top": "山札の上へ: {{count}}",
+            "hand": "手札へ: {{count}}",
+            "field": "場へ: {{cards}}",
+            "ex": "EXエリアへ: {{cards}}",
+            "cemetery": "墓地へ: {{cards}}"
+          },
+          "coinFlip": "{{actor}} のコイントス: {{result}}",
+          "diceRoll": "{{actor}} のダイスロール: {{value}}",
+          "resetGame": "{{actor}} がゲームをリセットしました",
+          "shuffleDeck": "{{actor}} がデッキをシャッフルしました",
+          "drawCard": "{{actor}} がカードを引きました",
+          "millCard": "{{actor}} が {{cardName}} を墓地に置きました",
+          "searchToHand": "{{actor}} がサーチしたカードを手札に加えました",
+          "searchPlayedField": "{{actor}} がサーチした {{cardName}} を場に出しました",
+          "searchSetField": "{{actor}} がサーチしたカードを場に伏せました",
+          "searchToEx": "{{actor}} がサーチした {{cardName}} をEXエリアに置きました",
+          "searchToExGeneric": "{{actor}} がサーチしたカードをEXエリアに置きました",
+          "cemeteryToHand": "{{actor}} が墓地の {{cardName}} を手札に加えました",
+          "cemeteryPlayedField": "{{actor}} が墓地の {{cardName}} を場に出しました",
+          "cemeteryToEx": "{{actor}} が墓地の {{cardName}} をEXエリアに置きました",
+          "evolvePlayedField": "{{actor}} がエボルヴデッキの {{cardName}} を場に出しました",
+          "evolveSetUsed": "{{actor}} が {{cardName}} を「使用済」にしました",
+          "evolveSetUnused": "{{actor}} が {{cardName}} を「未使用」に戻しました",
+          "banishToHand": "{{actor}} が消滅させた {{cardName}} を手札に加えました",
+          "banishPlayedField": "{{actor}} が消滅させた {{cardName}} を場に出しました",
+          "banishToEx": "{{actor}} が消滅させた {{cardName}} をEXエリアに置きました",
+          "revealLookTop": "{{actor}} が山札の上を公開中",
+          "revealSearch": "{{actor}} がサーチしたカードを公開中",
+          "cardPlayed": "{{actor}} が {{cardName}} をプレーしました",
+          "cardPlayedToField": "{{actor}} が {{cardName}} を場に出しました",
+          "attackDeclared": "{{actor}} が攻撃を宣言しました",
+          "attackAnnouncement": "{{attacker}} が {{target}} に攻撃！",
+          "attackHistory": "{{attacker}} -> {{target}}",
+          "leaderLabel": "{{owner}} リーダー",
+          "starterDecided": "{{actor}} が先攻です！",
+          "starterDecidedManual": "手動設定: {{actor}} が先攻です！"
         }
       }
     }
