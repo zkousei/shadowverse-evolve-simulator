@@ -124,7 +124,7 @@ const GameBoard: React.FC = () => {
   );
   const searchTargetRole = searchZone ? getZoneOwner(searchZone.id) ?? role : role;
   const currentTurnLabel = gameState.turnPlayer === bottomRole ? bottomLabel : topLabel;
-  const canUndoTurn = canUndoLastTurn(gameState, gameState.lastGameState);
+  const canUndoTurn = canUndoLastTurn(gameState, gameState.lastGameState, role, isSoloMode);
   const isBottomTurnActive = gameState.gameStatus === 'playing' && gameState.turnPlayer === bottomRole;
   const isTopTurnActive = gameState.gameStatus === 'playing' && gameState.turnPlayer === topRole;
   const canResetGame = isSoloMode || isHost;

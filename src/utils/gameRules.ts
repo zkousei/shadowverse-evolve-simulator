@@ -14,6 +14,11 @@ export const isHandCardMovementLocked = (
   state: SyncState
 ): boolean => state.gameStatus === 'preparing';
 
-export const canUndoLastTurn = (state: SyncState, lastGameState: SyncState | any | null): boolean => {
-  return !!lastGameState && state.gameStatus === 'playing';
+export const canUndoLastTurn = (
+  state: SyncState,
+  lastGameState: any,
+  role: PlayerRole,
+  isSoloMode: boolean
+): boolean => {
+  return !!lastGameState && state.gameStatus === 'playing' && (isSoloMode || state.turnPlayer !== role);
 };
