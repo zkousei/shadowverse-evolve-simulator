@@ -32,6 +32,7 @@ export interface SyncState {
   tokenOptions: Record<PlayerRole, TokenOption[]>;
   revealHandsMode: boolean;
   revision: number;
+  lastGameState?: Omit<SyncState, 'lastGameState'> | null;
 }
 
 export const initialState: SyncState = {
@@ -47,5 +48,6 @@ export const initialState: SyncState = {
     guest: [],
   },
   revealHandsMode: false,
-  revision: 0
+  revision: 0,
+  lastGameState: null
 };

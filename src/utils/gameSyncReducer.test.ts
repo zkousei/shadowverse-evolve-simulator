@@ -378,6 +378,8 @@ describe('gameSyncReducer', () => {
     expect(result.cards.find(c => c.id === 'deck-guest')?.zone).toBe('hand-guest');
     expect(result.cards.find(c => c.id === 'tapped-guest')?.isTapped).toBe(false);
     expect(result.revision).toBe(5);
+    expect(result.lastGameState).toBeDefined();
+    expect(result.lastGameState?.turnPlayer).toBe('host');
   });
 
   it('resets the game while preserving non-token cards in their original decks', () => {
@@ -1695,14 +1697,40 @@ describe('gameSyncReducer', () => {
     });
     expect(spawned.cards.find(c => c.id === 'token-1')).toBeDefined();
 
-    const undone = applyGameSyncEvent(spawned, {
+    const spawnedWithBackup = { ...spawned, lastGameState: ordered };
+
+    const undone = applyGameSyncEvent(spawnedWithBackup, {
       id: 'evt-23',
       type: 'UNDO_LAST_TURN',
       actor: 'host',
-      previousState: ordered,
+      previousState: ordered, // Ignored now but kept for type safety
     });
     expect(undone.cards.find(c => c.id === 'token-1')).toBeUndefined();
     expect(undone.turnPlayer).toBe('guest');
     expect(undone.revision).toBe(spawned.revision + 1);
+  });
+
+  it('allows guest to trigger UNDO_LAST_TURN in P2P mode', () => {
+    const beforeTurnEnd = createState({
+      turnPlayer: 'guest',
+      revision: 10,
+    });
+    const afterTurnEnd = createState({
+      turnPlayer: 'host',
+      revision: 11,
+    });
+
+    const afterTurnEndWithBackup = { ...afterTurnEnd, lastGameState: beforeTurnEnd };
+
+    const undone = applyGameSyncEvent(afterTurnEndWithBackup, {
+      id: 'evt-guest-undo',
+      type: 'UNDO_LAST_TURN',
+      actor: 'guest',
+      previousState: beforeTurnEnd,
+    }, 'guest');
+
+    expect(undone.turnPlayer).toBe('guest');
+    expect(undone.revision).toBe(12);
+    expect(undone).not.toBe(afterTurnEnd);
   });
 });

@@ -172,7 +172,7 @@ export const useGameBoardLogic = () => {
     cards: PublicCardView[];
     summaryLines?: string[]
   } | null>(null);
-  const [lastGameState, setLastGameState] = useState<SyncState | null>(null);
+  const [hasUndoableMove, setHasUndoableMove] = useState(false);
   const [isRollingDice, setIsRollingDice] = useState(false);
   const [diceValue, setDiceValue] = useState<number | null>(null);
   const [cardStatLookup, setCardStatLookup] = useState<CardStatLookup>({});
@@ -248,14 +248,16 @@ export const useGameBoardLogic = () => {
     snapshotRetryCountRef.current = 0;
   }, []);
 
-  const resetTransientUiState = useCallback(() => {
+  const resetTransientUiState = useCallback((includingUndo = true) => {
     setSearchZone(null);
     setIsMulliganModalOpen(false);
     setMulliganOrder([]);
     setTopDeckCards([]);
-    // Clear any pending card-move undo checkpoint so stale pre-reconnect
-    // state cannot be restored after a reconnection or sync event.
-    undoableCardMoveStateRef.current = null;
+    // Only clear undo state if explicitly requested (e.g. game reset or connection lost).
+    if (includingUndo) {
+      undoableCardMoveStateRef.current = null;
+      setHasUndoableMove(false);
+    }
   }, []);
 
   const sendSnapshot = useCallback((state: SyncState, source: PlayerRole, effects?: SharedUiEffect[]) => {
@@ -578,21 +580,22 @@ export const useGameBoardLogic = () => {
       }, 800);
       diceFinalizeTimeoutRef.current = null;
     }, 900);
-  }, [clearAttackMessageTimer, clearCoinMessageTimer, clearDiceTimers, clearRevealedCardsTimer, isSoloMode, pushEventHistory, role, showTimedCardPlayMessage, showTimedCoinMessage]);
+  }, [clearAttackMessageTimer, clearCoinMessageTimer, clearDiceTimers, clearRevealedCardsTimer, isSoloMode, pushEventHistory, revealedCardsOverlay, role, showTimedCardPlayMessage, showTimedCoinMessage]);
 
   const maybeApplySnapshot = useCallback((incomingState: SyncState, source: PlayerRole) => {
+    const currentState = gameStateRef.current;
+    
     if (!isHost && source === 'host' && awaitingInitialSnapshotRef.current) {
       awaitingInitialSnapshotRef.current = false;
       applyLocalState(incomingState);
-      setLastGameState(null);
       return;
     }
 
-    const currentRevision = gameStateRef.current.revision;
+    const currentRevision = currentState.revision;
     if (incomingState.revision < currentRevision) return;
     if (incomingState.revision === currentRevision && !(source === 'host' && !isHost)) return;
+
     applyLocalState(incomingState);
-    setLastGameState(null);
   }, [applyLocalState, isHost]);
 
   const applyAuthoritativeEvent = useCallback((
@@ -626,9 +629,6 @@ export const useGameBoardLogic = () => {
     }
 
     const currentState = gameStateRef.current;
-    if (event.type === 'END_TURN') {
-      setLastGameState(JSON.parse(JSON.stringify(currentState)));
-    }
     const nextState = applyGameSyncEvent(currentState, event, requester);
     if (nextState === currentState) return;
     applyLocalState(nextState);
@@ -839,8 +839,10 @@ export const useGameBoardLogic = () => {
     // Save or clear the card-move undo checkpoint BEFORE dispatching.
     if (CARD_MOVE_EVENTS.has(fullEvent.type)) {
       undoableCardMoveStateRef.current = gameStateRef.current;
+      setHasUndoableMove(true);
     } else if (UNDO_CLEAR_EVENTS.has(fullEvent.type)) {
       undoableCardMoveStateRef.current = null;
+      setHasUndoableMove(false);
     }
 
     if (isSoloMode || isHost) {
@@ -974,7 +976,10 @@ export const useGameBoardLogic = () => {
           }
         }
         if (!isHost && data.source === 'host') {
-          resetTransientUiState();
+          // Do NOT clear undo state on every snapshot. Only clear things like
+          // search overlays or mulligan modals if the revision jumped significantly,
+          // or if the game status changed.
+          resetTransientUiState(false); // Keep undo buttons on normal sync
           setStatus(t('gameBoard.status.connectedHostReady'));
         }
       }
@@ -1063,7 +1068,6 @@ export const useGameBoardLogic = () => {
 
     applyLocalState(savedSessionCandidate.state);
     resetTransientUiState();
-    setLastGameState(null);
     setSavedSessionCandidate(null);
     setStatus(t('gameBoard.status.sessionRestored'));
     sendSnapshotToCurrentConnection(savedSessionCandidate.state, 'host');
@@ -1229,10 +1233,9 @@ export const useGameBoardLogic = () => {
   };
 
   const handleUndoTurn = () => {
-    if (lastGameState) {
-      dispatchGameEvent({ type: 'UNDO_LAST_TURN', previousState: lastGameState });
-      setLastGameState(null);
-    }
+    const backup = gameState.lastGameState;
+    if (!backup) return;
+    dispatchGameEvent({ type: 'UNDO_LAST_TURN', previousState: backup as SyncState });
   };
 
   const handleSetInitialTurnOrder = (forcedStarter?: 'host' | 'guest') => {
@@ -1306,6 +1309,7 @@ export const useGameBoardLogic = () => {
     if (!saved) return;
     // Clear immediately so the button can't be double-clicked.
     undoableCardMoveStateRef.current = null;
+    setHasUndoableMove(false);
     dispatchGameEvent({ type: 'UNDO_CARD_MOVE', previousState: saved });
   };
 
@@ -1321,7 +1325,6 @@ export const useGameBoardLogic = () => {
 
   const confirmResetGame = () => {
     setShowResetConfirm(false);
-    setLastGameState(null);
     dispatchGameEvent({ type: 'RESET_GAME' });
   };
 
@@ -1533,9 +1536,9 @@ export const useGameBoardLogic = () => {
     handleModifyCounter, handleModifyGenericCounter, handleDragEnd, toggleTap, handleFlipCard, handleSendToBottom,
     handleBanish, handlePlayToField, handleSendToCemetery, handleReturnEvolve, handleShuffleDeck, handleDeclareAttack,
     handleSetRevealHandsMode,
-    getCards, getTokenOptions, lastGameState, millCard,
+    getCards, getTokenOptions, lastGameState: gameState.lastGameState, millCard,
     topDeckCards, handleLookAtTop, handleResolveTopDeck, setTopDeckCards,
-    handleUndoCardMove, undoableCardMoveStateRef,
+    handleUndoCardMove, undoableCardMoveStateRef, hasUndoableMove,
     isDebug
   };
 };

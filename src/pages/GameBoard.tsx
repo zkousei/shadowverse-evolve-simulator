@@ -72,9 +72,9 @@ const GameBoard: React.FC = () => {
     handleModifyCounter, handleModifyGenericCounter, handleDragEnd, toggleTap, handleFlipCard, handleSendToBottom,
     handleBanish, handlePlayToField, handleSendToCemetery, handleReturnEvolve, handleShuffleDeck, handleDeclareAttack,
     handleSetRevealHandsMode,
-    getCards, getTokenOptions, lastGameState, millCard,
+    getCards, getTokenOptions, millCard,
     topDeckCards, handleLookAtTop, handleResolveTopDeck, setTopDeckCards,
-    handleUndoCardMove, undoableCardMoveStateRef,
+    handleUndoCardMove, hasUndoableMove,
     isDebug
   } = useGameBoardLogic();
 
@@ -124,7 +124,7 @@ const GameBoard: React.FC = () => {
   );
   const searchTargetRole = searchZone ? getZoneOwner(searchZone.id) ?? role : role;
   const currentTurnLabel = gameState.turnPlayer === bottomRole ? bottomLabel : topLabel;
-  const canUndoTurn = canUndoLastTurn(gameState, lastGameState, role, isSoloMode);
+  const canUndoTurn = canUndoLastTurn(gameState, gameState.lastGameState);
   const isBottomTurnActive = gameState.gameStatus === 'playing' && gameState.turnPlayer === bottomRole;
   const isTopTurnActive = gameState.gameStatus === 'playing' && gameState.turnPlayer === topRole;
   const canResetGame = isSoloMode || isHost;
@@ -2070,7 +2070,7 @@ const GameBoard: React.FC = () => {
                 )}
                  {gameState.gameStatus === 'playing' &&
                   (isSoloMode ? gameState.turnPlayer === 'host' : gameState.turnPlayer === role) &&
-                  undoableCardMoveStateRef.current && (
+                  hasUndoableMove && (
                   <button
                     onClick={handleUndoCardMove}
                     className="glass-panel"

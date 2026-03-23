@@ -1,4 +1,4 @@
-import type { SyncState } from '../types/game';
+import { initialState, type SyncState } from '../types/game';
 import type { GameSyncEvent } from '../types/sync';
 import * as CardLogic from './cardLogic';
 import { canImportDeck, isHandCardMovementLocked } from './gameRules';
@@ -123,6 +123,12 @@ export const applyGameSyncEvent = (
 
       const finalCards = CardLogic.drawCard(untapCards, nextPlayer);
 
+      const stateBackup: SyncState = { 
+        ...state, 
+        lastGameState: null,
+        cards: [...state.cards].map(c => ({ ...c })) // Deep copy cards at least
+      };
+      
       return bumpRevision({
         ...state,
         turnPlayer: nextPlayer,
@@ -130,6 +136,7 @@ export const applyGameSyncEvent = (
         phase: 'Start',
         [nextPlayer]: nextPlayerState,
         cards: finalCards,
+        lastGameState: stateBackup,
       });
     }
 
@@ -141,6 +148,7 @@ export const applyGameSyncEvent = (
         gameStatus: 'playing',
         cards: state.cards.map(card => card.zone.startsWith('field-') ? { ...card, isFlipped: false } : card),
         [starter]: { ...state[starter], pp: 1, maxPp: 1 },
+        lastGameState: null,
       });
     }
 
@@ -159,15 +167,12 @@ export const applyGameSyncEvent = (
         }));
 
       return {
-        ...state,
-        host: { hp: 20, pp: 0, maxPp: 0, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
-        guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+        ...initialState,
         cards: resetCards,
-        turnPlayer: 'host',
-        turnCount: 1,
-        phase: 'Start',
-        gameStatus: 'preparing',
         tokenOptions: state.tokenOptions,
+        host: { ...initialState.host, isReady: state.host.isReady },
+        guest: { ...initialState.guest, isReady: state.guest.isReady },
+        lastGameState: null,
         revision: state.revision + 1,
       };
     }
@@ -425,12 +430,15 @@ export const applyGameSyncEvent = (
       });
     }
 
-    case 'UNDO_LAST_TURN':
-      if (!isHostRequester(requester)) return state;
+    case 'UNDO_LAST_TURN': {
+      // Allow any role to trigger turn undo as long as the state has a backup.
+      if (!state.lastGameState) return state;
       return {
-        ...event.previousState,
+        ...state.lastGameState,
         revision: state.revision + 1,
-      };
+        lastGameState: null,
+      } as SyncState;
+    }
 
     case 'UNDO_CARD_MOVE':
       // Any actor can undo their own card move during their turn.
