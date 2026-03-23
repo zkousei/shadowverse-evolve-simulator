@@ -237,7 +237,7 @@ describe('DeckBuilder', () => {
     expect(await screen.findByText('Alpha Knight')).toBeInTheDocument();
     expect(screen.getByText('Select a class or title to enable constructed deck building.')).toBeInTheDocument();
     expect(screen.getByText('Resolve these issues before exporting.')).toBeInTheDocument();
-    expect(within(constructedClass).queryByRole('option', { name: 'ニュートラル' })).not.toBeInTheDocument();
+    expect(within(constructedClass).queryByRole('option', { name: 'Neutral' })).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByPlaceholderText('Search cards by name...'), {
       target: { value: 'beta' },
@@ -252,10 +252,10 @@ describe('DeckBuilder', () => {
     expect(screen.getByText('Beta Mage')).toBeInTheDocument();
     expect(screen.queryByText('Alpha Knight')).not.toBeInTheDocument();
 
-    fireEvent.click(within(classFilterGroup).getByRole('button', { name: 'ウィッチ' }));
+    fireEvent.click(within(classFilterGroup).getByRole('button', { name: 'Witch' }));
     expect(screen.getByText('Beta Mage')).toBeInTheDocument();
     expect(screen.queryByText('Alpha Knight')).not.toBeInTheDocument();
-    expect(within(classFilterGroup).getByRole('button', { name: 'ウィッチ' })).toHaveAttribute('aria-pressed', 'true');
+    expect(within(classFilterGroup).getByRole('button', { name: 'Witch' })).toHaveAttribute('aria-pressed', 'true');
 
     fireEvent.click(within(classFilterGroup).getByRole('button', { name: 'All' }));
     fireEvent.click(within(cardTypeFilterGroup).getByRole('button', { name: 'Spell' }));
@@ -768,11 +768,11 @@ describe('DeckBuilder', () => {
     fireEvent.change(screen.getByRole('combobox', { name: 'Crossover class A' }), {
       target: { value: 'ロイヤル' },
     });
-    expect(within(screen.getByRole('combobox', { name: 'Crossover class B' })).queryByRole('option', { name: 'ロイヤル' })).not.toBeInTheDocument();
+    expect(within(screen.getByRole('combobox', { name: 'Crossover class B' })).queryByRole('option', { name: 'Royal' })).not.toBeInTheDocument();
     fireEvent.change(screen.getByRole('combobox', { name: 'Crossover class B' }), {
       target: { value: 'ウィッチ' },
     });
-    expect(within(screen.getByRole('combobox', { name: 'Crossover class A' })).queryByRole('option', { name: 'ウィッチ' })).not.toBeInTheDocument();
+    expect(within(screen.getByRole('combobox', { name: 'Crossover class A' })).queryByRole('option', { name: 'Witch' })).not.toBeInTheDocument();
 
     expect(screen.getByText('Alpha Knight')).toBeInTheDocument();
     expect(screen.getByText('Beta Mage')).toBeInTheDocument();
