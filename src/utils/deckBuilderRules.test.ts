@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CLASS } from '../models/class';
 import type { DeckRuleConfig } from '../models/deckRule';
-import type { DeckBuilderCardData } from '../models/deckBuilderCard';
+import { getDisplayDedupKey, type DeckBuilderCardData } from '../models/deckBuilderCard';
 import {
   canAddCardToDeckState,
   canAddCardToSection,
@@ -206,6 +206,38 @@ const titleTokenCard: DeckBuilderCardData = {
   id: 'CP01-T01',
   name: 'Title Token',
   title: 'ウマ娘 プリティーダービー',
+};
+
+const cutthroatCard: DeckBuilderCardData = {
+  id: 'BP19-110',
+  name: '機鋒の咎人・カットスロート',
+  image: '/cutthroat.png',
+  class: 'ニュートラル',
+  type: 'フォロワー',
+  card_kind_normalized: 'follower',
+  deck_section: 'main',
+  is_token: false,
+  is_evolve_card: false,
+  is_deck_build_legal: true,
+};
+
+const cutthroatEvolveCard: DeckBuilderCardData = {
+  id: 'BP19-111',
+  name: '機鋒の咎人・カットスロート',
+  image: '/cutthroat-evolve.png',
+  class: 'ニュートラル',
+  type: 'フォロワー・エボルヴ',
+  card_kind_normalized: 'evolve_follower',
+  deck_section: 'evolve',
+  is_token: false,
+  is_evolve_card: true,
+  is_deck_build_legal: true,
+};
+
+const fakeCutthroatCard: DeckBuilderCardData = {
+  ...cutthroatCard,
+  id: 'FAKE-001',
+  name: '機鋒の咎人・カットスロートの弟子',
 };
 
 const constructedRoyalRule: DeckRuleConfig = {
@@ -541,5 +573,67 @@ describe('deckBuilderRules', () => {
         { id: 'deckBuilder.validation.limited', params: { cardName: 'お菓子の家', format: 'constructed', actual: 2 } },
       ])
     );
+  });
+
+  describe('Cutthroat Rule', () => {
+    it('limits other cards to 1 copy if Cutthroat is in the Main Deck', () => {
+      const deckState = {
+        mainDeck: [cutthroatCard, mainCard],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [],
+      };
+      // Adding a second copy of mainCard should be blocked
+      expect(canAddCardToDeckState(mainCard, 'main', deckState)).toBe(false);
+    });
+
+    it('limits other cards to 1 copy if Cutthroat is in the Evolve Deck', () => {
+      const deckState = {
+        mainDeck: [mainCard],
+        evolveDeck: [cutthroatEvolveCard],
+        leaderCards: [],
+        tokenDeck: [],
+      };
+      // Corrected Specification: Evolve version does NOT trigger the rule
+      expect(canAddCardToDeckState(mainCard, 'main', deckState)).toBe(true);
+    });
+
+    it('does not trigger the rule if card name is only a substring match', () => {
+      const deckState = {
+        mainDeck: [fakeCutthroatCard],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [],
+      };
+      // Substring trigger name should NOT trigger the rule
+      expect(canAddCardToDeckState(mainCard, 'main', deckState)).toBe(true);
+    });
+
+    it('still allows up to 3 copies of Cutthroat itself', () => {
+      const deckState = {
+        mainDeck: [cutthroatCard, { ...cutthroatCard, id: 'BP19-110-V2' }],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [],
+      };
+      expect(canAddCardToDeckState(cutthroatCard, 'main', deckState)).toBe(true);
+    });
+
+    it('sanitizes imported deck state with Cutthroat rule', () => {
+      const importedDeck = {
+        mainDeck: [cutthroatCard, mainCard, { ...mainCard, id: 'ID2' }],
+        evolveDeck: [evolveCard, { ...evolveCard, id: 'ID3' }],
+        leaderCards: [],
+        tokenDeck: [],
+      };
+      const catalog = [cutthroatCard, mainCard, evolveCard];
+      
+      const sanitized = sanitizeImportedDeckState(importedDeck, catalog);
+      
+      // mainCard should be limited to 1 in main
+      expect(sanitized.mainDeck.filter(c => getDisplayDedupKey(c) === getDisplayDedupKey(mainCard))).toHaveLength(1);
+      // evolveCard should be limited to 1 in evolve
+      expect(sanitized.evolveDeck.filter(c => getDisplayDedupKey(c) === getDisplayDedupKey(evolveCard))).toHaveLength(1);
+    });
   });
 });

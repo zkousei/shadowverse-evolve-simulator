@@ -5,6 +5,7 @@ import type { RestrictionFormat, RestrictionSource } from '../models/deckRestric
 import { createEmptyDeckState, type DeckState } from '../models/deckState';
 import type { DeckRuleConfig } from '../models/deckRule';
 import { DEFAULT_COPY_LIMIT_PER_CARD, getEffectiveDeckRestriction } from './deckRestrictionRules';
+import { getGlobalIntrinsicLimit } from '../data/intrinsicDeckExceptions';
 
 export type DeckTargetSection = 'main' | 'evolve' | 'leader' | 'token';
 
@@ -206,10 +207,18 @@ const getSectionCards = (deckState: DeckState, targetSection: DeckTargetSection)
 const getCardCopyLimit = (
   card: DeckBuilderCardData,
   targetSection: DeckTargetSection,
-  ruleConfig: DeckRuleConfig = DEFAULT_RULE_CONFIG
+  ruleConfig: DeckRuleConfig = DEFAULT_RULE_CONFIG,
+  deckState?: DeckState
 ): number => {
   if (targetSection !== 'main' && targetSection !== 'evolve') {
     return Number.POSITIVE_INFINITY;
+  }
+
+  if (deckState) {
+    const globalLimit = getGlobalIntrinsicLimit(card, deckState);
+    if (globalLimit !== undefined) {
+      return globalLimit;
+    }
   }
 
   return getEffectiveDeckRestriction(card, targetSection, ruleConfig).copyLimit;
@@ -231,7 +240,7 @@ export const canAddCardToDeckState = (
 ): boolean => {
   if (!canAddCardToSection(card, targetSection, ruleConfig)) return false;
 
-  const copyLimit = getCardCopyLimit(card, targetSection, ruleConfig);
+  const copyLimit = getCardCopyLimit(card, targetSection, ruleConfig, deckState);
   if (!Number.isFinite(copyLimit)) return true;
 
   return countCopiesInSection(getSectionCards(deckState, targetSection), card) < copyLimit;
@@ -246,7 +255,8 @@ export const sanitizeImportedSection = (
   importedCards: DeckBuilderCardData[],
   availableCards: DeckBuilderCardData[],
   targetSection: DeckTargetSection,
-  ruleConfig: DeckRuleConfig = DEFAULT_RULE_CONFIG
+  ruleConfig: DeckRuleConfig = DEFAULT_RULE_CONFIG,
+  deckStateHint?: DeckState
 ): DeckBuilderCardData[] => {
   const cardCatalogById = new Map(availableCards.map(card => [card.id, card]));
   const limit = getDeckLimit(targetSection, ruleConfig);
@@ -256,7 +266,7 @@ export const sanitizeImportedSection = (
     .map(card => resolveImportedCard(card, cardCatalogById))
     .filter(card => canAddCardToSection(card, targetSection, ruleConfig))
     .filter(card => {
-      const copyLimit = getCardCopyLimit(card, targetSection, ruleConfig);
+      const copyLimit = getCardCopyLimit(card, targetSection, ruleConfig, deckStateHint);
       if (!Number.isFinite(copyLimit)) return true;
       const dedupeKey = getDisplayDedupKey(card);
       const nextCount = (copyCounts.get(dedupeKey) ?? 0) + 1;
@@ -314,7 +324,14 @@ export const validateDeckState = (
         const restriction = representativeCard
           ? getEffectiveDeckRestriction(representativeCard, deck, ruleConfig)
           : { copyLimit: DEFAULT_COPY_LIMIT_PER_CARD, source: 'default' as const };
-        const copyLimit = restriction.copyLimit;
+        
+        let copyLimit = restriction.copyLimit;
+        if (representativeCard) {
+          const globalLimit = getGlobalIntrinsicLimit(representativeCard, deckState);
+          if (globalLimit !== undefined) {
+            copyLimit = globalLimit;
+          }
+        }
 
         if (count > copyLimit) {
           issues.push({
@@ -567,18 +584,28 @@ export const sanitizeImportedDeckState = (
   availableCards: DeckBuilderCardData[],
   ruleConfig: DeckRuleConfig = DEFAULT_RULE_CONFIG
 ): DeckState => {
+  const cardCatalogById = new Map(availableCards.map(card => [card.id, card]));
+  
+  const tempDeckState: DeckState = {
+    mainDeck: (importedDeck.mainDeck ?? []).map(c => resolveImportedCard(c, cardCatalogById)),
+    evolveDeck: (importedDeck.evolveDeck ?? []).map(c => resolveImportedCard(c, cardCatalogById)),
+    leaderCards: (getImportedLeaderCards(importedDeck)).map(c => resolveImportedCard(c, cardCatalogById)),
+    tokenDeck: (importedDeck.tokenDeck ?? []).map(c => resolveImportedCard(c, cardCatalogById)),
+  };
+
   const leaderCards = sanitizeImportedSection(
     getImportedLeaderCards(importedDeck),
     availableCards,
     'leader',
-    ruleConfig
+    ruleConfig,
+    tempDeckState
   );
 
   return {
     ...createEmptyDeckState(),
-    mainDeck: sanitizeImportedSection(importedDeck.mainDeck ?? [], availableCards, 'main', ruleConfig),
-    evolveDeck: sanitizeImportedSection(importedDeck.evolveDeck ?? [], availableCards, 'evolve', ruleConfig),
+    mainDeck: sanitizeImportedSection(importedDeck.mainDeck ?? [], availableCards, 'main', ruleConfig, tempDeckState),
+    evolveDeck: sanitizeImportedSection(importedDeck.evolveDeck ?? [], availableCards, 'evolve', ruleConfig, tempDeckState),
     leaderCards,
-    tokenDeck: sanitizeImportedSection(importedDeck.tokenDeck ?? [], availableCards, 'token', ruleConfig),
+    tokenDeck: sanitizeImportedSection(importedDeck.tokenDeck ?? [], availableCards, 'token', ruleConfig, tempDeckState),
   };
 };
