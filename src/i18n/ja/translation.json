@@ -15,14 +15,19 @@
         "removeMain": "メインデッキから1枚削除",
         "removeToken": "トークンデッキから1枚削除",
         "save": "保存",
+        "saveTitle": "デッキを保存",
+        "saveDisabledTitle": "保存可能なデッキ数の上限（{{limit}}）に達しました。新しいデッキを保存するには、古いデッキを削除またはエクスポートしてください。",
         "saveAsNew": "新しく保存",
+        "saveAsNewTitle": "現在のデッキを新しい保存済みデッキとして保存",
         "import": "インポート",
         "importDeckLog": "DeckLogから取り込み",
         "betaBadge": "BETA",
         "export": "エクスポート",
         "reset": "リセット",
-        "makeUnsavedCopy": "未保存のコピーを作成"
+        "makeUnsavedCopy": "未保存のコピーを作成",
+        "duplicateDisabledTitle": "保存可能なデッキ数の上限（{{limit}}）に達しました。複製するには、古いデッキを削除またはエクスポートしてください。"
       },
+      "deckName": "デッキ名",
       "leader": "リーダー",
       "myDeckSort": "デッキの並び順",
       "noLeader": "リーダーが選択されていません。",
@@ -30,16 +35,32 @@
       "mainDeck": "メインデッキ",
       "evolveDeck": "エボルヴデッキ",
       "leaderToken": "リーダー / トークン",
-      "defaultDeckName": "新規デッキ",
+      "defaultDeckName": "My Deck",
       "deckNameHint": "デフォルト: {{name}}",
+      "sortAria": "デッキの並び順",
       "storage": "保存先",
-      "file": "ファイル"
+      "file": "ファイル",
+      "sort": {
+        "added": "追加順",
+        "cost": "コスト順",
+        "id": "カードID順"
+      }
     },
     "deckRule": {
       "crossoverClassA": "クロスオーバー クラスA",
       "crossoverClassB": "クロスオーバー クラスB",
       "identity": {
-        "type": "構築ルール:"
+        "type": "構築ルール:",
+        "class": "クラス",
+        "title": "称号"
+      },
+      "aria": {
+        "format": "デッキフォーマット",
+        "identityType": "デッキ識別タイプ",
+        "constructedClass": "構築戦クラス",
+        "constructedTitle": "構築戦称号",
+        "crossoverClassA": "クロスオーバークラスA",
+        "crossoverClassB": "クロスオーバークラスB"
       },
       "ruleFormat": "ルール",
       "selectClass": "クラスを選択",
@@ -50,6 +71,11 @@
       "selectedTitle": "選択中の称号",
       "title": "デッキ構築ルール",
       "format": "フォーマット",
+      "formats": {
+        "constructed": "構築戦",
+        "crossover": "クロスオーバー",
+        "other": "その他"
+      },
       "unselected": "未選択",
       "constructed": "構築戦 (Title)",
       "class": "クラス戦",
@@ -61,29 +87,40 @@
       "crossoverSecond": "サブクラス",
       "promptConstructed": "構築戦(Title)またはクラス戦を有効にすると、デッキルールに基づいたフィルタリングが行われます。",
       "promptCrossover": "クロスオーバーを有効にすると、2つのクラスのカードを使用できるようになります。",
-      "resolveBeforeExport": "エクスポートする前にデッキルールの不備を解消してください。"
+      "resolveBeforeExport": "エクスポートする前にデッキルールの不備を解消してください。",
+      "legalReady": "このデッキは適法で、エクスポート可能です。"
     },
     "modals": {
       "deleteAllDecks": {
-        "title": "すべての保存済みデッキを削除"
+        "title": "すべての保存済みデッキを削除",
+        "aria": "保存済みデッキ全削除確認",
+        "desc": "このブラウザのマイデッキに保存されている {{count}} 件をすべて削除しますか？",
+        "note": "現在のDeckBuilderの内容はそのまま残ります。エクスポートしたJSONファイルには影響しません。"
       },
       "deleteSelectedDecks": {
-        "title": "選択したデッキを削除"
+        "title": "選択したデッキを削除",
+        "aria": "選択した保存済みデッキの削除確認",
+        "desc": "このブラウザのマイデッキから、選択した {{count}} 件を削除しますか？",
+        "note": "現在のDeckBuilderの内容はそのまま残ります。エクスポートしたJSONファイルには影響しません。"
       },
       "loadDeck": {
         "continue": "再開する",
         "deleteBulkHint": "デッキを選択して一括削除できます。",
         "illegalDeck": "不正なデッキ",
         "resolveIssues": "読み込み後に不備を解消してからエクスポートしてください。",
+        "updated": "更新: {{at}}",
         "resume": "前回のセッションを再開",
         "resumeSessionDesc": "このブラウザで最後に編集していたデッキビルダーのセッションを復元しますか？",
-        "resumeSessionNote": "「再開する」を選ぶと前回の状態から続きを作成できます。「リセットして開始」を選ぶとまっさらな状態から始めます。",
-        "startFresh": "リセットして開始",
-        "title": "デッキを読み込む",
-        "message": "現在の編集内容は失われます。保存されていない変更がある場合は、先に保存することをお勧めします。続けますか？",
-        "confirm": "読み込む",
-        "cancel": "キャンセル",
-        "resumeAria": "以前のセッションを再開"
+      "resumeSessionNote": "「再開する」を選ぶと前回の状態から続きを作成できます。「リセットして開始」を選ぶとまっさらな状態から始めます。",
+      "startFresh": "リセットして開始",
+      "title": "デッキを読み込む",
+      "aria": "保存済みデッキ読み込み確認",
+      "desc": "現在の未保存の変更を「{{name}}」で置き換えますか？",
+      "note": "Deck Builder での現在の未保存の編集内容は置き換えられます。",
+      "message": "現在の編集内容は失われます。保存されていない変更がある場合は、先に保存することをお勧めします。続けますか？",
+      "confirm": "読み込む",
+      "cancel": "キャンセル",
+      "resumeAria": "以前のセッションを再開"
       },
       "resetBuilder": {
         "aria": "ビルダーの終了確認",
@@ -111,29 +148,76 @@
       },
       "deleteDeck": {
         "title": "デッキを削除",
+        "aria": "保存済みデッキ削除確認",
+        "desc": "このブラウザのマイデッキから「{{name}}」を削除しますか？",
+        "note": "このブラウザ内の保存済みコピーだけを削除します。エクスポートしたJSONファイルには影響しません。",
         "message": "デッキ「{{name}}」を削除してもよろしいですか？この操作は取り消せません。",
         "confirm": "削除する"
+      },
+      "buttons": {
+        "cancel": "キャンセル",
+        "load": "読み込む",
+        "resume": "再開する",
+        "startFresh": "リセットして開始",
+        "delete": "削除",
+        "clear": "クリア"
       }
     },
     "myDecks": {
       "deleteAll": "すべて削除",
       "deleteSelected": "選択したものを削除",
       "search": "デッキ名で検索...",
+      "searchAria": "保存済みデッキを検索",
+      "selectDeck": "「{{name}}」を選択",
+      "shownCount": "{{count}} 件",
+      "selectedCount": "{{count}} 件を選択中",
       "title": "マイデッキ",
       "subtitle": "このブラウザのローカルストレージに保存されています",
       "disclaimer": "※ブラウザのキャッシュをクリアすると削除される場合があります。重要なデッキはエクスポートしてバックアップしてください。",
+      "select": "選択",
+      "cancelSelection": "選択を解除",
+      "selectAllShown": "表示中をすべて選択",
+      "clearSelection": "選択をクリア",
       "noDecks": "保存されたデッキはまだありません。",
       "lastModified": "最終更新: {{date}}",
       "current": "（編集中）",
       "actions": {
         "load": "読み込む",
-        "delete": "削除"
+        "delete": "削除",
+        "duplicate": "複製",
+        "duplicateTitle": "保存済みデッキを複製",
+        "export": "エクスポート",
+        "exportTitle": "保存済みデッキをエクスポート"
       }
     },
     "preview": {
       "cost": "コスト",
       "id": "ID",
-      "stats": "ステータス"
+      "stats": "ステータス",
+      "dialogAria": "カードプレビュー: {{name}}",
+      "closeAria": "カードプレビューを閉じる",
+      "openAria": "{{name}} をプレビュー",
+      "openTitle": "{{name}} をプレビュー",
+      "enlargedAlt": "{{name}} の拡大表示"
+    },
+    "pagination": {
+      "prev": "前へ",
+      "next": "次へ"
+    },
+    "validation": {
+      "requireTitle": "構築戦では称号の選択が必要です。",
+      "requireClass": "構築戦ではクラスの選択が必要です。",
+      "requireCrossoverClasses": "クロスオーバーでは異なる2つのクラス選択が必要です。",
+      "mainDeckTooSmall": "メインデッキは最低{{expected}}枚必要です ({{actual}}/{{expected}})。",
+      "limitExceeded": "{{deck}} が上限を超えています ({{actual}}/{{expected}})。",
+      "tooManyCopies": "{{deck}} に {{cardName}} が多すぎます ({{actual}}/{{expected}})。",
+      "banned": "{{cardName}} は {{format}} で使用禁止です。",
+      "limited": "{{cardName}} は {{format}} で1枚制限です ({{actual}}/1)。",
+      "invalidLeaderCount": "{{format}} ではリーダーがちょうど{{expected}}枚必要です ({{actual}}/{{expected}})。",
+      "crossoverLeaderClassesInclude": "リーダーは {{firstClass}} と {{secondClass}} をそれぞれ含む必要があります。",
+      "crossoverLeaderClassesMatch": "リーダーは選択したクロスオーバーのクラスと一致している必要があります。",
+      "invalidSection": "{{deck}} に不正なセクションのカードが含まれています: {{cardList}}。",
+      "invalidRule": "{{deck}} に選択したデッキルールと一致しないカードが含まれています: {{cardList}}。"
     },
     "title": "カードライブラリ",
     "loading": "カード情報を読み込み中です...",
@@ -168,14 +252,28 @@
         "expansion": "エクスパンス",
         "cardType": "カード種別",
         "rarity": "レアリティ",
-        "productName": "商品名"
+        "productName": "商品名",
+        "subtype": "サブタイプ"
+      },
+      "aria": {
+        "section": "デッキセクションフィルター",
+        "class": "クラスフィルター",
+        "cardType": "カード種別フィルター",
+        "cost": "コストフィルター",
+        "expansion": "エクスパンションフィルター",
+        "rarity": "レアリティフィルター",
+        "productName": "商品名フィルター",
+        "subtypeInput": "サブタイプフィルター入力"
       },
       "searchCards": "カード名で検索...",
+      "hideSameNameVariants": "同名バリエーションを隠す",
       "allExpansions": "すべてのエクスパンション",
       "allRarities": "すべてのレアリティ",
       "allProducts": "すべての商品",
       "searchSubtype": "サブタイプで検索...",
       "reset": "フィルターをリセット",
+      "addSubtype": "追加",
+      "removeSubtypeFilter": "サブタイプフィルター {{tag}} を削除",
       "hideOriginalArts": "重複アートを非表示",
       "cardType": {
         "all": "すべて",
@@ -324,6 +422,14 @@
       "reconnectNow": "今すぐ再接続",
       "reconnect": "再接続"
     },
+    "card": {
+      "play": "プレイ",
+      "counter": "カウンター",
+      "toEvolveDeck": "エボルヴデッキへ",
+      "rest": "レスト",
+      "stand": "スタンド",
+      "attack": "攻撃"
+    },
     "controls": {
       "decideTurnOrder": "🪙 順番を決める (ランダム)",
       "p1First": "1P 先行",
@@ -444,10 +550,12 @@
         "instruction": "カードをクリックして移動先を選択: {{destination}}",
         "assignTo": "選択したカードの移動先:",
         "pendingCards": "未割り当てのカード",
-        "allAssignedInline": "すべてのカードが割り当てられました。",
-        "empty": "対象なし",
-        "tapToReturn": "カードをタップして戻す",
-        "remaining": "残り{{count}}枚",
+      "allAssignedInline": "すべてのカードが割り当てられました。",
+      "empty": "対象なし",
+      "tapToReturn": "カードをタップして戻す",
+      "reorderBackward": "{{destination}} の順番を前へ移動: {{card}}",
+      "reorderForward": "{{destination}} の順番を後へ移動: {{card}}",
+      "remaining": "残り{{count}}枚",
         "allOrganized": "整理完了",
         "yourHand": "手札 ({{count}})",
         "hide": "隠す",
@@ -512,6 +620,26 @@
           "starterDecidedManual": "手動設定: {{actor}} が先攻です！"
         }
       }
+    }
+  },
+  "cardArtwork": {
+    "back": {
+      "alt": "カード裏面",
+      "label": "カード裏面"
+    },
+    "types": {
+      "follower": "フォロワー",
+      "spell": "スペル",
+      "amulet": "アミュレット",
+      "equipment": "装備",
+      "leader": "リーダー",
+      "token": "トークン",
+      "other": "その他"
+    },
+    "badges": {
+      "token": "トークン",
+      "advance": "アドバンス",
+      "evolve": "エボルヴ"
     }
   },
   "home": {

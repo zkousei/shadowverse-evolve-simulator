@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import type { CardDetail } from '../utils/cardDetails';
 import { isDummyCardArtEnabled } from '../utils/cardArtMode';
 import type { RuntimeBaseCardType } from '../utils/cardType';
@@ -86,20 +87,20 @@ const resolveDummyKind = (
 
 const formatStat = (value: number | null | undefined) => (value === null || value === undefined ? '-' : String(value));
 
-const resolveSpecialBadge = (
+const resolveSpecialBadgeKey = (
   detail: { cardKindNormalized?: string } | undefined,
   isTokenCard?: boolean,
   isEvolveCard?: boolean
-): string | null => {
+): 'token' | 'advance' | 'evolve' | null => {
   const normalizedKind = detail?.cardKindNormalized ?? '';
 
-  if (normalizedKind.startsWith('token_') || isTokenCard) return 'TOKEN';
-  if (normalizedKind.startsWith('advance_')) return 'ADVANCE';
-  if (normalizedKind.startsWith('evolve_')) return 'EVOLVE';
-  if (normalizedKind === 'advance') return 'ADVANCE';
-  if (normalizedKind === 'evolve') return 'EVOLVE';
+  if (normalizedKind.startsWith('token_') || isTokenCard) return 'token';
+  if (normalizedKind.startsWith('advance_')) return 'advance';
+  if (normalizedKind.startsWith('evolve_')) return 'evolve';
+  if (normalizedKind === 'advance') return 'advance';
+  if (normalizedKind === 'evolve') return 'evolve';
 
-  return isEvolveCard ? 'EVOLVE' : null;
+  return isEvolveCard ? 'evolve' : null;
 };
 
 const CardArtwork: React.FC<Props> = ({
@@ -114,13 +115,14 @@ const CardArtwork: React.FC<Props> = ({
   style,
   draggable,
 }) => {
+  const { t } = useTranslation();
   const resolvedImage = detail?.image || image;
 
   if (!isDummyCardArtEnabled()) {
     return (
       <img
         src={isBack ? '/card_back.png' : resolvedImage}
-        alt={isBack ? 'Card Back' : alt}
+        alt={isBack ? t('cardArtwork.back.alt') : alt}
         style={style}
         draggable={draggable}
       />
@@ -135,7 +137,7 @@ const CardArtwork: React.FC<Props> = ({
   if (isBack) {
     return (
       <div
-        aria-label="Card Back"
+        aria-label={t('cardArtwork.back.alt')}
         style={{
           ...baseStyle,
           display: 'flex',
@@ -154,7 +156,7 @@ const CardArtwork: React.FC<Props> = ({
       >
         <div>
           <div style={{ fontSize: '0.7rem', opacity: 0.7 }}>Shadowverse Evolve</div>
-          <div style={{ fontSize: '0.9rem', marginTop: '0.2rem' }}>Card Back</div>
+          <div style={{ fontSize: '0.9rem', marginTop: '0.2rem' }}>{t('cardArtwork.back.label')}</div>
         </div>
       </div>
     );
@@ -162,10 +164,11 @@ const CardArtwork: React.FC<Props> = ({
 
   const dummyKind = resolveDummyKind(detail, baseCardType, isLeaderCard, isTokenCard);
   const kindStyle = CARD_KIND_STYLES[dummyKind];
-  const specialBadge = resolveSpecialBadge(detail, isTokenCard, isEvolveCard);
+  const specialBadgeKey = resolveSpecialBadgeKey(detail, isTokenCard, isEvolveCard);
+  const specialBadge = specialBadgeKey ? t(`cardArtwork.badges.${specialBadgeKey}`) : null;
   const typeLabel = isLeaderCard
-    ? 'LEADER'
-    : dummyKind.toUpperCase();
+    ? t('cardArtwork.types.leader')
+    : t(`cardArtwork.types.${dummyKind}`);
 
   return (
     <div

@@ -10,11 +10,15 @@
         "export": "Export",
         "reset": "Reset",
         "save": "Save",
+        "saveTitle": "Save deck",
+        "saveDisabledTitle": "My Decks limit reached ({{limit}}). Delete or export older decks before creating a new saved deck.",
         "saveAsNew": "Save as New Deck",
+        "saveAsNewTitle": "Save current deck as a new saved deck",
         "saved": "Saved",
         "unsavedChanges": "Unsaved changes",
         "notSaved": "Not saved to My Decks",
         "makeUnsavedCopy": "Make Unsaved Copy",
+        "duplicateDisabledTitle": "My Decks limit reached ({{limit}}). Delete or export older decks before duplicating.",
         "keepWorkingCopy": "Keep the current deck as a local working copy without tracking the saved deck.",
         "removeLeader": "Remove one leader",
         "removeMain": "Remove one copy from Main Deck",
@@ -24,6 +28,7 @@
       "deckName": "Deck Name",
       "defaultDeckName": "My Deck",
       "deckNameHint": "If left blank, the deck will be saved as {{name}}.",
+      "sortAria": "Deck sort",
       "myDeckSort": "My Deck Sort",
       "storage": "Storage",
       "file": "File",
@@ -71,14 +76,28 @@
         "expansion": "Expansion",
         "cardType": "Card Type",
         "rarity": "Rarity",
-        "productName": "Product Name"
+        "productName": "Product Name",
+        "subtype": "Subtype"
+      },
+      "aria": {
+        "section": "Deck section filter",
+        "class": "Class filter",
+        "cardType": "Card type filter",
+        "cost": "Cost filter",
+        "expansion": "Expansion filter",
+        "rarity": "Rarity filter",
+        "productName": "Product filter",
+        "subtypeInput": "Subtype filter input"
       },
       "searchCards": "Search cards by name...",
+      "hideSameNameVariants": "Hide same-name variants",
       "allExpansions": "All Expansions",
       "allRarities": "All Rarities",
       "allProducts": "All Products",
       "searchSubtype": "Search subtype...",
       "reset": "Reset Filters",
+      "addSubtype": "Add",
+      "removeSubtypeFilter": "Remove subtype filter {{tag}}",
       "hideOriginalArts": "Hide duplicate arts",
       "cardType": {
         "all": "All",
@@ -107,6 +126,14 @@
         "class": "Class",
         "title": "Title"
       },
+      "aria": {
+        "format": "Deck format",
+        "identityType": "Deck identity type",
+        "constructedClass": "Constructed class",
+        "constructedTitle": "Constructed title",
+        "crossoverClassA": "Crossover class A",
+        "crossoverClassB": "Crossover class B"
+      },
       "selectedClass": "Selected Class",
       "selectClass": "Select class",
       "selectedTitle": "Selected Title",
@@ -117,20 +144,37 @@
       "selectSecondClass": "Select second class",
       "promptConstructed": "Select a class or title to enable constructed deck building.",
       "promptCrossover": "Select two different classes to enable crossover deck building.",
-      "resolveBeforeExport": "Resolve these issues before exporting."
+      "resolveBeforeExport": "Resolve these issues before exporting.",
+      "legalReady": "This deck is legal and ready to export."
     },
     "myDecks": {
       "title": "My Decks",
       "subtitle": "Saved in this browser",
       "disclaimer": "My Decks is stored in this browser only. To keep a durable backup or move decks to another device, use Export and save the JSON file.",
       "search": "Search by deck name...",
+      "searchAria": "Search saved decks",
+      "selectDeck": "Select {{name}}",
+      "shownCount": "{{count}} decks",
+      "selectedCount": "{{count}} selected",
       "count": "Total: {{count}} / {{max}}",
       "startFresh": "Start Fresh Deck",
       "deleteAll": "Delete All",
       "deleteSelected": "Delete Selected",
-      "cancelSelection": "Cancel",
+      "cancelSelection": "Cancel Selection",
+      "select": "Select",
       "selectMode": "Select Mode",
-      "noDecks": "No saved decks yet. Build a deck and press Save to keep it in this browser."
+      "selectAllShown": "Select All Shown",
+      "clearSelection": "Clear Selection",
+      "current": "Current",
+      "noDecks": "No saved decks yet. Build a deck and press Save to keep it in this browser.",
+      "actions": {
+        "load": "Load",
+        "delete": "Delete",
+        "duplicate": "Duplicate",
+        "duplicateTitle": "Duplicate saved deck",
+        "export": "Export",
+        "exportTitle": "Export saved deck"
+      }
     },
     "addActions": {
       "mainTitle": "Add to Main Deck",
@@ -144,12 +188,14 @@
     "modals": {
       "loadDeck": {
         "title": "Load Saved Deck",
-        "desc": "Are you sure you want to load \"{{name}}\"? Current unsaved changes will be lost.",
+        "desc": "Replace the current unsaved changes with \"{{name}}\"?",
+        "note": "Your current unsaved edits in Deck Builder will be replaced.",
         "resume": "Resume Previous Session",
         "resumeDesc": "You have a previous unsaved session for \"{{name}}\". Do you want to resume it?",
         "resumeSessionDesc": "Restore the last Deck Builder session from this browser?",
         "resumeSessionNote": "Continue to reopen the previous builder state, or start fresh with an empty deck builder.",
         "resumeAria": "Resume previous session",
+        "aria": "Load saved deck confirmation",
         "startFresh": "Start Fresh",
         "continue": "Continue",
         "illegalDeck": "Illegal deck",
@@ -182,15 +228,21 @@
       },
       "deleteDeck": {
         "title": "Delete Saved Deck",
-        "desc": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone."
+        "aria": "Delete saved deck confirmation",
+        "desc": "Delete \"{{name}}\" from My Decks on this browser?",
+        "note": "This only removes the saved copy in this browser. Exported JSON files are not affected."
       },
       "deleteSelectedDecks": {
         "title": "Delete Selected Saved Decks",
-        "desc": "Are you sure you want to delete the selected {{count}} decks? This action cannot be undone."
+        "aria": "Delete selected saved decks confirmation",
+        "desc": "Delete {{count}} selected saved decks from My Decks on this browser?",
+        "note": "This keeps the current DeckBuilder contents as they are. Exported JSON files are not affected."
       },
       "deleteAllDecks": {
         "title": "Delete All Saved Decks",
-        "desc": "Are you sure you want to delete all saved decks? This action cannot be undone."
+        "aria": "Delete all saved decks confirmation",
+        "desc": "Delete all {{count}} saved decks from My Decks on this browser?",
+        "note": "This keeps the current DeckBuilder contents as they are. Exported JSON files are not affected."
       },
       "buttons": {
         "cancel": "Cancel",
@@ -204,7 +256,16 @@
     "preview": {
       "id": "ID",
       "cost": "Cost",
-      "stats": "Stats"
+      "stats": "Stats",
+      "dialogAria": "{{name}} preview",
+      "closeAria": "Close card preview",
+      "openAria": "Preview {{name}}",
+      "openTitle": "Preview {{name}}",
+      "enlargedAlt": "{{name}} enlarged"
+    },
+    "pagination": {
+      "prev": "Prev",
+      "next": "Next"
     },
     "validation": {
       "requireTitle": "Constructed decks require a selected title.",
@@ -408,6 +469,14 @@
       "reconnectNow": "Reconnect Now",
       "reconnect": "Reconnect"
     },
+    "card": {
+      "play": "Play",
+      "counter": "Counter",
+      "toEvolveDeck": "To Evolve Deck",
+      "rest": "REST",
+      "stand": "STAND",
+      "attack": "Attack"
+    },
     "controls": {
       "decideTurnOrder": "🪙 Decide Turn Order (Random)",
       "p1First": "Player 1 1st",
@@ -528,10 +597,12 @@
         "instruction": "Click a card to move it to: {{destination}}",
         "assignTo": "Assign selected to:",
         "pendingCards": "Cards to be Assigned",
-        "allAssignedInline": "All cards have been assigned.",
-        "empty": "Empty",
-        "tapToReturn": "Tap card to move back",
-        "remaining": "{{count}} cards remaining to assign",
+      "allAssignedInline": "All cards have been assigned.",
+      "empty": "Empty",
+      "tapToReturn": "Tap card to move back",
+      "reorderBackward": "Move {{destination}} order backward for {{card}}",
+      "reorderForward": "Move {{destination}} order forward for {{card}}",
+      "remaining": "{{count}} cards remaining to assign",
         "allOrganized": "All cards organized",
         "yourHand": "Your Hand ({{count}})",
         "hide": "hide",
@@ -587,12 +658,36 @@
           "revealLookTop": "{{actor}} revealed from Look Top",
           "revealSearch": "{{actor}} revealed from Search",
           "attackDeclared": "{{actor}} declared an attack",
+          "attackAnnouncement": "{{attacker}} attacks {{target}}",
+          "attackHistory": "{{attacker}} -> {{target}}",
+          "leaderLabel": "{{owner}} Leader",
           "cardPlayed": "{{actor}} played {{cardName}}",
           "cardPlayedToField": "{{actor}} played to field {{cardName}}",
           "starterDecided": "{{actor}} will go first!",
           "starterDecidedManual": "Manually set: {{actor}} will go first!"
         }
       }
+    }
+  }
+  ,
+  "cardArtwork": {
+    "back": {
+      "alt": "Card Back",
+      "label": "Card Back"
+    },
+    "types": {
+      "follower": "FOLLOWER",
+      "spell": "SPELL",
+      "amulet": "AMULET",
+      "equipment": "EQUIPMENT",
+      "leader": "LEADER",
+      "token": "TOKEN",
+      "other": "OTHER"
+    },
+    "badges": {
+      "token": "TOKEN",
+      "advance": "ADVANCE",
+      "evolve": "EVOLVE"
     }
   }
 }

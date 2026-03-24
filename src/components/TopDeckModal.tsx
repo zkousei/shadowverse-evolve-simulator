@@ -265,7 +265,7 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
                             >
                               <button
                                 type="button"
-                                aria-label={`${btn.label} order backward for ${a.card.name}`}
+                                aria-label={t('gameBoard.modals.topDeck.reorderBackward', { destination: btn.label, card: a.card.name })}
                                 disabled={(a.order || 0) <= 1}
                                 onClick={(event) => {
                                   event.stopPropagation();
@@ -289,7 +289,7 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
                               </button>
                               <button
                                 type="button"
-                                aria-label={`${btn.label} order forward for ${a.card.name}`}
+                                aria-label={t('gameBoard.modals.topDeck.reorderForward', { destination: btn.label, card: a.card.name })}
                                 disabled={(a.order || 0) >= group.length}
                                 onClick={(event) => {
                                   event.stopPropagation();

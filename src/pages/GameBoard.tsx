@@ -824,7 +824,7 @@ const GameBoard: React.FC = () => {
         {t('gameBoard.board.statusLabel', { label })}
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', fontSize: '0.95rem' }}>
-        <span>HP</span>
+        <span>{t('gameBoard.board.stats.hp')}</span>
         <strong style={{ color: '#ef4444' }}>{gameState[playerRole].hp}</strong>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', fontSize: '0.95rem' }}>
@@ -832,15 +832,15 @@ const GameBoard: React.FC = () => {
         <strong><span style={{ color: '#3b82f6' }}>{gameState[playerRole].pp}</span> / {gameState[playerRole].maxPp}</strong>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', fontSize: '0.95rem' }}>
-        <span>EP</span>
+        <span>{t('gameBoard.board.stats.ep')}</span>
         <strong style={{ color: '#fbbf24' }}>{gameState[playerRole].ep}</strong>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', fontSize: '0.95rem' }}>
-        <span>SEP</span>
+        <span>{t('gameBoard.board.stats.sep')}</span>
         <strong style={{ color: '#facc15' }}>{gameState[playerRole].sep}</strong>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', fontSize: '0.95rem' }}>
-        <span>Combo</span>
+        <span>{t('gameBoard.board.stats.combo')}</span>
         <strong>{gameState[playerRole].combo}</strong>
       </div>
     </div>
@@ -1162,7 +1162,7 @@ const GameBoard: React.FC = () => {
                 padding: '0.2rem 0.45rem',
                 borderRadius: '999px'
               }}>
-                BETA
+                {t('home.cards.soloPlay.badge')}
               </span>
             )}
             {!isSoloMode && (
@@ -1181,7 +1181,7 @@ const GameBoard: React.FC = () => {
                 {connectionBadgeTone.label}
               </span>
             )}
-            <span style={{ color: (status.includes('ready') || status.includes('完了') || status.includes('準備完了')) ? 'var(--vivid-green-cyan)' : 'var(--text-muted)' }}>{status}</span>
+            <span style={{ color: isSoloMode ? 'var(--vivid-green-cyan)' : 'var(--text-muted)' }}>{status}</span>
             {!isSoloMode && !isHost && connectionState !== 'connected' && (
               <button
                 onClick={attemptReconnect}
@@ -1497,7 +1497,7 @@ const GameBoard: React.FC = () => {
                 fontWeight: 'bold'
               }}
             >
-              Cancel
+              {t('gameBoard.alerts.cancel')}
             </button>
           </div>
         )}
@@ -1691,10 +1691,10 @@ const GameBoard: React.FC = () => {
                   >
                     {t('gameBoard.zones.loadFromMyDecks', { label: topLabel })}
                   </button>
-                  <button onClick={() => drawCard(topRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing' || !canInteract} title={gameState.gameStatus !== 'playing' || !canInteract ? interactionBlockedTitle ?? 'Available during the game only.' : undefined} style={{ padding: '0.5rem', background: '#6366f1', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' && canInteract ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' && canInteract ? 'pointer' : 'not-allowed' }}>
+                  <button onClick={() => drawCard(topRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing' || !canInteract} title={gameState.gameStatus !== 'playing' || !canInteract ? interactionBlockedTitle ?? t('gameBoard.board.availableDuringGameOnly') : undefined} style={{ padding: '0.5rem', background: '#6366f1', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' && canInteract ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' && canInteract ? 'pointer' : 'not-allowed' }}>
                     {t('gameBoard.zones.draw', { label: topLabel })}
                   </button>
-                  <button onClick={() => millCard(topRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing' || !canInteract} title={gameState.gameStatus !== 'playing' || !canInteract ? interactionBlockedTitle ?? 'Available during the game only.' : undefined} style={{ padding: '0.5rem', background: '#475569', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' && canInteract ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' && canInteract ? 'pointer' : 'not-allowed' }}>
+                  <button onClick={() => millCard(topRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing' || !canInteract} title={gameState.gameStatus !== 'playing' || !canInteract ? interactionBlockedTitle ?? t('gameBoard.board.availableDuringGameOnly') : undefined} style={{ padding: '0.5rem', background: '#475569', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' && canInteract ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' && canInteract ? 'pointer' : 'not-allowed' }}>
                     {t('gameBoard.zones.mill', { label: topLabel })}
                   </button>
                   {renderEndTurnButton(topRole, topLabel, '#fbbf24')}

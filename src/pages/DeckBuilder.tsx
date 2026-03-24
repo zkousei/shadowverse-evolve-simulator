@@ -39,6 +39,7 @@ import {
   clearDraft,
   createDeckSnapshot,
   createPristineDeckSnapshot,
+  DEFAULT_DECK_NAME,
   deleteAllSavedDecks,
   deleteSavedDeck,
   deleteSavedDecks,
@@ -174,7 +175,7 @@ const formatSavedDeckUpdatedAt = (value: string, locale?: string): string => {
   }
 };
 
-const resolveDeckName = (value: string, t: any) => value.trim() || t('deckBuilder.deckArea.defaultDeckName');
+const resolveDeckName = (value: string) => value.trim() || DEFAULT_DECK_NAME;
 
 type SaveFeedback = {
   kind: 'success' | 'warning';
@@ -410,7 +411,7 @@ const DeckBuilder: React.FC = () => {
     const timeoutId = window.setTimeout(() => {
       saveDraft({
         selectedDeckId: selectedSavedDeckId,
-        name: resolveDeckName(deckName, t),
+        name: resolveDeckName(deckName),
         ruleConfig: deckRuleConfig,
         deckState,
       });
@@ -617,7 +618,7 @@ const DeckBuilder: React.FC = () => {
       }, 200);
     };
 
-    downloadDeckJson(resolveDeckName(deckName, t), deckRuleConfig, deckState);
+    downloadDeckJson(resolveDeckName(deckName), deckRuleConfig, deckState);
   };
 
   const handleImportDeck = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -723,7 +724,7 @@ const DeckBuilder: React.FC = () => {
       return;
     }
 
-    const snapshot = createDeckSnapshot(resolveDeckName(deckName, t), deckRuleConfig, deckState);
+    const snapshot = createDeckSnapshot(resolveDeckName(deckName), deckRuleConfig, deckState);
     const savedDeck = saveDeck({
       id: saveAsNew ? undefined : (selectedSavedDeckId ?? undefined),
       name: snapshot.name,
@@ -943,7 +944,7 @@ const DeckBuilder: React.FC = () => {
               checked={hideSameNameVariants}
               onChange={(e) => { setHideSameNameVariants(e.target.checked); setPage(0); }}
             />
-            Hide same-name variants
+            {t('deckBuilder.filters.hideSameNameVariants')}
           </label>
 
           <button
@@ -966,7 +967,7 @@ const DeckBuilder: React.FC = () => {
         <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <div
             role="group"
-            aria-label="Deck section filter"
+            aria-label={t('deckBuilder.filters.aria.section')}
             style={{
               display: 'flex',
               background: 'var(--bg-surface)',
@@ -1007,7 +1008,7 @@ const DeckBuilder: React.FC = () => {
           {/* Class Filter */}
           <div
             role="group"
-            aria-label="Class filter"
+            aria-label={t('deckBuilder.filters.aria.class')}
             style={{
               display: 'flex',
               background: 'var(--bg-surface)',
@@ -1047,7 +1048,7 @@ const DeckBuilder: React.FC = () => {
 
           <div
             role="group"
-            aria-label="Card type filter"
+            aria-label={t('deckBuilder.filters.aria.cardType')}
             style={{
               display: 'flex',
               background: 'var(--bg-surface)',
@@ -1087,7 +1088,7 @@ const DeckBuilder: React.FC = () => {
           {/* Cost Filter */}
           <div
             role="group"
-            aria-label="Cost filter"
+            aria-label={t('deckBuilder.filters.aria.cost')}
             style={{ display: 'flex', background: 'var(--bg-surface)', padding: '0.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}
           >
             <span style={{ padding: '0.5rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('deckBuilder.filters.labels.cost')}:</span>
@@ -1114,7 +1115,7 @@ const DeckBuilder: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('deckBuilder.filters.labels.expansion')}:</span>
             <select
-              aria-label="Expansion filter"
+              aria-label={t('deckBuilder.filters.aria.expansion')}
               value={expansionFilter}
               onChange={(e) => { setExpansionFilter(e.target.value); setPage(0); }}
               style={{
@@ -1138,7 +1139,7 @@ const DeckBuilder: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('deckBuilder.filters.labels.rarity')}:</span>
             <select
-              aria-label="Rarity filter"
+              aria-label={t('deckBuilder.filters.aria.rarity')}
               value={rarityFilter}
               onChange={(e) => { setRarityFilter(e.target.value); setPage(0); }}
               style={{
@@ -1162,7 +1163,7 @@ const DeckBuilder: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('deckBuilder.filters.labels.productName')}:</span>
             <select
-              aria-label="Product filter"
+              aria-label={t('deckBuilder.filters.aria.productName')}
               value={productNameFilter}
               onChange={(e) => { setProductNameFilter(e.target.value); setPage(0); }}
               style={{
@@ -1186,10 +1187,10 @@ const DeckBuilder: React.FC = () => {
           {/* Subtype Filter */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', minWidth: '240px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Subtype:</span>
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('deckBuilder.filters.labels.subtype')}:</span>
               <input
                 type="text"
-                aria-label="Subtype filter input"
+                aria-label={t('deckBuilder.filters.aria.subtypeInput')}
                 list="subtype-filter-options"
                 placeholder={t('deckBuilder.filters.searchSubtype')}
                 value={subtypeSearch}
@@ -1229,7 +1230,7 @@ const DeckBuilder: React.FC = () => {
                   cursor: 'pointer',
                 }}
               >
-                Add
+                {t('deckBuilder.filters.addSubtype')}
               </button>
             </div>
 
@@ -1252,7 +1253,7 @@ const DeckBuilder: React.FC = () => {
                       fontSize: '0.75rem',
                       cursor: 'pointer',
                     }}
-                    title={`Remove subtype filter ${tag}`}
+                    title={t('deckBuilder.filters.removeSubtypeFilter', { tag })}
                   >
                     <span>{tag}</span>
                     <span style={{ color: 'var(--text-muted)' }}>×</span>
@@ -1273,7 +1274,7 @@ const DeckBuilder: React.FC = () => {
               className="glass-panel"
               style={{ padding: '0.5rem 1rem' }}
             >
-              Prev
+              {t('deckBuilder.pagination.prev')}
             </button>
             <span>{page + 1} / {totalPages}</span>
             <button
@@ -1283,7 +1284,7 @@ const DeckBuilder: React.FC = () => {
               className="glass-panel"
               style={{ padding: '0.5rem 1rem' }}
             >
-              Next
+              {t('deckBuilder.pagination.next')}
             </button>
           </div>
         </div>
@@ -1299,8 +1300,8 @@ const DeckBuilder: React.FC = () => {
                 <div key={card.id} className="glass-panel" style={{ padding: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   <button
                     type="button"
-                    aria-label={`Preview ${card.name}`}
-                    title={`Preview ${card.name}`}
+                    aria-label={t('deckBuilder.preview.openAria', { name: card.name })}
+                    title={t('deckBuilder.preview.openTitle', { name: card.name })}
                     onClick={() => setPreviewCard(card)}
                     style={{
                       padding: 0,
@@ -1368,7 +1369,7 @@ const DeckBuilder: React.FC = () => {
       <div className="glass-panel" style={{ width: '350px', display: 'flex', flexDirection: 'column', borderRight: 'none', borderTop: 'none', borderBottom: 'none', borderRadius: 0 }}>
         <div style={{ padding: '0.75rem 1.5rem', borderBottom: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           <div style={{ color: 'var(--text-muted)', fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-            Deck Name
+            {t('deckBuilder.deckArea.deckName')}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -1403,13 +1404,15 @@ const DeckBuilder: React.FC = () => {
                   e.target.style.boxShadow = 'none';
                   e.target.style.background = 'rgba(15, 23, 42, 0.45)';
                 }}
-                placeholder="Deck Name"
+                placeholder={t('deckBuilder.deckArea.deckName')}
               />
               <button
                 type="button"
                 onClick={() => handleSaveDeck(false)}
                 disabled={!canSaveCurrentDeck}
-                title={canSaveCurrentDeck ? 'Save deck' : `My Decks limit reached (${HARD_SAVED_DECK_LIMIT}). Delete or export older decks before creating a new saved deck.`}
+                title={canSaveCurrentDeck
+                  ? t('deckBuilder.deckArea.actions.saveTitle')
+                  : t('deckBuilder.deckArea.actions.saveDisabledTitle', { limit: HARD_SAVED_DECK_LIMIT })}
                 style={{
                   flexShrink: 0,
                   display: 'flex',
@@ -1426,7 +1429,7 @@ const DeckBuilder: React.FC = () => {
                   opacity: canSaveCurrentDeck ? 1 : 0.75,
                 }}
               >
-                Save
+                {t('deckBuilder.deckArea.actions.save')}
               </button>
             </div>
             {selectedSavedDeckId && (
@@ -1452,7 +1455,7 @@ const DeckBuilder: React.FC = () => {
             )}
             {deckName.trim() === '' && (
               <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
-                {t('deckBuilder.deckArea.deckNameHint', { name: t('deckBuilder.deckArea.defaultDeckName') })}
+                {t('deckBuilder.deckArea.deckNameHint', { name: DEFAULT_DECK_NAME })}
               </div>
             )}
           </div>
@@ -1579,7 +1582,7 @@ const DeckBuilder: React.FC = () => {
               <label htmlFor="deck-format" style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('deckBuilder.deckRule.ruleFormat')}</label>
               <select
                 id="deck-format"
-                aria-label="Deck format"
+                aria-label={t('deckBuilder.deckRule.aria.format')}
                 value={deckRuleConfig.format}
                 onChange={(e) => {
                   const nextFormat = e.target.value as DeckFormat;
@@ -1613,7 +1616,7 @@ const DeckBuilder: React.FC = () => {
               <>
                 <div
                   role="group"
-                  aria-label="Deck identity type"
+                  aria-label={t('deckBuilder.deckRule.aria.identityType')}
                   style={{
                     display: 'flex',
                     background: 'var(--bg-surface)',
@@ -1654,7 +1657,7 @@ const DeckBuilder: React.FC = () => {
                     <label htmlFor="constructed-class" style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('deckBuilder.deckRule.selectedClass')}</label>
                     <select
                       id="constructed-class"
-                      aria-label="Constructed class"
+                      aria-label={t('deckBuilder.deckRule.aria.constructedClass')}
                       value={deckRuleConfig.selectedClass ?? ''}
                       onChange={(e) => setDeckRuleConfig(current => ({
                         ...current,
@@ -1684,7 +1687,7 @@ const DeckBuilder: React.FC = () => {
                     <label htmlFor="constructed-title" style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('deckBuilder.deckRule.selectedTitle')}</label>
                     <select
                       id="constructed-title"
-                      aria-label="Constructed title"
+                      aria-label={t('deckBuilder.deckRule.aria.constructedTitle')}
                       value={deckRuleConfig.selectedTitle ?? ''}
                       onChange={(e) => setDeckRuleConfig(current => ({
                         ...current,
@@ -1714,7 +1717,7 @@ const DeckBuilder: React.FC = () => {
                   <label htmlFor="crossover-class-a" style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('deckBuilder.deckRule.crossoverClassA')}</label>
                   <select
                     id="crossover-class-a"
-                    aria-label="Crossover class A"
+                    aria-label={t('deckBuilder.deckRule.aria.crossoverClassA')}
                     value={deckRuleConfig.selectedClasses[0] ?? ''}
                     onChange={(e) => setDeckRuleConfig(current => ({
                       ...current,
@@ -1747,7 +1750,7 @@ const DeckBuilder: React.FC = () => {
                   <label htmlFor="crossover-class-b" style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('deckBuilder.deckRule.crossoverClassB')}</label>
                   <select
                     id="crossover-class-b"
-                    aria-label="Crossover class B"
+                    aria-label={t('deckBuilder.deckRule.aria.crossoverClassB')}
                     value={deckRuleConfig.selectedClasses[1] ?? ''}
                     onChange={(e) => setDeckRuleConfig(current => ({
                       ...current,
@@ -1813,7 +1816,7 @@ const DeckBuilder: React.FC = () => {
             {deckIssueMessages.length === 0 && (
               <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: '0.75rem' }}>
                 <p style={{ margin: 0, color: 'var(--vivid-green-cyan)', fontSize: '0.875rem', fontWeight: 700 }}>
-                  This deck is legal and ready to export.
+                  {t('deckBuilder.deckRule.legalReady')}
                 </p>
               </div>
             )}
@@ -1823,7 +1826,7 @@ const DeckBuilder: React.FC = () => {
             <label htmlFor="deck-sort" style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('deckBuilder.deckArea.myDeckSort')}</label>
             <select
               id="deck-sort"
-              aria-label="Deck sort"
+              aria-label={t('deckBuilder.deckArea.sortAria')}
               value={deckSortMode}
               onChange={(e) => setDeckSortMode(e.target.value as DeckSortMode)}
               style={{
@@ -2058,13 +2061,15 @@ const DeckBuilder: React.FC = () => {
                     cursor: 'pointer',
                   }}
                 >
-                  Close
+                  {t('common.buttons.close')}
                 </button>
                 <button
                   type="button"
                   onClick={() => handleSaveDeck(true)}
                   disabled={!canCreateNewSavedDeck}
-                  title={canCreateNewSavedDeck ? 'Save current deck as a new saved deck' : `My Decks limit reached (${HARD_SAVED_DECK_LIMIT}). Delete or export older decks before creating a new saved deck.`}
+                  title={canCreateNewSavedDeck
+                    ? t('deckBuilder.deckArea.actions.saveAsNewTitle')
+                    : t('deckBuilder.deckArea.actions.saveDisabledTitle', { limit: HARD_SAVED_DECK_LIMIT })}
                   style={{
                     padding: '0.45rem 0.75rem',
                     borderRadius: 'var(--radius-md)',
@@ -2076,7 +2081,7 @@ const DeckBuilder: React.FC = () => {
                     opacity: canCreateNewSavedDeck ? 1 : 0.75,
                   }}
                 >
-                  Save As New
+                  {t('deckBuilder.deckArea.actions.saveAsNew')}
                 </button>
                 {filteredSavedDecks.length > 0 && (
                   <button
@@ -2098,7 +2103,7 @@ const DeckBuilder: React.FC = () => {
                       cursor: 'pointer',
                     }}
                   >
-                    {isSavedDeckSelectMode ? 'Cancel Selection' : 'Select'}
+                    {isSavedDeckSelectMode ? t('deckBuilder.myDecks.cancelSelection') : t('deckBuilder.myDecks.select')}
                   </button>
                 )}
                 {savedDecks.length > 0 && (
@@ -2127,7 +2132,7 @@ const DeckBuilder: React.FC = () => {
                 value={savedDeckSearch}
                 onChange={(event) => setSavedDeckSearch(event.target.value)}
                 placeholder={t('deckBuilder.myDecks.search')}
-                aria-label="Search saved decks"
+                aria-label={t('deckBuilder.myDecks.searchAria')}
                 style={{
                   flex: 1,
                   minWidth: '220px',
@@ -2140,7 +2145,7 @@ const DeckBuilder: React.FC = () => {
                 }}
               />
               <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                {filteredSavedDecks.length} decks
+                {t('deckBuilder.myDecks.shownCount', { count: filteredSavedDecks.length })}
               </span>
             </div>
 
@@ -2159,7 +2164,7 @@ const DeckBuilder: React.FC = () => {
                 }}
               >
                 <span style={{ color: 'var(--text-main)', fontSize: '0.85rem', fontWeight: 700 }}>
-                  {selectedSavedDeckIds.length} selected
+                  {t('deckBuilder.myDecks.selectedCount', { count: selectedSavedDeckIds.length })}
                 </span>
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                   <button
@@ -2174,7 +2179,7 @@ const DeckBuilder: React.FC = () => {
                       cursor: 'pointer',
                     }}
                   >
-                    {areAllShownSavedDecksSelected ? 'Clear Selection' : 'Select All Shown'}
+                    {areAllShownSavedDecksSelected ? t('deckBuilder.myDecks.clearSelection') : t('deckBuilder.myDecks.selectAllShown')}
                   </button>
                   <button
                     type="button"
@@ -2230,7 +2235,7 @@ const DeckBuilder: React.FC = () => {
                           >
                             <input
                               type="checkbox"
-                              aria-label={`Select ${savedDeck.name}`}
+                              aria-label={t('deckBuilder.myDecks.selectDeck', { name: savedDeck.name })}
                               checked={selectedSavedDeckIds.includes(savedDeck.id)}
                               onChange={() => toggleSavedDeckSelection(savedDeck.id)}
                             />
@@ -2241,7 +2246,7 @@ const DeckBuilder: React.FC = () => {
                             <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>{savedDeck.name}</div>
                             {savedDeck.id === selectedSavedDeckId && (
                               <span style={{ fontSize: '0.72rem', color: '#67e8f9', border: '1px solid rgba(103, 232, 249, 0.35)', borderRadius: '999px', padding: '0.12rem 0.45rem' }}>
-                                Current
+                                {t('deckBuilder.myDecks.current')}
                               </span>
                             )}
                             {!canExport && (
@@ -2293,13 +2298,15 @@ const DeckBuilder: React.FC = () => {
                                   cursor: 'pointer',
                                 }}
                               >
-                                Load
+                                {t('deckBuilder.myDecks.actions.load')}
                               </button>
                               <button
                                 type="button"
                                 onClick={() => handleDuplicateSavedDeck(savedDeck.id)}
                                 disabled={!canCreateNewSavedDeck}
-                                title={canCreateNewSavedDeck ? 'Duplicate saved deck' : `My Decks limit reached (${HARD_SAVED_DECK_LIMIT}). Delete or export older decks before duplicating.`}
+                                title={canCreateNewSavedDeck
+                                  ? t('deckBuilder.myDecks.actions.duplicateTitle')
+                                  : t('deckBuilder.deckArea.actions.duplicateDisabledTitle', { limit: HARD_SAVED_DECK_LIMIT })}
                                 style={{
                                   padding: '0.45rem 0.7rem',
                                   borderRadius: 'var(--radius-md)',
@@ -2310,13 +2317,13 @@ const DeckBuilder: React.FC = () => {
                                   opacity: canCreateNewSavedDeck ? 1 : 0.7,
                                 }}
                               >
-                                Duplicate
+                                {t('deckBuilder.myDecks.actions.duplicate')}
                               </button>
                               <button
                                 type="button"
                                 onClick={() => handleExportSavedDeck(savedDeck.id)}
                                 disabled={!canExport}
-                                title={canExport ? 'Export saved deck' : 'Resolve deck issues after loading before exporting'}
+                                title={canExport ? t('deckBuilder.myDecks.actions.exportTitle') : t('deckBuilder.modals.loadDeck.resolveIssues')}
                                 style={{
                                   padding: '0.45rem 0.7rem',
                                   borderRadius: 'var(--radius-md)',
@@ -2327,7 +2334,7 @@ const DeckBuilder: React.FC = () => {
                                   opacity: canExport ? 1 : 0.7,
                                 }}
                               >
-                                Export
+                                {t('deckBuilder.myDecks.actions.export')}
                               </button>
                               <button
                                 type="button"
@@ -2341,7 +2348,7 @@ const DeckBuilder: React.FC = () => {
                                   cursor: 'pointer',
                                 }}
                               >
-                                Delete
+                                {t('deckBuilder.modals.buttons.delete')}
                               </button>
                             </>
                           )}
@@ -2358,7 +2365,7 @@ const DeckBuilder: React.FC = () => {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Load saved deck confirmation"
+          aria-label={t('deckBuilder.modals.loadDeck.aria')}
           style={{
             position: 'fixed',
             inset: 0,
@@ -2383,10 +2390,10 @@ const DeckBuilder: React.FC = () => {
           >
             <h3 style={{ margin: 0, color: '#fcd34d' }}>{t('deckBuilder.modals.loadDeck.title')}</h3>
             <p style={{ margin: 0, color: 'var(--text-main)', lineHeight: 1.5 }}>
-              Replace the current unsaved changes with "{pendingLoadDeck.name}"?
+              {t('deckBuilder.modals.loadDeck.desc', { name: pendingLoadDeck.name })}
             </p>
             <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem', lineHeight: 1.5 }}>
-              Your current unsaved edits in Deck Builder will be replaced.
+              {t('deckBuilder.modals.loadDeck.note')}
             </p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
               <button
@@ -2401,7 +2408,7 @@ const DeckBuilder: React.FC = () => {
                   cursor: 'pointer',
                 }}
               >
-                Cancel
+                {t('deckBuilder.modals.buttons.cancel')}
               </button>
               <button
                 type="button"
@@ -2416,7 +2423,7 @@ const DeckBuilder: React.FC = () => {
                   cursor: 'pointer',
                 }}
               >
-                Load
+                {t('deckBuilder.myDecks.actions.load')}
               </button>
             </div>
           </div>
@@ -2427,7 +2434,7 @@ const DeckBuilder: React.FC = () => {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Delete saved deck confirmation"
+          aria-label={t('deckBuilder.modals.deleteDeck.aria')}
           style={{
             position: 'fixed',
             inset: 0,
@@ -2452,10 +2459,10 @@ const DeckBuilder: React.FC = () => {
           >
             <h3 style={{ margin: 0, color: '#fca5a5' }}>{t('deckBuilder.modals.deleteDeck.title')}</h3>
             <p style={{ margin: 0, color: 'var(--text-main)', lineHeight: 1.5 }}>
-              Delete "{pendingDeleteDeck.name}" from My Decks on this browser?
+              {t('deckBuilder.modals.deleteDeck.desc', { name: pendingDeleteDeck.name })}
             </p>
             <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem', lineHeight: 1.5 }}>
-              This only removes the saved copy in this browser. Exported JSON files are not affected.
+              {t('deckBuilder.modals.deleteDeck.note')}
             </p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
               <button
@@ -2470,7 +2477,7 @@ const DeckBuilder: React.FC = () => {
                   cursor: 'pointer',
                 }}
               >
-                Cancel
+                {t('deckBuilder.modals.buttons.cancel')}
               </button>
               <button
                 type="button"
@@ -2485,7 +2492,7 @@ const DeckBuilder: React.FC = () => {
                   cursor: 'pointer',
                 }}
               >
-                Delete
+                {t('deckBuilder.modals.buttons.delete')}
               </button>
             </div>
           </div>
@@ -2605,7 +2612,7 @@ const DeckBuilder: React.FC = () => {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Delete selected saved decks confirmation"
+          aria-label={t('deckBuilder.modals.deleteSelectedDecks.aria')}
           style={{
             position: 'fixed',
             inset: 0,
@@ -2630,10 +2637,10 @@ const DeckBuilder: React.FC = () => {
           >
             <h3 style={{ margin: 0, color: '#fca5a5' }}>{t('deckBuilder.modals.deleteSelectedDecks.title')}</h3>
             <p style={{ margin: 0, color: 'var(--text-main)', lineHeight: 1.5 }}>
-              Delete {selectedSavedDeckIds.length} selected saved decks from My Decks on this browser?
+              {t('deckBuilder.modals.deleteSelectedDecks.desc', { count: selectedSavedDeckIds.length })}
             </p>
             <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem', lineHeight: 1.5 }}>
-              This keeps the current DeckBuilder contents as they are. Exported JSON files are not affected.
+              {t('deckBuilder.modals.deleteSelectedDecks.note')}
             </p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
               <button
@@ -2648,7 +2655,7 @@ const DeckBuilder: React.FC = () => {
                   cursor: 'pointer',
                 }}
               >
-                Cancel
+                {t('deckBuilder.modals.buttons.cancel')}
               </button>
               <button
                 type="button"
@@ -2663,7 +2670,7 @@ const DeckBuilder: React.FC = () => {
                   cursor: 'pointer',
                 }}
               >
-                Delete Selected
+                {t('deckBuilder.myDecks.deleteSelected')}
               </button>
             </div>
           </div>
@@ -2674,7 +2681,7 @@ const DeckBuilder: React.FC = () => {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Delete all saved decks confirmation"
+          aria-label={t('deckBuilder.modals.deleteAllDecks.aria')}
           style={{
             position: 'fixed',
             inset: 0,
@@ -2699,10 +2706,10 @@ const DeckBuilder: React.FC = () => {
           >
             <h3 style={{ margin: 0, color: '#fca5a5' }}>{t('deckBuilder.modals.deleteAllDecks.title')}</h3>
             <p style={{ margin: 0, color: 'var(--text-main)', lineHeight: 1.5 }}>
-              Delete all {savedDecks.length} saved decks from My Decks on this browser?
+              {t('deckBuilder.modals.deleteAllDecks.desc', { count: savedDecks.length })}
             </p>
             <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem', lineHeight: 1.5 }}>
-              This keeps the current DeckBuilder contents as they are. Exported JSON files are not affected.
+              {t('deckBuilder.modals.deleteAllDecks.note')}
             </p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
               <button
@@ -2717,7 +2724,7 @@ const DeckBuilder: React.FC = () => {
                   cursor: 'pointer',
                 }}
               >
-                Cancel
+                {t('deckBuilder.modals.buttons.cancel')}
               </button>
               <button
                 type="button"
@@ -2732,7 +2739,7 @@ const DeckBuilder: React.FC = () => {
                   cursor: 'pointer',
                 }}
               >
-                Delete All
+                {t('deckBuilder.myDecks.deleteAll')}
               </button>
             </div>
           </div>
@@ -2757,7 +2764,7 @@ const DeckBuilder: React.FC = () => {
           <div
             role="dialog"
             aria-modal="true"
-            aria-label={`${previewCard.name} preview`}
+            aria-label={t('deckBuilder.preview.dialogAria', { name: previewCard.name })}
             onClick={(event) => event.stopPropagation()}
             style={{
               position: 'relative',
@@ -2775,7 +2782,7 @@ const DeckBuilder: React.FC = () => {
           >
             <button
               type="button"
-              aria-label="Close card preview"
+              aria-label={t('deckBuilder.preview.closeAria')}
               onClick={() => setPreviewCard(null)}
               style={{
                 position: 'absolute',
@@ -2815,7 +2822,7 @@ const DeckBuilder: React.FC = () => {
             <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'flex-start', marginBottom: '0.25rem' }}>
               <CardArtwork
                 image={previewDetail?.image || previewCard.image}
-                alt={`${previewCard.name} enlarged`}
+                alt={t('deckBuilder.preview.enlargedAlt', { name: previewCard.name })}
                 detail={previewDetail ?? {
                   id: previewCard.id,
                   name: previewCard.name,
@@ -2860,7 +2867,7 @@ const DeckBuilder: React.FC = () => {
 
             <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '0.6rem' }}>
               <div style={{ color: '#f8fafc', fontWeight: 700, fontSize: '0.82rem', marginBottom: '0.35rem' }}>
-                Ability Text
+                {t('gameBoard.inspector.abilityText')}
               </div>
               <div
                 style={{
@@ -2878,7 +2885,7 @@ const DeckBuilder: React.FC = () => {
               >
                 {previewDetail?.abilityText
                   ? formatAbilityText(previewDetail.abilityText)
-                  : 'このカードの詳細テキストは見つかりませんでした。'}
+                  : t('gameBoard.inspector.noAbilityText')}
               </div>
             </div>
           </div>

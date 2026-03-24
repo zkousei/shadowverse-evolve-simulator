@@ -1,5 +1,6 @@
 import React from 'react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
+import { useTranslation } from 'react-i18next';
 import type { BaseCardStats } from '../utils/cardStats';
 import { isMainDeckSpellCard, type RuntimeBaseCardType } from '../utils/cardType';
 import type { CardDetail } from '../utils/cardDetails';
@@ -57,6 +58,7 @@ interface Props {
 }
 
 const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideCurrentStats, highlightTone, onInspect, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, isHidden, isLocked, quickActionsDisabled, disableCombatAndCounterControls, debugIndex }) => {
+  const { t } = useTranslation();
   const inspectPointerStartRef = React.useRef<{ x: number; y: number } | null>(null);
   const isInteractionLocked = isLocked || card.isLeaderCard || card.zone.startsWith('leader-');
   const { attributes, listeners, setNodeRef: setDraggableRef, transform } = useDraggable({
@@ -98,7 +100,7 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
   const effectiveDisplayCounters = displayCounters ?? card.counters;
   const genericCounterValue = card.genericCounter ?? 0;
   const isNormalSpellPlay = isMainDeckSpellCard(card);
-  const playActionLabel = isNormalSpellPlay ? 'Play' : 'Play to Field';
+  const playActionLabel = isNormalSpellPlay ? t('gameBoard.card.play') : t('gameBoard.modals.search.playToField');
   const currentStats = !hideCurrentStats && isStatDisplayZone && !isHidden && !card.isFlipped && baseStats
     ? {
         atk: baseStats.atk + effectiveDisplayCounters.atk,
@@ -268,7 +270,7 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
                 boxShadow: '0 6px 12px rgba(0,0,0,0.3)'
               }}
             >
-              <span>Counter</span>
+              <span>{t('gameBoard.card.counter')}</span>
               <span style={{ color: '#f8fafc' }}>{genericCounterValue}</span>
             </div>
           )}
@@ -315,18 +317,18 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
               )}
               <div style={{ display: 'flex', justifyContent: 'center', gap: '4px', marginTop: 'auto' }}>
                 {onSendToBottom && <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onSendToBottom(card.id); }} style={{ background: 'var(--bg-surface-elevated)', color: 'white', border: '1px solid gray', padding: '2px 4px', fontSize: '10px', borderRadius: '2px' }}>↓Bot</button>}
-                {onCemetery && <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onCemetery(card.id); }} style={{ background: '#374151', color: 'white', border: '1px solid #9ca3af', padding: '2px 4px', fontSize: '10px', borderRadius: '2px' }}>Cemetery</button>}
-                {onBanish && <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onBanish(card.id); }} style={{ background: '#4c1d95', color: 'white', border: '1px solid #c4b5fd', padding: '2px 4px', fontSize: '10px', borderRadius: '2px' }}>Banish</button>}
+                {onCemetery && <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onCemetery(card.id); }} style={{ background: '#374151', color: 'white', border: '1px solid #9ca3af', padding: '2px 4px', fontSize: '10px', borderRadius: '2px' }}>{t('zone.cemetery')}</button>}
+                {onBanish && <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onBanish(card.id); }} style={{ background: '#4c1d95', color: 'white', border: '1px solid #c4b5fd', padding: '2px 4px', fontSize: '10px', borderRadius: '2px' }}>{t('zone.banish')}</button>}
               </div>
               {onReturnEvolve && card.isEvolveCard && (
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '4px', marginTop: '2px' }}>
-                  <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onReturnEvolve(card.id); }} style={{ background: 'var(--accent-primary)', color: 'black', border: '1px solid var(--accent-primary)', padding: '2px 4px', fontSize: '10px', borderRadius: '2px', width: '100%', fontWeight: 'bold' }}>To Evolve Deck</button>
+                  <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onReturnEvolve(card.id); }} style={{ background: 'var(--accent-primary)', color: 'black', border: '1px solid var(--accent-primary)', padding: '2px 4px', fontSize: '10px', borderRadius: '2px', width: '100%', fontWeight: 'bold' }}>{t('gameBoard.card.toEvolveDeck')}</button>
                 </div>
               )}
               {onTap && !disableCombatAndCounterControls && (
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '4px', marginTop: '2px' }}>
                   <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onTap(card.id); }} style={{ background: card.isTapped ? '#fbbf24' : '#64748b', color: 'black', border: '1px solid #fff', padding: '4px 4px', fontSize: '11px', borderRadius: '4px', width: '100%', fontWeight: 'bold' }}>
-                    {card.isTapped ? 'STAND' : 'REST'}
+                    {card.isTapped ? t('gameBoard.card.stand') : t('gameBoard.card.rest')}
                   </button>
                   {onAttack && card.zone.startsWith('field-') && !card.isTapped && (card.baseCardType === 'follower' || !!baseStats) && (
                     <button
@@ -334,7 +336,7 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
                       onClick={(e) => { e.stopPropagation(); onAttack(card.id); }}
                       style={{ background: '#f97316', color: 'white', border: '1px solid #fdba74', padding: '4px 4px', fontSize: '11px', borderRadius: '4px', width: '100%', fontWeight: 'bold' }}
                     >
-                      Attack
+                      {t('gameBoard.card.attack')}
                     </button>
                   )}
                 </div>

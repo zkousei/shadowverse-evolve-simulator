@@ -135,8 +135,8 @@ describe('TopDeckModal', () => {
     fireEvent.click(screen.getByAltText('Card c2'));
     fireEvent.click(screen.getByAltText('Card c3'));
 
-    fireEvent.click(screen.getByLabelText('Bottom of Deck order forward for Card c1'));
-    fireEvent.click(screen.getByLabelText('Bottom of Deck order forward for Card c1'));
+    fireEvent.click(screen.getByLabelText('Move Bottom of Deck order forward for Card c1'));
+    fireEvent.click(screen.getByLabelText('Move Bottom of Deck order forward for Card c1'));
     fireEvent.click(screen.getByText('Confirm'));
 
     expect(onConfirm).toHaveBeenCalledWith([
@@ -164,8 +164,8 @@ describe('TopDeckModal', () => {
     fireEvent.click(screen.getAllByText('Field')[0]);
     fireEvent.click(screen.getByAltText('Card c3'));
 
-    const backwardButton = screen.getByLabelText('Top of Deck order backward for Card c2');
-    expect(screen.getByLabelText('Top of Deck order backward for Card c1')).toBeDisabled();
+    const backwardButton = screen.getByLabelText('Move Top of Deck order backward for Card c2');
+    expect(screen.getByLabelText('Move Top of Deck order backward for Card c1')).toBeDisabled();
 
     fireEvent.click(backwardButton);
     fireEvent.click(document.querySelector('img[src="/c2.png"]') as Element);

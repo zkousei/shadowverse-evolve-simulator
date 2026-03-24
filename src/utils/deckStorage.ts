@@ -57,6 +57,7 @@ export const SAVED_DECKS_KEY = 'sve.savedDecks.v1';
 export const DECK_BUILDER_DRAFT_KEY = 'sve.deckBuilderDraft.v1';
 export const SOFT_SAVED_DECK_LIMIT = 100;
 export const HARD_SAVED_DECK_LIMIT = 200;
+export const DEFAULT_DECK_NAME = 'My Deck';
 
 const SCHEMA_VERSION = 1 as const;
 
@@ -79,7 +80,7 @@ const getStorage = (): Storage | null => {
 
 const normalizeDeckName = (name: string): string => {
   const trimmed = name.trim();
-  return trimmed.length > 0 ? trimmed : 'My Deck';
+  return trimmed.length > 0 ? trimmed : DEFAULT_DECK_NAME;
 };
 
 const compactCardsToRefs = (cards: DeckBuilderCardData[]): SavedDeckCardRef[] => {
@@ -417,5 +418,5 @@ export const restoreDraftToSnapshot = (
 export const createEmptySavedDeckSections = (): SavedDeckSections => EMPTY_SECTIONS;
 
 export const createPristineDeckSnapshot = (ruleConfig: DeckRuleConfig): DeckBuilderSnapshot => (
-  createDeckSnapshot('My Deck', ruleConfig, createEmptyDeckState())
+  createDeckSnapshot(DEFAULT_DECK_NAME, ruleConfig, createEmptyDeckState())
 );
