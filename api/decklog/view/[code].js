@@ -1,7 +1,6 @@
 const DECKLOG_API_BASE = 'https://decklog.bushiroad.com/system/app/api/view/';
 
 const isValidDeckCode = (value) => /^[A-Za-z0-9-]+$/.test(value);
-const getPreview = (value) => value.replace(/\s+/g, ' ').slice(0, 200);
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -17,8 +16,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    console.log('[decklog-proxy] request:start', { deckCode });
-
     const upstreamResponse = await fetch(`${DECKLOG_API_BASE}${deckCode}`, {
       method: 'POST',
       headers: {
@@ -34,23 +31,11 @@ export default async function handler(req, res) {
     const text = await upstreamResponse.text();
     const contentType = upstreamResponse.headers.get('content-type') ?? 'application/json; charset=utf-8';
 
-    console.log('[decklog-proxy] request:finish', {
-      deckCode,
-      upstreamStatus: upstreamResponse.status,
-      contentType,
-      preview: getPreview(text),
-    });
-
     res.status(upstreamResponse.status);
     res.setHeader('Content-Type', contentType);
     res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=86400');
-    res.setHeader('X-DeckLog-Upstream-Status', String(upstreamResponse.status));
     return res.send(text);
-  } catch (error) {
-    console.error('[decklog-proxy] request:error', {
-      deckCode,
-      error: error instanceof Error ? error.message : String(error),
-    });
+  } catch {
     return res.status(502).json({ error: 'Failed to reach DeckLog' });
   }
 }
