@@ -47,7 +47,7 @@ describe('TopDeckModal', () => {
     fireEvent.click(screen.getByAltText('Card c1'));
     fireEvent.click(screen.getByAltText('Card c2'));
 
-    expect(screen.getByText('All cards assigned.')).toBeInTheDocument();
+    expect(screen.getByText('All cards have been assigned.')).toBeInTheDocument();
     expect(confirmButton).toBeEnabled();
     expect(screen.getByText('1')).toBeInTheDocument();
     expect(screen.getByText('2')).toBeInTheDocument();
@@ -76,7 +76,7 @@ describe('TopDeckModal', () => {
     );
 
     fireEvent.click(screen.getByAltText('Card c1'));
-    expect(screen.getByText('All cards assigned.')).toBeInTheDocument();
+    expect(screen.getByText('All cards have been assigned.')).toBeInTheDocument();
 
     rerender(
       <TopDeckModal
@@ -95,7 +95,7 @@ describe('TopDeckModal', () => {
       />
     );
 
-    expect(screen.getByText('Remaining: 1 cards')).toBeInTheDocument();
+    expect(screen.getByText('1 cards remaining to assign')).toBeInTheDocument();
     expect(screen.getByAltText('Card c1')).toBeInTheDocument();
   });
 

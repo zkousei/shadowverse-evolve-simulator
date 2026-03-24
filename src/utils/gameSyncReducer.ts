@@ -11,6 +11,30 @@ const bumpRevision = (state: SyncState): SyncState => ({
   revision: state.revision + 1,
 });
 
+const createReducerStateSnapshot = (
+  state: SyncState
+): NonNullable<SyncState['lastGameState']> => ({
+  ...state,
+  host: { ...state.host },
+  guest: { ...state.guest },
+  cards: state.cards.map(card => ({ ...card })),
+  tokenOptions: {
+    host: state.tokenOptions.host.map(option => ({ ...option })),
+    guest: state.tokenOptions.guest.map(option => ({ ...option })),
+  },
+});
+
+const withCardMoveCheckpoint = (
+  state: SyncState,
+  actor: GameSyncEvent['actor'],
+  nextCards: SyncState['cards']
+): SyncState => bumpRevision({
+  ...state,
+  cards: nextCards,
+  lastUndoableCardMoveState: createReducerStateSnapshot(state),
+  lastUndoableCardMoveActor: actor,
+});
+
 const isHostRequester = (requester: EventRequester): boolean => requester === 'host';
 
 const isActorRequester = (
@@ -126,6 +150,8 @@ export const applyGameSyncEvent = (
       const stateBackup: SyncState = { 
         ...state, 
         lastGameState: null,
+        lastUndoableCardMoveState: null,
+        lastUndoableCardMoveActor: null,
         cards: [...state.cards].map(c => ({ ...c })) // Deep copy cards at least
       };
       
@@ -137,6 +163,8 @@ export const applyGameSyncEvent = (
         [nextPlayer]: nextPlayerState,
         cards: finalCards,
         lastGameState: stateBackup,
+        lastUndoableCardMoveState: null,
+        lastUndoableCardMoveActor: null,
       });
     }
 
@@ -149,6 +177,8 @@ export const applyGameSyncEvent = (
         cards: state.cards.map(card => card.zone.startsWith('field-') ? { ...card, isFlipped: false } : card),
         [starter]: { ...state[starter], pp: 1, maxPp: 1 },
         lastGameState: null,
+        lastUndoableCardMoveState: null,
+        lastUndoableCardMoveActor: null,
       });
     }
 
@@ -173,6 +203,8 @@ export const applyGameSyncEvent = (
         host: { ...initialState.host, isReady: state.host.isReady },
         guest: { ...initialState.guest, isReady: state.guest.isReady },
         lastGameState: null,
+        lastUndoableCardMoveState: null,
+        lastUndoableCardMoveActor: null,
         revision: state.revision + 1,
       };
     }
@@ -183,10 +215,7 @@ export const applyGameSyncEvent = (
       if (isPreparingEvolveDeckMoveBlocked(state, event.cardId)) return state;
       const nextCards = CardLogic.applyDrop(state.cards, event.cardId, event.overId);
       if (nextCards === state.cards) return state;
-      return bumpRevision({
-        ...state,
-        cards: nextCards,
-      });
+      return withCardMoveCheckpoint(state, event.actor, nextCards);
     }
 
     case 'MODIFY_COUNTER': {
@@ -212,10 +241,7 @@ export const applyGameSyncEvent = (
       if (state.gameStatus !== 'playing') return state;
       const nextCards = CardLogic.drawCard(state.cards, event.actor);
       if (nextCards === state.cards) return state;
-      return bumpRevision({
-        ...state,
-        cards: nextCards,
-      });
+      return withCardMoveCheckpoint(state, event.actor, nextCards);
     }
 
     case 'MILL_CARD': {
@@ -223,10 +249,7 @@ export const applyGameSyncEvent = (
       if (state.gameStatus !== 'playing') return state;
       const nextCards = CardLogic.millCard(state.cards, event.actor);
       if (nextCards === state.cards) return state;
-      return bumpRevision({
-        ...state,
-        cards: nextCards,
-      });
+      return withCardMoveCheckpoint(state, event.actor, nextCards);
     }
 
     case 'TOGGLE_TAP': {
@@ -253,49 +276,34 @@ export const applyGameSyncEvent = (
       if (isPreparingHandMovementBlocked(state, event.cardId)) return state;
       const nextCards = CardLogic.sendCardToBottom(state.cards, event.cardId);
       if (nextCards === state.cards) return state;
-      return bumpRevision({
-        ...state,
-        cards: nextCards,
-      });
+      return withCardMoveCheckpoint(state, event.actor, nextCards);
     }
 
     case 'BANISH_CARD': {
       if (isPreparingHandMovementBlocked(state, event.cardId)) return state;
       const nextCards = CardLogic.banishCard(state.cards, event.cardId);
       if (nextCards === state.cards) return state;
-      return bumpRevision({
-        ...state,
-        cards: nextCards,
-      });
+      return withCardMoveCheckpoint(state, event.actor, nextCards);
     }
 
     case 'SEND_TO_CEMETERY': {
       if (isPreparingHandMovementBlocked(state, event.cardId)) return state;
       const nextCards = CardLogic.sendCardToCemetery(state.cards, event.cardId);
       if (nextCards === state.cards) return state;
-      return bumpRevision({
-        ...state,
-        cards: nextCards,
-      });
+      return withCardMoveCheckpoint(state, event.actor, nextCards);
     }
 
     case 'RETURN_EVOLVE': {
       const nextCards = CardLogic.returnEvolveCard(state.cards, event.cardId);
       if (nextCards === state.cards) return state;
-      return bumpRevision({
-        ...state,
-        cards: nextCards,
-      });
+      return withCardMoveCheckpoint(state, event.actor, nextCards);
     }
 
     case 'PLAY_TO_FIELD': {
       if (isPreparingHandMovementBlocked(state, event.cardId)) return state;
       const nextCards = CardLogic.playCardToField(state.cards, event.cardId, event.actor);
       if (nextCards === state.cards) return state;
-      return bumpRevision({
-        ...state,
-        cards: nextCards,
-      });
+      return withCardMoveCheckpoint(state, event.actor, nextCards);
     }
 
     case 'EXTRACT_CARD': {
@@ -310,17 +318,11 @@ export const applyGameSyncEvent = (
           preserveAttachment: false,
         });
         if (nextCards === state.cards) return state;
-        return bumpRevision({
-          ...state,
-          cards: nextCards,
-        });
+        return withCardMoveCheckpoint(state, event.actor, nextCards);
       }
       const nextCards = CardLogic.extractCard(state.cards, event.cardId, event.actor, event.destination);
       if (nextCards === state.cards) return state;
-      return bumpRevision({
-        ...state,
-        cards: nextCards,
-      });
+      return withCardMoveCheckpoint(state, event.actor, nextCards);
     }
 
     case 'SHUFFLE_DECK': {
@@ -330,6 +332,8 @@ export const applyGameSyncEvent = (
       return bumpRevision({
         ...state,
         cards: nextCards,
+        lastUndoableCardMoveState: null,
+        lastUndoableCardMoveActor: null,
       });
     }
 
@@ -369,6 +373,8 @@ export const applyGameSyncEvent = (
           ...state[event.actor],
           initialHandDrawn: true,
         },
+        lastUndoableCardMoveState: null,
+        lastUndoableCardMoveActor: null,
       });
     }
 
@@ -383,6 +389,8 @@ export const applyGameSyncEvent = (
           ...state[event.actor],
           mulliganUsed: true,
         },
+        lastUndoableCardMoveState: null,
+        lastUndoableCardMoveActor: null,
       });
     }
 
@@ -390,10 +398,7 @@ export const applyGameSyncEvent = (
       if (!isActorRequester(requester, event.actor)) return state;
       const nextCards = CardLogic.resolveTopDeckResults(state.cards, event.actor, event.results);
       if (nextCards === state.cards) return state;
-      return bumpRevision({
-        ...state,
-        cards: nextCards,
-      });
+      return withCardMoveCheckpoint(state, event.actor, nextCards);
     }
 
     case 'IMPORT_DECK': {
@@ -413,6 +418,8 @@ export const applyGameSyncEvent = (
           [event.actor]: event.tokenOptions ?? [],
         },
         cards: nextCards,
+        lastUndoableCardMoveState: null,
+        lastUndoableCardMoveActor: null,
       });
     }
 
@@ -427,6 +434,8 @@ export const applyGameSyncEvent = (
         phase: 'Start',
         [starter]: { ...state[starter], ep: 0 },
         [second]: { ...state[second], ep: 3 },
+        lastUndoableCardMoveState: null,
+        lastUndoableCardMoveActor: null,
       });
     }
 
@@ -437,24 +446,26 @@ export const applyGameSyncEvent = (
         ...state.lastGameState,
         revision: state.revision + 1,
         lastGameState: null,
+        lastUndoableCardMoveState: null,
+        lastUndoableCardMoveActor: null,
       } as SyncState;
     }
 
     case 'UNDO_CARD_MOVE':
-      // Any actor can undo their own card move during their turn.
       if (!isActorRequester(requester, event.actor)) return state;
+      if (!state.lastUndoableCardMoveState) return state;
+      if (state.lastUndoableCardMoveActor !== event.actor) return state;
       return {
-        ...event.previousState,
+        ...state.lastUndoableCardMoveState,
         revision: state.revision + 1,
+        lastUndoableCardMoveState: null,
+        lastUndoableCardMoveActor: null,
       };
 
     case 'SPAWN_TOKEN': {
       if (!isActorRequester(requester, event.actor)) return state;
       const nextCards = CardLogic.spawnTokenCard(state.cards, event.token);
-      return bumpRevision({
-        ...state,
-        cards: nextCards,
-      });
+      return withCardMoveCheckpoint(state, event.actor, nextCards);
     }
 
     case 'ATTACK_DECLARATION': {

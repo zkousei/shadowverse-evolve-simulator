@@ -4,12 +4,12 @@ import { buildCardPlayedEffect, formatCardPlayedEffect } from './cardPlayUi';
 
 const t = ((key: string, options?: any) => {
   const map: Record<string, string> = {
-    'gameBoard.shared.actor.you': 'You',
-    'gameBoard.shared.actor.opponent': 'Opponent',
-    'gameBoard.shared.actor.player1': 'Player 1',
-    'gameBoard.shared.actor.player2': 'Player 2',
-    'gameBoard.shared.messages.cardPlayed': '{{actor}} played {{cardName}}',
-    'gameBoard.shared.messages.cardPlayedToField': '{{actor}} played to field {{cardName}}',
+    'gameBoard.modals.shared.actor.you': 'You',
+    'gameBoard.modals.shared.actor.opponent': 'Opponent',
+    'gameBoard.modals.shared.actor.player1': 'Player 1',
+    'gameBoard.modals.shared.actor.player2': 'Player 2',
+    'gameBoard.modals.shared.messages.cardPlayed': '{{actor}} played {{cardName}}',
+    'gameBoard.modals.shared.messages.cardPlayedToField': '{{actor}} played to field {{cardName}}',
   };
 
   let value = map[key] || key;
@@ -78,4 +78,3 @@ describe('cardPlayUi', () => {
     expect(formatCardPlayedEffect({ ...effect, mode: 'playToField' }, 'host', true, t)).toBe('Player 2 played to field Fire Chain');
   });
 });
-

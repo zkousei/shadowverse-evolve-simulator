@@ -1733,4 +1733,95 @@ describe('gameSyncReducer', () => {
     expect(undone.revision).toBe(12);
     expect(undone).not.toBe(afterTurnEnd);
   });
+
+  it('stores an authoritative card-move checkpoint and uses it for UNDO_CARD_MOVE', () => {
+    const beforeMove = createState({
+      revision: 20,
+      gameStatus: 'playing',
+      cards: [
+        {
+          id: 'card-host-undo',
+          cardId: 'BP01-111',
+          name: 'Undo Target',
+          image: '',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    const afterMove = applyGameSyncEvent(beforeMove, {
+      id: 'evt-card-move',
+      type: 'MOVE_CARD',
+      actor: 'host',
+      cardId: 'card-host-undo',
+      overId: 'ex-host',
+    });
+
+    expect(afterMove.cards.find(c => c.id === 'card-host-undo')?.zone).toBe('ex-host');
+    expect(afterMove.lastUndoableCardMoveActor).toBe('host');
+    expect(afterMove.lastUndoableCardMoveState?.cards.find(c => c.id === 'card-host-undo')?.zone).toBe('field-host');
+
+    const undone = applyGameSyncEvent(afterMove, {
+      id: 'evt-card-move-undo',
+      type: 'UNDO_CARD_MOVE',
+      actor: 'host',
+    }, 'host');
+
+    expect(undone.cards.find(c => c.id === 'card-host-undo')?.zone).toBe('field-host');
+    expect(undone.lastUndoableCardMoveState).toBeNull();
+    expect(undone.lastUndoableCardMoveActor).toBeNull();
+    expect(undone.revision).toBe(afterMove.revision + 1);
+  });
+
+  it('rejects UNDO_CARD_MOVE when the requester does not own the authoritative checkpoint', () => {
+    const checkpoint = createState({
+      revision: 30,
+      gameStatus: 'playing',
+      cards: [
+        {
+          id: 'card-host-undo',
+          cardId: 'BP01-112',
+          name: 'Undo Target',
+          image: '',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    const state = createState({
+      revision: 31,
+      gameStatus: 'playing',
+      cards: [
+        {
+          id: 'card-host-undo',
+          cardId: 'BP01-112',
+          name: 'Undo Target',
+          image: '',
+          zone: 'ex-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+      lastUndoableCardMoveState: checkpoint,
+      lastUndoableCardMoveActor: 'host',
+    });
+
+    const denied = applyGameSyncEvent(state, {
+      id: 'evt-card-move-undo-denied',
+      type: 'UNDO_CARD_MOVE',
+      actor: 'guest',
+    }, 'guest');
+
+    expect(denied).toBe(state);
+  });
 });

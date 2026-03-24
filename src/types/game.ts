@@ -32,7 +32,9 @@ export interface SyncState {
   tokenOptions: Record<PlayerRole, TokenOption[]>;
   revealHandsMode: boolean;
   revision: number;
-  lastGameState?: Omit<SyncState, 'lastGameState'> | null;
+  lastGameState?: Omit<SyncState, 'lastGameState' | 'lastUndoableCardMoveState' | 'lastUndoableCardMoveActor'> | null;
+  lastUndoableCardMoveState?: Omit<SyncState, 'lastGameState' | 'lastUndoableCardMoveState' | 'lastUndoableCardMoveActor'> | null;
+  lastUndoableCardMoveActor?: PlayerRole | null;
 }
 
 export const initialState: SyncState = {
@@ -49,5 +51,7 @@ export const initialState: SyncState = {
   },
   revealHandsMode: false,
   revision: 0,
-  lastGameState: null
+  lastGameState: null,
+  lastUndoableCardMoveState: null,
+  lastUndoableCardMoveActor: null,
 };
