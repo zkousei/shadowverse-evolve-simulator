@@ -79,6 +79,7 @@ const MAX_SNAPSHOT_REQUEST_RETRIES = 2;
 const SNAPSHOT_FLUSH_INTERVAL_MS = 50;
 
 type SnapshotMessage = Extract<SyncMessage, { type: 'STATE_SNAPSHOT' }>;
+type GameBoardStatusKey = `gameBoard.status.${string}`;
 
 const isPlayerHud = (value: unknown): value is SyncState['host'] => (
   typeof value === 'object' &&
@@ -178,7 +179,8 @@ export const useGameBoardLogic = () => {
   const isDebug = searchParams.get('debug') === 'true';
 
   const { t } = useTranslation();
-  const [status, setStatus] = useState<string>(t('gameBoard.status.initializing'));
+  const [statusKey, setStatusKey] = useState<GameBoardStatusKey>('gameBoard.status.initializing');
+  const status = t(statusKey);
   const [connectionState, setConnectionState] = useState<ConnectionState>('idle');
   const [gameState, setGameState] = useState<SyncState>(initialState);
   const [savedSessionCandidate, setSavedSessionCandidate] = useState<SavedHostSession | null>(null);
@@ -1013,16 +1015,16 @@ export const useGameBoardLogic = () => {
     if (!peer) return;
 
     setConnectionState(current => current === 'connected' ? 'reconnecting' : 'connecting');
-    setStatus(t('gameBoard.status.connectingToHost'));
+    setStatusKey('gameBoard.status.connectingToHost');
     const conn = peer.connect(`sv-evolve-${room}`);
     setupConnectionRef.current(conn);
   }, [isHost, isSoloMode, room]);
 
-  const scheduleReconnect = useCallback((message: string) => {
+  const scheduleReconnect = useCallback((messageKey: GameBoardStatusKey) => {
     if (isSoloMode || isHost) return;
     clearReconnectTimer();
     setConnectionState('reconnecting');
-    setStatus(message);
+    setStatusKey(messageKey);
     resetTransientUiState();
     reconnectTimeoutRef.current = setTimeout(() => {
       reconnectTimeoutRef.current = null;
@@ -1058,13 +1060,13 @@ export const useGameBoardLogic = () => {
 
       if (snapshotRetryCountRef.current >= MAX_SNAPSHOT_REQUEST_RETRIES) {
         clearSnapshotRequestTimer();
-        setStatus(t('gameBoard.status.syncTimedOut'));
+        setStatusKey('gameBoard.status.syncTimedOut');
         attemptReconnect();
         return;
       }
 
       snapshotRetryCountRef.current += 1;
-      setStatus(t('gameBoard.status.waitingForRestore'));
+      setStatusKey('gameBoard.status.waitingForRestore');
       requestSnapshotWithRetry(conn, token);
     }, SNAPSHOT_REQUEST_TIMEOUT_MS);
   }, [attemptReconnect, clearSnapshotRequestTimer, isHost, isSoloMode, role]);
@@ -1090,12 +1092,12 @@ export const useGameBoardLogic = () => {
       setConnectionState('connected');
 
       if (isHost) {
-        setStatus(t('gameBoard.status.guestConnectedReady'));
+        setStatusKey('gameBoard.status.guestConnectedReady');
         return;
       }
 
       awaitingInitialSnapshotRef.current = true;
-      setStatus(t('gameBoard.status.connectedHostSyncing'));
+      setStatusKey('gameBoard.status.connectedHostSyncing');
       requestSnapshotWithRetry(conn, token);
     });
     conn.on('data', (rawData: unknown) => {
@@ -1110,7 +1112,7 @@ export const useGameBoardLogic = () => {
       if (data.type === 'REQUEST_SNAPSHOT') {
         if (isHost) {
           if (savedSessionCandidateRef.current) {
-            setStatus(t('gameBoard.status.guestConnectedChooseResume'));
+            setStatusKey('gameBoard.status.guestConnectedChooseResume');
             conn.send({
               type: 'WAITING_FOR_HOST_SESSION',
               source: 'host',
@@ -1132,7 +1134,7 @@ export const useGameBoardLogic = () => {
       if (data.type === 'WAITING_FOR_HOST_SESSION') {
         clearSnapshotRequestTimer();
         if (!isHost) {
-          setStatus(t('gameBoard.status.waitingForHostDecision'));
+          setStatusKey('gameBoard.status.waitingForHostDecision');
         }
         return;
       }
@@ -1150,7 +1152,7 @@ export const useGameBoardLogic = () => {
           // search overlays or mulligan modals if the revision jumped significantly,
           // or if the game status changed.
           resetTransientUiState(false); // Keep undo buttons on normal sync
-          setStatus(t('gameBoard.status.connectedHostReady'));
+          setStatusKey('gameBoard.status.connectedHostReady');
         }
       }
     });
@@ -1164,11 +1166,11 @@ export const useGameBoardLogic = () => {
 
       if (isHost) {
         setConnectionState('disconnected');
-        setStatus(t('gameBoard.status.guestDisconnectedWaiting'));
+        setStatusKey('gameBoard.status.guestDisconnectedWaiting');
         return;
       }
 
-      scheduleReconnect(t('gameBoard.status.connectionLostReconnecting'));
+      scheduleReconnect('gameBoard.status.connectionLostReconnecting');
     });
     conn.on('error', () => {
       if (activeConnectionTokenRef.current !== token) return;
@@ -1180,11 +1182,11 @@ export const useGameBoardLogic = () => {
 
       if (isHost) {
         setConnectionState('disconnected');
-        setStatus(t('gameBoard.status.connectionErrorWaiting'));
+        setStatusKey('gameBoard.status.connectionErrorWaiting');
         return;
       }
 
-      scheduleReconnect(t('gameBoard.status.connectionErrorReconnecting'));
+      scheduleReconnect('gameBoard.status.connectionErrorReconnecting');
     });
   }, [applyAuthoritativeEvent, buildNetworkSnapshotState, clearPendingSnapshotMessage, clearReconnectTimer, clearSnapshotRequestTimer, isHost, maybeApplySnapshot, playSharedUiEffect, requestSnapshotWithRetry, resetTransientUiState, role, scheduleReconnect, sendMessage]);
 
@@ -1250,7 +1252,7 @@ export const useGameBoardLogic = () => {
     applyLocalState(savedSessionCandidate.state);
     resetTransientUiState();
     setSavedSessionCandidate(null);
-    setStatus(t('gameBoard.status.sessionRestored'));
+    setStatusKey('gameBoard.status.sessionRestored');
     sendSnapshotToCurrentConnection(savedSessionCandidate.state, 'host');
   }, [applyLocalState, resetTransientUiState, savedSessionCandidate, sendSnapshotToCurrentConnection]);
 
@@ -1260,13 +1262,13 @@ export const useGameBoardLogic = () => {
     }
 
     setSavedSessionCandidate(null);
-    setStatus(t('gameBoard.status.startingFresh'));
+    setStatusKey('gameBoard.status.startingFresh');
     sendSnapshotToCurrentConnection(gameStateRef.current, 'host');
   }, [room, sendSnapshotToCurrentConnection]);
 
   useEffect(() => {
     if (isSoloMode) {
-      setStatus(t('gameBoard.status.soloMode'));
+      setStatusKey('gameBoard.status.soloMode');
       setConnectionState('connected');
       processedEventDeduperRef.current.reset();
       return;
@@ -1279,7 +1281,7 @@ export const useGameBoardLogic = () => {
     peerRef.current = peer;
 
     peer.on('open', () => {
-      setStatus(t('gameBoard.status.' + (isHost ? 'connectedWaitingGuest' : 'connectedJoiningRoom')));
+      setStatusKey(`gameBoard.status.${isHost ? 'connectedWaitingGuest' : 'connectedJoiningRoom'}`);
       if (isHost) {
         setConnectionState('disconnected');
       }
@@ -1296,20 +1298,20 @@ export const useGameBoardLogic = () => {
 
     peer.on('disconnected', () => {
       if (isHost) {
-        setStatus(t('gameBoard.status.disconnectedFromPeer'));
+        setStatusKey('gameBoard.status.disconnectedFromPeer');
         return;
       }
 
-      scheduleReconnect(t('gameBoard.status.peerConnectionLostReconnecting'));
+      scheduleReconnect('gameBoard.status.peerConnectionLostReconnecting');
     });
 
     peer.on('error', () => {
       if (isHost) {
-        setStatus(t('gameBoard.status.p2pErrorWaiting'));
+        setStatusKey('gameBoard.status.p2pErrorWaiting');
         return;
       }
 
-      scheduleReconnect(t('gameBoard.status.unableToReachHostReconnecting'));
+      scheduleReconnect('gameBoard.status.unableToReachHostReconnecting');
     });
 
     return () => {
@@ -1347,7 +1349,7 @@ export const useGameBoardLogic = () => {
       turnPlayer: 'host',
     };
     applyLocalState(debugState);
-    setStatus(t('gameBoard.status.debugAutoStarted'));
+    setStatusKey('gameBoard.status.debugAutoStarted');
   }, [applyLocalState, isDebug]);
 
   useEffect(() => {
