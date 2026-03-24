@@ -52,13 +52,13 @@
       "identity": {
         "type": "構築ルール:",
         "class": "クラス",
-        "title": "称号"
+        "title": "タイトル"
       },
       "aria": {
         "format": "デッキフォーマット",
         "identityType": "デッキ識別タイプ",
         "constructedClass": "構築戦クラス",
-        "constructedTitle": "構築戦称号",
+        "constructedTitle": "構築戦タイトル",
         "crossoverClassA": "クロスオーバークラスA",
         "crossoverClassB": "クロスオーバークラスB"
       },
@@ -66,9 +66,9 @@
       "selectClass": "クラスを選択",
       "selectFirstClass": "メインクラスを選択",
       "selectSecondClass": "サブクラスを選択",
-      "selectTitle": "称号を選択",
+      "selectTitle": "タイトルを選択",
       "selectedClass": "選択中のクラス",
-      "selectedTitle": "選択中の称号",
+      "selectedTitle": "選択中のタイトル",
       "title": "デッキ構築ルール",
       "format": "フォーマット",
       "formats": {
@@ -81,11 +81,11 @@
       "class": "クラス戦",
       "crossover": "クロスオーバー",
       "other": "その他",
-      "titleIdentity": "称号設定",
+      "titleIdentity": "タイトル設定",
       "classIdentity": "クラス設定",
       "crossoverFirst": "メインクラス",
       "crossoverSecond": "サブクラス",
-      "promptConstructed": "構築戦(Title)またはクラス戦を有効にすると、デッキルールに基づいたフィルタリングが行われます。",
+      "promptConstructed": "構築戦(タイトル)またはクラス戦を有効にすると、デッキルールに基づいたフィルタリングが行われます。",
       "promptCrossover": "クロスオーバーを有効にすると、2つのクラスのカードを使用できるようになります。",
       "resolveBeforeExport": "エクスポートする前にデッキルールの不備を解消してください。",
       "legalReady": "このデッキは適法で、エクスポート可能です。"
@@ -205,7 +205,7 @@
       "next": "次へ"
     },
     "validation": {
-      "requireTitle": "構築戦では称号の選択が必要です。",
+      "requireTitle": "構築戦ではタイトルの選択が必要です。",
       "requireClass": "構築戦ではクラスの選択が必要です。",
       "requireCrossoverClasses": "クロスオーバーでは異なる2つのクラス選択が必要です。",
       "mainDeckTooSmall": "メインデッキは最低{{expected}}枚必要です ({{actual}}/{{expected}})。",
