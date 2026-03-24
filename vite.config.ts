@@ -37,4 +37,26 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(getAppVersion()),
   },
+  server: {
+    proxy: {
+      '/api/decklog/view': {
+        target: 'https://decklog.bushiroad.com',
+        changeOrigin: true,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          Origin: 'https://decklog.bushiroad.com',
+        },
+        rewrite: (path) => path.replace(/^\/api\/decklog\/view/, '/system/app/api/view'),
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq) => {
+            const path = proxyReq.path ?? '';
+            const deckCode = path.split('/').filter(Boolean).pop();
+            if (deckCode) {
+              proxyReq.setHeader('Referer', `https://decklog.bushiroad.com/view/${deckCode}`);
+            }
+          });
+        },
+      },
+    },
+  },
 })

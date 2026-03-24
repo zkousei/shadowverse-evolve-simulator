@@ -5,6 +5,8 @@
         "exportDisabledTitle": "Resolve issues before exporting",
         "exportTitle": "Export Deck",
         "import": "Import",
+        "importDeckLog": "Import from DeckLog",
+        "betaBadge": "BETA",
         "export": "Export",
         "reset": "Reset",
         "save": "Save",
@@ -45,6 +47,14 @@
     },
     "alerts": {
       "importFailed": "Failed to parse deck JSON.",
+      "deckLogInvalidInput": "Enter a valid DeckLog code or URL.",
+      "deckLogFetchFailed": "Could not load the DeckLog deck. Please try again later.",
+      "deckLogInvalidResponse": "DeckLog returned an unexpected deck payload.",
+      "deckLogNotFound": "That DeckLog deck could not be found.",
+      "deckLogUnsupportedGame": "Only Shadowverse EVOLVE DeckLog decks are supported.",
+      "deckLogCardsLoading": "The card database is still loading. Please try DeckLog import again in a moment.",
+      "deckLogImportSuccess": "Imported \"{{name}}\" from DeckLog.",
+      "deckLogImportPartial": "Imported the DeckLog deck, but {{count}} cards could not be matched in the local card database.",
       "emptyBuilder": "The builder is empty. Add cards or adjust the setup before saving.",
       "saveAsNewSuccess": "\"{{name}}\" was saved as a new deck.",
       "saveSuccess": "\"{{name}}\" was saved.",
@@ -160,6 +170,15 @@
         "descNote": "This also discards the saved Deck Builder session for this browser.",
         "confirm": "Yes, Reset",
         "aria": "Reset builder confirmation"
+      },
+      "deckLogImport": {
+        "title": "Import from DeckLog",
+        "desc": "Paste a DeckLog code or public DeckLog URL to replace the current Deck Builder contents.",
+        "placeholder": "e.g. a DeckLog code or a public DeckLog URL",
+        "note": "Beta feature. This currently supports Shadowverse EVOLVE DeckLog decks only.",
+        "confirm": "Import",
+        "importing": "Importing...",
+        "aria": "Import from DeckLog dialog"
       },
       "deleteDeck": {
         "title": "Delete Saved Deck",
