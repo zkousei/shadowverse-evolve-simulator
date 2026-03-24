@@ -211,7 +211,18 @@ export const fetchDeckLogImport = async (
   }
 
   if (!response.ok) {
-    throw new DeckLogImportError('fetch-failed', `DeckLog responded with ${response.status}.`);
+    let detail = '';
+
+    try {
+      const errorPayload = await response.json() as { error?: string };
+      if (typeof errorPayload?.error === 'string' && errorPayload.error.trim()) {
+        detail = ` ${errorPayload.error.trim()}`;
+      }
+    } catch {
+      // Ignore secondary parsing issues and fall back to the status-only message.
+    }
+
+    throw new DeckLogImportError('fetch-failed', `DeckLog responded with ${response.status}.${detail}`);
   }
 
   let payload: unknown;
