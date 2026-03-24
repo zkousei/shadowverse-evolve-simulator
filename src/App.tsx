@@ -76,6 +76,8 @@ function AppNavigation() {
   };
 
   const { t, i18n } = useTranslation();
+  const activeLanguage = i18n.resolvedLanguage ?? i18n.language;
+  const normalizedLanguage = activeLanguage.startsWith('ja') ? 'ja' : 'en';
 
   const handleLanguageChange = (lang: string) => {
     i18n.changeLanguage(lang);
@@ -217,7 +219,7 @@ function AppNavigation() {
             transition: 'border-color var(--transition-fast)',
           }}
         >
-          <span>{i18n.language === 'en' ? 'English' : '日本語'}</span>
+          <span>{normalizedLanguage === 'en' ? 'English' : '日本語'}</span>
           <svg
             width="10"
             height="6"
@@ -254,23 +256,23 @@ function AppNavigation() {
                 key={lang.code}
                 type="button"
                 role="option"
-                aria-selected={i18n.language === lang.code}
+                aria-selected={normalizedLanguage === lang.code}
                 onClick={() => handleLanguageChange(lang.code)}
                 style={{
                   padding: '0.5rem 0.75rem',
                   borderRadius: 'var(--radius-md)',
-                  color: i18n.language === lang.code ? 'var(--text-main)' : 'var(--text-muted)',
-                  background: i18n.language === lang.code ? 'rgba(59, 130, 246, 0.15)' : 'none',
+                  color: normalizedLanguage === lang.code ? 'var(--text-main)' : 'var(--text-muted)',
+                  background: normalizedLanguage === lang.code ? 'rgba(59, 130, 246, 0.15)' : 'none',
                   textAlign: 'left',
                   fontSize: '0.85rem',
-                  fontWeight: i18n.language === lang.code ? 700 : 400,
+                  fontWeight: normalizedLanguage === lang.code ? 700 : 400,
                   transition: 'all var(--transition-fast)',
                 }}
                 onMouseEnter={e => {
-                  if (i18n.language !== lang.code) e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                  if (normalizedLanguage !== lang.code) e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
                 }}
                 onMouseLeave={e => {
-                  if (i18n.language !== lang.code) e.currentTarget.style.background = 'none';
+                  if (normalizedLanguage !== lang.code) e.currentTarget.style.background = 'none';
                 }}
               >
                 {lang.label}

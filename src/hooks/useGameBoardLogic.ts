@@ -973,7 +973,7 @@ export const useGameBoardLogic = () => {
         return;
       }
 
-      scheduleReconnect('Connection lost. Reconnecting...');
+      scheduleReconnect(t('gameBoard.status.connectionLostReconnecting'));
     });
     conn.on('error', () => {
       if (activeConnectionTokenRef.current !== token) return;
@@ -988,7 +988,7 @@ export const useGameBoardLogic = () => {
         return;
       }
 
-      scheduleReconnect('Connection error. Reconnecting...');
+      scheduleReconnect(t('gameBoard.status.connectionErrorReconnecting'));
     });
   }, [applyAuthoritativeEvent, clearReconnectTimer, clearSnapshotRequestTimer, isHost, maybeApplySnapshot, playSharedUiEffect, requestSnapshotWithRetry, resetTransientUiState, role, scheduleReconnect]);
 
@@ -1095,7 +1095,7 @@ export const useGameBoardLogic = () => {
         return;
       }
 
-      scheduleReconnect('Peer connection lost. Reconnecting...');
+      scheduleReconnect(t('gameBoard.status.peerConnectionLostReconnecting'));
     });
 
     peer.on('error', () => {
@@ -1104,7 +1104,7 @@ export const useGameBoardLogic = () => {
         return;
       }
 
-      scheduleReconnect('Unable to reach host. Reconnecting...');
+      scheduleReconnect(t('gameBoard.status.unableToReachHostReconnecting'));
     });
 
     return () => {
@@ -1198,7 +1198,9 @@ export const useGameBoardLogic = () => {
     }
     if (gameState.turnCount === 0) return;
     showTimedTurnMessage(
-      isSoloMode ? `${gameState.turnPlayer === 'host' ? 'PLAYER 1' : 'PLAYER 2'} TURN` : 'YOUR TURN',
+      isSoloMode
+        ? t('gameBoard.turn.p1', { label: gameState.turnPlayer === 'host' ? 'PLAYER 1' : 'PLAYER 2' })
+        : t('gameBoard.turn.your'),
       2500
     );
   }, [clearTurnMessageTimer, gameState.turnPlayer, gameState.turnCount, gameState.gameStatus, isSoloMode, role, showTimedTurnMessage]);
@@ -1238,7 +1240,7 @@ export const useGameBoardLogic = () => {
 
   const handleStartGame = () => {
     dispatchGameEvent({ type: 'START_GAME' });
-    showTimedTurnMessage('GAME START!', 2500);
+    showTimedTurnMessage(t('gameBoard.alerts.gameStart'), 2500);
   };
 
   const handleToggleReady = (targetRole?: PlayerRole) => {
@@ -1412,7 +1414,7 @@ export const useGameBoardLogic = () => {
       try {
         const data = JSON.parse(e.target?.result as string) as ImportableDeckData;
         importDeckData(data, targetRole);
-      } catch (err) { alert("Failed to parse deck JSON."); }
+      } catch (err) { alert(t('deckBuilder.alerts.importFailed')); }
     };
     reader.readAsText(file);
   };

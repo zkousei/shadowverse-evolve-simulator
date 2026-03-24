@@ -136,6 +136,7 @@
       "emptyBuilder": "ビルダーが空です。カードを追加するか設定を調整してから保存してください。",
       "saveAsNewSuccess": "新しいデッキ「{{name}}」を保存しました。",
       "saveSuccess": "デッキ「{{name}}」を保存しました。",
+      "unsavedCopySuccess": "現在のデッキを未保存のコピーにしました。",
       "sessionRestored": "ブラウザに保存されていたセッションを復元しました。",
       "limitReachedHard": "保存可能なデッキ数の上限（{{limit}}）に達しました。新しいデッキを保存するには、古いデッキを削除またはエクスポートしてください。",
       "limitReachedSoft": "現在 {{count}} 個のデッキが保存されています。上限（{{limit}}）に達する前に、古いデッキのエクスポートや削除を検討してください。"
@@ -344,6 +345,7 @@
       "previousSession": "このルームの以前のセッションデータが見つかりました。",
       "previousSessionTime": "{{time}} の状態から復帰できます。",
       "previousSessionUnknown": "直前の盤面を復帰できます。",
+      "gameStart": "ゲーム開始！",
       "discard": "破棄する",
       "resume": "セッションを復帰する",
       "attackMode": "攻撃モード",

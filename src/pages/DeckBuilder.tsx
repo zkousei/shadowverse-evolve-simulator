@@ -687,7 +687,7 @@ const DeckBuilder: React.FC = () => {
     setDraftRestored(false);
     setSaveFeedback({
       kind: 'success',
-      message: 'The current deck is now an unsaved copy.',
+      message: t('deckBuilder.alerts.unsavedCopySuccess'),
     });
   };
 

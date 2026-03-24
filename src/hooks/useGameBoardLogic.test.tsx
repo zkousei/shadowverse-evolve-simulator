@@ -18,6 +18,10 @@ vi.mock('react-i18next', () => ({
         'gameBoard.status.connectedHostReady': 'Connected to host! Game ready.',
         'gameBoard.status.guestDisconnectedWaiting': 'Guest disconnected. Waiting for reconnection...',
         'gameBoard.status.connectionErrorWaiting': 'Connection error. Waiting for guest...',
+        'gameBoard.status.connectionLostReconnecting': 'Connection lost. Reconnecting...',
+        'gameBoard.status.connectionErrorReconnecting': 'Connection error. Reconnecting...',
+        'gameBoard.status.peerConnectionLostReconnecting': 'Peer connection lost. Reconnecting...',
+        'gameBoard.status.unableToReachHostReconnecting': 'Unable to reach host. Reconnecting...',
         'gameBoard.status.sessionRestored': 'Saved host session restored.',
         'gameBoard.status.startingFresh': 'Starting a fresh host session.',
         'gameBoard.status.soloMode': 'Solo Mode',
@@ -61,10 +65,16 @@ vi.mock('react-i18next', () => ({
         'gameBoard.modals.shared.messages.revealLookTop': '{{actor}} revealed from Look Top',
         'gameBoard.modals.shared.messages.revealSearch': '{{actor}} revealed from Search',
         'gameBoard.modals.shared.messages.attackDeclared': '{{actor}} declared an attack',
+        'gameBoard.modals.shared.messages.attackAnnouncement': '{{attacker}} attacks {{target}}',
+        'gameBoard.modals.shared.messages.attackHistory': '{{attacker}} -> {{target}}',
+        'gameBoard.modals.shared.messages.leaderLabel': '{{owner}} Leader',
         'gameBoard.modals.shared.messages.cardPlayed': '{{actor}} played {{cardName}}',
         'gameBoard.modals.shared.messages.cardPlayedToField': '{{actor}} played to field {{cardName}}',
         'gameBoard.modals.shared.messages.starterDecided': '{{actor}} will go first!',
         'gameBoard.modals.shared.messages.starterDecidedManual': 'Manually set: {{actor}} will go first!',
+        'gameBoard.turn.p1': '{{label}} TURN',
+        'gameBoard.turn.your': 'YOUR TURN',
+        'gameBoard.alerts.gameStart': 'GAME START!',
       };
       let value = map[key] || key;
       if (options) {
@@ -180,6 +190,7 @@ function HookHarness() {
     canInteract,
     gameState,
     cardPlayMessage,
+    attackMessage,
     turnMessage,
     eventHistory,
     revealedCardsOverlay,
@@ -195,6 +206,7 @@ function HookHarness() {
       <div data-testid="can-interact">{String(canInteract)}</div>
       <div data-testid="host-hp">{gameState.host.hp}</div>
       <div data-testid="card-play-message">{cardPlayMessage ?? 'none'}</div>
+      <div data-testid="attack-message">{attackMessage ?? 'none'}</div>
       <div data-testid="turn-message">{turnMessage ?? 'none'}</div>
       <div data-testid="event-history">{eventHistory.join(' || ') || 'none'}</div>
       <div data-testid="revealed-overlay-title">{revealedCardsOverlay?.title ?? 'none'}</div>
@@ -592,6 +604,60 @@ describe('useGameBoardLogic shared UI notifications', () => {
     });
 
     expect(screen.getByTestId('card-play-message')).toHaveTextContent('Opponent played Fire Chain');
+    expect(screen.getByTestId('event-history')).not.toHaveTextContent('Opponent played Fire Chain');
+  });
+
+  it('shows attack declarations in the attack dialog and recent events', () => {
+    const { conn } = connectGuest();
+
+    act(() => {
+      conn.emit('data', {
+        type: 'SHARED_UI_EFFECT',
+        effect: {
+          type: 'ATTACK_DECLARED',
+          actor: 'host',
+          attackerCardId: 'attacker-1',
+          attackerName: 'Knight',
+          target: { type: 'leader', player: 'guest' },
+        },
+      });
+      vi.advanceTimersByTime(0);
+    });
+
+    expect(screen.getByTestId('attack-message')).toHaveTextContent('Opponent Knight attacks You Leader');
+    expect(screen.getByTestId('event-history')).toHaveTextContent('Knight -> You Leader');
+    expect(screen.getByTestId('card-play-message')).toHaveTextContent('none');
+  });
+
+  it('keeps attack logs while card-play notifications remain dialog-only', () => {
+    const { conn } = connectGuest();
+
+    act(() => {
+      conn.emit('data', {
+        type: 'SHARED_UI_EFFECT',
+        effect: {
+          type: 'ATTACK_DECLARED',
+          actor: 'host',
+          attackerCardId: 'attacker-1',
+          attackerName: 'Knight',
+          target: { type: 'leader', player: 'guest' },
+        },
+      });
+      vi.advanceTimersByTime(0);
+    });
+
+    expect(screen.getByTestId('event-history')).toHaveTextContent('Knight -> You Leader');
+
+    act(() => {
+      conn.emit('data', {
+        type: 'SHARED_UI_EFFECT',
+        effect: { type: 'CARD_PLAYED', actor: 'host', cardId: 'spell-1', cardName: 'Fire Chain', mode: 'play' },
+      });
+      vi.advanceTimersByTime(0);
+    });
+
+    expect(screen.getByTestId('card-play-message')).toHaveTextContent('Opponent played Fire Chain');
+    expect(screen.getByTestId('event-history')).toHaveTextContent('Knight -> You Leader');
     expect(screen.getByTestId('event-history')).not.toHaveTextContent('Opponent played Fire Chain');
   });
 
