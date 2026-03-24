@@ -48,6 +48,10 @@ describe('extractDeckLogCode', () => {
     expect(extractDeckLogCode('https://decklog.bushiroad.com/view/7H9K2')).toBe('7H9K2');
   });
 
+  it('extracts a deck code from a DeckLog URL with query parameters', () => {
+    expect(extractDeckLogCode('https://decklog.bushiroad.com/view/7H9K2?from=share#top')).toBe('7H9K2');
+  });
+
   it('rejects invalid input', () => {
     expect(extractDeckLogCode('hello world')).toBeNull();
   });
@@ -65,6 +69,16 @@ describe('getDeckLogRuleConfig', () => {
       selectedClass: null,
       selectedTitle: null,
       selectedClasses: ['エルフ', 'ロイヤル'],
+    });
+  });
+
+  it('falls back to null for unrecognized crossover classes', () => {
+    expect(getDeckLogRuleConfig('X', 'エルフ/Unknown')).toEqual({
+      format: 'crossover',
+      identityType: 'class',
+      selectedClass: null,
+      selectedTitle: null,
+      selectedClasses: ['エルフ', null],
     });
   });
 
@@ -125,6 +139,25 @@ describe('convertDeckLogResponse', () => {
     expect(result.missingCardIds).toEqual(['UNKNOWN-001']);
   });
 
+  it('uses a fallback deck name and normalizes missing optional card fields', () => {
+    const result = convertDeckLogResponse({
+      id: 1,
+      title: '   ',
+      game_title_id: 6,
+      list: [
+        { card_number: 'BP01-001', name: 'Alpha Knight', num: 1, card_kind: '・フォロワー・' },
+      ],
+    }, availableCards);
+
+    expect(result.deckName).toBe('DeckLog Import');
+    expect(result.deckState.mainDeck[0]).toMatchObject({
+      id: 'BP01-001',
+      name: 'Alpha Knight',
+      image: '',
+      type: 'フォロワー',
+    });
+  });
+
   it('rejects non-SVE decks', () => {
     expect(() => convertDeckLogResponse({
       id: 1,
@@ -135,6 +168,15 @@ describe('convertDeckLogResponse', () => {
 });
 
 describe('fetchDeckLogImport', () => {
+  it('rejects invalid input before calling the API', async () => {
+    const fetchMock = vi.fn();
+
+    await expect(fetchDeckLogImport('not a code', availableCards, fetchMock as unknown as typeof fetch))
+      .rejects.toMatchObject({ code: 'invalid-input' });
+
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('throws a not-found error for empty API responses', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -143,5 +185,46 @@ describe('fetchDeckLogImport', () => {
 
     await expect(fetchDeckLogImport('7H9K2', availableCards, fetchMock as unknown as typeof fetch))
       .rejects.toMatchObject({ code: 'not-found' });
+  });
+
+  it('surfaces network fetch failures', async () => {
+    const fetchMock = vi.fn().mockRejectedValue(new Error('network down'));
+
+    await expect(fetchDeckLogImport('7H9K2', availableCards, fetchMock as unknown as typeof fetch))
+      .rejects.toMatchObject({ code: 'fetch-failed' });
+  });
+
+  it('includes proxy error details when the API responds with a failure payload', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 502,
+      json: vi.fn().mockResolvedValue({ error: 'Failed to reach DeckLog' }),
+    });
+
+    await expect(fetchDeckLogImport('7H9K2', availableCards, fetchMock as unknown as typeof fetch))
+      .rejects.toMatchObject({
+        code: 'fetch-failed',
+        message: 'DeckLog responded with 502. Failed to reach DeckLog',
+      });
+  });
+
+  it('rejects invalid JSON payloads', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockRejectedValue(new Error('invalid json')),
+    });
+
+    await expect(fetchDeckLogImport('7H9K2', availableCards, fetchMock as unknown as typeof fetch))
+      .rejects.toMatchObject({ code: 'invalid-response' });
+  });
+
+  it('rejects unexpected payload shapes', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({ title: 'missing id' }),
+    });
+
+    await expect(fetchDeckLogImport('7H9K2', availableCards, fetchMock as unknown as typeof fetch))
+      .rejects.toMatchObject({ code: 'invalid-response' });
   });
 });
