@@ -234,6 +234,7 @@
       "connectingToHost": "ホストに接続中...",
       "syncTimedOut": "ホストの状態取得がタイムアウトしました。再接続しています...",
       "waitingForRestore": "ホストのセッション復元を待機中... 同期を再試行しています。",
+      "waitingForHostDecision": "ホストが保存済みセッションを復元するか選択中です。待機しています...",
       "guestConnectedReady": "ゲストが接続しました！ゲームの準備が整いました。",
       "connectedHostSyncing": "ホストに接続しました。最新のゲーム状態を同期中...",
       "guestConnectedChooseResume": "ゲストが接続しました。保存されたセッションを復元するか選択してください。",

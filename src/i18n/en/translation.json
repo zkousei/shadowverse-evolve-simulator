@@ -314,6 +314,7 @@
       "connectingToHost": "Connecting to host...",
       "syncTimedOut": "Timed out waiting for host state. Reconnecting...",
       "waitingForRestore": "Waiting for host session restore... retrying sync.",
+      "waitingForHostDecision": "Host is choosing whether to resume the saved session. Waiting...",
       "guestConnectedReady": "Guest connected! Game ready.",
       "connectedHostSyncing": "Connected to host. Syncing latest game state...",
       "guestConnectedChooseResume": "Guest connected. Choose whether to resume the saved session.",

@@ -90,9 +90,11 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
 
   if (!isOpen) return null;
 
-  const isMainDeckSearch = zoneId?.startsWith('mainDeck-') ?? title.includes('Main Deck');
+  const sourceZonePrefix = zoneId?.split('-')[0] ?? null;
+  const isMainDeckSearch = sourceZonePrefix === 'mainDeck';
   const isPreparingMainDeckSearch = !allowHandExtraction && isMainDeckSearch;
-  const isEvolveDeck = zoneId?.startsWith('evolveDeck-') ?? title.includes('Evolve');
+  const isEvolveDeck = sourceZonePrefix === 'evolveDeck';
+  const isPublicRecoveryZone = sourceZonePrefix === 'cemetery' || sourceZonePrefix === 'banish';
   const actionRole = targetRole ?? viewerRole;
   const selectedCard = selectedCardId ? cards.find(card => card.id === selectedCardId) ?? null : null;
   const selectedCardDetail = selectedCard ? cardDetailLookup[selectedCard.cardId] : null;
@@ -211,7 +213,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
                   </div>
                 )}
 
-                {!readOnly && (c.owner === viewerRole || zoneId?.startsWith('cemetery-') || zoneId?.startsWith('banish-') || title.includes('Cemetery') || title.includes('Banish')) && (
+                {!readOnly && (c.owner === viewerRole || isPublicRecoveryZone) && (
                   <div
                     className="modal-card-controls"
                     style={{

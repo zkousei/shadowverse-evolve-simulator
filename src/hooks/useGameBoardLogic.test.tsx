@@ -12,6 +12,7 @@ vi.mock('react-i18next', () => ({
         'gameBoard.status.connectingToHost': 'Connecting to host...',
         'gameBoard.status.syncTimedOut': 'Timed out waiting for host state. Reconnecting...',
         'gameBoard.status.waitingForRestore': 'Waiting for host session restore... retrying sync.',
+        'gameBoard.status.waitingForHostDecision': 'Host is choosing whether to resume the saved session. Waiting...',
         'gameBoard.status.guestConnectedReady': 'Guest connected! Game ready.',
         'gameBoard.status.connectedHostSyncing': 'Connected to host. Syncing latest game state...',
         'gameBoard.status.guestConnectedChooseResume': 'Guest connected. Choose whether to resume the saved session.',
@@ -167,6 +168,7 @@ const mockPeerJs = (PeerJsModule as unknown as {
   __mockPeerJs: {
     peers: Array<{
       connect: ReturnType<typeof vi.fn>;
+      destroy: ReturnType<typeof vi.fn>;
       connections: Array<{
         open: boolean;
         send: ReturnType<typeof vi.fn>;
@@ -189,6 +191,7 @@ function HookHarness() {
     connectionState,
     canInteract,
     gameState,
+    hasUndoableMove,
     cardPlayMessage,
     attackMessage,
     turnMessage,
@@ -197,6 +200,10 @@ function HookHarness() {
     savedSessionCandidate,
     resumeSavedSession,
     discardSavedSession,
+    endTurn,
+    handleUndoTurn,
+    drawCard,
+    handleUndoCardMove,
   } = useGameBoardLogic();
 
   return (
@@ -205,6 +212,9 @@ function HookHarness() {
       <div data-testid="connection-state">{connectionState}</div>
       <div data-testid="can-interact">{String(canInteract)}</div>
       <div data-testid="host-hp">{gameState.host.hp}</div>
+      <div data-testid="host-hand-count">{gameState.cards.filter(card => card.zone === 'hand-host').length}</div>
+      <div data-testid="can-undo-turn">{String(!!gameState.lastGameState || !!gameState.networkHasUndoableTurn)}</div>
+      <div data-testid="can-undo-move">{String(hasUndoableMove)}</div>
       <div data-testid="card-play-message">{cardPlayMessage ?? 'none'}</div>
       <div data-testid="attack-message">{attackMessage ?? 'none'}</div>
       <div data-testid="turn-message">{turnMessage ?? 'none'}</div>
@@ -218,6 +228,10 @@ function HookHarness() {
           <button onClick={discardSavedSession}>Discard Saved Session</button>
         </>
       )}
+      <button onClick={() => endTurn('host')}>Host End Turn</button>
+      <button onClick={handleUndoTurn}>Undo Turn</button>
+      <button onClick={() => drawCard('host')}>Host Draw</button>
+      <button onClick={handleUndoCardMove}>Undo Move</button>
     </div>
   );
 }
@@ -354,7 +368,17 @@ describe('useGameBoardLogic P2P reconnect', () => {
         state: {
           host: { hp: 20, pp: 0, maxPp: 0, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
           guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
-          cards: [],
+          cards: [{
+            id: 'revealed-card-1',
+            cardId: 'BP01-001',
+            name: 'Aurelia',
+            image: '/aurelia.png',
+            zone: 'hand-host',
+            owner: 'host',
+            isTapped: false,
+            isFlipped: false,
+            counters: { atk: 0, hp: 0 },
+          }],
           turnPlayer: 'host',
           turnCount: 1,
           phase: 'Start',
@@ -371,6 +395,29 @@ describe('useGameBoardLogic P2P reconnect', () => {
 
     expect(conn.send).toHaveBeenCalledTimes(2);
     expect(screen.getByTestId('status')).toHaveTextContent('Connected to host! Game ready.');
+  });
+
+  it('waits without reconnecting when the host reports a pending saved session', () => {
+    renderHarness('/game?host=false&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const conn = peer.connections[0];
+    act(() => {
+      conn.open = true;
+      conn.emit('open');
+      conn.emit('data', {
+        type: 'WAITING_FOR_HOST_SESSION',
+        source: 'host',
+      });
+      vi.advanceTimersByTime(7000);
+    });
+
+    expect(screen.getByTestId('status')).toHaveTextContent('Host is choosing whether to resume the saved session. Waiting...');
+    expect(peer.connect).toHaveBeenCalledTimes(1);
   });
 
   it('falls back to reconnecting after snapshot retries are exhausted', () => {
@@ -567,6 +614,142 @@ describe('useGameBoardLogic P2P reconnect', () => {
     renderHarness('/game?host=false&room=ROOM123');
     expect(screen.getByTestId('saved-session')).toHaveTextContent('none');
   });
+
+  it('responds to guest snapshot requests with a waiting message while a saved session is pending', () => {
+    window.sessionStorage.setItem('sv-evolve:host-session:ROOM123', JSON.stringify({
+      room: 'ROOM123',
+      savedAt: '2026-03-19T10:00:00.000Z',
+      appVersion: '0.0.0',
+      state: {
+        host: { hp: 11, pp: 1, maxPp: 1, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+        guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+        cards: [],
+        turnPlayer: 'host',
+        turnCount: 1,
+        phase: 'Start',
+        gameStatus: 'preparing',
+        tokenOptions: { host: [], guest: [] },
+        revision: 2,
+      },
+    }));
+
+    renderHarness('/game?host=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const conn = mockPeerJs.createConnection('guest');
+    act(() => {
+      peer.emit('connection', conn);
+      conn.open = true;
+      conn.emit('open');
+      conn.emit('data', {
+        type: 'REQUEST_SNAPSHOT',
+        lastKnownRevision: 0,
+        source: 'guest',
+      });
+    });
+
+    expect(conn.send).toHaveBeenCalledWith({
+      type: 'WAITING_FOR_HOST_SESSION',
+      source: 'host',
+    });
+  });
+
+  it('keeps host-side turn undo available after ending the turn', () => {
+    window.sessionStorage.setItem('sv-evolve:host-session:ROOM123', JSON.stringify({
+      room: 'ROOM123',
+      savedAt: '2026-03-19T10:00:00.000Z',
+      appVersion: '0.0.0',
+      state: {
+        host: { hp: 20, pp: 1, maxPp: 1, ep: 0, sep: 1, combo: 0, initialHandDrawn: true, mulliganUsed: true, isReady: true },
+        guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: true, mulliganUsed: true, isReady: true },
+        cards: [],
+        turnPlayer: 'host',
+        turnCount: 2,
+        phase: 'Main',
+        gameStatus: 'playing',
+        tokenOptions: { host: [], guest: [] },
+        revision: 7,
+      },
+    }));
+
+    renderHarness('/game?host=true&room=ROOM123');
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Resume Saved Session' }));
+    });
+
+    expect(screen.getByTestId('can-undo-turn')).toHaveTextContent('false');
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Host End Turn' }));
+    });
+
+    expect(screen.getByTestId('can-undo-turn')).toHaveTextContent('true');
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Undo Turn' }));
+    });
+
+    expect(screen.getByTestId('can-undo-turn')).toHaveTextContent('false');
+  });
+
+  it('keeps host-side card-move undo available after a card draw', () => {
+    window.sessionStorage.setItem('sv-evolve:host-session:ROOM123', JSON.stringify({
+      room: 'ROOM123',
+      savedAt: '2026-03-19T10:00:00.000Z',
+      appVersion: '0.0.0',
+      state: {
+        host: { hp: 20, pp: 1, maxPp: 1, ep: 0, sep: 1, combo: 0, initialHandDrawn: true, mulliganUsed: true, isReady: true },
+        guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: true, mulliganUsed: true, isReady: true },
+        cards: [
+          {
+            id: 'deck-card-1',
+            cardId: 'BP01-001',
+            name: 'Deck Card',
+            image: '',
+            zone: 'mainDeck-host',
+            owner: 'host',
+            isTapped: false,
+            isFlipped: true,
+            counters: { atk: 0, hp: 0 },
+          },
+        ],
+        turnPlayer: 'host',
+        turnCount: 2,
+        phase: 'Main',
+        gameStatus: 'playing',
+        tokenOptions: { host: [], guest: [] },
+        revision: 7,
+      },
+    }));
+
+    renderHarness('/game?host=true&room=ROOM123');
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Resume Saved Session' }));
+    });
+
+    expect(screen.getByTestId('host-hand-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('false');
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Host Draw' }));
+    });
+
+    expect(screen.getByTestId('host-hand-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('true');
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Undo Move' }));
+    });
+
+    expect(screen.getByTestId('host-hand-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('false');
+  });
 });
 
 describe('useGameBoardLogic shared UI notifications', () => {
@@ -661,8 +844,8 @@ describe('useGameBoardLogic shared UI notifications', () => {
     expect(screen.getByTestId('event-history')).not.toHaveTextContent('Opponent played Fire Chain');
   });
 
-  it('merges look-top summary into the reveal overlay and logs only the summary entry', () => {
-    const { conn } = connectGuest();
+  it('merges look-top summary into the reveal overlay and logs only the summary entry', async () => {
+    const { conn, peer } = connectGuest();
 
     act(() => {
       conn.emit('data', {
@@ -688,8 +871,9 @@ describe('useGameBoardLogic shared UI notifications', () => {
           cemeteryCards: [],
         },
       });
-      vi.advanceTimersByTime(0);
     });
+
+    await act(async () => {});
 
     expect(screen.getByTestId('revealed-overlay-title')).toHaveTextContent('Opponent revealed from Look Top');
     expect(screen.getByTestId('revealed-overlay-summary')).toHaveTextContent('Revealed to Hand: Aurelia');
@@ -697,6 +881,42 @@ describe('useGameBoardLogic shared UI notifications', () => {
     expect(screen.getByTestId('event-history')).toHaveTextContent('Opponent resolved Look Top 4');
     expect(screen.getByTestId('event-history')).toHaveTextContent('Revealed to Hand: Aurelia');
     expect(screen.getByTestId('event-history')).not.toHaveTextContent('Opponent revealed from Look Top');
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
+    expect(mockPeerJs.peers).toHaveLength(1);
+    expect(peer.destroy).not.toHaveBeenCalled();
+  });
+
+  it('keeps the guest connected and shows the reveal overlay when Search reveal is piggybacked on a snapshot', () => {
+    const { conn, peer } = connectGuest();
+
+    act(() => {
+      conn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: {
+          host: { hp: 20, pp: 0, maxPp: 0, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          cards: [],
+          turnPlayer: 'host',
+          turnCount: 1,
+          phase: 'Start',
+          gameStatus: 'playing',
+          tokenOptions: { host: [], guest: [] },
+          revision: 2,
+        },
+        pendingEffects: [{
+          type: 'REVEAL_SEARCHED_CARD_TO_HAND',
+          actor: 'host',
+          cardIds: ['revealed-card-1'],
+        }],
+      });
+      vi.advanceTimersByTime(0);
+    });
+
+    expect(screen.getByTestId('revealed-overlay-title')).toHaveTextContent('Opponent revealed from Search');
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
+    expect(mockPeerJs.peers).toHaveLength(1);
+    expect(peer.destroy).not.toHaveBeenCalled();
   });
 
   it('does not keep reset or preparing-only evolve usage entries in recent events', () => {

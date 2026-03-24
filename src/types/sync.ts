@@ -44,7 +44,7 @@ export type GameSyncEvent =
   | { id: string; type: 'RESOLVE_TOP_DECK'; actor: PlayerRole; results: TopDeckResult[] }
   | { id: string; type: 'IMPORT_DECK'; actor: PlayerRole; cards: CardInstance[]; tokenOptions?: TokenOption[] }
   | { id: string; type: 'SET_INITIAL_TURN_ORDER'; actor: PlayerRole; starter: PlayerRole; manual: boolean }
-  | { id: string; type: 'UNDO_LAST_TURN'; actor: PlayerRole; previousState: SyncState }
+  | { id: string; type: 'UNDO_LAST_TURN'; actor: PlayerRole }
   | { id: string; type: 'UNDO_CARD_MOVE'; actor: PlayerRole }
   | { id: string; type: 'SET_REVEAL_HANDS_MODE'; actor: PlayerRole; enabled: boolean }
   | { id: string; type: 'SPAWN_TOKEN'; actor: PlayerRole; token: CardInstance }
@@ -80,11 +80,12 @@ export type SharedUiEffect =
     }
   | { type: 'CARD_PLAYED'; actor: PlayerRole; cardId: string; cardName: string; mode: 'play' | 'playToField' }
   | { type: 'REVEAL_TOP_DECK_CARDS'; actor: PlayerRole; cards: PublicCardView[] }
-  | { type: 'REVEAL_SEARCHED_CARD_TO_HAND'; actor: PlayerRole; cards: PublicCardView[] }
+  | { type: 'REVEAL_SEARCHED_CARD_TO_HAND'; actor: PlayerRole; cardIds: string[] }
   | { type: 'ATTACK_DECLARED'; actor: PlayerRole; attackerCardId: string; attackerName: string; target: AttackTargetView };
 
 export type SyncMessage =
   | { type: 'EVENT'; event: GameSyncEvent }
   | { type: 'REQUEST_SNAPSHOT'; lastKnownRevision: number; source: PlayerRole }
+  | { type: 'WAITING_FOR_HOST_SESSION'; source: PlayerRole }
   | { type: 'STATE_SNAPSHOT'; state: SyncState; source: PlayerRole; pendingEffects?: SharedUiEffect[] }
   | { type: 'SHARED_UI_EFFECT'; effect: SharedUiEffect };

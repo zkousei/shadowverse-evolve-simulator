@@ -124,7 +124,15 @@ const GameBoard: React.FC = () => {
   );
   const searchTargetRole = searchZone ? getZoneOwner(searchZone.id) ?? role : role;
   const currentTurnLabel = gameState.turnPlayer === bottomRole ? bottomLabel : topLabel;
-  const canUndoTurn = canUndoLastTurn(gameState, gameState.lastGameState, role, isSoloMode);
+  const canUndoTurnFlag = isSoloMode || isHost
+    ? !!gameState.lastGameState
+    : !!(gameState.networkHasUndoableTurn ?? gameState.lastGameState);
+  const canUndoTurn = canUndoLastTurn(
+    gameState,
+    canUndoTurnFlag,
+    role,
+    isSoloMode
+  );
   const isBottomTurnActive = gameState.gameStatus === 'playing' && gameState.turnPlayer === bottomRole;
   const isTopTurnActive = gameState.gameStatus === 'playing' && gameState.turnPlayer === topRole;
   const canResetGame = isSoloMode || isHost;
@@ -2414,7 +2422,7 @@ const GameBoard: React.FC = () => {
             {revealedCardsOverlay.cards.map((card) => (
               <div key={`${card.cardId}-${card.name}`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem', maxWidth: '120px' }}>
                 <CardArtwork
-                  image={card.image}
+                  image={cardDetailLookup[card.cardId]?.image || card.image}
                   alt={card.name}
                   detail={cardDetailLookup[card.cardId]}
                   style={{ width: '90px', height: '126px', borderRadius: '8px', boxShadow: '0 4px 14px rgba(0,0,0,0.45)' }}

@@ -471,6 +471,8 @@ describe('gameSyncReducer', () => {
       counters: { atk: 0, hp: 0 },
       genericCounter: 0,
     });
+    expect(result.host.isReady).toBe(false);
+    expect(result.guest.isReady).toBe(false);
     expect(result.tokenOptions.host).toEqual([{ cardId: 'token-host', name: 'Host Token', image: '/host-token.png' }]);
     expect(result.revision).toBe(9);
   });
@@ -1703,7 +1705,6 @@ describe('gameSyncReducer', () => {
       id: 'evt-23',
       type: 'UNDO_LAST_TURN',
       actor: 'host',
-      previousState: ordered, // Ignored now but kept for type safety
     });
     expect(undone.cards.find(c => c.id === 'token-1')).toBeUndefined();
     expect(undone.turnPlayer).toBe('guest');
@@ -1726,7 +1727,6 @@ describe('gameSyncReducer', () => {
       id: 'evt-guest-undo',
       type: 'UNDO_LAST_TURN',
       actor: 'guest',
-      previousState: beforeTurnEnd,
     }, 'guest');
 
     expect(undone.turnPlayer).toBe('guest');
@@ -1764,6 +1764,8 @@ describe('gameSyncReducer', () => {
     expect(afterMove.cards.find(c => c.id === 'card-host-undo')?.zone).toBe('ex-host');
     expect(afterMove.lastUndoableCardMoveActor).toBe('host');
     expect(afterMove.lastUndoableCardMoveState?.cards.find(c => c.id === 'card-host-undo')?.zone).toBe('field-host');
+    expect(afterMove.lastUndoableCardMoveState).not.toHaveProperty('lastGameState');
+    expect(afterMove.lastUndoableCardMoveState).not.toHaveProperty('lastUndoableCardMoveState');
 
     const undone = applyGameSyncEvent(afterMove, {
       id: 'evt-card-move-undo',

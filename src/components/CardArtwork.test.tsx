@@ -2,11 +2,35 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import CardArtwork from './CardArtwork';
 
+let dummyArtEnabled = true;
+
 vi.mock('../utils/cardArtMode', () => ({
-  isDummyCardArtEnabled: () => true,
+  isDummyCardArtEnabled: () => dummyArtEnabled,
 }));
 
 describe('CardArtwork', () => {
+  it('falls back to detail image in official mode when card image is empty', () => {
+    dummyArtEnabled = false;
+
+    render(
+      <CardArtwork
+        image=""
+        alt="Fallback Image Card"
+        detail={{
+          name: 'Fallback Image Card',
+          image: '/detail-image.png',
+          cost: '1',
+          atk: 1,
+          hp: 1,
+          type: 'フォロワー',
+        }}
+      />
+    );
+
+    expect(screen.getByAltText('Fallback Image Card')).toHaveAttribute('src', '/detail-image.png');
+    dummyArtEnabled = true;
+  });
+
   it('shows an ADVANCE badge for advance cards instead of EVOLVE', () => {
     render(
       <CardArtwork

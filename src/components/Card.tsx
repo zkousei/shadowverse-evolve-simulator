@@ -35,7 +35,7 @@ export interface CardInspectAnchor {
 interface Props {
   card: CardInstance;
   baseStats?: BaseCardStats;
-  detail?: Pick<CardDetail, 'name' | 'cost' | 'atk' | 'hp' | 'type'>;
+  detail?: Pick<CardDetail, 'name' | 'cost' | 'atk' | 'hp' | 'type' | 'image'>;
   displayCounters?: { atk: number; hp: number };
   hideCurrentStats?: boolean;
   highlightTone?: 'attack-source' | 'attack-target';
@@ -94,6 +94,7 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
   }
 
   const isStatDisplayZone = card.zone.startsWith('field-') || card.zone.startsWith('ex-');
+  const resolvedImage = detail?.image || card.image;
   const effectiveDisplayCounters = displayCounters ?? card.counters;
   const genericCounterValue = card.genericCounter ?? 0;
   const isNormalSpellPlay = isMainDeckSpellCard(card);
@@ -168,7 +169,7 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
     >
       {(isHidden || card.isFlipped) ? (
         <CardArtwork
-          image={card.image}
+          image={resolvedImage}
           alt={card.name}
           isBack={true}
           detail={detail}
@@ -182,7 +183,7 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
       ) : (
         <>
           <CardArtwork
-            image={card.image}
+            image={resolvedImage}
             alt={card.name}
             detail={detail}
             baseCardType={card.baseCardType}

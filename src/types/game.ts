@@ -35,6 +35,8 @@ export interface SyncState {
   lastGameState?: Omit<SyncState, 'lastGameState' | 'lastUndoableCardMoveState' | 'lastUndoableCardMoveActor'> | null;
   lastUndoableCardMoveState?: Omit<SyncState, 'lastGameState' | 'lastUndoableCardMoveState' | 'lastUndoableCardMoveActor'> | null;
   lastUndoableCardMoveActor?: PlayerRole | null;
+  networkHasUndoableTurn?: boolean;
+  networkHasUndoableCardMove?: boolean;
 }
 
 export const initialState: SyncState = {
@@ -54,4 +56,6 @@ export const initialState: SyncState = {
   lastGameState: null,
   lastUndoableCardMoveState: null,
   lastUndoableCardMoveActor: null,
+  networkHasUndoableTurn: false,
+  networkHasUndoableCardMove: false,
 };

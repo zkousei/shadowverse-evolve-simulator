@@ -11,6 +11,7 @@ interface Props {
   isBack?: boolean;
   detail?: (
     Pick<CardDetail, 'name' | 'cost' | 'atk' | 'hp' | 'type'>
+    & { image?: string }
     & { cardKindNormalized?: string }
   ) | undefined;
   baseCardType?: RuntimeBaseCardType | null;
@@ -113,10 +114,12 @@ const CardArtwork: React.FC<Props> = ({
   style,
   draggable,
 }) => {
+  const resolvedImage = detail?.image || image;
+
   if (!isDummyCardArtEnabled()) {
     return (
       <img
-        src={isBack ? '/card_back.png' : image}
+        src={isBack ? '/card_back.png' : resolvedImage}
         alt={isBack ? 'Card Back' : alt}
         style={style}
         draggable={draggable}

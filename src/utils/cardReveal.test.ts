@@ -28,7 +28,7 @@ describe('cardReveal', () => {
     )).toEqual({
       type: 'REVEAL_SEARCHED_CARD_TO_HAND',
       actor: 'host',
-      cards: [{ cardId: 'c1', name: 'Card c1', image: '/c1.png' }],
+      cardIds: ['c1'],
     });
   });
 });

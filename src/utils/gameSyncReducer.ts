@@ -13,8 +13,16 @@ const bumpRevision = (state: SyncState): SyncState => ({
 
 const createReducerStateSnapshot = (
   state: SyncState
-): NonNullable<SyncState['lastGameState']> => ({
-  ...state,
+): NonNullable<SyncState['lastGameState']> => {
+  const {
+    lastGameState: _lastGameState,
+    lastUndoableCardMoveState: _lastUndoableCardMoveState,
+    lastUndoableCardMoveActor: _lastUndoableCardMoveActor,
+    ...rest
+  } = state;
+
+  return {
+  ...rest,
   host: { ...state.host },
   guest: { ...state.guest },
   cards: state.cards.map(card => ({ ...card })),
@@ -22,7 +30,11 @@ const createReducerStateSnapshot = (
     host: state.tokenOptions.host.map(option => ({ ...option })),
     guest: state.tokenOptions.guest.map(option => ({ ...option })),
   },
-});
+  // Reducer-side checkpoints must stay flat. If we copy nested undo/turn
+  // backups into every snapshot, the authoritative STATE_SNAPSHOT balloons
+  // on card moves/look-top resolution and can overwhelm the WebRTC channel.
+  };
+};
 
 const withCardMoveCheckpoint = (
   state: SyncState,
@@ -200,8 +212,6 @@ export const applyGameSyncEvent = (
         ...initialState,
         cards: resetCards,
         tokenOptions: state.tokenOptions,
-        host: { ...initialState.host, isReady: state.host.isReady },
-        guest: { ...initialState.guest, isReady: state.guest.isReady },
         lastGameState: null,
         lastUndoableCardMoveState: null,
         lastUndoableCardMoveActor: null,
