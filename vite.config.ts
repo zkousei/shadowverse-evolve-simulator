@@ -45,6 +45,9 @@ export default defineConfig({
         headers: {
           'X-Requested-With': 'XMLHttpRequest',
           Origin: 'https://decklog.bushiroad.com',
+          Accept: 'application/json, text/plain, */*',
+          'Accept-Language': 'ja,en-US;q=0.9,en;q=0.8',
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
         },
         rewrite: (path) => path.replace(/^\/api\/decklog\/view/, '/system/app/api/view'),
         configure: (proxy) => {

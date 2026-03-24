@@ -22,6 +22,9 @@ export default async function handler(req, res) {
         'X-Requested-With': 'XMLHttpRequest',
         Origin: 'https://decklog.bushiroad.com',
         Referer: `https://decklog.bushiroad.com/view/${deckCode}`,
+        Accept: 'application/json, text/plain, */*',
+        'Accept-Language': 'ja,en-US;q=0.9,en;q=0.8',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
       },
     });
 
