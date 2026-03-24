@@ -1092,8 +1092,8 @@ describe('DeckBuilder', () => {
     render(<DeckBuilder />);
     await screen.findByText('Alpha Knight');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Import from DeckLog' }));
-    fireEvent.change(screen.getByPlaceholderText('e.g. 7H9K2 or https://decklog.bushiroad.com/view/7H9K2'), {
+    fireEvent.click(screen.getByRole('button', { name: /Import from DeckLog/i }));
+    fireEvent.change(screen.getByPlaceholderText('e.g. a DeckLog code or a public DeckLog URL'), {
       target: { value: 'https://decklog.bushiroad.com/view/7H9K2' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Import' }));
