@@ -192,6 +192,7 @@ function HookHarness() {
     canInteract,
     gameState,
     hasUndoableMove,
+    canUndoTurn,
     cardPlayMessage,
     attackMessage,
     turnMessage,
@@ -213,7 +214,7 @@ function HookHarness() {
       <div data-testid="can-interact">{String(canInteract)}</div>
       <div data-testid="host-hp">{gameState.host.hp}</div>
       <div data-testid="host-hand-count">{gameState.cards.filter(card => card.zone === 'hand-host').length}</div>
-      <div data-testid="can-undo-turn">{String(!!gameState.lastGameState || !!gameState.networkHasUndoableTurn)}</div>
+      <div data-testid="can-undo-turn">{String(canUndoTurn)}</div>
       <div data-testid="can-undo-move">{String(hasUndoableMove)}</div>
       <div data-testid="card-play-message">{cardPlayMessage ?? 'none'}</div>
       <div data-testid="attack-message">{attackMessage ?? 'none'}</div>

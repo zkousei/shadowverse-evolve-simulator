@@ -1337,6 +1337,10 @@ export const useGameBoardLogic = () => {
     );
   }, [gameState.lastUndoableCardMoveActor, gameState.lastUndoableCardMoveState, gameState.networkHasUndoableCardMove, isHost, isSoloMode, role]);
 
+  const canUndoTurn = isSoloMode || isHost
+    ? !!gameState.lastGameState
+    : !!(gameState.networkHasUndoableTurn ?? gameState.lastGameState);
+
   useEffect(() => {
     return () => {
       clearReconnectTimer();
@@ -1383,10 +1387,7 @@ export const useGameBoardLogic = () => {
   };
 
   const handleUndoTurn = () => {
-    const canUndo = isSoloMode || isHost
-      ? !!gameState.lastGameState
-      : !!(gameState.networkHasUndoableTurn ?? gameState.lastGameState);
-    if (!canUndo) return;
+    if (!canUndoTurn) return;
     dispatchGameEvent({ type: 'UNDO_LAST_TURN' });
   };
 
@@ -1689,7 +1690,7 @@ export const useGameBoardLogic = () => {
     handleSetRevealHandsMode,
     getCards, getTokenOptions, lastGameState: gameState.lastGameState, millCard,
     topDeckCards, handleLookAtTop, handleResolveTopDeck, setTopDeckCards,
-    handleUndoCardMove, hasUndoableMove,
+    handleUndoCardMove, hasUndoableMove, canUndoTurn,
     isDebug
   };
 };

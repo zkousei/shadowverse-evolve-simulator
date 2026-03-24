@@ -74,7 +74,7 @@ const GameBoard: React.FC = () => {
     handleSetRevealHandsMode,
     getCards, getTokenOptions, millCard,
     topDeckCards, handleLookAtTop, handleResolveTopDeck, setTopDeckCards,
-    handleUndoCardMove, hasUndoableMove,
+    handleUndoCardMove, hasUndoableMove, canUndoTurn,
     isDebug
   } = useGameBoardLogic();
 
@@ -124,12 +124,9 @@ const GameBoard: React.FC = () => {
   );
   const searchTargetRole = searchZone ? getZoneOwner(searchZone.id) ?? role : role;
   const currentTurnLabel = gameState.turnPlayer === bottomRole ? bottomLabel : topLabel;
-  const canUndoTurnFlag = isSoloMode || isHost
-    ? !!gameState.lastGameState
-    : !!(gameState.networkHasUndoableTurn ?? gameState.lastGameState);
-  const canUndoTurn = canUndoLastTurn(
+  const canShowUndoTurn = canUndoLastTurn(
     gameState,
-    canUndoTurnFlag,
+    canUndoTurn,
     role,
     isSoloMode
   );
@@ -1325,7 +1322,7 @@ const GameBoard: React.FC = () => {
               </>
             )}
 
-            {canUndoTurn && (
+            {canShowUndoTurn && (
               <button
                 onClick={() => setShowUndoConfirm(true)}
                 style={{
