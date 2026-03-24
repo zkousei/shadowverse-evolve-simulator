@@ -17,6 +17,8 @@
         "save": "保存",
         "saveAsNew": "新しく保存",
         "import": "インポート",
+        "importDeckLog": "DeckLogから取り込み",
+        "betaBadge": "BETA",
         "export": "エクスポート",
         "reset": "リセット",
         "makeUnsavedCopy": "未保存のコピーを作成"
@@ -98,6 +100,15 @@
         "descNote": "ルール設定、デッキ名、カードの検索フィルターは保持されます。",
         "title": "デッキをリセット"
       },
+      "deckLogImport": {
+        "title": "DeckLogから取り込み",
+        "desc": "DeckLogのコードまたは公開URLを貼り付けて、現在のDeckBuilder内容を置き換えます。",
+        "placeholder": "例: DeckLogコード または 公開DeckLog URL",
+        "note": "ベータ機能です。現在は Shadowverse EVOLVE のDeckLogデッキのみ対応しています。",
+        "confirm": "取り込む",
+        "importing": "取り込み中...",
+        "aria": "DeckLog取り込みダイアログ"
+      },
       "deleteDeck": {
         "title": "デッキを削除",
         "message": "デッキ「{{name}}」を削除してもよろしいですか？この操作は取り消せません。",
@@ -133,6 +144,14 @@
     },
     "alerts": {
       "importFailed": "デッキファイルの読み込みに失敗しました。",
+      "deckLogInvalidInput": "有効なDeckLogコードまたはURLを入力してください。",
+      "deckLogFetchFailed": "DeckLogのデッキを取得できませんでした。時間をおいて再度お試しください。",
+      "deckLogInvalidResponse": "DeckLogから予期しないデータが返されました。",
+      "deckLogNotFound": "指定したDeckLogデッキが見つかりませんでした。",
+      "deckLogUnsupportedGame": "Shadowverse EVOLVE のDeckLogデッキのみ対応しています。",
+      "deckLogCardsLoading": "カード情報を読み込み中です。少し待ってからDeckLog取り込みをお試しください。",
+      "deckLogImportSuccess": "DeckLogから「{{name}}」を取り込みました。",
+      "deckLogImportPartial": "DeckLogデッキは取り込みましたが、{{count}}枚のカードをローカルのカードデータで照合できませんでした。",
       "emptyBuilder": "ビルダーが空です。カードを追加するか設定を調整してから保存してください。",
       "saveAsNewSuccess": "新しいデッキ「{{name}}」を保存しました。",
       "saveSuccess": "デッキ「{{name}}」を保存しました。",

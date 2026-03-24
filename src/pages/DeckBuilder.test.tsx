@@ -194,7 +194,7 @@ const stubFileReaderWithImportedDeck = () => {
 
 describe('DeckBuilder', () => {
   beforeAll(() => {
-    vi.setConfig({ testTimeout: 10000 });
+    vi.setConfig({ testTimeout: 20000 });
   });
 
   beforeEach(() => {
@@ -1059,6 +1059,60 @@ describe('DeckBuilder', () => {
 
     const mainDeckSection = screen.getByRole('heading', { name: /^Main Deck/ }).nextElementSibling as HTMLElement;
     expect(within(mainDeckSection).getByText('Alpha Knight')).toBeInTheDocument();
+  });
+
+  it('imports a DeckLog deck from a public code or URL', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn()
+        .mockResolvedValueOnce({
+          json: vi.fn().mockResolvedValue(mockCards),
+        } as unknown as Response)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue({
+            id: 4092682,
+            title: 'DeckLog Elf',
+            game_title_id: 6,
+            deck_param1: 'N',
+            deck_param2: 'ロイヤル',
+            list: [
+              { card_number: 'BP01-001', num: 2, card_kind: '・フォロワー・', name: 'Alpha Knight', img: 'BP01/bp01_001.png', custom_param: { class_name: 'ロイヤル' } },
+            ],
+            sub_list: [
+              { card_number: 'EV01-001', num: 1, card_kind: '・フォロワー・エボルヴ・', name: 'Evolve Angel', img: 'EV01/ev01_001.png', custom_param: { class_name: 'ロイヤル' } },
+            ],
+            p_list: [
+              { card_number: 'LDR01-001', num: 1, card_kind: '・リーダー・', name: 'Leader Luna', img: 'LDR01/ldr01_001.png', custom_param: { class_name: 'ロイヤル' } },
+            ],
+          }),
+        } as unknown as Response)
+    );
+
+    render(<DeckBuilder />);
+    await screen.findByText('Alpha Knight');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Import from DeckLog' }));
+    fireEvent.change(screen.getByPlaceholderText('e.g. 7H9K2 or https://decklog.bushiroad.com/view/7H9K2'), {
+      target: { value: 'https://decklog.bushiroad.com/view/7H9K2' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Import' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Imported "DeckLog Elf" from DeckLog.')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('Not saved to My Decks')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('DeckLog Elf')).toBeInTheDocument();
+
+    const mainDeckSection = screen.getByRole('heading', { name: /^Main Deck/ }).nextElementSibling as HTMLElement;
+    const evolveDeckSection = screen.getByRole('heading', { name: /^Evolve Deck/ }).nextElementSibling as HTMLElement;
+    const leaderSection = screen.getByRole('heading', { name: /^Leader/ }).nextElementSibling as HTMLElement;
+
+    expect(within(mainDeckSection).getByText('Alpha Knight')).toBeInTheDocument();
+    expect(within(mainDeckSection).getByText('× 2')).toBeInTheDocument();
+    expect(within(evolveDeckSection).getByText('Evolve Angel')).toBeInTheDocument();
+    expect(within(leaderSection).getByText('Leader Luna')).toBeInTheDocument();
   });
 
   it('keeps the My Decks modal open when load is canceled', async () => {

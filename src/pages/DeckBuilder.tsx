@@ -56,6 +56,7 @@ import {
   type DeckBuilderSnapshot,
   type SavedDeckRecordV1,
 } from '../utils/deckStorage';
+import { DeckLogImportError, fetchDeckLogImport } from '../utils/decklogImport';
 import CardArtwork from '../components/CardArtwork';
 
 type PendingDraftRestore = {
@@ -218,6 +219,9 @@ const DeckBuilder: React.FC = () => {
   const [saveFeedback, setSaveFeedback] = useState<SaveFeedback | null>(null);
   const [isSavedDeckSelectMode, setIsSavedDeckSelectMode] = useState(false);
   const [selectedSavedDeckIds, setSelectedSavedDeckIds] = useState<string[]>([]);
+  const [isDeckLogImportOpen, setIsDeckLogImportOpen] = useState(false);
+  const [deckLogInput, setDeckLogInput] = useState('');
+  const [isImportingDeckLog, setIsImportingDeckLog] = useState(false);
 
   useEffect(() => {
     fetch('/cards_detailed.json')
@@ -644,6 +648,66 @@ const DeckBuilder: React.FC = () => {
     reader.readAsText(file);
     // Reset input so the same file can be uploaded again if needed
     event.target.value = '';
+  };
+
+  const getDeckLogImportMessage = (error: unknown): string => {
+    if (error instanceof DeckLogImportError) {
+      switch (error.code) {
+        case 'invalid-input':
+          return t('deckBuilder.alerts.deckLogInvalidInput');
+        case 'not-found':
+          return t('deckBuilder.alerts.deckLogNotFound');
+        case 'unsupported-game':
+          return t('deckBuilder.alerts.deckLogUnsupportedGame');
+        case 'fetch-failed':
+          return t('deckBuilder.alerts.deckLogFetchFailed');
+        case 'invalid-response':
+        default:
+          return t('deckBuilder.alerts.deckLogInvalidResponse');
+      }
+    }
+
+    return t('deckBuilder.alerts.deckLogFetchFailed');
+  };
+
+  const handleImportDeckLog = async () => {
+    if (cards.length === 0) {
+      setSaveFeedback({
+        kind: 'warning',
+        message: t('deckBuilder.alerts.deckLogCardsLoading'),
+      });
+      return;
+    }
+
+    setIsImportingDeckLog(true);
+
+    try {
+      const importedDeck = await fetchDeckLogImport(deckLogInput, cards);
+      const sanitizedDeckState = sanitizeImportedDeckState(importedDeck.deckState, cards, importedDeck.ruleConfig);
+
+      setDeckName(importedDeck.deckName);
+      setDeckRuleConfig(importedDeck.ruleConfig);
+      setDeckState(sanitizedDeckState);
+      setSelectedSavedDeckId(null);
+      setSavedBaselineSnapshot(null);
+      setDraftRestored(false);
+      setPendingDraftRestore(null);
+      setIsDeckLogImportOpen(false);
+      setDeckLogInput('');
+      setSaveFeedback({
+        kind: importedDeck.missingCardIds.length > 0 ? 'warning' : 'success',
+        message: importedDeck.missingCardIds.length > 0
+          ? t('deckBuilder.alerts.deckLogImportPartial', { count: importedDeck.missingCardIds.length })
+          : t('deckBuilder.alerts.deckLogImportSuccess', { name: importedDeck.deckName }),
+      });
+    } catch (error) {
+      setSaveFeedback({
+        kind: 'warning',
+        message: getDeckLogImportMessage(error),
+      });
+    } finally {
+      setIsImportingDeckLog(false);
+    }
   };
 
   const handleSaveDeck = (saveAsNew = false) => {
@@ -1429,6 +1493,39 @@ const DeckBuilder: React.FC = () => {
                   <Upload size={14} /> {t('deckBuilder.deckArea.actions.import')}
                   <input type="file" accept=".json" onChange={handleImportDeck} style={{ display: 'none' }} />
                 </label>
+                <button
+                  type="button"
+                  onClick={() => setIsDeckLogImportOpen(true)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                    background: 'var(--bg-overlay)',
+                    color: 'var(--text-main)',
+                    border: '1px solid var(--border-light)',
+                    padding: '0.45rem 0.75rem',
+                    borderRadius: 'var(--radius-md)',
+                    fontSize: '0.875rem',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <Upload size={14} />
+                  {t('deckBuilder.deckArea.actions.importDeckLog')}
+                  <span
+                    style={{
+                      marginLeft: '0.2rem',
+                      padding: '0.08rem 0.35rem',
+                      borderRadius: '999px',
+                      background: 'rgba(245, 158, 11, 0.18)',
+                      color: '#fcd34d',
+                      fontSize: '0.65rem',
+                      fontWeight: 700,
+                      letterSpacing: '0.04em',
+                    }}
+                  >
+                    {t('deckBuilder.deckArea.actions.betaBadge')}
+                  </span>
+                </button>
                 <button
                   type="button"
                   onClick={exportDeck}
@@ -2389,6 +2486,115 @@ const DeckBuilder: React.FC = () => {
                 }}
               >
                 Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isDeckLogImportOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={t('deckBuilder.modals.deckLogImport.aria')}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.72)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.5rem',
+            zIndex: 1100,
+          }}
+        >
+          <div
+            className="glass-panel"
+            style={{
+              width: '100%',
+              maxWidth: '460px',
+              padding: '1.25rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.9rem',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <h3 style={{ margin: 0, color: '#67e8f9' }}>{t('deckBuilder.modals.deckLogImport.title')}</h3>
+              <span
+                style={{
+                  padding: '0.12rem 0.42rem',
+                  borderRadius: '999px',
+                  background: 'rgba(245, 158, 11, 0.18)',
+                  color: '#fcd34d',
+                  fontSize: '0.7rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.04em',
+                }}
+              >
+                {t('deckBuilder.deckArea.actions.betaBadge')}
+              </span>
+            </div>
+            <p style={{ margin: 0, color: 'var(--text-main)', lineHeight: 1.5 }}>
+              {t('deckBuilder.modals.deckLogImport.desc')}
+            </p>
+            <input
+              type="text"
+              value={deckLogInput}
+              onChange={(event) => setDeckLogInput(event.target.value)}
+              placeholder={t('deckBuilder.modals.deckLogImport.placeholder')}
+              autoFocus
+              style={{
+                width: '100%',
+                padding: '0.7rem 0.85rem',
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--border-light)',
+                background: 'var(--bg-overlay)',
+                color: 'var(--text-main)',
+                fontSize: '0.95rem',
+              }}
+            />
+            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.8rem', lineHeight: 1.5 }}>
+              {t('deckBuilder.modals.deckLogImport.note')}
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.25rem' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  if (isImportingDeckLog) return;
+                  setIsDeckLogImportOpen(false);
+                  setDeckLogInput('');
+                }}
+                style={{
+                  padding: '0.5rem 0.9rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border-light)',
+                  background: 'var(--bg-surface)',
+                  color: 'var(--text-main)',
+                  cursor: isImportingDeckLog ? 'not-allowed' : 'pointer',
+                  opacity: isImportingDeckLog ? 0.7 : 1,
+                }}
+              >
+                {t('common.buttons.cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={handleImportDeckLog}
+                disabled={isImportingDeckLog || deckLogInput.trim().length === 0}
+                style={{
+                  padding: '0.5rem 0.9rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'var(--accent-primary)',
+                  color: '#fff',
+                  fontWeight: 700,
+                  cursor: isImportingDeckLog || deckLogInput.trim().length === 0 ? 'not-allowed' : 'pointer',
+                  opacity: isImportingDeckLog || deckLogInput.trim().length === 0 ? 0.75 : 1,
+                }}
+              >
+                {isImportingDeckLog
+                  ? t('deckBuilder.modals.deckLogImport.importing')
+                  : t('deckBuilder.modals.deckLogImport.confirm')}
               </button>
             </div>
           </div>
