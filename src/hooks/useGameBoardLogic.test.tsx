@@ -608,12 +608,43 @@ describe('useGameBoardLogic P2P reconnect', () => {
     });
 
     expect(screen.getByTestId('saved-session')).toHaveTextContent('none');
-    expect(window.sessionStorage.getItem('sv-evolve:host-session:ROOM123')).toBeTruthy();
+    expect(window.sessionStorage.getItem('sv-evolve:host-session:ROOM123')).toBeNull();
 
     unmount();
 
     renderHarness('/game?host=false&room=ROOM123');
     expect(screen.getByTestId('saved-session')).toHaveTextContent('none');
+  });
+
+  it('does not save a fresh host board as a resumable session', () => {
+    renderHarness('/game?host=true&room=ROOM123');
+
+    expect(screen.getByTestId('saved-session')).toHaveTextContent('none');
+    expect(window.sessionStorage.getItem('sv-evolve:host-session:ROOM123')).toBeNull();
+  });
+
+  it('ignores a stored fresh host board when checking for a saved session candidate', () => {
+    window.sessionStorage.setItem('sv-evolve:host-session:ROOM123', JSON.stringify({
+      room: 'ROOM123',
+      savedAt: '2026-03-19T10:00:00.000Z',
+      appVersion: '0.0.0',
+      state: {
+        host: { hp: 20, pp: 0, maxPp: 0, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+        guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+        cards: [],
+        turnPlayer: 'host',
+        turnCount: 1,
+        phase: 'Start',
+        gameStatus: 'preparing',
+        tokenOptions: { host: [], guest: [] },
+        revision: 0,
+      },
+    }));
+
+    renderHarness('/game?host=true&room=ROOM123');
+
+    expect(screen.getByTestId('saved-session')).toHaveTextContent('none');
+    expect(window.sessionStorage.getItem('sv-evolve:host-session:ROOM123')).toBeNull();
   });
 
   it('responds to guest snapshot requests with a waiting message while a saved session is pending', () => {

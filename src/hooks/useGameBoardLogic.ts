@@ -131,6 +131,43 @@ const parseSavedHostSession = (rawValue: string | null, room: string): SavedHost
   }
 };
 
+const isInitialPlayerHud = (hud: SyncState['host']): boolean => (
+  hud.hp === 20 &&
+  hud.pp === 0 &&
+  hud.maxPp === 0 &&
+  hud.ep === 0 &&
+  hud.sep === 1 &&
+  hud.combo === 0 &&
+  hud.initialHandDrawn === false &&
+  hud.mulliganUsed === false &&
+  hud.isReady === false
+);
+
+const isInitialGuestHud = (hud: SyncState['guest']): boolean => (
+  hud.hp === 20 &&
+  hud.pp === 0 &&
+  hud.maxPp === 0 &&
+  hud.ep === 3 &&
+  hud.sep === 1 &&
+  hud.combo === 0 &&
+  hud.initialHandDrawn === false &&
+  hud.mulliganUsed === false &&
+  hud.isReady === false
+);
+
+const hasMeaningfulGameSessionState = (state: SyncState): boolean => {
+  if (state.cards.length > 0) return true;
+  if (state.phase !== 'Start') return true;
+  if (state.turnPlayer !== 'host') return true;
+  if (state.turnCount !== 1) return true;
+  if (state.gameStatus !== 'preparing') return true;
+  if (state.revealHandsMode) return true;
+  if (state.tokenOptions.host.length > 0 || state.tokenOptions.guest.length > 0) return true;
+  if (!isInitialPlayerHud(state.host)) return true;
+  if (!isInitialGuestHud(state.guest)) return true;
+  return false;
+};
+
 export const useGameBoardLogic = () => {
   const [searchParams] = useSearchParams();
   const room = searchParams.get('room') || '';
@@ -1175,8 +1212,11 @@ export const useGameBoardLogic = () => {
     const storageKey = getHostSessionStorageKey(room);
     const parsed = parseSavedHostSession(window.sessionStorage.getItem(storageKey), room);
 
-    if (!parsed) {
+    if (!parsed || !hasMeaningfulGameSessionState(parsed.state)) {
       window.sessionStorage.removeItem(storageKey);
+      setSavedSessionCandidate(null);
+      setHasCheckedSavedSession(true);
+      return;
     }
 
     setSavedSessionCandidate(parsed);
@@ -1188,6 +1228,12 @@ export const useGameBoardLogic = () => {
     if (!hasCheckedSavedSession || isSoloMode || !isHost || !room) return;
     if (savedSessionCandidate) return;
 
+    const storageKey = getHostSessionStorageKey(room);
+    if (!hasMeaningfulGameSessionState(gameState)) {
+      window.sessionStorage.removeItem(storageKey);
+      return;
+    }
+
     const payload: SavedHostSession = {
       room,
       savedAt: new Date().toISOString(),
@@ -1195,7 +1241,7 @@ export const useGameBoardLogic = () => {
       state: gameState,
     };
 
-    window.sessionStorage.setItem(getHostSessionStorageKey(room), JSON.stringify(payload));
+    window.sessionStorage.setItem(storageKey, JSON.stringify(payload));
   }, [gameState, hasCheckedSavedSession, isHost, isSoloMode, room, savedSessionCandidate]);
 
   const resumeSavedSession = useCallback(() => {
