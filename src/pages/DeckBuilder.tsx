@@ -368,6 +368,8 @@ const DeckBuilder: React.FC = () => {
   const wouldCreateNewSavedDeck = selectedSavedDeckId === null;
   const canCreateNewSavedDeck = !hasReachedHardLimit;
   const canSaveCurrentDeck = !wouldCreateNewSavedDeck || canCreateNewSavedDeck;
+  // "Saved" / "Unsaved changes" compare the current builder against the loaded
+  // My Decks baseline. Session restore and local draft persistence are separate.
   const isDirty = savedBaselineSnapshot
     ? !areDeckSnapshotsEqual(currentSnapshot, savedBaselineSnapshot)
     : !areDeckSnapshotsEqual(currentSnapshot, pristineSnapshot);
@@ -403,6 +405,8 @@ const DeckBuilder: React.FC = () => {
   useEffect(() => {
     if (cards.length === 0 || !hasInitializedDraft || pendingDraftRestore) return;
 
+    // Persist any non-empty builder session, regardless of whether it already
+    // matches a saved deck. Restore is based on "what was on screen last time".
     if (!hasBuilderState) {
       clearDraft();
       return;
@@ -712,6 +716,8 @@ const DeckBuilder: React.FC = () => {
   };
 
   const handleSaveDeck = (saveAsNew = false) => {
+    // An entirely empty builder is treated as "nothing to save" to avoid
+    // cluttering My Decks with placeholder entries that carry no deck content.
     if (!hasBuilderState) {
       setSaveFeedback({
         kind: 'warning',
@@ -747,6 +753,8 @@ const DeckBuilder: React.FC = () => {
   };
 
   const handleMakeUnsavedCopy = () => {
+    // Keep the current builder exactly as-is, but stop tracking it against the
+    // loaded My Decks record so subsequent saves create/update a new baseline.
     setSelectedSavedDeckId(null);
     setSavedBaselineSnapshot(null);
     setDraftRestored(false);
@@ -786,6 +794,8 @@ const DeckBuilder: React.FC = () => {
 
   const handleDeleteAllSavedDecks = () => {
     deleteAllSavedDecks();
+    // Deleting saved records never wipes the current builder. It only removes
+    // My Decks entries and drops tracking if the loaded baseline was deleted.
     if (selectedSavedDeckId !== null) {
       setSelectedSavedDeckId(null);
       setSavedBaselineSnapshot(null);
@@ -801,6 +811,8 @@ const DeckBuilder: React.FC = () => {
     if (selectedSavedDeckIds.length === 0) return;
 
     deleteSavedDecks(selectedSavedDeckIds);
+    // Selected deletion follows the same rule as Delete All: preserve the live
+    // builder and only detach it if its saved baseline is among the deletions.
     if (selectedSavedDeckId !== null && selectedSavedDeckIds.includes(selectedSavedDeckId)) {
       setSelectedSavedDeckId(null);
       setSavedBaselineSnapshot(null);

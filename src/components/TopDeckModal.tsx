@@ -99,6 +99,8 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
 
   const getGroup = (action: TopDeckAction) => {
     const group = assignedCards.filter(a => a.action === action);
+    // Top/Bottom order is not just visual. It determines the final deck
+    // resolution order returned by onConfirm.
     if (action === 'top' || action === 'bottom') {
       return [...group].sort((a, b) => (a.order || 0) - (b.order || 0));
     }

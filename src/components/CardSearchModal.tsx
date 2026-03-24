@@ -90,6 +90,8 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
 
   if (!isOpen) return null;
 
+  // Search behavior must key off the structural zone id, not the localized
+  // modal title, otherwise i18n changes can alter which actions are allowed.
   const sourceZonePrefix = zoneId?.split('-')[0] ?? null;
   const isMainDeckSearch = sourceZonePrefix === 'mainDeck';
   const isPreparingMainDeckSearch = !allowHandExtraction && isMainDeckSearch;

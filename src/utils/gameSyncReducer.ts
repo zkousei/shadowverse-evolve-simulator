@@ -43,6 +43,8 @@ const withCardMoveCheckpoint = (
 ): SyncState => bumpRevision({
   ...state,
   cards: nextCards,
+  // Card-move undo is reducer-owned and actor-scoped. Clients only request an
+  // undo; they never send back the state to restore.
   lastUndoableCardMoveState: createReducerStateSnapshot(state),
   lastUndoableCardMoveActor: actor,
 });
@@ -196,6 +198,8 @@ export const applyGameSyncEvent = (
 
     case 'RESET_GAME': {
       if (!isHostRequester(requester)) return state;
+      // Reset Game returns the board to a fresh room state but intentionally
+      // keeps token options so imported/custom token presets survive the reset.
       const resetCards = state.cards
         .filter(c => !c.isTokenCard && c.cardId !== 'token')
         .map(c => ({

@@ -95,6 +95,8 @@ const GameBoard: React.FC = () => {
   const [isRoomCopied, setIsRoomCopied] = React.useState(false);
   const inspectorRef = React.useRef<HTMLDivElement | null>(null);
   const canOpenSavedDeckPicker = allCards.length > 0;
+  // Solo mode renders both players for a single viewer. The top board is the
+  // "other side" of the same local match, not a protected remote opponent.
   const viewerRole = isSoloMode ? 'all' : role;
   const isPreparingHandMoveLocked = isHandCardMovementLocked(gameState);
   const topRole = (isSoloMode ? 'guest' : role === 'host' ? 'guest' : 'host') as PlayerRole;
@@ -130,6 +132,8 @@ const GameBoard: React.FC = () => {
     role,
     isSoloMode
   );
+  // P2P can optionally hide the opponent hand, but solo always shows both
+  // hands to the same player.
   const shouldHideTopHand = !isSoloMode && !gameState.revealHandsMode;
   const isBottomTurnActive = gameState.gameStatus === 'playing' && gameState.turnPlayer === bottomRole;
   const isTopTurnActive = gameState.gameStatus === 'playing' && gameState.turnPlayer === topRole;
@@ -1428,6 +1432,8 @@ const GameBoard: React.FC = () => {
             }}
           >
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+              {/* This is a room/session resume prompt, separate from any saved
+                  deck concept used by the DeckBuilder. */}
               <strong style={{ fontSize: '0.88rem' }}>{t('gameBoard.alerts.previousSession')}</strong>
               <span style={{ fontSize: '0.78rem', color: '#bfdbfe' }}>
                 {savedSessionTimestamp ? t('gameBoard.alerts.previousSessionTime', { time: savedSessionTimestamp }) : t('gameBoard.alerts.previousSessionUnknown')}

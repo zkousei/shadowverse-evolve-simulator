@@ -116,6 +116,8 @@ const CardArtwork: React.FC<Props> = ({
   draggable,
 }) => {
   const { t } = useTranslation();
+  // Network snapshots may omit official image URLs for size reasons, so prefer
+  // the catalog-backed detail image whenever it is available locally.
   const resolvedImage = detail?.image || image;
 
   if (!isDummyCardArtEnabled()) {

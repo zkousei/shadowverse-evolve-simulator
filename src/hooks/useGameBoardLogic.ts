@@ -157,6 +157,8 @@ const isInitialGuestHud = (hud: SyncState['guest']): boolean => (
 );
 
 const hasMeaningfulGameSessionState = (state: SyncState): boolean => {
+  // Fresh host boards are not resumable sessions. Only persist states that
+  // represent meaningful progress so "Start Fresh" stays fresh on revisit.
   if (state.cards.length > 0) return true;
   if (state.phase !== 'Start') return true;
   if (state.turnPlayer !== 'host') return true;
@@ -179,6 +181,8 @@ export const useGameBoardLogic = () => {
   const isDebug = searchParams.get('debug') === 'true';
 
   const { t } = useTranslation();
+  // Keep the status as an i18n key so language switches update the current
+  // connection message without waiting for another network event.
   const [statusKey, setStatusKey] = useState<GameBoardStatusKey>('gameBoard.status.initializing');
   const status = t(statusKey);
   const [connectionState, setConnectionState] = useState<ConnectionState>('idle');
@@ -583,6 +587,8 @@ export const useGameBoardLogic = () => {
           image: '',
         }));
 
+      // Revealed search results are public information, so both the overlay and
+      // the recent-event log can safely include the revealed card names.
       pushEventHistory(`${message}: ${cards.map((card) => card.name).join(', ')}`);
       setRevealedCardsOverlay({
         type: 'search',
@@ -602,6 +608,8 @@ export const useGameBoardLogic = () => {
       setAttackMessage(formattedAttack.announcement);
       setAttackVisual(effect);
       setAttackHistory(previous => [formattedAttack.history, ...previous].slice(0, 3));
+      // Attacks remain in the recent-event log because they are high-signal game
+      // actions; ordinary Play actions intentionally do not.
       pushEventHistory(formattedAttack.history);
       attackMessageTimeoutRef.current = setTimeout(() => {
         setAttackMessage(null);
@@ -612,6 +620,8 @@ export const useGameBoardLogic = () => {
     }
 
     if (effect.type === 'CARD_PLAYED') {
+      // Play/Play to Field uses the transient dialog only. Keeping it out of the
+      // recent-event log avoids overwhelming the log with routine actions.
       const message = formatCardPlayedEffect(effect, role, isSoloMode, t);
       showTimedCardPlayMessage(message, 2600);
       return;
@@ -700,6 +710,9 @@ export const useGameBoardLogic = () => {
       const summaryLines = formatSharedUiMessage(effect, role, isSoloMode, t).split('\n').filter(Boolean);
       pushEventHistory(summaryLines.join('\n'));
       if (revealTopIsActiveRef.current) {
+        // When Look Top also reveals cards publicly, keep the summary inside the
+        // same overlay so the user sees one combined resolution instead of two
+        // competing notifications.
         setRevealedCardsOverlay((previous) => {
           if (!previous || previous.type !== 'look-top') return previous;
           return {
@@ -1112,6 +1125,8 @@ export const useGameBoardLogic = () => {
       if (data.type === 'REQUEST_SNAPSHOT') {
         if (isHost) {
           if (savedSessionCandidateRef.current) {
+            // While the host is deciding whether to resume a saved session,
+            // guests should wait instead of reconnect-looping.
             setStatusKey('gameBoard.status.guestConnectedChooseResume');
             conn.send({
               type: 'WAITING_FOR_HOST_SESSION',
@@ -1249,6 +1264,8 @@ export const useGameBoardLogic = () => {
   const resumeSavedSession = useCallback(() => {
     if (!savedSessionCandidate) return;
 
+    // Resuming replaces the live board immediately, so clear transient UI first
+    // and then push the restored authoritative state to the guest.
     applyLocalState(savedSessionCandidate.state);
     resetTransientUiState();
     setSavedSessionCandidate(null);
@@ -1261,6 +1278,8 @@ export const useGameBoardLogic = () => {
       window.sessionStorage.removeItem(getHostSessionStorageKey(room));
     }
 
+    // Discard keeps the current fresh board but drops the resumable candidate,
+    // so the next visit starts from a clean room state.
     setSavedSessionCandidate(null);
     setStatusKey('gameBoard.status.startingFresh');
     sendSnapshotToCurrentConnection(gameStateRef.current, 'host');
