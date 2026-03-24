@@ -130,6 +130,7 @@ const GameBoard: React.FC = () => {
     role,
     isSoloMode
   );
+  const shouldHideTopHand = !isSoloMode && !gameState.revealHandsMode;
   const isBottomTurnActive = gameState.gameStatus === 'playing' && gameState.turnPlayer === bottomRole;
   const isTopTurnActive = gameState.gameStatus === 'playing' && gameState.turnPlayer === topRole;
   const canResetGame = isSoloMode || isHost;
@@ -1561,43 +1562,44 @@ const GameBoard: React.FC = () => {
               </div>
             </div>
 
-            {/* Reveal Hands Mode Toggle */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '0.6rem 0.8rem',
-              background: 'rgba(255, 255, 255, 0.05)',
-              borderRadius: 'var(--radius-sm)',
-              border: '1px solid rgba(255, 255, 255, 0.1)'
-            }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <div style={{ color: '#fff', fontSize: '0.85rem', fontWeight: 'bold' }}>
-                  {t('gameBoard.preparation.revealHandsMode')}
+            {!isSoloMode && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0.6rem 0.8rem',
+                background: 'rgba(255, 255, 255, 0.05)',
+                borderRadius: 'var(--radius-sm)',
+                border: '1px solid rgba(255, 255, 255, 0.1)'
+              }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <div style={{ color: '#fff', fontSize: '0.85rem', fontWeight: 'bold' }}>
+                    {t('gameBoard.preparation.revealHandsMode')}
+                  </div>
+                  <div style={{ color: '#94a3b8', fontSize: '0.72rem' }}>
+                    {t('gameBoard.preparation.revealHandsModeDesc')}
+                  </div>
                 </div>
-                <div style={{ color: '#94a3b8', fontSize: '0.72rem' }}>
-                  {t('gameBoard.preparation.revealHandsModeDesc')}
-                </div>
+                <button
+                  onClick={() => handleSetRevealHandsMode(!gameState.revealHandsMode)}
+                  disabled={!isHost}
+                  style={{
+                    padding: '4px 12px',
+                    background: gameState.revealHandsMode ? '#059669' : '#334155',
+                    color: 'white',
+                    borderRadius: '999px',
+                    border: 'none',
+                    fontSize: '0.75rem',
+                    fontWeight: 'bold',
+                    cursor: isHost ? 'pointer' : 'not-allowed',
+                    opacity: isHost ? 1 : 0.6,
+                    transition: 'background-color 0.2s'
+                  }}
+                >
+                  {gameState.revealHandsMode ? 'ON' : 'OFF'}
+                </button>
               </div>
-              <button
-                onClick={() => handleSetRevealHandsMode(!gameState.revealHandsMode)}
-                disabled={!isHost}
-                style={{
-                  padding: '4px 12px',
-                  background: gameState.revealHandsMode ? '#059669' : '#334155',
-                  color: 'white',
-                  borderRadius: '999px',
-                  border: 'none',
-                  fontSize: '0.75rem',
-                  fontWeight: 'bold',
-                  cursor: isHost ? 'pointer' : 'not-allowed',
-                  opacity: isHost ? 1 : 0.6,
-                  transition: 'background-color 0.2s'
-                }}
-              >
-                {gameState.revealHandsMode ? 'ON' : 'OFF'}
-              </button>
-            </div>
+            )}
           </div>
         )}
 
@@ -1713,7 +1715,7 @@ const GameBoard: React.FC = () => {
                         label={t('gameBoard.zones.hand', { label: topLabel })}
                         cards={getCards(`hand-${topRole}`)}
                         cardDetailLookup={cardDetailLookup}
-                        hideCards={!gameState.revealHandsMode}
+                        hideCards={shouldHideTopHand}
                         layout="horizontal"
                         onInspectCard={handleInspectCard}
                         isProtected={true}
@@ -1822,7 +1824,7 @@ const GameBoard: React.FC = () => {
                         label={t('gameBoard.zones.hand', { label: topLabel })}
                         cards={getCards(`hand-${topRole}`)}
                         cardDetailLookup={cardDetailLookup}
-                        hideCards={!gameState.revealHandsMode}
+                        hideCards={shouldHideTopHand}
                         layout="horizontal"
                         onInspectCard={handleInspectCard}
                         isProtected={true}
