@@ -101,6 +101,26 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
   const genericCounterValue = card.genericCounter ?? 0;
   const isNormalSpellPlay = isMainDeckSpellCard(card);
   const playActionLabel = isNormalSpellPlay ? t('gameBoard.card.play') : t('gameBoard.modals.search.playToField');
+  const quickActionLabels = {
+    sendToBottom: t('gameBoard.card.quickActions.sendToBottom'),
+    cemetery: t('gameBoard.card.quickActions.cemetery'),
+    banish: t('gameBoard.card.quickActions.banish'),
+    toEvolveDeck: t('gameBoard.card.quickActions.toEvolveDeck'),
+  };
+  const quickActionDescriptions = {
+    sendToBottom: t('gameBoard.card.quickActionDescriptions.sendToBottom'),
+    cemetery: t('gameBoard.card.quickActionDescriptions.cemetery'),
+    banish: t('gameBoard.card.quickActionDescriptions.banish'),
+    toEvolveDeck: t('gameBoard.card.quickActionDescriptions.toEvolveDeck'),
+  };
+  const compactQuickActionButtonStyle: React.CSSProperties = {
+    padding: '2px 4px',
+    fontSize: '10px',
+    borderRadius: '2px',
+    minWidth: '32px',
+    whiteSpace: 'nowrap',
+    lineHeight: 1.2,
+  };
   const currentStats = !hideCurrentStats && isStatDisplayZone && !isHidden && !card.isFlipped && baseStats
     ? {
         atk: baseStats.atk + effectiveDisplayCounters.atk,
@@ -316,13 +336,51 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
                 </div>
               )}
               <div style={{ display: 'flex', justifyContent: 'center', gap: '4px', marginTop: 'auto' }}>
-                {onSendToBottom && <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onSendToBottom(card.id); }} style={{ background: 'var(--bg-surface-elevated)', color: 'white', border: '1px solid gray', padding: '2px 4px', fontSize: '10px', borderRadius: '2px' }}>↓Bot</button>}
-                {onCemetery && <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onCemetery(card.id); }} style={{ background: '#374151', color: 'white', border: '1px solid #9ca3af', padding: '2px 4px', fontSize: '10px', borderRadius: '2px' }}>{t('zone.cemetery')}</button>}
-                {onBanish && <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onBanish(card.id); }} style={{ background: '#4c1d95', color: 'white', border: '1px solid #c4b5fd', padding: '2px 4px', fontSize: '10px', borderRadius: '2px' }}>{t('zone.banish')}</button>}
+                {onSendToBottom && (
+                  <button
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => { e.stopPropagation(); onSendToBottom(card.id); }}
+                    title={quickActionDescriptions.sendToBottom}
+                    aria-label={quickActionDescriptions.sendToBottom}
+                    style={{ background: 'var(--bg-surface-elevated)', color: 'white', border: '1px solid gray', ...compactQuickActionButtonStyle }}
+                  >
+                    {quickActionLabels.sendToBottom}
+                  </button>
+                )}
+                {onCemetery && (
+                  <button
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => { e.stopPropagation(); onCemetery(card.id); }}
+                    title={quickActionDescriptions.cemetery}
+                    aria-label={quickActionDescriptions.cemetery}
+                    style={{ background: '#374151', color: 'white', border: '1px solid #9ca3af', ...compactQuickActionButtonStyle }}
+                  >
+                    {quickActionLabels.cemetery}
+                  </button>
+                )}
+                {onBanish && (
+                  <button
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => { e.stopPropagation(); onBanish(card.id); }}
+                    title={quickActionDescriptions.banish}
+                    aria-label={quickActionDescriptions.banish}
+                    style={{ background: '#4c1d95', color: 'white', border: '1px solid #c4b5fd', ...compactQuickActionButtonStyle }}
+                  >
+                    {quickActionLabels.banish}
+                  </button>
+                )}
               </div>
               {onReturnEvolve && card.isEvolveCard && (
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '4px', marginTop: '2px' }}>
-                  <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onReturnEvolve(card.id); }} style={{ background: 'var(--accent-primary)', color: 'black', border: '1px solid var(--accent-primary)', padding: '2px 4px', fontSize: '10px', borderRadius: '2px', width: '100%', fontWeight: 'bold' }}>{t('gameBoard.card.toEvolveDeck')}</button>
+                  <button
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => { e.stopPropagation(); onReturnEvolve(card.id); }}
+                    title={quickActionDescriptions.toEvolveDeck}
+                    aria-label={quickActionDescriptions.toEvolveDeck}
+                    style={{ background: 'var(--accent-primary)', color: 'black', border: '1px solid var(--accent-primary)', ...compactQuickActionButtonStyle, width: '100%', fontWeight: 'bold' }}
+                  >
+                    {quickActionLabels.toEvolveDeck}
+                  </button>
                 </div>
               )}
               {onTap && !disableCombatAndCounterControls && (

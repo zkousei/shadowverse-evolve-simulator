@@ -475,7 +475,19 @@
       "toEvolveDeck": "To Evolve Deck",
       "rest": "REST",
       "stand": "STAND",
-      "attack": "Attack"
+      "attack": "Attack",
+      "quickActions": {
+        "sendToBottom": "Bot",
+        "cemetery": "Cem",
+        "banish": "Ban",
+        "toEvolveDeck": "Evolve"
+      },
+      "quickActionDescriptions": {
+        "sendToBottom": "Send to bottom of deck",
+        "cemetery": "Send to cemetery",
+        "banish": "Banish this card",
+        "toEvolveDeck": "Return to evolve deck"
+      }
     },
     "controls": {
       "decideTurnOrder": "🪙 Decide Turn Order (Random)",

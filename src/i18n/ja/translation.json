@@ -428,7 +428,19 @@
       "toEvolveDeck": "エボルヴデッキへ",
       "rest": "レスト",
       "stand": "スタンド",
-      "attack": "攻撃"
+      "attack": "攻撃",
+      "quickActions": {
+        "sendToBottom": "山下",
+        "cemetery": "墓地",
+        "banish": "消滅",
+        "toEvolveDeck": "進化へ"
+      },
+      "quickActionDescriptions": {
+        "sendToBottom": "山札の下に送る",
+        "cemetery": "墓地に送る",
+        "banish": "消滅させる",
+        "toEvolveDeck": "エボルヴデッキに戻す"
+      }
     },
     "controls": {
       "decideTurnOrder": "🪙 順番を決める (ランダム)",

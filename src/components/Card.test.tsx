@@ -80,10 +80,10 @@ describe('Card', () => {
     fireEvent.click(screen.getByText('-A'));
     fireEvent.click(screen.getByText('+H'));
     fireEvent.click(screen.getByText('-H'));
-    fireEvent.click(screen.getByText('↓Bot'));
-    fireEvent.click(screen.getByText('Cemetery'));
-    fireEvent.click(screen.getByText('Banish'));
-    fireEvent.click(screen.getByText('To Evolve Deck'));
+    fireEvent.click(screen.getByText('Bot'));
+    fireEvent.click(screen.getByText('Cem'));
+    fireEvent.click(screen.getByText('Ban'));
+    fireEvent.click(screen.getByText('Evolve'));
     fireEvent.click(screen.getByText('REST'));
     fireEvent.contextMenu(screen.getByAltText('Test Card').closest('.game-card') as HTMLElement);
 
@@ -97,6 +97,23 @@ describe('Card', () => {
     expect(onReturnEvolve).toHaveBeenCalledWith('card-1');
     expect(onTap).toHaveBeenCalledTimes(2);
     expect(onTap).toHaveBeenCalledWith('card-1');
+  });
+
+  it('keeps quick-action buttons compact while exposing descriptive labels', () => {
+    render(
+      <Card
+        card={createCard({ isEvolveCard: true })}
+        onSendToBottom={vi.fn()}
+        onBanish={vi.fn()}
+        onReturnEvolve={vi.fn()}
+        onCemetery={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('Bot')).toHaveAttribute('title', 'Send to bottom of deck');
+    expect(screen.getByText('Cem')).toHaveAttribute('aria-label', 'Send to cemetery');
+    expect(screen.getByText('Ban')).toHaveAttribute('title', 'Banish this card');
+    expect(screen.getByText('Evolve')).toHaveAttribute('aria-label', 'Return to evolve deck');
   });
 
   it('fires generic counter quick actions for field cards', () => {
@@ -148,9 +165,9 @@ describe('Card', () => {
     expect(screen.queryByText('+C')).not.toBeInTheDocument();
     expect(screen.queryByText('-C')).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByText('↓Bot'));
-    fireEvent.click(screen.getByText('Cemetery'));
-    fireEvent.click(screen.getByText('Banish'));
+    fireEvent.click(screen.getByText('Bot'));
+    fireEvent.click(screen.getByText('Cem'));
+    fireEvent.click(screen.getByText('Ban'));
     fireEvent.contextMenu(screen.getByAltText('Test Card').closest('.game-card') as HTMLElement);
 
     expect(onSendToBottom).toHaveBeenCalledWith('card-1');
