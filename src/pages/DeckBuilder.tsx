@@ -70,6 +70,10 @@ const PAGE_SIZE = 50;
 const COST_FILTER_VALUES = ['All', '0', '1', '2', '3', '4', '5', '6', '7+'] as const;
 const DECK_SECTION_FILTER_VALUES = ['All', 'main', 'evolve', 'leader', 'token'] as const;
 const CARD_TYPE_FILTER_VALUES = ['All', 'follower', 'spell', 'amulet'] as const;
+const HOVER_PREVIEW_WIDTH = 220;
+const HOVER_PREVIEW_MAX_HEIGHT = 320;
+const HOVER_PREVIEW_OFFSET = 16;
+const HOVER_PREVIEW_VIEWPORT_PADDING = 8;
 
 const ADD_ACTIONS: Record<DeckTargetSection, { background: string }> = {
   main: { background: 'var(--accent-primary)' },
@@ -508,6 +512,7 @@ const DeckBuilder: React.FC = () => {
     ? subtypeTags.filter(tag => tag.toLowerCase().includes(subtypeSearch.trim().toLowerCase()))
     : subtypeTags;
   const previewDetail = previewCard ? cardDetailLookup[previewCard.id] ?? null : null;
+  const hoveredDetail = hoveredDeckCard ? cardDetailLookup[hoveredDeckCard.id] ?? null : null;
   const previewPrimaryMeta = [
     previewDetail?.className,
     previewDetail?.title,
@@ -3130,8 +3135,20 @@ const DeckBuilder: React.FC = () => {
         <div
           style={{
             position: 'fixed',
-            left: Math.min(hoverPos.x + 16, window.innerWidth - 220),
-            top: Math.min(hoverPos.y + 16, window.innerHeight - 320),
+            left: Math.max(
+              HOVER_PREVIEW_VIEWPORT_PADDING,
+              Math.min(
+                hoverPos.x + HOVER_PREVIEW_OFFSET,
+                window.innerWidth - HOVER_PREVIEW_WIDTH - HOVER_PREVIEW_VIEWPORT_PADDING
+              )
+            ),
+            top: Math.max(
+              HOVER_PREVIEW_VIEWPORT_PADDING,
+              Math.min(
+                hoverPos.y + HOVER_PREVIEW_OFFSET,
+                window.innerHeight - HOVER_PREVIEW_MAX_HEIGHT - HOVER_PREVIEW_VIEWPORT_PADDING
+              )
+            ),
             zIndex: 2000,
             pointerEvents: 'none',
             background: 'rgba(15, 23, 42, 0.92)',
@@ -3139,13 +3156,14 @@ const DeckBuilder: React.FC = () => {
             borderRadius: '12px',
             padding: '0.5rem',
             boxShadow: '0 16px 40px rgba(0,0,0,0.45)',
-            width: '200px',
+            width: `${HOVER_PREVIEW_WIDTH}px`,
+            maxHeight: `${HOVER_PREVIEW_MAX_HEIGHT}px`,
           }}
         >
           <CardArtwork
             image={hoveredDeckCard.image}
             alt={hoveredDeckCard.name}
-            detail={cardDetailLookup[hoveredDeckCard.id]}
+            detail={hoveredDetail ?? undefined}
             baseCardType={getBaseCardType(hoveredDeckCard.card_kind_normalized)}
             isLeaderCard={hoveredDeckCard.deck_section === 'leader'}
             isTokenCard={hoveredDeckCard.deck_section === 'token' || hoveredDeckCard.is_token}

@@ -1034,6 +1034,36 @@ describe('DeckBuilder', () => {
     expect(screen.queryByText('Unsaved changes')).not.toBeInTheDocument();
   });
 
+  it('shows a hover preview for deck entries', async () => {
+    render(<DeckBuilder />);
+    await screen.findByText('Alpha Knight');
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Deck format' }), {
+      target: { value: 'other' },
+    });
+
+    fireEvent.click(
+      within(screen.getByAltText('Alpha Knight').closest('.glass-panel') as HTMLElement)
+        .getByTitle('Add to Main Deck')
+    );
+
+    const mainDeckSection = screen.getByRole('heading', { name: /^Main Deck/ }).nextElementSibling as HTMLElement;
+    const deckCardName = within(mainDeckSection).getByText('Alpha Knight');
+    const baseCount = screen.getAllByText('Alpha Knight').length;
+
+    fireEvent.mouseEnter(deckCardName, { clientX: 120, clientY: 140 });
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Alpha Knight').length).toBeGreaterThan(baseCount);
+    });
+
+    fireEvent.mouseLeave(deckCardName);
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Alpha Knight')).toHaveLength(baseCount);
+    });
+  });
+
   it('can detach a saved deck into an unsaved copy without clearing the current contents', async () => {
     render(<DeckBuilder />);
     await screen.findByText('Alpha Knight');
