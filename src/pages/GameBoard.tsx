@@ -8,7 +8,7 @@ import TopDeckModal from '../components/TopDeckModal';
 import { useGameBoardLogic } from '../hooks/useGameBoardLogic';
 import { canImportDeck, canUndoLastTurn, isHandCardMovementLocked } from '../utils/gameRules';
 import { getPlayerLabel, getZoneOwner } from '../utils/soloMode';
-import type { PlayerRole, TokenOption } from '../types/game';
+import type { PlayerRole } from '../types/game';
 import type { AttackTarget } from '../types/sync';
 import { formatAbilityText } from '../utils/cardDetails';
 import type { DeckBuilderCardData } from '../models/deckBuilderCard';
@@ -81,6 +81,8 @@ const GameBoard: React.FC = () => {
   const [isTopNInputOpen, setIsTopNInputOpen] = React.useState(false);
   const [topNValue, setTopNValue] = React.useState(3);
   const [tokenSpawnTargetRole, setTokenSpawnTargetRole] = React.useState<PlayerRole | null>(null);
+  const [tokenSpawnCounts, setTokenSpawnCounts] = React.useState<Record<string, number>>({});
+  const [tokenSpawnDestination, setTokenSpawnDestination] = React.useState<'ex' | 'field'>('ex');
   const [showUndoConfirm, setShowUndoConfirm] = React.useState(false);
   const [topDeckTargetRole, setTopDeckTargetRole] = React.useState<PlayerRole>('host');
   const [mulliganTargetRole, setMulliganTargetRole] = React.useState<PlayerRole>('host');
@@ -163,6 +165,14 @@ const GameBoard: React.FC = () => {
       return savedSessionCandidate.savedAt;
     }
   }, [savedSessionCandidate]);
+  const tokenSpawnOptions = React.useMemo(
+    () => (tokenSpawnTargetRole ? getTokenOptions(tokenSpawnTargetRole) : []),
+    [getTokenOptions, tokenSpawnTargetRole]
+  );
+  const totalTokenSpawnCount = React.useMemo(
+    () => tokenSpawnOptions.reduce((total, token) => total + (tokenSpawnCounts[token.cardId] ?? 0), 0),
+    [tokenSpawnCounts, tokenSpawnOptions]
+  );
   const sidePanelWidth = 220;
   const topPanelWidth = 188;
   const sideZoneWidth = 140;
@@ -564,13 +574,35 @@ const GameBoard: React.FC = () => {
   const openTokenSpawnModal = (targetRole: PlayerRole) => {
     if (!canInteract) return;
     setTokenSpawnTargetRole(targetRole);
+    setTokenSpawnCounts({});
+    setTokenSpawnDestination('ex');
   };
 
-  const handleTokenSpawn = (token: TokenOption) => {
+  const handleTokenSpawn = () => {
     if (!tokenSpawnTargetRole) return;
-    spawnToken(tokenSpawnTargetRole, token);
+    tokenSpawnOptions.forEach((token) => {
+      const count = tokenSpawnCounts[token.cardId] ?? 0;
+      for (let index = 0; index < count; index += 1) {
+        spawnToken(tokenSpawnTargetRole, token, tokenSpawnDestination);
+      }
+    });
+    setTokenSpawnCounts({});
     setTokenSpawnTargetRole(null);
   };
+
+  const handleTokenSpawnCountChange = React.useCallback((cardId: string, delta: number) => {
+    setTokenSpawnCounts((current) => {
+      const nextCount = Math.max(0, Math.min(5, (current[cardId] ?? 0) + delta));
+      if (nextCount === 0) {
+        const { [cardId]: _removed, ...rest } = current;
+        return rest;
+      }
+      return {
+        ...current,
+        [cardId]: nextCount,
+      };
+    });
+  }, []);
 
   const handleStartAttack = React.useCallback((cardId: string) => {
     if (!canInteract) return;
@@ -2221,21 +2253,52 @@ const GameBoard: React.FC = () => {
 
       {tokenSpawnTargetRole && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 4500 }}>
-          <div style={{ background: 'var(--bg-surface)', padding: '2rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', width: 'min(920px, 92vw)' }}>
+          <div style={{ background: 'var(--bg-surface)', padding: '2rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', width: 'min(980px, 94vw)' }}>
             <h3 style={{ marginBottom: '1rem', color: 'white', textAlign: 'center' }}>{t('gameBoard.modals.tokenSpawn.title')}</h3>
+            <p style={{ margin: '0 0 1rem', color: 'var(--text-muted)', textAlign: 'center' }}>
+              {t('gameBoard.modals.tokenSpawn.description')}
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem', alignSelf: 'center' }}>
+                {t('gameBoard.modals.tokenSpawn.destinationLabel')}
+              </span>
+              {(['ex', 'field'] as const).map((destination) => {
+                const isSelected = tokenSpawnDestination === destination;
+                return (
+                  <button
+                    key={destination}
+                    type="button"
+                    onClick={() => setTokenSpawnDestination(destination)}
+                    style={{
+                      padding: '0.45rem 0.9rem',
+                      borderRadius: '999px',
+                      border: `1px solid ${isSelected ? 'rgba(103, 232, 249, 0.7)' : 'var(--border-light)'}`,
+                      background: isSelected ? 'rgba(103, 232, 249, 0.16)' : 'var(--bg-overlay)',
+                      color: isSelected ? '#67e8f9' : 'var(--text-main)',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {destination === 'ex'
+                      ? t('gameBoard.modals.tokenSpawn.destinations.ex')
+                      : t('gameBoard.modals.tokenSpawn.destinations.field')}
+                  </button>
+                );
+              })}
+            </div>
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
-              {getTokenOptions(tokenSpawnTargetRole).map((token) => (
-                <button
+              {tokenSpawnOptions.map((token) => {
+                const count = tokenSpawnCounts[token.cardId] ?? 0;
+                return (
+                <div
                   key={`${token.cardId}-${token.name}`}
-                  onClick={() => handleTokenSpawn(token)}
                   style={{
                     width: '140px',
-                    background: 'transparent',
+                    background: 'rgba(15, 23, 42, 0.5)',
                     border: '1px solid var(--border-light)',
                     borderRadius: '10px',
                     padding: '0.6rem',
                     color: 'white',
-                    cursor: 'pointer',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '0.5rem',
@@ -2252,16 +2315,80 @@ const GameBoard: React.FC = () => {
                     draggable={false}
                   />
                   <span style={{ fontSize: '0.78rem', lineHeight: 1.35, textAlign: 'center' }}>{token.name}</span>
-                </button>
-              ))}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.2rem' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleTokenSpawnCountChange(token.cardId, -1)}
+                      disabled={count === 0}
+                      aria-label={t('gameBoard.modals.tokenSpawn.decrease', { token: token.name })}
+                      style={{
+                        width: '2rem',
+                        height: '2rem',
+                        borderRadius: '999px',
+                        border: '1px solid var(--border-light)',
+                        background: 'var(--bg-overlay)',
+                        color: 'var(--text-main)',
+                        cursor: count === 0 ? 'not-allowed' : 'pointer',
+                        opacity: count === 0 ? 0.55 : 1,
+                        fontWeight: 700,
+                      }}
+                    >
+                      -
+                    </button>
+                    <span style={{ minWidth: '1.8rem', textAlign: 'center', fontWeight: 700, fontSize: '0.95rem' }}>
+                      {count}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleTokenSpawnCountChange(token.cardId, 1)}
+                      disabled={count >= 5}
+                      aria-label={t('gameBoard.modals.tokenSpawn.increase', { token: token.name })}
+                      style={{
+                        width: '2rem',
+                        height: '2rem',
+                        borderRadius: '999px',
+                        border: '1px solid var(--border-light)',
+                        background: 'var(--bg-overlay)',
+                        color: 'var(--text-main)',
+                        cursor: count >= 5 ? 'not-allowed' : 'pointer',
+                        opacity: count >= 5 ? 0.55 : 1,
+                        fontWeight: 700,
+                      }}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              )})}
             </div>
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                {t('gameBoard.modals.tokenSpawn.totalSelected', { count: totalTokenSpawnCount })}
+              </span>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem' }}>
               <button
                 onClick={() => setTokenSpawnTargetRole(null)}
                 style={{ padding: '0.5rem 1.5rem', background: '#333', color: 'white', borderRadius: '4px', cursor: 'pointer', border: 'none' }}
               >
                 {t('common.buttons.cancel')}
               </button>
+              <button
+                type="button"
+                onClick={handleTokenSpawn}
+                disabled={totalTokenSpawnCount === 0}
+                style={{
+                  padding: '0.5rem 1.5rem',
+                  background: totalTokenSpawnCount === 0 ? 'rgba(56, 189, 248, 0.45)' : '#0ea5e9',
+                  color: 'white',
+                  borderRadius: '4px',
+                  cursor: totalTokenSpawnCount === 0 ? 'not-allowed' : 'pointer',
+                  border: 'none',
+                  fontWeight: 700,
+                }}
+              >
+                {t('gameBoard.modals.tokenSpawn.confirm')}
+              </button>
+              </div>
             </div>
           </div>
         </div>

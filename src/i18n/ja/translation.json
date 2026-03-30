@@ -537,7 +537,17 @@
         "confirm": "はい、取り消します"
       },
       "tokenSpawn": {
-        "title": "トークンを選択"
+        "title": "トークンを生成",
+        "description": "各トークンの枚数を 0〜5 枚で指定して、生成先を選んでください。",
+        "destinationLabel": "生成先",
+        "destinations": {
+          "ex": "EXエリア",
+          "field": "場"
+        },
+        "increase": "{{token}} の枚数を増やす",
+        "decrease": "{{token}} の枚数を減らす",
+        "totalSelected": "合計 {{count}} 枚",
+        "confirm": "生成"
       },
       "topN": {
         "title": "上から何枚見ますか？",

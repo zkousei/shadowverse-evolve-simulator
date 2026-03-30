@@ -1657,14 +1657,18 @@ export const useGameBoardLogic = () => {
     reader.readAsText(file);
   };
 
-  const spawnToken = (targetRole: PlayerRole = role, tokenOption?: TokenOption) => {
+  const spawnToken = (
+    targetRole: PlayerRole = role,
+    tokenOption?: TokenOption,
+    destination: 'ex' | 'field' = 'ex'
+  ) => {
     const selectedToken = tokenOption ?? defaultTokenOption.current;
     const newCard: CardInstance = {
       id: uuid(),
       cardId: selectedToken.cardId,
       name: selectedToken.name,
       image: selectedToken.image,
-      zone: `ex-${targetRole}`,
+      zone: `${destination}-${targetRole}`,
       owner: targetRole,
       isTapped: false,
       isFlipped: false,

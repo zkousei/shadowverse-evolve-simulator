@@ -205,6 +205,7 @@ function HookHarness() {
     handleUndoTurn,
     drawCard,
     handleUndoCardMove,
+    spawnToken,
   } = useGameBoardLogic();
 
   return (
@@ -214,6 +215,8 @@ function HookHarness() {
       <div data-testid="can-interact">{String(canInteract)}</div>
       <div data-testid="host-hp">{gameState.host.hp}</div>
       <div data-testid="host-hand-count">{gameState.cards.filter(card => card.zone === 'hand-host').length}</div>
+      <div data-testid="host-ex-count">{gameState.cards.filter(card => card.zone === 'ex-host').length}</div>
+      <div data-testid="host-field-count">{gameState.cards.filter(card => card.zone === 'field-host').length}</div>
       <div data-testid="can-undo-turn">{String(canUndoTurn)}</div>
       <div data-testid="can-undo-move">{String(hasUndoableMove)}</div>
       <div data-testid="card-play-message">{cardPlayMessage ?? 'none'}</div>
@@ -233,6 +236,26 @@ function HookHarness() {
       <button onClick={handleUndoTurn}>Undo Turn</button>
       <button onClick={() => drawCard('host')}>Host Draw</button>
       <button onClick={handleUndoCardMove}>Undo Move</button>
+      <button
+        onClick={() => spawnToken('host', {
+          cardId: 'token-alpha',
+          name: 'Alpha Token',
+          image: '/token-alpha.png',
+          baseCardType: 'follower',
+        }, 'ex')}
+      >
+        Spawn Token to EX
+      </button>
+      <button
+        onClick={() => spawnToken('host', {
+          cardId: 'token-beta',
+          name: 'Beta Token',
+          image: '/token-beta.png',
+          baseCardType: 'follower',
+        }, 'field')}
+      >
+        Spawn Token to Field
+      </button>
     </div>
   );
 }
@@ -1102,5 +1125,23 @@ describe('useGameBoardLogic shared UI notifications', () => {
     });
 
     expect(screen.getByTestId('turn-message')).toHaveTextContent('none');
+  });
+
+  it('spawns tokens to the ex area by default', () => {
+    renderHarness('/game?mode=solo');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Spawn Token to EX' }));
+
+    expect(screen.getByTestId('host-ex-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('host-field-count')).toHaveTextContent('0');
+  });
+
+  it('can spawn tokens directly to the field when requested', () => {
+    renderHarness('/game?mode=solo');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Spawn Token to Field' }));
+
+    expect(screen.getByTestId('host-ex-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('host-field-count')).toHaveTextContent('1');
   });
 });
