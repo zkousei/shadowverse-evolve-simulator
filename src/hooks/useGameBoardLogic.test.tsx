@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import * as PeerJsModule from 'peerjs';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { SyncState } from '../types/game';
 import { useGameBoardLogic } from './useGameBoardLogic';
 
 vi.mock('react-i18next', () => ({
@@ -205,8 +206,22 @@ function HookHarness() {
     handleUndoTurn,
     drawCard,
     handleUndoCardMove,
+    handleDeckUpload,
     spawnToken,
     spawnTokens,
+    handleModifyCounter,
+    handleModifyGenericCounter,
+    handleDragEnd,
+    toggleTap,
+    handleFlipCard,
+    handleSendToBottom,
+    handleBanish,
+    handlePlayToField,
+    handleSendToCemetery,
+    handleReturnEvolve,
+    handleShuffleDeck,
+    handleDeclareAttack,
+    handleSetRevealHandsMode,
   } = useGameBoardLogic();
 
   return (
@@ -218,6 +233,16 @@ function HookHarness() {
       <div data-testid="host-hand-count">{gameState.cards.filter(card => card.zone === 'hand-host').length}</div>
       <div data-testid="host-ex-count">{gameState.cards.filter(card => card.zone === 'ex-host').length}</div>
       <div data-testid="host-field-count">{gameState.cards.filter(card => card.zone === 'field-host').length}</div>
+      <div data-testid="host-cemetery-count">{gameState.cards.filter(card => card.zone === 'cemetery-host').length}</div>
+      <div data-testid="host-banish-count">{gameState.cards.filter(card => card.zone === 'banish-host').length}</div>
+      <div data-testid="host-evolve-count">{gameState.cards.filter(card => card.zone === 'evolveDeck-host').length}</div>
+      <div data-testid="host-main-deck-count">{gameState.cards.filter(card => card.zone === 'mainDeck-host').length}</div>
+      <div data-testid="counter-card-atk">{String(gameState.cards.find(card => card.id === 'counter-card')?.counters.atk ?? 'missing')}</div>
+      <div data-testid="counter-card-generic">{String(gameState.cards.find(card => card.id === 'counter-card')?.genericCounter ?? 'missing')}</div>
+      <div data-testid="tap-card-state">{String(gameState.cards.find(card => card.id === 'tap-card')?.isTapped ?? 'missing')}</div>
+      <div data-testid="tap-child-state">{String(gameState.cards.find(card => card.id === 'tap-child')?.isTapped ?? 'missing')}</div>
+      <div data-testid="flip-card-state">{String(gameState.cards.find(card => card.id === 'flip-card')?.isFlipped ?? 'missing')}</div>
+      <div data-testid="reveal-hands-mode">{String(gameState.revealHandsMode)}</div>
       <div data-testid="can-undo-turn">{String(canUndoTurn)}</div>
       <div data-testid="can-undo-move">{String(hasUndoableMove)}</div>
       <div data-testid="card-play-message">{cardPlayMessage ?? 'none'}</div>
@@ -237,6 +262,21 @@ function HookHarness() {
       <button onClick={handleUndoTurn}>Undo Turn</button>
       <button onClick={() => drawCard('host')}>Host Draw</button>
       <button onClick={handleUndoCardMove}>Undo Move</button>
+      <input data-testid="deck-upload-input" type="file" onChange={(event) => handleDeckUpload(event, 'host')} />
+      <button onClick={() => handleModifyCounter('counter-card', 'atk', 2, 'host')}>Add ATK Counter</button>
+      <button onClick={() => handleModifyGenericCounter('counter-card', 1, 'host')}>Add Generic Counter</button>
+      <button onClick={() => handleDragEnd({ active: { id: 'drag-card' }, over: { id: 'ex-host' } } as any)}>Drag Card to EX</button>
+      <button onClick={() => toggleTap('tap-card')}>Toggle Tap Stack</button>
+      <button onClick={() => handleFlipCard('flip-card', 'host')}>Toggle Evolve Usage</button>
+      <button onClick={() => handleSendToBottom('bottom-card')}>Send Field Card to Bottom</button>
+      <button onClick={() => handleBanish('banish-card')}>Banish Field Card</button>
+      <button onClick={() => handlePlayToField('hand-card', 'host')}>Play Hand Card to Field</button>
+      <button onClick={() => handleSendToCemetery('field-card')}>Send Field Card to Cemetery</button>
+      <button onClick={() => handleReturnEvolve('evolve-card')}>Return Evolve Card</button>
+      <button onClick={() => handleShuffleDeck('host')}>Shuffle Host Deck</button>
+      <button onClick={() => handleDeclareAttack('attacker-card', { type: 'leader', player: 'guest' }, 'host')}>Declare Attack to Guest Leader</button>
+      <button onClick={() => handleSetRevealHandsMode(true)}>Enable Reveal Hands</button>
+      <button onClick={() => handleSetRevealHandsMode(false)}>Disable Reveal Hands</button>
       <button
         onClick={() => spawnToken('host', {
           cardId: 'token-alpha',
@@ -281,6 +321,32 @@ function HookHarness() {
       >
         Spawn Token Batch to EX
       </button>
+      <button
+        onClick={() => spawnTokens('host', [{
+          tokenOption: {
+            cardId: 'token-alpha',
+            name: 'Alpha Token',
+            image: '/token-alpha.png',
+            baseCardType: 'follower',
+          },
+          count: 1,
+        }], 'ex')}
+      >
+        Spawn Single Token Batch to EX
+      </button>
+      <button
+        onClick={() => spawnTokens('host', [{
+          tokenOption: {
+            cardId: 'token-alpha',
+            name: 'Alpha Token',
+            image: '/token-alpha.png',
+            baseCardType: 'follower',
+          },
+          count: 0,
+        }], 'ex')}
+      >
+        Spawn Zero Tokens
+      </button>
     </div>
   );
 }
@@ -290,6 +356,82 @@ const renderHarness = (entry: string) => render(
     <HookHarness />
   </MemoryRouter>
 );
+
+type SyncStateOverrides = Omit<Partial<SyncState>, 'host' | 'guest'> & {
+  host?: Partial<SyncState['host']>;
+  guest?: Partial<SyncState['guest']>;
+};
+
+const buildSyncState = (overrides: SyncStateOverrides = {}): SyncState => ({
+  host: {
+    hp: 20,
+    pp: 0,
+    maxPp: 0,
+    ep: 0,
+    sep: 1,
+    combo: 0,
+    initialHandDrawn: false,
+    mulliganUsed: false,
+    isReady: false,
+    ...overrides.host,
+  },
+  guest: {
+    hp: 20,
+    pp: 0,
+    maxPp: 0,
+    ep: 3,
+    sep: 1,
+    combo: 0,
+    initialHandDrawn: false,
+    mulliganUsed: false,
+    isReady: false,
+    ...overrides.guest,
+  },
+  cards: overrides.cards ?? [],
+  turnPlayer: overrides.turnPlayer ?? 'host',
+  turnCount: overrides.turnCount ?? 1,
+  phase: overrides.phase ?? 'Start',
+  gameStatus: overrides.gameStatus ?? 'preparing',
+  tokenOptions: overrides.tokenOptions ?? { host: [], guest: [] },
+  revision: overrides.revision ?? 1,
+  lastGameState: overrides.lastGameState,
+  lastUndoableCardMoveActor: overrides.lastUndoableCardMoveActor ?? null,
+  lastUndoableCardMoveState: overrides.lastUndoableCardMoveState ?? null,
+  revealHandsMode: overrides.revealHandsMode ?? false,
+  networkHasUndoableCardMove: overrides.networkHasUndoableCardMove,
+});
+
+const seedHostSavedSession = (overrides: SyncStateOverrides = {}) => {
+  window.sessionStorage.setItem('sv-evolve:host-session:ROOM123', JSON.stringify({
+    room: 'ROOM123',
+    savedAt: '2026-03-19T10:00:00.000Z',
+    appVersion: '0.0.0',
+    state: buildSyncState(overrides),
+  }));
+};
+
+const renderResumedHostHarness = (overrides: SyncStateOverrides = {}) => {
+  seedHostSavedSession(overrides);
+  renderHarness('/game?host=true&room=ROOM123');
+
+  act(() => {
+    fireEvent.click(screen.getByRole('button', { name: 'Resume Saved Session' }));
+  });
+};
+
+const installMockFileReader = (result: string) => {
+  const readAsText = vi.fn(function (this: { onload: null | ((event: { target: { result: string } }) => void) }) {
+    this.onload?.({ target: { result } });
+  });
+
+  class MockFileReader {
+    onload: null | ((event: { target: { result: string } }) => void) = null;
+    readAsText = readAsText;
+  }
+
+  vi.stubGlobal('FileReader', MockFileReader);
+  return readAsText;
+};
 
 const connectGuest = (entry = '/game?host=false&room=ROOM123') => {
   renderHarness(entry);
@@ -1181,5 +1323,471 @@ describe('useGameBoardLogic shared UI notifications', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Undo Move' }));
 
     expect(screen.getByTestId('host-ex-count')).toHaveTextContent('0');
+  });
+});
+
+describe('useGameBoardLogic action handlers', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    mockPeerJs.reset();
+    window.sessionStorage.clear();
+  });
+
+  afterEach(() => {
+    vi.runOnlyPendingTimers();
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it('moves a field card to the cemetery and keeps the move undoable', () => {
+    renderResumedHostHarness({
+      cards: [{
+        id: 'field-card',
+        cardId: 'BP01-001',
+        name: 'Aurelia',
+        image: '/aurelia.png',
+        zone: 'field-host',
+        owner: 'host',
+        isTapped: false,
+        isFlipped: false,
+        counters: { atk: 0, hp: 0 },
+      }],
+      gameStatus: 'playing',
+      turnCount: 2,
+      phase: 'Main',
+      revision: 7,
+    });
+
+    expect(screen.getByTestId('host-field-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('host-cemetery-count')).toHaveTextContent('0');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send Field Card to Cemetery' }));
+
+    expect(screen.getByTestId('host-field-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('host-cemetery-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Undo Move' }));
+
+    expect(screen.getByTestId('host-field-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('host-cemetery-count')).toHaveTextContent('0');
+  });
+
+  it('updates atk and generic counters without creating an undoable move', () => {
+    renderResumedHostHarness({
+      cards: [{
+        id: 'counter-card',
+        cardId: 'BP01-007',
+        name: 'Counter Test',
+        image: '/counter-test.png',
+        zone: 'field-host',
+        owner: 'host',
+        isTapped: false,
+        isFlipped: false,
+        counters: { atk: 1, hp: 0 },
+        genericCounter: 2,
+      }],
+      gameStatus: 'playing',
+      turnCount: 2,
+      phase: 'Main',
+      revision: 7,
+    });
+
+    expect(screen.getByTestId('counter-card-atk')).toHaveTextContent('1');
+    expect(screen.getByTestId('counter-card-generic')).toHaveTextContent('2');
+    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('false');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add ATK Counter' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add Generic Counter' }));
+
+    expect(screen.getByTestId('counter-card-atk')).toHaveTextContent('3');
+    expect(screen.getByTestId('counter-card-generic')).toHaveTextContent('3');
+    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('false');
+  });
+
+  it('imports a deck through the upload handler using FileReader', () => {
+    const readAsText = installMockFileReader(JSON.stringify({
+      mainDeck: [{
+        id: 'BP01-101',
+        name: 'Main Deck Card',
+        image: '/main-deck-card.png',
+        deck_section: 'main',
+        card_kind_normalized: 'follower',
+      }],
+      evolveDeck: [{
+        id: 'BP02-101',
+        name: 'Evolve Card',
+        image: '/evolve-card.png',
+        deck_section: 'evolve',
+        card_kind_normalized: 'follower',
+      }],
+      leaderCards: [{
+        id: 'BP00-101',
+        name: 'Leader Card',
+        image: '/leader-card.png',
+        deck_section: 'leader',
+        card_kind_normalized: 'leader',
+      }],
+    }));
+
+    renderHarness('/game?mode=solo');
+
+    const input = screen.getByTestId('deck-upload-input');
+    const file = new File(['{}'], 'deck.json', { type: 'application/json' });
+    fireEvent.change(input, { target: { files: [file] } });
+
+    expect(readAsText).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('host-main-deck-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('host-evolve-count')).toHaveTextContent('1');
+  });
+
+  it('shows an alert when uploaded deck data cannot be parsed', () => {
+    const readAsText = installMockFileReader('{invalid-json');
+    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => undefined);
+
+    renderHarness('/game?mode=solo');
+
+    const input = screen.getByTestId('deck-upload-input');
+    const file = new File(['{}'], 'broken.json', { type: 'application/json' });
+    fireEvent.change(input, { target: { files: [file] } });
+
+    expect(readAsText).toHaveBeenCalledTimes(1);
+    expect(alertSpy).toHaveBeenCalledWith('deckBuilder.alerts.importFailed');
+    expect(screen.getByTestId('host-main-deck-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('host-evolve-count')).toHaveTextContent('0');
+  });
+
+  it('moves a card to the ex area through drag end and keeps the move undoable', () => {
+    renderResumedHostHarness({
+      cards: [{
+        id: 'drag-card',
+        cardId: 'BP01-008',
+        name: 'Drag Test',
+        image: '/drag-test.png',
+        zone: 'field-host',
+        owner: 'host',
+        isTapped: false,
+        isFlipped: false,
+        counters: { atk: 0, hp: 0 },
+      }],
+      gameStatus: 'playing',
+      turnCount: 2,
+      phase: 'Main',
+      revision: 7,
+    });
+
+    expect(screen.getByTestId('host-field-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('host-ex-count')).toHaveTextContent('0');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Drag Card to EX' }));
+
+    expect(screen.getByTestId('host-field-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('host-ex-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Undo Move' }));
+
+    expect(screen.getByTestId('host-field-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('host-ex-count')).toHaveTextContent('0');
+  });
+
+  it('treats a single token batch as a single undoable spawn token action', () => {
+    renderHarness('/game?mode=solo');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Spawn Single Token Batch to EX' }));
+
+    expect(screen.getByTestId('host-ex-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Undo Move' }));
+
+    expect(screen.getByTestId('host-ex-count')).toHaveTextContent('0');
+  });
+
+  it('toggles tap for the full attached stack', () => {
+    renderResumedHostHarness({
+      cards: [
+        {
+          id: 'tap-card',
+          cardId: 'BP01-009',
+          name: 'Tap Parent',
+          image: '/tap-parent.png',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'tap-child',
+          cardId: 'BP01-010',
+          name: 'Tap Child',
+          image: '/tap-child.png',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+          attachedTo: 'tap-card',
+        },
+      ],
+      gameStatus: 'playing',
+      turnCount: 2,
+      phase: 'Main',
+      revision: 7,
+    });
+
+    expect(screen.getByTestId('tap-card-state')).toHaveTextContent('false');
+    expect(screen.getByTestId('tap-child-state')).toHaveTextContent('false');
+    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('false');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Toggle Tap Stack' }));
+
+    expect(screen.getByTestId('tap-card-state')).toHaveTextContent('true');
+    expect(screen.getByTestId('tap-child-state')).toHaveTextContent('true');
+    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('false');
+  });
+
+  it('does nothing when spawnTokens is called with only zero counts', () => {
+    renderHarness('/game?mode=solo');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Spawn Zero Tokens' }));
+
+    expect(screen.getByTestId('host-ex-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('false');
+  });
+
+  it('returns an evolve card from the field to the evolve deck', () => {
+    renderResumedHostHarness({
+      cards: [{
+        id: 'evolve-card',
+        cardId: 'BP02-001',
+        name: 'Dragon Warrior',
+        image: '/dragon-warrior.png',
+        zone: 'field-host',
+        owner: 'host',
+        isTapped: true,
+        isFlipped: false,
+        counters: { atk: 2, hp: 1 },
+        genericCounter: 3,
+        isEvolveCard: true,
+      }],
+      gameStatus: 'playing',
+      turnCount: 2,
+      phase: 'Main',
+      revision: 7,
+    });
+
+    expect(screen.getByTestId('host-field-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('host-evolve-count')).toHaveTextContent('0');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Return Evolve Card' }));
+
+    expect(screen.getByTestId('host-field-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('host-evolve-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('true');
+  });
+
+  it('toggles the evolve deck usage flag for the selected evolve card', () => {
+    renderResumedHostHarness({
+      cards: [{
+        id: 'flip-card',
+        cardId: 'BP02-010',
+        name: 'Dragon Warrior',
+        image: '/dragon-warrior.png',
+        zone: 'evolveDeck-host',
+        owner: 'host',
+        isTapped: false,
+        isFlipped: true,
+        counters: { atk: 0, hp: 0 },
+        isEvolveCard: true,
+      }],
+      gameStatus: 'preparing',
+      revision: 7,
+    });
+
+    expect(screen.getByTestId('flip-card-state')).toHaveTextContent('true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Toggle Evolve Usage' }));
+
+    expect(screen.getByTestId('flip-card-state')).toHaveTextContent('false');
+  });
+
+  it('sends a field card to the bottom of the main deck', () => {
+    renderResumedHostHarness({
+      cards: [{
+        id: 'bottom-card',
+        cardId: 'BP01-005',
+        name: 'Aurelia',
+        image: '/aurelia.png',
+        zone: 'field-host',
+        owner: 'host',
+        isTapped: true,
+        isFlipped: false,
+        counters: { atk: 3, hp: 2 },
+        genericCounter: 1,
+      }],
+      gameStatus: 'playing',
+      turnCount: 2,
+      phase: 'Main',
+      revision: 7,
+    });
+
+    expect(screen.getByTestId('host-field-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('host-main-deck-count')).toHaveTextContent('0');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send Field Card to Bottom' }));
+
+    expect(screen.getByTestId('host-field-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('host-main-deck-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('true');
+  });
+
+  it('plays a hand card to the field and shows the local play notification', () => {
+    renderResumedHostHarness({
+      cards: [{
+        id: 'hand-card',
+        cardId: 'BP01-003',
+        name: 'Quickblader',
+        image: '/quickblader.png',
+        zone: 'hand-host',
+        owner: 'host',
+        isTapped: false,
+        isFlipped: false,
+        counters: { atk: 0, hp: 0 },
+      }],
+      gameStatus: 'playing',
+      turnCount: 2,
+      phase: 'Main',
+      revision: 7,
+    });
+
+    expect(screen.getByTestId('host-hand-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('host-field-count')).toHaveTextContent('0');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Play Hand Card to Field' }));
+
+    expect(screen.getByTestId('host-hand-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('host-field-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('card-play-message')).toHaveTextContent('You played to field Quickblader');
+    expect(screen.getByTestId('event-history')).not.toHaveTextContent('You played to field Quickblader');
+    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('true');
+  });
+
+  it('moves a field card to banish', () => {
+    renderResumedHostHarness({
+      cards: [{
+        id: 'banish-card',
+        cardId: 'BP01-006',
+        name: 'Bellringer Angel',
+        image: '/bellringer-angel.png',
+        zone: 'field-host',
+        owner: 'host',
+        isTapped: false,
+        isFlipped: false,
+        counters: { atk: 0, hp: 0 },
+      }],
+      gameStatus: 'playing',
+      turnCount: 2,
+      phase: 'Main',
+      revision: 7,
+    });
+
+    expect(screen.getByTestId('host-field-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('host-banish-count')).toHaveTextContent('0');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Banish Field Card' }));
+
+    expect(screen.getByTestId('host-field-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('host-banish-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('true');
+  });
+
+  it('shuffles the host deck and shows the shared notification without creating an undoable move', () => {
+    renderResumedHostHarness({
+      cards: [
+        {
+          id: 'deck-card-1',
+          cardId: 'BP01-001',
+          name: 'Aurelia',
+          image: '/aurelia.png',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'deck-card-2',
+          cardId: 'BP01-002',
+          name: 'Bellringer Angel',
+          image: '/bellringer-angel.png',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+      gameStatus: 'playing',
+      turnCount: 2,
+      phase: 'Main',
+      revision: 7,
+    });
+
+    expect(screen.getByTestId('host-main-deck-count')).toHaveTextContent('2');
+    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('false');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Shuffle Host Deck' }));
+
+    expect(screen.getByTestId('host-main-deck-count')).toHaveTextContent('2');
+    expect(screen.getByTestId('card-play-message')).toHaveTextContent('You shuffled the deck');
+    expect(screen.getByTestId('event-history')).toHaveTextContent('You shuffled the deck');
+    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('false');
+  });
+
+  it('declares an attack against the guest leader and records the attack history', () => {
+    renderResumedHostHarness({
+      cards: [{
+        id: 'attacker-card',
+        cardId: 'BP01-004',
+        name: 'Knight',
+        image: '/knight.png',
+        zone: 'field-host',
+        owner: 'host',
+        isTapped: false,
+        isFlipped: false,
+        counters: { atk: 0, hp: 0 },
+      }],
+      gameStatus: 'playing',
+      turnPlayer: 'host',
+      turnCount: 2,
+      phase: 'Main',
+      revision: 7,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Declare Attack to Guest Leader' }));
+
+    expect(screen.getByTestId('attack-message')).toHaveTextContent('You Knight attacks Opponent Leader');
+    expect(screen.getByTestId('event-history')).toHaveTextContent('Knight -> Opponent Leader');
+    expect(screen.getByTestId('card-play-message')).toHaveTextContent('none');
+  });
+
+  it('toggles reveal hands mode on and off for the host state', () => {
+    renderResumedHostHarness({
+      gameStatus: 'playing',
+      turnCount: 2,
+      phase: 'Main',
+      revision: 7,
+    });
+
+    expect(screen.getByTestId('reveal-hands-mode')).toHaveTextContent('false');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Enable Reveal Hands' }));
+    expect(screen.getByTestId('reveal-hands-mode')).toHaveTextContent('true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Disable Reveal Hands' }));
+    expect(screen.getByTestId('reveal-hands-mode')).toHaveTextContent('false');
   });
 });

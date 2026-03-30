@@ -31,4 +31,23 @@ describe('cardReveal', () => {
       cardIds: ['c1'],
     });
   });
+
+  it('builds a reveal effect for a top-deck card with public card data', () => {
+    expect(buildSingleCardRevealEffect(
+      [createCard('c2')],
+      'guest',
+      'c2',
+      'REVEAL_TOP_DECK_CARDS'
+    )).toEqual({
+      type: 'REVEAL_TOP_DECK_CARDS',
+      actor: 'guest',
+      cards: [
+        {
+          cardId: 'c2',
+          name: 'Card c2',
+          image: '/c2.png',
+        },
+      ],
+    });
+  });
 });

@@ -95,4 +95,35 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Play' }));
     expect(screen.getByPlaceholderText('Room Code')).toHaveValue('');
   });
+
+  it('keeps join disabled for blank room ids and trims room codes before navigating', () => {
+    window.history.pushState({}, '', '/');
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Play' }));
+    const joinButton = screen.getByRole('button', { name: 'Join' });
+    expect(joinButton).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText('Join Game'), { target: { value: '  ROOM99  ' } });
+    expect(joinButton).toBeEnabled();
+
+    fireEvent.click(joinButton);
+    expect(window.location.pathname).toBe('/game');
+    expect(window.location.search).toBe('?host=false&room=ROOM99');
+  });
+
+  it('opens and closes the language and play menus via outside click and escape', () => {
+    window.history.pushState({}, '', '/');
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Play' }));
+    expect(screen.getByRole('menu', { name: 'Play menu' })).toBeInTheDocument();
+    fireEvent.mouseDown(document.body);
+    expect(screen.queryByRole('menu', { name: 'Play menu' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'English' }));
+    expect(screen.getByRole('listbox')).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  });
 });
