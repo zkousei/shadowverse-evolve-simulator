@@ -743,6 +743,18 @@ describe('CardLogic utils', () => {
       expect(result).toHaveLength(2);
       expect(result[1].id).toBe('token-1');
     });
+
+    it('should append multiple spawned tokens in order', () => {
+      const existing = createMockCard('base', 'field-host');
+      const tokens = [
+        { ...createMockCard('token-1', 'ex-host'), cardId: 'token-alpha' },
+        { ...createMockCard('token-2', 'field-host'), cardId: 'token-beta' },
+      ];
+      const result = CardLogic.spawnTokenCards([existing], tokens);
+      expect(result).toHaveLength(3);
+      expect(result[1].id).toBe('token-1');
+      expect(result[2].id).toBe('token-2');
+    });
   });
 
   describe('resolveTopDeckResults', () => {

@@ -1711,6 +1711,63 @@ describe('gameSyncReducer', () => {
     expect(undone.revision).toBe(spawned.revision + 1);
   });
 
+  it('treats batch token generation as one undoable card move', () => {
+    const baseState = createState({
+      cards: [],
+    });
+
+    const spawned = applyGameSyncEvent(baseState, {
+      id: 'evt-batch-token',
+      type: 'SPAWN_TOKENS_BATCH',
+      actor: 'host',
+      tokens: [
+        {
+          id: 'token-1',
+          cardId: 'token-alpha',
+          name: 'Alpha Token',
+          image: '',
+          zone: 'ex-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'token-2',
+          cardId: 'token-alpha',
+          name: 'Alpha Token',
+          image: '',
+          zone: 'ex-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'token-3',
+          cardId: 'token-beta',
+          name: 'Beta Token',
+          image: '',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    expect(spawned.cards).toHaveLength(3);
+
+    const undone = applyGameSyncEvent(spawned, {
+      id: 'evt-batch-token-undo',
+      type: 'UNDO_CARD_MOVE',
+      actor: 'host',
+    });
+
+    expect(undone.cards).toHaveLength(0);
+  });
+
   it('allows guest to trigger UNDO_LAST_TURN in P2P mode', () => {
     const beforeTurnEnd = createState({
       turnPlayer: 'guest',

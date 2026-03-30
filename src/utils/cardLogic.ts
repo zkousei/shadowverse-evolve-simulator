@@ -709,6 +709,11 @@ export const spawnTokenCard = (
   token: CardInstance
 ): CardInstance[] => [...cards, token];
 
+export const spawnTokenCards = (
+  cards: CardInstance[],
+  tokens: CardInstance[]
+): CardInstance[] => [...cards, ...tokens];
+
 /**
  * Executes a mulligan operation based on selected IDs.
  */

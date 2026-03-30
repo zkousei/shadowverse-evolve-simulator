@@ -482,6 +482,13 @@ export const applyGameSyncEvent = (
       return withCardMoveCheckpoint(state, event.actor, nextCards);
     }
 
+    case 'SPAWN_TOKENS_BATCH': {
+      if (!isActorRequester(requester, event.actor)) return state;
+      if (event.tokens.length === 0) return state;
+      const nextCards = CardLogic.spawnTokenCards(state.cards, event.tokens);
+      return withCardMoveCheckpoint(state, event.actor, nextCards);
+    }
+
     case 'ATTACK_DECLARATION': {
       if (!isActorRequester(requester, event.actor)) return state;
       if (!canDeclareAttack(state.cards, event.actor, event.attackerCardId, event.target, state.turnPlayer, state.gameStatus)) {

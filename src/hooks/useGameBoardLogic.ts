@@ -54,6 +54,7 @@ type DispatchableGameSyncEvent =
   | { type: 'UNDO_CARD_MOVE'; actor?: PlayerRole }
   | { type: 'SET_REVEAL_HANDS_MODE'; actor?: PlayerRole; enabled: boolean }
   | { type: 'SPAWN_TOKEN'; actor?: PlayerRole; token: CardInstance }
+  | { type: 'SPAWN_TOKENS_BATCH'; actor?: PlayerRole; tokens: CardInstance[] }
   | { type: 'ATTACK_DECLARATION'; actor?: PlayerRole; attackerCardId: string; target: AttackTarget };
 
 type ConnectionState = 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'disconnected';
@@ -1657,14 +1658,18 @@ export const useGameBoardLogic = () => {
     reader.readAsText(file);
   };
 
-  const spawnToken = (targetRole: PlayerRole = role, tokenOption?: TokenOption) => {
+  const spawnToken = (
+    targetRole: PlayerRole = role,
+    tokenOption?: TokenOption,
+    destination: 'ex' | 'field' = 'ex'
+  ) => {
     const selectedToken = tokenOption ?? defaultTokenOption.current;
     const newCard: CardInstance = {
       id: uuid(),
       cardId: selectedToken.cardId,
       name: selectedToken.name,
       image: selectedToken.image,
-      zone: `ex-${targetRole}`,
+      zone: `${destination}-${targetRole}`,
       owner: targetRole,
       isTapped: false,
       isFlipped: false,
@@ -1674,6 +1679,37 @@ export const useGameBoardLogic = () => {
       baseCardType: selectedToken.baseCardType ?? null,
     };
     dispatchGameEvent({ type: 'SPAWN_TOKEN', actor: targetRole, token: newCard });
+  };
+
+  const spawnTokens = (
+    targetRole: PlayerRole = role,
+    tokenSelections: Array<{ tokenOption: TokenOption; count: number }>,
+    destination: 'ex' | 'field' = 'ex'
+  ) => {
+    const tokens = tokenSelections.flatMap(({ tokenOption, count }) => (
+      Array.from({ length: Math.max(0, count) }, () => ({
+        id: uuid(),
+        cardId: tokenOption.cardId,
+        name: tokenOption.name,
+        image: tokenOption.image,
+        zone: `${destination}-${targetRole}`,
+        owner: targetRole,
+        isTapped: false,
+        isFlipped: false,
+        counters: tokenOption.cardId === 'token' ? { atk: 1, hp: 1 } : { atk: 0, hp: 0 },
+        genericCounter: 0,
+        isTokenCard: true,
+        baseCardType: tokenOption.baseCardType ?? null,
+      } satisfies CardInstance))
+    ));
+
+    if (tokens.length === 0) return;
+    if (tokens.length === 1) {
+      dispatchGameEvent({ type: 'SPAWN_TOKEN', actor: targetRole, token: tokens[0] });
+      return;
+    }
+
+    dispatchGameEvent({ type: 'SPAWN_TOKENS_BATCH', actor: targetRole, tokens });
   };
 
   const handleModifyCounter = (cardId: string, stat: 'atk' | 'hp', delta: number, actor?: PlayerRole) => {
@@ -1751,7 +1787,7 @@ export const useGameBoardLogic = () => {
     handleStatChange, setPhase, endTurn, handleUndoTurn, handleSetInitialTurnOrder,
     handlePureCoinFlip, handleRollDice, handleStartGame, handleToggleReady,
     handleDrawInitialHand, startMulligan, handleMulliganOrderSelect, executeMulligan,
-    drawCard, handleExtractCard, confirmResetGame, handleDeckUpload, importDeckData, spawnToken,
+    drawCard, handleExtractCard, confirmResetGame, handleDeckUpload, importDeckData, spawnToken, spawnTokens,
     handleModifyCounter, handleModifyGenericCounter, handleDragEnd, toggleTap, handleFlipCard, handleSendToBottom,
     handleBanish, handlePlayToField, handleSendToCemetery, handleReturnEvolve, handleShuffleDeck, handleDeclareAttack,
     handleSetRevealHandsMode,

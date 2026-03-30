@@ -584,7 +584,17 @@
         "confirm": "Yes, Undo"
       },
       "tokenSpawn": {
-        "title": "Select Token"
+        "title": "Generate Tokens",
+        "description": "Choose how many of each token to create, then pick where they should appear.",
+        "destinationLabel": "Spawn to",
+        "destinations": {
+          "ex": "EX Area",
+          "field": "Field"
+        },
+        "increase": "Increase {{token}} count",
+        "decrease": "Decrease {{token}} count",
+        "totalSelected": "{{count}} selected",
+        "confirm": "Generate"
       },
       "topN": {
         "title": "How many cards to look at?",
