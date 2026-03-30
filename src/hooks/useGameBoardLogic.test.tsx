@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import * as PeerJsModule from 'peerjs';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { SyncState } from '../types/game';
 import { useGameBoardLogic } from './useGameBoardLogic';
 
 vi.mock('react-i18next', () => ({
@@ -207,6 +208,12 @@ function HookHarness() {
     handleUndoCardMove,
     spawnToken,
     spawnTokens,
+    handlePlayToField,
+    handleSendToCemetery,
+    handleReturnEvolve,
+    handleShuffleDeck,
+    handleDeclareAttack,
+    handleSetRevealHandsMode,
   } = useGameBoardLogic();
 
   return (
@@ -218,6 +225,10 @@ function HookHarness() {
       <div data-testid="host-hand-count">{gameState.cards.filter(card => card.zone === 'hand-host').length}</div>
       <div data-testid="host-ex-count">{gameState.cards.filter(card => card.zone === 'ex-host').length}</div>
       <div data-testid="host-field-count">{gameState.cards.filter(card => card.zone === 'field-host').length}</div>
+      <div data-testid="host-cemetery-count">{gameState.cards.filter(card => card.zone === 'cemetery-host').length}</div>
+      <div data-testid="host-evolve-count">{gameState.cards.filter(card => card.zone === 'evolveDeck-host').length}</div>
+      <div data-testid="host-main-deck-count">{gameState.cards.filter(card => card.zone === 'mainDeck-host').length}</div>
+      <div data-testid="reveal-hands-mode">{String(gameState.revealHandsMode)}</div>
       <div data-testid="can-undo-turn">{String(canUndoTurn)}</div>
       <div data-testid="can-undo-move">{String(hasUndoableMove)}</div>
       <div data-testid="card-play-message">{cardPlayMessage ?? 'none'}</div>
@@ -237,6 +248,13 @@ function HookHarness() {
       <button onClick={handleUndoTurn}>Undo Turn</button>
       <button onClick={() => drawCard('host')}>Host Draw</button>
       <button onClick={handleUndoCardMove}>Undo Move</button>
+      <button onClick={() => handlePlayToField('hand-card', 'host')}>Play Hand Card to Field</button>
+      <button onClick={() => handleSendToCemetery('field-card')}>Send Field Card to Cemetery</button>
+      <button onClick={() => handleReturnEvolve('evolve-card')}>Return Evolve Card</button>
+      <button onClick={() => handleShuffleDeck('host')}>Shuffle Host Deck</button>
+      <button onClick={() => handleDeclareAttack('attacker-card', { type: 'leader', player: 'guest' }, 'host')}>Declare Attack to Guest Leader</button>
+      <button onClick={() => handleSetRevealHandsMode(true)}>Enable Reveal Hands</button>
+      <button onClick={() => handleSetRevealHandsMode(false)}>Disable Reveal Hands</button>
       <button
         onClick={() => spawnToken('host', {
           cardId: 'token-alpha',
@@ -290,6 +308,68 @@ const renderHarness = (entry: string) => render(
     <HookHarness />
   </MemoryRouter>
 );
+
+type SyncStateOverrides = Omit<Partial<SyncState>, 'host' | 'guest'> & {
+  host?: Partial<SyncState['host']>;
+  guest?: Partial<SyncState['guest']>;
+};
+
+const buildSyncState = (overrides: SyncStateOverrides = {}): SyncState => ({
+  host: {
+    hp: 20,
+    pp: 0,
+    maxPp: 0,
+    ep: 0,
+    sep: 1,
+    combo: 0,
+    initialHandDrawn: false,
+    mulliganUsed: false,
+    isReady: false,
+    ...overrides.host,
+  },
+  guest: {
+    hp: 20,
+    pp: 0,
+    maxPp: 0,
+    ep: 3,
+    sep: 1,
+    combo: 0,
+    initialHandDrawn: false,
+    mulliganUsed: false,
+    isReady: false,
+    ...overrides.guest,
+  },
+  cards: overrides.cards ?? [],
+  turnPlayer: overrides.turnPlayer ?? 'host',
+  turnCount: overrides.turnCount ?? 1,
+  phase: overrides.phase ?? 'Start',
+  gameStatus: overrides.gameStatus ?? 'preparing',
+  tokenOptions: overrides.tokenOptions ?? { host: [], guest: [] },
+  revision: overrides.revision ?? 1,
+  lastGameState: overrides.lastGameState,
+  lastUndoableCardMoveActor: overrides.lastUndoableCardMoveActor ?? null,
+  lastUndoableCardMoveState: overrides.lastUndoableCardMoveState ?? null,
+  revealHandsMode: overrides.revealHandsMode ?? false,
+  networkHasUndoableCardMove: overrides.networkHasUndoableCardMove,
+});
+
+const seedHostSavedSession = (overrides: SyncStateOverrides = {}) => {
+  window.sessionStorage.setItem('sv-evolve:host-session:ROOM123', JSON.stringify({
+    room: 'ROOM123',
+    savedAt: '2026-03-19T10:00:00.000Z',
+    appVersion: '0.0.0',
+    state: buildSyncState(overrides),
+  }));
+};
+
+const renderResumedHostHarness = (overrides: SyncStateOverrides = {}) => {
+  seedHostSavedSession(overrides);
+  renderHarness('/game?host=true&room=ROOM123');
+
+  act(() => {
+    fireEvent.click(screen.getByRole('button', { name: 'Resume Saved Session' }));
+  });
+};
 
 const connectGuest = (entry = '/game?host=false&room=ROOM123') => {
   renderHarness(entry);
@@ -1181,5 +1261,201 @@ describe('useGameBoardLogic shared UI notifications', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Undo Move' }));
 
     expect(screen.getByTestId('host-ex-count')).toHaveTextContent('0');
+  });
+});
+
+describe('useGameBoardLogic action handlers', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    mockPeerJs.reset();
+    window.sessionStorage.clear();
+  });
+
+  afterEach(() => {
+    vi.runOnlyPendingTimers();
+    vi.useRealTimers();
+  });
+
+  it('moves a field card to the cemetery and keeps the move undoable', () => {
+    renderResumedHostHarness({
+      cards: [{
+        id: 'field-card',
+        cardId: 'BP01-001',
+        name: 'Aurelia',
+        image: '/aurelia.png',
+        zone: 'field-host',
+        owner: 'host',
+        isTapped: false,
+        isFlipped: false,
+        counters: { atk: 0, hp: 0 },
+      }],
+      gameStatus: 'playing',
+      turnCount: 2,
+      phase: 'Main',
+      revision: 7,
+    });
+
+    expect(screen.getByTestId('host-field-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('host-cemetery-count')).toHaveTextContent('0');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send Field Card to Cemetery' }));
+
+    expect(screen.getByTestId('host-field-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('host-cemetery-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Undo Move' }));
+
+    expect(screen.getByTestId('host-field-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('host-cemetery-count')).toHaveTextContent('0');
+  });
+
+  it('returns an evolve card from the field to the evolve deck', () => {
+    renderResumedHostHarness({
+      cards: [{
+        id: 'evolve-card',
+        cardId: 'BP02-001',
+        name: 'Dragon Warrior',
+        image: '/dragon-warrior.png',
+        zone: 'field-host',
+        owner: 'host',
+        isTapped: true,
+        isFlipped: false,
+        counters: { atk: 2, hp: 1 },
+        genericCounter: 3,
+        isEvolveCard: true,
+      }],
+      gameStatus: 'playing',
+      turnCount: 2,
+      phase: 'Main',
+      revision: 7,
+    });
+
+    expect(screen.getByTestId('host-field-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('host-evolve-count')).toHaveTextContent('0');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Return Evolve Card' }));
+
+    expect(screen.getByTestId('host-field-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('host-evolve-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('true');
+  });
+
+  it('plays a hand card to the field and shows the local play notification', () => {
+    renderResumedHostHarness({
+      cards: [{
+        id: 'hand-card',
+        cardId: 'BP01-003',
+        name: 'Quickblader',
+        image: '/quickblader.png',
+        zone: 'hand-host',
+        owner: 'host',
+        isTapped: false,
+        isFlipped: false,
+        counters: { atk: 0, hp: 0 },
+      }],
+      gameStatus: 'playing',
+      turnCount: 2,
+      phase: 'Main',
+      revision: 7,
+    });
+
+    expect(screen.getByTestId('host-hand-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('host-field-count')).toHaveTextContent('0');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Play Hand Card to Field' }));
+
+    expect(screen.getByTestId('host-hand-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('host-field-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('card-play-message')).toHaveTextContent('You played to field Quickblader');
+    expect(screen.getByTestId('event-history')).not.toHaveTextContent('You played to field Quickblader');
+    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('true');
+  });
+
+  it('shuffles the host deck and shows the shared notification without creating an undoable move', () => {
+    renderResumedHostHarness({
+      cards: [
+        {
+          id: 'deck-card-1',
+          cardId: 'BP01-001',
+          name: 'Aurelia',
+          image: '/aurelia.png',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'deck-card-2',
+          cardId: 'BP01-002',
+          name: 'Bellringer Angel',
+          image: '/bellringer-angel.png',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+      gameStatus: 'playing',
+      turnCount: 2,
+      phase: 'Main',
+      revision: 7,
+    });
+
+    expect(screen.getByTestId('host-main-deck-count')).toHaveTextContent('2');
+    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('false');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Shuffle Host Deck' }));
+
+    expect(screen.getByTestId('host-main-deck-count')).toHaveTextContent('2');
+    expect(screen.getByTestId('card-play-message')).toHaveTextContent('You shuffled the deck');
+    expect(screen.getByTestId('event-history')).toHaveTextContent('You shuffled the deck');
+    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('false');
+  });
+
+  it('declares an attack against the guest leader and records the attack history', () => {
+    renderResumedHostHarness({
+      cards: [{
+        id: 'attacker-card',
+        cardId: 'BP01-004',
+        name: 'Knight',
+        image: '/knight.png',
+        zone: 'field-host',
+        owner: 'host',
+        isTapped: false,
+        isFlipped: false,
+        counters: { atk: 0, hp: 0 },
+      }],
+      gameStatus: 'playing',
+      turnPlayer: 'host',
+      turnCount: 2,
+      phase: 'Main',
+      revision: 7,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Declare Attack to Guest Leader' }));
+
+    expect(screen.getByTestId('attack-message')).toHaveTextContent('You Knight attacks Opponent Leader');
+    expect(screen.getByTestId('event-history')).toHaveTextContent('Knight -> Opponent Leader');
+    expect(screen.getByTestId('card-play-message')).toHaveTextContent('none');
+  });
+
+  it('toggles reveal hands mode on and off for the host state', () => {
+    renderResumedHostHarness({
+      gameStatus: 'playing',
+      turnCount: 2,
+      phase: 'Main',
+      revision: 7,
+    });
+
+    expect(screen.getByTestId('reveal-hands-mode')).toHaveTextContent('false');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Enable Reveal Hands' }));
+    expect(screen.getByTestId('reveal-hands-mode')).toHaveTextContent('true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Disable Reveal Hands' }));
+    expect(screen.getByTestId('reveal-hands-mode')).toHaveTextContent('false');
   });
 });
