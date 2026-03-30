@@ -54,6 +54,7 @@ type DispatchableGameSyncEvent =
   | { type: 'UNDO_CARD_MOVE'; actor?: PlayerRole }
   | { type: 'SET_REVEAL_HANDS_MODE'; actor?: PlayerRole; enabled: boolean }
   | { type: 'SPAWN_TOKEN'; actor?: PlayerRole; token: CardInstance }
+  | { type: 'SPAWN_TOKENS_BATCH'; actor?: PlayerRole; tokens: CardInstance[] }
   | { type: 'ATTACK_DECLARATION'; actor?: PlayerRole; attackerCardId: string; target: AttackTarget };
 
 type ConnectionState = 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'disconnected';
@@ -1680,6 +1681,37 @@ export const useGameBoardLogic = () => {
     dispatchGameEvent({ type: 'SPAWN_TOKEN', actor: targetRole, token: newCard });
   };
 
+  const spawnTokens = (
+    targetRole: PlayerRole = role,
+    tokenSelections: Array<{ tokenOption: TokenOption; count: number }>,
+    destination: 'ex' | 'field' = 'ex'
+  ) => {
+    const tokens = tokenSelections.flatMap(({ tokenOption, count }) => (
+      Array.from({ length: Math.max(0, count) }, () => ({
+        id: uuid(),
+        cardId: tokenOption.cardId,
+        name: tokenOption.name,
+        image: tokenOption.image,
+        zone: `${destination}-${targetRole}`,
+        owner: targetRole,
+        isTapped: false,
+        isFlipped: false,
+        counters: tokenOption.cardId === 'token' ? { atk: 1, hp: 1 } : { atk: 0, hp: 0 },
+        genericCounter: 0,
+        isTokenCard: true,
+        baseCardType: tokenOption.baseCardType ?? null,
+      } satisfies CardInstance))
+    ));
+
+    if (tokens.length === 0) return;
+    if (tokens.length === 1) {
+      dispatchGameEvent({ type: 'SPAWN_TOKEN', actor: targetRole, token: tokens[0] });
+      return;
+    }
+
+    dispatchGameEvent({ type: 'SPAWN_TOKENS_BATCH', actor: targetRole, tokens });
+  };
+
   const handleModifyCounter = (cardId: string, stat: 'atk' | 'hp', delta: number, actor?: PlayerRole) => {
     dispatchGameEvent({ type: 'MODIFY_COUNTER', actor, cardId, stat, delta });
   };
@@ -1755,7 +1787,7 @@ export const useGameBoardLogic = () => {
     handleStatChange, setPhase, endTurn, handleUndoTurn, handleSetInitialTurnOrder,
     handlePureCoinFlip, handleRollDice, handleStartGame, handleToggleReady,
     handleDrawInitialHand, startMulligan, handleMulliganOrderSelect, executeMulligan,
-    drawCard, handleExtractCard, confirmResetGame, handleDeckUpload, importDeckData, spawnToken,
+    drawCard, handleExtractCard, confirmResetGame, handleDeckUpload, importDeckData, spawnToken, spawnTokens,
     handleModifyCounter, handleModifyGenericCounter, handleDragEnd, toggleTap, handleFlipCard, handleSendToBottom,
     handleBanish, handlePlayToField, handleSendToCemetery, handleReturnEvolve, handleShuffleDeck, handleDeclareAttack,
     handleSetRevealHandsMode,

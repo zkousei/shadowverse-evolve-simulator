@@ -206,6 +206,7 @@ function HookHarness() {
     drawCard,
     handleUndoCardMove,
     spawnToken,
+    spawnTokens,
   } = useGameBoardLogic();
 
   return (
@@ -255,6 +256,30 @@ function HookHarness() {
         }, 'field')}
       >
         Spawn Token to Field
+      </button>
+      <button
+        onClick={() => spawnTokens('host', [
+          {
+            tokenOption: {
+              cardId: 'token-alpha',
+              name: 'Alpha Token',
+              image: '/token-alpha.png',
+              baseCardType: 'follower',
+            },
+            count: 2,
+          },
+          {
+            tokenOption: {
+              cardId: 'token-beta',
+              name: 'Beta Token',
+              image: '/token-beta.png',
+              baseCardType: 'follower',
+            },
+            count: 1,
+          },
+        ], 'ex')}
+      >
+        Spawn Token Batch to EX
       </button>
     </div>
   );
@@ -1143,5 +1168,18 @@ describe('useGameBoardLogic shared UI notifications', () => {
 
     expect(screen.getByTestId('host-ex-count')).toHaveTextContent('0');
     expect(screen.getByTestId('host-field-count')).toHaveTextContent('1');
+  });
+
+  it('treats batch token generation as a single undoable move', () => {
+    renderHarness('/game?mode=solo');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Spawn Token Batch to EX' }));
+
+    expect(screen.getByTestId('host-ex-count')).toHaveTextContent('3');
+    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Undo Move' }));
+
+    expect(screen.getByTestId('host-ex-count')).toHaveTextContent('0');
   });
 });

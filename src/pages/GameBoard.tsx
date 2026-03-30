@@ -68,7 +68,7 @@ const GameBoard: React.FC = () => {
     handleStatChange, setPhase, endTurn, handleUndoTurn, handleSetInitialTurnOrder,
     handlePureCoinFlip, handleRollDice, handleStartGame, handleToggleReady,
     handleDrawInitialHand, startMulligan, handleMulliganOrderSelect, executeMulligan,
-    drawCard, handleExtractCard, confirmResetGame, handleDeckUpload, importDeckData, spawnToken,
+    drawCard, handleExtractCard, confirmResetGame, handleDeckUpload, importDeckData, spawnTokens,
     handleModifyCounter, handleModifyGenericCounter, handleDragEnd, toggleTap, handleFlipCard, handleSendToBottom,
     handleBanish, handlePlayToField, handleSendToCemetery, handleReturnEvolve, handleShuffleDeck, handleDeclareAttack,
     handleSetRevealHandsMode,
@@ -580,12 +580,14 @@ const GameBoard: React.FC = () => {
 
   const handleTokenSpawn = () => {
     if (!tokenSpawnTargetRole) return;
-    tokenSpawnOptions.forEach((token) => {
-      const count = tokenSpawnCounts[token.cardId] ?? 0;
-      for (let index = 0; index < count; index += 1) {
-        spawnToken(tokenSpawnTargetRole, token, tokenSpawnDestination);
-      }
-    });
+    spawnTokens(
+      tokenSpawnTargetRole,
+      tokenSpawnOptions.map((token) => ({
+        tokenOption: token,
+        count: tokenSpawnCounts[token.cardId] ?? 0,
+      })),
+      tokenSpawnDestination
+    );
     setTokenSpawnCounts({});
     setTokenSpawnTargetRole(null);
   };

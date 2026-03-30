@@ -48,6 +48,7 @@ export type GameSyncEvent =
   | { id: string; type: 'UNDO_CARD_MOVE'; actor: PlayerRole }
   | { id: string; type: 'SET_REVEAL_HANDS_MODE'; actor: PlayerRole; enabled: boolean }
   | { id: string; type: 'SPAWN_TOKEN'; actor: PlayerRole; token: CardInstance }
+  | { id: string; type: 'SPAWN_TOKENS_BATCH'; actor: PlayerRole; tokens: CardInstance[] }
   | { id: string; type: 'ATTACK_DECLARATION'; actor: PlayerRole; attackerCardId: string; target: AttackTarget };
 
 export type SharedUiEffect =
