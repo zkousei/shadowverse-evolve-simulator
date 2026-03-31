@@ -1414,6 +1414,7 @@ describe('useGameBoardLogic action handlers', () => {
         image: '/main-deck-card.png',
         deck_section: 'main',
         card_kind_normalized: 'follower',
+        related_cards: [{ id: 'BP01-T01', name: 'Token A' }],
       }],
       evolveDeck: [{
         id: 'BP02-101',
@@ -1421,6 +1422,7 @@ describe('useGameBoardLogic action handlers', () => {
         image: '/evolve-card.png',
         deck_section: 'evolve',
         card_kind_normalized: 'follower',
+        related_cards: [{ id: 'BP02-T01', name: 'Token B' }],
       }],
       leaderCards: [{
         id: 'BP00-101',
@@ -1428,6 +1430,7 @@ describe('useGameBoardLogic action handlers', () => {
         image: '/leader-card.png',
         deck_section: 'leader',
         card_kind_normalized: 'leader',
+        related_cards: [{ id: 'BP00-T01', name: 'Token C' }],
       }],
     }));
 

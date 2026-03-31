@@ -3,12 +3,11 @@ import { buildCardDetailLookup, formatAbilityText } from './cardDetails';
 
 describe('cardDetails', () => {
   it('builds a lookup with parsed stats and text fields', () => {
-    const lookup = buildCardDetailLookup([
-      {
-        id: 'BP01-001',
-        name: 'Test Follower',
-        image: '/test.png',
-        class: 'ロイヤル',
+    const cardWithRelatedCards = {
+      id: 'BP01-001',
+      name: 'Test Follower',
+      image: '/test.png',
+      class: 'ロイヤル',
       title: 'Sample',
       type: 'フォロワー',
       subtype: '兵士',
@@ -17,7 +16,11 @@ describe('cardDetails', () => {
       atk: '2',
       hp: '4',
       ability_text: 'Alpha',
-      },
+      related_cards: [{ id: 'TK01-001', name: 'Token' }],
+    };
+
+    const lookup = buildCardDetailLookup([
+      cardWithRelatedCards,
       {
         id: 'BP01-002',
         atk: '-',
@@ -41,6 +44,7 @@ describe('cardDetails', () => {
     });
     expect(lookup['BP01-002'].atk).toBeNull();
     expect(lookup['BP01-002'].hp).toBeNull();
+    expect(lookup['BP01-001']).not.toHaveProperty('related_cards');
   });
 
   it('formats separators in ability text for readability', () => {

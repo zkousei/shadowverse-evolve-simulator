@@ -1,6 +1,7 @@
 import asyncio
 import json
 import re
+import urllib.parse
 from html import unescape
 from typing import Optional
 
@@ -27,6 +28,18 @@ def clean_text(value: str) -> str:
     return " ".join(value.split())
 
 
+def first_nonempty_text(*values: Optional[str]) -> Optional[str]:
+    for value in values:
+        if not value:
+            continue
+
+        cleaned = clean_text(value)
+        if cleaned:
+            return cleaned
+
+    return None
+
+
 def has_core_details(card: dict) -> bool:
     return all(field in card for field in ("class", "type", "subtype", "cost", "atk", "hp"))
 
@@ -48,6 +61,89 @@ def extract_detail_text(detail_html: str) -> str:
     return " ".join(lines)
 
 
+def extract_related_cards(soup: BeautifulSoup) -> list[dict[str, str]]:
+    relation_div = soup.select_one(".cardlist-Detail_Relation")
+    if not relation_div:
+        return []
+
+    related_cards: list[dict[str, str]] = []
+    seen_ids: set[str] = set()
+
+    for link in relation_div.select('a[href*="/cardlist/?cardno="]'):
+        href = link.get("href", "")
+        parsed = urllib.parse.urlparse(href)
+        related_card_id = urllib.parse.parse_qs(parsed.query).get("cardno", [None])[0]
+        if not related_card_id or related_card_id in seen_ids:
+            continue
+
+        image = link.select_one("img")
+        related_card_name = first_nonempty_text(
+            image.get("alt") if image else None,
+            image.get("title") if image else None,
+            link.get("title"),
+            link.get_text(" ", strip=True),
+        )
+        if not related_card_name:
+            continue
+
+        related_cards.append({
+            "id": related_card_id,
+            "name": related_card_name,
+        })
+        seen_ids.add(related_card_id)
+
+    return related_cards
+
+
+def parse_card_detail_html(card: dict, html: str) -> dict:
+    updated_card = dict(card)
+    soup = BeautifulSoup(html, "html.parser")
+
+    info_div = soup.select_one(".info")
+    if info_div:
+        for dl in info_div.select("dl"):
+            dt = clean_text(dl.select_one("dt").get_text()) if dl.select_one("dt") else ""
+            dd = clean_text(dl.select_one("dd").get_text()) if dl.select_one("dd") else ""
+            if dt == "クラス":
+                updated_card["class"] = dd
+            elif dt == "タイトル":
+                updated_card["title"] = dd
+            elif dt == "カード種類":
+                updated_card["type"] = dd
+            elif dt == "タイプ":
+                updated_card["subtype"] = dd
+            elif dt == "レアリティ":
+                updated_card["rarity"] = dd
+            elif dt == "収録商品":
+                updated_card["product_name"] = dd
+
+    status_div = soup.select_one(".status")
+    if status_div:
+        cost = status_div.select_one(".status-Item-Cost")
+        atk = status_div.select_one(".status-Item-Power")
+        hp = status_div.select_one(".status-Item-Hp")
+        if cost:
+            updated_card["cost"] = clean_text(cost.get_text().replace("コスト", ""))
+        if atk:
+            updated_card["atk"] = clean_text(atk.get_text().replace("攻撃力", ""))
+        if hp:
+            updated_card["hp"] = clean_text(hp.get_text().replace("体力", ""))
+
+    detail_div = soup.select_one(".detail")
+    if detail_div:
+        detail_text = extract_detail_text(detail_div.decode_contents())
+        if detail_text:
+            updated_card["ability_text"] = detail_text
+
+    related_cards = extract_related_cards(soup)
+    if related_cards:
+        updated_card["related_cards"] = related_cards
+    else:
+        updated_card.pop("related_cards", None)
+
+    return derive_card_metadata(updated_card)
+
+
 async def fetch_html(session: aiohttp.ClientSession, url: str) -> Optional[str]:
     for attempt in range(1, MAX_RETRIES + 1):
         try:
@@ -66,45 +162,7 @@ async def fetch_card_detail(session: aiohttp.ClientSession, card: dict) -> dict:
     if not html:
         return card
 
-    soup = BeautifulSoup(html, "html.parser")
-
-    info_div = soup.select_one(".info")
-    if info_div:
-        for dl in info_div.select("dl"):
-            dt = clean_text(dl.select_one("dt").get_text()) if dl.select_one("dt") else ""
-            dd = clean_text(dl.select_one("dd").get_text()) if dl.select_one("dd") else ""
-            if dt == "クラス":
-                card["class"] = dd
-            elif dt == "タイトル":
-                card["title"] = dd
-            elif dt == "カード種類":
-                card["type"] = dd
-            elif dt == "タイプ":
-                card["subtype"] = dd
-            elif dt == "レアリティ":
-                card["rarity"] = dd
-            elif dt == "収録商品":
-                card["product_name"] = dd
-
-    status_div = soup.select_one(".status")
-    if status_div:
-        cost = status_div.select_one(".status-Item-Cost")
-        atk = status_div.select_one(".status-Item-Power")
-        hp = status_div.select_one(".status-Item-Hp")
-        if cost:
-            card["cost"] = clean_text(cost.get_text().replace("コスト", ""))
-        if atk:
-            card["atk"] = clean_text(atk.get_text().replace("攻撃力", ""))
-        if hp:
-            card["hp"] = clean_text(hp.get_text().replace("体力", ""))
-
-    detail_div = soup.select_one(".detail")
-    if detail_div:
-        detail_text = extract_detail_text(detail_div.decode_contents())
-        if detail_text:
-            card["ability_text"] = detail_text
-
-    return derive_card_metadata(card)
+    return parse_card_detail_html(card, html)
 
 
 async def main() -> None:

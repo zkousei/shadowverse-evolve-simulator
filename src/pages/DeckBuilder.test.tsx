@@ -48,6 +48,12 @@ const mockCards: DeckBuilderCardData[] = [
     is_token: false,
     is_evolve_card: false,
     is_deck_build_legal: true,
+    related_cards: [
+      {
+        id: 'TK01-001',
+        name: 'Knight Token',
+      },
+    ],
   },
   {
     id: 'EV01-001',
@@ -900,6 +906,8 @@ describe('DeckBuilder', () => {
       expect.objectContaining({ id: 'LDR01-001' }),
       expect.objectContaining({ id: 'LDR01-002' }),
     ]);
+    expect(exportedDeck.mainDeck[0]).not.toHaveProperty('related_cards');
+    expect(exportedDeck.evolveDeck[0]).not.toHaveProperty('related_cards');
 
     vi.runAllTimers();
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:deck');
@@ -1009,6 +1017,48 @@ describe('DeckBuilder', () => {
     const mainDeckSection = screen.getByRole('heading', { name: /^Main Deck/ }).nextElementSibling as HTMLElement;
     expect(within(mainDeckSection).getByText('Alpha Knight')).toBeInTheDocument();
     expect(within(mainDeckSection).queryByText('Beta Mage')).not.toBeInTheDocument();
+  });
+
+  it('exports saved decks without embedding related card metadata', async () => {
+    const createObjectURL = vi.fn().mockReturnValue('blob:saved-deck');
+    const revokeObjectURL = vi.fn();
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    vi.stubGlobal('URL', {
+      createObjectURL,
+      revokeObjectURL,
+    });
+
+    render(<DeckBuilder />);
+    await screen.findByText('Alpha Knight');
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Deck format' }), {
+      target: { value: 'other' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('Deck Name'), {
+      target: { value: 'Saved Export Deck' },
+    });
+    fireEvent.click(within(screen.getByAltText('Alpha Knight').closest('.glass-panel') as HTMLElement).getByTitle('Add to Main Deck'));
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'My Decks' }));
+    const modal = screen.getByRole('dialog', { name: 'My Decks' });
+
+    vi.useFakeTimers();
+    fireEvent.click(within(modal).getByRole('button', { name: 'Export' }));
+
+    expect(createObjectURL).toHaveBeenCalled();
+    expect(clickSpy).toHaveBeenCalled();
+
+    const exportedBlob = createObjectURL.mock.calls[0]?.[0] as Blob;
+    const exportedDeck = JSON.parse(await exportedBlob.text());
+    expect(exportedDeck.mainDeck[0]).toMatchObject({
+      id: 'BP01-001',
+      name: 'Alpha Knight',
+    });
+    expect(exportedDeck.mainDeck[0]).not.toHaveProperty('related_cards');
+
+    vi.runAllTimers();
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:saved-deck');
   });
 
   it('rejects saving a completely pristine builder state and shows a warning', async () => {
