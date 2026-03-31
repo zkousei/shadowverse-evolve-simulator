@@ -19,6 +19,7 @@ import {
   DECK_FORMAT_VALUES,
   type DeckFormat,
   getImportedDeckRuleConfig,
+  type DeckRuleConfig,
 } from '../models/deckRule';
 import { createEmptyDeckState, type DeckState } from '../models/deckState';
 import {
@@ -185,6 +186,43 @@ type SaveFeedback = {
   kind: 'success' | 'warning';
   message: string;
 };
+
+type ExportableDeckCard = Omit<DeckBuilderCardData, 'related_cards'>;
+
+type ExportableDeckPayload = {
+  deckName: string;
+  rule: DeckFormat;
+  identityType: DeckRuleConfig['identityType'];
+  selectedClass: DeckRuleConfig['selectedClass'];
+  selectedTitle: DeckRuleConfig['selectedTitle'];
+  selectedClasses: DeckRuleConfig['selectedClasses'];
+  mainDeck: ExportableDeckCard[];
+  evolveDeck: ExportableDeckCard[];
+  leaderCards: ExportableDeckCard[];
+  tokenDeck: ExportableDeckCard[];
+};
+
+const toExportableDeckCard = (card: DeckBuilderCardData): ExportableDeckCard => {
+  const { related_cards: _relatedCards, ...exportableCard } = card;
+  return exportableCard;
+};
+
+const buildExportableDeckPayload = (
+  name: string,
+  ruleConfig: DeckRuleConfig,
+  deckState: DeckState
+): ExportableDeckPayload => ({
+  deckName: name,
+  rule: ruleConfig.format,
+  identityType: ruleConfig.identityType,
+  selectedClass: ruleConfig.selectedClass,
+  selectedTitle: ruleConfig.selectedTitle,
+  selectedClasses: ruleConfig.selectedClasses,
+  mainDeck: deckState.mainDeck.map(toExportableDeckCard),
+  evolveDeck: deckState.evolveDeck.map(toExportableDeckCard),
+  leaderCards: deckState.leaderCards.map(toExportableDeckCard),
+  tokenDeck: deckState.tokenDeck.map(toExportableDeckCard),
+});
 
 const DeckBuilder: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -596,15 +634,7 @@ const DeckBuilder: React.FC = () => {
 
   const exportDeck = () => {
     const downloadDeckJson = (name: string, ruleConfig: typeof deckRuleConfig, nextDeckState: DeckState) => {
-      const data = JSON.stringify({
-        deckName: name,
-        rule: ruleConfig.format,
-        identityType: ruleConfig.identityType,
-        selectedClass: ruleConfig.selectedClass,
-        selectedTitle: ruleConfig.selectedTitle,
-        selectedClasses: ruleConfig.selectedClasses,
-        ...nextDeckState,
-      }, null, 2);
+      const data = JSON.stringify(buildExportableDeckPayload(name, ruleConfig, nextDeckState), null, 2);
 
       // Sanitize filename - allow alphanumeric, Japanese characters, underscores, hyphens
       const rawName = name.trim();
@@ -871,15 +901,15 @@ const DeckBuilder: React.FC = () => {
     if (!savedDeck) return;
 
     const restoredDeck = restoreSavedDeckToSnapshot(savedDeck, cards);
-    const data = JSON.stringify({
-      deckName: restoredDeck.snapshot.name,
-      rule: restoredDeck.snapshot.ruleConfig.format,
-      identityType: restoredDeck.snapshot.ruleConfig.identityType,
-      selectedClass: restoredDeck.snapshot.ruleConfig.selectedClass,
-      selectedTitle: restoredDeck.snapshot.ruleConfig.selectedTitle,
-      selectedClasses: restoredDeck.snapshot.ruleConfig.selectedClasses,
-      ...restoredDeck.snapshot.deckState,
-    }, null, 2);
+    const data = JSON.stringify(
+      buildExportableDeckPayload(
+        restoredDeck.snapshot.name,
+        restoredDeck.snapshot.ruleConfig,
+        restoredDeck.snapshot.deckState,
+      ),
+      null,
+      2,
+    );
 
     const rawName = restoredDeck.snapshot.name.trim();
     const safeName = rawName.length > 0

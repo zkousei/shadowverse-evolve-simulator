@@ -2,6 +2,11 @@ import type { CardClassValue } from './class';
 import type { CardKindNormalized, DeckSection } from './cardClassification';
 import { SUBTYPE_ATOMIC_VALUES } from '../data/subtypeAtomicValues';
 
+export interface RelatedCardReference {
+  id: string;
+  name: string;
+}
+
 export interface DeckBuilderCardData {
   id: string; // EXP-NUM format, e.g PCS01-001
   name: string;
@@ -21,6 +26,7 @@ export interface DeckBuilderCardData {
   is_token?: boolean;
   is_evolve_card?: boolean;
   is_deck_build_legal?: boolean;
+  related_cards?: RelatedCardReference[];
 }
 
 const compareJa = (left: string, right: string) => left.localeCompare(right, 'ja');

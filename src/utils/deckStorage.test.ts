@@ -30,6 +30,12 @@ const mockCards: DeckBuilderCardData[] = [
     type: 'フォロワー',
     card_kind_normalized: 'follower',
     deck_section: 'main',
+    related_cards: [
+      {
+        id: 'TK01-001',
+        name: 'Knight Token',
+      },
+    ],
   },
   {
     id: 'EV01-001',
@@ -128,6 +134,44 @@ describe('deckStorage', () => {
     expect(draft?.selectedDeckId).toBe(saved.id);
     const restoredDraft = restoreDraftToSnapshot(draft!, mockCards);
     expect(restoredDraft.snapshot.deckState.mainDeck).toEqual([mockCards[0], mockCards[0]]);
+  });
+
+  it('stores only card references while restoring catalog metadata such as related cards', () => {
+    saveDeck({
+      name: 'Royal Related Test',
+      ruleConfig: otherRuleConfig,
+      deckState: {
+        mainDeck: [mockCards[0]],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [],
+      },
+    });
+
+    saveDraft({
+      selectedDeckId: null,
+      name: 'Draft Related Test',
+      ruleConfig: otherRuleConfig,
+      deckState: {
+        mainDeck: [mockCards[0]],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [],
+      },
+    });
+
+    const savedDecksPayload = window.localStorage.getItem(SAVED_DECKS_KEY) ?? '';
+    const draftPayload = window.localStorage.getItem(DECK_BUILDER_DRAFT_KEY) ?? '';
+
+    expect(savedDecksPayload).not.toContain('related_cards');
+    expect(draftPayload).not.toContain('related_cards');
+
+    const savedDeck = listSavedDecks()[0];
+    const restoredSaved = restoreSavedDeckToSnapshot(savedDeck, mockCards);
+    const restoredDraft = restoreDraftToSnapshot(loadDraft()!, mockCards);
+
+    expect(restoredSaved.snapshot.deckState.mainDeck[0].related_cards).toEqual(mockCards[0].related_cards);
+    expect(restoredDraft.snapshot.deckState.mainDeck[0].related_cards).toEqual(mockCards[0].related_cards);
   });
 
   it('ignores broken storage payloads and clears drafts safely', () => {
