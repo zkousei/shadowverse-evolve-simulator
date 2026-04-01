@@ -133,9 +133,14 @@ const matchesConstructedClassRule = (
   return card.class === selectedClass || card.class === CLASS.NEUTRAL;
 };
 
-const matchesConstructedTitleRule = (card: DeckBuilderCardData, selectedTitle: string): boolean => (
-  card.title === selectedTitle
-);
+const matchesConstructedTitleRule = (
+  card: DeckBuilderCardData,
+  targetSection: DeckTargetSection,
+  selectedTitle: string
+): boolean => {
+  if (targetSection === 'token') return true;
+  return card.title === selectedTitle;
+};
 
 const matchesCrossoverClassRule = (
   card: DeckBuilderCardData,
@@ -162,7 +167,7 @@ export const isCardAllowedInSectionByRule = (
     }
 
     if (ruleConfig.identityType === 'title' && ruleConfig.selectedTitle) {
-      return matchesConstructedTitleRule(card, ruleConfig.selectedTitle);
+      return matchesConstructedTitleRule(card, targetSection, ruleConfig.selectedTitle);
     }
 
     return false;
@@ -579,6 +584,49 @@ const getImportedLeaderCards = (importedDeck: ImportedDeckState): DeckBuilderCar
   return [];
 };
 
+const getRelatedTokenIdentityKey = (card: Pick<DeckBuilderCardData, 'id' | 'name'>): string => {
+  const normalizedName = card.name.trim();
+  return normalizedName.length > 0 ? `name:${normalizedName}` : `id:${card.id}`;
+};
+
+export const appendRelatedTokensToDeckState = (
+  deckState: DeckState,
+  availableCards: DeckBuilderCardData[],
+  ruleConfig: DeckRuleConfig = DEFAULT_RULE_CONFIG
+): DeckState => {
+  if (availableCards.length === 0) return deckState;
+
+  const cardCatalogById = new Map(availableCards.map(card => [card.id, card]));
+  const tokenIdentityKeys = new Set(deckState.tokenDeck.map(getRelatedTokenIdentityKey));
+  const tokensToAppend: DeckBuilderCardData[] = [];
+
+  [
+    ...deckState.mainDeck,
+    ...deckState.evolveDeck,
+    ...deckState.leaderCards,
+  ].forEach(card => {
+    (card.related_cards ?? []).forEach(relatedCard => {
+      const relatedToken = cardCatalogById.get(relatedCard.id);
+      if (!relatedToken) return;
+      if (inferDeckSection(relatedToken) !== 'token') return;
+      if (!canAddCardToSection(relatedToken, 'token', ruleConfig)) return;
+
+      const tokenIdentityKey = getRelatedTokenIdentityKey(relatedToken);
+      if (tokenIdentityKeys.has(tokenIdentityKey)) return;
+
+      tokenIdentityKeys.add(tokenIdentityKey);
+      tokensToAppend.push(relatedToken);
+    });
+  });
+
+  if (tokensToAppend.length === 0) return deckState;
+
+  return {
+    ...deckState,
+    tokenDeck: [...deckState.tokenDeck, ...tokensToAppend],
+  };
+};
+
 export const sanitizeImportedDeckState = (
   importedDeck: ImportedDeckState,
   availableCards: DeckBuilderCardData[],
@@ -601,11 +649,11 @@ export const sanitizeImportedDeckState = (
     tempDeckState
   );
 
-  return {
+  return appendRelatedTokensToDeckState({
     ...createEmptyDeckState(),
     mainDeck: sanitizeImportedSection(importedDeck.mainDeck ?? [], availableCards, 'main', ruleConfig, tempDeckState),
     evolveDeck: sanitizeImportedSection(importedDeck.evolveDeck ?? [], availableCards, 'evolve', ruleConfig, tempDeckState),
     leaderCards,
     tokenDeck: sanitizeImportedSection(importedDeck.tokenDeck ?? [], availableCards, 'token', ruleConfig, tempDeckState),
-  };
+  }, availableCards, ruleConfig);
 };

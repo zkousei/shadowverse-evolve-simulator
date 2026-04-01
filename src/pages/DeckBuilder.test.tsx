@@ -331,6 +331,22 @@ describe('DeckBuilder', () => {
     expect(screen.getByText('0/1')).toBeInTheDocument();
   }, 10000);
 
+  it('auto-adds a related token when a card is added to the main deck', async () => {
+    render(<DeckBuilder />);
+    await screen.findByText('Alpha Knight');
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Constructed class' }), {
+      target: { value: 'ロイヤル' },
+    });
+
+    fireEvent.click(within(screen.getByAltText('Alpha Knight').closest('.glass-panel') as HTMLElement).getByTitle('Add to Main Deck'));
+
+    const tokenDeckSection = screen.getByRole('heading', { name: /^Token Deck/ }).nextElementSibling as HTMLElement;
+    await waitFor(() => {
+      expect(within(tokenDeckSection).getByText('Knight Token')).toBeInTheDocument();
+    });
+  });
+
   it('filters cards by deck section and combines with rarity and product filters', async () => {
     render(<DeckBuilder />);
 
@@ -594,6 +610,9 @@ describe('DeckBuilder', () => {
     });
     expect(screen.getByText('Session restored from this browser')).toBeInTheDocument();
     expect(within(mainDeckSection).getByText('Alpha Knight')).toBeInTheDocument();
+
+    const tokenDeckSection = screen.getByRole('heading', { name: /^Token Deck/ }).nextElementSibling as HTMLElement;
+    expect(within(tokenDeckSection).getByText('Knight Token')).toBeInTheDocument();
   });
 
   it('discards a previous session when Start Fresh is chosen from the restore prompt', async () => {
@@ -659,6 +678,9 @@ describe('DeckBuilder', () => {
     await waitFor(() => {
       expect(screen.getByDisplayValue('Loaded Session Deck')).toBeInTheDocument();
     });
+
+    const tokenDeckSection = screen.getByRole('heading', { name: /^Token Deck/ }).nextElementSibling as HTMLElement;
+    expect(within(tokenDeckSection).getByText('Knight Token')).toBeInTheDocument();
   });
 
   it('reset builder clears the current builder state and removes the saved session', async () => {
@@ -950,6 +972,36 @@ describe('DeckBuilder', () => {
     expect(screen.getByRole('combobox', { name: 'Crossover class B' })).toHaveValue('ウィッチ');
   });
 
+  it('auto-adds related tokens when importing a deck from JSON without token entries', async () => {
+    importedDeckPayload = {
+      deckName: 'JSON Token Import',
+      mainDeck: [mockCards[0]],
+      evolveDeck: [],
+      leaderCards: [],
+      tokenDeck: [],
+    };
+
+    stubFileReaderWithImportedDeck();
+
+    const { container } = render(<DeckBuilder />);
+    await screen.findByText('Alpha Knight');
+
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File(['{}'], 'JSON Token Import.json', { type: 'application/json' });
+    Object.defineProperty(fileInput, 'files', {
+      value: [file],
+      configurable: true,
+    });
+    fireEvent.change(fileInput);
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('JSON Token Import')).toBeInTheDocument();
+    });
+
+    const tokenDeckSection = screen.getByRole('heading', { name: /^Token Deck/ }).nextElementSibling as HTMLElement;
+    expect(within(tokenDeckSection).getByText('Knight Token')).toBeInTheDocument();
+  });
+
   it('sanitizes imported cards that are placed in the wrong deck section', async () => {
     importedDeckPayload = {
       mainDeck: [mockCards[1]],
@@ -1188,11 +1240,13 @@ describe('DeckBuilder', () => {
     const mainDeckSection = screen.getByRole('heading', { name: /^Main Deck/ }).nextElementSibling as HTMLElement;
     const evolveDeckSection = screen.getByRole('heading', { name: /^Evolve Deck/ }).nextElementSibling as HTMLElement;
     const leaderSection = screen.getByRole('heading', { name: /^Leader/ }).nextElementSibling as HTMLElement;
+    const tokenDeckSection = screen.getByRole('heading', { name: /^Token Deck/ }).nextElementSibling as HTMLElement;
 
     expect(within(mainDeckSection).getByText('Alpha Knight')).toBeInTheDocument();
     expect(within(mainDeckSection).getByText('× 2')).toBeInTheDocument();
     expect(within(evolveDeckSection).getByText('Evolve Angel')).toBeInTheDocument();
     expect(within(leaderSection).getByText('Leader Luna')).toBeInTheDocument();
+    expect(within(tokenDeckSection).getByText('Knight Token')).toBeInTheDocument();
   });
 
   it('keeps the My Decks modal open when load is canceled', async () => {
