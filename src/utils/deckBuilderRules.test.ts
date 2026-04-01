@@ -3,6 +3,7 @@ import { CLASS } from '../models/class';
 import type { DeckRuleConfig } from '../models/deckRule';
 import { getDisplayDedupKey, type DeckBuilderCardData } from '../models/deckBuilderCard';
 import {
+  appendRelatedTokensToDeckState,
   canAddCardToDeckState,
   canAddCardToSection,
   getAllowedSections,
@@ -208,6 +209,70 @@ const titleTokenCard: DeckBuilderCardData = {
   title: 'ウマ娘 プリティーダービー',
 };
 
+const relatedTokenVariantA: DeckBuilderCardData = {
+  ...tokenCard,
+  id: 'TK01-010',
+  name: 'Shared Token',
+  image: '/shared-token-a.png',
+};
+
+const relatedTokenVariantB: DeckBuilderCardData = {
+  ...tokenCard,
+  id: 'TK01-011',
+  name: 'Shared Token',
+  image: '/shared-token-b.png',
+};
+
+const secondaryRelatedToken: DeckBuilderCardData = {
+  ...tokenCard,
+  id: 'TK01-012',
+  name: 'Support Token',
+  image: '/support-token.png',
+};
+
+const chainedRelatedToken: DeckBuilderCardData = {
+  ...tokenCard,
+  id: 'TK01-013',
+  name: 'Chained Token',
+  image: '/chained-token.png',
+};
+
+const mainCardWithRelatedTokens: DeckBuilderCardData = {
+  ...mainCard,
+  id: 'BP01-010',
+  name: 'Source Main Card',
+  related_cards: [
+    { id: relatedTokenVariantA.id, name: relatedTokenVariantA.name },
+    { id: secondaryRelatedToken.id, name: secondaryRelatedToken.name },
+    { id: evolveCard.id, name: evolveCard.name },
+  ],
+};
+
+const evolveCardWithRelatedTokens: DeckBuilderCardData = {
+  ...evolveCard,
+  id: 'EV01-010',
+  name: 'Source Evolve Card',
+  related_cards: [
+    { id: relatedTokenVariantB.id, name: relatedTokenVariantB.name },
+  ],
+};
+
+const leaderCardWithRelatedTokens: DeckBuilderCardData = {
+  ...royalLeaderCard,
+  id: 'LDR01-010',
+  name: 'Source Leader Card',
+  related_cards: [
+    { id: secondaryRelatedToken.id, name: secondaryRelatedToken.name },
+  ],
+};
+
+const tokenCardWithRelatedTokens: DeckBuilderCardData = {
+  ...relatedTokenVariantA,
+  related_cards: [
+    { id: chainedRelatedToken.id, name: chainedRelatedToken.name },
+  ],
+};
+
 const cutthroatCard: DeckBuilderCardData = {
   id: 'BP19-110',
   name: '機鋒の咎人・カットスロート',
@@ -384,6 +449,7 @@ describe('deckBuilderRules', () => {
       selectedClasses: [null, null],
     };
     expect(canAddCardToSection(titleCard, 'main', constructedTitleRule)).toBe(true);
+    expect(canAddCardToSection(tokenCard, 'token', constructedTitleRule)).toBe(true);
     expect(canAddCardToSection(titleTokenCard, 'token', constructedTitleRule)).toBe(true);
     expect(isCardAllowedByRule(mainCard, constructedTitleRule)).toBe(false);
   });
@@ -485,6 +551,65 @@ describe('deckBuilderRules', () => {
     }, catalog, constructedRoyalRule);
 
     expect(sanitizedLegacyDeck.leaderCards).toEqual([royalLeaderCard]);
+  });
+
+  it('appends related token cards from main, evolve, and leader cards during import sanitize', () => {
+    const catalog = [
+      mainCardWithRelatedTokens,
+      evolveCardWithRelatedTokens,
+      leaderCardWithRelatedTokens,
+      relatedTokenVariantA,
+      relatedTokenVariantB,
+      secondaryRelatedToken,
+      evolveCard,
+    ];
+
+    const sanitized = sanitizeImportedDeckState({
+      mainDeck: [mainCardWithRelatedTokens],
+      evolveDeck: [evolveCardWithRelatedTokens],
+      leaderCards: [leaderCardWithRelatedTokens],
+      tokenDeck: [],
+    }, catalog, constructedRoyalRule);
+
+    expect(sanitized.tokenDeck.map(card => card.id)).toEqual([
+      relatedTokenVariantA.id,
+      secondaryRelatedToken.id,
+    ]);
+  });
+
+  it('prefers an existing token variant when related tokens share the same name', () => {
+    const deckState = appendRelatedTokensToDeckState({
+      mainDeck: [mainCardWithRelatedTokens, evolveCardWithRelatedTokens],
+      evolveDeck: [],
+      leaderCards: [],
+      tokenDeck: [relatedTokenVariantB],
+    }, [
+      mainCardWithRelatedTokens,
+      evolveCardWithRelatedTokens,
+      relatedTokenVariantA,
+      relatedTokenVariantB,
+      secondaryRelatedToken,
+    ], constructedRoyalRule);
+
+    expect(deckState.tokenDeck.map(card => card.id)).toEqual([
+      relatedTokenVariantB.id,
+      secondaryRelatedToken.id,
+    ]);
+  });
+
+  it('does not recursively append tokens from cards already in the token deck', () => {
+    const deckState = appendRelatedTokensToDeckState({
+      mainDeck: [mainCard],
+      evolveDeck: [],
+      leaderCards: [],
+      tokenDeck: [tokenCardWithRelatedTokens],
+    }, [
+      mainCard,
+      tokenCardWithRelatedTokens,
+      chainedRelatedToken,
+    ], constructedRoyalRule);
+
+    expect(deckState.tokenDeck.map(card => card.id)).toEqual([tokenCardWithRelatedTokens.id]);
   });
 
   it('reports invalid deck placements and deck size overflow', () => {

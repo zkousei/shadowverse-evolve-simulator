@@ -23,6 +23,7 @@ import {
 } from '../models/deckRule';
 import { createEmptyDeckState, type DeckState } from '../models/deckState';
 import {
+  appendRelatedTokensToDeckState,
   canAddCardToDeckState,
   DECK_LIMITS,
   getDeckLimit,
@@ -300,7 +301,20 @@ const DeckBuilder: React.FC = () => {
     const restoredDraft = restoreDraftToSnapshot(draft, cards);
     const savedDeck = draft.selectedDeckId ? getSavedDeckById(draft.selectedDeckId) : null;
     const baselineSnapshot = savedDeck
-      ? restoreSavedDeckToSnapshot(savedDeck, cards).snapshot
+      ? (() => {
+        const restoredSavedDeck = restoreSavedDeckToSnapshot(savedDeck, cards);
+        const normalizedDeckState = sanitizeImportedDeckState(
+          restoredSavedDeck.snapshot.deckState,
+          cards,
+          restoredSavedDeck.snapshot.ruleConfig,
+        );
+
+        return createDeckSnapshot(
+          restoredSavedDeck.snapshot.name,
+          restoredSavedDeck.snapshot.ruleConfig,
+          normalizedDeckState,
+        );
+      })()
       : null;
 
     setPendingDraftRestore({
@@ -574,13 +588,17 @@ const DeckBuilder: React.FC = () => {
     if (!canAddCardToDeckState(card, targetSection, deckState, deckRuleConfig)) return;
 
     setDeckState(current => {
+      let nextDeckState = current;
+
       switch (targetSection) {
         case 'main':
           if (current.mainDeck.length >= DECK_LIMITS.main) return current;
-          return { ...current, mainDeck: [...current.mainDeck, card] };
+          nextDeckState = { ...current, mainDeck: [...current.mainDeck, card] };
+          break;
         case 'evolve':
           if (current.evolveDeck.length >= DECK_LIMITS.evolve) return current;
-          return { ...current, evolveDeck: [...current.evolveDeck, card] };
+          nextDeckState = { ...current, evolveDeck: [...current.evolveDeck, card] };
+          break;
         case 'leader': {
           if (deckRuleConfig.format === 'crossover') {
             const leaderClass = card.class;
@@ -591,18 +609,24 @@ const DeckBuilder: React.FC = () => {
             if (existingIndex >= 0) {
               const nextLeaderCards = [...current.leaderCards];
               nextLeaderCards[existingIndex] = card;
-              return { ...current, leaderCards: nextLeaderCards };
+              nextDeckState = { ...current, leaderCards: nextLeaderCards };
+              break;
             }
 
             if (current.leaderCards.length >= leaderLimit) return current;
-            return { ...current, leaderCards: [...current.leaderCards, card] };
+            nextDeckState = { ...current, leaderCards: [...current.leaderCards, card] };
+            break;
           }
 
-          return { ...current, leaderCards: [card] };
+          nextDeckState = { ...current, leaderCards: [card] };
+          break;
         }
         case 'token':
-          return { ...current, tokenDeck: [...current.tokenDeck, card] };
+          nextDeckState = { ...current, tokenDeck: [...current.tokenDeck, card] };
+          break;
       }
+
+      return appendRelatedTokensToDeckState(nextDeckState, cards, deckRuleConfig);
     });
   };
 
@@ -806,11 +830,21 @@ const DeckBuilder: React.FC = () => {
     if (!savedDeck) return;
 
     const restoredDeck = restoreSavedDeckToSnapshot(savedDeck, cards);
+    const sanitizedDeckState = sanitizeImportedDeckState(
+      restoredDeck.snapshot.deckState,
+      cards,
+      restoredDeck.snapshot.ruleConfig,
+    );
+
     setDeckName(restoredDeck.snapshot.name);
     setDeckRuleConfig(restoredDeck.snapshot.ruleConfig);
-    setDeckState(sanitizeImportedDeckState(restoredDeck.snapshot.deckState, cards, restoredDeck.snapshot.ruleConfig));
+    setDeckState(sanitizedDeckState);
     setSelectedSavedDeckId(savedDeck.id);
-    setSavedBaselineSnapshot(restoredDeck.snapshot);
+    setSavedBaselineSnapshot(createDeckSnapshot(
+      restoredDeck.snapshot.name,
+      restoredDeck.snapshot.ruleConfig,
+      sanitizedDeckState,
+    ));
     setDraftRestored(false);
     setPendingDraftRestore(null);
     setIsMyDecksOpen(false);
