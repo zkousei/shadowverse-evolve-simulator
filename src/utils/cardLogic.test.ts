@@ -702,6 +702,20 @@ describe('CardLogic utils', () => {
       const result = CardLogic.extractCard([card], 'e2', 'host', 'hand-host');
       expect(result[0].zone).toBe('evolveDeck-host');
     });
+
+    it('should attach an extracted evolve card to the chosen field card and inherit its tap state', () => {
+      const base = { ...createMockCard('base', 'field-host'), isTapped: true };
+      const evolve = { ...createMockCard('evo', 'evolveDeck-host'), isEvolveCard: true };
+
+      const result = CardLogic.extractCardToFieldAttachment([base, evolve], 'evo', 'host', 'base');
+
+      expect(result.find(card => card.id === 'evo')).toMatchObject({
+        zone: 'field-host',
+        attachedTo: 'base',
+        isTapped: true,
+      });
+      expect(result.find(card => card.id === 'base')?.isTapped).toBe(true);
+    });
   });
 
   describe('setup and deck helpers', () => {

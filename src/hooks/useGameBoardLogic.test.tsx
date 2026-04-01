@@ -206,6 +206,7 @@ function HookHarness() {
     handleUndoTurn,
     drawCard,
     handleUndoCardMove,
+    handleExtractCard,
     handleDeckUpload,
     spawnToken,
     spawnTokens,
@@ -222,6 +223,9 @@ function HookHarness() {
     handleShuffleDeck,
     handleDeclareAttack,
     handleSetRevealHandsMode,
+    evolveAutoAttachSelection,
+    confirmEvolveAutoAttachSelection,
+    cancelEvolveAutoAttachSelection,
   } = useGameBoardLogic();
 
   return (
@@ -252,6 +256,13 @@ function HookHarness() {
       <div data-testid="revealed-overlay-title">{revealedCardsOverlay?.title ?? 'none'}</div>
       <div data-testid="revealed-overlay-summary">{revealedCardsOverlay?.summaryLines?.join(' || ') ?? 'none'}</div>
       <div data-testid="saved-session">{savedSessionCandidate ? savedSessionCandidate.room : 'none'}</div>
+      <div data-testid="auto-attach-selection-count">{String(evolveAutoAttachSelection?.candidateCards.length ?? 0)}</div>
+      <div data-testid="auto-attach-selection-source">{evolveAutoAttachSelection?.sourceCard.id ?? 'none'}</div>
+      <div data-testid="auto-attach-selection-targets">{evolveAutoAttachSelection?.candidateCards.map(card => card.id).join(',') ?? 'none'}</div>
+      <div data-testid="evolve-search-attached-to">{gameState.cards.find(card => card.id === 'evolve-search-card')?.attachedTo ?? 'none'}</div>
+      <div data-testid="evolve-search-tapped">{String(gameState.cards.find(card => card.id === 'evolve-search-card')?.isTapped ?? 'missing')}</div>
+      <div data-testid="drag-evolve-attached-to">{gameState.cards.find(card => card.id === 'drag-evolve-card')?.attachedTo ?? 'none'}</div>
+      <div data-testid="drag-evolve-tapped">{String(gameState.cards.find(card => card.id === 'drag-evolve-card')?.isTapped ?? 'missing')}</div>
       {savedSessionCandidate && (
         <>
           <button onClick={resumeSavedSession}>Resume Saved Session</button>
@@ -271,6 +282,12 @@ function HookHarness() {
       <button onClick={() => handleSendToBottom('bottom-card')}>Send Field Card to Bottom</button>
       <button onClick={() => handleBanish('banish-card')}>Banish Field Card</button>
       <button onClick={() => handlePlayToField('hand-card', 'host')}>Play Hand Card to Field</button>
+      <button onClick={() => handleExtractCard('evolve-search-card', 'field-host', 'host')}>Extract Evolve to Field</button>
+      <button onClick={() => handleDragEnd({ active: { id: 'drag-evolve-card' }, over: { id: 'field-host' } } as any)}>Drag Evolve to Field</button>
+      <button onClick={() => handleDragEnd({ active: { id: 'attach-base-1' }, over: { id: 'attach-base-2' } } as any)}>Attach Base 1 Under Base 2</button>
+      <button onClick={() => confirmEvolveAutoAttachSelection('attach-base-1')}>Confirm Auto Attach Base 1</button>
+      <button onClick={() => confirmEvolveAutoAttachSelection('attach-base-2')}>Confirm Auto Attach Base 2</button>
+      <button onClick={cancelEvolveAutoAttachSelection}>Cancel Auto Attach</button>
       <button onClick={() => handleSendToCemetery('field-card')}>Send Field Card to Cemetery</button>
       <button onClick={() => handleReturnEvolve('evolve-card')}>Return Evolve Card</button>
       <button onClick={() => handleShuffleDeck('host')}>Shuffle Host Deck</button>
@@ -432,6 +449,24 @@ const installMockFileReader = (result: string) => {
   vi.stubGlobal('FileReader', MockFileReader);
   return readAsText;
 };
+
+const installMockCatalogFetch = (cards: Array<Record<string, unknown>>) => {
+  const fetchMock = vi.fn().mockResolvedValue({
+    json: vi.fn().mockResolvedValue(cards),
+  });
+
+  vi.stubGlobal('fetch', fetchMock);
+  return fetchMock;
+};
+
+const createCatalogCard = (overrides: Record<string, unknown>) => ({
+  id: 'CARD-001',
+  name: 'Catalog Card',
+  image: '/catalog-card.png',
+  card_kind_normalized: 'follower',
+  deck_section: 'main',
+  ...overrides,
+});
 
 const connectGuest = (entry = '/game?host=false&room=ROOM123') => {
   renderHarness(entry);
@@ -1676,6 +1711,316 @@ describe('useGameBoardLogic action handlers', () => {
     expect(screen.getByTestId('card-play-message')).toHaveTextContent('You played to field Quickblader');
     expect(screen.getByTestId('event-history')).not.toHaveTextContent('You played to field Quickblader');
     expect(screen.getByTestId('can-undo-move')).toHaveTextContent('true');
+  });
+
+  it('keeps the existing evolve-deck placement behavior when no auto-attach target is on the field', async () => {
+    installMockCatalogFetch([
+      createCatalogCard({ id: 'BASE-001', name: 'Base Follower' }),
+      createCatalogCard({
+        id: 'EVO-001',
+        name: 'Base Follower',
+        deck_section: 'evolve',
+        card_kind_normalized: 'evolve_follower',
+        related_cards: [{ id: 'BASE-001', name: 'Base Follower' }],
+      }),
+    ]);
+
+    renderResumedHostHarness({
+      cards: [{
+        id: 'evolve-search-card',
+        cardId: 'EVO-001',
+        name: 'Base Follower',
+        image: '/base-follower-evo.png',
+        zone: 'evolveDeck-host',
+        owner: 'host',
+        isTapped: false,
+        isFlipped: false,
+        counters: { atk: 0, hp: 0 },
+        isEvolveCard: true,
+      }],
+      gameStatus: 'playing',
+      turnCount: 2,
+      phase: 'Main',
+      revision: 7,
+    });
+
+    await act(async () => {});
+
+    fireEvent.click(screen.getByRole('button', { name: 'Extract Evolve to Field' }));
+
+    expect(screen.getByTestId('auto-attach-selection-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('host-evolve-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('host-field-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('evolve-search-attached-to')).toHaveTextContent('none');
+  });
+
+  it('auto-attaches an evolve card from search when a single related field card is present', async () => {
+    installMockCatalogFetch([
+      createCatalogCard({ id: 'BASE-001', name: 'Base Follower' }),
+      createCatalogCard({
+        id: 'EVO-001',
+        name: 'Base Follower',
+        deck_section: 'evolve',
+        card_kind_normalized: 'evolve_follower',
+        related_cards: [{ id: 'BASE-001', name: 'Base Follower' }],
+      }),
+    ]);
+
+    renderResumedHostHarness({
+      cards: [
+        {
+          id: 'evolve-search-card',
+          cardId: 'EVO-001',
+          name: 'Base Follower',
+          image: '/base-follower-evo.png',
+          zone: 'evolveDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+          isEvolveCard: true,
+        },
+        {
+          id: 'attach-base-1',
+          cardId: 'BASE-001',
+          name: 'Base Follower',
+          image: '/base-follower.png',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+      gameStatus: 'playing',
+      turnCount: 2,
+      phase: 'Main',
+      revision: 7,
+    });
+
+    await act(async () => {});
+
+    fireEvent.click(screen.getByRole('button', { name: 'Extract Evolve to Field' }));
+
+    expect(screen.getByTestId('auto-attach-selection-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('host-evolve-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('host-field-count')).toHaveTextContent('2');
+    expect(screen.getByTestId('evolve-search-attached-to')).toHaveTextContent('attach-base-1');
+  });
+
+  it('offers selection when exact and reprint targets both match and attaches the chosen card', async () => {
+    installMockCatalogFetch([
+      createCatalogCard({ id: 'BASE-001', name: 'Base Follower' }),
+      createCatalogCard({ id: 'BASE-SP', name: 'Base Follower' }),
+      createCatalogCard({
+        id: 'EVO-001',
+        name: 'Base Follower',
+        deck_section: 'evolve',
+        card_kind_normalized: 'evolve_follower',
+        related_cards: [{ id: 'BASE-001', name: 'Base Follower' }],
+      }),
+      createCatalogCard({
+        id: 'EVO-SP',
+        name: 'Base Follower',
+        deck_section: 'evolve',
+        card_kind_normalized: 'evolve_follower',
+        related_cards: [{ id: 'BASE-SP', name: 'Base Follower' }],
+      }),
+    ]);
+
+    renderResumedHostHarness({
+      cards: [
+        {
+          id: 'evolve-search-card',
+          cardId: 'EVO-001',
+          name: 'Base Follower',
+          image: '/base-follower-evo.png',
+          zone: 'evolveDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+          isEvolveCard: true,
+        },
+        {
+          id: 'attach-base-1',
+          cardId: 'BASE-001',
+          name: 'Base Follower',
+          image: '/base-follower.png',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'attach-base-2',
+          cardId: 'BASE-SP',
+          name: 'Base Follower',
+          image: '/base-follower-sp.png',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+      gameStatus: 'playing',
+      turnCount: 2,
+      phase: 'Main',
+      revision: 7,
+    });
+
+    await act(async () => {});
+
+    fireEvent.click(screen.getByRole('button', { name: 'Extract Evolve to Field' }));
+
+    expect(screen.getByTestId('auto-attach-selection-count')).toHaveTextContent('2');
+    expect(screen.getByTestId('auto-attach-selection-source')).toHaveTextContent('evolve-search-card');
+    expect(screen.getByTestId('host-evolve-count')).toHaveTextContent('1');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm Auto Attach Base 2' }));
+
+    expect(screen.getByTestId('auto-attach-selection-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('host-evolve-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('host-field-count')).toHaveTextContent('3');
+    expect(screen.getByTestId('evolve-search-attached-to')).toHaveTextContent('attach-base-2');
+  });
+
+  it('re-resolves auto-attach candidates while the selection is open and cancels invalid confirmations', async () => {
+    installMockCatalogFetch([
+      createCatalogCard({ id: 'BASE-001', name: 'Base Follower' }),
+      createCatalogCard({ id: 'BASE-SP', name: 'Base Follower' }),
+      createCatalogCard({
+        id: 'EVO-001',
+        name: 'Base Follower',
+        deck_section: 'evolve',
+        card_kind_normalized: 'evolve_follower',
+        related_cards: [{ id: 'BASE-001', name: 'Base Follower' }],
+      }),
+      createCatalogCard({
+        id: 'EVO-SP',
+        name: 'Base Follower',
+        deck_section: 'evolve',
+        card_kind_normalized: 'evolve_follower',
+        related_cards: [{ id: 'BASE-SP', name: 'Base Follower' }],
+      }),
+    ]);
+
+    renderResumedHostHarness({
+      cards: [
+        {
+          id: 'evolve-search-card',
+          cardId: 'EVO-001',
+          name: 'Base Follower',
+          image: '/base-follower-evo.png',
+          zone: 'evolveDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+          isEvolveCard: true,
+        },
+        {
+          id: 'attach-base-1',
+          cardId: 'BASE-001',
+          name: 'Base Follower',
+          image: '/base-follower.png',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'attach-base-2',
+          cardId: 'BASE-SP',
+          name: 'Base Follower',
+          image: '/base-follower-sp.png',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+      gameStatus: 'playing',
+      turnCount: 2,
+      phase: 'Main',
+      revision: 8,
+    });
+
+    await act(async () => {});
+
+    fireEvent.click(screen.getByRole('button', { name: 'Extract Evolve to Field' }));
+
+    expect(screen.getByTestId('auto-attach-selection-count')).toHaveTextContent('2');
+    expect(screen.getByTestId('auto-attach-selection-targets')).toHaveTextContent('attach-base-1,attach-base-2');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Attach Base 1 Under Base 2' }));
+
+    expect(screen.getByTestId('auto-attach-selection-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('auto-attach-selection-targets')).toHaveTextContent('attach-base-2');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm Auto Attach Base 1' }));
+
+    expect(screen.getByTestId('auto-attach-selection-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('host-evolve-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('evolve-search-attached-to')).toHaveTextContent('none');
+  });
+
+  it('auto-attaches an evolve card when dragged from the evolve deck onto an empty field zone', async () => {
+    installMockCatalogFetch([
+      createCatalogCard({ id: 'BASE-001', name: 'Base Follower' }),
+      createCatalogCard({
+        id: 'EVO-001',
+        name: 'Base Follower',
+        deck_section: 'evolve',
+        card_kind_normalized: 'evolve_follower',
+        related_cards: [{ id: 'BASE-001', name: 'Base Follower' }],
+      }),
+    ]);
+
+    renderResumedHostHarness({
+      cards: [
+        {
+          id: 'drag-evolve-card',
+          cardId: 'EVO-001',
+          name: 'Base Follower',
+          image: '/base-follower-evo.png',
+          zone: 'evolveDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+          isEvolveCard: true,
+        },
+        {
+          id: 'attach-base-1',
+          cardId: 'BASE-001',
+          name: 'Base Follower',
+          image: '/base-follower.png',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: true,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+      gameStatus: 'playing',
+      turnCount: 2,
+      phase: 'Main',
+      revision: 7,
+    });
+
+    await act(async () => {});
+
+    fireEvent.click(screen.getByRole('button', { name: 'Drag Evolve to Field' }));
+
+    expect(screen.getByTestId('host-evolve-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('host-field-count')).toHaveTextContent('2');
+    expect(screen.getByTestId('drag-evolve-attached-to')).toHaveTextContent('attach-base-1');
+    expect(screen.getByTestId('drag-evolve-tapped')).toHaveTextContent('true');
   });
 
   it('moves a field card to banish', () => {

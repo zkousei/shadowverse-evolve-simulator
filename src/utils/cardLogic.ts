@@ -665,6 +665,35 @@ export const extractCard = (
   });
 };
 
+export const extractCardToFieldAttachment = (
+  cards: CardInstance[],
+  cardId: string,
+  role: 'host' | 'guest',
+  attachToCardId: string
+): CardInstance[] => {
+  const targetCard = cards.find(c => c.id === cardId);
+  if (!targetCard) return cards;
+  if (isLeaderCard(targetCard)) return cards;
+
+  const attachTarget = cards.find(c => c.id === attachToCardId);
+  if (!attachTarget) return cards;
+  if (isLeaderCard(attachTarget)) return cards;
+
+  const rootCard = findRootCard(cards, attachTarget);
+  const destinationZone = `field-${role}`;
+  if (rootCard.zone !== destinationZone) return cards;
+
+  return moveCardToEnd(cards, cardId, {
+    zone: destinationZone,
+    isFlipped: false,
+    isTapped: rootCard.isTapped,
+    counters: getCountersForMove(targetCard, destinationZone),
+    genericCounter: getGenericCounterForMove(targetCard, destinationZone),
+    attachedTo: rootCard.id,
+    preserveAttachment: false,
+  });
+};
+
 export const modifyPlayerStatValue = (
   currentValue: number,
   maxPp: number,

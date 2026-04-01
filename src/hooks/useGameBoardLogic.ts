@@ -21,6 +21,7 @@ import { buildSingleCardRevealEffect } from '../utils/cardReveal';
 import { buildAttackDeclaredEffect, formatAttackEffect } from '../utils/attackUi';
 import { buildCardPlayedEffect, formatCardPlayedEffect } from '../utils/cardPlayUi';
 import { normalizeBaseCardType } from '../utils/cardType';
+import { buildEvolveAutoAttachResolver, type EvolveAutoAttachResolver } from '../utils/evolveAutoAttach';
 
 type DispatchableGameSyncEvent =
   | { type: 'FLIP_SHARED_COIN'; actor?: PlayerRole }
@@ -42,7 +43,7 @@ type DispatchableGameSyncEvent =
   | { type: 'SEND_TO_CEMETERY'; actor?: PlayerRole; cardId: string }
   | { type: 'RETURN_EVOLVE'; actor?: PlayerRole; cardId: string }
   | { type: 'PLAY_TO_FIELD'; actor?: PlayerRole; cardId: string }
-  | { type: 'EXTRACT_CARD'; actor?: PlayerRole; cardId: string; destination?: string; revealToOpponent?: boolean }
+  | { type: 'EXTRACT_CARD'; actor?: PlayerRole; cardId: string; destination?: string; revealToOpponent?: boolean; attachToCardId?: string }
   | { type: 'SHUFFLE_DECK'; actor?: PlayerRole }
   | { type: 'MODIFY_PLAYER_STAT'; actor?: PlayerRole; playerKey: PlayerRole; stat: 'hp' | 'pp' | 'maxPp' | 'ep' | 'sep' | 'combo'; delta: number }
   | { type: 'DRAW_INITIAL_HAND'; actor?: PlayerRole }
@@ -81,6 +82,11 @@ const SNAPSHOT_FLUSH_INTERVAL_MS = 50;
 
 type SnapshotMessage = Extract<SyncMessage, { type: 'STATE_SNAPSHOT' }>;
 type GameBoardStatusKey = `gameBoard.status.${string}`;
+
+type PendingEvolveAutoAttachSelection = {
+  sourceCardId: string;
+  actor: PlayerRole;
+};
 
 const isPlayerHud = (value: unknown): value is SyncState['host'] => (
   typeof value === 'object' &&
@@ -215,6 +221,7 @@ export const useGameBoardLogic = () => {
   const [mulliganOrder, setMulliganOrder] = useState<string[]>([]);
   const [isMulliganModalOpen, setIsMulliganModalOpen] = useState(false);
   const [topDeckCards, setTopDeckCards] = useState<CardInstance[]>([]);
+  const [pendingEvolveAutoAttachSelection, setPendingEvolveAutoAttachSelection] = useState<PendingEvolveAutoAttachSelection | null>(null);
   const defaultTokenOption = useRef<TokenOption>({
     cardId: 'token',
     name: 'Token',
@@ -227,6 +234,7 @@ export const useGameBoardLogic = () => {
   const setupConnectionRef = useRef<(conn: DataConnection) => void>(() => undefined);
   const gameStateRef = useRef<SyncState>(initialState);
   const cardDetailLookupRef = useRef<CardDetailLookup>({});
+  const evolveAutoAttachResolverRef = useRef<EvolveAutoAttachResolver | null>(null);
   const savedSessionCandidateRef = useRef<SavedHostSession | null>(null);
   const awaitingInitialSnapshotRef = useRef(false);
   const activeConnectionTokenRef = useRef<string | null>(null);
@@ -407,10 +415,37 @@ export const useGameBoardLogic = () => {
     setIsMulliganModalOpen(false);
     setMulliganOrder([]);
     setTopDeckCards([]);
+    setPendingEvolveAutoAttachSelection(null);
     // Only clear undo state if explicitly requested (e.g. game reset or connection lost).
     if (includingUndo) {
       setHasUndoableMove(false);
     }
+  }, []);
+
+  const resolveEvolveAutoAttachSelection = useCallback((cardId: string, boardCards = gameStateRef.current.cards) => {
+    const resolver = evolveAutoAttachResolverRef.current;
+    if (!resolver) return null;
+
+    const sourceCard = boardCards.find(card => card.id === cardId);
+    if (!sourceCard || !resolver.isEligibleSource(sourceCard)) return null;
+
+    const candidateCards = resolver.resolveCandidates(sourceCard, boardCards)
+      .map(candidate => candidate.card);
+
+    return {
+      sourceCard,
+      candidateCards,
+    };
+  }, []);
+
+  const queueEvolveAutoAttachSelection = useCallback((
+    sourceCardId: string,
+    actor: PlayerRole
+  ) => {
+    setPendingEvolveAutoAttachSelection({
+      sourceCardId,
+      actor,
+    });
   }, []);
 
   const sendSnapshot = useCallback((state: SyncState, source: PlayerRole, effects?: SharedUiEffect[]) => {
@@ -1023,6 +1058,49 @@ export const useGameBoardLogic = () => {
     sendMessage({ type: 'EVENT', event: fullEvent });
   }, [applyAuthoritativeEvent, connectionState, isHost, isSoloMode, role, sendMessage]);
 
+  const executeEvolveAutoAttach = useCallback((
+    sourceCardId: string,
+    actor: PlayerRole,
+    attachToCardId: string
+  ) => {
+    dispatchGameEvent({
+      type: 'EXTRACT_CARD',
+      actor,
+      cardId: sourceCardId,
+      destination: `field-${actor}`,
+      attachToCardId,
+    });
+  }, [dispatchGameEvent]);
+
+  const confirmEvolveAutoAttachSelection = useCallback((attachToCardId: string) => {
+    if (!pendingEvolveAutoAttachSelection) return;
+    const resolvedSelection = resolveEvolveAutoAttachSelection(
+      pendingEvolveAutoAttachSelection.sourceCardId,
+      gameStateRef.current.cards
+    );
+    const sourceCard = resolvedSelection?.sourceCard;
+    if (
+      !resolvedSelection ||
+      !sourceCard ||
+      sourceCard.zone !== `evolveDeck-${pendingEvolveAutoAttachSelection.actor}` ||
+      !resolvedSelection.candidateCards.some(candidateCard => candidateCard.id === attachToCardId)
+    ) {
+      setPendingEvolveAutoAttachSelection(null);
+      return;
+    }
+
+    setPendingEvolveAutoAttachSelection(null);
+    executeEvolveAutoAttach(
+      pendingEvolveAutoAttachSelection.sourceCardId,
+      pendingEvolveAutoAttachSelection.actor,
+      attachToCardId
+    );
+  }, [executeEvolveAutoAttach, pendingEvolveAutoAttachSelection, resolveEvolveAutoAttachSelection]);
+
+  const cancelEvolveAutoAttachSelection = useCallback(() => {
+    setPendingEvolveAutoAttachSelection(null);
+  }, []);
+
   const connectToHost = useCallback(() => {
     if (isSoloMode || isHost) return;
     const peer = peerRef.current;
@@ -1384,15 +1462,47 @@ export const useGameBoardLogic = () => {
         setCardStatLookup(statLookup);
         setCardDetailLookup(detailLookup);
         cardDetailLookupRef.current = detailLookup;
+        evolveAutoAttachResolverRef.current = buildEvolveAutoAttachResolver(data);
       })
       .catch(err => console.error('Could not load card stats', err));
-    return () => { isActive = false; };
+    return () => {
+      isActive = false;
+      evolveAutoAttachResolverRef.current = null;
+    };
   }, []);
 
   useEffect(() => {
     if (gameState.gameStatus !== 'preparing') return;
     clearAttackUiState();
   }, [clearAttackUiState, gameState.gameStatus]);
+
+  const evolveAutoAttachSelection = React.useMemo(() => {
+    if (!pendingEvolveAutoAttachSelection) return null;
+
+    const resolvedSelection = resolveEvolveAutoAttachSelection(
+      pendingEvolveAutoAttachSelection.sourceCardId,
+      gameState.cards
+    );
+    const sourceCard = resolvedSelection?.sourceCard;
+    if (!sourceCard || sourceCard.zone !== `evolveDeck-${pendingEvolveAutoAttachSelection.actor}`) return null;
+
+    const candidateCards = resolvedSelection?.candidateCards ?? [];
+
+    if (candidateCards.length === 0) return null;
+
+    return {
+      actor: pendingEvolveAutoAttachSelection.actor,
+      sourceCard,
+      candidateCards,
+    };
+  }, [gameState.cards, pendingEvolveAutoAttachSelection, resolveEvolveAutoAttachSelection]);
+
+  useEffect(() => {
+    if (!pendingEvolveAutoAttachSelection) return;
+    if (!evolveAutoAttachSelection) {
+      setPendingEvolveAutoAttachSelection(null);
+    }
+  }, [evolveAutoAttachSelection, pendingEvolveAutoAttachSelection]);
 
   useEffect(() => {
     const canUndoMove = isSoloMode || isHost
@@ -1539,7 +1649,34 @@ export const useGameBoardLogic = () => {
     targetRole?: PlayerRole,
     revealToOpponent = false
   ) => {
-    dispatchGameEvent({ type: 'EXTRACT_CARD', actor: targetRole, cardId, destination: customDestination, revealToOpponent });
+    const actor = targetRole ?? role;
+
+    if (customDestination?.startsWith(`field-${actor}`)) {
+      const sourceCard = gameStateRef.current.cards.find(card => card.id === cardId);
+      if (sourceCard?.zone === `evolveDeck-${actor}`) {
+        const resolvedSelection = resolveEvolveAutoAttachSelection(cardId);
+        if (resolvedSelection?.candidateCards.length === 1) {
+          dispatchGameEvent({
+            type: 'EXTRACT_CARD',
+            actor,
+            cardId,
+            destination: customDestination,
+            revealToOpponent,
+            attachToCardId: resolvedSelection.candidateCards[0].id,
+          });
+          setSearchZone(null);
+          return;
+        }
+
+        if (resolvedSelection && resolvedSelection.candidateCards.length > 1) {
+          queueEvolveAutoAttachSelection(cardId, actor);
+          setSearchZone(null);
+          return;
+        }
+      }
+    }
+
+    dispatchGameEvent({ type: 'EXTRACT_CARD', actor, cardId, destination: customDestination, revealToOpponent });
     setSearchZone(null);
   };
 
@@ -1725,6 +1862,31 @@ export const useGameBoardLogic = () => {
     if (!over) return;
     const cardId = active.id as string;
     const overId = over.id as string;
+
+    const sourceCard = gameStateRef.current.cards.find(card => card.id === cardId);
+    if (
+      sourceCard &&
+      sourceCard.zone === `evolveDeck-${sourceCard.owner}` &&
+      overId === `field-${sourceCard.owner}`
+    ) {
+      const resolvedSelection = resolveEvolveAutoAttachSelection(cardId);
+      if (resolvedSelection?.candidateCards.length === 1) {
+        dispatchGameEvent({
+          type: 'EXTRACT_CARD',
+          actor: sourceCard.owner,
+          cardId,
+          destination: overId,
+          attachToCardId: resolvedSelection.candidateCards[0].id,
+        });
+        return;
+      }
+
+      if (resolvedSelection && resolvedSelection.candidateCards.length > 1) {
+        queueEvolveAutoAttachSelection(cardId, sourceCard.owner);
+        return;
+      }
+    }
+
     dispatchGameEvent({ type: 'MOVE_CARD', cardId, overId });
   };
 
@@ -1791,6 +1953,7 @@ export const useGameBoardLogic = () => {
     handleModifyCounter, handleModifyGenericCounter, handleDragEnd, toggleTap, handleFlipCard, handleSendToBottom,
     handleBanish, handlePlayToField, handleSendToCemetery, handleReturnEvolve, handleShuffleDeck, handleDeclareAttack,
     handleSetRevealHandsMode,
+    evolveAutoAttachSelection, confirmEvolveAutoAttachSelection, cancelEvolveAutoAttachSelection,
     getCards, getTokenOptions, lastGameState: gameState.lastGameState, millCard,
     topDeckCards, handleLookAtTop, handleResolveTopDeck, setTopDeckCards,
     handleUndoCardMove, hasUndoableMove, canUndoTurn,
