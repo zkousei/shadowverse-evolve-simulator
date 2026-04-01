@@ -1808,6 +1808,84 @@ describe('useGameBoardLogic action handlers', () => {
     expect(screen.getByTestId('evolve-search-attached-to')).toHaveTextContent('attach-base-1');
   });
 
+  it('ignores field cards that are already evolved when auto-attaching from search', async () => {
+    installMockCatalogFetch([
+      createCatalogCard({ id: 'BASE-001', name: 'Base Follower' }),
+      createCatalogCard({
+        id: 'EVO-001',
+        name: 'Base Follower',
+        deck_section: 'evolve',
+        card_kind_normalized: 'evolve_follower',
+        related_cards: [{ id: 'BASE-001', name: 'Base Follower' }],
+      }),
+    ]);
+
+    renderResumedHostHarness({
+      cards: [
+        {
+          id: 'evolve-search-card',
+          cardId: 'EVO-001',
+          name: 'Base Follower',
+          image: '/base-follower-evo.png',
+          zone: 'evolveDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+          isEvolveCard: true,
+        },
+        {
+          id: 'attach-base-1',
+          cardId: 'BASE-001',
+          name: 'Base Follower',
+          image: '/base-follower.png',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'attach-base-1-evolved',
+          cardId: 'EVO-001',
+          name: 'Base Follower',
+          image: '/base-follower-evo.png',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+          isEvolveCard: true,
+          attachedTo: 'attach-base-1',
+        },
+        {
+          id: 'attach-base-2',
+          cardId: 'BASE-001',
+          name: 'Base Follower',
+          image: '/base-follower.png',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+      gameStatus: 'playing',
+      turnCount: 2,
+      phase: 'Main',
+      revision: 7,
+    });
+
+    await act(async () => {});
+
+    fireEvent.click(screen.getByRole('button', { name: 'Extract Evolve to Field' }));
+
+    expect(screen.getByTestId('auto-attach-selection-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('host-evolve-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('host-field-count')).toHaveTextContent('4');
+    expect(screen.getByTestId('evolve-search-attached-to')).toHaveTextContent('attach-base-2');
+  });
+
   it('offers selection when exact and reprint targets both match and attaches the chosen card', async () => {
     installMockCatalogFetch([
       createCatalogCard({ id: 'BASE-001', name: 'Base Follower' }),

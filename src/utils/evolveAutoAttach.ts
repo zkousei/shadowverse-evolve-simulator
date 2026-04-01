@@ -108,9 +108,11 @@ const getRootFieldCards = (boardCards: CardInstance[], owner: CardInstance['owne
 
 const isValidFieldTarget = (
   card: CardInstance,
+  boardCards: CardInstance[],
   cardsById: Record<string, DeckBuilderCardData>
 ): boolean => {
   if (card.isLeaderCard || card.isEvolveCard || card.isTokenCard) return false;
+  if (boardCards.some(fieldCard => fieldCard.attachedTo === card.id && fieldCard.isEvolveCard)) return false;
 
   const catalogCard = cardsById[card.cardId];
   if (!catalogCard || catalogCard.deck_section !== 'main') return false;
@@ -152,7 +154,7 @@ export const buildEvolveAutoAttachResolver = (
     if (!catalogCard) return [];
 
     const rootFieldCards = getRootFieldCards(boardCards, card.owner)
-      .filter(fieldCard => isValidFieldTarget(fieldCard, cardsById));
+      .filter(fieldCard => isValidFieldTarget(fieldCard, boardCards, cardsById));
 
     const directTargetIds = new Set(getMainRelatedTargetIds(catalogCard, cardsById));
     const directCandidates = rootFieldCards

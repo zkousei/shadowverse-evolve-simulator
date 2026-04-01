@@ -59,6 +59,48 @@ describe('buildEvolveAutoAttachResolver', () => {
     });
   });
 
+  it('excludes field cards that already have an evolve card attached', () => {
+    const resolver = buildEvolveAutoAttachResolver([
+      createCatalogCard({ id: 'BASE-001', name: 'Base Follower' }),
+      createCatalogCard({
+        id: 'EVO-001',
+        name: 'Base Follower',
+        deck_section: 'evolve',
+        card_kind_normalized: 'evolve_follower',
+        related_cards: [{ id: 'BASE-001', name: 'Base Follower' }],
+      }),
+    ]);
+
+    const candidates = resolver.resolveCandidates(
+      createRuntimeCard({
+        id: 'evo-runtime',
+        cardId: 'EVO-001',
+        zone: 'evolveDeck-host',
+        owner: 'host',
+        isEvolveCard: true,
+      }),
+      [
+        createRuntimeCard({ id: 'field-base-1', cardId: 'BASE-001', name: 'Base Follower' }),
+        createRuntimeCard({
+          id: 'field-base-1-evolved',
+          cardId: 'EVO-001',
+          name: 'Base Follower',
+          zone: 'field-host',
+          owner: 'host',
+          isEvolveCard: true,
+          attachedTo: 'field-base-1',
+        }),
+        createRuntimeCard({ id: 'field-base-2', cardId: 'BASE-001', name: 'Base Follower' }),
+      ]
+    );
+
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0]).toMatchObject({
+      matchSource: 'direct',
+      card: { id: 'field-base-2' },
+    });
+  });
+
   it('includes reprint targets that share the same name/title/kind family', () => {
     const resolver = buildEvolveAutoAttachResolver([
       createCatalogCard({ id: 'BASE-001', name: 'Base Follower' }),
