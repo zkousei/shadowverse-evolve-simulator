@@ -289,6 +289,47 @@ describe('CardLogic utils', () => {
     });
   });
 
+  describe('moveTopCardToEx', () => {
+    it('should move the top card to ex', () => {
+      const cards = [
+        createMockCard('top', 'mainDeck-host'),
+        createMockCard('bottom', 'mainDeck-host'),
+      ];
+
+      const result = CardLogic.moveTopCardToEx(cards, 'host');
+      const top = result.find(c => c.id === 'top');
+
+      expect(top?.zone).toBe('ex-host');
+      expect(result[result.length - 1].id).toBe('top');
+    });
+
+    it('should return pure evolve cards to evolve deck when moving top card to ex', () => {
+      const cards = [
+        {
+          ...createMockCard('top', 'mainDeck-host'),
+          isEvolveCard: true,
+          cardKindNormalized: 'evolve_follower',
+        },
+      ];
+
+      const result = CardLogic.moveTopCardToEx(cards, 'host');
+      expect(result.find(c => c.id === 'top')?.zone).toBe('evolveDeck-host');
+    });
+
+    it('should allow advance cards to stay in ex when moving top card to ex', () => {
+      const cards = [
+        {
+          ...createMockCard('top', 'mainDeck-host'),
+          isEvolveCard: true,
+          cardKindNormalized: 'advance_follower',
+        },
+      ];
+
+      const result = CardLogic.moveTopCardToEx(cards, 'host');
+      expect(result.find(c => c.id === 'top')?.zone).toBe('ex-host');
+    });
+  });
+
   describe('getDeckZone', () => {
     it('should return evolveDeck for evolve cards', () => {
       const card = { ...createMockCard('e1', 'field-host'), isEvolveCard: true };

@@ -491,6 +491,28 @@ export const millCard = (
 };
 
 /**
+ * Moves the top card of the main deck to the EX area.
+ */
+export const moveTopCardToEx = (
+  cards: CardInstance[],
+  role: 'host' | 'guest'
+): CardInstance[] => {
+  const myDeck = cards.filter(c => c.zone === `mainDeck-${role}`);
+  if (myDeck.length === 0) return cards;
+
+  const topCard = myDeck[0];
+  return moveCardToEnd(cards, topCard.id, {
+    zone: `ex-${role}`,
+    isFlipped: false,
+    counters: { atk: 0, hp: 0 },
+    genericCounter: 0,
+    isTapped: false,
+    attachedTo: undefined,
+    preserveAttachment: false
+  });
+};
+
+/**
  * Returns the natural deck zone for a given card (Main vs Evolve).
  */
 export const getDeckZone = (card: CardInstance): string => {

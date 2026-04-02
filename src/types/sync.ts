@@ -30,6 +30,7 @@ export type GameSyncEvent =
   | { id: string; type: 'MODIFY_GENERIC_COUNTER'; actor: PlayerRole; cardId: string; delta: number }
   | { id: string; type: 'DRAW_CARD'; actor: PlayerRole }
   | { id: string; type: 'MILL_CARD'; actor: PlayerRole }
+  | { id: string; type: 'MOVE_TOP_CARD_TO_EX'; actor: PlayerRole }
   | { id: string; type: 'TOGGLE_TAP'; actor: PlayerRole; cardId: string }
   | { id: string; type: 'TOGGLE_FLIP'; actor: PlayerRole; cardId: string }
   | { id: string; type: 'SEND_TO_BOTTOM'; actor: PlayerRole; cardId: string }
@@ -60,6 +61,7 @@ export type SharedUiEffect =
   | { type: 'SHUFFLE_DECK_COMPLETED'; actor: PlayerRole }
   | { type: 'DRAW_CARD_COMPLETED'; actor: PlayerRole }
   | { type: 'MILL_CARD_COMPLETED'; actor: PlayerRole; cardName: string }
+  | { type: 'TOP_CARD_TO_EX_COMPLETED'; actor: PlayerRole; cardName: string }
   | { type: 'SEARCHED_CARD_TO_HAND'; actor: PlayerRole }
   | { type: 'SEARCHED_CARD_PLACED'; actor: PlayerRole; destination: 'field' | 'ex'; cardName?: string }
   | { type: 'CEMETERY_CARD_TO_HAND'; actor: PlayerRole; cardName: string }
