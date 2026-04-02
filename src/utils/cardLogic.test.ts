@@ -322,6 +322,26 @@ describe('CardLogic utils', () => {
       expect(CardLogic.resolveMoveDestination(card, 'hand-host')).toBe('evolveDeck-host');
     });
 
+    it('should return non-advance evolve cards to evolve deck when sent to ex', () => {
+      const card = {
+        ...createMockCard('e1', 'field-host'),
+        isEvolveCard: true,
+        cardKindNormalized: 'evolve_follower',
+      };
+
+      expect(CardLogic.resolveMoveDestination(card, 'ex-host')).toBe('evolveDeck-host');
+    });
+
+    it('should allow advance cards to stay in ex', () => {
+      const card = {
+        ...createMockCard('adv-1', 'field-host'),
+        isEvolveCard: true,
+        cardKindNormalized: 'advance_follower',
+      };
+
+      expect(CardLogic.resolveMoveDestination(card, 'ex-host')).toBe('ex-host');
+    });
+
     it('should keep leader cards in the leader zone regardless of the requested destination', () => {
       const leader = { ...createMockCard('leader-1', 'leader-host'), isLeaderCard: true };
 
@@ -373,6 +393,23 @@ describe('CardLogic utils', () => {
       const moved = result.find(c => c.id === 'e1');
       expect(moved?.zone).toBe('evolveDeck-host');
       expect(moved?.isFlipped).toBe(false);
+    });
+
+    it('should leave invalid non-evolve attachments on the field when an evolve root is dropped onto cemetery', () => {
+      const evolveRoot = { ...createMockCard('e1', 'field-host'), isEvolveCard: true };
+      const invalidTop = { ...createMockCard('main-top', 'field-host'), attachedTo: 'e1' };
+      const cemetery = createMockCard('cem', 'cemetery-host');
+
+      const result = CardLogic.applyDrop([evolveRoot, invalidTop, cemetery], 'e1', 'cem');
+
+      expect(result.find(c => c.id === 'e1')).toMatchObject({
+        zone: 'evolveDeck-host',
+        attachedTo: undefined,
+      });
+      expect(result.find(c => c.id === 'main-top')).toMatchObject({
+        zone: 'field-host',
+        attachedTo: undefined,
+      });
     });
 
     it('should turn cards face-up when moving from a deck to the field by drag and drop', () => {
@@ -432,6 +469,66 @@ describe('CardLogic utils', () => {
       expect(result.find(c => c.id === 'field-1')?.isTapped).toBe(false);
       expect(result.find(c => c.id === 'field-1')?.counters).toEqual({ atk: 0, hp: 0 });
       expect(result.find(c => c.id === 'field-1')?.genericCounter).toBe(0);
+    });
+
+    it('should detach the whole stack when a field stack is dragged to the ex area', () => {
+      const base = createMockCard('base', 'field-host');
+      const top = { ...createMockCard('top', 'field-host'), attachedTo: 'base' };
+      const nested = { ...createMockCard('nested', 'field-host'), attachedTo: 'top' };
+      const exCard = createMockCard('ex-1', 'ex-host');
+
+      const result = CardLogic.applyDrop([base, top, nested, exCard], 'base', 'ex-1');
+
+      expect(result.find(c => c.id === 'base')).toMatchObject({
+        zone: 'ex-host',
+        attachedTo: undefined,
+      });
+      expect(result.find(c => c.id === 'top')).toMatchObject({
+        zone: 'ex-host',
+        attachedTo: undefined,
+      });
+      expect(result.find(c => c.id === 'nested')).toMatchObject({
+        zone: 'ex-host',
+        attachedTo: undefined,
+      });
+    });
+
+    it('should return non-advance evolve cards to evolve deck when a stack is moved to the ex area', () => {
+      const base = createMockCard('base', 'field-host');
+      const evolve = {
+        ...createMockCard('evo', 'field-host'),
+        attachedTo: 'base',
+        isEvolveCard: true,
+        cardKindNormalized: 'evolve_follower',
+      };
+      const exCard = createMockCard('ex-1', 'ex-host');
+
+      const result = CardLogic.applyDrop([base, evolve, exCard], 'base', 'ex-1');
+
+      expect(result.find(c => c.id === 'base')).toMatchObject({
+        zone: 'ex-host',
+        attachedTo: undefined,
+      });
+      expect(result.find(c => c.id === 'evo')).toMatchObject({
+        zone: 'evolveDeck-host',
+        attachedTo: undefined,
+      });
+    });
+
+    it('should still allow advance cards to move to the ex area', () => {
+      const advance = {
+        ...createMockCard('advance', 'field-host'),
+        isEvolveCard: true,
+        cardKindNormalized: 'advance_follower',
+      };
+      const exCard = createMockCard('ex-1', 'ex-host');
+
+      const result = CardLogic.applyDrop([advance, exCard], 'advance', 'ex-1');
+
+      expect(result.find(c => c.id === 'advance')).toMatchObject({
+        zone: 'ex-host',
+        attachedTo: undefined,
+      });
     });
 
     it('should preserve counters when an ex card is dragged to the field', () => {
@@ -733,6 +830,23 @@ describe('CardLogic utils', () => {
       });
     });
 
+    it('should send opposing non-token descendants to their owner private zones when sending a token to cemetery', () => {
+      const token = { ...createMockCard('token-root', 'field-host', 'host'), cardId: 'token' };
+      const opposingFollower = {
+        ...createMockCard('opposing-follower', 'field-host', 'guest'),
+        attachedTo: 'token-root',
+      };
+
+      const result = CardLogic.sendCardToCemetery([token, opposingFollower], 'token-root');
+
+      expect(result.find(c => c.id === 'token-root')).toBeUndefined();
+      expect(result.find(c => c.id === 'opposing-follower')).toMatchObject({
+        zone: 'cemetery-guest',
+        attachedTo: undefined,
+        linkedTo: undefined,
+      });
+    });
+
     it('should return attached evolve cards to evolve deck when sending the base card to cemetery', () => {
       const oldCemetery = createMockCard('old-cemetery', 'cemetery-host');
       const oldUsedEvo = { ...createMockCard('old-evo', 'evolveDeck-host'), isEvolveCard: true, isFlipped: false };
@@ -746,6 +860,31 @@ describe('CardLogic utils', () => {
       expect(result.find(c => c.id === 'evo')?.attachedTo).toBeUndefined();
       expect(result[0].id).toBe('base');
       expect(result[1].id).toBe('evo');
+    });
+
+    it('should leave invalid non-evolve attachments on the field when sending an evolve root to cemetery', () => {
+      const evolveRoot = { ...createMockCard('evo-root', 'field-host'), isEvolveCard: true };
+      const invalidTop = {
+        ...createMockCard('main-top', 'field-host'),
+        attachedTo: 'evo-root',
+        counters: { atk: 2, hp: -1 },
+        genericCounter: 1,
+        isTapped: true,
+      };
+
+      const result = CardLogic.sendCardToCemetery([evolveRoot, invalidTop], 'evo-root');
+
+      expect(result.find(c => c.id === 'evo-root')).toMatchObject({
+        zone: 'evolveDeck-host',
+        attachedTo: undefined,
+      });
+      expect(result.find(c => c.id === 'main-top')).toMatchObject({
+        zone: 'field-host',
+        attachedTo: undefined,
+        counters: { atk: 2, hp: -1 },
+        genericCounter: 1,
+        isTapped: true,
+      });
     });
 
     it('should place newly sent cemetery cards on top of the cemetery stack', () => {
@@ -862,6 +1001,52 @@ describe('CardLogic utils', () => {
         isTapped: true,
       });
       expect(result.find(card => card.id === 'base')?.isTapped).toBe(true);
+    });
+
+    it('should detach attachments when extracting a stack into the ex area', () => {
+      const base = createMockCard('base', 'field-host');
+      const top = { ...createMockCard('top', 'field-host'), attachedTo: 'base' };
+
+      const result = CardLogic.extractCard([base, top], 'base', 'host', 'ex-host');
+
+      expect(result.find(card => card.id === 'base')).toMatchObject({
+        zone: 'ex-host',
+        attachedTo: undefined,
+      });
+      expect(result.find(card => card.id === 'top')).toMatchObject({
+        zone: 'ex-host',
+        attachedTo: undefined,
+      });
+    });
+
+    it('should return non-advance evolve cards to evolve deck when extracting them to ex', () => {
+      const card = {
+        ...createMockCard('evo', 'field-host'),
+        isEvolveCard: true,
+        cardKindNormalized: 'evolve_spell',
+      };
+
+      const result = CardLogic.extractCard([card], 'evo', 'host', 'ex-host');
+
+      expect(result.find(found => found.id === 'evo')).toMatchObject({
+        zone: 'evolveDeck-host',
+        attachedTo: undefined,
+      });
+    });
+
+    it('should still allow advance cards to be extracted to ex', () => {
+      const card = {
+        ...createMockCard('advance', 'field-host'),
+        isEvolveCard: true,
+        cardKindNormalized: 'advance_spell',
+      };
+
+      const result = CardLogic.extractCard([card], 'advance', 'host', 'ex-host');
+
+      expect(result.find(found => found.id === 'advance')).toMatchObject({
+        zone: 'ex-host',
+        attachedTo: undefined,
+      });
     });
   });
 
@@ -995,6 +1180,57 @@ describe('CardLogic utils', () => {
 
       expect(result.find(c => c.id === 'field-hidden')?.isFlipped).toBe(true);
       expect(result.find(c => c.id === 'deck-hidden')?.isFlipped).toBe(true);
+    });
+
+    it('should preserve valid attached and linked relations on the field', () => {
+      const base = createMockCard('base', 'field-host');
+      const attached = { ...createMockCard('attached', 'field-host'), attachedTo: 'base' };
+      const linked = { ...createMockCard('linked', 'field-host'), linkedTo: 'base' };
+
+      const result = CardLogic.applyStateWithGuards([base, attached, linked]);
+
+      expect(result.find(c => c.id === 'attached')?.attachedTo).toBe('base');
+      expect(result.find(c => c.id === 'linked')?.linkedTo).toBe('base');
+    });
+
+    it('should clear relations that remain outside the field', () => {
+      const exParent = createMockCard('ex-parent', 'ex-host');
+      const exAttached = { ...createMockCard('ex-attached', 'ex-host'), attachedTo: 'ex-parent' };
+      const cemeteryParent = createMockCard('cem-parent', 'cemetery-host');
+      const cemeteryLinked = { ...createMockCard('cem-linked', 'cemetery-host'), linkedTo: 'cem-parent' };
+
+      const result = CardLogic.applyStateWithGuards([exParent, exAttached, cemeteryParent, cemeteryLinked]);
+
+      expect(result.find(c => c.id === 'ex-attached')?.attachedTo).toBeUndefined();
+      expect(result.find(c => c.id === 'cem-linked')?.linkedTo).toBeUndefined();
+    });
+
+    it('should clear missing and cyclic parent references', () => {
+      const orphan = { ...createMockCard('orphan', 'field-host'), attachedTo: 'missing-parent' };
+      const cycleA = { ...createMockCard('cycle-a', 'field-host'), attachedTo: 'cycle-b' };
+      const cycleB = { ...createMockCard('cycle-b', 'field-host'), attachedTo: 'cycle-a' };
+
+      const result = CardLogic.applyStateWithGuards([orphan, cycleA, cycleB]);
+
+      expect(result.find(c => c.id === 'orphan')?.attachedTo).toBeUndefined();
+      expect(result.find(c => c.id === 'cycle-a')?.attachedTo).toBeUndefined();
+      expect(result.find(c => c.id === 'cycle-b')?.attachedTo).toBeUndefined();
+    });
+
+    it('should prefer attachedTo when both relation fields are present', () => {
+      const base = createMockCard('base', 'field-host');
+      const card = {
+        ...createMockCard('dual', 'field-host'),
+        attachedTo: 'base',
+        linkedTo: 'base',
+      };
+
+      const result = CardLogic.applyStateWithGuards([base, card]);
+
+      expect(result.find(c => c.id === 'dual')).toMatchObject({
+        attachedTo: 'base',
+        linkedTo: undefined,
+      });
     });
   });
 

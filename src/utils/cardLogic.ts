@@ -1,6 +1,6 @@
 import type { CardInstance } from '../components/Card';
 import type { SyncState } from '../types/game';
-import { isMainDeckSpellCard } from './cardType';
+import { isMainDeckSpellCard, isPureEvolveCard } from './cardType';
 
 /**
  * Pure logic for card state transitions.
@@ -114,12 +114,113 @@ const collectLinkedChildIds = (
   );
 };
 
+const detachInvalidEvolveRootSubtrees = (
+  cards: CardInstance[],
+  rootCardId: string,
+  destinationZone?: string
+): CardInstance[] => {
+  if (!destinationZone) return cards;
+
+  const rootCard = cards.find(card => card.id === rootCardId);
+  if (!rootCard?.isEvolveCard) return cards;
+
+  const destinationPrefix = getZonePrefix(destinationZone);
+  if (destinationPrefix === 'field' || destinationPrefix === 'ex') return cards;
+
+  const releasedRootIds = new Set(
+    cards
+      .filter(card => card.attachedTo === rootCardId && !card.isEvolveCard && !isTokenCard(card))
+      .map(card => card.id)
+  );
+
+  if (releasedRootIds.size === 0) return cards;
+
+  return cards.map(card => (
+    releasedRootIds.has(card.id)
+      ? { ...card, attachedTo: undefined }
+      : card
+  ));
+};
+
 const getZonePrefix = (zone: string): string => zone.split('-')[0];
+const PRIVATE_ZONE_PREFIXES = new Set(['mainDeck', 'evolveDeck', 'hand', 'cemetery', 'banish']);
+const ATTACHMENT_BLOCKED_ZONE_PREFIXES = new Set([...PRIVATE_ZONE_PREFIXES, 'ex']);
 const isLeaderZone = (zone: string): boolean => zone.startsWith('leader-');
 const isLeaderCard = (card: CardInstance | undefined): boolean =>
   Boolean(card?.isLeaderCard) || isLeaderZone(card?.zone ?? '');
 const isTokenCard = (card: CardInstance | undefined): boolean =>
   Boolean(card?.isTokenCard) || card?.cardId === 'token';
+const isFieldZone = (zone: string): boolean => getZonePrefix(zone) === 'field';
+
+const getPreferredParentId = (card: Pick<CardInstance, 'attachedTo' | 'linkedTo'>): string | undefined =>
+  card.attachedTo ?? card.linkedTo;
+
+const hasBrokenAncestorChain = (
+  cardsById: Map<string, CardInstance>,
+  cardId: string,
+  parentId: string
+): boolean => {
+  const visited = new Set<string>([cardId]);
+  let currentId: string | undefined = parentId;
+
+  while (currentId) {
+    if (visited.has(currentId)) return true;
+    visited.add(currentId);
+
+    const currentCard = cardsById.get(currentId);
+    if (!currentCard) return false;
+
+    currentId = getPreferredParentId(currentCard);
+  }
+
+  return false;
+};
+
+const sanitizeCardRelations = (cards: CardInstance[]): CardInstance[] => {
+  const cardsById = new Map(cards.map(card => [card.id, card] as const));
+
+  return cards.map(card => {
+    let nextCard = card;
+
+    if (nextCard.attachedTo && nextCard.linkedTo) {
+      nextCard = { ...nextCard, linkedTo: undefined };
+    }
+
+    if (nextCard.attachedTo) {
+      const parentCard = cardsById.get(nextCard.attachedTo);
+      const isInvalidAttachment =
+        !parentCard ||
+        parentCard.id === nextCard.id ||
+        isLeaderCard(parentCard) ||
+        isLeaderCard(nextCard) ||
+        !isFieldZone(nextCard.zone) ||
+        parentCard.zone !== nextCard.zone ||
+        hasBrokenAncestorChain(cardsById, nextCard.id, nextCard.attachedTo);
+
+      if (isInvalidAttachment) {
+        nextCard = { ...nextCard, attachedTo: undefined };
+      }
+    }
+
+    if (nextCard.linkedTo) {
+      const parentCard = cardsById.get(nextCard.linkedTo);
+      const isInvalidLink =
+        !parentCard ||
+        parentCard.id === nextCard.id ||
+        isLeaderCard(parentCard) ||
+        isLeaderCard(nextCard) ||
+        !isFieldZone(nextCard.zone) ||
+        parentCard.zone !== nextCard.zone ||
+        hasBrokenAncestorChain(cardsById, nextCard.id, nextCard.linkedTo);
+
+      if (isInvalidLink) {
+        nextCard = { ...nextCard, linkedTo: undefined };
+      }
+    }
+
+    return nextCard;
+  });
+};
 
 const findRootCard = (cards: CardInstance[], card: CardInstance): CardInstance => {
   let rootCard = card;
@@ -184,16 +285,17 @@ export const moveCardToEnd = (
   cardId: string,
   options: MoveCardOptions
 ): CardInstance[] => {
-  const targetCard = cards.find(c => c.id === cardId);
+  const workingCards = detachInvalidEvolveRootSubtrees(cards, cardId, options.zone);
+  const targetCard = workingCards.find(c => c.id === cardId);
   if (!targetCard) return cards;
   if (isLeaderCard(targetCard)) return cards;
 
-  const descendantIds = collectDescendantIds(cards, cardId);
+  const descendantIds = collectDescendantIds(workingCards, cardId);
   const movedStackIds = new Set<string>([cardId, ...descendantIds]);
-  const linkedChildIds = collectLinkedChildIds(cards, movedStackIds);
-  const otherCards = cards.filter(c => c.id !== cardId && !descendantIds.has(c.id) && !linkedChildIds.has(c.id));
-  const attachments = cards.filter(c => descendantIds.has(c.id));
-  const linkedCards = cards.filter(c => linkedChildIds.has(c.id));
+  const linkedChildIds = collectLinkedChildIds(workingCards, movedStackIds);
+  const otherCards = workingCards.filter(c => c.id !== cardId && !descendantIds.has(c.id) && !linkedChildIds.has(c.id));
+  const attachments = workingCards.filter(c => descendantIds.has(c.id));
+  const linkedCards = workingCards.filter(c => linkedChildIds.has(c.id));
 
   const movedAttachments = attachments.map(a => {
     const attachmentZone = options.zone ? resolveMoveDestination(a, options.zone) : a.zone;
@@ -261,16 +363,17 @@ export const moveCardToFront = (
   cardId: string,
   options: MoveCardOptions
 ): CardInstance[] => {
-  const targetCard = cards.find(c => c.id === cardId);
+  const workingCards = detachInvalidEvolveRootSubtrees(cards, cardId, options.zone);
+  const targetCard = workingCards.find(c => c.id === cardId);
   if (!targetCard) return cards;
   if (isLeaderCard(targetCard)) return cards;
 
-  const descendantIds = collectDescendantIds(cards, cardId);
+  const descendantIds = collectDescendantIds(workingCards, cardId);
   const movedStackIds = new Set<string>([cardId, ...descendantIds]);
-  const linkedChildIds = collectLinkedChildIds(cards, movedStackIds);
-  const otherCards = cards.filter(c => c.id !== cardId && !descendantIds.has(c.id) && !linkedChildIds.has(c.id));
-  const attachments = cards.filter(c => descendantIds.has(c.id));
-  const linkedCards = cards.filter(c => linkedChildIds.has(c.id));
+  const linkedChildIds = collectLinkedChildIds(workingCards, movedStackIds);
+  const otherCards = workingCards.filter(c => c.id !== cardId && !descendantIds.has(c.id) && !linkedChildIds.has(c.id));
+  const attachments = workingCards.filter(c => descendantIds.has(c.id));
+  const linkedCards = workingCards.filter(c => linkedChildIds.has(c.id));
 
   const movedAttachments = attachments.map(a => {
     const attachmentZone = options.zone ? resolveMoveDestination(a, options.zone) : a.zone;
@@ -411,11 +514,20 @@ export const resolveMoveDestination = (
     return getDeckZone(card);
   }
 
-  if (card.isEvolveCard && ['hand', 'cemetery', 'banish'].includes(requestedPrefix)) {
+  if (isPureEvolveCard(card) && ['hand', 'cemetery', 'banish', 'ex'].includes(requestedPrefix)) {
     return getDeckZone(card);
   }
 
   return requestedZone;
+};
+
+const resolveOwnedRequestedZone = (
+  card: CardInstance,
+  requestedZone: string
+): string => {
+  const requestedPrefix = getZonePrefix(requestedZone);
+  if (!PRIVATE_ZONE_PREFIXES.has(requestedPrefix)) return requestedZone;
+  return `${requestedPrefix}-${card.owner}`;
 };
 
 export const resolveDrop = (
@@ -465,6 +577,7 @@ export const resolveDrop = (
   baseZonePrefix = getZonePrefix(targetZone);
 
   const isEnteringSafeZone = ['mainDeck', 'evolveDeck', 'hand', 'cemetery', 'banish'].includes(baseZonePrefix);
+  const shouldDetachAttachments = ATTACHMENT_BLOCKED_ZONE_PREFIXES.has(baseZonePrefix);
   const isReturningToDeck = baseZonePrefix === 'mainDeck' || baseZonePrefix === 'evolveDeck';
   const isEnteringHand = baseZonePrefix === 'hand';
   const isEnteringEx = baseZonePrefix === 'ex';
@@ -489,7 +602,7 @@ export const resolveDrop = (
       isTapped: isEnteringSafeZone || isEnteringEx ? false : activeCard.isTapped,
       counters: isEnteringHand ? { atk: 0, hp: 0 } : getCountersForMove(activeCard, targetZone),
       genericCounter: getGenericCounterForMove(activeCard, targetZone),
-      preserveAttachment: !isEnteringSafeZone,
+      preserveAttachment: !shouldDetachAttachments,
     },
   };
 };
@@ -613,7 +726,8 @@ const dissolveTokenStackIntoZone = (
   const movedNonTokenCards = cards
     .filter(card => stackIds.has(card.id) && !isTokenCard(card))
     .map(card => {
-      const destinationZone = resolveMoveDestination(card, requestedZone);
+      const ownedRequestedZone = resolveOwnedRequestedZone(card, requestedZone);
+      const destinationZone = resolveMoveDestination(card, ownedRequestedZone);
       return {
         ...card,
         zone: destinationZone,
@@ -628,7 +742,8 @@ const dissolveTokenStackIntoZone = (
   const movedLinkedCards = cards
     .filter(card => linkedChildIds.has(card.id) && !isTokenCard(card))
     .map(card => {
-      const destinationZone = resolveMoveDestination(card, requestedZone);
+      const ownedRequestedZone = resolveOwnedRequestedZone(card, requestedZone);
+      const destinationZone = resolveMoveDestination(card, ownedRequestedZone);
       return {
         ...card,
         zone: destinationZone,
@@ -775,7 +890,7 @@ export const extractCard = (
 
   const destinationPrefix = getZonePrefix(destinationZone);
   const isEnteringHand = destinationPrefix === 'hand';
-  const isEnteringSafeZone = ['mainDeck', 'evolveDeck', 'hand', 'cemetery', 'banish'].includes(destinationPrefix);
+  const shouldDetachAttachments = ATTACHMENT_BLOCKED_ZONE_PREFIXES.has(destinationPrefix);
 
   return moveCardToEnd(cards, cardId, {
     zone: destinationZone,
@@ -783,7 +898,7 @@ export const extractCard = (
     counters: isEnteringHand ? { atk: 0, hp: 0 } : getCountersForMove(targetCard, destinationZone),
     genericCounter: getGenericCounterForMove(targetCard, destinationZone),
     attachedTo: undefined,
-    preserveAttachment: !isEnteringSafeZone,
+    preserveAttachment: !shouldDetachAttachments,
   });
 };
 
@@ -990,7 +1105,7 @@ export const resolveTopDeckResults = (
  * Final guard to ensure state integrity.
  */
 export const applyStateWithGuards = (newState: CardInstance[]): CardInstance[] => {
-  const ids = new Set();
+  const ids = new Set<string>();
   const uniqueCards: CardInstance[] = [];
   
   for (const card of newState) {
@@ -1001,8 +1116,8 @@ export const applyStateWithGuards = (newState: CardInstance[]): CardInstance[] =
     ids.add(card.id);
     uniqueCards.push(card);
   }
-  
-  return uniqueCards;
+
+  return sanitizeCardRelations(uniqueCards);
 };
 
 export const normalizeCardsForGameState = (

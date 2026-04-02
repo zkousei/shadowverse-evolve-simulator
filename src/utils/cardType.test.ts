@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isMainDeckSpellCard, normalizeBaseCardType } from './cardType';
+import { isAdvanceKind, isMainDeckSpellCard, isPureEvolveCard, normalizeBaseCardType } from './cardType';
 
 describe('cardType', () => {
   it('normalizes known card kinds and Japanese fallback labels', () => {
@@ -20,5 +20,13 @@ describe('cardType', () => {
     expect(isMainDeckSpellCard({ baseCardType: 'spell' })).toBe(true);
     expect(isMainDeckSpellCard({ baseCardType: 'spell', isEvolveCard: true })).toBe(false);
     expect(isMainDeckSpellCard({ baseCardType: 'follower' })).toBe(false);
+  });
+
+  it('distinguishes advance cards from non-advance evolve cards', () => {
+    expect(isAdvanceKind('advance_follower')).toBe(true);
+    expect(isAdvanceKind('evolve_follower')).toBe(false);
+    expect(isPureEvolveCard({ isEvolveCard: true, cardKindNormalized: 'evolve_follower' })).toBe(true);
+    expect(isPureEvolveCard({ isEvolveCard: true, cardKindNormalized: 'advance_follower' })).toBe(false);
+    expect(isPureEvolveCard({ isEvolveCard: true })).toBe(true);
   });
 });
