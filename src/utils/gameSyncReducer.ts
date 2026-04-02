@@ -208,6 +208,7 @@ export const applyGameSyncEvent = (
           isFlipped: c.isLeaderCard ? false : true,
           isTapped: false,
           attachedTo: undefined,
+          linkedTo: undefined,
           counters: { atk: 0, hp: 0 },
           genericCounter: 0,
         }));
@@ -228,6 +229,15 @@ export const applyGameSyncEvent = (
       if (isPreparingMainDeckDragBlocked(state, event.cardId)) return state;
       if (isPreparingEvolveDeckMoveBlocked(state, event.cardId)) return state;
       const nextCards = CardLogic.applyDrop(state.cards, event.cardId, event.overId);
+      if (nextCards === state.cards) return state;
+      return withCardMoveCheckpoint(state, event.actor, nextCards);
+    }
+
+    case 'LINK_CARD_TO_FIELD': {
+      if (isPreparingHandMovementBlocked(state, event.cardId)) return state;
+      if (isPreparingMainDeckDragBlocked(state, event.cardId)) return state;
+      if (isPreparingEvolveDeckMoveBlocked(state, event.cardId)) return state;
+      const nextCards = CardLogic.linkCardToField(state.cards, event.cardId, event.parentCardId);
       if (nextCards === state.cards) return state;
       return withCardMoveCheckpoint(state, event.actor, nextCards);
     }

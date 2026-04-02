@@ -101,6 +101,19 @@ const collectDescendantIds = (
   return descendantIds;
 };
 
+const collectLinkedChildIds = (
+  cards: CardInstance[],
+  parentIds: Iterable<string>
+): Set<string> => {
+  const parentIdSet = parentIds instanceof Set ? parentIds : new Set(parentIds);
+
+  return new Set(
+    cards
+      .filter(card => card.linkedTo && parentIdSet.has(card.linkedTo))
+      .map(card => card.id)
+  );
+};
+
 const getZonePrefix = (zone: string): string => zone.split('-')[0];
 const isLeaderZone = (zone: string): boolean => zone.startsWith('leader-');
 const isLeaderCard = (card: CardInstance | undefined): boolean =>
@@ -112,9 +125,11 @@ const findRootCard = (cards: CardInstance[], card: CardInstance): CardInstance =
   let rootCard = card;
   const visited = new Set<string>();
 
-  while (rootCard.attachedTo && !visited.has(rootCard.attachedTo)) {
+  while (true) {
+    const parentId = rootCard.attachedTo ?? rootCard.linkedTo;
+    if (!parentId || visited.has(parentId)) break;
     visited.add(rootCard.id);
-    const parentCard = cards.find(c => c.id === rootCard.attachedTo);
+    const parentCard = cards.find(c => c.id === parentId);
     if (!parentCard) break;
     rootCard = parentCard;
   }
@@ -151,9 +166,10 @@ const syncStackTapState = (
 ): CardInstance[] => {
   const stackIds = collectStackIds(cards, rootId);
   if (stackIds.size === 0) return cards;
+  const linkedIds = collectLinkedChildIds(cards, stackIds);
 
   return cards.map(card => (
-    stackIds.has(card.id)
+    stackIds.has(card.id) || linkedIds.has(card.id)
       ? { ...card, isTapped }
       : card
   ));
@@ -173,8 +189,11 @@ export const moveCardToEnd = (
   if (isLeaderCard(targetCard)) return cards;
 
   const descendantIds = collectDescendantIds(cards, cardId);
-  const otherCards = cards.filter(c => c.id !== cardId && !descendantIds.has(c.id));
+  const movedStackIds = new Set<string>([cardId, ...descendantIds]);
+  const linkedChildIds = collectLinkedChildIds(cards, movedStackIds);
+  const otherCards = cards.filter(c => c.id !== cardId && !descendantIds.has(c.id) && !linkedChildIds.has(c.id));
   const attachments = cards.filter(c => descendantIds.has(c.id));
+  const linkedCards = cards.filter(c => linkedChildIds.has(c.id));
 
   const movedAttachments = attachments.map(a => {
     const attachmentZone = options.zone ? resolveMoveDestination(a, options.zone) : a.zone;
@@ -191,6 +210,7 @@ export const moveCardToEnd = (
           : a.isFlipped
       ),
       attachedTo: options.preserveAttachment === false ? undefined : (options.attachedTo ?? a.attachedTo),
+      linkedTo: options.zone ? undefined : a.linkedTo,
     };
   });
 
@@ -206,9 +226,30 @@ export const moveCardToEnd = (
         ? getFaceStateForZone(movedZone, targetCard.isFlipped)
         : targetCard.isFlipped
     ),
+    linkedTo: options.zone ? undefined : targetCard.linkedTo,
   };
 
-  return [...otherCards, ...movedAttachments, movedCard];
+  const movedLinkedCards = linkedCards.map(linkedCard => {
+    const linkedZone = options.zone ? resolveMoveDestination(linkedCard, options.zone) : linkedCard.zone;
+    const linkedZonePrefix = getZonePrefix(linkedZone);
+    return {
+      ...linkedCard,
+      ...options,
+      zone: linkedZone,
+      counters: options.zone ? getCountersForMove(linkedCard, linkedZone) : (options.counters ?? linkedCard.counters),
+      genericCounter: options.zone ? getGenericCounterForMove(linkedCard, linkedZone) : (options.genericCounter ?? linkedCard.genericCounter),
+      isTapped: options.isTapped ?? linkedCard.isTapped,
+      isFlipped: options.isFlipped ?? (
+        options.zone
+          ? getFaceStateForZone(linkedZone, linkedCard.isFlipped)
+          : linkedCard.isFlipped
+      ),
+      attachedTo: undefined,
+      linkedTo: linkedZonePrefix === 'field' ? linkedCard.linkedTo : undefined,
+    };
+  });
+
+  return [...otherCards, ...movedAttachments, movedCard, ...movedLinkedCards];
 };
 
 /**
@@ -225,8 +266,11 @@ export const moveCardToFront = (
   if (isLeaderCard(targetCard)) return cards;
 
   const descendantIds = collectDescendantIds(cards, cardId);
-  const otherCards = cards.filter(c => c.id !== cardId && !descendantIds.has(c.id));
+  const movedStackIds = new Set<string>([cardId, ...descendantIds]);
+  const linkedChildIds = collectLinkedChildIds(cards, movedStackIds);
+  const otherCards = cards.filter(c => c.id !== cardId && !descendantIds.has(c.id) && !linkedChildIds.has(c.id));
   const attachments = cards.filter(c => descendantIds.has(c.id));
+  const linkedCards = cards.filter(c => linkedChildIds.has(c.id));
 
   const movedAttachments = attachments.map(a => {
     const attachmentZone = options.zone ? resolveMoveDestination(a, options.zone) : a.zone;
@@ -243,6 +287,7 @@ export const moveCardToFront = (
           : a.isFlipped
       ),
       attachedTo: options.preserveAttachment === false ? undefined : (options.attachedTo ?? a.attachedTo),
+      linkedTo: options.zone ? undefined : a.linkedTo,
     };
   });
 
@@ -258,9 +303,30 @@ export const moveCardToFront = (
         ? getFaceStateForZone(movedZone, targetCard.isFlipped)
         : targetCard.isFlipped
     ),
+    linkedTo: options.zone ? undefined : targetCard.linkedTo,
   };
 
-  return [movedCard, ...movedAttachments, ...otherCards];
+  const movedLinkedCards = linkedCards.map(linkedCard => {
+    const linkedZone = options.zone ? resolveMoveDestination(linkedCard, options.zone) : linkedCard.zone;
+    const linkedZonePrefix = getZonePrefix(linkedZone);
+    return {
+      ...linkedCard,
+      ...options,
+      zone: linkedZone,
+      counters: options.zone ? getCountersForMove(linkedCard, linkedZone) : (options.counters ?? linkedCard.counters),
+      genericCounter: options.zone ? getGenericCounterForMove(linkedCard, linkedZone) : (options.genericCounter ?? linkedCard.genericCounter),
+      isTapped: options.isTapped ?? linkedCard.isTapped,
+      isFlipped: options.isFlipped ?? (
+        options.zone
+          ? getFaceStateForZone(linkedZone, linkedCard.isFlipped)
+          : linkedCard.isFlipped
+      ),
+      attachedTo: undefined,
+      linkedTo: linkedZonePrefix === 'field' ? linkedCard.linkedTo : undefined,
+    };
+  });
+
+  return [movedCard, ...movedAttachments, ...movedLinkedCards, ...otherCards];
 };
 
 /**
@@ -493,9 +559,14 @@ export const toggleTapStack = (
   if (isLeaderCard(targetCard)) return cards;
 
   const stackIds = collectStackIds(cards, cardId);
+  const linkedIds = collectLinkedChildIds(cards, stackIds);
   const newIsTapped = !targetCard.isTapped;
 
-  return cards.map(c => stackIds.has(c.id) ? { ...c, isTapped: newIsTapped } : c);
+  return cards.map(c => (
+    stackIds.has(c.id) || linkedIds.has(c.id)
+      ? { ...c, isTapped: newIsTapped }
+      : c
+  ));
 };
 
 export const tapStack = (
@@ -507,10 +578,15 @@ export const tapStack = (
   if (isLeaderCard(targetCard)) return cards;
 
   const stackIds = collectStackIds(cards, cardId);
-  const shouldChange = cards.some(c => stackIds.has(c.id) && !c.isTapped);
+  const linkedIds = collectLinkedChildIds(cards, stackIds);
+  const shouldChange = cards.some(c => (stackIds.has(c.id) || linkedIds.has(c.id)) && !c.isTapped);
   if (!shouldChange) return cards;
 
-  return cards.map(c => stackIds.has(c.id) ? { ...c, isTapped: true } : c);
+  return cards.map(c => (
+    stackIds.has(c.id) || linkedIds.has(c.id)
+      ? { ...c, isTapped: true }
+      : c
+  ));
 };
 
 export const toggleFlip = (
@@ -532,7 +608,8 @@ const dissolveTokenStackIntoZone = (
 ): CardInstance[] => {
   const descendantIds = collectDescendantIds(cards, cardId);
   const stackIds = new Set<string>([cardId, ...descendantIds]);
-  const otherCards = cards.filter(card => !stackIds.has(card.id));
+  const linkedChildIds = collectLinkedChildIds(cards, stackIds);
+  const otherCards = cards.filter(card => !stackIds.has(card.id) && !linkedChildIds.has(card.id));
   const movedNonTokenCards = cards
     .filter(card => stackIds.has(card.id) && !isTokenCard(card))
     .map(card => {
@@ -543,14 +620,30 @@ const dissolveTokenStackIntoZone = (
         isFlipped: getFaceStateForZone(destinationZone, card.isFlipped),
         isTapped: false,
         attachedTo: undefined,
+        linkedTo: undefined,
+        counters: getCountersForMove(card, destinationZone),
+        genericCounter: getGenericCounterForMove(card, destinationZone),
+      };
+    });
+  const movedLinkedCards = cards
+    .filter(card => linkedChildIds.has(card.id) && !isTokenCard(card))
+    .map(card => {
+      const destinationZone = resolveMoveDestination(card, requestedZone);
+      return {
+        ...card,
+        zone: destinationZone,
+        isFlipped: getFaceStateForZone(destinationZone, card.isFlipped),
+        isTapped: false,
+        attachedTo: undefined,
+        linkedTo: undefined,
         counters: getCountersForMove(card, destinationZone),
         genericCounter: getGenericCounterForMove(card, destinationZone),
       };
     });
 
   return shouldPlaceAtFront
-    ? [...movedNonTokenCards, ...otherCards]
-    : [...otherCards, ...movedNonTokenCards];
+    ? [...movedNonTokenCards, ...movedLinkedCards, ...otherCards]
+    : [...otherCards, ...movedNonTokenCards, ...movedLinkedCards];
 };
 
 export const sendCardToBottom = (
@@ -723,6 +816,41 @@ export const extractCardToFieldAttachment = (
   });
 };
 
+export const linkCardToField = (
+  cards: CardInstance[],
+  cardId: string,
+  parentCardId: string
+): CardInstance[] => {
+  const targetCard = cards.find(c => c.id === cardId);
+  if (!targetCard) return cards;
+  if (isLeaderCard(targetCard)) return cards;
+
+  const parentCard = cards.find(c => c.id === parentCardId);
+  if (!parentCard) return cards;
+  if (isLeaderCard(parentCard)) return cards;
+
+  const rootCard = findRootCard(cards, parentCard);
+  const destinationZone = `field-${targetCard.owner}`;
+  if (rootCard.zone !== destinationZone) return cards;
+  if (rootCard.owner !== targetCard.owner) return cards;
+
+  const movedCards = moveCardToEnd(cards, cardId, {
+    zone: destinationZone,
+    isFlipped: false,
+    isTapped: rootCard.isTapped,
+    counters: getCountersForMove(targetCard, destinationZone),
+    genericCounter: getGenericCounterForMove(targetCard, destinationZone),
+    attachedTo: undefined,
+    preserveAttachment: false,
+  });
+
+  return movedCards.map(card => (
+    card.id === cardId
+      ? { ...card, attachedTo: undefined, linkedTo: rootCard.id }
+      : card
+  ));
+};
+
 export const modifyPlayerStatValue = (
   currentValue: number,
   maxPp: number,
@@ -747,7 +875,7 @@ export const drawInitialHand = (
   const myDeck = cards.filter(c => c.zone === `mainDeck-${role}`);
   if (myDeck.length < 4) return cards;
 
-  const drawnCards = myDeck.slice(0, 4).map(c => ({ ...c, zone: `hand-${role}`, isFlipped: false }));
+  const drawnCards = myDeck.slice(0, 4).map(c => ({ ...c, zone: `hand-${role}`, isFlipped: false, linkedTo: undefined }));
   const drawnIds = new Set(drawnCards.map(c => c.id));
   const otherCards = cards.filter(c => !drawnIds.has(c.id));
   return [...otherCards, ...drawnCards];
@@ -788,11 +916,11 @@ export const executeMulligan = (
   // 1. Prepare returned cards (Ordered by selection)
   const returnedCards = selectedIds.map(id => {
     const card = cards.find(c => c.id === id)!;
-    return { ...card, zone: getDeckZone(card), isFlipped: true, isTapped: false, attachedTo: undefined };
+    return { ...card, zone: getDeckZone(card), isFlipped: true, isTapped: false, attachedTo: undefined, linkedTo: undefined };
   });
 
   // 2. Draw 4 new ones
-  const newHandCards = restOfDeck.slice(0, 4).map(c => ({ ...c, zone: `hand-${role}`, isFlipped: false }));
+  const newHandCards = restOfDeck.slice(0, 4).map(c => ({ ...c, zone: `hand-${role}`, isFlipped: false, linkedTo: undefined }));
   
   // 3. Remaining
   const remainingDeckCards = restOfDeck.slice(4);
@@ -834,7 +962,7 @@ export const resolveTopDeckResults = (
         zone = getDeckZone(card); 
         break;
     }
-    return { ...card, zone, isFlipped: (res.action === 'top' || res.action === 'bottom') };
+    return { ...card, zone, isFlipped: (res.action === 'top' || res.action === 'bottom'), linkedTo: undefined };
   });
 
   const topCards = results.filter(r => r.action === 'top').sort((a, b) => (a.order || 0) - (b.order || 0)).map(r => processedCards.find(pc => pc.id === r.cardId)!);

@@ -1299,6 +1299,54 @@ describe('gameSyncReducer', () => {
     expect(dragged).toBe(state);
   });
 
+  it('links a special card to a field card without using the normal stack model', () => {
+    const state = createState({
+      revision: 8,
+      gameStatus: 'playing',
+      cards: [
+        {
+          id: 'special-card',
+          cardId: 'BPV-001',
+          name: 'ドライブポイント',
+          image: '',
+          zone: 'evolveDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+          isEvolveCard: true,
+        },
+        {
+          id: 'field-card',
+          cardId: 'BP01-099',
+          name: 'Field Card',
+          image: '',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: true,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    const result = applyGameSyncEvent(state, {
+      id: 'evt-link-card-to-field',
+      type: 'LINK_CARD_TO_FIELD',
+      actor: 'host',
+      cardId: 'special-card',
+      parentCardId: 'field-card',
+    });
+
+    expect(result.cards.find(card => card.id === 'special-card')).toMatchObject({
+      zone: 'field-host',
+      linkedTo: 'field-card',
+      attachedTo: undefined,
+      isTapped: true,
+    });
+    expect(result.lastUndoableCardMoveActor).toBe('host');
+  });
+
   it('applies stat, initial hand, mulligan, top deck resolve, and import events', () => {
     const baseState = createState({
       revision: 0,

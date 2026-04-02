@@ -18,6 +18,7 @@ export interface CardInstance {
   counters: { atk: number; hp: number };
   genericCounter?: number;
   attachedTo?: string; // ID of the base card this evolve card is stacked on
+  linkedTo?: string; // ID of the parent card this special linked card visually sits under
   isEvolveCard?: boolean; // Rule flag to prevent Evolve cards mixing into Main deck
   isLeaderCard?: boolean;
   isTokenCard?: boolean;

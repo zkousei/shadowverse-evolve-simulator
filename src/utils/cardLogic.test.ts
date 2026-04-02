@@ -79,6 +79,20 @@ describe('CardLogic utils', () => {
       expect(result.every(c => c.zone === 'cemetery-host')).toBe(true);
       expect(result.every(c => c.attachedTo === undefined)).toBe(true);
     });
+
+    it('should carry linked cards with the parent card and clear their link outside the field', () => {
+      const parent = createMockCard('parent', 'field-host');
+      const linked = { ...createMockCard('linked', 'field-host'), linkedTo: 'parent', isEvolveCard: true };
+      const other = createMockCard('other', 'field-host');
+      const cards = [parent, linked, other];
+
+      const result = CardLogic.moveCardToEnd(cards, 'parent', { zone: 'cemetery-host' });
+
+      expect(result.map(c => c.id)).toEqual(['other', 'parent', 'linked']);
+      expect(result[1].zone).toBe('cemetery-host');
+      expect(result[2].zone).toBe('evolveDeck-host');
+      expect(result[2].linkedTo).toBeUndefined();
+    });
   });
 
   describe('moveCardToFront', () => {
@@ -123,6 +137,44 @@ describe('CardLogic utils', () => {
       });
 
       expect(result.every(c => c.attachedTo === undefined)).toBe(true);
+    });
+
+    it('should keep linked cards with the parent card when moving within the field', () => {
+      const parent = createMockCard('parent', 'field-host');
+      const linked = { ...createMockCard('linked', 'field-host'), linkedTo: 'parent', isEvolveCard: true };
+      const cards = [parent, linked];
+
+      const result = CardLogic.moveCardToFront(cards, 'parent', { zone: 'field-host' });
+      const movedLinked = result.find(c => c.id === 'linked');
+
+      expect(result.map(c => c.id)).toEqual(['parent', 'linked']);
+      expect(movedLinked?.zone).toBe('field-host');
+      expect(movedLinked?.linkedTo).toBe('parent');
+    });
+  });
+
+  describe('linkCardToField', () => {
+    it('moves a special card onto the field and links it to the target root card', () => {
+      const source = {
+        ...createMockCard('special', 'evolveDeck-host'),
+        cardId: 'BPV-001',
+        isEvolveCard: true,
+      };
+      const parent = {
+        ...createMockCard('parent', 'field-host'),
+        isTapped: true,
+      };
+
+      const result = CardLogic.linkCardToField([source, parent], 'special', 'parent');
+      const linked = result.find(card => card.id === 'special');
+
+      expect(linked).toMatchObject({
+        zone: 'field-host',
+        linkedTo: 'parent',
+        attachedTo: undefined,
+        isTapped: true,
+        isFlipped: false,
+      });
     });
   });
 
@@ -275,6 +327,20 @@ describe('CardLogic utils', () => {
 
       expect(CardLogic.resolveMoveDestination(leader, 'field-host')).toBe('leader-host');
       expect(CardLogic.resolveMoveDestination(leader, 'hand-host')).toBe('leader-host');
+    });
+  });
+
+  describe('tap sync with linked cards', () => {
+    it('toggles tap on linked cards together with the stack root', () => {
+      const parent = createMockCard('parent', 'field-host');
+      const evolve = { ...createMockCard('evolve', 'field-host'), attachedTo: 'parent', isEvolveCard: true };
+      const linked = { ...createMockCard('linked', 'field-host'), linkedTo: 'parent', isEvolveCard: true };
+
+      const result = CardLogic.toggleTapStack([parent, evolve, linked], 'parent');
+
+      expect(result.find(c => c.id === 'parent')?.isTapped).toBe(true);
+      expect(result.find(c => c.id === 'evolve')?.isTapped).toBe(true);
+      expect(result.find(c => c.id === 'linked')?.isTapped).toBe(true);
     });
   });
 
@@ -433,6 +499,22 @@ describe('CardLogic utils', () => {
       expect(result.find(c => c.id === 'base')?.zone).toBe('cemetery-host');
       expect(result.find(c => c.id === 'evo')?.zone).toBe('evolveDeck-host');
       expect(result.find(c => c.id === 'evo')?.attachedTo).toBeUndefined();
+    });
+
+    it('clears linkedTo when a linked card is dragged back onto the field zone', () => {
+      const linked = {
+        ...createMockCard('linked', 'field-host'),
+        linkedTo: 'parent',
+        isEvolveCard: true,
+      };
+      const parent = createMockCard('parent', 'field-host');
+
+      const result = CardLogic.applyDrop([linked, parent], 'linked', 'field-host');
+
+      expect(result.find(c => c.id === 'linked')).toMatchObject({
+        zone: 'field-host',
+        linkedTo: undefined,
+      });
     });
 
     it('should prevent moving leader cards or dropping onto leader zones', () => {

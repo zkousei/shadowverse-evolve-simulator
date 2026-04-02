@@ -263,6 +263,11 @@ function HookHarness() {
       <div data-testid="evolve-search-tapped">{String(gameState.cards.find(card => card.id === 'evolve-search-card')?.isTapped ?? 'missing')}</div>
       <div data-testid="drag-evolve-attached-to">{gameState.cards.find(card => card.id === 'drag-evolve-card')?.attachedTo ?? 'none'}</div>
       <div data-testid="drag-evolve-tapped">{String(gameState.cards.find(card => card.id === 'drag-evolve-card')?.isTapped ?? 'missing')}</div>
+      <div data-testid="link-search-linked-to">{gameState.cards.find(card => card.id === 'link-search-card')?.linkedTo ?? 'none'}</div>
+      <div data-testid="link-search-zone">{gameState.cards.find(card => card.id === 'link-search-card')?.zone ?? 'none'}</div>
+      <div data-testid="drag-linked-linked-to">{gameState.cards.find(card => card.id === 'drag-linked-card')?.linkedTo ?? 'none'}</div>
+      <div data-testid="drag-linked-zone">{gameState.cards.find(card => card.id === 'drag-linked-card')?.zone ?? 'none'}</div>
+      <div data-testid="drag-linked-tapped">{String(gameState.cards.find(card => card.id === 'drag-linked-card')?.isTapped ?? 'missing')}</div>
       {savedSessionCandidate && (
         <>
           <button onClick={resumeSavedSession}>Resume Saved Session</button>
@@ -283,7 +288,10 @@ function HookHarness() {
       <button onClick={() => handleBanish('banish-card')}>Banish Field Card</button>
       <button onClick={() => handlePlayToField('hand-card', 'host')}>Play Hand Card to Field</button>
       <button onClick={() => handleExtractCard('evolve-search-card', 'field-host', 'host')}>Extract Evolve to Field</button>
+      <button onClick={() => handleExtractCard('link-search-card', 'field-host', 'host')}>Extract Linked to Field</button>
       <button onClick={() => handleDragEnd({ active: { id: 'drag-evolve-card' }, over: { id: 'field-host' } } as any)}>Drag Evolve to Field</button>
+      <button onClick={() => handleDragEnd({ active: { id: 'drag-linked-card' }, over: { id: 'link-base-card' } } as any)}>Drag Linked Card to Base</button>
+      <button onClick={() => handleDragEnd({ active: { id: 'drag-linked-card' }, over: { id: 'field-host' } } as any)}>Drag Linked Card to Field</button>
       <button onClick={() => handleDragEnd({ active: { id: 'attach-base-1' }, over: { id: 'attach-base-2' } } as any)}>Attach Base 1 Under Base 2</button>
       <button onClick={() => confirmEvolveAutoAttachSelection('attach-base-1')}>Confirm Auto Attach Base 1</button>
       <button onClick={() => confirmEvolveAutoAttachSelection('attach-base-2')}>Confirm Auto Attach Base 2</button>
@@ -2099,6 +2107,244 @@ describe('useGameBoardLogic action handlers', () => {
     expect(screen.getByTestId('host-field-count')).toHaveTextContent('2');
     expect(screen.getByTestId('drag-evolve-attached-to')).toHaveTextContent('attach-base-1');
     expect(screen.getByTestId('drag-evolve-tapped')).toHaveTextContent('true');
+  });
+
+  it('keeps the existing placement behavior for special link cards when no target is on the field', async () => {
+    installMockCatalogFetch([
+      createCatalogCard({ id: 'BASE-001', name: 'Base Vanguard Unit' }),
+      createCatalogCard({
+        id: 'DRIVE-001',
+        name: 'ドライブポイント',
+        title: 'カードファイト!! ヴァンガード',
+        deck_section: 'evolve',
+        card_kind_normalized: 'evolve_spell',
+      }),
+    ]);
+
+    renderResumedHostHarness({
+      cards: [{
+        id: 'link-search-card',
+        cardId: 'DRIVE-001',
+        name: 'ドライブポイント',
+        image: '/drive-point.png',
+        zone: 'evolveDeck-host',
+        owner: 'host',
+        isTapped: false,
+        isFlipped: false,
+        counters: { atk: 0, hp: 0 },
+        isEvolveCard: true,
+      }],
+      gameStatus: 'playing',
+      turnCount: 2,
+      phase: 'Main',
+      revision: 7,
+    });
+
+    await act(async () => {});
+
+    fireEvent.click(screen.getByRole('button', { name: 'Extract Linked to Field' }));
+
+    expect(screen.getByTestId('host-evolve-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('host-field-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('link-search-linked-to')).toHaveTextContent('none');
+    expect(screen.getByTestId('link-search-zone')).toHaveTextContent('field-host');
+  });
+
+  it('auto-links a special card from search when a single related field card is present', async () => {
+    installMockCatalogFetch([
+      createCatalogCard({
+        id: 'BASE-001',
+        name: 'Base Vanguard Unit',
+        related_cards: [{ id: 'DRIVE-001', name: 'ドライブポイント' }],
+      }),
+      createCatalogCard({
+        id: 'DRIVE-001',
+        name: 'ドライブポイント',
+        title: 'カードファイト!! ヴァンガード',
+        deck_section: 'evolve',
+        card_kind_normalized: 'evolve_spell',
+      }),
+    ]);
+
+    renderResumedHostHarness({
+      cards: [
+        {
+          id: 'link-search-card',
+          cardId: 'DRIVE-001',
+          name: 'ドライブポイント',
+          image: '/drive-point.png',
+          zone: 'evolveDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+          isEvolveCard: true,
+        },
+        {
+          id: 'link-base-1',
+          cardId: 'BASE-001',
+          name: 'Base Vanguard Unit',
+          image: '/base-vanguard-unit.png',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: true,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+      gameStatus: 'playing',
+      turnCount: 2,
+      phase: 'Main',
+      revision: 7,
+    });
+
+    await act(async () => {});
+
+    fireEvent.click(screen.getByRole('button', { name: 'Extract Linked to Field' }));
+
+    expect(screen.getByTestId('host-evolve-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('host-field-count')).toHaveTextContent('2');
+    expect(screen.getByTestId('link-search-linked-to')).toHaveTextContent('link-base-1');
+    expect(screen.getByTestId('link-search-zone')).toHaveTextContent('field-host');
+  });
+
+  it('offers selection for special link cards and links the chosen target', async () => {
+    installMockCatalogFetch([
+      createCatalogCard({
+        id: 'BASE-001',
+        name: 'Base Vanguard Unit',
+        related_cards: [{ id: 'DRIVE-001', name: 'ドライブポイント' }],
+      }),
+      createCatalogCard({
+        id: 'BASE-002',
+        name: 'Base Vanguard Unit 2',
+        related_cards: [{ id: 'DRIVE-001', name: 'ドライブポイント' }],
+      }),
+      createCatalogCard({
+        id: 'DRIVE-001',
+        name: 'ドライブポイント',
+        title: 'カードファイト!! ヴァンガード',
+        deck_section: 'evolve',
+        card_kind_normalized: 'evolve_spell',
+      }),
+    ]);
+
+    renderResumedHostHarness({
+      cards: [
+        {
+          id: 'drag-linked-card',
+          cardId: 'DRIVE-001',
+          name: 'ドライブポイント',
+          image: '/drive-point.png',
+          zone: 'evolveDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+          isEvolveCard: true,
+        },
+        {
+          id: 'attach-base-1',
+          cardId: 'BASE-001',
+          name: 'Base Vanguard Unit',
+          image: '/base-vanguard-unit.png',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'attach-base-2',
+          cardId: 'BASE-002',
+          name: 'Base Vanguard Unit 2',
+          image: '/base-vanguard-unit-2.png',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+      gameStatus: 'playing',
+      turnCount: 2,
+      phase: 'Main',
+      revision: 7,
+    });
+
+    await act(async () => {});
+
+    fireEvent.click(screen.getByRole('button', { name: 'Drag Linked Card to Field' }));
+
+    expect(screen.getByTestId('auto-attach-selection-count')).toHaveTextContent('2');
+    expect(screen.getByTestId('auto-attach-selection-source')).toHaveTextContent('drag-linked-card');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm Auto Attach Base 2' }));
+
+    expect(screen.getByTestId('auto-attach-selection-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('drag-linked-linked-to')).toHaveTextContent('attach-base-2');
+    expect(screen.getByTestId('drag-linked-zone')).toHaveTextContent('field-host');
+  });
+
+  it('links a special card by manual drag and clears the link when moved back to the field', async () => {
+    installMockCatalogFetch([
+      createCatalogCard({
+        id: 'VG-DRIVE-001',
+        name: 'ドライブポイント',
+        title: 'カードファイト!! ヴァンガード',
+        deck_section: 'evolve',
+        card_kind_normalized: 'evolve_spell',
+      }),
+      createCatalogCard({
+        id: 'BASE-001',
+        name: 'Base Follower',
+      }),
+    ]);
+
+    renderResumedHostHarness({
+      cards: [
+        {
+          id: 'drag-linked-card',
+          cardId: 'VG-DRIVE-001',
+          name: 'ドライブポイント',
+          image: '/drive-point.png',
+          zone: 'evolveDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+          isEvolveCard: true,
+        },
+        {
+          id: 'link-base-card',
+          cardId: 'BASE-001',
+          name: 'Base Follower',
+          image: '/base-follower.png',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: true,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+      gameStatus: 'playing',
+      turnCount: 2,
+      phase: 'Main',
+      revision: 7,
+    });
+
+    await act(async () => {});
+
+    fireEvent.click(screen.getByRole('button', { name: 'Drag Linked Card to Base' }));
+
+    expect(screen.getByTestId('drag-linked-linked-to')).toHaveTextContent('link-base-card');
+    expect(screen.getByTestId('drag-linked-zone')).toHaveTextContent('field-host');
+    expect(screen.getByTestId('drag-linked-tapped')).toHaveTextContent('true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Drag Linked Card to Field' }));
+
+    expect(screen.getByTestId('drag-linked-linked-to')).toHaveTextContent('none');
+    expect(screen.getByTestId('drag-linked-zone')).toHaveTextContent('field-host');
   });
 
   it('moves a field card to banish', () => {

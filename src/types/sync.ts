@@ -25,6 +25,7 @@ export type GameSyncEvent =
   | { id: string; type: 'START_GAME'; actor: PlayerRole }
   | { id: string; type: 'RESET_GAME'; actor: PlayerRole }
   | { id: string; type: 'MOVE_CARD'; actor: PlayerRole; cardId: string; overId: string }
+  | { id: string; type: 'LINK_CARD_TO_FIELD'; actor: PlayerRole; cardId: string; parentCardId: string }
   | { id: string; type: 'MODIFY_COUNTER'; actor: PlayerRole; cardId: string; stat: 'atk' | 'hp'; delta: number }
   | { id: string; type: 'MODIFY_GENERIC_COUNTER'; actor: PlayerRole; cardId: string; delta: number }
   | { id: string; type: 'DRAW_CARD'; actor: PlayerRole }
