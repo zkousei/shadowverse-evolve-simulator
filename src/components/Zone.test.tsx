@@ -35,7 +35,7 @@ vi.mock('react-i18next', () => ({
 }));
 
 vi.mock('./Card', () => ({
-  default: ({ card, isHidden, isLocked, debugIndex, hideCurrentStats, displayCounters, baseStats }: { card: CardInstance; isHidden?: boolean; isLocked?: boolean; debugIndex?: number; hideCurrentStats?: boolean; displayCounters?: { atk: number; hp: number }; baseStats?: { atk: number; hp: number } }) => (
+  default: ({ card, isHidden, isLocked, debugIndex, hideCurrentStats, displayCounters, baseStats, onSendToBottom, onBanish, onCemetery, onReturnEvolve }: { card: CardInstance; isHidden?: boolean; isLocked?: boolean; debugIndex?: number; hideCurrentStats?: boolean; displayCounters?: { atk: number; hp: number }; baseStats?: { atk: number; hp: number }; onSendToBottom?: (id: string) => void; onBanish?: (id: string) => void; onCemetery?: (id: string) => void; onReturnEvolve?: (id: string) => void }) => (
     <div
       data-testid="mock-card"
       data-card-id={card.id}
@@ -45,6 +45,10 @@ vi.mock('./Card', () => ({
       data-hide-current-stats={String(Boolean(hideCurrentStats))}
       data-display-counters={displayCounters ? `${displayCounters.atk}/${displayCounters.hp}` : ''}
       data-base-stats={baseStats ? `${baseStats.atk}/${baseStats.hp}` : ''}
+      data-has-send-to-bottom={String(Boolean(onSendToBottom))}
+      data-has-banish={String(Boolean(onBanish))}
+      data-has-cemetery={String(Boolean(onCemetery))}
+      data-has-return-evolve={String(Boolean(onReturnEvolve))}
     >
       {card.name}
     </div>
@@ -199,5 +203,49 @@ describe('Zone', () => {
       top: '40px',
       left: '30px',
     });
+  });
+
+  it('passes individual removal actions to linked cards', () => {
+    render(
+      <Zone
+        id="field-host"
+        label="Field"
+        cards={[
+          createCard('parent'),
+          createCard('linked-special', { linkedTo: 'parent', isTokenCard: true }),
+        ]}
+        onSendToBottom={vi.fn()}
+        onBanish={vi.fn()}
+        onCemetery={vi.fn()}
+      />
+    );
+
+    const linkedCard = screen.getAllByTestId('mock-card').find(card => card.getAttribute('data-card-id') === 'linked-special');
+    expect(linkedCard).toHaveAttribute('data-has-send-to-bottom', 'true');
+    expect(linkedCard).toHaveAttribute('data-has-banish', 'true');
+    expect(linkedCard).toHaveAttribute('data-has-cemetery', 'true');
+  });
+
+  it('does not pass token-only removal actions to non-token linked cards', () => {
+    render(
+      <Zone
+        id="field-host"
+        label="Field"
+        cards={[
+          createCard('parent'),
+          createCard('linked-special', { linkedTo: 'parent', isEvolveCard: true }),
+        ]}
+        onSendToBottom={vi.fn()}
+        onBanish={vi.fn()}
+        onCemetery={vi.fn()}
+        onReturnEvolve={vi.fn()}
+      />
+    );
+
+    const linkedCard = screen.getAllByTestId('mock-card').find(card => card.getAttribute('data-card-id') === 'linked-special');
+    expect(linkedCard).toHaveAttribute('data-has-send-to-bottom', 'false');
+    expect(linkedCard).toHaveAttribute('data-has-banish', 'false');
+    expect(linkedCard).toHaveAttribute('data-has-cemetery', 'false');
+    expect(linkedCard).toHaveAttribute('data-has-return-evolve', 'true');
   });
 });

@@ -7,6 +7,7 @@ export interface TokenOption {
   name: string;
   image: string;
   baseCardType?: RuntimeBaseCardType | null;
+  cardKindNormalized?: string;
 }
 
 export interface PlayerHUD {

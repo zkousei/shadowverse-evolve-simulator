@@ -5,6 +5,7 @@ import Peer from 'peerjs';
 import type { DataConnection } from 'peerjs';
 import { type DragEndEvent } from '@dnd-kit/core';
 import { type CardInstance } from '../components/Card';
+import type { DeckBuilderCardData } from '../models/deckBuilderCard';
 import { type PlayerRole, type SyncState, type TokenOption, initialState } from '../types/game';
 import { type AttackTarget, type GameSyncEvent, type PublicCardView, type SharedUiEffect, type SyncMessage } from '../types/sync';
 import { uuid } from '../utils/helpers';
@@ -89,6 +90,42 @@ type GameBoardStatusKey = `gameBoard.status.${string}`;
 type PendingEvolveAutoAttachSelection = {
   sourceCardId: string;
   actor: PlayerRole;
+};
+
+const findUnitRootCard = (cards: CardInstance[], card: CardInstance): CardInstance => {
+  let rootCard = card;
+  const visited = new Set<string>();
+
+  while (true) {
+    const parentId = rootCard.attachedTo ?? rootCard.linkedTo;
+    if (!parentId || visited.has(parentId)) break;
+    visited.add(rootCard.id);
+    const parentCard = cards.find(candidate => candidate.id === parentId);
+    if (!parentCard) break;
+    rootCard = parentCard;
+  }
+
+  return rootCard;
+};
+
+const isTokenEquipmentCard = (
+  card: CardInstance | undefined,
+  tokenEquipmentCardIds: Set<string>
+): boolean => {
+  if (!card) return false;
+  return card.cardKindNormalized === 'token_equipment' || tokenEquipmentCardIds.has(card.cardId);
+};
+
+const isEquipmentLinkTargetCard = (
+  card: CardInstance | undefined,
+  catalogCard: DeckBuilderCardData | undefined
+): boolean => {
+  if (!card) return false;
+  if (catalogCard) {
+    return catalogCard.deck_section === 'main' && catalogCard.card_kind_normalized === 'follower';
+  }
+
+  return !card.isLeaderCard && !card.isEvolveCard && !card.isTokenCard && card.baseCardType === 'follower';
 };
 
 const isPlayerHud = (value: unknown): value is SyncState['host'] => (
@@ -237,9 +274,11 @@ export const useGameBoardLogic = () => {
   const setupConnectionRef = useRef<(conn: DataConnection) => void>(() => undefined);
   const gameStateRef = useRef<SyncState>(initialState);
   const cardDetailLookupRef = useRef<CardDetailLookup>({});
+  const cardCatalogByIdRef = useRef<Record<string, DeckBuilderCardData>>({});
   const evolveAutoAttachResolverRef = useRef<EvolveAutoAttachResolver | null>(null);
   const fieldLinkAutoAttachResolverRef = useRef<FieldLinkAutoAttachResolver | null>(null);
   const fieldLinkCardIdsRef = useRef<Set<string>>(new Set());
+  const tokenEquipmentCardIdsRef = useRef<Set<string>>(new Set());
   const savedSessionCandidateRef = useRef<SavedHostSession | null>(null);
   const awaitingInitialSnapshotRef = useRef(false);
   const activeConnectionTokenRef = useRef<string | null>(null);
@@ -1481,8 +1520,12 @@ export const useGameBoardLogic = () => {
     let isActive = true;
     fetch('/cards_detailed.json')
       .then(res => res.json())
-      .then(data => {
+      .then((data: DeckBuilderCardData[]) => {
         if (!isActive) return;
+        cardCatalogByIdRef.current = data.reduce<Record<string, DeckBuilderCardData>>((lookup, card) => {
+          lookup[card.id] = card;
+          return lookup;
+        }, {});
         const statLookup = buildCardStatLookup(data);
         const detailLookup = buildCardDetailLookup(data);
         console.log('[DEBUG] Card lookups built:', Object.keys(statLookup).length, 'stats,', Object.keys(detailLookup).length, 'details');
@@ -1496,13 +1539,20 @@ export const useGameBoardLogic = () => {
             .filter((card: any) => Boolean(getFieldLinkGroupId(card)))
             .map((card: any) => card.id)
         );
+        tokenEquipmentCardIdsRef.current = new Set(
+          data
+            .filter((card: any) => card.card_kind_normalized === 'token_equipment')
+            .map((card: any) => card.id)
+        );
       })
       .catch(err => console.error('Could not load card stats', err));
     return () => {
       isActive = false;
+      cardCatalogByIdRef.current = {};
       evolveAutoAttachResolverRef.current = null;
       fieldLinkAutoAttachResolverRef.current = null;
       fieldLinkCardIdsRef.current = new Set();
+      tokenEquipmentCardIdsRef.current = new Set();
     };
   }, []);
 
@@ -1738,7 +1788,8 @@ export const useGameBoardLogic = () => {
         isFlipped: true,
         counters: { atk: 0, hp: 0 },
         genericCounter: 0,
-        baseCardType: normalizeBaseCardType(c.card_kind_normalized ?? c.type)
+        baseCardType: normalizeBaseCardType(c.card_kind_normalized ?? c.type),
+        cardKindNormalized: c.card_kind_normalized ?? undefined,
       });
     });
 
@@ -1757,7 +1808,8 @@ export const useGameBoardLogic = () => {
           counters: { atk: 0, hp: 0 },
           genericCounter: 0,
           isEvolveCard: true,
-          baseCardType: normalizeBaseCardType(c.card_kind_normalized ?? c.type)
+          baseCardType: normalizeBaseCardType(c.card_kind_normalized ?? c.type),
+          cardKindNormalized: c.card_kind_normalized ?? undefined,
         });
       });
 
@@ -1783,6 +1835,7 @@ export const useGameBoardLogic = () => {
           genericCounter: 0,
           isLeaderCard: true,
           baseCardType: normalizeBaseCardType(c.card_kind_normalized ?? c.type),
+          cardKindNormalized: c.card_kind_normalized ?? undefined,
         });
       });
 
@@ -1795,6 +1848,7 @@ export const useGameBoardLogic = () => {
             name: c.name,
             image: c.image,
             baseCardType: normalizeBaseCardType(c.card_kind_normalized ?? c.type),
+            cardKindNormalized: c.card_kind_normalized ?? undefined,
           });
         }
       });
@@ -1848,6 +1902,7 @@ export const useGameBoardLogic = () => {
       genericCounter: 0,
       isTokenCard: true,
       baseCardType: selectedToken.baseCardType ?? null,
+      cardKindNormalized: selectedToken.cardKindNormalized ?? undefined,
     };
     dispatchGameEvent({ type: 'SPAWN_TOKEN', actor: targetRole, token: newCard });
   };
@@ -1871,6 +1926,7 @@ export const useGameBoardLogic = () => {
         genericCounter: 0,
         isTokenCard: true,
         baseCardType: tokenOption.baseCardType ?? null,
+        cardKindNormalized: tokenOption.cardKindNormalized ?? undefined,
       } satisfies CardInstance))
     ));
 
@@ -1899,20 +1955,39 @@ export const useGameBoardLogic = () => {
 
     const sourceCard = gameStateRef.current.cards.find(card => card.id === cardId);
     const overCard = gameStateRef.current.cards.find(card => card.id === overId);
+    const overRootCard = overCard ? findUnitRootCard(gameStateRef.current.cards, overCard) : undefined;
+    const overCatalogCard = overRootCard ? cardCatalogByIdRef.current[overRootCard.cardId] : undefined;
+
+    const isEquipmentManualLink =
+      Boolean(
+        sourceCard &&
+        overRootCard &&
+        cardId !== overId &&
+        isTokenEquipmentCard(sourceCard, tokenEquipmentCardIdsRef.current) &&
+        (sourceCard.zone === `field-${sourceCard.owner}` || sourceCard.zone === `ex-${sourceCard.owner}`) &&
+        overRootCard.zone === `field-${sourceCard.owner}` &&
+        overRootCard.owner === sourceCard.owner &&
+        isEquipmentLinkTargetCard(overRootCard, overCatalogCard)
+      );
 
     if (
       sourceCard &&
       overCard &&
       cardId !== overId &&
-      fieldLinkCardIdsRef.current.has(sourceCard.cardId) &&
-      overCard.zone === `field-${sourceCard.owner}` &&
-      overCard.owner === sourceCard.owner
+      (
+        (
+          fieldLinkCardIdsRef.current.has(sourceCard.cardId) &&
+          overCard.zone === `field-${sourceCard.owner}` &&
+          overCard.owner === sourceCard.owner
+        ) ||
+        isEquipmentManualLink
+      )
     ) {
       dispatchGameEvent({
         type: 'LINK_CARD_TO_FIELD',
         actor: sourceCard.owner,
         cardId,
-        parentCardId: overId,
+        parentCardId: overRootCard?.id ?? overId,
       });
       return;
     }
