@@ -76,7 +76,10 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
           detail={cardDetailLookup?.[linkedCard.cardId]}
           highlightTone={getHighlightTone?.(linkedCard)}
           onInspect={onInspectCard}
+          onSendToBottom={linkedCard.isTokenCard ? onSendToBottom : undefined}
+          onBanish={linkedCard.isTokenCard ? onBanish : undefined}
           onReturnEvolve={onReturnEvolve}
+          onCemetery={linkedCard.isTokenCard ? onCemetery : undefined}
           isHidden={hideCards}
           isLocked={lockCards || (isProtected && viewerRole !== 'all' && linkedCard.owner !== viewerRole)}
           quickActionsDisabled={disableQuickActionsForCard?.(linkedCard)}
@@ -85,7 +88,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
         />
       </div>
     ));
-  }, [attachmentLeftOffset, attachmentTopOffset, cardDetailLookup, cardStatLookup, disableQuickActionsForCard, getHighlightTone, hideCards, isDebug, isProtected, linkedCardLeftOffset, linkedCardTopOffset, lockCards, onInspectCard, onReturnEvolve, viewerRole]);
+  }, [attachmentLeftOffset, attachmentTopOffset, cardDetailLookup, cardStatLookup, disableQuickActionsForCard, getHighlightTone, hideCards, isDebug, isProtected, linkedCardLeftOffset, linkedCardTopOffset, lockCards, onBanish, onCemetery, onInspectCard, onReturnEvolve, onSendToBottom, viewerRole]);
 
   return (
     <div

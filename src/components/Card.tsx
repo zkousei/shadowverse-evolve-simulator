@@ -23,6 +23,7 @@ export interface CardInstance {
   isLeaderCard?: boolean;
   isTokenCard?: boolean;
   baseCardType?: RuntimeBaseCardType | null;
+  cardKindNormalized?: string;
 }
 
 export interface CardInspectAnchor {

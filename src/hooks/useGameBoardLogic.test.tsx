@@ -263,6 +263,10 @@ function HookHarness() {
       <div data-testid="evolve-search-tapped">{String(gameState.cards.find(card => card.id === 'evolve-search-card')?.isTapped ?? 'missing')}</div>
       <div data-testid="drag-evolve-attached-to">{gameState.cards.find(card => card.id === 'drag-evolve-card')?.attachedTo ?? 'none'}</div>
       <div data-testid="drag-evolve-tapped">{String(gameState.cards.find(card => card.id === 'drag-evolve-card')?.isTapped ?? 'missing')}</div>
+      <div data-testid="equipment-play-linked-to">{gameState.cards.find(card => card.id === 'equipment-play-card')?.linkedTo ?? 'none'}</div>
+      <div data-testid="equipment-play-zone">{gameState.cards.find(card => card.id === 'equipment-play-card')?.zone ?? 'none'}</div>
+      <div data-testid="drag-equipment-linked-to">{gameState.cards.find(card => card.id === 'drag-equipment-card')?.linkedTo ?? 'none'}</div>
+      <div data-testid="drag-equipment-zone">{gameState.cards.find(card => card.id === 'drag-equipment-card')?.zone ?? 'none'}</div>
       <div data-testid="link-search-linked-to">{gameState.cards.find(card => card.id === 'link-search-card')?.linkedTo ?? 'none'}</div>
       <div data-testid="link-search-zone">{gameState.cards.find(card => card.id === 'link-search-card')?.zone ?? 'none'}</div>
       <div data-testid="drag-linked-linked-to">{gameState.cards.find(card => card.id === 'drag-linked-card')?.linkedTo ?? 'none'}</div>
@@ -287,9 +291,12 @@ function HookHarness() {
       <button onClick={() => handleSendToBottom('bottom-card')}>Send Field Card to Bottom</button>
       <button onClick={() => handleBanish('banish-card')}>Banish Field Card</button>
       <button onClick={() => handlePlayToField('hand-card', 'host')}>Play Hand Card to Field</button>
+      <button onClick={() => handlePlayToField('equipment-play-card', 'host')}>Play Equipment to Field</button>
       <button onClick={() => handleExtractCard('evolve-search-card', 'field-host', 'host')}>Extract Evolve to Field</button>
       <button onClick={() => handleExtractCard('link-search-card', 'field-host', 'host')}>Extract Linked to Field</button>
       <button onClick={() => handleDragEnd({ active: { id: 'drag-evolve-card' }, over: { id: 'field-host' } } as any)}>Drag Evolve to Field</button>
+      <button onClick={() => handleDragEnd({ active: { id: 'drag-equipment-card' }, over: { id: 'equipment-base-card' } } as any)}>Drag Equipment to Base</button>
+      <button onClick={() => handleDragEnd({ active: { id: 'drag-equipment-card' }, over: { id: 'equipment-base-evolved-card' } } as any)}>Drag Equipment to Evolved Base</button>
       <button onClick={() => handleDragEnd({ active: { id: 'drag-linked-card' }, over: { id: 'link-base-card' } } as any)}>Drag Linked Card to Base</button>
       <button onClick={() => handleDragEnd({ active: { id: 'drag-linked-card' }, over: { id: 'field-host' } } as any)}>Drag Linked Card to Field</button>
       <button onClick={() => handleDragEnd({ active: { id: 'attach-base-1' }, over: { id: 'attach-base-2' } } as any)}>Attach Base 1 Under Base 2</button>
@@ -2150,6 +2157,61 @@ describe('useGameBoardLogic action handlers', () => {
     expect(screen.getByTestId('link-search-zone')).toHaveTextContent('field-host');
   });
 
+  it('keeps token equipment play-to-field behavior without auto-linking it', async () => {
+    installMockCatalogFetch([
+      createCatalogCard({
+        id: 'EQUIP-001',
+        name: 'アメスアミュレット',
+        deck_section: 'token',
+        card_kind_normalized: 'token_equipment',
+      }),
+      createCatalogCard({
+        id: 'BASE-001',
+        name: 'Base Follower',
+      }),
+    ]);
+
+    renderResumedHostHarness({
+      cards: [
+        {
+          id: 'equipment-play-card',
+          cardId: 'EQUIP-001',
+          name: 'アメスアミュレット',
+          image: '/equip.png',
+          zone: 'ex-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+          isTokenCard: true,
+          baseCardType: 'amulet',
+        },
+        {
+          id: 'equipment-base-card',
+          cardId: 'BASE-001',
+          name: 'Base Follower',
+          image: '/base-follower.png',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+      gameStatus: 'playing',
+      turnCount: 2,
+      phase: 'Main',
+      revision: 7,
+    });
+
+    await act(async () => {});
+
+    fireEvent.click(screen.getByRole('button', { name: 'Play Equipment to Field' }));
+
+    expect(screen.getByTestId('equipment-play-zone')).toHaveTextContent('field-host');
+    expect(screen.getByTestId('equipment-play-linked-to')).toHaveTextContent('none');
+  });
+
   it('auto-links a special card from search when a single related field card is present', async () => {
     installMockCatalogFetch([
       createCatalogCard({
@@ -2284,6 +2346,180 @@ describe('useGameBoardLogic action handlers', () => {
     expect(screen.getByTestId('auto-attach-selection-count')).toHaveTextContent('0');
     expect(screen.getByTestId('drag-linked-linked-to')).toHaveTextContent('attach-base-2');
     expect(screen.getByTestId('drag-linked-zone')).toHaveTextContent('field-host');
+  });
+
+  it('links token equipment to a follower when manually dragged from ex', async () => {
+    installMockCatalogFetch([
+      createCatalogCard({
+        id: 'EQUIP-001',
+        name: 'アメスアミュレット',
+        deck_section: 'token',
+        card_kind_normalized: 'token_equipment',
+      }),
+      createCatalogCard({
+        id: 'BASE-001',
+        name: 'Base Follower',
+      }),
+    ]);
+
+    renderResumedHostHarness({
+      cards: [
+        {
+          id: 'drag-equipment-card',
+          cardId: 'EQUIP-001',
+          name: 'アメスアミュレット',
+          image: '/equip.png',
+          zone: 'ex-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+          isTokenCard: true,
+          baseCardType: 'amulet',
+        },
+        {
+          id: 'equipment-base-card',
+          cardId: 'BASE-001',
+          name: 'Base Follower',
+          image: '/base-follower.png',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: true,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+      gameStatus: 'playing',
+      turnCount: 2,
+      phase: 'Main',
+      revision: 7,
+    });
+
+    await act(async () => {});
+
+    fireEvent.click(screen.getByRole('button', { name: 'Drag Equipment to Base' }));
+
+    expect(screen.getByTestId('drag-equipment-zone')).toHaveTextContent('field-host');
+    expect(screen.getByTestId('drag-equipment-linked-to')).toHaveTextContent('equipment-base-card');
+  });
+
+  it('links token equipment even before the card catalog fetch resolves', () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})));
+
+    renderResumedHostHarness({
+      cards: [
+        {
+          id: 'drag-equipment-card',
+          cardId: 'EQUIP-001',
+          name: 'アメスアミュレット',
+          image: '/equip.png',
+          zone: 'ex-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+          isTokenCard: true,
+          baseCardType: 'amulet',
+          cardKindNormalized: 'token_equipment',
+        },
+        {
+          id: 'equipment-base-card',
+          cardId: 'BASE-001',
+          name: 'Base Follower',
+          image: '/base-follower.png',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: true,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+          baseCardType: 'follower',
+        },
+      ],
+      gameStatus: 'playing',
+      turnCount: 2,
+      phase: 'Main',
+      revision: 7,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Drag Equipment to Base' }));
+
+    expect(screen.getByTestId('drag-equipment-zone')).toHaveTextContent('field-host');
+    expect(screen.getByTestId('drag-equipment-linked-to')).toHaveTextContent('equipment-base-card');
+  });
+
+  it('links token equipment to the root follower when dropped onto an evolved unit', async () => {
+    installMockCatalogFetch([
+      createCatalogCard({
+        id: 'EQUIP-001',
+        name: 'アメスアミュレット',
+        deck_section: 'token',
+        card_kind_normalized: 'token_equipment',
+      }),
+      createCatalogCard({
+        id: 'BASE-001',
+        name: 'Base Follower',
+      }),
+      createCatalogCard({
+        id: 'EVO-001',
+        name: 'Base Follower',
+        deck_section: 'evolve',
+        card_kind_normalized: 'evolve_follower',
+        related_cards: [{ id: 'BASE-001', name: 'Base Follower' }],
+      }),
+    ]);
+
+    renderResumedHostHarness({
+      cards: [
+        {
+          id: 'drag-equipment-card',
+          cardId: 'EQUIP-001',
+          name: 'アメスアミュレット',
+          image: '/equip.png',
+          zone: 'ex-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+          isTokenCard: true,
+          baseCardType: 'amulet',
+        },
+        {
+          id: 'equipment-base-card',
+          cardId: 'BASE-001',
+          name: 'Base Follower',
+          image: '/base-follower.png',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: true,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'equipment-base-evolved-card',
+          cardId: 'EVO-001',
+          name: 'Base Follower',
+          image: '/base-follower-evo.png',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: true,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+          attachedTo: 'equipment-base-card',
+          isEvolveCard: true,
+        },
+      ],
+      gameStatus: 'playing',
+      turnCount: 2,
+      phase: 'Main',
+      revision: 7,
+    });
+
+    await act(async () => {});
+
+    fireEvent.click(screen.getByRole('button', { name: 'Drag Equipment to Evolved Base' }));
+
+    expect(screen.getByTestId('drag-equipment-zone')).toHaveTextContent('field-host');
+    expect(screen.getByTestId('drag-equipment-linked-to')).toHaveTextContent('equipment-base-card');
   });
 
   it('links a special card by manual drag and clears the link when moved back to the field', async () => {
