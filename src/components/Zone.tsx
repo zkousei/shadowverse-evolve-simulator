@@ -34,6 +34,11 @@ interface Props {
 
 const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLookup, onInspectCard, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, hideCards, layout = 'horizontal', isProtected, lockCards, disableQuickActionsForCard, getHighlightTone, viewerRole, containerStyle, isDebug }) => {
   const { isOver, setNodeRef } = useDroppable({ id });
+  const attachmentTopOffset = 20;
+  const attachmentLeftOffset = 15;
+  const linkedCardTopOffset = 20;
+  const linkedCardLeftOffset = 15;
+  const linkedCardPaddingBottom = 24;
 
   const isStack = layout === 'stack';
   const isFieldZone = id.startsWith('field-');
@@ -44,7 +49,43 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
   const validAttachedIds = new Set(
     cards.filter(c => c.attachedTo && cards.some(parent => parent.id === c.attachedTo)).map(c => c.id)
   );
-  const topLevelCards = cards.filter(c => !validAttachedIds.has(c.id));
+  const validLinkedIds = new Set(
+    cards.filter(c => c.linkedTo && cards.some(parent => parent.id === c.linkedTo)).map(c => c.id)
+  );
+  const topLevelCards = cards.filter(c => !validAttachedIds.has(c.id) && !validLinkedIds.has(c.id));
+
+  const renderLinkedCards = React.useCallback((linkedCards: CardInstance[], attachmentCount: number) => {
+    if (linkedCards.length === 0) return null;
+
+    const baseTopOffset = linkedCardTopOffset + (attachmentCount * attachmentTopOffset);
+    const baseLeftOffset = linkedCardLeftOffset + (attachmentCount * attachmentLeftOffset);
+
+    return linkedCards.map((linkedCard, index) => (
+      <div
+        key={linkedCard.id}
+        style={{
+          position: 'absolute',
+          top: baseTopOffset + (index * linkedCardTopOffset),
+          left: baseLeftOffset + (index * linkedCardLeftOffset),
+          zIndex: 0,
+        }}
+      >
+        <Card
+          card={linkedCard}
+          baseStats={cardStatLookup?.[linkedCard.cardId]}
+          detail={cardDetailLookup?.[linkedCard.cardId]}
+          highlightTone={getHighlightTone?.(linkedCard)}
+          onInspect={onInspectCard}
+          onReturnEvolve={onReturnEvolve}
+          isHidden={hideCards}
+          isLocked={lockCards || (isProtected && viewerRole !== 'all' && linkedCard.owner !== viewerRole)}
+          quickActionsDisabled={disableQuickActionsForCard?.(linkedCard)}
+          disableCombatAndCounterControls={true}
+          debugIndex={isDebug ? index : undefined}
+        />
+      </div>
+    ));
+  }, [attachmentLeftOffset, attachmentTopOffset, cardDetailLookup, cardStatLookup, disableQuickActionsForCard, getHighlightTone, hideCards, isDebug, isProtected, linkedCardLeftOffset, linkedCardTopOffset, lockCards, onInspectCard, onReturnEvolve, viewerRole]);
 
   return (
     <div
@@ -140,8 +181,20 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
                 const displayIndex = cards.length - index;
                 const stackOffset = Math.min(index, 5) * 2;
                 const attachments = cards.filter(c => c.attachedTo === card.id);
+                const linkedCards = cards.filter(c => c.linkedTo === card.id);
                 return (
-                  <div key={card.id} style={{ position: 'absolute', top: stackOffset, left: stackOffset, zIndex: displayIndex }}>
+                  <div
+                    key={card.id}
+                    style={{
+                      position: 'absolute',
+                      top: stackOffset,
+                      left: stackOffset,
+                      zIndex: displayIndex,
+                      paddingBottom: linkedCards.length > 0
+                        ? linkedCardPaddingBottom + (attachments.length * attachmentTopOffset) + ((linkedCards.length - 1) * linkedCardTopOffset)
+                        : undefined,
+                    }}
+                  >
                     <Card
                       card={card}
                       baseStats={cardStatLookup?.[card.cardId]}
@@ -164,8 +217,9 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
                       disableCombatAndCounterControls={hasCardOnTop(card.id)}
                       debugIndex={isDebug ? index : undefined}
                     />
+                    {renderLinkedCards(linkedCards, attachments.length)}
                     {attachments.map((attachedCard, i) => (
-                      <div key={attachedCard.id} style={{ position: 'absolute', top: (i + 1) * 20, left: (i + 1) * 15, zIndex: index + 10 + i }}>
+                      <div key={attachedCard.id} style={{ position: 'absolute', top: (i + 1) * attachmentTopOffset, left: (i + 1) * attachmentLeftOffset, zIndex: index + 10 + i }}>
                         <Card
                           card={attachedCard}
                           baseStats={cardStatLookup?.[attachedCard.cardId]}
@@ -202,8 +256,17 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
 
         return topLevelCards.map((card) => {
           const attachments = cards.filter(c => c.attachedTo === card.id);
+          const linkedCards = cards.filter(c => c.linkedTo === card.id);
           return (
-            <div key={card.id} style={{ position: 'relative' }}>
+            <div
+              key={card.id}
+              style={{
+                position: 'relative',
+                paddingBottom: linkedCards.length > 0
+                  ? linkedCardPaddingBottom + (attachments.length * attachmentTopOffset) + ((linkedCards.length - 1) * linkedCardTopOffset)
+                  : undefined,
+              }}
+            >
               <Card
                 card={card}
                 baseStats={cardStatLookup?.[card.cardId]}
@@ -226,8 +289,9 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
                 disableCombatAndCounterControls={hasCardOnTop(card.id)}
                 debugIndex={isDebug ? topLevelCards.indexOf(card) : undefined}
               />
+              {renderLinkedCards(linkedCards, attachments.length)}
               {attachments.map((attachedCard, i) => (
-                <div key={attachedCard.id} style={{ position: 'absolute', top: (i + 1) * 20, left: (i + 1) * 15, zIndex: 10 + i }}>
+                <div key={attachedCard.id} style={{ position: 'absolute', top: (i + 1) * attachmentTopOffset, left: (i + 1) * attachmentLeftOffset, zIndex: 10 + i }}>
                   <Card
                     card={attachedCard}
                     baseStats={cardStatLookup?.[attachedCard.cardId]}

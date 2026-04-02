@@ -22,6 +22,8 @@ import { buildAttackDeclaredEffect, formatAttackEffect } from '../utils/attackUi
 import { buildCardPlayedEffect, formatCardPlayedEffect } from '../utils/cardPlayUi';
 import { normalizeBaseCardType } from '../utils/cardType';
 import { buildEvolveAutoAttachResolver, type EvolveAutoAttachResolver } from '../utils/evolveAutoAttach';
+import { buildFieldLinkAutoAttachResolver, type FieldLinkAutoAttachResolver } from '../utils/fieldLinkAutoAttach';
+import { getFieldLinkGroupId } from '../data/fieldLinkRules';
 
 type DispatchableGameSyncEvent =
   | { type: 'FLIP_SHARED_COIN'; actor?: PlayerRole }
@@ -32,6 +34,7 @@ type DispatchableGameSyncEvent =
   | { type: 'START_GAME'; actor?: PlayerRole }
   | { type: 'RESET_GAME'; actor?: PlayerRole }
   | { type: 'MOVE_CARD'; actor?: PlayerRole; cardId: string; overId: string }
+  | { type: 'LINK_CARD_TO_FIELD'; actor?: PlayerRole; cardId: string; parentCardId: string }
   | { type: 'MODIFY_COUNTER'; actor?: PlayerRole; cardId: string; stat: 'atk' | 'hp'; delta: number }
   | { type: 'MODIFY_GENERIC_COUNTER'; actor?: PlayerRole; cardId: string; delta: number }
   | { type: 'DRAW_CARD'; actor?: PlayerRole }
@@ -235,6 +238,8 @@ export const useGameBoardLogic = () => {
   const gameStateRef = useRef<SyncState>(initialState);
   const cardDetailLookupRef = useRef<CardDetailLookup>({});
   const evolveAutoAttachResolverRef = useRef<EvolveAutoAttachResolver | null>(null);
+  const fieldLinkAutoAttachResolverRef = useRef<FieldLinkAutoAttachResolver | null>(null);
+  const fieldLinkCardIdsRef = useRef<Set<string>>(new Set());
   const savedSessionCandidateRef = useRef<SavedHostSession | null>(null);
   const awaitingInitialSnapshotRef = useRef(false);
   const activeConnectionTokenRef = useRef<string | null>(null);
@@ -423,11 +428,20 @@ export const useGameBoardLogic = () => {
   }, []);
 
   const resolveEvolveAutoAttachSelection = useCallback((cardId: string, boardCards = gameStateRef.current.cards) => {
-    const resolver = evolveAutoAttachResolverRef.current;
-    if (!resolver) return null;
-
     const sourceCard = boardCards.find(card => card.id === cardId);
-    if (!sourceCard || !resolver.isEligibleSource(sourceCard)) return null;
+    if (!sourceCard) return null;
+
+    const fieldLinkResolver = fieldLinkAutoAttachResolverRef.current;
+    if (fieldLinkResolver?.isEligibleSource(sourceCard)) {
+      return {
+        sourceCard,
+        candidateCards: fieldLinkResolver.resolveCandidates(sourceCard, boardCards),
+        placement: 'linked' as const,
+      };
+    }
+
+    const resolver = evolveAutoAttachResolverRef.current;
+    if (!resolver || !resolver.isEligibleSource(sourceCard)) return null;
 
     const candidateCards = resolver.resolveCandidates(sourceCard, boardCards)
       .map(candidate => candidate.card);
@@ -435,6 +449,7 @@ export const useGameBoardLogic = () => {
     return {
       sourceCard,
       candidateCards,
+      placement: 'stack' as const,
     };
   }, []);
 
@@ -1061,8 +1076,19 @@ export const useGameBoardLogic = () => {
   const executeEvolveAutoAttach = useCallback((
     sourceCardId: string,
     actor: PlayerRole,
-    attachToCardId: string
+    attachToCardId: string,
+    placement: 'stack' | 'linked'
   ) => {
+    if (placement === 'linked') {
+      dispatchGameEvent({
+        type: 'LINK_CARD_TO_FIELD',
+        actor,
+        cardId: sourceCardId,
+        parentCardId: attachToCardId,
+      });
+      return;
+    }
+
     dispatchGameEvent({
       type: 'EXTRACT_CARD',
       actor,
@@ -1093,7 +1119,8 @@ export const useGameBoardLogic = () => {
     executeEvolveAutoAttach(
       pendingEvolveAutoAttachSelection.sourceCardId,
       pendingEvolveAutoAttachSelection.actor,
-      attachToCardId
+      attachToCardId,
+      resolvedSelection.placement
     );
   }, [executeEvolveAutoAttach, pendingEvolveAutoAttachSelection, resolveEvolveAutoAttachSelection]);
 
@@ -1463,11 +1490,19 @@ export const useGameBoardLogic = () => {
         setCardDetailLookup(detailLookup);
         cardDetailLookupRef.current = detailLookup;
         evolveAutoAttachResolverRef.current = buildEvolveAutoAttachResolver(data);
+        fieldLinkAutoAttachResolverRef.current = buildFieldLinkAutoAttachResolver(data);
+        fieldLinkCardIdsRef.current = new Set(
+          data
+            .filter((card: any) => Boolean(getFieldLinkGroupId(card)))
+            .map((card: any) => card.id)
+        );
       })
       .catch(err => console.error('Could not load card stats', err));
     return () => {
       isActive = false;
       evolveAutoAttachResolverRef.current = null;
+      fieldLinkAutoAttachResolverRef.current = null;
+      fieldLinkCardIdsRef.current = new Set();
     };
   }, []);
 
@@ -1494,6 +1529,7 @@ export const useGameBoardLogic = () => {
       actor: pendingEvolveAutoAttachSelection.actor,
       sourceCard,
       candidateCards,
+      placement: resolvedSelection.placement,
     };
   }, [gameState.cards, pendingEvolveAutoAttachSelection, resolveEvolveAutoAttachSelection]);
 
@@ -1656,14 +1692,12 @@ export const useGameBoardLogic = () => {
       if (sourceCard?.zone === `evolveDeck-${actor}`) {
         const resolvedSelection = resolveEvolveAutoAttachSelection(cardId);
         if (resolvedSelection?.candidateCards.length === 1) {
-          dispatchGameEvent({
-            type: 'EXTRACT_CARD',
-            actor,
+          executeEvolveAutoAttach(
             cardId,
-            destination: customDestination,
-            revealToOpponent,
-            attachToCardId: resolvedSelection.candidateCards[0].id,
-          });
+            actor,
+            resolvedSelection.candidateCards[0].id,
+            resolvedSelection.placement
+          );
           setSearchZone(null);
           return;
         }
@@ -1864,6 +1898,25 @@ export const useGameBoardLogic = () => {
     const overId = over.id as string;
 
     const sourceCard = gameStateRef.current.cards.find(card => card.id === cardId);
+    const overCard = gameStateRef.current.cards.find(card => card.id === overId);
+
+    if (
+      sourceCard &&
+      overCard &&
+      cardId !== overId &&
+      fieldLinkCardIdsRef.current.has(sourceCard.cardId) &&
+      overCard.zone === `field-${sourceCard.owner}` &&
+      overCard.owner === sourceCard.owner
+    ) {
+      dispatchGameEvent({
+        type: 'LINK_CARD_TO_FIELD',
+        actor: sourceCard.owner,
+        cardId,
+        parentCardId: overId,
+      });
+      return;
+    }
+
     if (
       sourceCard &&
       sourceCard.zone === `evolveDeck-${sourceCard.owner}` &&
@@ -1871,13 +1924,12 @@ export const useGameBoardLogic = () => {
     ) {
       const resolvedSelection = resolveEvolveAutoAttachSelection(cardId);
       if (resolvedSelection?.candidateCards.length === 1) {
-        dispatchGameEvent({
-          type: 'EXTRACT_CARD',
-          actor: sourceCard.owner,
+        executeEvolveAutoAttach(
           cardId,
-          destination: overId,
-          attachToCardId: resolvedSelection.candidateCards[0].id,
-        });
+          sourceCard.owner,
+          resolvedSelection.candidateCards[0].id,
+          resolvedSelection.placement
+        );
         return;
       }
 

@@ -597,10 +597,10 @@
         "confirm": "Generate"
       },
       "evolveAutoAttach": {
-        "title": "Choose Stack Target",
-        "description": "Choose which card to stack {{card}} onto.",
+        "title": "Choose Target Card",
+        "description": "Choose which card should receive {{card}}.",
         "playingCard": "Card Being Played",
-        "selectTarget": "Multiple matching cards are on the field. Select the card to stack onto."
+        "selectTarget": "Multiple matching cards are on the field. Select the target card."
       },
       "topN": {
         "title": "How many cards to look at?",

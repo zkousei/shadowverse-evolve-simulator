@@ -161,4 +161,43 @@ describe('Zone', () => {
     expect(cards[0]).toHaveAttribute('data-base-stats', '2/3');
     expect(cards[1]).toHaveAttribute('data-display-counters', '1/-1');
   });
+
+  it('does not count linked cards as top-level field cards', () => {
+    render(
+      <Zone
+        id="field-host"
+        label="Field"
+        cards={[
+          createCard('parent'),
+          createCard('linked-special', { linkedTo: 'parent', isEvolveCard: true }),
+        ]}
+      />
+    );
+
+    expect(screen.getByText('Field')).toBeInTheDocument();
+    expect(screen.getByText('1')).toBeInTheDocument();
+
+    const renderedCards = screen.getAllByTestId('mock-card');
+    expect(renderedCards.map(card => card.getAttribute('data-card-id'))).toEqual(['parent', 'linked-special']);
+  });
+
+  it('renders linked cards below existing attachments on the same parent', () => {
+    render(
+      <Zone
+        id="field-host"
+        label="Field"
+        cards={[
+          createCard('parent'),
+          createCard('evolve', { attachedTo: 'parent', isEvolveCard: true }),
+          createCard('linked-special', { linkedTo: 'parent', isEvolveCard: true }),
+        ]}
+      />
+    );
+
+    const linkedCard = screen.getAllByTestId('mock-card').find(card => card.getAttribute('data-card-id') === 'linked-special');
+    expect(linkedCard?.parentElement).toHaveStyle({
+      top: '40px',
+      left: '30px',
+    });
+  });
 });
