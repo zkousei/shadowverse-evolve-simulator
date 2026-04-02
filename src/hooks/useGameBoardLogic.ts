@@ -40,6 +40,7 @@ type DispatchableGameSyncEvent =
   | { type: 'MODIFY_GENERIC_COUNTER'; actor?: PlayerRole; cardId: string; delta: number }
   | { type: 'DRAW_CARD'; actor?: PlayerRole }
   | { type: 'MILL_CARD'; actor?: PlayerRole }
+  | { type: 'MOVE_TOP_CARD_TO_EX'; actor?: PlayerRole }
   | { type: 'TOGGLE_TAP'; actor?: PlayerRole; cardId: string }
   | { type: 'TOGGLE_FLIP'; actor?: PlayerRole; cardId: string }
   | { type: 'SEND_TO_BOTTOM'; actor?: PlayerRole; cardId: string }
@@ -742,6 +743,12 @@ export const useGameBoardLogic = () => {
       return;
     }
 
+    if (effect.type === 'TOP_CARD_TO_EX_COMPLETED') {
+      const message = formatSharedUiMessage(effect, role, isSoloMode, t);
+      showTimedCardPlayMessage(message, 2600);
+      return;
+    }
+
     if (effect.type === 'SEARCHED_CARD_TO_HAND') {
       const message = formatSharedUiMessage(effect, role, isSoloMode, t);
       showTimedCardPlayMessage(message, 2600);
@@ -1079,6 +1086,18 @@ export const useGameBoardLogic = () => {
           type: 'MILL_CARD_COMPLETED',
           actor: event.actor,
           cardName: milledCard.name,
+        };
+        playSharedUiEffect(effect);
+        sendSharedUiEffect(effect);
+      }
+    }
+    if (event.type === 'MOVE_TOP_CARD_TO_EX') {
+      const movedCard = currentState.cards.find(card => card.zone === `mainDeck-${event.actor}`);
+      if (movedCard) {
+        const effect: SharedUiEffect = {
+          type: 'TOP_CARD_TO_EX_COMPLETED',
+          actor: event.actor,
+          cardName: movedCard.name,
         };
         playSharedUiEffect(effect);
         sendSharedUiEffect(effect);
@@ -1709,6 +1728,10 @@ export const useGameBoardLogic = () => {
     dispatchGameEvent({ type: 'MILL_CARD', actor: targetRole });
   };
 
+  const moveTopCardToEx = (targetRole?: PlayerRole) => {
+    dispatchGameEvent({ type: 'MOVE_TOP_CARD_TO_EX', actor: targetRole });
+  };
+
   const handleLookAtTop = (n: number, targetRole: PlayerRole = role) => {
     if (!isSoloMode && !isHost && connectionState !== 'connected') return;
     if (gameState.gameStatus !== 'playing') return;
@@ -2081,7 +2104,7 @@ export const useGameBoardLogic = () => {
     handleBanish, handlePlayToField, handleSendToCemetery, handleReturnEvolve, handleShuffleDeck, handleDeclareAttack,
     handleSetRevealHandsMode,
     evolveAutoAttachSelection, confirmEvolveAutoAttachSelection, cancelEvolveAutoAttachSelection,
-    getCards, getTokenOptions, lastGameState: gameState.lastGameState, millCard,
+    getCards, getTokenOptions, lastGameState: gameState.lastGameState, millCard, moveTopCardToEx,
     topDeckCards, handleLookAtTop, handleResolveTopDeck, setTopDeckCards,
     handleUndoCardMove, hasUndoableMove, canUndoTurn,
     isDebug

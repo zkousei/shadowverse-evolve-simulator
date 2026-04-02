@@ -21,6 +21,7 @@ const t = ((key: string, options?: any) => {
     'gameBoard.modals.shared.messages.shuffleDeck': '{{actor}} shuffled the deck',
     'gameBoard.modals.shared.messages.drawCard': '{{actor}} drew a card',
     'gameBoard.modals.shared.messages.millCard': '{{actor}} milled {{cardName}}',
+    'gameBoard.modals.shared.messages.topCardToEx': '{{actor}} moved {{cardName}} to EX Area',
     'gameBoard.modals.shared.messages.searchToHand': '{{actor}} added a card from Search to hand',
     'gameBoard.modals.shared.messages.searchPlayedField': '{{actor}} played to field {{cardName}} from Search',
     'gameBoard.modals.shared.messages.searchSetField': '{{actor}} set a card from Search to field',
@@ -113,6 +114,13 @@ describe('sharedRandom', () => {
       false,
       t
     )).toBe('Opponent milled Aurelia');
+
+    expect(formatSharedUiMessage(
+      { type: 'TOP_CARD_TO_EX_COMPLETED', actor: 'host', cardName: 'Drive Point' },
+      'guest',
+      false,
+      t
+    )).toBe('Opponent moved Drive Point to EX Area');
 
     expect(formatSharedUiMessage(
       { type: 'SEARCHED_CARD_PLACED', actor: 'host', destination: 'ex', cardName: 'Drive Point' },

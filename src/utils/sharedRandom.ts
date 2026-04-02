@@ -94,6 +94,11 @@ export const formatSharedUiMessage = (
     return t('gameBoard.modals.shared.messages.millCard', { actor: actorLabel, cardName: effect.cardName });
   }
 
+  if (effect.type === 'TOP_CARD_TO_EX_COMPLETED') {
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    return t('gameBoard.modals.shared.messages.topCardToEx', { actor: actorLabel, cardName: effect.cardName });
+  }
+
   if (effect.type === 'SEARCHED_CARD_TO_HAND') {
     const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
     return t('gameBoard.modals.shared.messages.searchToHand', { actor: actorLabel });

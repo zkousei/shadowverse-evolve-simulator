@@ -683,6 +683,29 @@ describe('gameSyncReducer', () => {
       actor: 'host',
     });
     expect(milled.cards.find(c => c.id === 'deck-2')?.zone).toBe('cemetery-host');
+
+    const toppedToEx = applyGameSyncEvent(createState({
+      revision: 0,
+      gameStatus: 'playing',
+      cards: [
+        {
+          id: 'deck-3',
+          cardId: 'BP01-015',
+          name: 'EX Target',
+          image: '',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    }), {
+      id: 'evt-10',
+      type: 'MOVE_TOP_CARD_TO_EX',
+      actor: 'host',
+    });
+    expect(toppedToEx.cards.find(c => c.id === 'deck-3')?.zone).toBe('ex-host');
   });
 
   it('applies top-deck resolution and appends imported cards with revision bumps', () => {

@@ -50,6 +50,7 @@ vi.mock('react-i18next', () => ({
         'gameBoard.modals.shared.messages.shuffleDeck': '{{actor}} shuffled the deck',
         'gameBoard.modals.shared.messages.drawCard': '{{actor}} drew a card',
         'gameBoard.modals.shared.messages.millCard': '{{actor}} milled {{cardName}}',
+        'gameBoard.modals.shared.messages.topCardToEx': '{{actor}} moved {{cardName}} to EX Area',
         'gameBoard.modals.shared.messages.searchToHand': '{{actor}} added a card from Search to hand',
         'gameBoard.modals.shared.messages.searchPlayedField': '{{actor}} played to field {{cardName}} from Search',
         'gameBoard.modals.shared.messages.searchSetField': '{{actor}} set a card from Search to field',
@@ -205,6 +206,7 @@ function HookHarness() {
     endTurn,
     handleUndoTurn,
     drawCard,
+    moveTopCardToEx,
     handleUndoCardMove,
     handleExtractCard,
     handleDeckUpload,
@@ -281,6 +283,7 @@ function HookHarness() {
       <button onClick={() => endTurn('host')}>Host End Turn</button>
       <button onClick={handleUndoTurn}>Undo Turn</button>
       <button onClick={() => drawCard('host')}>Host Draw</button>
+      <button onClick={() => moveTopCardToEx('host')}>Host Top to EX</button>
       <button onClick={handleUndoCardMove}>Undo Move</button>
       <input data-testid="deck-upload-input" type="file" onChange={(event) => handleDeckUpload(event, 'host')} />
       <button onClick={() => handleModifyCounter('counter-card', 'atk', 2, 'host')}>Add ATK Counter</button>
@@ -1020,6 +1023,63 @@ describe('useGameBoardLogic P2P reconnect', () => {
     });
 
     expect(screen.getByTestId('host-hand-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('false');
+  });
+
+  it('moves the host deck top card to ex and supports undo', () => {
+    window.sessionStorage.setItem('sv-evolve:host-session:ROOM123', JSON.stringify({
+      room: 'ROOM123',
+      savedAt: '2026-03-19T10:00:00.000Z',
+      appVersion: '0.0.0',
+      state: {
+        host: { hp: 20, pp: 1, maxPp: 1, ep: 0, sep: 1, combo: 0, initialHandDrawn: true, mulliganUsed: true, isReady: true },
+        guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: true, mulliganUsed: true, isReady: true },
+        cards: [
+          {
+            id: 'deck-card-1',
+            cardId: 'BP01-001',
+            name: 'Deck Card',
+            image: '',
+            zone: 'mainDeck-host',
+            owner: 'host',
+            isTapped: false,
+            isFlipped: true,
+            counters: { atk: 0, hp: 0 },
+          },
+        ],
+        turnPlayer: 'host',
+        turnCount: 2,
+        phase: 'Main',
+        gameStatus: 'playing',
+        tokenOptions: { host: [], guest: [] },
+        revision: 7,
+      },
+    }));
+
+    renderHarness('/game?host=true&room=ROOM123');
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Resume Saved Session' }));
+    });
+
+    expect(screen.getByTestId('host-main-deck-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('host-ex-count')).toHaveTextContent('0');
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Host Top to EX' }));
+    });
+
+    expect(screen.getByTestId('host-main-deck-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('host-ex-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('true');
+    expect(screen.getByTestId('card-play-message')).toHaveTextContent('You moved Deck Card to EX Area');
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Undo Move' }));
+    });
+
+    expect(screen.getByTestId('host-main-deck-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('host-ex-count')).toHaveTextContent('0');
     expect(screen.getByTestId('can-undo-move')).toHaveTextContent('false');
   });
 });
