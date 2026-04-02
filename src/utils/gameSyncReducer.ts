@@ -322,6 +322,11 @@ export const applyGameSyncEvent = (
 
     case 'EXTRACT_CARD': {
       if (isPreparingEvolveDeckMoveBlocked(state, event.cardId)) return state;
+      if (event.attachToCardId) {
+        const nextCards = CardLogic.extractCardToFieldAttachment(state.cards, event.cardId, event.actor, event.attachToCardId);
+        if (nextCards === state.cards) return state;
+        return withCardMoveCheckpoint(state, event.actor, nextCards);
+      }
       if (isPreparingMainDeckFieldSet(state, event.actor, event.cardId, event.destination)) {
         const nextCards = CardLogic.moveCardToEnd(state.cards, event.cardId, {
           zone: `field-${event.actor}`,

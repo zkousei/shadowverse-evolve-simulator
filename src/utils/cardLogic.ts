@@ -437,7 +437,7 @@ export const applyDrop = (
   if (!resolution) return cards;
 
   if (resolution.shouldDeleteToken) {
-    return removeTokenAndAttachments(cards, cardId);
+    return dissolveTokenStackIntoZone(cards, cardId, resolution.targetZone, resolution.shouldPlaceAtFront);
   }
 
   const movedCards = resolution.shouldPlaceAtFront
@@ -524,12 +524,33 @@ export const toggleFlip = (
   return cards.map(c => c.id === cardId ? { ...c, isFlipped: !c.isFlipped } : c);
 };
 
-const removeTokenAndAttachments = (
+const dissolveTokenStackIntoZone = (
   cards: CardInstance[],
-  cardId: string
+  cardId: string,
+  requestedZone: string,
+  shouldPlaceAtFront: boolean
 ): CardInstance[] => {
   const descendantIds = collectDescendantIds(cards, cardId);
-  return cards.filter(c => c.id !== cardId && !descendantIds.has(c.id));
+  const stackIds = new Set<string>([cardId, ...descendantIds]);
+  const otherCards = cards.filter(card => !stackIds.has(card.id));
+  const movedNonTokenCards = cards
+    .filter(card => stackIds.has(card.id) && !isTokenCard(card))
+    .map(card => {
+      const destinationZone = resolveMoveDestination(card, requestedZone);
+      return {
+        ...card,
+        zone: destinationZone,
+        isFlipped: getFaceStateForZone(destinationZone, card.isFlipped),
+        isTapped: false,
+        attachedTo: undefined,
+        counters: getCountersForMove(card, destinationZone),
+        genericCounter: getGenericCounterForMove(card, destinationZone),
+      };
+    });
+
+  return shouldPlaceAtFront
+    ? [...movedNonTokenCards, ...otherCards]
+    : [...otherCards, ...movedNonTokenCards];
 };
 
 export const sendCardToBottom = (
@@ -539,7 +560,9 @@ export const sendCardToBottom = (
   const targetCard = cards.find(c => c.id === cardId);
   if (!targetCard) return cards;
   if (isLeaderCard(targetCard)) return cards;
-  if (isTokenCard(targetCard)) return removeTokenAndAttachments(cards, cardId);
+  if (isTokenCard(targetCard)) {
+    return dissolveTokenStackIntoZone(cards, cardId, getDeckZone(targetCard), false);
+  }
 
   return moveCardToEnd(cards, cardId, {
     zone: getDeckZone(targetCard),
@@ -559,7 +582,9 @@ export const banishCard = (
   const targetCard = cards.find(c => c.id === cardId);
   if (!targetCard) return cards;
   if (isLeaderCard(targetCard)) return cards;
-  if (isTokenCard(targetCard)) return removeTokenAndAttachments(cards, cardId);
+  if (isTokenCard(targetCard)) {
+    return dissolveTokenStackIntoZone(cards, cardId, `banish-${targetCard.owner}`, true);
+  }
 
   const destinationZone = targetCard.isEvolveCard ? getDeckZone(targetCard) : `banish-${targetCard.owner}`;
   return moveCardToFront(cards, cardId, {
@@ -580,7 +605,9 @@ export const sendCardToCemetery = (
   const targetCard = cards.find(c => c.id === cardId);
   if (!targetCard) return cards;
   if (isLeaderCard(targetCard)) return cards;
-  if (isTokenCard(targetCard)) return removeTokenAndAttachments(cards, cardId);
+  if (isTokenCard(targetCard)) {
+    return dissolveTokenStackIntoZone(cards, cardId, `cemetery-${targetCard.owner}`, true);
+  }
 
   const destinationZone = targetCard.isEvolveCard ? getDeckZone(targetCard) : `cemetery-${targetCard.owner}`;
   return moveCardToFront(cards, cardId, {
@@ -601,7 +628,9 @@ export const returnEvolveCard = (
   const targetCard = cards.find(c => c.id === cardId);
   if (!targetCard) return cards;
   if (isLeaderCard(targetCard)) return cards;
-  if (isTokenCard(targetCard)) return removeTokenAndAttachments(cards, cardId);
+  if (isTokenCard(targetCard)) {
+    return dissolveTokenStackIntoZone(cards, cardId, getDeckZone(targetCard), true);
+  }
 
   return moveCardToFront(cards, cardId, {
     zone: getDeckZone(targetCard),
@@ -662,6 +691,35 @@ export const extractCard = (
     genericCounter: getGenericCounterForMove(targetCard, destinationZone),
     attachedTo: undefined,
     preserveAttachment: !isEnteringSafeZone,
+  });
+};
+
+export const extractCardToFieldAttachment = (
+  cards: CardInstance[],
+  cardId: string,
+  role: 'host' | 'guest',
+  attachToCardId: string
+): CardInstance[] => {
+  const targetCard = cards.find(c => c.id === cardId);
+  if (!targetCard) return cards;
+  if (isLeaderCard(targetCard)) return cards;
+
+  const attachTarget = cards.find(c => c.id === attachToCardId);
+  if (!attachTarget) return cards;
+  if (isLeaderCard(attachTarget)) return cards;
+
+  const rootCard = findRootCard(cards, attachTarget);
+  const destinationZone = `field-${role}`;
+  if (rootCard.zone !== destinationZone) return cards;
+
+  return moveCardToEnd(cards, cardId, {
+    zone: destinationZone,
+    isFlipped: false,
+    isTapped: rootCard.isTapped,
+    counters: getCountersForMove(targetCard, destinationZone),
+    genericCounter: getGenericCounterForMove(targetCard, destinationZone),
+    attachedTo: rootCard.id,
+    preserveAttachment: false,
   });
 };
 

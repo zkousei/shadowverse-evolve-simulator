@@ -396,15 +396,31 @@ describe('CardLogic utils', () => {
       expect(result.find(c => c.id === 'token-1')).toBeUndefined();
     });
 
-    it('should delete nested attachments along with a token dropped into a safe zone', () => {
+    it('should move non-token descendants to resolved zones when a token is dropped into a safe zone', () => {
       const token = { ...createMockCard('token-1', 'field-host'), cardId: 'token' };
       const child = { ...createMockCard('child-1', 'field-host'), attachedTo: 'token-1' };
-      const grandchild = { ...createMockCard('grandchild-1', 'field-host'), attachedTo: 'child-1' };
+      const grandchild = { ...createMockCard('grandchild-1', 'field-host'), attachedTo: 'child-1', isEvolveCard: true };
       const deck = createMockCard('deck', 'mainDeck-host');
 
       const result = CardLogic.applyDrop([token, child, grandchild, deck], 'token-1', 'deck');
 
-      expect(result.map(c => c.id)).toEqual(['deck']);
+      expect(result.find(c => c.id === 'token-1')).toBeUndefined();
+      expect(result.find(c => c.id === 'child-1')).toMatchObject({
+        zone: 'mainDeck-host',
+        attachedTo: undefined,
+        isTapped: false,
+        isFlipped: true,
+        counters: { atk: 0, hp: 0 },
+        genericCounter: 0,
+      });
+      expect(result.find(c => c.id === 'grandchild-1')).toMatchObject({
+        zone: 'evolveDeck-host',
+        attachedTo: undefined,
+        isTapped: false,
+        isFlipped: false,
+        counters: { atk: 0, hp: 0 },
+        genericCounter: 0,
+      });
     });
 
     it('should return attached evolve cards to evolve deck when the base card is dropped onto cemetery', () => {
@@ -576,14 +592,63 @@ describe('CardLogic utils', () => {
       expect(result).toEqual([]);
     });
 
-    it('should remove nested attachments when sending a token to the bottom of the deck', () => {
+    it('should move non-token descendants to their natural decks when sending a token to the bottom of the deck', () => {
       const token = { ...createMockCard('t1', 'field-host'), cardId: 'token' };
       const child = { ...createMockCard('t2', 'field-host'), attachedTo: 't1' };
-      const grandchild = { ...createMockCard('t3', 'field-host'), attachedTo: 't2' };
+      const grandchild = { ...createMockCard('t3', 'field-host'), attachedTo: 't2', isEvolveCard: true };
 
       const result = CardLogic.sendCardToBottom([token, child, grandchild], 't1');
 
-      expect(result).toEqual([]);
+      expect(result.find(c => c.id === 't1')).toBeUndefined();
+      expect(result.find(c => c.id === 't2')).toMatchObject({
+        zone: 'mainDeck-host',
+        attachedTo: undefined,
+        isFlipped: true,
+      });
+      expect(result.find(c => c.id === 't3')).toMatchObject({
+        zone: 'evolveDeck-host',
+        attachedTo: undefined,
+        isFlipped: false,
+      });
+    });
+
+    it('should move non-token descendants toward the requested zone when sending a token to cemetery', () => {
+      const token = { ...createMockCard('token-root', 'field-host'), cardId: 'token' };
+      const base = {
+        ...createMockCard('base', 'field-host'),
+        attachedTo: 'token-root',
+        counters: { atk: 2, hp: -1 },
+        genericCounter: 3,
+        isTapped: true,
+      };
+      const evolve = {
+        ...createMockCard('evo', 'field-host'),
+        attachedTo: 'base',
+        isEvolveCard: true,
+        counters: { atk: 1, hp: 2 },
+        genericCounter: 1,
+        isTapped: true,
+      };
+
+      const result = CardLogic.sendCardToCemetery([token, base, evolve], 'token-root');
+
+      expect(result.find(c => c.id === 'token-root')).toBeUndefined();
+      expect(result.find(c => c.id === 'base')).toMatchObject({
+        zone: 'cemetery-host',
+        attachedTo: undefined,
+        isTapped: false,
+        isFlipped: false,
+        counters: { atk: 0, hp: 0 },
+        genericCounter: 0,
+      });
+      expect(result.find(c => c.id === 'evo')).toMatchObject({
+        zone: 'evolveDeck-host',
+        attachedTo: undefined,
+        isTapped: false,
+        isFlipped: false,
+        counters: { atk: 0, hp: 0 },
+        genericCounter: 0,
+      });
     });
 
     it('should return attached evolve cards to evolve deck when sending the base card to cemetery', () => {
@@ -701,6 +766,20 @@ describe('CardLogic utils', () => {
       const card = { ...createMockCard('e2', 'evolveDeck-host'), isEvolveCard: true };
       const result = CardLogic.extractCard([card], 'e2', 'host', 'hand-host');
       expect(result[0].zone).toBe('evolveDeck-host');
+    });
+
+    it('should attach an extracted evolve card to the chosen field card and inherit its tap state', () => {
+      const base = { ...createMockCard('base', 'field-host'), isTapped: true };
+      const evolve = { ...createMockCard('evo', 'evolveDeck-host'), isEvolveCard: true };
+
+      const result = CardLogic.extractCardToFieldAttachment([base, evolve], 'evo', 'host', 'base');
+
+      expect(result.find(card => card.id === 'evo')).toMatchObject({
+        zone: 'field-host',
+        attachedTo: 'base',
+        isTapped: true,
+      });
+      expect(result.find(card => card.id === 'base')?.isTapped).toBe(true);
     });
   });
 

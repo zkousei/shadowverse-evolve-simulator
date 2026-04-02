@@ -1128,6 +1128,54 @@ describe('gameSyncReducer', () => {
     expect(played.cards.find(c => c.id === 'hand-card')?.zone).toBe('field-host');
   });
 
+  it('attaches an extracted evolve card to the specified field card when attachToCardId is provided', () => {
+    const state = createState({
+      revision: 2,
+      gameStatus: 'playing',
+      cards: [
+        {
+          id: 'base-card',
+          cardId: 'BP01-018',
+          name: 'Base Card',
+          image: '',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: true,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'evolve-card',
+          cardId: 'BP01-019',
+          name: 'Evolve Card',
+          image: '',
+          zone: 'evolveDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+          isEvolveCard: true,
+        },
+      ],
+    });
+
+    const extracted = applyGameSyncEvent(state, {
+      id: 'evt-15-attach',
+      type: 'EXTRACT_CARD',
+      actor: 'host',
+      cardId: 'evolve-card',
+      destination: 'field-host',
+      attachToCardId: 'base-card',
+    });
+
+    expect(extracted.cards.find(c => c.id === 'evolve-card')).toMatchObject({
+      zone: 'field-host',
+      attachedTo: 'base-card',
+      isTapped: true,
+    });
+    expect(extracted.lastUndoableCardMoveState).not.toBeNull();
+  });
+
   it('sets searched main-deck cards face-down onto the field during preparation', () => {
     const state = createState({
       revision: 2,

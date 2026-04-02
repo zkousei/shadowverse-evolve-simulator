@@ -596,6 +596,12 @@
         "totalSelected": "{{count}} selected",
         "confirm": "Generate"
       },
+      "evolveAutoAttach": {
+        "title": "Choose Stack Target",
+        "description": "Choose which card to stack {{card}} onto.",
+        "playingCard": "Card Being Played",
+        "selectTarget": "Multiple matching cards are on the field. Select the card to stack onto."
+      },
       "topN": {
         "title": "How many cards to look at?",
         "confirm": "Look"

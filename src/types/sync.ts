@@ -36,7 +36,7 @@ export type GameSyncEvent =
   | { id: string; type: 'SEND_TO_CEMETERY'; actor: PlayerRole; cardId: string }
   | { id: string; type: 'RETURN_EVOLVE'; actor: PlayerRole; cardId: string }
   | { id: string; type: 'PLAY_TO_FIELD'; actor: PlayerRole; cardId: string }
-  | { id: string; type: 'EXTRACT_CARD'; actor: PlayerRole; cardId: string; destination?: string; revealToOpponent?: boolean }
+  | { id: string; type: 'EXTRACT_CARD'; actor: PlayerRole; cardId: string; destination?: string; revealToOpponent?: boolean; attachToCardId?: string }
   | { id: string; type: 'SHUFFLE_DECK'; actor: PlayerRole }
   | { id: string; type: 'MODIFY_PLAYER_STAT'; actor: PlayerRole; playerKey: PlayerRole; stat: 'hp' | 'pp' | 'maxPp' | 'ep' | 'sep' | 'combo'; delta: number }
   | { id: string; type: 'DRAW_INITIAL_HAND'; actor: PlayerRole }

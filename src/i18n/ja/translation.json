@@ -549,6 +549,12 @@
         "totalSelected": "合計 {{count}} 枚",
         "confirm": "生成"
       },
+      "evolveAutoAttach": {
+        "title": "重ね先を選択",
+        "description": "{{card}} を重ねる対象を選んでください。",
+        "playingCard": "場に出すカード",
+        "selectTarget": "対象が複数見つかりました。重ねるカードを選択してください。"
+      },
       "topN": {
         "title": "上から何枚見ますか？",
         "confirm": "見る"
