@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { initialState, type SyncState } from '../types/game';
 import { applyGameSyncEvent } from './gameSyncReducer';
+import * as CardLogic from './cardLogic';
 
 const createState = (overrides: Partial<SyncState> = {}): SyncState => ({
   ...initialState,
@@ -475,6 +476,62 @@ describe('gameSyncReducer', () => {
     expect(result.guest.isReady).toBe(false);
     expect(result.tokenOptions.host).toEqual([{ cardId: 'token-host', name: 'Host Token', image: '/host-token.png' }]);
     expect(result.revision).toBe(9);
+  });
+
+  it('shuffles both players main decks during reset', () => {
+    const shuffleSpy = vi.spyOn(CardLogic, 'shuffleDeck');
+
+    const state = createState({
+      revision: 3,
+      gameStatus: 'playing',
+      cards: [
+        {
+          id: 'host-main-a',
+          cardId: 'BP01-101',
+          name: 'Host Main A',
+          image: '',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 1, hp: 2 },
+        },
+        {
+          id: 'guest-main-a',
+          cardId: 'BP01-102',
+          name: 'Guest Main A',
+          image: '',
+          zone: 'field-guest',
+          owner: 'guest',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 2, hp: 1 },
+        },
+      ],
+    });
+
+    const result = applyGameSyncEvent(state, {
+      id: 'evt-reset-shuffle',
+      type: 'RESET_GAME',
+      actor: 'host',
+    });
+
+    expect(shuffleSpy).toHaveBeenNthCalledWith(1, expect.any(Array), 'host');
+    expect(shuffleSpy).toHaveBeenNthCalledWith(2, expect.any(Array), 'guest');
+    expect(result.cards.find(c => c.id === 'host-main-a')).toMatchObject({
+      zone: 'mainDeck-host',
+      isFlipped: true,
+      counters: { atk: 0, hp: 0 },
+      genericCounter: 0,
+    });
+    expect(result.cards.find(c => c.id === 'guest-main-a')).toMatchObject({
+      zone: 'mainDeck-guest',
+      isFlipped: true,
+      counters: { atk: 0, hp: 0 },
+      genericCounter: 0,
+    });
+
+    shuffleSpy.mockRestore();
   });
 
   it('imports leader cards and token options with the deck', () => {
