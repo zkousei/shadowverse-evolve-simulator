@@ -212,9 +212,9 @@ export const applyGameSyncEvent = (
           counters: { atk: 0, hp: 0 },
           genericCounter: 0,
         }));
-      const shuffledResetCards = (['host', 'guest'] as const).reduce(
-        (cards, role) => CardLogic.shuffleDeck(cards, role),
-        resetCards
+      const shuffledResetCards = CardLogic.shuffleDeck(
+        CardLogic.shuffleDeck(resetCards, 'host'),
+        'guest'
       );
 
       return {
