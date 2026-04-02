@@ -15,7 +15,14 @@ export const normalizeBaseCardType = (value?: string | null): RuntimeBaseCardTyp
   return null;
 };
 
+export const isAdvanceKind = (cardKindNormalized?: string | null): boolean => (
+  Boolean(cardKindNormalized?.startsWith('advance_'))
+);
+
+export const isPureEvolveCard = (
+  card: { isEvolveCard?: boolean; cardKindNormalized?: string | null } | null | undefined
+): boolean => Boolean(card?.isEvolveCard && !isAdvanceKind(card.cardKindNormalized));
+
 export const isMainDeckSpellCard = (
   card: { isEvolveCard?: boolean; baseCardType?: RuntimeBaseCardType | null } | null | undefined
 ): boolean => Boolean(card && !card.isEvolveCard && card.baseCardType === 'spell');
-
