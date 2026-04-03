@@ -17,9 +17,7 @@ import {
 import {
   createDefaultDeckRuleConfig,
   DECK_FORMAT_VALUES,
-  type DeckFormat,
   getImportedDeckRuleConfig,
-  type DeckRuleConfig,
 } from '../models/deckRule';
 import { createEmptyDeckState, type DeckState } from '../models/deckState';
 import {
@@ -59,6 +57,11 @@ import {
   type DeckBuilderSnapshot,
   type SavedDeckRecordV1,
 } from '../utils/deckStorage';
+import {
+  buildExportableDeckPayload,
+  downloadDeckJson,
+  resolveImportedDeckName,
+} from '../utils/deckFile';
 import { DeckLogImportError, fetchDeckLogImport } from '../utils/decklogImport';
 import { formatSavedDeckCountSummary, formatSavedDeckRuleSummary } from '../utils/savedDeckPresentation';
 import CardArtwork from '../components/CardArtwork';
@@ -158,43 +161,6 @@ type SaveFeedback = {
   kind: 'success' | 'warning';
   message: string;
 };
-
-type ExportableDeckCard = Omit<DeckBuilderCardData, 'related_cards'>;
-
-type ExportableDeckPayload = {
-  deckName: string;
-  rule: DeckFormat;
-  identityType: DeckRuleConfig['identityType'];
-  selectedClass: DeckRuleConfig['selectedClass'];
-  selectedTitle: DeckRuleConfig['selectedTitle'];
-  selectedClasses: DeckRuleConfig['selectedClasses'];
-  mainDeck: ExportableDeckCard[];
-  evolveDeck: ExportableDeckCard[];
-  leaderCards: ExportableDeckCard[];
-  tokenDeck: ExportableDeckCard[];
-};
-
-const toExportableDeckCard = (card: DeckBuilderCardData): ExportableDeckCard => {
-  const { related_cards: _relatedCards, ...exportableCard } = card;
-  return exportableCard;
-};
-
-const buildExportableDeckPayload = (
-  name: string,
-  ruleConfig: DeckRuleConfig,
-  deckState: DeckState
-): ExportableDeckPayload => ({
-  deckName: name,
-  rule: ruleConfig.format,
-  identityType: ruleConfig.identityType,
-  selectedClass: ruleConfig.selectedClass,
-  selectedTitle: ruleConfig.selectedTitle,
-  selectedClasses: ruleConfig.selectedClasses,
-  mainDeck: deckState.mainDeck.map(toExportableDeckCard),
-  evolveDeck: deckState.evolveDeck.map(toExportableDeckCard),
-  leaderCards: deckState.leaderCards.map(toExportableDeckCard),
-  tokenDeck: deckState.tokenDeck.map(toExportableDeckCard),
-});
 
 const DeckBuilder: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -628,33 +594,10 @@ const DeckBuilder: React.FC = () => {
   };
 
   const exportDeck = () => {
-    const downloadDeckJson = (name: string, ruleConfig: typeof deckRuleConfig, nextDeckState: DeckState) => {
-      const data = JSON.stringify(buildExportableDeckPayload(name, ruleConfig, nextDeckState), null, 2);
-
-      // Sanitize filename - allow alphanumeric, Japanese characters, underscores, hyphens
-      const rawName = name.trim();
-      const safeName = rawName.length > 0
-        ? rawName.replace(/[^\w\u3000-\u303F\u3040-\u309F\u30A0-\u30FF\uFF00-\uFFEF\u4E00-\u9FAF\-]/g, '_')
-        : 'shadowverse_deck';
-
-      const blob = new Blob([data], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${safeName}.json`;
-      a.style.display = 'none';
-      document.body.appendChild(a);
-      a.click();
-
-      // Delay revoke to ensure download starts
-      setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }, 200);
-    };
-
-    downloadDeckJson(resolveDeckName(deckName), deckRuleConfig, deckState);
+    downloadDeckJson(
+      resolveDeckName(deckName),
+      buildExportableDeckPayload(resolveDeckName(deckName), deckRuleConfig, deckState)
+    );
   };
 
   const handleImportDeck = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -665,12 +608,8 @@ const DeckBuilder: React.FC = () => {
     reader.onload = (e) => {
       try {
         const data = JSON.parse(e.target?.result as string);
-        if (data.deckName) setDeckName(data.deckName);
-        else {
-          // Fallback to filename if no deckName in JSON
-          const nameMatch = file.name.match(/(.+)\.json$/i);
-          if (nameMatch) setDeckName(nameMatch[1]);
-        }
+        const importedDeckName = resolveImportedDeckName(data, file.name);
+        if (importedDeckName) setDeckName(importedDeckName);
         const importedRuleConfig = getImportedDeckRuleConfig(data);
         setDeckRuleConfig(importedRuleConfig);
         setDeckState(sanitizeImportedDeckState(data, cards, importedRuleConfig));
@@ -678,7 +617,7 @@ const DeckBuilder: React.FC = () => {
         setSavedBaselineSnapshot(null);
         setDraftRestored(false);
         setPendingDraftRestore(null);
-      } catch (err) {
+      } catch {
         alert(t('deckBuilder.alerts.importFailed'));
       }
     };
@@ -906,32 +845,14 @@ const DeckBuilder: React.FC = () => {
     if (!savedDeck) return;
 
     const restoredDeck = restoreSavedDeckToSnapshot(savedDeck, cards);
-    const data = JSON.stringify(
+    downloadDeckJson(
+      restoredDeck.snapshot.name,
       buildExportableDeckPayload(
         restoredDeck.snapshot.name,
         restoredDeck.snapshot.ruleConfig,
         restoredDeck.snapshot.deckState,
       ),
-      null,
-      2,
     );
-
-    const rawName = restoredDeck.snapshot.name.trim();
-    const safeName = rawName.length > 0
-      ? rawName.replace(/[^\w\u3000-\u303F\u3040-\u309F\u30A0-\u30FF\uFF00-\uFFEF\u4E00-\u9FAF\-]/g, '_')
-      : 'shadowverse_deck';
-    const blob = new Blob([data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = `${safeName}.json`;
-    anchor.style.display = 'none';
-    document.body.appendChild(anchor);
-    anchor.click();
-    setTimeout(() => {
-      document.body.removeChild(anchor);
-      URL.revokeObjectURL(url);
-    }, 200);
   };
 
   return (
