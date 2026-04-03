@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildCardDetailLookup, formatAbilityText } from './cardDetails';
+import { buildCardDetailLookup, buildCardDetailPresentation, formatAbilityText } from './cardDetails';
 
 describe('cardDetails', () => {
   it('builds a lookup with parsed stats and text fields', () => {
@@ -51,5 +51,39 @@ describe('cardDetails', () => {
     expect(formatAbilityText('A ---------- B ――――――――――――――― C')).toBe(
       'A\n\n----------\n\nB\n\n―――――――――――――――\n\nC'
     );
+  });
+
+  it('builds presentation metadata and stats from card details', () => {
+    expect(buildCardDetailPresentation({
+      className: 'Royal',
+      title: 'Hero Tale',
+      type: 'Follower',
+      subtype: 'Soldier',
+      atk: 2,
+      hp: 4,
+    })).toEqual({
+      primaryMeta: 'Royal / Hero Tale',
+      secondaryMeta: 'Follower / Soldier',
+      stats: '2 / 4',
+    });
+
+    expect(buildCardDetailPresentation({
+      className: '',
+      title: 'Hero Tale',
+      type: 'Follower',
+      subtype: '',
+      atk: 2,
+      hp: null,
+    })).toEqual({
+      primaryMeta: 'Hero Tale',
+      secondaryMeta: 'Follower',
+      stats: null,
+    });
+
+    expect(buildCardDetailPresentation(null)).toEqual({
+      primaryMeta: '',
+      secondaryMeta: '',
+      stats: null,
+    });
   });
 });

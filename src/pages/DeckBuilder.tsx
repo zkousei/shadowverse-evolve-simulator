@@ -33,7 +33,7 @@ import {
   sanitizeImportedDeckState,
   type DeckTargetSection,
 } from '../utils/deckBuilderRules';
-import { buildCardDetailLookup, formatAbilityText } from '../utils/cardDetails';
+import { buildCardDetailLookup, buildCardDetailPresentation, formatAbilityText } from '../utils/cardDetails';
 import {
   areDeckSnapshotsEqual,
   clearDraft,
@@ -448,17 +448,7 @@ const DeckBuilder: React.FC = () => {
       height: window.innerHeight,
     })
     : null;
-  const previewPrimaryMeta = [
-    previewDetail?.className,
-    previewDetail?.title,
-  ].filter(Boolean).join(' / ');
-  const previewSecondaryMeta = [
-    previewDetail?.type,
-    previewDetail?.subtype,
-  ].filter(Boolean).join(' / ');
-  const previewStats = previewDetail && previewDetail.atk !== null && previewDetail.hp !== null
-    ? `${previewDetail.atk} / ${previewDetail.hp}`
-    : null;
+  const previewPresentation = buildCardDetailPresentation(previewDetail);
 
   const removeLastCardById = (cards: DeckBuilderCardData[], cardId?: string): DeckBuilderCardData[] => {
     if (!cardId) return cards;
@@ -2809,14 +2799,14 @@ const DeckBuilder: React.FC = () => {
                 <div style={{ color: '#f8fafc', fontWeight: 800, fontSize: '1rem', lineHeight: 1.35 }}>
                   {previewDetail?.name || previewCard.name}
                 </div>
-                {previewPrimaryMeta && (
+                {previewPresentation.primaryMeta && (
                   <div style={{ color: '#cbd5e1', fontSize: '0.76rem', marginTop: '0.18rem', lineHeight: 1.45 }}>
-                    {previewPrimaryMeta}
+                    {previewPresentation.primaryMeta}
                   </div>
                 )}
-                {previewSecondaryMeta && (
+                {previewPresentation.secondaryMeta && (
                   <div style={{ color: '#94a3b8', fontSize: '0.74rem', marginTop: '0.1rem', lineHeight: 1.45 }}>
-                    {previewSecondaryMeta}
+                    {previewPresentation.secondaryMeta}
                   </div>
                 )}
               </div>
@@ -2858,10 +2848,10 @@ const DeckBuilder: React.FC = () => {
                   <span>{previewCard.id}</span>
                   <span style={{ color: '#94a3b8' }}>{t('deckBuilder.preview.cost')}</span>
                   <span>{previewDetail?.cost || previewCard.cost || '-'}</span>
-                  {previewStats && (
+                  {previewPresentation.stats && (
                     <>
                       <span style={{ color: '#94a3b8' }}>{t('deckBuilder.preview.stats')}</span>
-                      <span>{previewStats}</span>
+                      <span>{previewPresentation.stats}</span>
                     </>
                   )}
                 </div>

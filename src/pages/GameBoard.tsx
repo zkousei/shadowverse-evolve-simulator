@@ -10,7 +10,7 @@ import { canImportDeck, canUndoLastTurn, isHandCardMovementLocked } from '../uti
 import { getPlayerLabel, getZoneOwner } from '../utils/soloMode';
 import type { PlayerRole } from '../types/game';
 import type { AttackTarget } from '../types/sync';
-import { formatAbilityText } from '../utils/cardDetails';
+import { buildCardDetailPresentation, formatAbilityText } from '../utils/cardDetails';
 import type { DeckBuilderCardData } from '../models/deckBuilderCard';
 import {
   filterSavedDeckOptionsBySearch,
@@ -473,17 +473,7 @@ const GameBoard: React.FC = () => {
   const selectedInspectorDetail = selectedInspectorCard
     ? cardDetailLookup[selectedInspectorCard.cardId]
     : null;
-  const inspectorPrimaryMeta = [
-    selectedInspectorDetail?.className,
-    selectedInspectorDetail?.title
-  ].filter(Boolean).join(' / ');
-  const inspectorSecondaryMeta = [
-    selectedInspectorDetail?.type,
-    selectedInspectorDetail?.subtype
-  ].filter(Boolean).join(' / ');
-  const inspectorStats = selectedInspectorDetail && selectedInspectorDetail.atk !== null && selectedInspectorDetail.hp !== null
-    ? `${selectedInspectorDetail.atk} / ${selectedInspectorDetail.hp}`
-    : null;
+  const inspectorPresentation = buildCardDetailPresentation(selectedInspectorDetail);
   const inspectorPopoverStyle = React.useMemo<React.CSSProperties | null>(() => {
     if (!selectedInspectorAnchor) return null;
 
@@ -860,14 +850,14 @@ const GameBoard: React.FC = () => {
             <div style={{ color: '#f8fafc', fontWeight: 800, fontSize: '0.95rem', lineHeight: 1.35 }}>
               {detail?.name || selectedInspectorCard.name}
             </div>
-            {inspectorPrimaryMeta && (
+            {inspectorPresentation.primaryMeta && (
               <div style={{ color: '#cbd5e1', fontSize: '0.72rem', marginTop: '0.18rem', lineHeight: 1.45 }}>
-                {inspectorPrimaryMeta}
+                {inspectorPresentation.primaryMeta}
               </div>
             )}
-            {inspectorSecondaryMeta && (
+            {inspectorPresentation.secondaryMeta && (
               <div style={{ color: '#94a3b8', fontSize: '0.7rem', marginTop: '0.1rem', lineHeight: 1.45 }}>
-                {inspectorSecondaryMeta}
+                {inspectorPresentation.secondaryMeta}
               </div>
             )}
           </div>
@@ -915,10 +905,10 @@ const GameBoard: React.FC = () => {
               <span>{selectedInspectorCard.cardId}</span>
               <span style={{ color: '#94a3b8' }}>{t('gameBoard.inspector.cost')}</span>
               <span>{detail?.cost || '-'}</span>
-              {inspectorStats && (
+              {inspectorPresentation.stats && (
                 <>
                   <span style={{ color: '#94a3b8' }}>{t('gameBoard.inspector.stats')}</span>
-                  <span>{inspectorStats}</span>
+                  <span>{inspectorPresentation.stats}</span>
                 </>
               )}
             </div>
