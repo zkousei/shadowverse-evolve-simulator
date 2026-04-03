@@ -58,12 +58,19 @@ import {
 } from '../utils/deckFile';
 import { addCardToDeckState, removeCardFromDeckState } from '../utils/deckBuilderMutations';
 import {
+  type DeckBuilderSessionState,
+  type PendingDraftRestoreState,
+  buildContinuedDraftRestoreSessionState,
   buildDeckBuilderSaveState,
   buildDeckLogImportFeedback,
   buildDeckLogImportedDeckState,
+  buildDetachedDeckBuilderTrackingState,
   buildDraftPersistencePayload,
+  buildImportedDeckSessionState,
   buildJsonImportedDeckState,
+  buildLoadedSavedDeckSessionState,
   buildPendingDraftRestoreState,
+  buildResetDeckBuilderSessionState,
   buildSavedDeckLoadState,
   getDraftPersistenceAction,
   getDeckLogImportMessage,
@@ -98,12 +105,6 @@ import { loadCardCatalog } from '../utils/cardCatalog';
 import { fetchDeckLogImport } from '../utils/decklogImport';
 import { formatSavedDeckCountSummary, formatSavedDeckRuleSummary } from '../utils/savedDeckPresentation';
 import CardArtwork from '../components/CardArtwork';
-
-type PendingDraftRestore = {
-  snapshot: DeckBuilderSnapshot;
-  selectedDeckId: string | null;
-  baselineSnapshot: DeckBuilderSnapshot | null;
-};
 
 const PAGE_SIZE = 50;
 const COST_FILTER_VALUES = ['All', '0', '1', '2', '3', '4', '5', '6', '7+'] as const;
@@ -153,7 +154,7 @@ const DeckBuilder: React.FC = () => {
   const [savedDeckSearch, setSavedDeckSearch] = useState('');
   const [draftRestored, setDraftRestored] = useState(false);
   const [hasInitializedDraft, setHasInitializedDraft] = useState(false);
-  const [pendingDraftRestore, setPendingDraftRestore] = useState<PendingDraftRestore | null>(null);
+  const [pendingDraftRestore, setPendingDraftRestore] = useState<PendingDraftRestoreState | null>(null);
   const [pendingDeleteDeckId, setPendingDeleteDeckId] = useState<string | null>(null);
   const [showDeleteAllSavedDecksDialog, setShowDeleteAllSavedDecksDialog] = useState(false);
   const [showDeleteSelectedSavedDecksDialog, setShowDeleteSelectedSavedDecksDialog] = useState(false);
@@ -310,20 +311,26 @@ const DeckBuilder: React.FC = () => {
     setSavedDecks(listSavedDecks());
   };
 
+  const applyDeckBuilderSessionState = (state: DeckBuilderSessionState) => {
+    if (state.deckName !== undefined) {
+      setDeckName(state.deckName);
+    }
+
+    setDeckRuleConfig(state.ruleConfig);
+    setDeckState(state.deckState);
+    setSelectedSavedDeckId(state.selectedSavedDeckId);
+    setSavedBaselineSnapshot(state.savedBaselineSnapshot);
+    setDraftRestored(state.draftRestored);
+    setPendingDraftRestore(state.pendingDraftRestore);
+  };
+
   const clearSavedDeckSelection = () => {
     setIsSavedDeckSelectMode(false);
     setSelectedSavedDeckIds([]);
   };
 
   const resetBuilderState = () => {
-    const defaultRuleConfig = createDefaultDeckRuleConfig();
-    setDeckName('');
-    setDeckRuleConfig(defaultRuleConfig);
-    setDeckState(createEmptyDeckState());
-    setSelectedSavedDeckId(null);
-    setSavedBaselineSnapshot(null);
-    setDraftRestored(false);
-    setPendingDraftRestore(null);
+    applyDeckBuilderSessionState(buildResetDeckBuilderSessionState());
   };
 
   const handleStartFresh = () => {
@@ -334,13 +341,7 @@ const DeckBuilder: React.FC = () => {
   const handleContinueDraftRestore = () => {
     if (!pendingDraftRestore) return;
 
-    setDeckName(pendingDraftRestore.snapshot.name);
-    setDeckRuleConfig(pendingDraftRestore.snapshot.ruleConfig);
-    setDeckState(pendingDraftRestore.snapshot.deckState);
-    setSelectedSavedDeckId(pendingDraftRestore.selectedDeckId);
-    setSavedBaselineSnapshot(pendingDraftRestore.baselineSnapshot);
-    setDraftRestored(true);
-    setPendingDraftRestore(null);
+    applyDeckBuilderSessionState(buildContinuedDraftRestoreSessionState(pendingDraftRestore));
   };
 
   const resetLibraryFilters = () => {
@@ -425,15 +426,9 @@ const DeckBuilder: React.FC = () => {
     reader.onload = (e) => {
       try {
         const data = JSON.parse(e.target?.result as string) as Record<string, unknown>;
-        const importedDeckState = buildJsonImportedDeckState(data, file.name, cards);
-        const importedDeckName = importedDeckState.deckName;
-        if (importedDeckName) setDeckName(importedDeckName);
-        setDeckRuleConfig(importedDeckState.ruleConfig);
-        setDeckState(importedDeckState.deckState);
-        setSelectedSavedDeckId(null);
-        setSavedBaselineSnapshot(null);
-        setDraftRestored(false);
-        setPendingDraftRestore(null);
+        applyDeckBuilderSessionState(
+          buildImportedDeckSessionState(buildJsonImportedDeckState(data, file.name, cards))
+        );
       } catch {
         alert(t('deckBuilder.alerts.importFailed'));
       }
@@ -456,15 +451,9 @@ const DeckBuilder: React.FC = () => {
 
     try {
       const importedDeck = await fetchDeckLogImport(deckLogInput, cards);
-      const importedDeckState = buildDeckLogImportedDeckState(importedDeck, cards);
-
-      setDeckName(importedDeckState.deckName ?? importedDeck.deckName);
-      setDeckRuleConfig(importedDeckState.ruleConfig);
-      setDeckState(importedDeckState.deckState);
-      setSelectedSavedDeckId(null);
-      setSavedBaselineSnapshot(null);
-      setDraftRestored(false);
-      setPendingDraftRestore(null);
+      applyDeckBuilderSessionState(
+        buildImportedDeckSessionState(buildDeckLogImportedDeckState(importedDeck, cards))
+      );
       setIsDeckLogImportOpen(false);
       setDeckLogInput('');
       setSaveFeedback(buildDeckLogImportFeedback(importedDeck, t));
@@ -518,9 +507,11 @@ const DeckBuilder: React.FC = () => {
   const handleMakeUnsavedCopy = () => {
     // Keep the current builder exactly as-is, but stop tracking it against the
     // loaded My Decks record so subsequent saves create/update a new baseline.
-    setSelectedSavedDeckId(null);
-    setSavedBaselineSnapshot(null);
-    setDraftRestored(false);
+    const detachedTrackingState = buildDetachedDeckBuilderTrackingState();
+    setSelectedSavedDeckId(detachedTrackingState.selectedSavedDeckId);
+    setSavedBaselineSnapshot(detachedTrackingState.savedBaselineSnapshot);
+    setDraftRestored(detachedTrackingState.draftRestored);
+    setPendingDraftRestore(detachedTrackingState.pendingDraftRestore);
     setSaveFeedback({
       kind: 'success',
       message: t('deckBuilder.alerts.unsavedCopySuccess'),
@@ -531,15 +522,9 @@ const DeckBuilder: React.FC = () => {
     const savedDeck = getSavedDeckById(deckId);
     if (!savedDeck) return;
 
-    const restoredDeck = buildSavedDeckLoadState(savedDeck, cards);
-
-    setDeckName(restoredDeck.deckName);
-    setDeckRuleConfig(restoredDeck.ruleConfig);
-    setDeckState(restoredDeck.deckState);
-    setSelectedSavedDeckId(restoredDeck.selectedSavedDeckId);
-    setSavedBaselineSnapshot(restoredDeck.savedBaselineSnapshot);
-    setDraftRestored(false);
-    setPendingDraftRestore(null);
+    applyDeckBuilderSessionState(
+      buildLoadedSavedDeckSessionState(buildSavedDeckLoadState(savedDeck, cards))
+    );
     setIsMyDecksOpen(false);
     setPendingLoadDeckId(null);
   };

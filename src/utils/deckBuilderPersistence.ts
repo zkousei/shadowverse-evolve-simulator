@@ -1,6 +1,10 @@
 import type { DeckBuilderCardData } from '../models/deckBuilderCard';
-import { getImportedDeckRuleConfig, type DeckRuleConfig } from '../models/deckRule';
-import type { DeckState } from '../models/deckState';
+import {
+  createDefaultDeckRuleConfig,
+  getImportedDeckRuleConfig,
+  type DeckRuleConfig,
+} from '../models/deckRule';
+import { createEmptyDeckState, type DeckState } from '../models/deckState';
 import { resolveDeckName } from './deckBuilderDisplay';
 import { sanitizeImportedDeckState } from './deckBuilderRules';
 import { resolveImportedDeckName } from './deckFile';
@@ -72,6 +76,16 @@ export type PendingDraftRestoreState = {
   baselineSnapshot: DeckBuilderSnapshot | null;
 };
 
+export type DeckBuilderSessionState = {
+  deckName?: string;
+  ruleConfig: DeckRuleConfig;
+  deckState: DeckState;
+  selectedSavedDeckId: string | null;
+  savedBaselineSnapshot: DeckBuilderSnapshot | null;
+  draftRestored: boolean;
+  pendingDraftRestore: PendingDraftRestoreState | null;
+};
+
 export type DraftPersistenceAction = 'skip' | 'clear' | 'save';
 
 export const buildDeckBuilderSaveState = (
@@ -131,6 +145,56 @@ export const buildDraftPersistencePayload = (
   name: resolveDeckName(deckName),
   ruleConfig,
   deckState,
+});
+
+export const buildDetachedDeckBuilderTrackingState = (): Pick<
+  DeckBuilderSessionState,
+  'selectedSavedDeckId' | 'savedBaselineSnapshot' | 'draftRestored' | 'pendingDraftRestore'
+> => ({
+  selectedSavedDeckId: null,
+  savedBaselineSnapshot: null,
+  draftRestored: false,
+  pendingDraftRestore: null,
+});
+
+export const buildResetDeckBuilderSessionState = (): DeckBuilderSessionState => ({
+  deckName: '',
+  ruleConfig: createDefaultDeckRuleConfig(),
+  deckState: createEmptyDeckState(),
+  ...buildDetachedDeckBuilderTrackingState(),
+});
+
+export const buildImportedDeckSessionState = (
+  importedDeckState: ImportedDeckBuilderState
+): DeckBuilderSessionState => ({
+  ...(importedDeckState.deckName ? { deckName: importedDeckState.deckName } : {}),
+  ruleConfig: importedDeckState.ruleConfig,
+  deckState: importedDeckState.deckState,
+  ...buildDetachedDeckBuilderTrackingState(),
+});
+
+export const buildContinuedDraftRestoreSessionState = (
+  pendingDraftRestore: PendingDraftRestoreState
+): DeckBuilderSessionState => ({
+  deckName: pendingDraftRestore.snapshot.name,
+  ruleConfig: pendingDraftRestore.snapshot.ruleConfig,
+  deckState: pendingDraftRestore.snapshot.deckState,
+  selectedSavedDeckId: pendingDraftRestore.selectedDeckId,
+  savedBaselineSnapshot: pendingDraftRestore.baselineSnapshot,
+  draftRestored: true,
+  pendingDraftRestore: null,
+});
+
+export const buildLoadedSavedDeckSessionState = (
+  restoredDeck: RestoredSavedDeckBuilderState
+): DeckBuilderSessionState => ({
+  deckName: restoredDeck.deckName,
+  ruleConfig: restoredDeck.ruleConfig,
+  deckState: restoredDeck.deckState,
+  selectedSavedDeckId: restoredDeck.selectedSavedDeckId,
+  savedBaselineSnapshot: restoredDeck.savedBaselineSnapshot,
+  draftRestored: false,
+  pendingDraftRestore: null,
 });
 
 const buildSanitizedSnapshot = (

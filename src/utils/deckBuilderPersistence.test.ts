@@ -4,12 +4,17 @@ import type { DeckRuleConfig } from '../models/deckRule';
 import { createDeckSnapshot, clearDraft, getSavedDeckById, loadDraft, saveDeck, saveDraft } from './deckStorage';
 import { DeckLogImportError, type DeckLogImportResult } from './decklogImport';
 import {
+  buildContinuedDraftRestoreSessionState,
   buildDeckBuilderSaveState,
   buildDeckLogImportFeedback,
   buildDeckLogImportedDeckState,
+  buildDetachedDeckBuilderTrackingState,
   buildDraftPersistencePayload,
+  buildImportedDeckSessionState,
   buildJsonImportedDeckState,
+  buildLoadedSavedDeckSessionState,
   buildPendingDraftRestoreState,
+  buildResetDeckBuilderSessionState,
   buildSavedDeckLoadState,
   getDraftPersistenceAction,
   getDeckLogImportMessage,
@@ -118,6 +123,71 @@ describe('deckBuilderPersistence', () => {
     expect(imported.deckState.tokenDeck).toEqual([tokenCard]);
   });
 
+  it('builds reusable session states for reset, imports, and detached tracking', () => {
+    expect(buildDetachedDeckBuilderTrackingState()).toEqual({
+      selectedSavedDeckId: null,
+      savedBaselineSnapshot: null,
+      draftRestored: false,
+      pendingDraftRestore: null,
+    });
+
+    expect(buildResetDeckBuilderSessionState()).toEqual({
+      deckName: '',
+      ruleConfig: {
+        format: 'constructed',
+        identityType: 'class',
+        selectedClass: null,
+        selectedTitle: null,
+        selectedClasses: [null, null],
+      },
+      deckState: {
+        mainDeck: [],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [],
+      },
+      selectedSavedDeckId: null,
+      savedBaselineSnapshot: null,
+      draftRestored: false,
+      pendingDraftRestore: null,
+    });
+
+    expect(buildImportedDeckSessionState({
+      deckName: 'Imported Deck',
+      ruleConfig: otherRuleConfig,
+      deckState: {
+        mainDeck: [mainCard],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [tokenCard],
+      },
+    })).toEqual({
+      deckName: 'Imported Deck',
+      ruleConfig: otherRuleConfig,
+      deckState: {
+        mainDeck: [mainCard],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [tokenCard],
+      },
+      selectedSavedDeckId: null,
+      savedBaselineSnapshot: null,
+      draftRestored: false,
+      pendingDraftRestore: null,
+    });
+
+    expect(buildImportedDeckSessionState({
+      deckName: null,
+      ruleConfig: otherRuleConfig,
+      deckState: {
+        mainDeck: [mainCard],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [],
+      },
+    })).not.toHaveProperty('deckName');
+  });
+
   it('builds save-state status for pristine, dirty, and limit-reached builders', () => {
     const pristineSnapshot = createDeckSnapshot('', otherRuleConfig, {
       mainDeck: [],
@@ -206,6 +276,20 @@ describe('deckBuilderPersistence', () => {
     expect(restored.deckState.mainDeck).toEqual([mainCard]);
     expect(restored.deckState.tokenDeck).toEqual([tokenCard]);
     expect(restored.savedBaselineSnapshot.deckState.tokenDeck).toEqual([tokenCard]);
+    expect(buildLoadedSavedDeckSessionState(restored)).toEqual({
+      deckName: 'Saved Royal',
+      ruleConfig: otherRuleConfig,
+      deckState: {
+        mainDeck: [mainCard],
+        evolveDeck: [],
+        leaderCards: [leaderCard],
+        tokenDeck: [tokenCard],
+      },
+      selectedSavedDeckId: savedDeck.id,
+      savedBaselineSnapshot: restored.savedBaselineSnapshot,
+      draftRestored: false,
+      pendingDraftRestore: null,
+    });
   });
 
   it('builds pending draft restore state with the matching saved baseline when present', () => {
@@ -239,6 +323,20 @@ describe('deckBuilderPersistence', () => {
     expect(pending.snapshot.deckState.tokenDeck).toEqual([tokenCard]);
     expect(pending.baselineSnapshot?.name).toBe('Saved Royal');
     expect(pending.baselineSnapshot?.deckState.tokenDeck).toEqual([tokenCard]);
+    expect(buildContinuedDraftRestoreSessionState(pending)).toEqual({
+      deckName: 'Draft Royal',
+      ruleConfig: otherRuleConfig,
+      deckState: {
+        mainDeck: [mainCard],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [tokenCard],
+      },
+      selectedSavedDeckId: savedDeck.id,
+      savedBaselineSnapshot: pending.baselineSnapshot,
+      draftRestored: true,
+      pendingDraftRestore: null,
+    });
   });
 
   it('decides whether draft persistence should skip, clear, or save', () => {
