@@ -62,6 +62,16 @@ import {
   downloadDeckJson,
   resolveImportedDeckName,
 } from '../utils/deckFile';
+import {
+  DECK_SORT_VALUES,
+  formatSavedDeckUpdatedAt,
+  groupDeckCardsForDisplay,
+  parseNullableStat,
+  resolveDeckName,
+  sortDeckCardsForDisplay,
+  type DeckSortMode,
+} from '../utils/deckBuilderDisplay';
+import { loadCardCatalog } from '../utils/cardCatalog';
 import { DeckLogImportError, fetchDeckLogImport } from '../utils/decklogImport';
 import { formatSavedDeckCountSummary, formatSavedDeckRuleSummary } from '../utils/savedDeckPresentation';
 import CardArtwork from '../components/CardArtwork';
@@ -87,75 +97,6 @@ const ADD_ACTIONS: Record<DeckTargetSection, { background: string }> = {
   leader: { background: '#f59e0b' },
   token: { background: 'var(--vivid-green-cyan)' },
 };
-
-const DECK_SORT_VALUES = ['added', 'cost', 'id'] as const;
-type DeckSortMode = typeof DECK_SORT_VALUES[number];
-
-const getCardCostSortValue = (card: DeckBuilderCardData): number => {
-  if (!card.cost || card.cost === '-') return Number.POSITIVE_INFINITY;
-  const parsed = Number.parseInt(card.cost, 10);
-  return Number.isNaN(parsed) ? Number.POSITIVE_INFINITY : parsed;
-};
-
-const sortDeckCardsForDisplay = (
-  cards: DeckBuilderCardData[],
-  sortMode: DeckSortMode
-): DeckBuilderCardData[] => {
-  if (sortMode === 'added') return cards;
-
-  return [...cards].sort((left, right) => {
-    if (sortMode === 'cost') {
-      const costDiff = getCardCostSortValue(left) - getCardCostSortValue(right);
-      if (costDiff !== 0) return costDiff;
-    }
-
-    return left.id.localeCompare(right.id, 'ja');
-  });
-};
-
-type DeckDisplayGroup = {
-  card: DeckBuilderCardData;
-  count: number;
-};
-
-const groupDeckCardsForDisplay = (cards: DeckBuilderCardData[]): DeckDisplayGroup[] => {
-  const groups: DeckDisplayGroup[] = [];
-
-  cards.forEach(card => {
-    const existingGroup = groups.find(group => group.card.id === card.id);
-    if (existingGroup) {
-      existingGroup.count += 1;
-      return;
-    }
-
-    groups.push({ card, count: 1 });
-  });
-
-  return groups;
-};
-
-const parseNullableStat = (value?: string): number | null => {
-  if (!value || value === '-') return null;
-
-  const parsed = Number.parseInt(value, 10);
-  return Number.isNaN(parsed) ? null : parsed;
-};
-
-const formatSavedDeckUpdatedAt = (value: string, locale?: string): string => {
-  try {
-    return new Intl.DateTimeFormat(locale, {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(new Date(value));
-  } catch {
-    return value;
-  }
-};
-
-const resolveDeckName = (value: string) => value.trim() || DEFAULT_DECK_NAME;
 
 type SaveFeedback = {
   kind: 'success' | 'warning';
@@ -207,8 +148,7 @@ const DeckBuilder: React.FC = () => {
   const [isImportingDeckLog, setIsImportingDeckLog] = useState(false);
 
   useEffect(() => {
-    fetch('/cards_detailed.json')
-      .then(res => res.json())
+    loadCardCatalog()
       .then(data => setCards(data))
       .catch(err => console.error("Could not load cards", err));
   }, []);

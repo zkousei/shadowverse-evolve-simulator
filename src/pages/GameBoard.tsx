@@ -18,6 +18,7 @@ import {
   formatSavedDeckCountSummary as formatSavedDeckCounts,
   formatSavedDeckRuleSummary,
 } from '../utils/savedDeckPresentation';
+import { loadCardCatalog } from '../utils/cardCatalog';
 import CardArtwork from '../components/CardArtwork';
 
 type LegalSavedDeckOption = {
@@ -271,8 +272,7 @@ const GameBoard: React.FC = () => {
   });
 
   React.useEffect(() => {
-    fetch('/cards_detailed.json')
-      .then(res => res.json())
+    loadCardCatalog()
       .then(data => {
         setAllCards(data);
       })
@@ -571,7 +571,8 @@ const GameBoard: React.FC = () => {
     setTokenSpawnCounts((current) => {
       const nextCount = Math.max(0, Math.min(5, (current[cardId] ?? 0) + delta));
       if (nextCount === 0) {
-        const { [cardId]: _removed, ...rest } = current;
+        const { [cardId]: omittedCardId, ...rest } = current;
+        void omittedCardId;
         return rest;
       }
       return {

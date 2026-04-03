@@ -22,6 +22,7 @@ import { buildSingleCardRevealEffect } from '../utils/cardReveal';
 import { buildAttackDeclaredEffect, formatAttackEffect } from '../utils/attackUi';
 import { buildCardPlayedEffect, formatCardPlayedEffect } from '../utils/cardPlayUi';
 import { normalizeBaseCardType } from '../utils/cardType';
+import { loadCardCatalog } from '../utils/cardCatalog';
 import { buildEvolveAutoAttachResolver, type EvolveAutoAttachResolver } from '../utils/evolveAutoAttach';
 import { buildFieldLinkAutoAttachResolver, type FieldLinkAutoAttachResolver } from '../utils/fieldLinkAutoAttach';
 import { getFieldLinkGroupId } from '../data/fieldLinkRules';
@@ -1537,8 +1538,7 @@ export const useGameBoardLogic = () => {
 
   useEffect(() => {
     let isActive = true;
-    fetch('/cards_detailed.json')
-      .then(res => res.json())
+    loadCardCatalog()
       .then((data: DeckBuilderCardData[]) => {
         if (!isActive) return;
         cardCatalogByIdRef.current = data.reduce<Record<string, DeckBuilderCardData>>((lookup, card) => {
@@ -1901,7 +1901,7 @@ export const useGameBoardLogic = () => {
       try {
         const data = JSON.parse(e.target?.result as string) as ImportableDeckData;
         importDeckData(data, targetRole);
-      } catch (err) { alert(t('deckBuilder.alerts.importFailed')); }
+      } catch { alert(t('deckBuilder.alerts.importFailed')); }
     };
     reader.readAsText(file);
   };
