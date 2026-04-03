@@ -1249,6 +1249,28 @@ describe('DeckBuilder', () => {
     expect(within(tokenDeckSection).getByText('Knight Token')).toBeInTheDocument();
   });
 
+  it('closes the DeckLog import modal on cancel and clears the pending input', async () => {
+    render(<DeckBuilder />);
+    await screen.findByText('Alpha Knight');
+
+    fireEvent.click(screen.getByRole('button', { name: /Import from DeckLog/i }));
+    const deckLogDialog = screen.getByRole('dialog', { name: 'Import from DeckLog dialog' });
+    const deckLogInput = within(deckLogDialog).getByPlaceholderText('e.g. a DeckLog code or a public DeckLog URL');
+
+    fireEvent.change(deckLogInput, {
+      target: { value: 'https://decklog.bushiroad.com/view/7H9K2' },
+    });
+    fireEvent.click(within(deckLogDialog).getByRole('button', { name: 'Cancel' }));
+
+    expect(screen.queryByRole('dialog', { name: 'Import from DeckLog dialog' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Import from DeckLog/i }));
+    const reopenedDialog = screen.getByRole('dialog', { name: 'Import from DeckLog dialog' });
+    expect(
+      within(reopenedDialog).getByPlaceholderText('e.g. a DeckLog code or a public DeckLog URL')
+    ).toHaveValue('');
+  });
+
   it('keeps the My Decks modal open when load is canceled', async () => {
     render(<DeckBuilder />);
     await screen.findByText('Alpha Knight');

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, Plus, Minus, Download, Upload } from 'lucide-react';
-import { CLASS, CLASS_FILTER_VALUES, CLASS_VALUES, CONSTRUCTED_CLASS_VALUES } from '../models/class';
+import { CLASS, CLASS_FILTER_VALUES, CONSTRUCTED_CLASS_VALUES } from '../models/class';
 import type { ClassFilter } from '../models/class';
 import { getBaseCardType } from '../models/cardClassification';
 import {
@@ -15,6 +15,7 @@ import {
 import {
   createDefaultDeckRuleConfig,
   DECK_FORMAT_VALUES,
+  type DeckFormat,
 } from '../models/deckRule';
 import { createEmptyDeckState, type DeckState } from '../models/deckState';
 import {
@@ -41,6 +42,36 @@ import {
   buildSubtypeAddedDeckBuilderLibraryFilterState,
   buildSubtypeRemovedDeckBuilderLibraryFilterState,
 } from '../utils/deckBuilderFilters';
+import {
+  type DeckBuilderMyDecksUiStatePatch,
+  buildClearedSavedDeckSelectionUiState,
+  buildClosedMyDecksUiState,
+  buildCompletedDeleteAllSavedDecksUiState,
+  buildCompletedDeleteSelectedSavedDecksUiState,
+  buildCompletedSavedDeckLoadUiState,
+  buildDismissedDeleteAllSavedDecksUiState,
+  buildDismissedDeleteSelectedSavedDecksUiState,
+  buildDismissedPendingSavedDeckDeleteUiState,
+  buildDismissedPendingSavedDeckLoadUiState,
+} from '../utils/deckBuilderMyDecksState';
+import {
+  type DeckBuilderModalUiStatePatch,
+  buildDismissedDeckLogImportUiState,
+  buildDismissedResetBuilderDialogUiState,
+  buildDismissedResetDeckDialogUiState,
+  buildFinishedDeckLogImportUiState,
+  buildOpenedDeckLogImportUiState,
+  buildOpenedResetBuilderDialogUiState,
+  buildOpenedResetDeckDialogUiState,
+  buildStartedDeckLogImportUiState,
+} from '../utils/deckBuilderModalState';
+import {
+  buildConstructedClassUpdatedRuleConfig,
+  buildConstructedTitleUpdatedRuleConfig,
+  buildCrossoverClassUpdatedRuleConfig,
+  buildDeckFormatUpdatedRuleConfig,
+  buildDeckIdentityTypeUpdatedRuleConfig,
+} from '../utils/deckBuilderRuleConfig';
 import {
   clearDraft,
   createDeckSnapshot,
@@ -331,9 +362,50 @@ const DeckBuilder: React.FC = () => {
     setPendingDraftRestore(state.pendingDraftRestore);
   };
 
+  const applyDeckBuilderMyDecksUiState = (state: DeckBuilderMyDecksUiStatePatch) => {
+    if (state.isMyDecksOpen !== undefined) {
+      setIsMyDecksOpen(state.isMyDecksOpen);
+    }
+    if (state.pendingLoadDeckId !== undefined) {
+      setPendingLoadDeckId(state.pendingLoadDeckId);
+    }
+    if (state.pendingDeleteDeckId !== undefined) {
+      setPendingDeleteDeckId(state.pendingDeleteDeckId);
+    }
+    if (state.showDeleteAllSavedDecksDialog !== undefined) {
+      setShowDeleteAllSavedDecksDialog(state.showDeleteAllSavedDecksDialog);
+    }
+    if (state.showDeleteSelectedSavedDecksDialog !== undefined) {
+      setShowDeleteSelectedSavedDecksDialog(state.showDeleteSelectedSavedDecksDialog);
+    }
+    if (state.isSavedDeckSelectMode !== undefined) {
+      setIsSavedDeckSelectMode(state.isSavedDeckSelectMode);
+    }
+    if (state.selectedSavedDeckIds !== undefined) {
+      setSelectedSavedDeckIds(state.selectedSavedDeckIds);
+    }
+  };
+
   const clearSavedDeckSelection = () => {
-    setIsSavedDeckSelectMode(false);
-    setSelectedSavedDeckIds([]);
+    applyDeckBuilderMyDecksUiState(buildClearedSavedDeckSelectionUiState());
+  };
+
+  const applyDeckBuilderModalUiState = (state: DeckBuilderModalUiStatePatch) => {
+    if (state.showResetDeckDialog !== undefined) {
+      setShowResetDeckDialog(state.showResetDeckDialog);
+    }
+    if (state.showResetBuilderDialog !== undefined) {
+      setShowResetBuilderDialog(state.showResetBuilderDialog);
+    }
+    if (state.isDeckLogImportOpen !== undefined) {
+      setIsDeckLogImportOpen(state.isDeckLogImportOpen);
+    }
+    if (state.deckLogInput !== undefined) {
+      setDeckLogInput(state.deckLogInput);
+    }
+    if (state.isImportingDeckLog !== undefined) {
+      setIsImportingDeckLog(state.isImportingDeckLog);
+    }
   };
 
   const buildCurrentLibraryFilterState = (): DeckBuilderLibraryFilterState => ({
@@ -431,13 +503,13 @@ const DeckBuilder: React.FC = () => {
 
   const resetDeckContents = () => {
     setDeckState(createEmptyDeckState());
-    setShowResetDeckDialog(false);
+    applyDeckBuilderModalUiState(buildDismissedResetDeckDialogUiState());
   };
 
   const resetBuilder = () => {
     clearDraft();
     resetBuilderState();
-    setShowResetBuilderDialog(false);
+    applyDeckBuilderModalUiState(buildDismissedResetBuilderDialogUiState());
   };
 
   const exportDeck = () => {
@@ -476,15 +548,14 @@ const DeckBuilder: React.FC = () => {
       return;
     }
 
-    setIsImportingDeckLog(true);
+    applyDeckBuilderModalUiState(buildStartedDeckLogImportUiState());
 
     try {
       const importedDeck = await fetchDeckLogImport(deckLogInput, cards);
       applyDeckBuilderSessionState(
         buildImportedDeckSessionState(buildDeckLogImportedDeckState(importedDeck, cards))
       );
-      setIsDeckLogImportOpen(false);
-      setDeckLogInput('');
+      applyDeckBuilderModalUiState(buildDismissedDeckLogImportUiState());
       setSaveFeedback(buildDeckLogImportFeedback(importedDeck, t));
     } catch (error) {
       setSaveFeedback({
@@ -492,7 +563,7 @@ const DeckBuilder: React.FC = () => {
         message: getDeckLogImportMessage(error, t),
       });
     } finally {
-      setIsImportingDeckLog(false);
+      applyDeckBuilderModalUiState(buildFinishedDeckLogImportUiState());
     }
   };
 
@@ -550,8 +621,7 @@ const DeckBuilder: React.FC = () => {
     applyDeckBuilderSessionState(
       buildLoadedSavedDeckSessionState(buildSavedDeckLoadState(savedDeck, cards))
     );
-    setIsMyDecksOpen(false);
-    setPendingLoadDeckId(null);
+    applyDeckBuilderMyDecksUiState(buildCompletedSavedDeckLoadUiState());
   };
 
   const handleDeleteSavedDeck = (deckId: string) => {
@@ -563,7 +633,7 @@ const DeckBuilder: React.FC = () => {
       setSavedBaselineSnapshot(null);
     }
     refreshSavedDecks();
-    setPendingDeleteDeckId(null);
+    applyDeckBuilderMyDecksUiState(buildDismissedPendingSavedDeckDeleteUiState());
   };
 
   const handleDeleteAllSavedDecks = () => {
@@ -575,10 +645,7 @@ const DeckBuilder: React.FC = () => {
       setSavedBaselineSnapshot(null);
     }
     refreshSavedDecks();
-    setPendingDeleteDeckId(null);
-    setPendingLoadDeckId(null);
-    clearSavedDeckSelection();
-    setShowDeleteAllSavedDecksDialog(false);
+    applyDeckBuilderMyDecksUiState(buildCompletedDeleteAllSavedDecksUiState());
   };
 
   const handleDeleteSelectedSavedDecks = () => {
@@ -592,10 +659,7 @@ const DeckBuilder: React.FC = () => {
       setSavedBaselineSnapshot(null);
     }
     refreshSavedDecks();
-    setPendingDeleteDeckId(null);
-    setPendingLoadDeckId(null);
-    clearSavedDeckSelection();
-    setShowDeleteSelectedSavedDecksDialog(false);
+    applyDeckBuilderMyDecksUiState(buildCompletedDeleteSelectedSavedDecksUiState());
   };
 
   const toggleSavedDeckSelection = (deckId: string) => {
@@ -607,8 +671,7 @@ const DeckBuilder: React.FC = () => {
   };
 
   const handleCloseMyDecks = () => {
-    setIsMyDecksOpen(false);
-    clearSavedDeckSelection();
+    applyDeckBuilderMyDecksUiState(buildClosedMyDecksUiState());
   };
 
   const pendingDeleteDeck = pendingDeleteDeckId ? getSavedDeckById(pendingDeleteDeckId) : null;
@@ -1253,7 +1316,7 @@ const DeckBuilder: React.FC = () => {
                 </label>
                 <button
                   type="button"
-                  onClick={() => setIsDeckLogImportOpen(true)}
+                  onClick={() => applyDeckBuilderModalUiState(buildOpenedDeckLogImportUiState())}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -1341,15 +1404,7 @@ const DeckBuilder: React.FC = () => {
                 value={deckRuleConfig.format}
                 onChange={(e) => {
                   const nextFormat = e.target.value as DeckFormat;
-                  setDeckRuleConfig(current => ({
-                    ...current,
-                    format: nextFormat,
-                    identityType: nextFormat === 'crossover' ? 'class' : current.identityType,
-                    selectedTitle: nextFormat === 'crossover' ? null : current.selectedTitle,
-                    selectedClasses: nextFormat === 'crossover' && current.selectedClasses.every(value => value === null) && current.selectedClass
-                      ? [current.selectedClass, null]
-                      : current.selectedClasses,
-                  }));
+                  setDeckRuleConfig(current => buildDeckFormatUpdatedRuleConfig(current, nextFormat));
                 }}
                 style={{
                   padding: '0.5rem',
@@ -1390,10 +1445,7 @@ const DeckBuilder: React.FC = () => {
                       key={identityType}
                       type="button"
                       aria-pressed={deckRuleConfig.identityType === identityType}
-                      onClick={() => setDeckRuleConfig(current => ({
-                        ...current,
-                        identityType,
-                      }))}
+                      onClick={() => setDeckRuleConfig(current => buildDeckIdentityTypeUpdatedRuleConfig(current, identityType))}
                       style={{
                         padding: '0.25rem 0.75rem',
                         borderRadius: '4px',
@@ -1414,10 +1466,7 @@ const DeckBuilder: React.FC = () => {
                       id="constructed-class"
                       aria-label={t('deckBuilder.deckRule.aria.constructedClass')}
                       value={deckRuleConfig.selectedClass ?? ''}
-                      onChange={(e) => setDeckRuleConfig(current => ({
-                        ...current,
-                        selectedClass: e.target.value === '' ? null : e.target.value as typeof CLASS_VALUES[number],
-                      }))}
+                      onChange={(e) => setDeckRuleConfig(current => buildConstructedClassUpdatedRuleConfig(current, e.target.value))}
                       style={{
                         padding: '0.5rem',
                         borderRadius: 'var(--radius-md)',
@@ -1444,10 +1493,7 @@ const DeckBuilder: React.FC = () => {
                       id="constructed-title"
                       aria-label={t('deckBuilder.deckRule.aria.constructedTitle')}
                       value={deckRuleConfig.selectedTitle ?? ''}
-                      onChange={(e) => setDeckRuleConfig(current => ({
-                        ...current,
-                        selectedTitle: e.target.value === '' ? null : e.target.value,
-                      }))}
+                      onChange={(e) => setDeckRuleConfig(current => buildConstructedTitleUpdatedRuleConfig(current, e.target.value))}
                       style={{
                         padding: '0.5rem',
                         borderRadius: 'var(--radius-md)',
@@ -1474,13 +1520,7 @@ const DeckBuilder: React.FC = () => {
                     id="crossover-class-a"
                     aria-label={t('deckBuilder.deckRule.aria.crossoverClassA')}
                     value={deckRuleConfig.selectedClasses[0] ?? ''}
-                    onChange={(e) => setDeckRuleConfig(current => ({
-                      ...current,
-                      selectedClasses: [
-                        e.target.value === '' ? null : e.target.value as typeof CLASS_VALUES[number],
-                        current.selectedClasses[1],
-                      ],
-                    }))}
+                    onChange={(e) => setDeckRuleConfig(current => buildCrossoverClassUpdatedRuleConfig(current, 0, e.target.value))}
                     style={{
                       padding: '0.5rem',
                       borderRadius: 'var(--radius-md)',
@@ -1507,13 +1547,7 @@ const DeckBuilder: React.FC = () => {
                     id="crossover-class-b"
                     aria-label={t('deckBuilder.deckRule.aria.crossoverClassB')}
                     value={deckRuleConfig.selectedClasses[1] ?? ''}
-                    onChange={(e) => setDeckRuleConfig(current => ({
-                      ...current,
-                      selectedClasses: [
-                        current.selectedClasses[0],
-                        e.target.value === '' ? null : e.target.value as typeof CLASS_VALUES[number],
-                      ],
-                    }))}
+                    onChange={(e) => setDeckRuleConfig(current => buildCrossoverClassUpdatedRuleConfig(current, 1, e.target.value))}
                     style={{
                       padding: '0.5rem',
                       borderRadius: 'var(--radius-md)',
@@ -1601,7 +1635,7 @@ const DeckBuilder: React.FC = () => {
           <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'flex-end', gap: '0.6rem', flexWrap: 'wrap' }}>
             <button
               type="button"
-              onClick={() => setShowResetDeckDialog(true)}
+              onClick={() => applyDeckBuilderModalUiState(buildOpenedResetDeckDialogUiState())}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -1620,7 +1654,7 @@ const DeckBuilder: React.FC = () => {
             </button>
             <button
               type="button"
-              onClick={() => setShowResetBuilderDialog(true)}
+              onClick={() => applyDeckBuilderModalUiState(buildOpenedResetBuilderDialogUiState())}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -2239,7 +2273,7 @@ const DeckBuilder: React.FC = () => {
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
               <button
                 type="button"
-                onClick={() => setPendingLoadDeckId(null)}
+                onClick={() => applyDeckBuilderMyDecksUiState(buildDismissedPendingSavedDeckLoadUiState())}
                 style={{
                   padding: '0.5rem 0.9rem',
                   borderRadius: 'var(--radius-md)',
@@ -2308,7 +2342,7 @@ const DeckBuilder: React.FC = () => {
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
               <button
                 type="button"
-                onClick={() => setPendingDeleteDeckId(null)}
+                onClick={() => applyDeckBuilderMyDecksUiState(buildDismissedPendingSavedDeckDeleteUiState())}
                 style={{
                   padding: '0.5rem 0.9rem',
                   borderRadius: 'var(--radius-md)',
@@ -2410,8 +2444,7 @@ const DeckBuilder: React.FC = () => {
                 type="button"
                 onClick={() => {
                   if (isImportingDeckLog) return;
-                  setIsDeckLogImportOpen(false);
-                  setDeckLogInput('');
+                  applyDeckBuilderModalUiState(buildDismissedDeckLogImportUiState());
                 }}
                 style={{
                   padding: '0.5rem 0.9rem',
@@ -2486,7 +2519,7 @@ const DeckBuilder: React.FC = () => {
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
               <button
                 type="button"
-                onClick={() => setShowDeleteSelectedSavedDecksDialog(false)}
+                onClick={() => applyDeckBuilderMyDecksUiState(buildDismissedDeleteSelectedSavedDecksUiState())}
                 style={{
                   padding: '0.5rem 0.9rem',
                   borderRadius: 'var(--radius-md)',
@@ -2555,7 +2588,7 @@ const DeckBuilder: React.FC = () => {
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
               <button
                 type="button"
-                onClick={() => setShowDeleteAllSavedDecksDialog(false)}
+                onClick={() => applyDeckBuilderMyDecksUiState(buildDismissedDeleteAllSavedDecksUiState())}
                 style={{
                   padding: '0.5rem 0.9rem',
                   borderRadius: 'var(--radius-md)',
@@ -2770,7 +2803,7 @@ const DeckBuilder: React.FC = () => {
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
               <button
                 type="button"
-                onClick={() => setShowResetDeckDialog(false)}
+                onClick={() => applyDeckBuilderModalUiState(buildDismissedResetDeckDialogUiState())}
                 style={{
                   padding: '0.5rem 0.9rem',
                   borderRadius: 'var(--radius-md)',
@@ -2839,7 +2872,7 @@ const DeckBuilder: React.FC = () => {
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
               <button
                 type="button"
-                onClick={() => setShowResetBuilderDialog(false)}
+                onClick={() => applyDeckBuilderModalUiState(buildDismissedResetBuilderDialogUiState())}
                 style={{
                   padding: '0.5rem 0.9rem',
                   borderRadius: 'var(--radius-md)',
