@@ -5,12 +5,10 @@ import { CLASS, CLASS_FILTER_VALUES, CLASS_VALUES, CONSTRUCTED_CLASS_VALUES } fr
 import type { ClassFilter } from '../models/class';
 import { getBaseCardType } from '../models/cardClassification';
 import {
-  dedupeCardsByDisplayIdentity,
   getAvailableExpansions,
   getAvailableProductNames,
   getAvailableRarities,
   getAvailableSubtypeTags,
-  getSubtypeTags,
   getAvailableTitles,
   type DeckBuilderCardData,
 } from '../models/deckBuilderCard';
@@ -28,12 +26,15 @@ import {
   getAllowedSections,
   getDeckValidationMessages,
   type DeckValidationMessage,
-  isCardAllowedByRule,
   isRuleConfigured,
   sanitizeImportedDeckState,
   type DeckTargetSection,
 } from '../utils/deckBuilderRules';
 import { buildCardDetailLookup, buildCardDetailPresentation, formatAbilityText } from '../utils/cardDetails';
+import {
+  buildDeckBuilderCatalogView,
+  getCrossoverClassOptions,
+} from '../utils/deckBuilderCatalog';
 import {
   areDeckSnapshotsEqual,
   clearDraft,
@@ -224,72 +225,25 @@ const DeckBuilder: React.FC = () => {
   const subtypeTags = getAvailableSubtypeTags(cards);
   const titles = getAvailableTitles(cards);
   const cardDetailLookup = React.useMemo(() => buildCardDetailLookup(cards), [cards]);
-  const isConstructed = deckRuleConfig.format === 'constructed';
-  const isCrossover = deckRuleConfig.format === 'crossover';
   const isRuleReady = isRuleConfigured(deckRuleConfig);
   const leaderLimit = getDeckLimit('leader', deckRuleConfig);
-
-  const filteredCards = cards.filter(c => {
-    if ((isConstructed || isCrossover) && isRuleReady && !isCardAllowedByRule(c, deckRuleConfig)) return false;
-
-    // 1. Name Filter
-    if (!c.name.toLowerCase().includes(search.toLowerCase())) return false;
-
-    // 2. Cost Filter
-    if (costFilter !== 'All') {
-      if (costFilter === '7+') {
-        if (!c.cost || c.cost === '-' || parseInt(c.cost) < 7) return false;
-      } else {
-        if (c.cost !== costFilter) return false;
-      }
-    }
-
-    // 3. Expansion Filter
-    if (expansionFilter !== 'All') {
-      if (!c.id.startsWith(expansionFilter + '-')) return false;
-    }
-
-    // 4. Class Filter
-    if (classFilter !== 'All') {
-      if (!c.class) return false;
-      if (c.class !== classFilter) return false;
-    }
-
-    // 5. Card Type Filter
-    if (cardTypeFilter !== 'All') {
-      if (getBaseCardType(c.card_kind_normalized) !== cardTypeFilter) {
-        return false;
-      }
-    }
-
-    // 6. Rarity Filter
-    if (rarityFilter !== 'All') {
-      if (c.rarity !== rarityFilter) return false;
-    }
-
-    // 7. Product Filter
-    if (productNameFilter !== 'All') {
-      if (c.product_name !== productNameFilter) return false;
-    }
-
-    // 8. Subtype Filter
-    if (selectedSubtypeTags.length > 0) {
-      const cardSubtypeTags = getSubtypeTags(c);
-      if (!selectedSubtypeTags.some(tag => cardSubtypeTags.includes(tag))) return false;
-    }
-
-    // 9. Deck Section Filter
-    if (deckSectionFilter !== 'All') {
-      if (c.deck_section !== deckSectionFilter) return false;
-    }
-
-    return true;
+  const {
+    paginatedCards,
+    totalPages,
+  } = buildDeckBuilderCatalogView(cards, deckRuleConfig, {
+    search,
+    costFilter,
+    expansionFilter,
+    classFilter,
+    cardTypeFilter,
+    rarityFilter,
+    productNameFilter,
+    selectedSubtypeTags,
+    deckSectionFilter,
+    hideSameNameVariants,
+    page,
+    pageSize: PAGE_SIZE,
   });
-  const displayCards = hideSameNameVariants
-    ? dedupeCardsByDisplayIdentity(filteredCards)
-    : filteredCards;
-  const paginatedCards = displayCards.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
-  const totalPages = Math.ceil(displayCards.length / PAGE_SIZE) || 1;
   const { mainDeck, evolveDeck, leaderCards, tokenDeck } = deckState;
   const deckIssueMessages = getDeckValidationMessages(deckState, deckRuleConfig);
   const sortedLeaderCards = sortDeckCardsForDisplay(leaderCards, deckSortMode);
@@ -300,11 +254,8 @@ const DeckBuilder: React.FC = () => {
   const groupedMainDeck = groupDeckCardsForDisplay(sortedMainDeck);
   const groupedEvolveDeck = groupDeckCardsForDisplay(sortedEvolveDeck);
   const groupedTokenDeck = groupDeckCardsForDisplay(sortedTokenDeck);
-  const crossoverClassOptionsA = CONSTRUCTED_CLASS_VALUES.filter(
-    cardClass => cardClass === deckRuleConfig.selectedClasses[0] || cardClass !== deckRuleConfig.selectedClasses[1]
-  );
-  const crossoverClassOptionsB = CONSTRUCTED_CLASS_VALUES.filter(
-    cardClass => cardClass === deckRuleConfig.selectedClasses[1] || cardClass !== deckRuleConfig.selectedClasses[0]
+  const { firstOptions: crossoverClassOptionsA, secondOptions: crossoverClassOptionsB } = getCrossoverClassOptions(
+    deckRuleConfig.selectedClasses
   );
   const canExportDeck = deckIssueMessages.length === 0;
   const currentSnapshot = createDeckSnapshot(deckName, deckRuleConfig, deckState);
