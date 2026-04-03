@@ -64,6 +64,17 @@ import {
 } from '../utils/deckFile';
 import { addCardToDeckState, removeCardFromDeckState } from '../utils/deckBuilderMutations';
 import {
+  addSubtypeTagSelection,
+  areAllShownSavedDecksSelected,
+  buildFilteredSavedDecks,
+  canAddSubtypeTag,
+  getFilteredSubtypeOptions,
+  getShownSavedDeckIds,
+  removeSubtypeTagSelection,
+  toggleSavedDeckSelectionId,
+  toggleShownSavedDeckIds,
+} from '../utils/deckBuilderSelections';
+import {
   DECK_HOVER_PREVIEW_MAX_HEIGHT,
   DECK_HOVER_PREVIEW_VIEWPORT_PADDING,
   DECK_HOVER_PREVIEW_WIDTH,
@@ -313,30 +324,15 @@ const DeckBuilder: React.FC = () => {
   const saveStateMessage = selectedSavedDeckId
     ? (isDirty ? t('deckBuilder.status.unsavedChanges') : t('deckBuilder.status.saved'))
     : t('deckBuilder.status.notSaved');
-  const filteredSavedDecks = React.useMemo(() => (
-    savedDecks
-      .filter(deck => deck.name.toLowerCase().includes(savedDeckSearch.trim().toLowerCase()))
-      .map(savedDeck => {
-        const restoredDeck = restoreSavedDeckToSnapshot(savedDeck, cards);
-        const sanitizedDeckState = sanitizeImportedDeckState(
-          restoredDeck.snapshot.deckState,
-          cards,
-          restoredDeck.snapshot.ruleConfig
-        );
-        const savedDeckIssues = getDeckValidationMessages(sanitizedDeckState, restoredDeck.snapshot.ruleConfig);
-
-        return {
-          savedDeck,
-          canExport: savedDeckIssues.length === 0,
-        };
-      })
-  ), [cards, savedDeckSearch, savedDecks]);
-  const shownSavedDeckIds = React.useMemo(
-    () => filteredSavedDecks.map(({ savedDeck }) => savedDeck.id),
-    [filteredSavedDecks]
+  const filteredSavedDecks = React.useMemo(
+    () => buildFilteredSavedDecks(savedDecks, cards, savedDeckSearch),
+    [cards, savedDeckSearch, savedDecks]
   );
-  const areAllShownSavedDecksSelected = shownSavedDeckIds.length > 0
-    && shownSavedDeckIds.every(id => selectedSavedDeckIds.includes(id));
+  const shownSavedDeckIds = React.useMemo(() => getShownSavedDeckIds(filteredSavedDecks), [filteredSavedDecks]);
+  const areAllShownSavedDecksSelectedValue = areAllShownSavedDecksSelected(
+    shownSavedDeckIds,
+    selectedSavedDeckIds
+  );
 
   useEffect(() => {
     if (cards.length === 0 || !hasInitializedDraft || pendingDraftRestore) return;
@@ -423,24 +419,19 @@ const DeckBuilder: React.FC = () => {
   };
 
   const addSubtypeTag = (tag: string) => {
-    const normalizedTag = tag.trim();
-    if (!normalizedTag || !subtypeTags.includes(normalizedTag)) return;
+    if (!canAddSubtypeTag(subtypeTags, selectedSubtypeTags, tag)) return;
 
-    setSelectedSubtypeTags(current => (
-      current.includes(normalizedTag) ? current : [...current, normalizedTag]
-    ));
+    setSelectedSubtypeTags(current => addSubtypeTagSelection(current, subtypeTags, tag));
     setSubtypeSearch('');
     setPage(0);
   };
 
   const removeSubtypeTag = (tag: string) => {
-    setSelectedSubtypeTags(current => current.filter(value => value !== tag));
+    setSelectedSubtypeTags(current => removeSubtypeTagSelection(current, tag));
     setPage(0);
   };
 
-  const filteredSubtypeOptions = subtypeSearch.trim().length > 0
-    ? subtypeTags.filter(tag => tag.toLowerCase().includes(subtypeSearch.trim().toLowerCase()))
-    : subtypeTags;
+  const filteredSubtypeOptions = getFilteredSubtypeOptions(subtypeTags, subtypeSearch);
   const previewDetail = previewCard ? cardDetailLookup[previewCard.id] ?? null : null;
   const hoveredDetail = hoveredDeckCard ? cardDetailLookup[hoveredDeckCard.id] ?? null : null;
   const hoveredPreviewPosition = hoveredDeckCard
@@ -692,24 +683,11 @@ const DeckBuilder: React.FC = () => {
   };
 
   const toggleSavedDeckSelection = (deckId: string) => {
-    setSelectedSavedDeckIds(current => (
-      current.includes(deckId)
-        ? current.filter(id => id !== deckId)
-        : [...current, deckId]
-    ));
+    setSelectedSavedDeckIds(current => toggleSavedDeckSelectionId(current, deckId));
   };
 
   const handleToggleShownSavedDeckSelection = () => {
-    if (shownSavedDeckIds.length === 0) return;
-
-    if (areAllShownSavedDecksSelected) {
-      setSelectedSavedDeckIds(current => current.filter(id => !shownSavedDeckIds.includes(id)));
-      return;
-    }
-
-    setSelectedSavedDeckIds(current => (
-      Array.from(new Set([...current, ...shownSavedDeckIds]))
-    ));
+    setSelectedSavedDeckIds(current => toggleShownSavedDeckIds(current, shownSavedDeckIds));
   };
 
   const handleCloseMyDecks = () => {
@@ -1081,7 +1059,7 @@ const DeckBuilder: React.FC = () => {
               <button
                 type="button"
                 onClick={() => addSubtypeTag(subtypeSearch)}
-                disabled={!subtypeSearch.trim() || !subtypeTags.includes(subtypeSearch.trim()) || selectedSubtypeTags.includes(subtypeSearch.trim())}
+                disabled={!canAddSubtypeTag(subtypeTags, selectedSubtypeTags, subtypeSearch)}
                 style={{
                   padding: '0.5rem 0.75rem',
                   borderRadius: 'var(--radius-md)',
@@ -2122,7 +2100,7 @@ const DeckBuilder: React.FC = () => {
                       cursor: 'pointer',
                     }}
                   >
-                    {areAllShownSavedDecksSelected ? t('deckBuilder.myDecks.clearSelection') : t('deckBuilder.myDecks.selectAllShown')}
+                    {areAllShownSavedDecksSelectedValue ? t('deckBuilder.myDecks.clearSelection') : t('deckBuilder.myDecks.selectAllShown')}
                   </button>
                   <button
                     type="button"
