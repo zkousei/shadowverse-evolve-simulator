@@ -19,32 +19,21 @@ import {
   getInspectorPopoverStyle,
   getInteractionBlockedTitle,
 } from '../utils/gameBoardPresentation';
+import { buildLegalSavedDeckOptions, type LegalSavedDeckOption } from '../utils/gameBoardSavedDecks';
+import {
+  buildTokenSpawnSelections,
+  getTotalTokenSpawnCount,
+  updateTokenSpawnCounts,
+} from '../utils/gameBoardTokens';
 import {
   getAttackHighlightTone as resolveAttackHighlightTone,
   getAttackTargetFromCard as resolveAttackTargetFromCard,
   isInspectableZone,
   shouldDisableQuickActionsForAttackTarget as shouldDisableQuickActionsForAttackTargetCard,
 } from '../utils/gameBoardCombat';
-import { listSavedDecks, restoreSavedDeckToSnapshot, type SavedDeckRecordV1 } from '../utils/deckStorage';
-import { getDeckValidationMessages, sanitizeImportedDeckState } from '../utils/deckBuilderRules';
-import {
-  formatSavedDeckCountSummary as formatSavedDeckCounts,
-  formatSavedDeckRuleSummary,
-} from '../utils/savedDeckPresentation';
+import { listSavedDecks } from '../utils/deckStorage';
 import { loadCardCatalog } from '../utils/cardCatalog';
 import CardArtwork from '../components/CardArtwork';
-
-type LegalSavedDeckOption = {
-  deck: SavedDeckRecordV1;
-  deckData: {
-    mainDeck: DeckBuilderCardData[];
-    evolveDeck: DeckBuilderCardData[];
-    leaderCards: DeckBuilderCardData[];
-    tokenDeck: DeckBuilderCardData[];
-  };
-  summary: string;
-  counts: string;
-};
 
 const GameBoard: React.FC = () => {
   const { t } = useTranslation();
@@ -142,7 +131,7 @@ const GameBoard: React.FC = () => {
     [getTokenOptions, tokenSpawnTargetRole]
   );
   const totalTokenSpawnCount = React.useMemo(
-    () => tokenSpawnOptions.reduce((total, token) => total + (tokenSpawnCounts[token.cardId] ?? 0), 0),
+    () => getTotalTokenSpawnCount(tokenSpawnOptions, tokenSpawnCounts),
     [tokenSpawnCounts, tokenSpawnOptions]
   );
   const sidePanelWidth = 220;
@@ -281,34 +270,7 @@ const GameBoard: React.FC = () => {
       return;
     }
 
-    const legalDecks = listSavedDecks()
-      .map(deck => {
-        const restored = restoreSavedDeckToSnapshot(deck, allCards);
-        if (restored.missingCardIds.length > 0) return null;
-
-        const sanitizedDeckState = sanitizeImportedDeckState(
-          restored.snapshot.deckState,
-          allCards,
-          restored.snapshot.ruleConfig
-        );
-        const issues = getDeckValidationMessages(sanitizedDeckState, restored.snapshot.ruleConfig);
-        if (issues.length > 0) return null;
-
-        return {
-          deck,
-          deckData: {
-            mainDeck: sanitizedDeckState.mainDeck,
-            evolveDeck: sanitizedDeckState.evolveDeck,
-            leaderCards: sanitizedDeckState.leaderCards,
-            tokenDeck: sanitizedDeckState.tokenDeck,
-          },
-          summary: formatSavedDeckRuleSummary(deck, t),
-          counts: formatSavedDeckCounts(deck, t),
-        } satisfies LegalSavedDeckOption;
-      })
-      .filter((value): value is LegalSavedDeckOption => value !== null);
-
-    setSavedDeckOptions(legalDecks);
+    setSavedDeckOptions(buildLegalSavedDeckOptions(listSavedDecks(), allCards, t));
   }, [allCards, t]);
 
   const openSavedDeckPicker = React.useCallback((targetRole: PlayerRole) => {
@@ -489,10 +451,7 @@ const GameBoard: React.FC = () => {
     if (!tokenSpawnTargetRole) return;
     spawnTokens(
       tokenSpawnTargetRole,
-      tokenSpawnOptions.map((token) => ({
-        tokenOption: token,
-        count: tokenSpawnCounts[token.cardId] ?? 0,
-      })),
+      buildTokenSpawnSelections(tokenSpawnOptions, tokenSpawnCounts),
       tokenSpawnDestination
     );
     setTokenSpawnCounts({});
@@ -500,18 +459,7 @@ const GameBoard: React.FC = () => {
   };
 
   const handleTokenSpawnCountChange = React.useCallback((cardId: string, delta: number) => {
-    setTokenSpawnCounts((current) => {
-      const nextCount = Math.max(0, Math.min(5, (current[cardId] ?? 0) + delta));
-      if (nextCount === 0) {
-        const { [cardId]: omittedCardId, ...rest } = current;
-        void omittedCardId;
-        return rest;
-      }
-      return {
-        ...current,
-        [cardId]: nextCount,
-      };
-    });
+    setTokenSpawnCounts(current => updateTokenSpawnCounts(current, cardId, delta));
   }, []);
 
   const handleStartAttack = React.useCallback((cardId: string) => {
