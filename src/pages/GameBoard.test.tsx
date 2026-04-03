@@ -1,0 +1,455 @@
+import React from 'react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import GameBoard from './GameBoard';
+import { useGameBoardLogic } from '../hooks/useGameBoardLogic';
+import { saveDeck } from '../utils/deckStorage';
+import { initialState, type SyncState } from '../types/game';
+import type { CardInspectAnchor, CardInstance } from '../components/Card';
+import type { DeckBuilderCardData } from '../models/deckBuilderCard';
+import type { DeckState } from '../models/deckState';
+import type { DeckRuleConfig } from '../models/deckRule';
+
+vi.mock('@dnd-kit/core', () => ({
+  DndContext: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+}));
+
+vi.mock('../components/Zone', () => ({
+  default: ({
+    id,
+    label,
+    cards,
+    onInspectCard,
+    onAttack,
+  }: {
+    id: string;
+    label: string;
+    cards: CardInstance[];
+    onInspectCard?: (card: CardInstance, anchor: CardInspectAnchor) => void;
+    onAttack?: (id: string) => void;
+  }) => (
+    <section data-testid={`zone-${id}`}>
+      <h3>{label}</h3>
+      {cards.map((card) => (
+        <div key={card.id} className="game-card" data-card-id={card.id}>
+          <span>{card.name}</span>
+          {onInspectCard && (
+            <button
+              type="button"
+              onClick={() => onInspectCard(card, {
+                top: 40,
+                left: 40,
+                right: 140,
+                bottom: 180,
+                width: 100,
+                height: 140,
+              })}
+            >
+              Inspect {card.name}
+            </button>
+          )}
+          {onAttack && (
+            <button type="button" onClick={() => onAttack(card.id)}>
+              Attack {card.name}
+            </button>
+          )}
+        </div>
+      ))}
+    </section>
+  ),
+}));
+
+vi.mock('../components/CardSearchModal', () => ({
+  default: ({
+    isOpen,
+    title,
+    onClose,
+  }: {
+    isOpen: boolean;
+    title: string;
+    onClose: () => void;
+  }) => (
+    isOpen ? (
+      <div role="dialog" aria-label={title}>
+        <button type="button" onClick={onClose}>Close Search</button>
+      </div>
+    ) : null
+  ),
+}));
+
+vi.mock('../components/TopDeckModal', () => ({
+  default: ({
+    isOpen,
+    onCancel,
+  }: {
+    isOpen: boolean;
+    onCancel: () => void;
+  }) => (
+    isOpen ? (
+      <div role="dialog" aria-label="Top Deck Modal">
+        <button type="button" onClick={onCancel}>Close Top Deck</button>
+      </div>
+    ) : null
+  ),
+}));
+
+vi.mock('../components/CardArtwork', () => ({
+  default: ({ alt }: { alt: string }) => <img alt={alt} />,
+}));
+
+vi.mock('../hooks/useGameBoardLogic', () => ({
+  useGameBoardLogic: vi.fn(),
+}));
+
+vi.mock('../utils/deckBuilderRules', async () => {
+  const actual = await vi.importActual<typeof import('../utils/deckBuilderRules')>('../utils/deckBuilderRules');
+
+  return {
+    ...actual,
+    getDeckValidationMessages: vi.fn((): [] => []),
+    sanitizeImportedDeckState: vi.fn((deckState: DeckState) => deckState),
+  };
+});
+
+const mockUseGameBoardLogic = vi.mocked(useGameBoardLogic);
+
+const ruleConfig: DeckRuleConfig = {
+  format: 'other',
+  identityType: 'class',
+  selectedClass: null,
+  selectedTitle: null,
+  selectedClasses: [null, null],
+};
+
+const catalogCards: DeckBuilderCardData[] = [
+  {
+    id: 'TEST-001',
+    name: 'Alpha Knight',
+    image: '/alpha.png',
+    class: 'ロイヤル',
+    title: 'Hero Tale',
+    type: 'フォロワー',
+    subtype: '兵士',
+    rarity: 'LG',
+    product_name: 'Booster Pack',
+    cost: '2',
+    atk: '2',
+    hp: '2',
+    ability_text: '[Fanfare] Test ability.',
+    card_kind_normalized: 'follower',
+    deck_section: 'main',
+    is_token: false,
+    is_evolve_card: false,
+    is_deck_build_legal: true,
+  },
+  {
+    id: 'TEST-LEADER',
+    name: 'Leader Alice',
+    image: '/leader.png',
+    class: 'ロイヤル',
+    title: 'Hero Tale',
+    type: 'リーダー',
+    rarity: 'PR',
+    product_name: 'Leader Set',
+    cost: '-',
+    card_kind_normalized: 'leader',
+    deck_section: 'leader',
+    is_token: false,
+    is_evolve_card: false,
+    is_deck_build_legal: true,
+  },
+];
+
+const makeCard = (overrides: Partial<CardInstance> = {}): CardInstance => ({
+  id: 'card-1',
+  cardId: 'TEST-001',
+  name: 'Alpha Knight',
+  image: '/alpha.png',
+  zone: 'field-host',
+  owner: 'host',
+  isTapped: false,
+  isFlipped: false,
+  counters: { atk: 0, hp: 0 },
+  genericCounter: 0,
+  baseCardType: 'follower',
+  cardKindNormalized: 'follower',
+  ...overrides,
+});
+
+const createGameState = (cards: CardInstance[], overrides: Partial<SyncState> = {}): SyncState => ({
+  ...initialState,
+  gameStatus: 'preparing',
+  cards,
+  ...overrides,
+});
+
+const buildMockGameBoardLogic = (
+  overrides: Partial<ReturnType<typeof useGameBoardLogic>> = {}
+): ReturnType<typeof useGameBoardLogic> => {
+  const gameState = overrides.gameState ?? createGameState([]);
+
+  return {
+    room: 'ROOM123',
+    mode: 'p2p',
+    isSoloMode: false,
+    isHost: true,
+    role: 'host',
+    status: 'Connected! Waiting for guest...',
+    connectionState: 'connected',
+    canInteract: true,
+    attemptReconnect: vi.fn(),
+    gameState,
+    savedSessionCandidate: null,
+    resumeSavedSession: vi.fn(),
+    discardSavedSession: vi.fn(),
+    searchZone: null,
+    setSearchZone: vi.fn(),
+    showResetConfirm: false,
+    setShowResetConfirm: vi.fn(),
+    coinMessage: null,
+    turnMessage: null,
+    cardPlayMessage: null,
+    attackMessage: null,
+    attackHistory: [],
+    eventHistory: [],
+    attackVisual: null,
+    revealedCardsOverlay: null,
+    cardStatLookup: {},
+    cardDetailLookup: {},
+    isRollingDice: false,
+    diceValue: null,
+    mulliganOrder: [],
+    isMulliganModalOpen: false,
+    setIsMulliganModalOpen: vi.fn(),
+    handleStatChange: vi.fn(),
+    setPhase: vi.fn(),
+    endTurn: vi.fn(),
+    handleUndoTurn: vi.fn(),
+    handleSetInitialTurnOrder: vi.fn(),
+    handlePureCoinFlip: vi.fn(),
+    handleRollDice: vi.fn(),
+    handleStartGame: vi.fn(),
+    handleToggleReady: vi.fn(),
+    handleDrawInitialHand: vi.fn(),
+    startMulligan: vi.fn(),
+    handleMulliganOrderSelect: vi.fn(),
+    executeMulligan: vi.fn(),
+    drawCard: vi.fn(),
+    handleExtractCard: vi.fn(),
+    confirmResetGame: vi.fn(),
+    handleDeckUpload: vi.fn(),
+    importDeckData: vi.fn(),
+    spawnToken: vi.fn(),
+    spawnTokens: vi.fn(),
+    handleModifyCounter: vi.fn(),
+    handleModifyGenericCounter: vi.fn(),
+    handleDragEnd: vi.fn(),
+    toggleTap: vi.fn(),
+    handleFlipCard: vi.fn(),
+    handleSendToBottom: vi.fn(),
+    handleBanish: vi.fn(),
+    handlePlayToField: vi.fn(),
+    handleSendToCemetery: vi.fn(),
+    handleReturnEvolve: vi.fn(),
+    handleShuffleDeck: vi.fn(),
+    handleDeclareAttack: vi.fn(),
+    handleSetRevealHandsMode: vi.fn(),
+    evolveAutoAttachSelection: null,
+    confirmEvolveAutoAttachSelection: vi.fn(),
+    cancelEvolveAutoAttachSelection: vi.fn(),
+    getCards: (zone: string) => gameState.cards.filter(card => card.zone === zone),
+    getTokenOptions: vi.fn(() => []),
+    lastGameState: null,
+    millCard: vi.fn(),
+    moveTopCardToEx: vi.fn(),
+    topDeckCards: [],
+    handleLookAtTop: vi.fn(),
+    handleResolveTopDeck: vi.fn(),
+    setTopDeckCards: vi.fn(),
+    handleUndoCardMove: vi.fn(),
+    hasUndoableMove: false,
+    canUndoTurn: null,
+    isDebug: false,
+    ...overrides,
+  } as ReturnType<typeof useGameBoardLogic>;
+};
+
+describe('GameBoard', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    window.localStorage.clear();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        json: vi.fn().mockResolvedValue(catalogCards),
+      } as unknown as Response)
+    );
+
+    const clipboardWriteText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(window.navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: clipboardWriteText,
+      },
+    });
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic());
+  });
+
+  it('copies the room id and shows copied feedback', async () => {
+    render(<GameBoard />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
+
+    await waitFor(() => {
+      expect(window.navigator.clipboard.writeText).toHaveBeenCalledWith('ROOM123');
+    });
+
+    expect(screen.getByRole('button', { name: 'Copied' })).toBeInTheDocument();
+  });
+
+  it('shows the previous host session prompt and wires resume/discard actions', () => {
+    const resumeSavedSession = vi.fn();
+    const discardSavedSession = vi.fn();
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      savedSessionCandidate: {
+        room: 'ROOM123',
+        savedAt: '2026-04-04T00:00:00.000Z',
+        appVersion: '1.0.0',
+        state: initialState,
+      },
+      resumeSavedSession,
+      discardSavedSession,
+    }));
+
+    render(<GameBoard />);
+
+    expect(screen.getByText('Previous host session found for this room.')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Resume Previous Session' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
+
+    expect(resumeSavedSession).toHaveBeenCalledTimes(1);
+    expect(discardSavedSession).toHaveBeenCalledTimes(1);
+  });
+
+  it('opens the saved deck picker, filters saved decks, and imports the selected deck', async () => {
+    saveDeck({
+      name: 'Alpha Deck',
+      ruleConfig,
+      deckState: {
+        mainDeck: [catalogCards[0]],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [],
+      },
+    });
+    saveDeck({
+      name: 'Beta Deck',
+      ruleConfig,
+      deckState: {
+        mainDeck: [catalogCards[0]],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [],
+      },
+    });
+
+    const importDeckData = vi.fn();
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      importDeckData,
+    }));
+
+    render(<GameBoard />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Load from My Decks' })).toBeEnabled();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Load from My Decks' }));
+
+    const picker = await screen.findByRole('dialog', { name: 'Load from My Decks' });
+    fireEvent.change(within(picker).getByRole('textbox', { name: 'Search saved decks' }), {
+      target: { value: 'beta' },
+    });
+
+    await waitFor(() => {
+      expect(within(picker).queryByText('Alpha Deck')).not.toBeInTheDocument();
+    });
+
+    expect(within(picker).getByText('Beta Deck')).toBeInTheDocument();
+    fireEvent.click(within(picker).getByRole('button', { name: 'Load' }));
+
+    expect(importDeckData).toHaveBeenCalledWith({
+      mainDeck: [catalogCards[0]],
+      evolveDeck: [],
+      leaderCards: [],
+      tokenDeck: [],
+    }, 'host');
+  });
+
+  it('opens the card inspector for an inspectable card and closes it from outside click', async () => {
+    const fieldCard = makeCard();
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      gameState: createGameState([fieldCard], { gameStatus: 'playing' }),
+      cardDetailLookup: {
+        'TEST-001': {
+          id: 'TEST-001',
+          name: 'Alpha Knight',
+          image: '/alpha.png',
+          className: 'Royal',
+          title: 'Hero Tale',
+          type: 'Follower',
+          subtype: 'Soldier',
+          cardKindNormalized: 'follower',
+          cost: '2',
+          atk: 2,
+          hp: 2,
+          abilityText: '[Fanfare] Test ability.',
+        },
+      },
+    }));
+
+    render(<GameBoard />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect Alpha Knight' }));
+
+    const inspector = await screen.findByTestId('card-inspector');
+    expect(within(inspector).getByText('Alpha Knight')).toBeInTheDocument();
+    expect(within(inspector).getByText('TEST-001')).toBeInTheDocument();
+
+    fireEvent.pointerDown(document.body);
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('card-inspector')).not.toBeInTheDocument();
+    });
+  });
+
+  it('enters attack mode for a valid attacker and lets the user cancel it', async () => {
+    const attacker = makeCard();
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      gameState: createGameState([attacker], {
+        gameStatus: 'playing',
+        turnPlayer: 'host',
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Attack Alpha Knight' }));
+
+    expect(await screen.findByText('ATTACK MODE')).toBeInTheDocument();
+    expect(screen.getByText((_, node) => (
+      node?.textContent === 'Select an enemy follower or leader for Alpha Knight.'
+    ))).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    await waitFor(() => {
+      expect(screen.queryByText('ATTACK MODE')).not.toBeInTheDocument();
+    });
+  });
+});

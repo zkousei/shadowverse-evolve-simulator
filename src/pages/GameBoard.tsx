@@ -14,6 +14,10 @@ import { formatAbilityText } from '../utils/cardDetails';
 import type { DeckBuilderCardData } from '../models/deckBuilderCard';
 import { listSavedDecks, restoreSavedDeckToSnapshot, type SavedDeckRecordV1 } from '../utils/deckStorage';
 import { getDeckValidationMessages, sanitizeImportedDeckState } from '../utils/deckBuilderRules';
+import {
+  formatSavedDeckCountSummary as formatSavedDeckCounts,
+  formatSavedDeckRuleSummary,
+} from '../utils/savedDeckPresentation';
 import CardArtwork from '../components/CardArtwork';
 
 type LegalSavedDeckOption = {
@@ -26,36 +30,6 @@ type LegalSavedDeckOption = {
   };
   summary: string;
   counts: string;
-};
-
-const formatSavedDeckRuleSummary = (deck: SavedDeckRecordV1, t: any): string => {
-  if (deck.ruleConfig.format === 'constructed') {
-    if (deck.ruleConfig.identityType === 'title' && deck.ruleConfig.selectedTitle) {
-      return t('gameBoard.deckRules.constructedTitle', { title: deck.ruleConfig.selectedTitle });
-    }
-
-    return t('gameBoard.deckRules.constructedClass', { class: deck.ruleConfig.selectedClass ?? t('gameBoard.deckRules.unselected') });
-  }
-
-  if (deck.ruleConfig.format === 'crossover') {
-    const [firstClass, secondClass] = deck.ruleConfig.selectedClasses;
-    return t('gameBoard.deckRules.crossover', { firstClass: firstClass ?? '?', secondClass: secondClass ?? '?' });
-  }
-
-  return t('gameBoard.deckRules.other');
-};
-
-const formatSavedDeckCounts = (deck: SavedDeckRecordV1, t: any): string => {
-  const countSection = (section: SavedDeckRecordV1['sections'][keyof SavedDeckRecordV1['sections']]) => (
-    section.reduce((total, ref) => total + ref.count, 0)
-  );
-
-  return [
-    `${t('gameBoard.deckRules.main')} ${countSection(deck.sections.main)}`,
-    `${t('gameBoard.deckRules.evolve')} ${countSection(deck.sections.evolve)}`,
-    `${t('gameBoard.deckRules.leader')} ${countSection(deck.sections.leader)}`,
-    `${t('gameBoard.deckRules.token')} ${countSection(deck.sections.token)}`,
-  ].join(' / ');
 };
 
 const GameBoard: React.FC = () => {

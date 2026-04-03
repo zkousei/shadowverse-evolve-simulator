@@ -60,6 +60,7 @@ import {
   type SavedDeckRecordV1,
 } from '../utils/deckStorage';
 import { DeckLogImportError, fetchDeckLogImport } from '../utils/decklogImport';
+import { formatSavedDeckCountSummary, formatSavedDeckRuleSummary } from '../utils/savedDeckPresentation';
 import CardArtwork from '../components/CardArtwork';
 
 type PendingDraftRestore = {
@@ -135,36 +136,6 @@ const parseNullableStat = (value?: string): number | null => {
 
   const parsed = Number.parseInt(value, 10);
   return Number.isNaN(parsed) ? null : parsed;
-};
-
-const formatSavedDeckRuleSummary = (deck: SavedDeckRecordV1, t: any): string => {
-  if (deck.ruleConfig.format === 'constructed') {
-    if (deck.ruleConfig.identityType === 'title' && deck.ruleConfig.selectedTitle) {
-      return t('gameBoard.deckRules.constructedTitle', { title: deck.ruleConfig.selectedTitle });
-    }
-
-    return t('gameBoard.deckRules.constructedClass', { class: deck.ruleConfig.selectedClass ?? t('gameBoard.deckRules.unselected') });
-  }
-
-  if (deck.ruleConfig.format === 'crossover') {
-    const [firstClass, secondClass] = deck.ruleConfig.selectedClasses;
-    return t('gameBoard.deckRules.crossover', { firstClass: firstClass ?? '?', secondClass: secondClass ?? '?' });
-  }
-
-  return t('gameBoard.deckRules.other');
-};
-
-const formatSavedDeckCountSummary = (deck: SavedDeckRecordV1, t: any): string => {
-  const countCards = (section: SavedDeckRecordV1['sections'][keyof SavedDeckRecordV1['sections']]) => (
-    section.reduce((total, ref) => total + ref.count, 0)
-  );
-
-  return [
-    `${t('gameBoard.deckRules.main')} ${countCards(deck.sections.main)}`,
-    `${t('gameBoard.deckRules.evolve')} ${countCards(deck.sections.evolve)}`,
-    `${t('gameBoard.deckRules.leader')} ${countCards(deck.sections.leader)}`,
-    `${t('gameBoard.deckRules.token')} ${countCards(deck.sections.token)}`,
-  ].join(' / ');
 };
 
 const formatSavedDeckUpdatedAt = (value: string, locale?: string): string => {
