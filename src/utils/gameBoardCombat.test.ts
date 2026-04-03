@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { CardInstance } from '../components/Card';
 import {
+  canInspectCard,
+  canStartAttack,
   getAttackHighlightTone,
   getAttackTargetFromCard,
   isInspectableZone,
+  shouldClearAttackSource,
+  shouldClearInspectorSelection,
   shouldDisableQuickActionsForAttackTarget,
 } from './gameBoardCombat';
 
@@ -29,6 +33,16 @@ describe('gameBoardCombat', () => {
     expect(isInspectableZone('field-guest')).toBe(true);
     expect(isInspectableZone('leader-host')).toBe(true);
     expect(isInspectableZone('mainDeck-host')).toBe(false);
+  });
+
+  it('validates whether cards can stay inspectable', () => {
+    expect(canInspectCard(makeCard({ zone: 'hand-host' }))).toBe(true);
+    expect(canInspectCard(makeCard({ zone: 'mainDeck-host' }))).toBe(false);
+    expect(canInspectCard(makeCard({ zone: 'field-host', isFlipped: true }))).toBe(false);
+
+    expect(shouldClearInspectorSelection(makeCard({ zone: 'field-host' }))).toBe(false);
+    expect(shouldClearInspectorSelection(makeCard({ zone: 'mainDeck-host' }))).toBe(true);
+    expect(shouldClearInspectorSelection(null)).toBe(true);
   });
 
   it('resolves attack targets for enemy leaders and followers', () => {
@@ -92,5 +106,42 @@ describe('gameBoardCombat', () => {
         'TEST-001': { atk: 2, hp: 2 },
       })
     ).toBeUndefined();
+  });
+
+  it('validates whether a card can start an attack', () => {
+    expect(
+      canStartAttack(makeCard(), {}, 'playing', 'host')
+    ).toBe(true);
+    expect(
+      canStartAttack(makeCard({ baseCardType: 'spell' }), {}, 'playing', 'host')
+    ).toBe(false);
+    expect(
+      canStartAttack(makeCard({ baseCardType: 'spell' }), { 'TEST-001': { atk: 2, hp: 2 } }, 'playing', 'host')
+    ).toBe(true);
+    expect(
+      canStartAttack(makeCard({ isTapped: true }), {}, 'playing', 'host')
+    ).toBe(false);
+    expect(
+      canStartAttack(makeCard({ isLeaderCard: true }), {}, 'playing', 'host')
+    ).toBe(false);
+    expect(
+      canStartAttack(makeCard({ zone: 'hand-host' }), {}, 'playing', 'host')
+    ).toBe(false);
+    expect(
+      canStartAttack(makeCard(), {}, 'preparing', 'host')
+    ).toBe(false);
+    expect(
+      canStartAttack(makeCard({ owner: 'guest', zone: 'field-guest' }), {}, 'playing', 'host')
+    ).toBe(false);
+  });
+
+  it('determines when the current attack source should be cleared', () => {
+    expect(shouldClearAttackSource(makeCard(), 'playing', 'host')).toBe(false);
+    expect(shouldClearAttackSource(null, 'playing', 'host')).toBe(true);
+    expect(shouldClearAttackSource(makeCard({ isTapped: true }), 'playing', 'host')).toBe(true);
+    expect(shouldClearAttackSource(makeCard({ isFlipped: true }), 'playing', 'host')).toBe(true);
+    expect(shouldClearAttackSource(makeCard({ zone: 'hand-host' }), 'playing', 'host')).toBe(true);
+    expect(shouldClearAttackSource(makeCard(), 'preparing', 'host')).toBe(true);
+    expect(shouldClearAttackSource(makeCard({ owner: 'guest', zone: 'field-guest' }), 'playing', 'host')).toBe(true);
   });
 });

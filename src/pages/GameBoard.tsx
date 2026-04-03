@@ -26,9 +26,12 @@ import {
   updateTokenSpawnCounts,
 } from '../utils/gameBoardTokens';
 import {
+  canInspectCard,
+  canStartAttack,
   getAttackHighlightTone as resolveAttackHighlightTone,
   getAttackTargetFromCard as resolveAttackTargetFromCard,
-  isInspectableZone,
+  shouldClearAttackSource,
+  shouldClearInspectorSelection,
   shouldDisableQuickActionsForAttackTarget as shouldDisableQuickActionsForAttackTargetCard,
 } from '../utils/gameBoardCombat';
 import { listSavedDecks } from '../utils/deckStorage';
@@ -320,7 +323,7 @@ const GameBoard: React.FC = () => {
       return;
     }
 
-    if (!isInspectableZone(card.zone) || card.isFlipped) return;
+    if (!canInspectCard(card)) return;
 
     if (selectedInspectorCardId === card.id) {
       setSelectedInspectorCardId(null);
@@ -336,7 +339,7 @@ const GameBoard: React.FC = () => {
     if (!selectedInspectorCardId) return;
 
     const selectedCard = gameState.cards.find(card => card.id === selectedInspectorCardId);
-    if (!selectedCard || !isInspectableZone(selectedCard.zone) || selectedCard.isFlipped) {
+    if (shouldClearInspectorSelection(selectedCard)) {
       setSelectedInspectorCardId(null);
       setSelectedInspectorAnchor(null);
     }
@@ -360,7 +363,7 @@ const GameBoard: React.FC = () => {
     if (!attackSourceCardId) return;
 
     const sourceCard = gameState.cards.find(card => card.id === attackSourceCardId);
-    if (!sourceCard || sourceCard.isTapped || sourceCard.isFlipped || !sourceCard.zone.startsWith('field-') || gameState.gameStatus !== 'playing' || gameState.turnPlayer !== sourceCard.owner) {
+    if (shouldClearAttackSource(sourceCard, gameState.gameStatus, gameState.turnPlayer)) {
       setAttackSourceCardId(null);
     }
   }, [attackSourceCardId, gameState.cards, gameState.gameStatus, gameState.turnPlayer]);
@@ -465,12 +468,7 @@ const GameBoard: React.FC = () => {
   const handleStartAttack = React.useCallback((cardId: string) => {
     if (!canInteract) return;
     const card = gameState.cards.find(entry => entry.id === cardId);
-    if (!card) return;
-    if (card.isTapped || card.isFlipped || card.isLeaderCard) return;
-    if (card.baseCardType !== 'follower' && !cardStatLookup[card.cardId]) return;
-    if (gameState.gameStatus !== 'playing') return;
-    if (!card.zone.startsWith(`field-${card.owner}`)) return;
-    if (gameState.turnPlayer !== card.owner) return;
+    if (!canStartAttack(card, cardStatLookup, gameState.gameStatus, gameState.turnPlayer)) return;
 
     setSelectedInspectorCardId(null);
     setSelectedInspectorAnchor(null);

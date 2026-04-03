@@ -16,6 +16,43 @@ export const isInspectableZone = (zone: string): boolean => (
   || zone.startsWith('leader-')
 );
 
+export const canInspectCard = (card: CardInstance): boolean => (
+  isInspectableZone(card.zone) && !card.isFlipped
+);
+
+export const shouldClearInspectorSelection = (
+  selectedCard: CardInstance | null | undefined
+): boolean => !selectedCard || !canInspectCard(selectedCard);
+
+export const canStartAttack = (
+  card: CardInstance | null | undefined,
+  cardStatLookup: CardStatLookup,
+  gameStatus: 'preparing' | 'playing',
+  turnPlayer: CardInstance['owner']
+): boolean => {
+  if (!card) return false;
+  if (card.isTapped || card.isFlipped || card.isLeaderCard) return false;
+  if (card.baseCardType !== 'follower' && !cardStatLookup[card.cardId]) return false;
+  if (gameStatus !== 'playing') return false;
+  if (!card.zone.startsWith(`field-${card.owner}`)) return false;
+  if (turnPlayer !== card.owner) return false;
+
+  return true;
+};
+
+export const shouldClearAttackSource = (
+  sourceCard: CardInstance | null | undefined,
+  gameStatus: 'preparing' | 'playing',
+  turnPlayer: CardInstance['owner']
+): boolean => (
+  !sourceCard
+  || sourceCard.isTapped
+  || sourceCard.isFlipped
+  || !sourceCard.zone.startsWith('field-')
+  || gameStatus !== 'playing'
+  || turnPlayer !== sourceCard.owner
+);
+
 export const getAttackTargetFromCard = (
   attackSourceCard: CardInstance | null,
   card: CardInstance,
