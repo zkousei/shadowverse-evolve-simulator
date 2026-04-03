@@ -12,6 +12,12 @@ import type { PlayerRole } from '../types/game';
 import type { AttackTarget } from '../types/sync';
 import { formatAbilityText } from '../utils/cardDetails';
 import type { DeckBuilderCardData } from '../models/deckBuilderCard';
+import {
+  filterSavedDeckOptionsBySearch,
+  formatSavedSessionTimestamp,
+  getConnectionBadgeTone,
+  getInteractionBlockedTitle,
+} from '../utils/gameBoardPresentation';
 import { listSavedDecks, restoreSavedDeckToSnapshot, type SavedDeckRecordV1 } from '../utils/deckStorage';
 import { getDeckValidationMessages, sanitizeImportedDeckState } from '../utils/deckBuilderRules';
 import {
@@ -117,29 +123,12 @@ const GameBoard: React.FC = () => {
   const isTopTurnActive = gameState.gameStatus === 'playing' && gameState.turnPlayer === topRole;
   const canResetGame = isSoloMode || isHost;
   const isGuestConnectionBlocked = !isSoloMode && !isHost && !canInteract;
-  const connectionBadgeTone = connectionState === 'connected'
-    ? { label: t('gameBoard.status.connected'), background: 'rgba(16, 185, 129, 0.18)', border: 'rgba(16, 185, 129, 0.38)', color: '#d1fae5' }
-    : connectionState === 'reconnecting' || connectionState === 'connecting'
-      ? { label: t('gameBoard.status.reconnecting'), background: 'rgba(245, 158, 11, 0.18)', border: 'rgba(245, 158, 11, 0.38)', color: '#fde68a' }
-      : { label: t('gameBoard.status.disconnected'), background: 'rgba(239, 68, 68, 0.18)', border: 'rgba(239, 68, 68, 0.38)', color: '#fecaca' };
-  const interactionBlockedTitle = isGuestConnectionBlocked
-    ? (connectionState === 'connecting' || connectionState === 'reconnecting'
-      ? t('gameBoard.status.reconnectingTitle')
-      : t('gameBoard.status.connectionRequired'))
-    : undefined;
+  const connectionBadgeTone = getConnectionBadgeTone(connectionState, t);
+  const interactionBlockedTitle = getInteractionBlockedTitle(isGuestConnectionBlocked, connectionState, t);
   const savedSessionTimestamp = React.useMemo(() => {
     if (!savedSessionCandidate) return null;
 
-    try {
-      return new Date(savedSessionCandidate.savedAt).toLocaleString(undefined, {
-        hour: '2-digit',
-        minute: '2-digit',
-        month: 'numeric',
-        day: 'numeric',
-      });
-    } catch {
-      return savedSessionCandidate.savedAt;
-    }
+    return formatSavedSessionTimestamp(savedSessionCandidate.savedAt);
   }, [savedSessionCandidate]);
   const tokenSpawnOptions = React.useMemo(
     () => (tokenSpawnTargetRole ? getTokenOptions(tokenSpawnTargetRole) : []),
@@ -336,9 +325,10 @@ const GameBoard: React.FC = () => {
     closeSavedDeckPicker();
   }, [closeSavedDeckPicker, gameState, importDeckData, savedDeckImportTargetRole]);
 
-  const filteredSavedDeckOptions = React.useMemo(() => (
-    savedDeckOptions.filter(option => option.deck.name.toLowerCase().includes(savedDeckSearch.trim().toLowerCase()))
-  ), [savedDeckOptions, savedDeckSearch]);
+  const filteredSavedDeckOptions = React.useMemo(
+    () => filterSavedDeckOptionsBySearch(savedDeckOptions, savedDeckSearch),
+    [savedDeckOptions, savedDeckSearch]
+  );
 
   const isInspectableZone = React.useCallback((zone: string) => (
     zone.startsWith('hand-') ||
