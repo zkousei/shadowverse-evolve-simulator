@@ -66,6 +66,15 @@ import {
   buildStartedDeckLogImportUiState,
 } from '../utils/deckBuilderModalState';
 import {
+  type DeckBuilderPreviewUiStatePatch,
+  buildClosedPreviewUiState,
+  buildDeckHoverPointerPosition,
+  buildEndedDeckHoverUiState,
+  buildMovedDeckHoverUiState,
+  buildOpenedPreviewUiState,
+  buildStartedDeckHoverUiState,
+} from '../utils/deckBuilderPreviewState';
+import {
   buildConstructedClassUpdatedRuleConfig,
   buildConstructedTitleUpdatedRuleConfig,
   buildCrossoverClassUpdatedRuleConfig,
@@ -205,6 +214,18 @@ const DeckBuilder: React.FC = () => {
   const [deckLogInput, setDeckLogInput] = useState('');
   const [isImportingDeckLog, setIsImportingDeckLog] = useState(false);
 
+  const applyDeckBuilderPreviewUiState = (state: DeckBuilderPreviewUiStatePatch) => {
+    if (state.previewCard !== undefined) {
+      setPreviewCard(state.previewCard);
+    }
+    if (state.hoveredDeckCard !== undefined) {
+      setHoveredDeckCard(state.hoveredDeckCard);
+    }
+    if (state.hoverPos !== undefined) {
+      setHoverPos(state.hoverPos);
+    }
+  };
+
   useEffect(() => {
     loadCardCatalog()
       .then(data => setCards(data))
@@ -216,7 +237,7 @@ const DeckBuilder: React.FC = () => {
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setPreviewCard(null);
+        applyDeckBuilderPreviewUiState(buildClosedPreviewUiState());
       }
     };
 
@@ -483,6 +504,40 @@ const DeckBuilder: React.FC = () => {
     })
     : null;
   const previewPresentation = buildCardDetailPresentation(previewDetail);
+
+  const handleOpenPreview = (card: DeckBuilderCardData) => {
+    applyDeckBuilderPreviewUiState(buildOpenedPreviewUiState(card));
+  };
+
+  const handleClosePreview = () => {
+    applyDeckBuilderPreviewUiState(buildClosedPreviewUiState());
+  };
+
+  const handleDeckCardMouseEnter = (
+    card: DeckBuilderCardData,
+    event: React.MouseEvent<HTMLDivElement>
+  ) => {
+    applyDeckBuilderPreviewUiState(
+      buildStartedDeckHoverUiState(
+        card,
+        buildDeckHoverPointerPosition(event.clientX, event.clientY)
+      )
+    );
+  };
+
+  const handleDeckCardMouseMove = (
+    event: React.MouseEvent<HTMLDivElement>
+  ) => {
+    applyDeckBuilderPreviewUiState(
+      buildMovedDeckHoverUiState(
+        buildDeckHoverPointerPosition(event.clientX, event.clientY)
+      )
+    );
+  };
+
+  const handleDeckCardMouseLeave = () => {
+    applyDeckBuilderPreviewUiState(buildEndedDeckHoverUiState());
+  };
 
   const addToDeck = (card: DeckBuilderCardData, targetSection: DeckTargetSection) => {
     if (!canAddCardToDeckState(card, targetSection, deckState, deckRuleConfig)) return;
@@ -1120,7 +1175,7 @@ const DeckBuilder: React.FC = () => {
                     type="button"
                     aria-label={t('deckBuilder.preview.openAria', { name: card.name })}
                     title={t('deckBuilder.preview.openTitle', { name: card.name })}
-                    onClick={() => setPreviewCard(card)}
+                    onClick={() => handleOpenPreview(card)}
                     style={{
                       padding: 0,
                       border: 'none',
@@ -1692,16 +1747,9 @@ const DeckBuilder: React.FC = () => {
                         whiteSpace: 'nowrap',
                         cursor: 'help',
                       }}
-                      onMouseEnter={(e) => {
-                        setHoveredDeckCard(card);
-                        setHoverPos({ x: e.clientX, y: e.clientY });
-                      }}
-                      onMouseMove={(e) => {
-                        setHoverPos({ x: e.clientX, y: e.clientY });
-                      }}
-                      onMouseLeave={() => {
-                        setHoveredDeckCard(null);
-                      }}
+                      onMouseEnter={(e) => handleDeckCardMouseEnter(card, e)}
+                      onMouseMove={handleDeckCardMouseMove}
+                      onMouseLeave={handleDeckCardMouseLeave}
                     >
                       {card.name}
                     </div>
@@ -1736,16 +1784,9 @@ const DeckBuilder: React.FC = () => {
                       whiteSpace: 'nowrap',
                       cursor: 'help',
                     }}
-                    onMouseEnter={(e) => {
-                      setHoveredDeckCard(card);
-                      setHoverPos({ x: e.clientX, y: e.clientY });
-                    }}
-                    onMouseMove={(e) => {
-                      setHoverPos({ x: e.clientX, y: e.clientY });
-                    }}
-                    onMouseLeave={() => {
-                      setHoveredDeckCard(null);
-                    }}
+                    onMouseEnter={(e) => handleDeckCardMouseEnter(card, e)}
+                    onMouseMove={handleDeckCardMouseMove}
+                    onMouseLeave={handleDeckCardMouseLeave}
                   >
                     {card.name}
                   </div>
@@ -1787,16 +1828,9 @@ const DeckBuilder: React.FC = () => {
                       whiteSpace: 'nowrap',
                       cursor: 'help',
                     }}
-                    onMouseEnter={(e) => {
-                      setHoveredDeckCard(card);
-                      setHoverPos({ x: e.clientX, y: e.clientY });
-                    }}
-                    onMouseMove={(e) => {
-                      setHoverPos({ x: e.clientX, y: e.clientY });
-                    }}
-                    onMouseLeave={() => {
-                      setHoveredDeckCard(null);
-                    }}
+                    onMouseEnter={(e) => handleDeckCardMouseEnter(card, e)}
+                    onMouseMove={handleDeckCardMouseMove}
+                    onMouseLeave={handleDeckCardMouseLeave}
                   >
                     {card.name}
                   </div>
@@ -1838,16 +1872,9 @@ const DeckBuilder: React.FC = () => {
                       whiteSpace: 'nowrap',
                       cursor: 'help',
                     }}
-                    onMouseEnter={(e) => {
-                      setHoveredDeckCard(card);
-                      setHoverPos({ x: e.clientX, y: e.clientY });
-                    }}
-                    onMouseMove={(e) => {
-                      setHoverPos({ x: e.clientX, y: e.clientY });
-                    }}
-                    onMouseLeave={() => {
-                      setHoveredDeckCard(null);
-                    }}
+                    onMouseEnter={(e) => handleDeckCardMouseEnter(card, e)}
+                    onMouseMove={handleDeckCardMouseMove}
+                    onMouseLeave={handleDeckCardMouseLeave}
                   >
                     {card.name}
                   </div>
@@ -2623,7 +2650,7 @@ const DeckBuilder: React.FC = () => {
       {previewCard && (
         <div
           role="presentation"
-          onClick={() => setPreviewCard(null)}
+          onClick={handleClosePreview}
           style={{
             position: 'fixed',
             inset: 0,
@@ -2657,7 +2684,7 @@ const DeckBuilder: React.FC = () => {
             <button
               type="button"
               aria-label={t('deckBuilder.preview.closeAria')}
-              onClick={() => setPreviewCard(null)}
+              onClick={handleClosePreview}
               style={{
                 position: 'absolute',
                 top: '-0.5rem',
