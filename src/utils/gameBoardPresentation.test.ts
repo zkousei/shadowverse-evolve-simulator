@@ -3,6 +3,7 @@ import {
   filterSavedDeckOptionsBySearch,
   formatSavedSessionTimestamp,
   getConnectionBadgeTone,
+  getInspectorPopoverStyle,
   getInteractionBlockedTitle,
 } from './gameBoardPresentation';
 
@@ -66,5 +67,39 @@ describe('gameBoardPresentation', () => {
       { deck: { name: 'Beta Deck' }, value: 2 },
     ]);
     expect(filterSavedDeckOptionsBySearch(options, '')).toEqual(options);
+  });
+
+  it('positions the inspector popover beside the anchor and clamps it into the viewport', () => {
+    expect(
+      getInspectorPopoverStyle(
+        { top: 40, left: 40, right: 140 },
+        { width: 1280, height: 720 }
+      )
+    ).toMatchObject({
+      top: 40,
+      left: 152,
+      width: 'min(300px, calc(100vw - 32px))',
+      maxHeight: 'min(420px, calc(100vh - 32px))',
+    });
+
+    expect(
+      getInspectorPopoverStyle(
+        { top: 640, left: 1120, right: 1220 },
+        { width: 1280, height: 720 }
+      )
+    ).toMatchObject({
+      top: 284,
+      left: 808,
+    });
+
+    expect(
+      getInspectorPopoverStyle(
+        { top: -20, left: 10, right: 20 },
+        { width: 280, height: 300 }
+      )
+    ).toMatchObject({
+      top: 16,
+      left: 16,
+    });
   });
 });

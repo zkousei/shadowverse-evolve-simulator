@@ -16,6 +16,7 @@ import {
   filterSavedDeckOptionsBySearch,
   formatSavedSessionTimestamp,
   getConnectionBadgeTone,
+  getInspectorPopoverStyle,
   getInteractionBlockedTitle,
 } from '../utils/gameBoardPresentation';
 import { listSavedDecks, restoreSavedDeckToSnapshot, type SavedDeckRecordV1 } from '../utils/deckStorage';
@@ -486,42 +487,10 @@ const GameBoard: React.FC = () => {
   const inspectorPopoverStyle = React.useMemo<React.CSSProperties | null>(() => {
     if (!selectedInspectorAnchor) return null;
 
-    const width = 300;
-    const height = 420;
-    const gap = 12;
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-
-    let left = selectedInspectorAnchor.right + gap;
-    if (left + width > viewportWidth - 16) {
-      left = selectedInspectorAnchor.left - width - gap;
-    }
-    if (left < 16) {
-      left = Math.max(16, viewportWidth - width - 16);
-    }
-
-    let top = selectedInspectorAnchor.top;
-    if (top + height > viewportHeight - 16) {
-      top = viewportHeight - height - 16;
-    }
-    if (top < 16) {
-      top = 16;
-    }
-
-    return {
-      position: 'fixed',
-      top,
-      left,
-      width: `min(${width}px, calc(100vw - 32px))`,
-      maxHeight: 'min(420px, calc(100vh - 32px))',
-      overflowY: 'auto',
-      zIndex: 900,
-      background: 'rgba(3, 7, 18, 0.97)',
-      border: '1px solid rgba(148, 163, 184, 0.28)',
-      borderRadius: '16px',
-      boxShadow: '0 18px 40px rgba(0,0,0,0.45)',
-      padding: '0.85rem'
-    };
+    return getInspectorPopoverStyle(selectedInspectorAnchor, {
+      width: window.innerWidth,
+      height: window.innerHeight,
+    });
   }, [selectedInspectorAnchor]);
 
   const openTopDeckModal = (targetRole: PlayerRole) => {
