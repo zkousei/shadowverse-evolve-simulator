@@ -19,6 +19,12 @@ import {
   getInspectorPopoverStyle,
   getInteractionBlockedTitle,
 } from '../utils/gameBoardPresentation';
+import {
+  getAttackHighlightTone as resolveAttackHighlightTone,
+  getAttackTargetFromCard as resolveAttackTargetFromCard,
+  isInspectableZone,
+  shouldDisableQuickActionsForAttackTarget as shouldDisableQuickActionsForAttackTargetCard,
+} from '../utils/gameBoardCombat';
 import { listSavedDecks, restoreSavedDeckToSnapshot, type SavedDeckRecordV1 } from '../utils/deckStorage';
 import { getDeckValidationMessages, sanitizeImportedDeckState } from '../utils/deckBuilderRules';
 import {
@@ -331,35 +337,12 @@ const GameBoard: React.FC = () => {
     [savedDeckOptions, savedDeckSearch]
   );
 
-  const isInspectableZone = React.useCallback((zone: string) => (
-    zone.startsWith('hand-') ||
-    zone.startsWith('field-') ||
-    zone.startsWith('ex-') ||
-    zone.startsWith('cemetery-') ||
-    zone.startsWith('banish-') ||
-    zone.startsWith('evolveDeck-') ||
-    zone.startsWith('leader-')
-  ), []);
-
   const getAttackTargetFromCard = React.useCallback((card: CardInstance): AttackTarget | null => {
-    if (!attackSourceCard) return null;
-    const opponentRole = attackSourceCard.owner === 'host' ? 'guest' : 'host';
-
-    if (card.zone === `leader-${opponentRole}`) {
-      return { type: 'leader', player: opponentRole };
-    }
-
-    if (card.zone.startsWith(`field-${opponentRole}`) && !card.isLeaderCard && (Boolean(cardStatLookup[card.cardId]) || card.isTokenCard)) {
-      return { type: 'card', cardId: card.id };
-    }
-
-    return null;
+    return resolveAttackTargetFromCard(attackSourceCard, card, cardStatLookup);
   }, [attackSourceCard, cardStatLookup]);
 
   const shouldDisableQuickActionsForAttackTarget = React.useCallback((card: CardInstance): boolean => {
-    if (!attackSourceCard) return false;
-    const opponentRole = attackSourceCard.owner === 'host' ? 'guest' : 'host';
-    return card.zone.startsWith(`field-${opponentRole}`) && !card.isLeaderCard;
+    return shouldDisableQuickActionsForAttackTargetCard(attackSourceCard, card);
   }, [attackSourceCard]);
 
   const handleAttackTargetSelect = React.useCallback((target: AttackTarget) => {
@@ -385,7 +368,7 @@ const GameBoard: React.FC = () => {
 
     setSelectedInspectorCardId(card.id);
     setSelectedInspectorAnchor(anchor);
-  }, [getAttackTargetFromCard, handleAttackTargetSelect, isInspectableZone, selectedInspectorCardId]);
+  }, [getAttackTargetFromCard, handleAttackTargetSelect, selectedInspectorCardId]);
 
   React.useEffect(() => {
     if (!selectedInspectorCardId) return;
@@ -395,7 +378,7 @@ const GameBoard: React.FC = () => {
       setSelectedInspectorCardId(null);
       setSelectedInspectorAnchor(null);
     }
-  }, [gameState.cards, isInspectableZone, selectedInspectorCardId]);
+  }, [gameState.cards, selectedInspectorCardId]);
 
   React.useEffect(() => {
     if (!selectedInspectorCardId) return;
@@ -552,14 +535,7 @@ const GameBoard: React.FC = () => {
   }, [canInteract, setSearchZone]);
 
   const getAttackHighlightTone = React.useCallback((card: CardInstance): 'attack-source' | 'attack-target' | undefined => {
-    if (!attackSourceCard) return undefined;
-    if (card.id === attackSourceCard.id) return 'attack-source';
-
-    const opponentRole = attackSourceCard.owner === 'host' ? 'guest' : 'host';
-    if (card.zone === `leader-${opponentRole}`) return 'attack-target';
-    if (card.zone.startsWith(`field-${opponentRole}`) && !card.isLeaderCard && (card.baseCardType === 'follower' || !!cardStatLookup[card.cardId])) return 'attack-target';
-
-    return undefined;
+    return resolveAttackHighlightTone(attackSourceCard, card, cardStatLookup);
   }, [attackSourceCard, cardStatLookup]);
 
   const renderLeaderZone = (
