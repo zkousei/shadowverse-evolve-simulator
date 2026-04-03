@@ -1,14 +1,17 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { DeckBuilderCardData } from '../models/deckBuilderCard';
 import type { DeckRuleConfig } from '../models/deckRule';
-import { clearDraft, getSavedDeckById, loadDraft, saveDeck, saveDraft } from './deckStorage';
+import { createDeckSnapshot, clearDraft, getSavedDeckById, loadDraft, saveDeck, saveDraft } from './deckStorage';
 import { DeckLogImportError, type DeckLogImportResult } from './decklogImport';
 import {
+  buildDeckBuilderSaveState,
   buildDeckLogImportFeedback,
   buildDeckLogImportedDeckState,
+  buildDraftPersistencePayload,
   buildJsonImportedDeckState,
   buildPendingDraftRestoreState,
   buildSavedDeckLoadState,
+  getDraftPersistenceAction,
   getDeckLogImportMessage,
   shouldDetachSavedDeckTracking,
 } from './deckBuilderPersistence';
@@ -115,6 +118,75 @@ describe('deckBuilderPersistence', () => {
     expect(imported.deckState.tokenDeck).toEqual([tokenCard]);
   });
 
+  it('builds save-state status for pristine, dirty, and limit-reached builders', () => {
+    const pristineSnapshot = createDeckSnapshot('', otherRuleConfig, {
+      mainDeck: [],
+      evolveDeck: [],
+      leaderCards: [],
+      tokenDeck: [],
+    });
+    const dirtySnapshot = createDeckSnapshot('Working Deck', otherRuleConfig, {
+      mainDeck: [mainCard],
+      evolveDeck: [],
+      leaderCards: [],
+      tokenDeck: [tokenCard],
+    });
+
+    expect(buildDeckBuilderSaveState(
+      pristineSnapshot,
+      pristineSnapshot,
+      null,
+      null,
+      0,
+      t
+    )).toMatchObject({
+      hasReachedSoftLimit: false,
+      hasReachedHardLimit: false,
+      wouldCreateNewSavedDeck: true,
+      canCreateNewSavedDeck: true,
+      canSaveCurrentDeck: true,
+      isDirty: false,
+      hasBuilderState: false,
+      saveStateMessage: 'deckBuilder.status.notSaved',
+    });
+
+    expect(buildDeckBuilderSaveState(
+      dirtySnapshot,
+      pristineSnapshot,
+      pristineSnapshot,
+      'deck-1',
+      100,
+      t
+    )).toMatchObject({
+      hasReachedSoftLimit: true,
+      hasReachedHardLimit: false,
+      wouldCreateNewSavedDeck: false,
+      canCreateNewSavedDeck: true,
+      canSaveCurrentDeck: true,
+      isDirty: true,
+      hasBuilderState: true,
+      saveStateMessage: 'deckBuilder.status.unsavedChanges',
+    });
+
+    expect(buildDeckBuilderSaveState(
+      dirtySnapshot,
+      pristineSnapshot,
+      null,
+      null,
+      200,
+      t
+    )).toMatchObject({
+      hasReachedSoftLimit: true,
+      hasReachedHardLimit: true,
+      wouldCreateNewSavedDeck: true,
+      canCreateNewSavedDeck: false,
+      canSaveCurrentDeck: false,
+      isDirty: true,
+      hasBuilderState: true,
+      saveStateMessage: 'deckBuilder.status.notSaved',
+    });
+  });
+
   it('builds saved deck load state with a normalized baseline snapshot', () => {
     const savedDeck = saveDeck({
       name: 'Saved Royal',
@@ -167,6 +239,33 @@ describe('deckBuilderPersistence', () => {
     expect(pending.snapshot.deckState.tokenDeck).toEqual([tokenCard]);
     expect(pending.baselineSnapshot?.name).toBe('Saved Royal');
     expect(pending.baselineSnapshot?.deckState.tokenDeck).toEqual([tokenCard]);
+  });
+
+  it('decides whether draft persistence should skip, clear, or save', () => {
+    expect(getDraftPersistenceAction(0, true, false, true)).toBe('skip');
+    expect(getDraftPersistenceAction(1, false, false, true)).toBe('skip');
+    expect(getDraftPersistenceAction(1, true, true, true)).toBe('skip');
+    expect(getDraftPersistenceAction(1, true, false, false)).toBe('clear');
+    expect(getDraftPersistenceAction(1, true, false, true)).toBe('save');
+  });
+
+  it('builds a normalized draft persistence payload', () => {
+    const payload = buildDraftPersistencePayload(null, '  Working Deck  ', otherRuleConfig, {
+      mainDeck: [mainCard],
+      evolveDeck: [],
+      leaderCards: [],
+      tokenDeck: [tokenCard],
+    });
+
+    expect(payload).toMatchObject({
+      schemaVersion: 1,
+      selectedDeckId: null,
+      name: 'Working Deck',
+      ruleConfig: otherRuleConfig,
+    });
+    expect(payload.deckState.mainDeck).toEqual([mainCard]);
+    expect(payload.deckState.tokenDeck).toEqual([tokenCard]);
+    expect(typeof payload.lastEditedAt).toBe('string');
   });
 
   it('builds DeckLog import state and feedback', () => {

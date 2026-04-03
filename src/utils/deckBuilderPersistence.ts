@@ -1,10 +1,14 @@
 import type { DeckBuilderCardData } from '../models/deckBuilderCard';
 import { getImportedDeckRuleConfig, type DeckRuleConfig } from '../models/deckRule';
 import type { DeckState } from '../models/deckState';
+import { resolveDeckName } from './deckBuilderDisplay';
 import { sanitizeImportedDeckState } from './deckBuilderRules';
 import { resolveImportedDeckName } from './deckFile';
 import {
+  areDeckSnapshotsEqual,
   createDeckSnapshot,
+  hasReachedHardSavedDeckLimit,
+  hasReachedSoftSavedDeckLimit,
   restoreDraftToSnapshot,
   restoreSavedDeckToSnapshot,
   type DeckBuilderDraftV1,
@@ -37,6 +41,17 @@ export type DeckBuilderFeedbackTranslator = (
   params?: Record<string, string | number>
 ) => string;
 
+export type DeckBuilderSaveState = {
+  hasReachedSoftLimit: boolean;
+  hasReachedHardLimit: boolean;
+  wouldCreateNewSavedDeck: boolean;
+  canCreateNewSavedDeck: boolean;
+  canSaveCurrentDeck: boolean;
+  isDirty: boolean;
+  hasBuilderState: boolean;
+  saveStateMessage: string;
+};
+
 export type ImportedDeckBuilderState = {
   deckName: string | null;
   ruleConfig: DeckRuleConfig;
@@ -56,6 +71,67 @@ export type PendingDraftRestoreState = {
   selectedDeckId: string | null;
   baselineSnapshot: DeckBuilderSnapshot | null;
 };
+
+export type DraftPersistenceAction = 'skip' | 'clear' | 'save';
+
+export const buildDeckBuilderSaveState = (
+  currentSnapshot: DeckBuilderSnapshot,
+  pristineSnapshot: DeckBuilderSnapshot,
+  savedBaselineSnapshot: DeckBuilderSnapshot | null,
+  selectedSavedDeckId: string | null,
+  savedDeckCount: number,
+  t: DeckBuilderFeedbackTranslator
+): DeckBuilderSaveState => {
+  const hasReachedSoftLimit = hasReachedSoftSavedDeckLimit(savedDeckCount);
+  const hasReachedHardLimit = hasReachedHardSavedDeckLimit(savedDeckCount);
+  const wouldCreateNewSavedDeck = selectedSavedDeckId === null;
+  const canCreateNewSavedDeck = !hasReachedHardLimit;
+  const canSaveCurrentDeck = !wouldCreateNewSavedDeck || canCreateNewSavedDeck;
+  const isDirty = savedBaselineSnapshot
+    ? !areDeckSnapshotsEqual(currentSnapshot, savedBaselineSnapshot)
+    : !areDeckSnapshotsEqual(currentSnapshot, pristineSnapshot);
+  const hasBuilderState = !areDeckSnapshotsEqual(currentSnapshot, pristineSnapshot);
+
+  return {
+    hasReachedSoftLimit,
+    hasReachedHardLimit,
+    wouldCreateNewSavedDeck,
+    canCreateNewSavedDeck,
+    canSaveCurrentDeck,
+    isDirty,
+    hasBuilderState,
+    saveStateMessage: selectedSavedDeckId
+      ? (isDirty ? t('deckBuilder.status.unsavedChanges') : t('deckBuilder.status.saved'))
+      : t('deckBuilder.status.notSaved'),
+  };
+};
+
+export const getDraftPersistenceAction = (
+  cardsLength: number,
+  hasInitializedDraft: boolean,
+  hasPendingDraftRestore: boolean,
+  hasBuilderState: boolean
+): DraftPersistenceAction => {
+  if (cardsLength === 0 || !hasInitializedDraft || hasPendingDraftRestore) {
+    return 'skip';
+  }
+
+  return hasBuilderState ? 'save' : 'clear';
+};
+
+export const buildDraftPersistencePayload = (
+  selectedDeckId: string | null,
+  deckName: string,
+  ruleConfig: DeckRuleConfig,
+  deckState: DeckState
+): DeckBuilderDraftV1 => ({
+  schemaVersion: 1,
+  selectedDeckId,
+  lastEditedAt: new Date().toISOString(),
+  name: resolveDeckName(deckName),
+  ruleConfig,
+  deckState,
+});
 
 const buildSanitizedSnapshot = (
   snapshot: DeckBuilderSnapshot,

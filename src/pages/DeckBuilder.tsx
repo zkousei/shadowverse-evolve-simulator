@@ -34,7 +34,6 @@ import {
   getCrossoverClassOptions,
 } from '../utils/deckBuilderCatalog';
 import {
-  areDeckSnapshotsEqual,
   clearDraft,
   createDeckSnapshot,
   createPristineDeckSnapshot,
@@ -45,8 +44,6 @@ import {
   duplicateSavedDeck,
   getSavedDeckById,
   HARD_SAVED_DECK_LIMIT,
-  hasReachedHardSavedDeckLimit,
-  hasReachedSoftSavedDeckLimit,
   listSavedDecks,
   loadDraft,
   restoreSavedDeckToSnapshot,
@@ -61,11 +58,14 @@ import {
 } from '../utils/deckFile';
 import { addCardToDeckState, removeCardFromDeckState } from '../utils/deckBuilderMutations';
 import {
+  buildDeckBuilderSaveState,
   buildDeckLogImportFeedback,
   buildDeckLogImportedDeckState,
+  buildDraftPersistencePayload,
   buildJsonImportedDeckState,
   buildPendingDraftRestoreState,
   buildSavedDeckLoadState,
+  getDraftPersistenceAction,
   getDeckLogImportMessage,
   shouldDetachSavedDeckTracking,
 } from '../utils/deckBuilderPersistence';
@@ -241,20 +241,22 @@ const DeckBuilder: React.FC = () => {
   const currentSnapshot = createDeckSnapshot(deckName, deckRuleConfig, deckState);
   const pristineSnapshot = React.useMemo(() => createPristineDeckSnapshot(createDefaultDeckRuleConfig()), []);
   const savedDeckCount = savedDecks.length;
-  const hasReachedSoftLimit = hasReachedSoftSavedDeckLimit(savedDeckCount);
-  const hasReachedHardLimit = hasReachedHardSavedDeckLimit(savedDeckCount);
-  const wouldCreateNewSavedDeck = selectedSavedDeckId === null;
-  const canCreateNewSavedDeck = !hasReachedHardLimit;
-  const canSaveCurrentDeck = !wouldCreateNewSavedDeck || canCreateNewSavedDeck;
-  // "Saved" / "Unsaved changes" compare the current builder against the loaded
-  // My Decks baseline. Session restore and local draft persistence are separate.
-  const isDirty = savedBaselineSnapshot
-    ? !areDeckSnapshotsEqual(currentSnapshot, savedBaselineSnapshot)
-    : !areDeckSnapshotsEqual(currentSnapshot, pristineSnapshot);
-  const hasBuilderState = !areDeckSnapshotsEqual(currentSnapshot, pristineSnapshot);
-  const saveStateMessage = selectedSavedDeckId
-    ? (isDirty ? t('deckBuilder.status.unsavedChanges') : t('deckBuilder.status.saved'))
-    : t('deckBuilder.status.notSaved');
+  const {
+    hasReachedSoftLimit,
+    hasReachedHardLimit,
+    canCreateNewSavedDeck,
+    canSaveCurrentDeck,
+    isDirty,
+    hasBuilderState,
+    saveStateMessage,
+  } = buildDeckBuilderSaveState(
+    currentSnapshot,
+    pristineSnapshot,
+    savedBaselineSnapshot,
+    selectedSavedDeckId,
+    savedDeckCount,
+    t
+  );
   const filteredSavedDecks = React.useMemo(
     () => buildFilteredSavedDecks(savedDecks, cards, savedDeckSearch),
     [cards, savedDeckSearch, savedDecks]
@@ -266,22 +268,21 @@ const DeckBuilder: React.FC = () => {
   );
 
   useEffect(() => {
-    if (cards.length === 0 || !hasInitializedDraft || pendingDraftRestore) return;
+    const draftPersistenceAction = getDraftPersistenceAction(
+      cards.length,
+      hasInitializedDraft,
+      pendingDraftRestore !== null,
+      hasBuilderState
+    );
+    if (draftPersistenceAction === 'skip') return;
 
-    // Persist any non-empty builder session, regardless of whether it already
-    // matches a saved deck. Restore is based on "what was on screen last time".
-    if (!hasBuilderState) {
+    if (draftPersistenceAction === 'clear') {
       clearDraft();
       return;
     }
 
     const timeoutId = window.setTimeout(() => {
-      saveDraft({
-        selectedDeckId: selectedSavedDeckId,
-        name: resolveDeckName(deckName),
-        ruleConfig: deckRuleConfig,
-        deckState,
-      });
+      saveDraft(buildDraftPersistencePayload(selectedSavedDeckId, deckName, deckRuleConfig, deckState));
     }, 400);
 
     return () => window.clearTimeout(timeoutId);
