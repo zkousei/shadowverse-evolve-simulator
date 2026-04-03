@@ -8,6 +8,7 @@ import {
   buildFilteredSavedDecks,
   canAddSubtypeTag,
   getFilteredSubtypeOptions,
+  getSavedDeckSelectionUiState,
   getShownSavedDeckIds,
   removeSubtypeTagSelection,
   toggleSavedDeckSelectionId,
@@ -114,6 +115,34 @@ describe('deckBuilderSelections', () => {
     expect(toggleSavedDeckSelectionId(['a'], 'b')).toEqual(['a', 'b']);
     expect(toggleShownSavedDeckIds(['x'], shownIds)).toEqual(['x', 'a', 'b']);
     expect(toggleShownSavedDeckIds(['a', 'b', 'x'], shownIds)).toEqual(['x']);
+    expect(getSavedDeckSelectionUiState({
+      filteredSavedDeckCount: filteredSavedDecks.length,
+      savedDeckCount: filteredSavedDecks.length,
+      isSavedDeckSelectMode: false,
+      selectedSavedDeckCount: 0,
+      areAllShownSavedDecksSelected: false,
+    })).toEqual({
+      showSelectionToggle: true,
+      selectionToggleAction: 'enter-selection',
+      showDeleteAll: true,
+      showBulkActions: false,
+      hasSelectedDecks: false,
+      bulkSelectionAction: 'select-all-shown',
+    });
+    expect(getSavedDeckSelectionUiState({
+      filteredSavedDeckCount: filteredSavedDecks.length,
+      savedDeckCount: filteredSavedDecks.length,
+      isSavedDeckSelectMode: true,
+      selectedSavedDeckCount: 2,
+      areAllShownSavedDecksSelected: true,
+    })).toEqual({
+      showSelectionToggle: true,
+      selectionToggleAction: 'cancel-selection',
+      showDeleteAll: true,
+      showBulkActions: true,
+      hasSelectedDecks: true,
+      bulkSelectionAction: 'clear-selection',
+    });
   });
 
   it('filters subtype options and updates subtype tag selections safely', () => {

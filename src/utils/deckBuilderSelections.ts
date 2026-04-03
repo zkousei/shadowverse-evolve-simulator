@@ -7,6 +7,15 @@ export type FilteredSavedDeckEntry = {
   canExport: boolean;
 };
 
+export type SavedDeckSelectionUiState = {
+  showSelectionToggle: boolean;
+  selectionToggleAction: 'enter-selection' | 'cancel-selection';
+  showDeleteAll: boolean;
+  showBulkActions: boolean;
+  hasSelectedDecks: boolean;
+  bulkSelectionAction: 'select-all-shown' | 'clear-selection';
+};
+
 const normalizeSearch = (value: string): string => value.trim().toLowerCase();
 
 export const buildFilteredSavedDecks = (
@@ -67,6 +76,27 @@ export const toggleShownSavedDeckIds = (
 
   return Array.from(new Set([...selectedSavedDeckIds, ...shownSavedDeckIds]));
 };
+
+export const getSavedDeckSelectionUiState = ({
+  filteredSavedDeckCount,
+  savedDeckCount,
+  isSavedDeckSelectMode,
+  selectedSavedDeckCount,
+  areAllShownSavedDecksSelected,
+}: {
+  filteredSavedDeckCount: number;
+  savedDeckCount: number;
+  isSavedDeckSelectMode: boolean;
+  selectedSavedDeckCount: number;
+  areAllShownSavedDecksSelected: boolean;
+}): SavedDeckSelectionUiState => ({
+  showSelectionToggle: filteredSavedDeckCount > 0,
+  selectionToggleAction: isSavedDeckSelectMode ? 'cancel-selection' : 'enter-selection',
+  showDeleteAll: savedDeckCount > 0,
+  showBulkActions: isSavedDeckSelectMode && filteredSavedDeckCount > 0,
+  hasSelectedDecks: selectedSavedDeckCount > 0,
+  bulkSelectionAction: areAllShownSavedDecksSelected ? 'clear-selection' : 'select-all-shown',
+});
 
 const normalizeSubtypeTag = (value: string): string => value.trim();
 

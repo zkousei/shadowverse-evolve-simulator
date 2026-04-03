@@ -75,6 +75,7 @@ import {
   buildFilteredSavedDecks,
   canAddSubtypeTag,
   getFilteredSubtypeOptions,
+  getSavedDeckSelectionUiState,
   getShownSavedDeckIds,
   removeSubtypeTagSelection,
   toggleSavedDeckSelectionId,
@@ -266,6 +267,13 @@ const DeckBuilder: React.FC = () => {
     shownSavedDeckIds,
     selectedSavedDeckIds
   );
+  const savedDeckSelectionUiState = getSavedDeckSelectionUiState({
+    filteredSavedDeckCount: filteredSavedDecks.length,
+    savedDeckCount,
+    isSavedDeckSelectMode,
+    selectedSavedDeckCount: selectedSavedDeckIds.length,
+    areAllShownSavedDecksSelected: areAllShownSavedDecksSelectedValue,
+  });
 
   useEffect(() => {
     const draftPersistenceAction = getDraftPersistenceAction(
@@ -1902,7 +1910,7 @@ const DeckBuilder: React.FC = () => {
                 >
                   {t('deckBuilder.deckArea.actions.saveAsNew')}
                 </button>
-                {filteredSavedDecks.length > 0 && (
+                {savedDeckSelectionUiState.showSelectionToggle && (
                   <button
                     type="button"
                     onClick={() => {
@@ -1922,10 +1930,12 @@ const DeckBuilder: React.FC = () => {
                       cursor: 'pointer',
                     }}
                   >
-                    {isSavedDeckSelectMode ? t('deckBuilder.myDecks.cancelSelection') : t('deckBuilder.myDecks.select')}
+                    {savedDeckSelectionUiState.selectionToggleAction === 'cancel-selection'
+                      ? t('deckBuilder.myDecks.cancelSelection')
+                      : t('deckBuilder.myDecks.select')}
                   </button>
                 )}
-                {savedDecks.length > 0 && (
+                {savedDeckSelectionUiState.showDeleteAll && (
                   <button
                     type="button"
                     onClick={() => setShowDeleteAllSavedDecksDialog(true)}
@@ -1968,7 +1978,7 @@ const DeckBuilder: React.FC = () => {
               </span>
             </div>
 
-            {isSavedDeckSelectMode && filteredSavedDecks.length > 0 && (
+            {savedDeckSelectionUiState.showBulkActions && (
               <div
                 style={{
                   display: 'flex',
@@ -1998,21 +2008,23 @@ const DeckBuilder: React.FC = () => {
                       cursor: 'pointer',
                     }}
                   >
-                    {areAllShownSavedDecksSelectedValue ? t('deckBuilder.myDecks.clearSelection') : t('deckBuilder.myDecks.selectAllShown')}
+                    {savedDeckSelectionUiState.bulkSelectionAction === 'clear-selection'
+                      ? t('deckBuilder.myDecks.clearSelection')
+                      : t('deckBuilder.myDecks.selectAllShown')}
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowDeleteSelectedSavedDecksDialog(true)}
-                    disabled={selectedSavedDeckIds.length === 0}
+                    disabled={!savedDeckSelectionUiState.hasSelectedDecks}
                     style={{
                       padding: '0.45rem 0.7rem',
                       borderRadius: 'var(--radius-md)',
                       border: '1px solid rgba(248, 113, 113, 0.45)',
-                      background: selectedSavedDeckIds.length > 0 ? 'rgba(239, 68, 68, 0.12)' : 'var(--bg-surface-elevated)',
-                      color: selectedSavedDeckIds.length > 0 ? '#fca5a5' : 'var(--text-muted)',
-                      cursor: selectedSavedDeckIds.length > 0 ? 'pointer' : 'not-allowed',
+                      background: savedDeckSelectionUiState.hasSelectedDecks ? 'rgba(239, 68, 68, 0.12)' : 'var(--bg-surface-elevated)',
+                      color: savedDeckSelectionUiState.hasSelectedDecks ? '#fca5a5' : 'var(--text-muted)',
+                      cursor: savedDeckSelectionUiState.hasSelectedDecks ? 'pointer' : 'not-allowed',
                       fontWeight: 700,
-                      opacity: selectedSavedDeckIds.length > 0 ? 1 : 0.7,
+                      opacity: savedDeckSelectionUiState.hasSelectedDecks ? 1 : 0.7,
                     }}
                   >
                     {t('deckBuilder.myDecks.deleteSelected')}
