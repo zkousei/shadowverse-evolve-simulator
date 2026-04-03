@@ -62,6 +62,7 @@ import {
   downloadDeckJson,
   resolveImportedDeckName,
 } from '../utils/deckFile';
+import { addCardToDeckState, removeCardFromDeckState } from '../utils/deckBuilderMutations';
 import {
   DECK_HOVER_PREVIEW_MAX_HEIGHT,
   DECK_HOVER_PREVIEW_VIEWPORT_PADDING,
@@ -450,72 +451,21 @@ const DeckBuilder: React.FC = () => {
     : null;
   const previewPresentation = buildCardDetailPresentation(previewDetail);
 
-  const removeLastCardById = (cards: DeckBuilderCardData[], cardId?: string): DeckBuilderCardData[] => {
-    if (!cardId) return cards;
-    const removeIndex = cards.findLastIndex(card => card.id === cardId);
-    if (removeIndex < 0) return cards;
-    return cards.filter((_, index) => index !== removeIndex);
-  };
-
   const addToDeck = (card: DeckBuilderCardData, targetSection: DeckTargetSection) => {
     if (!canAddCardToDeckState(card, targetSection, deckState, deckRuleConfig)) return;
 
     setDeckState(current => {
-      let nextDeckState = current;
-
-      switch (targetSection) {
-        case 'main':
-          if (current.mainDeck.length >= DECK_LIMITS.main) return current;
-          nextDeckState = { ...current, mainDeck: [...current.mainDeck, card] };
-          break;
-        case 'evolve':
-          if (current.evolveDeck.length >= DECK_LIMITS.evolve) return current;
-          nextDeckState = { ...current, evolveDeck: [...current.evolveDeck, card] };
-          break;
-        case 'leader': {
-          if (deckRuleConfig.format === 'crossover') {
-            const leaderClass = card.class;
-
-            if (!leaderClass || leaderClass === CLASS.NEUTRAL || leaderClass === '-') return current;
-
-            const existingIndex = current.leaderCards.findIndex(leader => leader.class === leaderClass);
-            if (existingIndex >= 0) {
-              const nextLeaderCards = [...current.leaderCards];
-              nextLeaderCards[existingIndex] = card;
-              nextDeckState = { ...current, leaderCards: nextLeaderCards };
-              break;
-            }
-
-            if (current.leaderCards.length >= leaderLimit) return current;
-            nextDeckState = { ...current, leaderCards: [...current.leaderCards, card] };
-            break;
-          }
-
-          nextDeckState = { ...current, leaderCards: [card] };
-          break;
-        }
-        case 'token':
-          nextDeckState = { ...current, tokenDeck: [...current.tokenDeck, card] };
-          break;
-      }
+      const nextDeckState = addCardToDeckState(current, card, targetSection, {
+        deckRuleConfig,
+        leaderLimit,
+      });
 
       return appendRelatedTokensToDeckState(nextDeckState, cards, deckRuleConfig);
     });
   };
 
   const removeFromDeck = (targetSection: DeckTargetSection, cardId?: string) => {
-    setDeckState(current => {
-      switch (targetSection) {
-        case 'main':
-          return { ...current, mainDeck: removeLastCardById(current.mainDeck, cardId) };
-        case 'evolve':
-          return { ...current, evolveDeck: removeLastCardById(current.evolveDeck, cardId) };
-        case 'leader':
-          return { ...current, leaderCards: removeLastCardById(current.leaderCards, cardId) };
-        case 'token':
-          return { ...current, tokenDeck: removeLastCardById(current.tokenDeck, cardId) };
-      }
-    });
+    setDeckState(current => removeCardFromDeckState(current, targetSection, cardId));
   };
 
   const resetDeckContents = () => {
