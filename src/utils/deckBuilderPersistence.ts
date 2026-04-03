@@ -197,6 +197,23 @@ export const buildLoadedSavedDeckSessionState = (
   pendingDraftRestore: null,
 });
 
+export const buildSavedDeckPersistedSessionState = (
+  savedDeck: SavedDeckRecordV1,
+  snapshot: DeckBuilderSnapshot
+): DeckBuilderSessionState => ({
+  deckName: savedDeck.name,
+  ruleConfig: snapshot.ruleConfig,
+  deckState: snapshot.deckState,
+  selectedSavedDeckId: savedDeck.id,
+  savedBaselineSnapshot: createDeckSnapshot(
+    savedDeck.name,
+    snapshot.ruleConfig,
+    snapshot.deckState
+  ),
+  draftRestored: false,
+  pendingDraftRestore: null,
+});
+
 const buildSanitizedSnapshot = (
   snapshot: DeckBuilderSnapshot,
   cards: DeckBuilderCardData[]

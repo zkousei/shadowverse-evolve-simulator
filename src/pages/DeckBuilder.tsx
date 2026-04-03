@@ -34,6 +34,14 @@ import {
   getCrossoverClassOptions,
 } from '../utils/deckBuilderCatalog';
 import {
+  type DeckBuilderCardTypeFilter,
+  type DeckBuilderDeckSectionFilter,
+  type DeckBuilderLibraryFilterState,
+  buildDefaultDeckBuilderLibraryFilterState,
+  buildSubtypeAddedDeckBuilderLibraryFilterState,
+  buildSubtypeRemovedDeckBuilderLibraryFilterState,
+} from '../utils/deckBuilderFilters';
+import {
   clearDraft,
   createDeckSnapshot,
   createPristineDeckSnapshot,
@@ -71,20 +79,19 @@ import {
   buildLoadedSavedDeckSessionState,
   buildPendingDraftRestoreState,
   buildResetDeckBuilderSessionState,
+  buildSavedDeckPersistedSessionState,
   buildSavedDeckLoadState,
   getDraftPersistenceAction,
   getDeckLogImportMessage,
   shouldDetachSavedDeckTracking,
 } from '../utils/deckBuilderPersistence';
 import {
-  addSubtypeTagSelection,
   areAllShownSavedDecksSelected,
   buildFilteredSavedDecks,
   canAddSubtypeTag,
   getFilteredSubtypeOptions,
   getSavedDeckSelectionUiState,
   getShownSavedDeckIds,
-  removeSubtypeTagSelection,
   toggleSavedDeckSelectionId,
   toggleShownSavedDeckIds,
 } from '../utils/deckBuilderSelections';
@@ -108,8 +115,8 @@ import CardArtwork from '../components/CardArtwork';
 
 const PAGE_SIZE = 50;
 const COST_FILTER_VALUES = ['All', '0', '1', '2', '3', '4', '5', '6', '7+'] as const;
-const DECK_SECTION_FILTER_VALUES = ['All', 'main', 'evolve', 'leader', 'token'] as const;
-const CARD_TYPE_FILTER_VALUES = ['All', 'follower', 'spell', 'amulet'] as const;
+const DECK_SECTION_FILTER_VALUES: readonly DeckBuilderDeckSectionFilter[] = ['All', 'main', 'evolve', 'leader', 'token'];
+const CARD_TYPE_FILTER_VALUES: readonly DeckBuilderCardTypeFilter[] = ['All', 'follower', 'spell', 'amulet'];
 
 const ADD_ACTIONS: Record<DeckTargetSection, { background: string }> = {
   main: { background: 'var(--accent-primary)' },
@@ -130,12 +137,12 @@ const DeckBuilder: React.FC = () => {
   const [costFilter, setCostFilter] = useState('All');
   const [expansionFilter, setExpansionFilter] = useState('All');
   const [classFilter, setClassFilter] = useState<ClassFilter>('All');
-  const [cardTypeFilter, setCardTypeFilter] = useState<(typeof CARD_TYPE_FILTER_VALUES)[number]>('All');
+  const [cardTypeFilter, setCardTypeFilter] = useState<DeckBuilderCardTypeFilter>('All');
   const [rarityFilter, setRarityFilter] = useState('All');
   const [productNameFilter, setProductNameFilter] = useState('All');
   const [subtypeSearch, setSubtypeSearch] = useState('');
   const [selectedSubtypeTags, setSelectedSubtypeTags] = useState<string[]>([]);
-  const [deckSectionFilter, setDeckSectionFilter] = useState<(typeof DECK_SECTION_FILTER_VALUES)[number]>('All');
+  const [deckSectionFilter, setDeckSectionFilter] = useState<DeckBuilderDeckSectionFilter>('All');
   const [hideSameNameVariants, setHideSameNameVariants] = useState(false);
   const [page, setPage] = useState(0);
 
@@ -329,6 +336,36 @@ const DeckBuilder: React.FC = () => {
     setSelectedSavedDeckIds([]);
   };
 
+  const buildCurrentLibraryFilterState = (): DeckBuilderLibraryFilterState => ({
+    search,
+    costFilter,
+    expansionFilter,
+    classFilter,
+    cardTypeFilter,
+    rarityFilter,
+    productNameFilter,
+    subtypeSearch,
+    selectedSubtypeTags,
+    deckSectionFilter,
+    hideSameNameVariants,
+    page,
+  });
+
+  const applyDeckBuilderLibraryFilterState = (state: DeckBuilderLibraryFilterState) => {
+    setSearch(state.search);
+    setCostFilter(state.costFilter);
+    setExpansionFilter(state.expansionFilter);
+    setClassFilter(state.classFilter);
+    setCardTypeFilter(state.cardTypeFilter);
+    setRarityFilter(state.rarityFilter);
+    setProductNameFilter(state.productNameFilter);
+    setSubtypeSearch(state.subtypeSearch);
+    setSelectedSubtypeTags(state.selectedSubtypeTags);
+    setDeckSectionFilter(state.deckSectionFilter);
+    setHideSameNameVariants(state.hideSameNameVariants);
+    setPage(state.page);
+  };
+
   const resetBuilderState = () => {
     applyDeckBuilderSessionState(buildResetDeckBuilderSessionState());
   };
@@ -345,31 +382,23 @@ const DeckBuilder: React.FC = () => {
   };
 
   const resetLibraryFilters = () => {
-    setSearch('');
-    setCostFilter('All');
-    setExpansionFilter('All');
-    setClassFilter('All');
-    setCardTypeFilter('All');
-    setRarityFilter('All');
-    setProductNameFilter('All');
-    setSubtypeSearch('');
-    setSelectedSubtypeTags([]);
-    setDeckSectionFilter('All');
-    setHideSameNameVariants(false);
-    setPage(0);
+    applyDeckBuilderLibraryFilterState(buildDefaultDeckBuilderLibraryFilterState());
   };
 
   const addSubtypeTag = (tag: string) => {
-    if (!canAddSubtypeTag(subtypeTags, selectedSubtypeTags, tag)) return;
-
-    setSelectedSubtypeTags(current => addSubtypeTagSelection(current, subtypeTags, tag));
-    setSubtypeSearch('');
-    setPage(0);
+    applyDeckBuilderLibraryFilterState(
+      buildSubtypeAddedDeckBuilderLibraryFilterState(
+        buildCurrentLibraryFilterState(),
+        subtypeTags,
+        tag
+      )
+    );
   };
 
   const removeSubtypeTag = (tag: string) => {
-    setSelectedSubtypeTags(current => removeSubtypeTagSelection(current, tag));
-    setPage(0);
+    applyDeckBuilderLibraryFilterState(
+      buildSubtypeRemovedDeckBuilderLibraryFilterState(buildCurrentLibraryFilterState(), tag)
+    );
   };
 
   const filteredSubtypeOptions = getFilteredSubtypeOptions(subtypeTags, subtypeSearch);
@@ -490,11 +519,7 @@ const DeckBuilder: React.FC = () => {
       deckState: snapshot.deckState,
     });
 
-    setDeckName(savedDeck.name);
-    setSelectedSavedDeckId(savedDeck.id);
-    setSavedBaselineSnapshot(createDeckSnapshot(savedDeck.name, snapshot.ruleConfig, snapshot.deckState));
-    setDraftRestored(false);
-    setPendingDraftRestore(null);
+    applyDeckBuilderSessionState(buildSavedDeckPersistedSessionState(savedDeck, snapshot));
     setSaveFeedback({
       kind: 'success',
       message: saveAsNew

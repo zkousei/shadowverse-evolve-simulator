@@ -15,6 +15,7 @@ import {
   buildLoadedSavedDeckSessionState,
   buildPendingDraftRestoreState,
   buildResetDeckBuilderSessionState,
+  buildSavedDeckPersistedSessionState,
   buildSavedDeckLoadState,
   getDraftPersistenceAction,
   getDeckLogImportMessage,
@@ -287,6 +288,40 @@ describe('deckBuilderPersistence', () => {
       },
       selectedSavedDeckId: savedDeck.id,
       savedBaselineSnapshot: restored.savedBaselineSnapshot,
+      draftRestored: false,
+      pendingDraftRestore: null,
+    });
+  });
+
+  it('builds persisted save state for the active builder session', () => {
+    const snapshot = createDeckSnapshot('Working Name', otherRuleConfig, {
+      mainDeck: [mainCard],
+      evolveDeck: [],
+      leaderCards: [leaderCard],
+      tokenDeck: [tokenCard],
+    });
+    const savedDeck = saveDeck({
+      name: 'Saved Name',
+      ruleConfig: snapshot.ruleConfig,
+      deckState: snapshot.deckState,
+    });
+
+    expect(buildSavedDeckPersistedSessionState(savedDeck, snapshot)).toEqual({
+      deckName: 'Saved Name',
+      ruleConfig: otherRuleConfig,
+      deckState: {
+        mainDeck: [mainCard],
+        evolveDeck: [],
+        leaderCards: [leaderCard],
+        tokenDeck: [tokenCard],
+      },
+      selectedSavedDeckId: savedDeck.id,
+      savedBaselineSnapshot: createDeckSnapshot('Saved Name', otherRuleConfig, {
+        mainDeck: [mainCard],
+        evolveDeck: [],
+        leaderCards: [leaderCard],
+        tokenDeck: [tokenCard],
+      }),
       draftRestored: false,
       pendingDraftRestore: null,
     });
