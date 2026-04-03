@@ -389,6 +389,39 @@ describe('GameBoard', () => {
     }, 'host');
   });
 
+  it('closes the saved deck picker when the backdrop is clicked', async () => {
+    saveDeck({
+      name: 'Alpha Deck',
+      ruleConfig,
+      deckState: {
+        mainDeck: [catalogCards[0]],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [],
+      },
+    });
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic());
+
+    render(<GameBoard />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Load from My Decks' })).toBeEnabled();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Load from My Decks' }));
+
+    const picker = await screen.findByRole('dialog', { name: 'Load from My Decks' });
+    const backdrop = picker.parentElement;
+    expect(backdrop).not.toBeNull();
+
+    fireEvent.click(backdrop!);
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Load from My Decks' })).not.toBeInTheDocument();
+    });
+  });
+
   it('opens the card inspector for an inspectable card and closes it from outside click', async () => {
     const fieldCard = makeCard();
 
@@ -427,6 +460,41 @@ describe('GameBoard', () => {
     });
   });
 
+  it('closes the card inspector with the Escape key', async () => {
+    const fieldCard = makeCard();
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      gameState: createGameState([fieldCard], { gameStatus: 'playing' }),
+      cardDetailLookup: {
+        'TEST-001': {
+          id: 'TEST-001',
+          name: 'Alpha Knight',
+          image: '/alpha.png',
+          className: 'Royal',
+          title: 'Hero Tale',
+          type: 'Follower',
+          subtype: 'Soldier',
+          cardKindNormalized: 'follower',
+          cost: '2',
+          atk: 2,
+          hp: 2,
+          abilityText: '[Fanfare] Test ability.',
+        },
+      },
+    }));
+
+    render(<GameBoard />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect Alpha Knight' }));
+    expect(await screen.findByTestId('card-inspector')).toBeInTheDocument();
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('card-inspector')).not.toBeInTheDocument();
+    });
+  });
+
   it('enters attack mode for a valid attacker and lets the user cancel it', async () => {
     const attacker = makeCard();
 
@@ -447,6 +515,28 @@ describe('GameBoard', () => {
     ))).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    await waitFor(() => {
+      expect(screen.queryByText('ATTACK MODE')).not.toBeInTheDocument();
+    });
+  });
+
+  it('closes attack mode with the Escape key', async () => {
+    const attacker = makeCard();
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      gameState: createGameState([attacker], {
+        gameStatus: 'playing',
+        turnPlayer: 'host',
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Attack Alpha Knight' }));
+    expect(await screen.findByText('ATTACK MODE')).toBeInTheDocument();
+
+    fireEvent.keyDown(window, { key: 'Escape' });
 
     await waitFor(() => {
       expect(screen.queryByText('ATTACK MODE')).not.toBeInTheDocument();

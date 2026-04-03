@@ -19,6 +19,12 @@ import {
   getInspectorPopoverStyle,
   getInteractionBlockedTitle,
 } from '../utils/gameBoardPresentation';
+import {
+  shouldDismissAttackModeOnPointerDown,
+  shouldDismissInspectorOnPointerDown,
+  shouldDismissModalOnBackdropClick,
+  shouldDismissOnEscapeKey,
+} from '../utils/gameBoardDismissals';
 import { buildLegalSavedDeckOptions, type LegalSavedDeckOption } from '../utils/gameBoardSavedDecks';
 import {
   buildTokenSpawnSelections,
@@ -349,10 +355,10 @@ const GameBoard: React.FC = () => {
     if (!selectedInspectorCardId) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setSelectedInspectorCardId(null);
-        setSelectedInspectorAnchor(null);
-      }
+      if (!shouldDismissOnEscapeKey(event.key)) return;
+
+      setSelectedInspectorCardId(null);
+      setSelectedInspectorAnchor(null);
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -372,9 +378,9 @@ const GameBoard: React.FC = () => {
     if (!attackSourceCardId) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setAttackSourceCardId(null);
-      }
+      if (!shouldDismissOnEscapeKey(event.key)) return;
+
+      setAttackSourceCardId(null);
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -386,10 +392,7 @@ const GameBoard: React.FC = () => {
 
     const handlePointerDown = (event: PointerEvent) => {
       const target = event.target as HTMLElement | null;
-      if (!target) return;
-      if (target.closest('.game-card')) return;
-      if (target.closest('button')) return;
-      if (target.closest('[data-leader-zone]')) return;
+      if (!shouldDismissAttackModeOnPointerDown(target)) return;
 
       setAttackSourceCardId(null);
     };
@@ -403,9 +406,7 @@ const GameBoard: React.FC = () => {
 
     const handlePointerDown = (event: PointerEvent) => {
       const target = event.target as HTMLElement | null;
-      if (!target) return;
-      if (inspectorRef.current?.contains(target)) return;
-      if (target.closest('.game-card')) return;
+      if (!shouldDismissInspectorOnPointerDown(target, inspectorRef.current)) return;
 
       setSelectedInspectorCardId(null);
       setSelectedInspectorAnchor(null);
@@ -878,9 +879,9 @@ const GameBoard: React.FC = () => {
       <div
         role="presentation"
         onClick={(event) => {
-          if (event.target === event.currentTarget) {
-            closeSavedDeckPicker();
-          }
+          if (!shouldDismissModalOnBackdropClick(event.target, event.currentTarget)) return;
+
+          closeSavedDeckPicker();
         }}
         style={{
           position: 'fixed',
@@ -1011,9 +1012,9 @@ const GameBoard: React.FC = () => {
       <div
         role="presentation"
         onClick={(event) => {
-          if (event.target === event.currentTarget) {
-            cancelEvolveAutoAttachSelection();
-          }
+          if (!shouldDismissModalOnBackdropClick(event.target, event.currentTarget)) return;
+
+          cancelEvolveAutoAttachSelection();
         }}
         style={{
           position: 'fixed',
