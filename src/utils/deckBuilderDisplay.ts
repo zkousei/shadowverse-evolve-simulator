@@ -3,10 +3,24 @@ import { DEFAULT_DECK_NAME } from './deckStorage';
 
 export const DECK_SORT_VALUES = ['added', 'cost', 'id'] as const;
 export type DeckSortMode = typeof DECK_SORT_VALUES[number];
+export const DECK_HOVER_PREVIEW_WIDTH = 220;
+export const DECK_HOVER_PREVIEW_MAX_HEIGHT = 320;
+export const DECK_HOVER_PREVIEW_OFFSET = 16;
+export const DECK_HOVER_PREVIEW_VIEWPORT_PADDING = 8;
 
 export type DeckDisplayGroup = {
   card: DeckBuilderCardData;
   count: number;
+};
+
+type Point = {
+  x: number;
+  y: number;
+};
+
+type ViewportSize = {
+  width: number;
+  height: number;
 };
 
 const getCardCostSortValue = (card: DeckBuilderCardData): number => {
@@ -69,3 +83,23 @@ export const formatSavedDeckUpdatedAt = (value: string, locale?: string): string
 };
 
 export const resolveDeckName = (value: string): string => value.trim() || DEFAULT_DECK_NAME;
+
+export const getDeckHoverPreviewPosition = (
+  hoverPos: Point,
+  viewport: ViewportSize
+): Point => ({
+  left: Math.max(
+    DECK_HOVER_PREVIEW_VIEWPORT_PADDING,
+    Math.min(
+      hoverPos.x + DECK_HOVER_PREVIEW_OFFSET,
+      viewport.width - DECK_HOVER_PREVIEW_WIDTH - DECK_HOVER_PREVIEW_VIEWPORT_PADDING
+    )
+  ),
+  top: Math.max(
+    DECK_HOVER_PREVIEW_VIEWPORT_PADDING,
+    Math.min(
+      hoverPos.y + DECK_HOVER_PREVIEW_OFFSET,
+      viewport.height - DECK_HOVER_PREVIEW_MAX_HEIGHT - DECK_HOVER_PREVIEW_VIEWPORT_PADDING
+    )
+  ),
+});

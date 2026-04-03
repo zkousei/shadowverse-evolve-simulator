@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { DeckBuilderCardData } from '../models/deckBuilderCard';
 import {
+  DECK_HOVER_PREVIEW_MAX_HEIGHT,
+  DECK_HOVER_PREVIEW_WIDTH,
   formatSavedDeckUpdatedAt,
+  getDeckHoverPreviewPosition,
   groupDeckCardsForDisplay,
   parseNullableStat,
   resolveDeckName,
@@ -82,5 +85,22 @@ describe('deckBuilderDisplay', () => {
   it('resolves deck names with trimming and default fallback', () => {
     expect(resolveDeckName('  Alpha Deck  ')).toBe('Alpha Deck');
     expect(resolveDeckName('   ')).toBe('My Deck');
+  });
+
+  it('positions the deck hover preview within the viewport bounds', () => {
+    expect(getDeckHoverPreviewPosition({ x: 120, y: 140 }, { width: 1280, height: 720 })).toEqual({
+      left: 136,
+      top: 156,
+    });
+
+    expect(getDeckHoverPreviewPosition({ x: 1260, y: 710 }, { width: 1280, height: 720 })).toEqual({
+      left: 1280 - DECK_HOVER_PREVIEW_WIDTH - 8,
+      top: 720 - DECK_HOVER_PREVIEW_MAX_HEIGHT - 8,
+    });
+
+    expect(getDeckHoverPreviewPosition({ x: -100, y: -100 }, { width: 200, height: 200 })).toEqual({
+      left: 8,
+      top: 8,
+    });
   });
 });
