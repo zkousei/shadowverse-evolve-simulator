@@ -15,7 +15,6 @@ import {
 import {
   createDefaultDeckRuleConfig,
   DECK_FORMAT_VALUES,
-  getImportedDeckRuleConfig,
 } from '../models/deckRule';
 import { createEmptyDeckState, type DeckState } from '../models/deckState';
 import {
@@ -27,7 +26,6 @@ import {
   getDeckValidationMessages,
   type DeckValidationMessage,
   isRuleConfigured,
-  sanitizeImportedDeckState,
   type DeckTargetSection,
 } from '../utils/deckBuilderRules';
 import { buildCardDetailLookup, buildCardDetailPresentation, formatAbilityText } from '../utils/cardDetails';
@@ -51,7 +49,6 @@ import {
   hasReachedSoftSavedDeckLimit,
   listSavedDecks,
   loadDraft,
-  restoreDraftToSnapshot,
   restoreSavedDeckToSnapshot,
   saveDeck,
   saveDraft,
@@ -61,9 +58,17 @@ import {
 import {
   buildExportableDeckPayload,
   downloadDeckJson,
-  resolveImportedDeckName,
 } from '../utils/deckFile';
 import { addCardToDeckState, removeCardFromDeckState } from '../utils/deckBuilderMutations';
+import {
+  buildDeckLogImportFeedback,
+  buildDeckLogImportedDeckState,
+  buildJsonImportedDeckState,
+  buildPendingDraftRestoreState,
+  buildSavedDeckLoadState,
+  getDeckLogImportMessage,
+  shouldDetachSavedDeckTracking,
+} from '../utils/deckBuilderPersistence';
 import {
   addSubtypeTagSelection,
   areAllShownSavedDecksSelected,
@@ -89,7 +94,7 @@ import {
   type DeckSortMode,
 } from '../utils/deckBuilderDisplay';
 import { loadCardCatalog } from '../utils/cardCatalog';
-import { DeckLogImportError, fetchDeckLogImport } from '../utils/decklogImport';
+import { fetchDeckLogImport } from '../utils/decklogImport';
 import { formatSavedDeckCountSummary, formatSavedDeckRuleSummary } from '../utils/savedDeckPresentation';
 import CardArtwork from '../components/CardArtwork';
 
@@ -188,33 +193,8 @@ const DeckBuilder: React.FC = () => {
       return;
     }
 
-    const restoredDraft = restoreDraftToSnapshot(draft, cards);
     const savedDeck = draft.selectedDeckId ? getSavedDeckById(draft.selectedDeckId) : null;
-    const baselineSnapshot = savedDeck
-      ? (() => {
-        const restoredSavedDeck = restoreSavedDeckToSnapshot(savedDeck, cards);
-        const normalizedDeckState = sanitizeImportedDeckState(
-          restoredSavedDeck.snapshot.deckState,
-          cards,
-          restoredSavedDeck.snapshot.ruleConfig,
-        );
-
-        return createDeckSnapshot(
-          restoredSavedDeck.snapshot.name,
-          restoredSavedDeck.snapshot.ruleConfig,
-          normalizedDeckState,
-        );
-      })()
-      : null;
-
-    setPendingDraftRestore({
-      snapshot: {
-        ...restoredDraft.snapshot,
-        deckState: sanitizeImportedDeckState(restoredDraft.snapshot.deckState, cards, restoredDraft.snapshot.ruleConfig),
-      },
-      selectedDeckId: savedDeck?.id ?? null,
-      baselineSnapshot,
-    });
+    setPendingDraftRestore(buildPendingDraftRestoreState(draft, cards, savedDeck));
     setHasInitializedDraft(true);
   }, [cards, hasInitializedDraft]);
 
@@ -435,12 +415,12 @@ const DeckBuilder: React.FC = () => {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const data = JSON.parse(e.target?.result as string);
-        const importedDeckName = resolveImportedDeckName(data, file.name);
+        const data = JSON.parse(e.target?.result as string) as Record<string, unknown>;
+        const importedDeckState = buildJsonImportedDeckState(data, file.name, cards);
+        const importedDeckName = importedDeckState.deckName;
         if (importedDeckName) setDeckName(importedDeckName);
-        const importedRuleConfig = getImportedDeckRuleConfig(data);
-        setDeckRuleConfig(importedRuleConfig);
-        setDeckState(sanitizeImportedDeckState(data, cards, importedRuleConfig));
+        setDeckRuleConfig(importedDeckState.ruleConfig);
+        setDeckState(importedDeckState.deckState);
         setSelectedSavedDeckId(null);
         setSavedBaselineSnapshot(null);
         setDraftRestored(false);
@@ -452,26 +432,6 @@ const DeckBuilder: React.FC = () => {
     reader.readAsText(file);
     // Reset input so the same file can be uploaded again if needed
     event.target.value = '';
-  };
-
-  const getDeckLogImportMessage = (error: unknown): string => {
-    if (error instanceof DeckLogImportError) {
-      switch (error.code) {
-        case 'invalid-input':
-          return t('deckBuilder.alerts.deckLogInvalidInput');
-        case 'not-found':
-          return t('deckBuilder.alerts.deckLogNotFound');
-        case 'unsupported-game':
-          return t('deckBuilder.alerts.deckLogUnsupportedGame');
-        case 'fetch-failed':
-          return t('deckBuilder.alerts.deckLogFetchFailed');
-        case 'invalid-response':
-        default:
-          return t('deckBuilder.alerts.deckLogInvalidResponse');
-      }
-    }
-
-    return t('deckBuilder.alerts.deckLogFetchFailed');
   };
 
   const handleImportDeckLog = async () => {
@@ -487,27 +447,22 @@ const DeckBuilder: React.FC = () => {
 
     try {
       const importedDeck = await fetchDeckLogImport(deckLogInput, cards);
-      const sanitizedDeckState = sanitizeImportedDeckState(importedDeck.deckState, cards, importedDeck.ruleConfig);
+      const importedDeckState = buildDeckLogImportedDeckState(importedDeck, cards);
 
-      setDeckName(importedDeck.deckName);
-      setDeckRuleConfig(importedDeck.ruleConfig);
-      setDeckState(sanitizedDeckState);
+      setDeckName(importedDeckState.deckName ?? importedDeck.deckName);
+      setDeckRuleConfig(importedDeckState.ruleConfig);
+      setDeckState(importedDeckState.deckState);
       setSelectedSavedDeckId(null);
       setSavedBaselineSnapshot(null);
       setDraftRestored(false);
       setPendingDraftRestore(null);
       setIsDeckLogImportOpen(false);
       setDeckLogInput('');
-      setSaveFeedback({
-        kind: importedDeck.missingCardIds.length > 0 ? 'warning' : 'success',
-        message: importedDeck.missingCardIds.length > 0
-          ? t('deckBuilder.alerts.deckLogImportPartial', { count: importedDeck.missingCardIds.length })
-          : t('deckBuilder.alerts.deckLogImportSuccess', { name: importedDeck.deckName }),
-      });
+      setSaveFeedback(buildDeckLogImportFeedback(importedDeck, t));
     } catch (error) {
       setSaveFeedback({
         kind: 'warning',
-        message: getDeckLogImportMessage(error),
+        message: getDeckLogImportMessage(error, t),
       });
     } finally {
       setIsImportingDeckLog(false);
@@ -567,22 +522,13 @@ const DeckBuilder: React.FC = () => {
     const savedDeck = getSavedDeckById(deckId);
     if (!savedDeck) return;
 
-    const restoredDeck = restoreSavedDeckToSnapshot(savedDeck, cards);
-    const sanitizedDeckState = sanitizeImportedDeckState(
-      restoredDeck.snapshot.deckState,
-      cards,
-      restoredDeck.snapshot.ruleConfig,
-    );
+    const restoredDeck = buildSavedDeckLoadState(savedDeck, cards);
 
-    setDeckName(restoredDeck.snapshot.name);
-    setDeckRuleConfig(restoredDeck.snapshot.ruleConfig);
-    setDeckState(sanitizedDeckState);
-    setSelectedSavedDeckId(savedDeck.id);
-    setSavedBaselineSnapshot(createDeckSnapshot(
-      restoredDeck.snapshot.name,
-      restoredDeck.snapshot.ruleConfig,
-      sanitizedDeckState,
-    ));
+    setDeckName(restoredDeck.deckName);
+    setDeckRuleConfig(restoredDeck.ruleConfig);
+    setDeckState(restoredDeck.deckState);
+    setSelectedSavedDeckId(restoredDeck.selectedSavedDeckId);
+    setSavedBaselineSnapshot(restoredDeck.savedBaselineSnapshot);
     setDraftRestored(false);
     setPendingDraftRestore(null);
     setIsMyDecksOpen(false);
@@ -593,7 +539,7 @@ const DeckBuilder: React.FC = () => {
     const savedDeck = getSavedDeckById(deckId);
     if (!savedDeck) return;
     deleteSavedDeck(deckId);
-    if (selectedSavedDeckId === deckId) {
+    if (shouldDetachSavedDeckTracking(selectedSavedDeckId, [deckId])) {
       setSelectedSavedDeckId(null);
       setSavedBaselineSnapshot(null);
     }
@@ -622,7 +568,7 @@ const DeckBuilder: React.FC = () => {
     deleteSavedDecks(selectedSavedDeckIds);
     // Selected deletion follows the same rule as Delete All: preserve the live
     // builder and only detach it if its saved baseline is among the deletions.
-    if (selectedSavedDeckId !== null && selectedSavedDeckIds.includes(selectedSavedDeckId)) {
+    if (shouldDetachSavedDeckTracking(selectedSavedDeckId, selectedSavedDeckIds)) {
       setSelectedSavedDeckId(null);
       setSavedBaselineSnapshot(null);
     }
