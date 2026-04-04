@@ -7,6 +7,7 @@ import DeckBuilderDeckHeader from '../components/DeckBuilderDeckHeader';
 import DeckBuilderDeleteSavedDecksDialog from '../components/DeckBuilderDeleteSavedDecksDialog';
 import DeckBuilderDeckSection from '../components/DeckBuilderDeckSection';
 import DeckBuilderDraftRestoreDialog from '../components/DeckBuilderDraftRestoreDialog';
+import DeckBuilderHoverPreview from '../components/DeckBuilderHoverPreview';
 import DeckBuilderLibraryFilters from '../components/DeckBuilderLibraryFilters';
 import DeckBuilderLibraryCard from '../components/DeckBuilderLibraryCard';
 import DeckBuilderMyDecksModal from '../components/DeckBuilderMyDecksModal';
@@ -15,7 +16,6 @@ import DeckBuilderPreviewModal from '../components/DeckBuilderPreviewModal';
 import DeckBuilderResetDialog from '../components/DeckBuilderResetDialog';
 import DeckBuilderRulePanel from '../components/DeckBuilderRulePanel';
 import DeckBuilderSavedDeckConfirmDialog from '../components/DeckBuilderSavedDeckConfirmDialog';
-import { getBaseCardType } from '../models/cardClassification';
 import {
   getAvailableExpansions,
   getAvailableProductNames,
@@ -168,7 +168,6 @@ import {
 } from '../utils/deckBuilderDisplay';
 import { loadCardCatalog } from '../utils/cardCatalog';
 import { fetchDeckLogImport } from '../utils/decklogImport';
-import CardArtwork from '../components/CardArtwork';
 
 const PAGE_SIZE = 50;
 const COST_FILTER_VALUES = ['All', '0', '1', '2', '3', '4', '5', '6', '7+'] as const;
@@ -1152,37 +1151,14 @@ const DeckBuilder: React.FC = () => {
       )}
 
       {hoveredDeckCard && (
-        <div
-          style={{
-            position: 'fixed',
-            left: hoveredPreviewPosition?.left ?? DECK_HOVER_PREVIEW_VIEWPORT_PADDING,
-            top: hoveredPreviewPosition?.top ?? DECK_HOVER_PREVIEW_VIEWPORT_PADDING,
-            zIndex: 2000,
-            pointerEvents: 'none',
-            background: 'rgba(15, 23, 42, 0.92)',
-            border: '1px solid rgba(255,255,255,0.12)',
-            borderRadius: '12px',
-            padding: '0.5rem',
-            boxShadow: '0 16px 40px rgba(0,0,0,0.45)',
-            width: `${DECK_HOVER_PREVIEW_WIDTH}px`,
-            maxHeight: `${DECK_HOVER_PREVIEW_MAX_HEIGHT}px`,
-          }}
-        >
-          <CardArtwork
-            image={hoveredDeckCard.image}
-            alt={hoveredDeckCard.name}
-            detail={hoveredDetail ?? undefined}
-            baseCardType={getBaseCardType(hoveredDeckCard.card_kind_normalized)}
-            isLeaderCard={hoveredDeckCard.deck_section === 'leader'}
-            isTokenCard={hoveredDeckCard.deck_section === 'token' || hoveredDeckCard.is_token}
-            isEvolveCard={hoveredDeckCard.is_evolve_card}
-            style={{ width: '100%', borderRadius: '10px' }}
-            draggable={false}
-          />
-          <div style={{ marginTop: '0.35rem', color: '#e2e8f0', fontSize: '0.78rem', fontWeight: 700 }}>
-            {hoveredDeckCard.name}
-          </div>
-        </div>
+        <DeckBuilderHoverPreview
+          hoveredDeckCard={hoveredDeckCard}
+          hoveredDetail={hoveredDetail}
+          left={hoveredPreviewPosition?.left ?? DECK_HOVER_PREVIEW_VIEWPORT_PADDING}
+          top={hoveredPreviewPosition?.top ?? DECK_HOVER_PREVIEW_VIEWPORT_PADDING}
+          width={DECK_HOVER_PREVIEW_WIDTH}
+          maxHeight={DECK_HOVER_PREVIEW_MAX_HEIGHT}
+        />
       )}
 
 
