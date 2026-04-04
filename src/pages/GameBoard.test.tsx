@@ -334,6 +334,42 @@ describe('GameBoard', () => {
     expect(discardSavedSession).toHaveBeenCalledTimes(1);
   });
 
+  it('shows the preparation checklist and toggles reveal hands mode', () => {
+    const handleSetRevealHandsMode = vi.fn();
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      handleSetRevealHandsMode,
+    }));
+
+    render(<GameBoard />);
+
+    expect(screen.getByText('Preparing Game')).toBeInTheDocument();
+    expect(screen.getByText('Reveal Hands Mode')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'OFF' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'OFF' }));
+
+    expect(handleSetRevealHandsMode).toHaveBeenCalledWith(true);
+  });
+
+  it('shows recent events while playing', () => {
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      gameState: createGameState([], {
+        gameStatus: 'playing',
+      }),
+      eventHistory: [
+        'Host drew a card.',
+        'Guest evolved Alpha Knight.',
+      ],
+    }));
+
+    render(<GameBoard />);
+
+    expect(screen.getByText('Recent Events')).toBeInTheDocument();
+    expect(screen.getByText('Host drew a card.')).toBeInTheDocument();
+    expect(screen.getByText('Guest evolved Alpha Knight.')).toBeInTheDocument();
+  });
+
   it('opens the saved deck picker, filters saved decks, and imports the selected deck', async () => {
     saveDeck({
       name: 'Alpha Deck',
