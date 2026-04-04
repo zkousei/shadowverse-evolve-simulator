@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import Zone from '../components/Zone';
 import type { CardInspectAnchor, CardInstance } from '../components/Card';
 import CardSearchModal from '../components/CardSearchModal';
+import GameBoardRoomStatus from '../components/GameBoardRoomStatus';
+import GameBoardSavedSessionPrompt from '../components/GameBoardSavedSessionPrompt';
 import TopDeckModal from '../components/TopDeckModal';
 import { useGameBoardLogic } from '../hooks/useGameBoardLogic';
 import { canImportDeck, canUndoLastTurn, isHandCardMovementLocked } from '../utils/gameRules';
@@ -1155,78 +1157,17 @@ const GameBoard: React.FC = () => {
         {/* Header bar tracking Phase / Turn */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-surface)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)' }}>
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-            <span>
-              {isSoloMode ? t('gameBoard.header.mode') : t('gameBoard.header.room')}:{' '}
-              <strong>{isSoloMode ? t('gameBoard.header.soloPlayBeta') : room}</strong>
-            </span>
-            {!isSoloMode && (
-              <button
-                type="button"
-                onClick={handleCopyRoomId}
-                style={{
-                  padding: '0.28rem 0.55rem',
-                  background: isRoomCopied ? 'rgba(16, 185, 129, 0.18)' : '#334155',
-                  color: isRoomCopied ? '#d1fae5' : 'white',
-                  border: `1px solid ${isRoomCopied ? 'rgba(16, 185, 129, 0.38)' : 'rgba(255,255,255,0.14)'}`,
-                  borderRadius: '999px',
-                  cursor: 'pointer',
-                  fontSize: '0.72rem',
-                  fontWeight: 'bold',
-                  transition: 'all 0.2s ease'
-                }}
-                title={t('gameBoard.room.copyAria')}
-              >
-                {isRoomCopied ? t('gameBoard.room.copied') : t('gameBoard.room.copy')}
-              </button>
-            )}
-            {isSoloMode && (
-              <span style={{
-                fontSize: '0.75rem',
-                fontWeight: 'bold',
-                color: '#111827',
-                background: '#f59e0b',
-                padding: '0.2rem 0.45rem',
-                borderRadius: '999px'
-              }}>
-                {t('home.cards.soloPlay.badge')}
-              </span>
-            )}
-            {!isSoloMode && (
-              <span
-                style={{
-                  padding: '0.22rem 0.55rem',
-                  borderRadius: '999px',
-                  border: `1px solid ${connectionBadgeTone.border}`,
-                  background: connectionBadgeTone.background,
-                  color: connectionBadgeTone.color,
-                  fontSize: '0.72rem',
-                  fontWeight: 'bold',
-                  letterSpacing: '0.02em'
-                }}
-              >
-                {connectionBadgeTone.label}
-              </span>
-            )}
-            <span style={{ color: isSoloMode ? 'var(--vivid-green-cyan)' : 'var(--text-muted)' }}>{status}</span>
-            {!isSoloMode && !isHost && connectionState !== 'connected' && (
-              <button
-                onClick={attemptReconnect}
-                disabled={connectionState === 'connecting'}
-                title={connectionState === 'connecting' ? t('gameBoard.header.reconnectMessageConnecting') : t('gameBoard.header.reconnectMessageRetry')}
-                style={{
-                  padding: '0.3rem 0.6rem',
-                  background: '#334155',
-                  color: 'white',
-                  border: '1px solid rgba(255,255,255,0.14)',
-                  borderRadius: '4px',
-                  cursor: connectionState === 'connecting' ? 'not-allowed' : 'pointer',
-                  fontSize: '0.75rem',
-                  opacity: connectionState === 'connecting' ? 0.6 : 1
-                }}
-              >
-                {connectionState === 'reconnecting' ? t('gameBoard.header.reconnectNow') : t('gameBoard.header.reconnect')}
-              </button>
-            )}
+            <GameBoardRoomStatus
+              room={room}
+              isSoloMode={isSoloMode}
+              isHost={isHost}
+              status={status}
+              connectionState={connectionState}
+              connectionBadgeTone={connectionBadgeTone}
+              isRoomCopied={isRoomCopied}
+              onCopyRoomId={handleCopyRoomId}
+              onReconnect={attemptReconnect}
+            />
 
             {gameState.gameStatus === 'preparing' ? (
               <div style={{ display: 'flex', gap: '0.4rem' }}>
@@ -1437,59 +1378,11 @@ const GameBoard: React.FC = () => {
         )}
 
         {!isSoloMode && isHost && savedSessionCandidate && (
-          <div
-            style={{
-              marginTop: '-0.35rem',
-              background: 'rgba(59, 130, 246, 0.12)',
-              border: '1px solid rgba(59, 130, 246, 0.32)',
-              color: '#dbeafe',
-              borderRadius: '10px',
-              padding: '0.75rem 0.9rem',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              gap: '1rem',
-              flexWrap: 'wrap'
-            }}
-          >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-              {/* This is a room/session resume prompt, separate from any saved
-                  deck concept used by the DeckBuilder. */}
-              <strong style={{ fontSize: '0.88rem' }}>{t('gameBoard.alerts.previousSession')}</strong>
-              <span style={{ fontSize: '0.78rem', color: '#bfdbfe' }}>
-                {savedSessionTimestamp ? t('gameBoard.alerts.previousSessionTime', { time: savedSessionTimestamp }) : t('gameBoard.alerts.previousSessionUnknown')}
-              </span>
-            </div>
-            <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
-              <button
-                onClick={discardSavedSession}
-                style={{
-                  padding: '0.45rem 0.9rem',
-                  background: 'transparent',
-                  color: '#e2e8f0',
-                  border: '1px solid rgba(255,255,255,0.18)',
-                  borderRadius: '6px',
-                  cursor: 'pointer'
-                }}
-              >
-                {t('gameBoard.alerts.discard')}
-              </button>
-              <button
-                onClick={resumeSavedSession}
-                style={{
-                  padding: '0.45rem 0.9rem',
-                  background: '#3b82f6',
-                  color: 'white',
-                  border: '1px solid #2563eb',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontWeight: 'bold'
-                }}
-              >
-                {t('gameBoard.alerts.resume')}
-              </button>
-            </div>
-          </div>
+          <GameBoardSavedSessionPrompt
+            savedSessionTimestamp={savedSessionTimestamp}
+            onDiscard={discardSavedSession}
+            onResume={resumeSavedSession}
+          />
         )}
 
         {attackSourceCard && (
