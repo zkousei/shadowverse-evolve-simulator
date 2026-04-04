@@ -8,10 +8,8 @@ import DeckBuilderDeleteSavedDecksDialog from '../components/DeckBuilderDeleteSa
 import DeckBuilderDeckSection from '../components/DeckBuilderDeckSection';
 import DeckBuilderDraftRestoreDialog from '../components/DeckBuilderDraftRestoreDialog';
 import DeckBuilderHoverPreview from '../components/DeckBuilderHoverPreview';
-import DeckBuilderLibraryFilters from '../components/DeckBuilderLibraryFilters';
-import DeckBuilderLibraryCard from '../components/DeckBuilderLibraryCard';
+import DeckBuilderLibraryPane from '../components/DeckBuilderLibraryPane';
 import DeckBuilderMyDecksModal from '../components/DeckBuilderMyDecksModal';
-import DeckBuilderPaginationControls from '../components/DeckBuilderPaginationControls';
 import DeckBuilderPreviewModal from '../components/DeckBuilderPreviewModal';
 import DeckBuilderResetDialog from '../components/DeckBuilderResetDialog';
 import DeckBuilderRulePanel from '../components/DeckBuilderRulePanel';
@@ -841,75 +839,53 @@ const DeckBuilder: React.FC = () => {
         />
       )}
 
-      {/* Left: Card Database */}
-      <div style={{ flex: 1, padding: '2rem', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-        <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>{t('deckBuilder.title')}</h1>
-
-        <DeckBuilderLibraryFilters
-          search={search}
-          hideSameNameVariants={hideSameNameVariants}
-          deckSectionFilter={deckSectionFilter}
-          classFilter={classFilter}
-          cardTypeFilter={cardTypeFilter}
-          costFilter={costFilter}
-          expansionFilter={expansionFilter}
-          rarityFilter={rarityFilter}
-          productNameFilter={productNameFilter}
-          subtypeSearch={subtypeSearch}
-          selectedSubtypeTags={selectedSubtypeTags}
-          filteredSubtypeOptions={filteredSubtypeOptions}
-          costFilterValues={COST_FILTER_VALUES}
-          deckSectionFilterValues={DECK_SECTION_FILTER_VALUES}
-          cardTypeFilterValues={CARD_TYPE_FILTER_VALUES}
-          expansions={expansions}
-          rarities={rarities}
-          productNames={productNames}
-          canAddSubtype={canAddSubtypeTag(subtypeTags, selectedSubtypeTags, subtypeSearch)}
-          onSearchChange={(value) => updateLibraryFiltersWithPageReset({ search: value })}
-          onHideSameNameVariantsChange={(checked) => updateLibraryFiltersWithPageReset({ hideSameNameVariants: checked })}
-          onReset={resetLibraryFilters}
-          onDeckSectionFilterChange={(value) => updateLibraryFiltersWithPageReset({ deckSectionFilter: value })}
-          onClassFilterChange={(value) => updateLibraryFiltersWithPageReset({ classFilter: value })}
-          onCardTypeFilterChange={(value) => updateLibraryFiltersWithPageReset({ cardTypeFilter: value })}
-          onCostFilterChange={(value) => updateLibraryFiltersWithPageReset({ costFilter: value })}
-          onExpansionFilterChange={(value) => updateLibraryFiltersWithPageReset({ expansionFilter: value })}
-          onRarityFilterChange={(value) => updateLibraryFiltersWithPageReset({ rarityFilter: value })}
-          onProductNameFilterChange={(value) => updateLibraryFiltersWithPageReset({ productNameFilter: value })}
-          onSubtypeSearchChange={(value) => updateLibraryFilters({ subtypeSearch: value })}
-          onAddSubtype={() => addSubtypeTag(subtypeSearch)}
-          onRemoveSubtype={removeSubtypeTag}
-        />
-
-        {/* Pagination Controls */}
-        <DeckBuilderPaginationControls
-          page={page}
-          totalPages={totalPages}
-          canGoPrev={page > 0}
-          canGoNext={page < totalPages - 1}
-          onPrev={() => updateLibraryFilters({ page: Math.max(0, page - 1) })}
-          onNext={() => updateLibraryFilters({ page: Math.min(totalPages - 1, page + 1) })}
-        />
-
-        {cards.length === 0 ? (
-          <p style={{ color: 'var(--text-muted)', textAlign: 'center', marginTop: '2rem' }}>{t('deckBuilder.loading')}</p>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '1rem' }}>
-            {paginatedCards.map((card) => {
-              return (
-                <DeckBuilderLibraryCard
-                  key={card.id}
-                  card={card}
-                  detail={cardDetailLookup[card.id]}
-                  allowedSections={getAllowedSections(card)}
-                  canAddToSection={(section) => canAddCardToDeckState(card, section, deckState, deckRuleConfig)}
-                  onOpenPreview={handleOpenPreview}
-                  onAddToSection={addToDeck}
-                />
-              );
-            })}
-          </div>
-        )}
-      </div>
+      <DeckBuilderLibraryPane
+        isLoading={cards.length === 0}
+        paginatedCards={paginatedCards}
+        cardDetailLookup={cardDetailLookup}
+        search={search}
+        hideSameNameVariants={hideSameNameVariants}
+        deckSectionFilter={deckSectionFilter}
+        classFilter={classFilter}
+        cardTypeFilter={cardTypeFilter}
+        costFilter={costFilter}
+        expansionFilter={expansionFilter}
+        rarityFilter={rarityFilter}
+        productNameFilter={productNameFilter}
+        subtypeSearch={subtypeSearch}
+        selectedSubtypeTags={selectedSubtypeTags}
+        filteredSubtypeOptions={filteredSubtypeOptions}
+        costFilterValues={COST_FILTER_VALUES}
+        deckSectionFilterValues={DECK_SECTION_FILTER_VALUES}
+        cardTypeFilterValues={CARD_TYPE_FILTER_VALUES}
+        expansions={expansions}
+        rarities={rarities}
+        productNames={productNames}
+        canAddSubtype={canAddSubtypeTag(subtypeTags, selectedSubtypeTags, subtypeSearch)}
+        page={page}
+        totalPages={totalPages}
+        canGoPrev={page > 0}
+        canGoNext={page < totalPages - 1}
+        getAllowedSections={getAllowedSections}
+        canAddToSection={(card, section) => canAddCardToDeckState(card, section, deckState, deckRuleConfig)}
+        onSearchChange={(value) => updateLibraryFiltersWithPageReset({ search: value })}
+        onHideSameNameVariantsChange={(checked) => updateLibraryFiltersWithPageReset({ hideSameNameVariants: checked })}
+        onReset={resetLibraryFilters}
+        onDeckSectionFilterChange={(value) => updateLibraryFiltersWithPageReset({ deckSectionFilter: value })}
+        onClassFilterChange={(value) => updateLibraryFiltersWithPageReset({ classFilter: value })}
+        onCardTypeFilterChange={(value) => updateLibraryFiltersWithPageReset({ cardTypeFilter: value })}
+        onCostFilterChange={(value) => updateLibraryFiltersWithPageReset({ costFilter: value })}
+        onExpansionFilterChange={(value) => updateLibraryFiltersWithPageReset({ expansionFilter: value })}
+        onRarityFilterChange={(value) => updateLibraryFiltersWithPageReset({ rarityFilter: value })}
+        onProductNameFilterChange={(value) => updateLibraryFiltersWithPageReset({ productNameFilter: value })}
+        onSubtypeSearchChange={(value) => updateLibraryFilters({ subtypeSearch: value })}
+        onAddSubtype={() => addSubtypeTag(subtypeSearch)}
+        onRemoveSubtype={removeSubtypeTag}
+        onPrev={() => updateLibraryFilters({ page: Math.max(0, page - 1) })}
+        onNext={() => updateLibraryFilters({ page: Math.min(totalPages - 1, page + 1) })}
+        onOpenPreview={handleOpenPreview}
+        onAddToSection={addToDeck}
+      />
 
       {/* Right: Deck Checklist */}
       <div className="glass-panel" style={{ width: '350px', display: 'flex', flexDirection: 'column', borderRight: 'none', borderTop: 'none', borderBottom: 'none', borderRadius: 0 }}>
