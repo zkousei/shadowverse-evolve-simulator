@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, Plus, Minus, Download, Upload } from 'lucide-react';
-import { CLASS, CLASS_FILTER_VALUES, CONSTRUCTED_CLASS_VALUES } from '../models/class';
+import { CLASS, CLASS_FILTER_VALUES } from '../models/class';
 import type { ClassFilter } from '../models/class';
+import DeckBuilderRulePanel from '../components/DeckBuilderRulePanel';
 import { getBaseCardType } from '../models/cardClassification';
 import {
   getAvailableExpansions,
@@ -14,7 +15,6 @@ import {
 } from '../models/deckBuilderCard';
 import {
   createDefaultDeckRuleConfig,
-  DECK_FORMAT_VALUES,
   type DeckRuleConfig,
   type DeckFormat,
 } from '../models/deckRule';
@@ -26,7 +26,6 @@ import {
   getDeckLimit,
   getAllowedSections,
   getDeckValidationMessages,
-  type DeckValidationMessage,
   isRuleConfigured,
   type DeckTargetSection,
 } from '../utils/deckBuilderRules';
@@ -1518,222 +1517,19 @@ const DeckBuilder: React.FC = () => {
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
-          <h3 style={{ marginBottom: '0.5rem' }}>{t('deckBuilder.deckRule.title')}</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '2rem' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-              <label htmlFor="deck-format" style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('deckBuilder.deckRule.ruleFormat')}</label>
-              <select
-                id="deck-format"
-                aria-label={t('deckBuilder.deckRule.aria.format')}
-                value={deckRuleConfig.format}
-                onChange={(e) => {
-                  const nextFormat = e.target.value as DeckFormat;
-                  handleDeckFormatChange(nextFormat);
-                }}
-                style={{
-                  padding: '0.5rem',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border-light)',
-                  background: 'var(--bg-surface)',
-                  color: 'var(--text-main)',
-                }}
-              >
-                {DECK_FORMAT_VALUES.map(format => (
-                  <option key={format} value={format}>
-                    {t(`deckBuilder.deckRule.formats.${format}` as any)}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {deckRuleConfig.format === 'constructed' && (
-              <>
-                <div
-                  role="group"
-                  aria-label={t('deckBuilder.deckRule.aria.identityType')}
-                  style={{
-                    display: 'flex',
-                    background: 'var(--bg-surface)',
-                    padding: '0.25rem',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--border-light)',
-                    gap: '0.25rem',
-                    alignItems: 'center',
-                  }}
-                >
-                  <span style={{ padding: '0.5rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                    {t('deckBuilder.deckRule.identity.type')}
-                  </span>
-                  {(['class', 'title'] as const).map(identityType => (
-                    <button
-                      key={identityType}
-                      type="button"
-                      aria-pressed={deckRuleConfig.identityType === identityType}
-                      onClick={() => handleDeckIdentityTypeChange(identityType)}
-                      style={{
-                        padding: '0.25rem 0.75rem',
-                        borderRadius: '4px',
-                        background: deckRuleConfig.identityType === identityType ? 'var(--brand-accent)' : 'transparent',
-                        color: deckRuleConfig.identityType === identityType ? '#fff' : 'var(--text-main)',
-                        fontWeight: deckRuleConfig.identityType === identityType ? 'bold' : 'normal',
-                      }}
-                    >
-                      {t(`deckBuilder.deckRule.identity.${identityType}` as any)}
-                    </button>
-                  ))}
-                </div>
-
-                {deckRuleConfig.identityType === 'class' ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                    <label htmlFor="constructed-class" style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('deckBuilder.deckRule.selectedClass')}</label>
-                    <select
-                      id="constructed-class"
-                      aria-label={t('deckBuilder.deckRule.aria.constructedClass')}
-                      value={deckRuleConfig.selectedClass ?? ''}
-                      onChange={(e) => handleConstructedClassChange(e.target.value)}
-                      style={{
-                        padding: '0.5rem',
-                        borderRadius: 'var(--radius-md)',
-                        border: '1px solid var(--border-light)',
-                        background: 'var(--bg-surface)',
-                        color: 'var(--text-main)',
-                      }}
-                    >
-                      <option value="">{t('deckBuilder.deckRule.selectClass')}</option>
-                      {CONSTRUCTED_CLASS_VALUES.map(cardClass => {
-                        const classKey = Object.keys(CLASS).find(k => (CLASS as any)[k] === cardClass)?.toLowerCase() || 'neutral';
-                        return (
-                          <option key={cardClass} value={cardClass}>
-                            {t(`common.classes.${classKey}`)}
-                          </option>
-                        );
-                      })}
-                    </select>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                    <label htmlFor="constructed-title" style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('deckBuilder.deckRule.selectedTitle')}</label>
-                    <select
-                      id="constructed-title"
-                      aria-label={t('deckBuilder.deckRule.aria.constructedTitle')}
-                      value={deckRuleConfig.selectedTitle ?? ''}
-                      onChange={(e) => handleConstructedTitleChange(e.target.value)}
-                      style={{
-                        padding: '0.5rem',
-                        borderRadius: 'var(--radius-md)',
-                        border: '1px solid var(--border-light)',
-                        background: 'var(--bg-surface)',
-                        color: 'var(--text-main)',
-                      }}
-                    >
-                      <option value="">{t('deckBuilder.deckRule.selectTitle')}</option>
-                      {titles.map(title => (
-                        <option key={title} value={title}>{title}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-              </>
-            )}
-
-            {deckRuleConfig.format === 'crossover' && (
-              <>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                  <label htmlFor="crossover-class-a" style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('deckBuilder.deckRule.crossoverClassA')}</label>
-                  <select
-                    id="crossover-class-a"
-                    aria-label={t('deckBuilder.deckRule.aria.crossoverClassA')}
-                    value={deckRuleConfig.selectedClasses[0] ?? ''}
-                    onChange={(e) => handleCrossoverClassChange(0, e.target.value)}
-                    style={{
-                      padding: '0.5rem',
-                      borderRadius: 'var(--radius-md)',
-                      border: '1px solid var(--border-light)',
-                      background: 'var(--bg-surface)',
-                      color: 'var(--text-main)',
-                    }}
-                  >
-                    <option value="">{t('deckBuilder.deckRule.selectFirstClass')}</option>
-                    {crossoverClassOptionsA.map(cardClass => {
-                      const classKey = Object.keys(CLASS).find(k => (CLASS as any)[k] === cardClass)?.toLowerCase() || 'neutral';
-                      return (
-                        <option key={cardClass} value={cardClass}>
-                          {t(`common.classes.${classKey}`)}
-                        </option>
-                      );
-                    })}
-                  </select>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                  <label htmlFor="crossover-class-b" style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('deckBuilder.deckRule.crossoverClassB')}</label>
-                  <select
-                    id="crossover-class-b"
-                    aria-label={t('deckBuilder.deckRule.aria.crossoverClassB')}
-                    value={deckRuleConfig.selectedClasses[1] ?? ''}
-                    onChange={(e) => handleCrossoverClassChange(1, e.target.value)}
-                    style={{
-                      padding: '0.5rem',
-                      borderRadius: 'var(--radius-md)',
-                      border: '1px solid var(--border-light)',
-                      background: 'var(--bg-surface)',
-                      color: 'var(--text-main)',
-                    }}
-                  >
-                    <option value="">{t('deckBuilder.deckRule.selectSecondClass')}</option>
-                    {crossoverClassOptionsB.map(cardClass => {
-                      const classKey = Object.keys(CLASS).find(k => (CLASS as any)[k] === cardClass)?.toLowerCase() || 'neutral';
-                      return (
-                        <option key={cardClass} value={cardClass}>
-                          {t(`common.classes.${classKey}`)}
-                        </option>
-                      );
-                    })}
-                  </select>
-                </div>
-              </>
-            )}
-            {deckRuleConfig.format === 'constructed' && !isRuleReady && (
-              <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                {t('deckBuilder.deckRule.promptConstructed')}
-              </p>
-            )}
-            {deckRuleConfig.format === 'crossover' && !isRuleReady && (
-              <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                {t('deckBuilder.deckRule.promptCrossover')}
-              </p>
-            )}
-            {deckIssueMessages.length > 0 && (
-              <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: '0.75rem' }}>
-                <p style={{ margin: '0 0 0.5rem 0', color: '#ef4444', fontSize: '0.875rem', fontWeight: 700 }}>
-                  {t('deckBuilder.deckRule.resolveBeforeExport')}
-                </p>
-                <ul style={{ margin: 0, paddingLeft: '1rem', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
-                  {deckIssueMessages.map((msg: DeckValidationMessage) => {
-                    const params: any = { ...msg.params };
-                    if (params.deckI18nKey) {
-                      params.deck = t(params.deckI18nKey);
-                    }
-                    if (params.format && typeof params.format === 'string' && ['constructed', 'crossover', 'other'].includes(params.format)) {
-                      params.format = t(`deckBuilder.deckRule.formats.${params.format}`);
-                    }
-                    return (
-                      <li key={msg.id + JSON.stringify(params)} style={{ marginBottom: '0.25rem' }}>
-                        {t(msg.id as any, params) as string}
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            )}
-            {deckIssueMessages.length === 0 && (
-              <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: '0.75rem' }}>
-                <p style={{ margin: 0, color: 'var(--vivid-green-cyan)', fontSize: '0.875rem', fontWeight: 700 }}>
-                  {t('deckBuilder.deckRule.legalReady')}
-                </p>
-              </div>
-            )}
-          </div>
+          <DeckBuilderRulePanel
+            deckRuleConfig={deckRuleConfig}
+            titles={titles}
+            crossoverClassOptionsA={crossoverClassOptionsA}
+            crossoverClassOptionsB={crossoverClassOptionsB}
+            isRuleReady={isRuleReady}
+            deckIssueMessages={deckIssueMessages}
+            onDeckFormatChange={handleDeckFormatChange}
+            onDeckIdentityTypeChange={handleDeckIdentityTypeChange}
+            onConstructedClassChange={handleConstructedClassChange}
+            onConstructedTitleChange={handleConstructedTitleChange}
+            onCrossoverClassChange={handleCrossoverClassChange}
+          />
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginBottom: '1.5rem' }}>
             <label htmlFor="deck-sort" style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('deckBuilder.deckArea.myDeckSort')}</label>
