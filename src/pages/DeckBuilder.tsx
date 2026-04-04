@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search } from 'lucide-react';
-import { CLASS, CLASS_FILTER_VALUES } from '../models/class';
 import type { ClassFilter } from '../models/class';
 import DeckBuilderDeckControls from '../components/DeckBuilderDeckControls';
 import DeckBuilderDeckHeader from '../components/DeckBuilderDeckHeader';
 import DeckBuilderDeckSection from '../components/DeckBuilderDeckSection';
+import DeckBuilderLibraryFilters from '../components/DeckBuilderLibraryFilters';
 import DeckBuilderLibraryCard from '../components/DeckBuilderLibraryCard';
 import DeckBuilderMyDecksModal from '../components/DeckBuilderMyDecksModal';
 import DeckBuilderPaginationControls from '../components/DeckBuilderPaginationControls';
@@ -866,352 +865,40 @@ const DeckBuilder: React.FC = () => {
       <div style={{ flex: 1, padding: '2rem', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
         <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>{t('deckBuilder.title')}</h1>
 
-        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', alignItems: 'center' }}>
-          <div style={{ position: 'relative', flex: 1 }}>
-            <Search size={20} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-            <input
-              type="text"
-              placeholder={t('deckBuilder.filters.searchCards')}
-              value={search}
-              onChange={(e) => updateLibraryFiltersWithPageReset({ search: e.target.value })}
-              style={{
-                width: '100%',
-                padding: '0.75rem 1rem 0.75rem 2.5rem',
-                fontSize: '1rem',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--border-light)',
-                background: 'var(--bg-surface)',
-                color: 'var(--text-main)',
-                outline: 'none'
-              }}
-            />
-          </div>
-
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.875rem', whiteSpace: 'nowrap' }}>
-            <input
-              type="checkbox"
-              checked={hideSameNameVariants}
-              onChange={(e) => updateLibraryFiltersWithPageReset({ hideSameNameVariants: e.target.checked })}
-            />
-            {t('deckBuilder.filters.hideSameNameVariants')}
-          </label>
-
-          <button
-            type="button"
-            onClick={resetLibraryFilters}
-            style={{
-              padding: '0.5rem 0.75rem',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--border-light)',
-              background: 'var(--bg-surface)',
-              color: 'var(--text-main)',
-              fontSize: '0.875rem',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {t('deckBuilder.filters.reset', 'Reset Filters')}
-          </button>
-        </div>
-
-        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          <div
-            role="group"
-            aria-label={t('deckBuilder.filters.aria.section')}
-            style={{
-              display: 'flex',
-              background: 'var(--bg-surface)',
-              padding: '0.25rem',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--border-light)',
-              flexWrap: 'wrap',
-              gap: '0.25rem',
-              alignItems: 'center',
-            }}
-          >
-            <span style={{ padding: '0.5rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-              {t('deckBuilder.filters.labels.section')}:
-            </span>
-
-            {DECK_SECTION_FILTER_VALUES.map((section) => (
-              <button
-                key={section}
-                type="button"
-                aria-pressed={deckSectionFilter === section}
-                onClick={() => updateLibraryFiltersWithPageReset({ deckSectionFilter: section })}
-                style={{
-                  padding: '0.25rem 0.75rem',
-                  borderRadius: '4px',
-                  background: deckSectionFilter === section ? 'var(--brand-accent)' : 'transparent',
-                  color: deckSectionFilter === section ? '#fff' : 'var(--text-main)',
-                  fontWeight: deckSectionFilter === section ? 'bold' : 'normal',
-                }}
-              >
-                {t(`deckBuilder.filters.deckSection.${section.toLowerCase()}` as any)}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Filters */}
-        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          {/* Class Filter */}
-          <div
-            role="group"
-            aria-label={t('deckBuilder.filters.aria.class')}
-            style={{
-              display: 'flex',
-              background: 'var(--bg-surface)',
-              padding: '0.25rem',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--border-light)',
-              flexWrap: 'wrap',
-              gap: '0.25rem',
-              alignItems: 'center',
-            }}
-          >
-            <span style={{ padding: '0.5rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-              {t('deckBuilder.filters.labels.class')}:
-            </span>
-
-            {CLASS_FILTER_VALUES.map((cls) => {
-              const classKey = cls === 'All' ? 'all' : (Object.keys(CLASS).find(k => (CLASS as any)[k] === cls)?.toLowerCase() || 'all');
-              return (
-                <button
-                  key={cls}
-                  type="button"
-                  aria-pressed={classFilter === cls}
-                  onClick={() => updateLibraryFiltersWithPageReset({ classFilter: cls })}
-                  style={{
-                    padding: '0.25rem 0.75rem',
-                    borderRadius: '4px',
-                    background: classFilter === cls ? 'var(--brand-accent)' : 'transparent',
-                    color: classFilter === cls ? '#fff' : 'var(--text-main)',
-                    fontWeight: classFilter === cls ? 'bold' : 'normal',
-                  }}
-                >
-                  {t(`common.classes.${classKey}`)}
-                </button>
-              );
-            })}
-          </div>
-
-          <div
-            role="group"
-            aria-label={t('deckBuilder.filters.aria.cardType')}
-            style={{
-              display: 'flex',
-              background: 'var(--bg-surface)',
-              padding: '0.25rem',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--border-light)',
-              flexWrap: 'wrap',
-              gap: '0.25rem',
-              alignItems: 'center',
-            }}
-          >
-            <span style={{ padding: '0.5rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-              {t('deckBuilder.filters.labels.cardType')}:
-            </span>
-
-            {CARD_TYPE_FILTER_VALUES.map((cardType) => (
-              <button
-                key={cardType}
-                type="button"
-                aria-pressed={cardTypeFilter === cardType}
-                onClick={() => updateLibraryFiltersWithPageReset({ cardTypeFilter: cardType })}
-                style={{
-                  padding: '0.25rem 0.75rem',
-                  borderRadius: '4px',
-                  background: cardTypeFilter === cardType ? 'var(--brand-accent)' : 'transparent',
-                  color: cardTypeFilter === cardType ? '#fff' : 'var(--text-main)',
-                  fontWeight: cardTypeFilter === cardType ? 'bold' : 'normal',
-                }}
-              >
-                {t(`deckBuilder.filters.cardType.${cardType.toLowerCase()}` as any)}
-              </button>
-            ))}
-          </div>
-
-        </div>
-        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          {/* Cost Filter */}
-          <div
-            role="group"
-            aria-label={t('deckBuilder.filters.aria.cost')}
-            style={{ display: 'flex', background: 'var(--bg-surface)', padding: '0.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}
-          >
-            <span style={{ padding: '0.5rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('deckBuilder.filters.labels.cost')}:</span>
-            {COST_FILTER_VALUES.map(c => (
-              <button
-                key={c}
-                type="button"
-                aria-pressed={costFilter === c}
-                onClick={() => updateLibraryFiltersWithPageReset({ costFilter: c })}
-                style={{
-                  padding: '0.25rem 0.75rem',
-                  borderRadius: '4px',
-                  background: costFilter === c ? 'var(--brand-accent)' : 'transparent',
-                  color: costFilter === c ? '#fff' : 'var(--text-main)',
-                  fontWeight: costFilter === c ? 'bold' : 'normal'
-                }}
-              >
-                {c}
-              </button>
-            ))}
-          </div>
-
-          {/* Expansion Filter */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('deckBuilder.filters.labels.expansion')}:</span>
-            <select
-              aria-label={t('deckBuilder.filters.aria.expansion')}
-              value={expansionFilter}
-              onChange={(e) => updateLibraryFiltersWithPageReset({ expansionFilter: e.target.value })}
-              style={{
-                padding: '0.5rem',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--border-light)',
-                background: 'var(--bg-surface)',
-                color: 'var(--text-main)',
-                outline: 'none',
-                minWidth: '120px'
-              }}
-            >
-              <option value="All">{t('deckBuilder.filters.allExpansions')}</option>
-              {expansions.map(ex => (
-                <option key={ex} value={ex}>{ex}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Rarity Filter */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('deckBuilder.filters.labels.rarity')}:</span>
-            <select
-              aria-label={t('deckBuilder.filters.aria.rarity')}
-              value={rarityFilter}
-              onChange={(e) => updateLibraryFiltersWithPageReset({ rarityFilter: e.target.value })}
-              style={{
-                padding: '0.5rem',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--border-light)',
-                background: 'var(--bg-surface)',
-                color: 'var(--text-main)',
-                outline: 'none',
-                minWidth: '120px'
-              }}
-            >
-              <option value="All">{t('deckBuilder.filters.allRarities')}</option>
-              {rarities.map(rarity => (
-                <option key={rarity} value={rarity}>{rarity}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Product Filter */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('deckBuilder.filters.labels.productName')}:</span>
-            <select
-              aria-label={t('deckBuilder.filters.aria.productName')}
-              value={productNameFilter}
-              onChange={(e) => updateLibraryFiltersWithPageReset({ productNameFilter: e.target.value })}
-              style={{
-                padding: '0.5rem',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--border-light)',
-                background: 'var(--bg-surface)',
-                color: 'var(--text-main)',
-                outline: 'none',
-                minWidth: '220px',
-                maxWidth: '320px'
-              }}
-            >
-              <option value="All">{t('deckBuilder.filters.allProducts')}</option>
-              {productNames.map(productName => (
-                <option key={productName} value={productName}>{productName}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Subtype Filter */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', minWidth: '240px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('deckBuilder.filters.labels.subtype')}:</span>
-              <input
-                type="text"
-                aria-label={t('deckBuilder.filters.aria.subtypeInput')}
-                list="subtype-filter-options"
-                placeholder={t('deckBuilder.filters.searchSubtype')}
-                value={subtypeSearch}
-                onChange={(e) => updateLibraryFilters({ subtypeSearch: e.target.value })}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    addSubtypeTag(subtypeSearch);
-                  }
-                }}
-                style={{
-                  flex: 1,
-                  minWidth: '160px',
-                  padding: '0.5rem',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border-light)',
-                  background: 'var(--bg-surface)',
-                  color: 'var(--text-main)',
-                  outline: 'none',
-                }}
-              />
-              <datalist id="subtype-filter-options">
-                {filteredSubtypeOptions.map(tag => (
-                  <option key={tag} value={tag} />
-                ))}
-              </datalist>
-              <button
-                type="button"
-                onClick={() => addSubtypeTag(subtypeSearch)}
-                disabled={!canAddSubtypeTag(subtypeTags, selectedSubtypeTags, subtypeSearch)}
-                style={{
-                  padding: '0.5rem 0.75rem',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border-light)',
-                  background: 'var(--bg-surface)',
-                  color: 'var(--text-main)',
-                  cursor: 'pointer',
-                }}
-              >
-                {t('deckBuilder.filters.addSubtype')}
-              </button>
-            </div>
-
-            {selectedSubtypeTags.length > 0 && (
-              <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                {selectedSubtypeTags.map(tag => (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => removeSubtypeTag(tag)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.3rem',
-                      padding: '0.25rem 0.5rem',
-                      borderRadius: '999px',
-                      border: '1px solid var(--border-light)',
-                      background: 'var(--bg-surface)',
-                      color: 'var(--text-main)',
-                      fontSize: '0.75rem',
-                      cursor: 'pointer',
-                    }}
-                    title={t('deckBuilder.filters.removeSubtypeFilter', { tag })}
-                  >
-                    <span>{tag}</span>
-                    <span style={{ color: 'var(--text-muted)' }}>×</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+        <DeckBuilderLibraryFilters
+          search={search}
+          hideSameNameVariants={hideSameNameVariants}
+          deckSectionFilter={deckSectionFilter}
+          classFilter={classFilter}
+          cardTypeFilter={cardTypeFilter}
+          costFilter={costFilter}
+          expansionFilter={expansionFilter}
+          rarityFilter={rarityFilter}
+          productNameFilter={productNameFilter}
+          subtypeSearch={subtypeSearch}
+          selectedSubtypeTags={selectedSubtypeTags}
+          filteredSubtypeOptions={filteredSubtypeOptions}
+          costFilterValues={COST_FILTER_VALUES}
+          deckSectionFilterValues={DECK_SECTION_FILTER_VALUES}
+          cardTypeFilterValues={CARD_TYPE_FILTER_VALUES}
+          expansions={expansions}
+          rarities={rarities}
+          productNames={productNames}
+          canAddSubtype={canAddSubtypeTag(subtypeTags, selectedSubtypeTags, subtypeSearch)}
+          onSearchChange={(value) => updateLibraryFiltersWithPageReset({ search: value })}
+          onHideSameNameVariantsChange={(checked) => updateLibraryFiltersWithPageReset({ hideSameNameVariants: checked })}
+          onReset={resetLibraryFilters}
+          onDeckSectionFilterChange={(value) => updateLibraryFiltersWithPageReset({ deckSectionFilter: value })}
+          onClassFilterChange={(value) => updateLibraryFiltersWithPageReset({ classFilter: value })}
+          onCardTypeFilterChange={(value) => updateLibraryFiltersWithPageReset({ cardTypeFilter: value })}
+          onCostFilterChange={(value) => updateLibraryFiltersWithPageReset({ costFilter: value })}
+          onExpansionFilterChange={(value) => updateLibraryFiltersWithPageReset({ expansionFilter: value })}
+          onRarityFilterChange={(value) => updateLibraryFiltersWithPageReset({ rarityFilter: value })}
+          onProductNameFilterChange={(value) => updateLibraryFiltersWithPageReset({ productNameFilter: value })}
+          onSubtypeSearchChange={(value) => updateLibraryFilters({ subtypeSearch: value })}
+          onAddSubtype={() => addSubtypeTag(subtypeSearch)}
+          onRemoveSubtype={removeSubtypeTag}
+        />
 
         {/* Pagination Controls */}
         <DeckBuilderPaginationControls
