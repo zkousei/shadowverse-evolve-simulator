@@ -8,6 +8,7 @@ import DeckBuilderDeckHeader from '../components/DeckBuilderDeckHeader';
 import DeckBuilderDeckSection from '../components/DeckBuilderDeckSection';
 import DeckBuilderLibraryCard from '../components/DeckBuilderLibraryCard';
 import DeckBuilderMyDecksModal from '../components/DeckBuilderMyDecksModal';
+import DeckBuilderPaginationControls from '../components/DeckBuilderPaginationControls';
 import DeckBuilderRulePanel from '../components/DeckBuilderRulePanel';
 import { getBaseCardType } from '../models/cardClassification';
 import {
@@ -1213,29 +1214,14 @@ const DeckBuilder: React.FC = () => {
         </div>
 
         {/* Pagination Controls */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <button
-              type="button"
-              disabled={page === 0}
-              onClick={() => updateLibraryFilters({ page: Math.max(0, page - 1) })}
-              className="glass-panel"
-              style={{ padding: '0.5rem 1rem' }}
-            >
-              {t('deckBuilder.pagination.prev')}
-            </button>
-            <span>{page + 1} / {totalPages}</span>
-            <button
-              type="button"
-              disabled={page >= totalPages - 1}
-              onClick={() => updateLibraryFilters({ page: Math.min(totalPages - 1, page + 1) })}
-              className="glass-panel"
-              style={{ padding: '0.5rem 1rem' }}
-            >
-              {t('deckBuilder.pagination.next')}
-            </button>
-          </div>
-        </div>
+        <DeckBuilderPaginationControls
+          page={page}
+          totalPages={totalPages}
+          canGoPrev={page > 0}
+          canGoNext={page < totalPages - 1}
+          onPrev={() => updateLibraryFilters({ page: Math.max(0, page - 1) })}
+          onNext={() => updateLibraryFilters({ page: Math.min(totalPages - 1, page + 1) })}
+        />
 
         {cards.length === 0 ? (
           <p style={{ color: 'var(--text-muted)', textAlign: 'center', marginTop: '2rem' }}>{t('deckBuilder.loading')}</p>

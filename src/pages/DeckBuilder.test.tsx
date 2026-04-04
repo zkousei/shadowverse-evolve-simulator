@@ -919,6 +919,34 @@ describe('DeckBuilder', () => {
     });
   });
 
+  it('updates pagination controls between the first and last library pages', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        json: vi.fn().mockResolvedValue(createUniqueCards(mockCards[0], 55)),
+      } as unknown as Response)
+    );
+
+    render(<DeckBuilder />);
+
+    expect(await screen.findByText('Alpha Knight 1')).toBeInTheDocument();
+
+    const prevButton = screen.getByRole('button', { name: 'Prev' });
+    const nextButton = screen.getByRole('button', { name: 'Next' });
+
+    expect(screen.getByText('1 / 2')).toBeInTheDocument();
+    expect(prevButton).toBeDisabled();
+    expect(nextButton).toBeEnabled();
+
+    fireEvent.click(nextButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('2 / 2')).toBeInTheDocument();
+    });
+    expect(prevButton).toBeEnabled();
+    expect(nextButton).toBeDisabled();
+  });
+
   it('exports a legal crossover deck file with selected classes and leader cards', async () => {
     const createObjectURL = vi.fn().mockReturnValue('blob:deck');
     const revokeObjectURL = vi.fn();
