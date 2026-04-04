@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Search, Plus, Minus, Download, Upload } from 'lucide-react';
 import { CLASS, CLASS_FILTER_VALUES } from '../models/class';
 import type { ClassFilter } from '../models/class';
+import DeckBuilderMyDecksToolbar from '../components/DeckBuilderMyDecksToolbar';
 import DeckBuilderRulePanel from '../components/DeckBuilderRulePanel';
 import DeckBuilderSavedDeckItem from '../components/DeckBuilderSavedDeckItem';
 import { getBaseCardType } from '../models/cardClassification';
@@ -774,6 +775,19 @@ const DeckBuilder: React.FC = () => {
 
   const handleCloseMyDecks = () => {
     applyDeckBuilderMyDecksUiState(buildClosedMyDecksUiState());
+  };
+
+  const handleToggleSavedDeckSelectionMode = () => {
+    if (isSavedDeckSelectMode) {
+      clearSavedDeckSelection();
+      return;
+    }
+
+    applyDeckBuilderMyDecksUiState(buildEnteredSavedDeckSelectionUiState());
+  };
+
+  const handleSavedDeckSearchChange = (value: string) => {
+    applyDeckBuilderMyDecksUiState(buildUpdatedSavedDeckSearchUiState(value));
   };
 
   const handleDeckFormatChange = (nextFormat: DeckFormat) => {
@@ -1800,175 +1814,22 @@ const DeckBuilder: React.FC = () => {
               overflow: 'hidden',
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
-              <div>
-                <h3 style={{ margin: 0 }}>{t('deckBuilder.myDecks.title')}</h3>
-                <p style={{ margin: '0.25rem 0 0 0', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                  {t('deckBuilder.myDecks.subtitle')}
-                </p>
-                <p style={{ margin: '0.35rem 0 0 0', color: '#fcd34d', fontSize: '0.78rem', lineHeight: 1.5, maxWidth: '38rem' }}>
-                  {t('deckBuilder.myDecks.disclaimer')}
-                </p>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end', flexShrink: 0 }}>
-                <button
-                  type="button"
-                  onClick={handleCloseMyDecks}
-                  style={{
-                    padding: '0.45rem 0.75rem',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--border-light)',
-                    background: 'var(--bg-surface)',
-                    color: 'var(--text-main)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {t('common.buttons.close')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSaveDeck(true)}
-                  disabled={!canCreateNewSavedDeck}
-                  title={canCreateNewSavedDeck
-                    ? t('deckBuilder.deckArea.actions.saveAsNewTitle')
-                    : t('deckBuilder.deckArea.actions.saveDisabledTitle', { limit: HARD_SAVED_DECK_LIMIT })}
-                  style={{
-                    padding: '0.45rem 0.75rem',
-                    borderRadius: 'var(--radius-md)',
-                    border: `1px solid ${canCreateNewSavedDeck ? 'rgba(255,255,255,0.12)' : '#64748b'}`,
-                    background: canCreateNewSavedDeck ? 'var(--accent-secondary)' : '#475569',
-                    color: '#fff',
-                    fontWeight: 700,
-                    cursor: canCreateNewSavedDeck ? 'pointer' : 'not-allowed',
-                    opacity: canCreateNewSavedDeck ? 1 : 0.75,
-                  }}
-                >
-                  {t('deckBuilder.deckArea.actions.saveAsNew')}
-                </button>
-                {savedDeckSelectionUiState.showSelectionToggle && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (isSavedDeckSelectMode) {
-                        clearSavedDeckSelection();
-                        return;
-                      }
-                      applyDeckBuilderMyDecksUiState(buildEnteredSavedDeckSelectionUiState());
-                    }}
-                    style={{
-                      padding: '0.45rem 0.75rem',
-                      borderRadius: 'var(--radius-md)',
-                      border: '1px solid var(--border-light)',
-                      background: isSavedDeckSelectMode ? 'var(--bg-overlay)' : 'var(--bg-surface)',
-                      color: 'var(--text-main)',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {savedDeckSelectionUiState.selectionToggleAction === 'cancel-selection'
-                      ? t('deckBuilder.myDecks.cancelSelection')
-                      : t('deckBuilder.myDecks.select')}
-                  </button>
-                )}
-                {savedDeckSelectionUiState.showDeleteAll && (
-                  <button
-                    type="button"
-                    onClick={() => applyDeckBuilderMyDecksUiState(buildOpenedDeleteAllSavedDecksUiState())}
-                    style={{
-                      padding: '0.45rem 0.75rem',
-                      borderRadius: 'var(--radius-md)',
-                      border: '1px solid rgba(248, 113, 113, 0.45)',
-                      background: 'rgba(239, 68, 68, 0.12)',
-                      color: '#fca5a5',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {t('deckBuilder.myDecks.deleteAll')}
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
-              <input
-                type="text"
-                value={savedDeckSearch}
-                onChange={(event) => applyDeckBuilderMyDecksUiState(
-                  buildUpdatedSavedDeckSearchUiState(event.target.value)
-                )}
-                placeholder={t('deckBuilder.myDecks.search')}
-                aria-label={t('deckBuilder.myDecks.searchAria')}
-                style={{
-                  flex: 1,
-                  minWidth: '220px',
-                  padding: '0.65rem 0.8rem',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border-light)',
-                  background: 'var(--bg-surface)',
-                  color: 'var(--text-main)',
-                  outline: 'none',
-                }}
-              />
-              <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                {t('deckBuilder.myDecks.shownCount', { count: filteredSavedDecks.length })}
-              </span>
-            </div>
-
-            {savedDeckSelectionUiState.showBulkActions && (
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  gap: '0.75rem',
-                  flexWrap: 'wrap',
-                  padding: '0.75rem 0.9rem',
-                  borderRadius: 'var(--radius-md)',
-                  background: 'rgba(15, 23, 42, 0.45)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                }}
-              >
-                <span style={{ color: 'var(--text-main)', fontSize: '0.85rem', fontWeight: 700 }}>
-                  {t('deckBuilder.myDecks.selectedCount', { count: selectedSavedDeckIds.length })}
-                </span>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                  <button
-                    type="button"
-                    onClick={handleToggleShownSavedDeckSelection}
-                    style={{
-                      padding: '0.45rem 0.7rem',
-                      borderRadius: 'var(--radius-md)',
-                      border: '1px solid var(--border-light)',
-                      background: 'var(--bg-overlay)',
-                      color: 'var(--text-main)',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {savedDeckSelectionUiState.bulkSelectionAction === 'clear-selection'
-                      ? t('deckBuilder.myDecks.clearSelection')
-                      : t('deckBuilder.myDecks.selectAllShown')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => applyDeckBuilderMyDecksUiState(buildOpenedDeleteSelectedSavedDecksUiState())}
-                    disabled={!savedDeckSelectionUiState.hasSelectedDecks}
-                    style={{
-                      padding: '0.45rem 0.7rem',
-                      borderRadius: 'var(--radius-md)',
-                      border: '1px solid rgba(248, 113, 113, 0.45)',
-                      background: savedDeckSelectionUiState.hasSelectedDecks ? 'rgba(239, 68, 68, 0.12)' : 'var(--bg-surface-elevated)',
-                      color: savedDeckSelectionUiState.hasSelectedDecks ? '#fca5a5' : 'var(--text-muted)',
-                      cursor: savedDeckSelectionUiState.hasSelectedDecks ? 'pointer' : 'not-allowed',
-                      fontWeight: 700,
-                      opacity: savedDeckSelectionUiState.hasSelectedDecks ? 1 : 0.7,
-                    }}
-                  >
-                    {t('deckBuilder.myDecks.deleteSelected')}
-                  </button>
-                </div>
-              </div>
-            )}
+            <DeckBuilderMyDecksToolbar
+              canCreateNewSavedDeck={canCreateNewSavedDeck}
+              hardSavedDeckLimit={HARD_SAVED_DECK_LIMIT}
+              isSavedDeckSelectMode={isSavedDeckSelectMode}
+              savedDeckSelectionUiState={savedDeckSelectionUiState}
+              savedDeckSearch={savedDeckSearch}
+              filteredSavedDeckCount={filteredSavedDecks.length}
+              selectedSavedDeckCount={selectedSavedDeckIds.length}
+              onClose={handleCloseMyDecks}
+              onSaveAsNew={() => handleSaveDeck(true)}
+              onToggleSelectionMode={handleToggleSavedDeckSelectionMode}
+              onDeleteAll={() => applyDeckBuilderMyDecksUiState(buildOpenedDeleteAllSavedDecksUiState())}
+              onSearchChange={handleSavedDeckSearchChange}
+              onToggleShownSelection={handleToggleShownSavedDeckSelection}
+              onDeleteSelected={() => applyDeckBuilderMyDecksUiState(buildOpenedDeleteSelectedSavedDecksUiState())}
+            />
 
             <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingRight: '0.25rem' }}>
               {filteredSavedDecks.length === 0 ? (
