@@ -347,6 +347,21 @@ describe('DeckBuilder', () => {
     });
   });
 
+  it('updates the deck sort control without affecting the reset flow', async () => {
+    render(<DeckBuilder />);
+
+    expect(await screen.findByText('Alpha Knight')).toBeInTheDocument();
+
+    const deckSort = screen.getByRole('combobox', { name: 'Deck sort' }) as HTMLSelectElement;
+    expect(deckSort.value).toBe('added');
+
+    fireEvent.change(deckSort, { target: { value: 'id' } });
+    expect(deckSort.value).toBe('id');
+
+    fireEvent.change(deckSort, { target: { value: 'cost' } });
+    expect(deckSort.value).toBe('cost');
+  });
+
   it('updates deck rule controls across constructed and crossover modes', async () => {
     render(<DeckBuilder />);
 

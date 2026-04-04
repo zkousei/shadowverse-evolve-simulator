@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Search, Plus, Minus } from 'lucide-react';
 import { CLASS, CLASS_FILTER_VALUES } from '../models/class';
 import type { ClassFilter } from '../models/class';
+import DeckBuilderDeckControls from '../components/DeckBuilderDeckControls';
 import DeckBuilderDeckHeader from '../components/DeckBuilderDeckHeader';
 import DeckBuilderMyDecksModal from '../components/DeckBuilderMyDecksModal';
 import DeckBuilderRulePanel from '../components/DeckBuilderRulePanel';
@@ -151,7 +152,6 @@ import {
   DECK_HOVER_PREVIEW_MAX_HEIGHT,
   DECK_HOVER_PREVIEW_VIEWPORT_PADDING,
   DECK_HOVER_PREVIEW_WIDTH,
-  DECK_SORT_VALUES,
   getDeckHoverPreviewPosition,
   groupDeckCardsForDisplay,
   parseNullableStat,
@@ -1355,67 +1355,12 @@ const DeckBuilder: React.FC = () => {
             onCrossoverClassChange={handleCrossoverClassChange}
           />
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginBottom: '1.5rem' }}>
-            <label htmlFor="deck-sort" style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('deckBuilder.deckArea.myDeckSort')}</label>
-            <select
-              id="deck-sort"
-              aria-label={t('deckBuilder.deckArea.sortAria')}
-              value={deckSortMode}
-              onChange={(e) => setDeckSortMode(e.target.value as DeckSortMode)}
-              style={{
-                padding: '0.5rem',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--border-light)',
-                background: 'var(--bg-surface)',
-                color: 'var(--text-main)',
-              }}
-            >
-              {DECK_SORT_VALUES.map(sortMode => (
-                <option key={sortMode} value={sortMode}>{t(`deckBuilder.deckArea.sort.${sortMode}` as any)}</option>
-              ))}
-            </select>
-          </div>
-
-          <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'flex-end', gap: '0.6rem', flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              onClick={() => applyDeckBuilderModalUiState(buildOpenedResetDeckDialogUiState())}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'rgba(239, 68, 68, 0.12)',
-                color: '#fca5a5',
-                border: '1px solid rgba(248, 113, 113, 0.45)',
-                padding: '0.4rem 0.65rem',
-                borderRadius: 'var(--radius-md)',
-                fontSize: '0.8rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              {t('deckBuilder.deckArea.actions.reset')}
-            </button>
-            <button
-              type="button"
-              onClick={() => applyDeckBuilderModalUiState(buildOpenedResetBuilderDialogUiState())}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'rgba(239, 68, 68, 0.18)',
-                color: '#fecaca',
-                border: '1px solid rgba(248, 113, 113, 0.55)',
-                padding: '0.4rem 0.65rem',
-                borderRadius: 'var(--radius-md)',
-                fontSize: '0.8rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-              }}
-            >
-              {t('deckBuilder.modals.resetBuilder.title')}
-            </button>
-          </div>
+          <DeckBuilderDeckControls
+            deckSortMode={deckSortMode}
+            onDeckSortModeChange={setDeckSortMode}
+            onOpenResetDeckDialog={() => applyDeckBuilderModalUiState(buildOpenedResetDeckDialogUiState())}
+            onOpenResetBuilderDialog={() => applyDeckBuilderModalUiState(buildOpenedResetBuilderDialogUiState())}
+          />
 
           <h3 style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
             <span>{t('deckBuilder.deckArea.leader')}</span>
