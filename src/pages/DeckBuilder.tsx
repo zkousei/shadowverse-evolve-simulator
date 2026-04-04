@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, Plus, Minus, Download, Upload } from 'lucide-react';
+import { Search, Plus, Minus } from 'lucide-react';
 import { CLASS, CLASS_FILTER_VALUES } from '../models/class';
 import type { ClassFilter } from '../models/class';
+import DeckBuilderDeckHeader from '../components/DeckBuilderDeckHeader';
 import DeckBuilderMyDecksModal from '../components/DeckBuilderMyDecksModal';
 import DeckBuilderRulePanel from '../components/DeckBuilderRulePanel';
 import { getBaseCardType } from '../models/cardClassification';
@@ -97,7 +98,6 @@ import {
   clearDraft,
   createDeckSnapshot,
   createPristineDeckSnapshot,
-  DEFAULT_DECK_NAME,
   deleteAllSavedDecks,
   deleteSavedDeck,
   deleteSavedDecks,
@@ -1320,213 +1320,25 @@ const DeckBuilder: React.FC = () => {
 
       {/* Right: Deck Checklist */}
       <div className="glass-panel" style={{ width: '350px', display: 'flex', flexDirection: 'column', borderRight: 'none', borderTop: 'none', borderBottom: 'none', borderRadius: 0 }}>
-        <div style={{ padding: '0.75rem 1.5rem', borderBottom: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          <div style={{ color: 'var(--text-muted)', fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-            {t('deckBuilder.deckArea.deckName')}
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <input
-                type="text"
-                value={deckName}
-                onChange={(e) => setDeckName(e.target.value)}
-                style={{
-                  fontSize: '1.5rem',
-                  fontWeight: 'bold',
-                  background: 'rgba(15, 23, 42, 0.45)',
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  borderBottom: '2px solid rgba(255,255,255,0.16)',
-                  borderRadius: 'var(--radius-md)',
-                  color: 'var(--text-main)',
-                  outline: 'none',
-                  width: '100%',
-                  minWidth: 0,
-                  transition: 'border-color 0.2s, box-shadow 0.2s, background 0.2s',
-                  padding: '0.7rem 0.85rem',
-                  flex: 1,
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = 'rgba(255,255,255,0.22)';
-                  e.target.style.borderBottom = '2px solid var(--brand-accent)';
-                  e.target.style.boxShadow = '0 0 0 3px rgba(14, 165, 233, 0.12)';
-                  e.target.style.background = 'rgba(15, 23, 42, 0.7)';
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = 'rgba(255,255,255,0.12)';
-                  e.target.style.borderBottom = '2px solid rgba(255,255,255,0.16)';
-                  e.target.style.boxShadow = 'none';
-                  e.target.style.background = 'rgba(15, 23, 42, 0.45)';
-                }}
-                placeholder={t('deckBuilder.deckArea.deckName')}
-              />
-              <button
-                type="button"
-                onClick={() => handleSaveDeck(false)}
-                disabled={!canSaveCurrentDeck}
-                title={canSaveCurrentDeck
-                  ? t('deckBuilder.deckArea.actions.saveTitle')
-                  : t('deckBuilder.deckArea.actions.saveDisabledTitle', { limit: HARD_SAVED_DECK_LIMIT })}
-                style={{
-                  flexShrink: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.25rem',
-                  background: canSaveCurrentDeck ? 'var(--accent-primary)' : '#475569',
-                  color: '#fff',
-                  border: `1px solid ${canSaveCurrentDeck ? 'rgba(255,255,255,0.12)' : '#64748b'}`,
-                  padding: '0.5rem 0.75rem',
-                  borderRadius: 'var(--radius-md)',
-                  fontSize: '0.875rem',
-                  fontWeight: 700,
-                  cursor: canSaveCurrentDeck ? 'pointer' : 'not-allowed',
-                  opacity: canSaveCurrentDeck ? 1 : 0.75,
-                }}
-              >
-                {t('deckBuilder.deckArea.actions.save')}
-              </button>
-            </div>
-            {selectedSavedDeckId && (
-              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <button
-                  type="button"
-                  onClick={handleMakeUnsavedCopy}
-                  title={t('deckBuilder.deckArea.actions.keepWorkingCopy')}
-                  style={{
-                    padding: '0.35rem 0.65rem',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--border-light)',
-                    background: 'var(--bg-surface)',
-                    color: 'var(--text-main)',
-                    fontSize: '0.78rem',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
-                >
-                  {t('deckBuilder.deckArea.actions.makeUnsavedCopy')}
-                </button>
-              </div>
-            )}
-            {deckName.trim() === '' && (
-              <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
-                {t('deckBuilder.deckArea.deckNameHint', { name: DEFAULT_DECK_NAME })}
-              </div>
-            )}
-          </div>
-
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', minWidth: 0 }}>
-              <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-                {t('deckBuilder.deckArea.storage')}
-              </span>
-              <button
-                type="button"
-                onClick={() => applyDeckBuilderMyDecksUiState(buildOpenedMyDecksUiState())}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.25rem',
-                  background: 'var(--bg-overlay)',
-                  color: 'var(--text-main)',
-                  border: '1px solid var(--border-light)',
-                  padding: '0.45rem 0.75rem',
-                  borderRadius: 'var(--radius-md)',
-                  fontSize: '0.875rem',
-                  cursor: 'pointer',
-                  minWidth: '110px',
-                }}
-              >
-                {t('deckBuilder.myDecks.title')}
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', minWidth: 0 }}>
-              <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-                {t('deckBuilder.deckArea.file')}
-              </span>
-              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'var(--bg-overlay)', padding: '0.45rem 0.75rem', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontSize: '0.875rem', border: '1px solid var(--border-light)' }}>
-                  <Upload size={14} /> {t('deckBuilder.deckArea.actions.import')}
-                  <input type="file" accept=".json" onChange={handleImportDeck} style={{ display: 'none' }} />
-                </label>
-                <button
-                  type="button"
-                  onClick={() => applyDeckBuilderModalUiState(buildOpenedDeckLogImportUiState())}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.25rem',
-                    background: 'var(--bg-overlay)',
-                    color: 'var(--text-main)',
-                    border: '1px solid var(--border-light)',
-                    padding: '0.45rem 0.75rem',
-                    borderRadius: 'var(--radius-md)',
-                    fontSize: '0.875rem',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <Upload size={14} />
-                  {t('deckBuilder.deckArea.actions.importDeckLog')}
-                  <span
-                    style={{
-                      marginLeft: '0.2rem',
-                      padding: '0.08rem 0.35rem',
-                      borderRadius: '999px',
-                      background: 'rgba(245, 158, 11, 0.18)',
-                      color: '#fcd34d',
-                      fontSize: '0.65rem',
-                      fontWeight: 700,
-                      letterSpacing: '0.04em',
-                    }}
-                  >
-                    {t('deckBuilder.deckArea.actions.betaBadge')}
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={exportDeck}
-                  disabled={!canExportDeck}
-                  title={canExportDeck ? t('deckBuilder.deckArea.actions.exportTitle') : t('deckBuilder.deckArea.actions.exportDisabledTitle')}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.25rem',
-                    background: canExportDeck ? '#3b82f6' : '#475569',
-                    color: '#fff',
-                    border: `1px solid ${canExportDeck ? '#2563eb' : '#64748b'}`,
-                    padding: '0.45rem 0.75rem',
-                    borderRadius: 'var(--radius-md)',
-                    fontSize: '0.875rem',
-                    fontWeight: 700,
-                    boxShadow: canExportDeck ? '0 4px 12px rgba(37, 99, 235, 0.25)' : 'none',
-                    opacity: canExportDeck ? 1 : 0.75,
-                    cursor: canExportDeck ? 'pointer' : 'not-allowed',
-                  }}
-                >
-                  <Download size={14} /> {t('deckBuilder.deckArea.actions.export')}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', minHeight: '1.9rem' }}>
-            <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
-              {saveStateMessage}
-            </div>
-            {draftRestored && (
-              <div style={{ color: '#fcd34d', fontSize: '0.75rem' }}>
-                {t('deckBuilder.alerts.sessionRestored')}
-              </div>
-            )}
-          </div>
-          {hasReachedSoftLimit && (
-            <div style={{ color: hasReachedHardLimit ? '#fca5a5' : '#fcd34d', fontSize: '0.75rem', lineHeight: 1.5 }}>
-              {hasReachedHardLimit
-                ? t('deckBuilder.alerts.limitReachedHard', { limit: HARD_SAVED_DECK_LIMIT })
-                : t('deckBuilder.alerts.limitReachedSoft', { count: savedDeckCount, limit: HARD_SAVED_DECK_LIMIT })}
-            </div>
-          )}
-        </div>
+        <DeckBuilderDeckHeader
+          deckName={deckName}
+          canSaveCurrentDeck={canSaveCurrentDeck}
+          canExportDeck={canExportDeck}
+          selectedSavedDeckId={selectedSavedDeckId}
+          saveStateMessage={saveStateMessage}
+          draftRestored={draftRestored}
+          hasReachedSoftLimit={hasReachedSoftLimit}
+          hasReachedHardLimit={hasReachedHardLimit}
+          savedDeckCount={savedDeckCount}
+          hardSavedDeckLimit={HARD_SAVED_DECK_LIMIT}
+          onDeckNameChange={setDeckName}
+          onSave={() => handleSaveDeck(false)}
+          onMakeUnsavedCopy={handleMakeUnsavedCopy}
+          onOpenMyDecks={() => applyDeckBuilderMyDecksUiState(buildOpenedMyDecksUiState())}
+          onImportDeck={handleImportDeck}
+          onOpenDeckLogImport={() => applyDeckBuilderModalUiState(buildOpenedDeckLogImportUiState())}
+          onExportDeck={exportDeck}
+        />
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
           <DeckBuilderRulePanel
