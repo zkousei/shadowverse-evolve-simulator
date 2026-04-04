@@ -3,12 +3,14 @@ import { useTranslation } from 'react-i18next';
 import type { ClassFilter } from '../models/class';
 import DeckBuilderDeckControls from '../components/DeckBuilderDeckControls';
 import DeckBuilderDeckHeader from '../components/DeckBuilderDeckHeader';
+import DeckBuilderDeleteSavedDecksDialog from '../components/DeckBuilderDeleteSavedDecksDialog';
 import DeckBuilderDeckSection from '../components/DeckBuilderDeckSection';
 import DeckBuilderLibraryFilters from '../components/DeckBuilderLibraryFilters';
 import DeckBuilderLibraryCard from '../components/DeckBuilderLibraryCard';
 import DeckBuilderMyDecksModal from '../components/DeckBuilderMyDecksModal';
 import DeckBuilderPaginationControls from '../components/DeckBuilderPaginationControls';
 import DeckBuilderPreviewModal from '../components/DeckBuilderPreviewModal';
+import DeckBuilderResetDialog from '../components/DeckBuilderResetDialog';
 import DeckBuilderRulePanel from '../components/DeckBuilderRulePanel';
 import { getBaseCardType } from '../models/cardClassification';
 import {
@@ -1320,141 +1322,21 @@ const DeckBuilder: React.FC = () => {
       )}
 
       {showDeleteSelectedSavedDecksDialog && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={t('deckBuilder.modals.deleteSelectedDecks.aria')}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(15, 23, 42, 0.72)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '1.5rem',
-            zIndex: 1100,
-          }}
-        >
-          <div
-            className="glass-panel"
-            style={{
-              width: '100%',
-              maxWidth: '440px',
-              padding: '1.25rem',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.75rem',
-            }}
-          >
-            <h3 style={{ margin: 0, color: '#fca5a5' }}>{t('deckBuilder.modals.deleteSelectedDecks.title')}</h3>
-            <p style={{ margin: 0, color: 'var(--text-main)', lineHeight: 1.5 }}>
-              {t('deckBuilder.modals.deleteSelectedDecks.desc', { count: selectedSavedDeckIds.length })}
-            </p>
-            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem', lineHeight: 1.5 }}>
-              {t('deckBuilder.modals.deleteSelectedDecks.note')}
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
-              <button
-                type="button"
-                onClick={() => applyDeckBuilderMyDecksUiState(buildDismissedDeleteSelectedSavedDecksUiState())}
-                style={{
-                  padding: '0.5rem 0.9rem',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border-light)',
-                  background: 'var(--bg-surface)',
-                  color: 'var(--text-main)',
-                  cursor: 'pointer',
-                }}
-              >
-                {t('deckBuilder.modals.buttons.cancel')}
-              </button>
-              <button
-                type="button"
-                onClick={handleDeleteSelectedSavedDecks}
-                style={{
-                  padding: '0.5rem 0.9rem',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid #dc2626',
-                  background: '#ef4444',
-                  color: '#fff',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
-              >
-                {t('deckBuilder.myDecks.deleteSelected')}
-              </button>
-            </div>
-          </div>
-        </div>
+        <DeckBuilderDeleteSavedDecksDialog
+          kind="selected"
+          count={selectedSavedDeckIds.length}
+          onCancel={() => applyDeckBuilderMyDecksUiState(buildDismissedDeleteSelectedSavedDecksUiState())}
+          onConfirm={handleDeleteSelectedSavedDecks}
+        />
       )}
 
       {showDeleteAllSavedDecksDialog && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={t('deckBuilder.modals.deleteAllDecks.aria')}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(15, 23, 42, 0.72)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '1.5rem',
-            zIndex: 1100,
-          }}
-        >
-          <div
-            className="glass-panel"
-            style={{
-              width: '100%',
-              maxWidth: '440px',
-              padding: '1.25rem',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.75rem',
-            }}
-          >
-            <h3 style={{ margin: 0, color: '#fca5a5' }}>{t('deckBuilder.modals.deleteAllDecks.title')}</h3>
-            <p style={{ margin: 0, color: 'var(--text-main)', lineHeight: 1.5 }}>
-              {t('deckBuilder.modals.deleteAllDecks.desc', { count: savedDecks.length })}
-            </p>
-            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem', lineHeight: 1.5 }}>
-              {t('deckBuilder.modals.deleteAllDecks.note')}
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
-              <button
-                type="button"
-                onClick={() => applyDeckBuilderMyDecksUiState(buildDismissedDeleteAllSavedDecksUiState())}
-                style={{
-                  padding: '0.5rem 0.9rem',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border-light)',
-                  background: 'var(--bg-surface)',
-                  color: 'var(--text-main)',
-                  cursor: 'pointer',
-                }}
-              >
-                {t('deckBuilder.modals.buttons.cancel')}
-              </button>
-              <button
-                type="button"
-                onClick={handleDeleteAllSavedDecks}
-                style={{
-                  padding: '0.5rem 0.9rem',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid #dc2626',
-                  background: '#ef4444',
-                  color: '#fff',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
-              >
-                {t('deckBuilder.myDecks.deleteAll')}
-              </button>
-            </div>
-          </div>
-        </div>
+        <DeckBuilderDeleteSavedDecksDialog
+          kind="all"
+          count={savedDecks.length}
+          onCancel={() => applyDeckBuilderMyDecksUiState(buildDismissedDeleteAllSavedDecksUiState())}
+          onConfirm={handleDeleteAllSavedDecks}
+        />
       )}
 
       {previewCard && (
@@ -1466,141 +1348,19 @@ const DeckBuilder: React.FC = () => {
       )}
 
       {showResetDeckDialog && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={t('deckBuilder.modals.resetDeck.aria')}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(15, 23, 42, 0.72)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '1.5rem',
-            zIndex: 1000,
-          }}
-        >
-          <div
-            className="glass-panel"
-            style={{
-              width: '100%',
-              maxWidth: '420px',
-              padding: '1.25rem',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.75rem',
-            }}
-          >
-            <h3 style={{ margin: 0, color: '#fcd34d' }}>{t('deckBuilder.modals.resetDeck.title')}</h3>
-            <p style={{ margin: 0, color: 'var(--text-main)', lineHeight: 1.5 }}>
-              {t('deckBuilder.modals.resetDeck.desc')}
-            </p>
-            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem', lineHeight: 1.5 }}>
-              {t('deckBuilder.modals.resetDeck.descNote')}
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
-              <button
-                type="button"
-                onClick={() => applyDeckBuilderModalUiState(buildDismissedResetDeckDialogUiState())}
-                style={{
-                  padding: '0.5rem 0.9rem',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border-light)',
-                  background: 'var(--bg-surface)',
-                  color: 'var(--text-main)',
-                  cursor: 'pointer',
-                }}
-              >
-                {t('common.buttons.cancel')}
-              </button>
-              <button
-                type="button"
-                onClick={resetDeckContents}
-                style={{
-                  padding: '0.5rem 0.9rem',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid #dc2626',
-                  background: '#ef4444',
-                  color: '#fff',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
-              >
-                {t('deckBuilder.modals.resetDeck.confirm')}
-              </button>
-            </div>
-          </div>
-        </div>
+        <DeckBuilderResetDialog
+          kind="deck"
+          onCancel={() => applyDeckBuilderModalUiState(buildDismissedResetDeckDialogUiState())}
+          onConfirm={resetDeckContents}
+        />
       )}
 
       {showResetBuilderDialog && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={t('deckBuilder.modals.resetBuilder.aria')}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(15, 23, 42, 0.72)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '1.5rem',
-            zIndex: 1000,
-          }}
-        >
-          <div
-            className="glass-panel"
-            style={{
-              width: '100%',
-              maxWidth: '420px',
-              padding: '1.25rem',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.75rem',
-            }}
-          >
-            <h3 style={{ margin: 0, color: '#fca5a5' }}>{t('deckBuilder.modals.resetBuilder.title')}</h3>
-            <p style={{ margin: 0, color: 'var(--text-main)', lineHeight: 1.5 }}>
-              {t('deckBuilder.modals.resetBuilder.desc')}
-            </p>
-            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem', lineHeight: 1.5 }}>
-              {t('deckBuilder.modals.resetBuilder.descNote')}
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
-              <button
-                type="button"
-                onClick={() => applyDeckBuilderModalUiState(buildDismissedResetBuilderDialogUiState())}
-                style={{
-                  padding: '0.5rem 0.9rem',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border-light)',
-                  background: 'var(--bg-surface)',
-                  color: 'var(--text-main)',
-                  cursor: 'pointer',
-                }}
-              >
-                {t('common.buttons.cancel')}
-              </button>
-              <button
-                type="button"
-                onClick={resetBuilder}
-                style={{
-                  padding: '0.5rem 0.9rem',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid #dc2626',
-                  background: '#ef4444',
-                  color: '#fff',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
-              >
-                {t('deckBuilder.modals.resetBuilder.confirm')}
-              </button>
-            </div>
-          </div>
-        </div>
+        <DeckBuilderResetDialog
+          kind="builder"
+          onCancel={() => applyDeckBuilderModalUiState(buildDismissedResetBuilderDialogUiState())}
+          onConfirm={resetBuilder}
+        />
       )}
 
       {hoveredDeckCard && (
