@@ -3,9 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { Search, Plus, Minus, Download, Upload } from 'lucide-react';
 import { CLASS, CLASS_FILTER_VALUES } from '../models/class';
 import type { ClassFilter } from '../models/class';
-import DeckBuilderMyDecksToolbar from '../components/DeckBuilderMyDecksToolbar';
+import DeckBuilderMyDecksModal from '../components/DeckBuilderMyDecksModal';
 import DeckBuilderRulePanel from '../components/DeckBuilderRulePanel';
-import DeckBuilderSavedDeckItem from '../components/DeckBuilderSavedDeckItem';
 import { getBaseCardType } from '../models/cardClassification';
 import {
   getAvailableExpansions,
@@ -1780,91 +1779,35 @@ const DeckBuilder: React.FC = () => {
       </div>
 
       {isMyDecksOpen && (
-        <div
-          role="presentation"
-          onClick={(event) => {
-            if (event.target === event.currentTarget) {
-              handleCloseMyDecks();
+        <DeckBuilderMyDecksModal
+          canCreateNewSavedDeck={canCreateNewSavedDeck}
+          hardSavedDeckLimit={HARD_SAVED_DECK_LIMIT}
+          isSavedDeckSelectMode={isSavedDeckSelectMode}
+          savedDeckSelectionUiState={savedDeckSelectionUiState}
+          savedDeckSearch={savedDeckSearch}
+          filteredSavedDecks={filteredSavedDecks}
+          selectedSavedDeckIds={selectedSavedDeckIds}
+          selectedSavedDeckId={selectedSavedDeckId}
+          onClose={handleCloseMyDecks}
+          onSaveAsNew={() => handleSaveDeck(true)}
+          onToggleSelectionMode={handleToggleSavedDeckSelectionMode}
+          onDeleteAll={() => applyDeckBuilderMyDecksUiState(buildOpenedDeleteAllSavedDecksUiState())}
+          onSearchChange={handleSavedDeckSearchChange}
+          onToggleShownSelection={handleToggleShownSavedDeckSelection}
+          onDeleteSelected={() => applyDeckBuilderMyDecksUiState(buildOpenedDeleteSelectedSavedDecksUiState())}
+          onToggleSelection={toggleSavedDeckSelection}
+          onLoad={(deckId) => {
+            if (isDirty) {
+              applyDeckBuilderMyDecksUiState(buildOpenedPendingSavedDeckLoadUiState(deckId));
+              return;
             }
-          }}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(15, 23, 42, 0.78)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '1rem',
-            zIndex: 1000,
-          }}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label={t('deckBuilder.myDecks.title')}
-            onClick={(event) => event.stopPropagation()}
-            className="glass-panel"
-            style={{
-              width: 'min(720px, calc(100vw - 32px))',
-              maxHeight: 'min(80vh, 760px)',
-              padding: '1rem',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.85rem',
-              overflow: 'hidden',
-            }}
-          >
-            <DeckBuilderMyDecksToolbar
-              canCreateNewSavedDeck={canCreateNewSavedDeck}
-              hardSavedDeckLimit={HARD_SAVED_DECK_LIMIT}
-              isSavedDeckSelectMode={isSavedDeckSelectMode}
-              savedDeckSelectionUiState={savedDeckSelectionUiState}
-              savedDeckSearch={savedDeckSearch}
-              filteredSavedDeckCount={filteredSavedDecks.length}
-              selectedSavedDeckCount={selectedSavedDeckIds.length}
-              onClose={handleCloseMyDecks}
-              onSaveAsNew={() => handleSaveDeck(true)}
-              onToggleSelectionMode={handleToggleSavedDeckSelectionMode}
-              onDeleteAll={() => applyDeckBuilderMyDecksUiState(buildOpenedDeleteAllSavedDecksUiState())}
-              onSearchChange={handleSavedDeckSearchChange}
-              onToggleShownSelection={handleToggleShownSavedDeckSelection}
-              onDeleteSelected={() => applyDeckBuilderMyDecksUiState(buildOpenedDeleteSelectedSavedDecksUiState())}
-            />
 
-            <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingRight: '0.25rem' }}>
-              {filteredSavedDecks.length === 0 ? (
-                <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: '1rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-                  {t('deckBuilder.myDecks.noDecks')}
-                </div>
-              ) : (
-                filteredSavedDecks.map(({ savedDeck, canExport }) => (
-                  <DeckBuilderSavedDeckItem
-                    key={savedDeck.id}
-                    savedDeck={savedDeck}
-                    canExport={canExport}
-                    isSavedDeckSelectMode={isSavedDeckSelectMode}
-                    isSelected={selectedSavedDeckIds.includes(savedDeck.id)}
-                    isCurrent={savedDeck.id === selectedSavedDeckId}
-                    canCreateNewSavedDeck={canCreateNewSavedDeck}
-                    hardSavedDeckLimit={HARD_SAVED_DECK_LIMIT}
-                    onToggleSelection={() => toggleSavedDeckSelection(savedDeck.id)}
-                    onLoad={() => {
-                      if (isDirty) {
-                        applyDeckBuilderMyDecksUiState(buildOpenedPendingSavedDeckLoadUiState(savedDeck.id));
-                        return;
-                      }
-
-                      handleLoadSavedDeck(savedDeck.id);
-                    }}
-                    onDuplicate={() => handleDuplicateSavedDeck(savedDeck.id)}
-                    onExport={() => handleExportSavedDeck(savedDeck.id)}
-                    onDelete={() => applyDeckBuilderMyDecksUiState(buildOpenedPendingSavedDeckDeleteUiState(savedDeck.id))}
-                  />
-                ))
-              )}
-            </div>
-          </div>
-        </div>
+            handleLoadSavedDeck(deckId);
+          }}
+          onDuplicate={handleDuplicateSavedDeck}
+          onExport={handleExportSavedDeck}
+          onDelete={(deckId) => applyDeckBuilderMyDecksUiState(buildOpenedPendingSavedDeckDeleteUiState(deckId))}
+        />
       )}
 
       {pendingLoadDeck && (
