@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, Plus } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { CLASS, CLASS_FILTER_VALUES } from '../models/class';
 import type { ClassFilter } from '../models/class';
 import DeckBuilderDeckControls from '../components/DeckBuilderDeckControls';
 import DeckBuilderDeckHeader from '../components/DeckBuilderDeckHeader';
 import DeckBuilderDeckSection from '../components/DeckBuilderDeckSection';
+import DeckBuilderLibraryCard from '../components/DeckBuilderLibraryCard';
 import DeckBuilderMyDecksModal from '../components/DeckBuilderMyDecksModal';
 import DeckBuilderRulePanel from '../components/DeckBuilderRulePanel';
 import { getBaseCardType } from '../models/cardClassification';
@@ -168,13 +169,6 @@ const PAGE_SIZE = 50;
 const COST_FILTER_VALUES = ['All', '0', '1', '2', '3', '4', '5', '6', '7+'] as const;
 const DECK_SECTION_FILTER_VALUES: readonly DeckBuilderDeckSectionFilter[] = ['All', 'main', 'evolve', 'leader', 'token'];
 const CARD_TYPE_FILTER_VALUES: readonly DeckBuilderCardTypeFilter[] = ['All', 'follower', 'spell', 'amulet'];
-
-const ADD_ACTIONS: Record<DeckTargetSection, { background: string }> = {
-  main: { background: 'var(--accent-primary)' },
-  evolve: { background: 'var(--accent-secondary)' },
-  leader: { background: '#f59e0b' },
-  token: { background: 'var(--vivid-green-cyan)' },
-};
 
 type SaveFeedback = {
   kind: 'success' | 'warning';
@@ -1248,71 +1242,16 @@ const DeckBuilder: React.FC = () => {
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '1rem' }}>
             {paginatedCards.map((card) => {
-              const allowedSections = getAllowedSections(card);
-
               return (
-                <div key={card.id} className="glass-panel" style={{ padding: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <button
-                    type="button"
-                    aria-label={t('deckBuilder.preview.openAria', { name: card.name })}
-                    title={t('deckBuilder.preview.openTitle', { name: card.name })}
-                    onClick={() => handleOpenPreview(card)}
-                    style={{
-                      padding: 0,
-                      border: 'none',
-                      background: 'transparent',
-                      cursor: 'pointer',
-                      lineHeight: 0,
-                    }}
-                  >
-                    <CardArtwork
-                      image={card.image}
-                      alt={card.name}
-                      detail={cardDetailLookup[card.id]}
-                      baseCardType={getBaseCardType(card.card_kind_normalized)}
-                      isLeaderCard={card.deck_section === 'leader'}
-                      isTokenCard={card.deck_section === 'token' || card.is_token}
-                      isEvolveCard={card.is_evolve_card}
-                      style={{ width: '100%', borderRadius: '4px' }}
-                      draggable={false}
-                    />
-                  </button>
-                  <p style={{ fontSize: '0.75rem', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={card.name}>
-                    {card.name}
-                  </p>
-                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    {allowedSections.map(section => {
-                      const action = ADD_ACTIONS[section];
-                      return (
-                        <button
-                          key={section}
-                          type="button"
-                          onClick={() => addToDeck(card, section)}
-                          disabled={!canAddCardToDeckState(card, section, deckState, deckRuleConfig)}
-                          style={{
-                            flex: section === 'token' ? '1 1 100%' : 1,
-                            padding: '0.25rem',
-                            background: canAddCardToDeckState(card, section, deckState, deckRuleConfig) ? action.background : 'var(--bg-surface-elevated)',
-                            borderRadius: '4px',
-                            display: 'flex',
-                            justifyContent: 'center',
-                            color: '#fff',
-                            fontSize: '0.75rem',
-                            fontWeight: 700,
-                            opacity: canAddCardToDeckState(card, section, deckState, deckRuleConfig) ? 1 : 0.5,
-                            cursor: canAddCardToDeckState(card, section, deckState, deckRuleConfig) ? 'pointer' : 'not-allowed',
-                          }}
-                          title={t(`deckBuilder.addActions.${section}Title` as any)}
-                        >
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                            {section !== 'leader' && section !== 'token' && <Plus size={16} color="#fff" />}
-                            {section === 'main' ? '' : section === 'evolve' ? 'EVO' : section === 'leader' ? 'LEAD' : 'TOKEN'}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+                <DeckBuilderLibraryCard
+                  key={card.id}
+                  card={card}
+                  detail={cardDetailLookup[card.id]}
+                  allowedSections={getAllowedSections(card)}
+                  canAddToSection={(section) => canAddCardToDeckState(card, section, deckState, deckRuleConfig)}
+                  onOpenPreview={handleOpenPreview}
+                  onAddToSection={addToDeck}
+                />
               );
             })}
           </div>
