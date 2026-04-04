@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, Plus, Minus } from 'lucide-react';
+import { Search, Plus } from 'lucide-react';
 import { CLASS, CLASS_FILTER_VALUES } from '../models/class';
 import type { ClassFilter } from '../models/class';
 import DeckBuilderDeckControls from '../components/DeckBuilderDeckControls';
 import DeckBuilderDeckHeader from '../components/DeckBuilderDeckHeader';
+import DeckBuilderDeckSection from '../components/DeckBuilderDeckSection';
 import DeckBuilderMyDecksModal from '../components/DeckBuilderMyDecksModal';
 import DeckBuilderRulePanel from '../components/DeckBuilderRulePanel';
 import { getBaseCardType } from '../models/cardClassification';
@@ -1362,176 +1363,70 @@ const DeckBuilder: React.FC = () => {
             onOpenResetBuilderDialog={() => applyDeckBuilderModalUiState(buildOpenedResetBuilderDialogUiState())}
           />
 
-          <h3 style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
-            <span>{t('deckBuilder.deckArea.leader')}</span>
-            <span style={{ color: leaderCards.length >= leaderLimit ? 'var(--brand-accent)' : 'var(--text-muted)' }}>
-              {leaderCards.length}/{leaderLimit}
-            </span>
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginBottom: '2rem' }}>
-            {groupedLeaderCards.length > 0 ? (
-              groupedLeaderCards.map(({ card, count }) => (
-                <div key={card.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', padding: '0.25rem 0.5rem', background: 'var(--bg-surface)', borderRadius: '4px' }}>
-                  <div style={{ minWidth: 0 }}>
-                    <div
-                      style={{
-                        fontSize: '0.875rem',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        cursor: 'help',
-                      }}
-                      onMouseEnter={(e) => handleDeckCardMouseEnter(card, e)}
-                      onMouseMove={handleDeckCardMouseMove}
-                      onMouseLeave={handleDeckCardMouseLeave}
-                    >
-                      {card.name}
-                    </div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {card.id} {card.cost ? `• Cost ${card.cost}` : ''}
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    {count > 1 && <span style={{ color: 'var(--text-main)', fontSize: '0.75rem', minWidth: '2rem', textAlign: 'right', fontWeight: 600 }}>× {count}</span>}
-                    <button type="button" onClick={() => removeFromDeck('leader', card.id)} style={{ color: '#ef4444' }} title={t('deckBuilder.deckArea.actions.removeLeader')}><Minus size={16} /></button>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('deckBuilder.deckArea.noLeader')}</p>
-            )}
-          </div>
+          <DeckBuilderDeckSection
+            title={t('deckBuilder.deckArea.leader')}
+            countLabel={`${leaderCards.length}/${leaderLimit}`}
+            countColor={leaderCards.length >= leaderLimit ? 'var(--brand-accent)' : 'var(--text-muted)'}
+            groupedCards={groupedLeaderCards}
+            targetSection="leader"
+            removeTitle={t('deckBuilder.deckArea.actions.removeLeader')}
+            emptyMessage={t('deckBuilder.deckArea.noLeader')}
+            rowsMarginBottom="2rem"
+            showCountWhenSingle={false}
+            countTextAlign="right"
+            onRemove={(cardId) => removeFromDeck('leader', cardId)}
+            onCardMouseEnter={handleDeckCardMouseEnter}
+            onCardMouseMove={handleDeckCardMouseMove}
+            onCardMouseLeave={handleDeckCardMouseLeave}
+          />
 
-          <h3 style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
-            <span>{t('deckBuilder.deckArea.mainDeck')}</span>
-            <span style={{ color: mainDeck.length >= 40 ? 'var(--vivid-green-cyan)' : 'var(--text-muted)' }}>{mainDeck.length}/{DECK_LIMITS.main}</span>
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginBottom: '2rem' }}>
-            {groupedMainDeck.map(({ card, count }) => (
-              <div key={card.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', padding: '0.25rem 0.5rem', background: 'var(--bg-surface)', borderRadius: '4px' }}>
-                <div style={{ minWidth: 0 }}>
-                  <div
-                    style={{
-                      fontSize: '0.875rem',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      cursor: 'help',
-                    }}
-                    onMouseEnter={(e) => handleDeckCardMouseEnter(card, e)}
-                    onMouseMove={handleDeckCardMouseMove}
-                    onMouseLeave={handleDeckCardMouseLeave}
-                  >
-                    {card.name}
-                  </div>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {card.id} {card.cost ? `• Cost ${card.cost}` : ''}
-                  </div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <button type="button" onClick={() => removeFromDeck('main', card.id)} style={{ color: '#ef4444' }} title={t('deckBuilder.deckArea.actions.removeMain')}><Minus size={16} /></button>
-                  <span style={{ color: 'var(--text-main)', fontSize: '0.75rem', minWidth: '2rem', textAlign: 'center', fontWeight: 600 }}>× {count}</span>
-                  <button
-                    type="button"
-                    onClick={() => addToDeck(card, 'main')}
-                    disabled={!canAddCardToDeckState(card, 'main', deckState, deckRuleConfig)}
-                    style={{ color: canAddCardToDeckState(card, 'main', deckState, deckRuleConfig) ? 'var(--vivid-green-cyan)' : 'var(--text-muted)' }}
-                    title={t('deckBuilder.addActions.mainLabel')}
-                  >
-                    <Plus size={16} />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+          <DeckBuilderDeckSection
+            title={t('deckBuilder.deckArea.mainDeck')}
+            countLabel={`${mainDeck.length}/${DECK_LIMITS.main}`}
+            countColor={mainDeck.length >= 40 ? 'var(--vivid-green-cyan)' : 'var(--text-muted)'}
+            groupedCards={groupedMainDeck}
+            targetSection="main"
+            removeTitle={t('deckBuilder.deckArea.actions.removeMain')}
+            addTitle={t('deckBuilder.addActions.mainLabel')}
+            canAddCard={(card) => canAddCardToDeckState(card, 'main', deckState, deckRuleConfig)}
+            rowsMarginBottom="2rem"
+            onRemove={(cardId) => removeFromDeck('main', cardId)}
+            onAdd={(card) => addToDeck(card, 'main')}
+            onCardMouseEnter={handleDeckCardMouseEnter}
+            onCardMouseMove={handleDeckCardMouseMove}
+            onCardMouseLeave={handleDeckCardMouseLeave}
+          />
 
-          <h3 style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
-            <span>{t('deckBuilder.deckArea.evolveDeck')}</span>
-            <span style={{ color: 'var(--text-muted)' }}>{evolveDeck.length}/{DECK_LIMITS.evolve}</span>
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-            {groupedEvolveDeck.map(({ card, count }) => (
-              <div key={card.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', padding: '0.25rem 0.5rem', background: 'var(--bg-surface)', borderRadius: '4px' }}>
-                <div style={{ minWidth: 0 }}>
+          <DeckBuilderDeckSection
+            title={t('deckBuilder.deckArea.evolveDeck')}
+            countLabel={`${evolveDeck.length}/${DECK_LIMITS.evolve}`}
+            groupedCards={groupedEvolveDeck}
+            targetSection="evolve"
+            removeTitle={t('deckBuilder.deckArea.actions.removeEvolve')}
+            addTitle={t('deckBuilder.addActions.evolveLabel')}
+            canAddCard={(card) => canAddCardToDeckState(card, 'evolve', deckState, deckRuleConfig)}
+            onRemove={(cardId) => removeFromDeck('evolve', cardId)}
+            onAdd={(card) => addToDeck(card, 'evolve')}
+            onCardMouseEnter={handleDeckCardMouseEnter}
+            onCardMouseMove={handleDeckCardMouseMove}
+            onCardMouseLeave={handleDeckCardMouseLeave}
+          />
 
-                  <div
-                    style={{
-                      fontSize: '0.875rem',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      cursor: 'help',
-                    }}
-                    onMouseEnter={(e) => handleDeckCardMouseEnter(card, e)}
-                    onMouseMove={handleDeckCardMouseMove}
-                    onMouseLeave={handleDeckCardMouseLeave}
-                  >
-                    {card.name}
-                  </div>
-
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {card.id} {card.cost ? `• Cost ${card.cost}` : ''}
-                  </div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <button type="button" onClick={() => removeFromDeck('evolve', card.id)} style={{ color: '#ef4444' }} title={t('deckBuilder.deckArea.actions.removeEvolve')}><Minus size={16} /></button>
-                  <span style={{ color: 'var(--text-main)', fontSize: '0.75rem', minWidth: '2rem', textAlign: 'center', fontWeight: 600 }}>× {count}</span>
-                  <button
-                    type="button"
-                    onClick={() => addToDeck(card, 'evolve')}
-                    disabled={!canAddCardToDeckState(card, 'evolve', deckState, deckRuleConfig)}
-                    style={{ color: canAddCardToDeckState(card, 'evolve', deckState, deckRuleConfig) ? 'var(--vivid-green-cyan)' : 'var(--text-muted)' }}
-                    title={t('deckBuilder.addActions.evolveLabel')}
-                  >
-                    <Plus size={16} />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <h3 style={{ marginTop: '2rem', marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
-            <span>{t('deckBuilder.deckArea.tokenDeck')}</span>
-            <span style={{ color: 'var(--text-muted)' }}>{tokenDeck.length}</span>
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-            {groupedTokenDeck.map(({ card, count }) => (
-              <div key={card.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', padding: '0.25rem 0.5rem', background: 'var(--bg-surface)', borderRadius: '4px' }}>
-                <div style={{ minWidth: 0 }}>
-                  <div
-                    style={{
-                      fontSize: '0.875rem',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      cursor: 'help',
-                    }}
-                    onMouseEnter={(e) => handleDeckCardMouseEnter(card, e)}
-                    onMouseMove={handleDeckCardMouseMove}
-                    onMouseLeave={handleDeckCardMouseLeave}
-                  >
-                    {card.name}
-                  </div>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {card.id} {card.cost ? `• Cost ${card.cost}` : ''}
-                  </div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <button type="button" onClick={() => removeFromDeck('token', card.id)} style={{ color: '#ef4444' }} title={t('deckBuilder.deckArea.actions.removeToken')}><Minus size={16} /></button>
-                  <span style={{ color: 'var(--text-main)', fontSize: '0.75rem', minWidth: '2rem', textAlign: 'center', fontWeight: 600 }}>× {count}</span>
-                  <button
-                    type="button"
-                    onClick={() => addToDeck(card, 'token')}
-                    disabled={!canAddCardToDeckState(card, 'token', deckState, deckRuleConfig)}
-                    style={{ color: canAddCardToDeckState(card, 'token', deckState, deckRuleConfig) ? 'var(--vivid-green-cyan)' : 'var(--text-muted)' }}
-                    title={t('deckBuilder.addActions.tokenLabel')}
-                  >
-                    <Plus size={16} />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+          <DeckBuilderDeckSection
+            title={t('deckBuilder.deckArea.tokenDeck')}
+            countLabel={tokenDeck.length}
+            groupedCards={groupedTokenDeck}
+            targetSection="token"
+            removeTitle={t('deckBuilder.deckArea.actions.removeToken')}
+            addTitle={t('deckBuilder.addActions.tokenLabel')}
+            canAddCard={(card) => canAddCardToDeckState(card, 'token', deckState, deckRuleConfig)}
+            headingMarginTop="2rem"
+            onRemove={(cardId) => removeFromDeck('token', cardId)}
+            onAdd={(card) => addToDeck(card, 'token')}
+            onCardMouseEnter={handleDeckCardMouseEnter}
+            onCardMouseMove={handleDeckCardMouseMove}
+            onCardMouseLeave={handleDeckCardMouseLeave}
+          />
         </div>
       </div>
 
