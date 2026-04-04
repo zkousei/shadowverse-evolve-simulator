@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ClassFilter } from '../models/class';
 import DeckBuilderDeckControls from '../components/DeckBuilderDeckControls';
+import DeckBuilderDeckLogImportDialog from '../components/DeckBuilderDeckLogImportDialog';
 import DeckBuilderDeckHeader from '../components/DeckBuilderDeckHeader';
 import DeckBuilderDeleteSavedDecksDialog from '../components/DeckBuilderDeleteSavedDecksDialog';
 import DeckBuilderDeckSection from '../components/DeckBuilderDeckSection';
@@ -13,6 +14,7 @@ import DeckBuilderPaginationControls from '../components/DeckBuilderPaginationCo
 import DeckBuilderPreviewModal from '../components/DeckBuilderPreviewModal';
 import DeckBuilderResetDialog from '../components/DeckBuilderResetDialog';
 import DeckBuilderRulePanel from '../components/DeckBuilderRulePanel';
+import DeckBuilderSavedDeckConfirmDialog from '../components/DeckBuilderSavedDeckConfirmDialog';
 import { getBaseCardType } from '../models/cardClassification';
 import {
   getAvailableExpansions,
@@ -1077,249 +1079,34 @@ const DeckBuilder: React.FC = () => {
       )}
 
       {pendingLoadDeck && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={t('deckBuilder.modals.loadDeck.aria')}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(15, 23, 42, 0.72)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '1.5rem',
-            zIndex: 1100,
-          }}
-        >
-          <div
-            className="glass-panel"
-            style={{
-              width: '100%',
-              maxWidth: '420px',
-              padding: '1.25rem',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.75rem',
-            }}
-          >
-            <h3 style={{ margin: 0, color: '#fcd34d' }}>{t('deckBuilder.modals.loadDeck.title')}</h3>
-            <p style={{ margin: 0, color: 'var(--text-main)', lineHeight: 1.5 }}>
-              {t('deckBuilder.modals.loadDeck.desc', { name: pendingLoadDeck.name })}
-            </p>
-            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem', lineHeight: 1.5 }}>
-              {t('deckBuilder.modals.loadDeck.note')}
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
-              <button
-                type="button"
-                onClick={() => applyDeckBuilderMyDecksUiState(buildDismissedPendingSavedDeckLoadUiState())}
-                style={{
-                  padding: '0.5rem 0.9rem',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border-light)',
-                  background: 'var(--bg-surface)',
-                  color: 'var(--text-main)',
-                  cursor: 'pointer',
-                }}
-              >
-                {t('deckBuilder.modals.buttons.cancel')}
-              </button>
-              <button
-                type="button"
-                onClick={() => handleLoadSavedDeck(pendingLoadDeck.id)}
-                style={{
-                  padding: '0.5rem 0.9rem',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  background: 'var(--accent-primary)',
-                  color: '#fff',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
-              >
-                {t('deckBuilder.myDecks.actions.load')}
-              </button>
-            </div>
-          </div>
-        </div>
+        <DeckBuilderSavedDeckConfirmDialog
+          kind="load"
+          deckName={pendingLoadDeck.name}
+          onCancel={() => applyDeckBuilderMyDecksUiState(buildDismissedPendingSavedDeckLoadUiState())}
+          onConfirm={() => handleLoadSavedDeck(pendingLoadDeck.id)}
+        />
       )}
 
       {pendingDeleteDeck && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={t('deckBuilder.modals.deleteDeck.aria')}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(15, 23, 42, 0.72)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '1.5rem',
-            zIndex: 1100,
-          }}
-        >
-          <div
-            className="glass-panel"
-            style={{
-              width: '100%',
-              maxWidth: '420px',
-              padding: '1.25rem',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.75rem',
-            }}
-          >
-            <h3 style={{ margin: 0, color: '#fca5a5' }}>{t('deckBuilder.modals.deleteDeck.title')}</h3>
-            <p style={{ margin: 0, color: 'var(--text-main)', lineHeight: 1.5 }}>
-              {t('deckBuilder.modals.deleteDeck.desc', { name: pendingDeleteDeck.name })}
-            </p>
-            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem', lineHeight: 1.5 }}>
-              {t('deckBuilder.modals.deleteDeck.note')}
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
-              <button
-                type="button"
-                onClick={() => applyDeckBuilderMyDecksUiState(buildDismissedPendingSavedDeckDeleteUiState())}
-                style={{
-                  padding: '0.5rem 0.9rem',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border-light)',
-                  background: 'var(--bg-surface)',
-                  color: 'var(--text-main)',
-                  cursor: 'pointer',
-                }}
-              >
-                {t('deckBuilder.modals.buttons.cancel')}
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDeleteSavedDeck(pendingDeleteDeck.id)}
-                style={{
-                  padding: '0.5rem 0.9rem',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid #dc2626',
-                  background: '#ef4444',
-                  color: '#fff',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
-              >
-                {t('deckBuilder.modals.buttons.delete')}
-              </button>
-            </div>
-          </div>
-        </div>
+        <DeckBuilderSavedDeckConfirmDialog
+          kind="delete"
+          deckName={pendingDeleteDeck.name}
+          onCancel={() => applyDeckBuilderMyDecksUiState(buildDismissedPendingSavedDeckDeleteUiState())}
+          onConfirm={() => handleDeleteSavedDeck(pendingDeleteDeck.id)}
+        />
       )}
 
       {isDeckLogImportOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={t('deckBuilder.modals.deckLogImport.aria')}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(15, 23, 42, 0.72)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '1.5rem',
-            zIndex: 1100,
+        <DeckBuilderDeckLogImportDialog
+          deckLogInput={deckLogInput}
+          isImportingDeckLog={isImportingDeckLog}
+          onDeckLogInputChange={setDeckLogInput}
+          onCancel={() => {
+            if (isImportingDeckLog) return;
+            applyDeckBuilderModalUiState(buildDismissedDeckLogImportUiState());
           }}
-        >
-          <div
-            className="glass-panel"
-            style={{
-              width: '100%',
-              maxWidth: '460px',
-              padding: '1.25rem',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.9rem',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <h3 style={{ margin: 0, color: '#67e8f9' }}>{t('deckBuilder.modals.deckLogImport.title')}</h3>
-              <span
-                style={{
-                  padding: '0.12rem 0.42rem',
-                  borderRadius: '999px',
-                  background: 'rgba(245, 158, 11, 0.18)',
-                  color: '#fcd34d',
-                  fontSize: '0.7rem',
-                  fontWeight: 700,
-                  letterSpacing: '0.04em',
-                }}
-              >
-                {t('deckBuilder.deckArea.actions.betaBadge')}
-              </span>
-            </div>
-            <p style={{ margin: 0, color: 'var(--text-main)', lineHeight: 1.5 }}>
-              {t('deckBuilder.modals.deckLogImport.desc')}
-            </p>
-            <input
-              type="text"
-              value={deckLogInput}
-              onChange={(event) => setDeckLogInput(event.target.value)}
-              placeholder={t('deckBuilder.modals.deckLogImport.placeholder')}
-              autoFocus
-              style={{
-                width: '100%',
-                padding: '0.7rem 0.85rem',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--border-light)',
-                background: 'var(--bg-overlay)',
-                color: 'var(--text-main)',
-                fontSize: '0.95rem',
-              }}
-            />
-            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.8rem', lineHeight: 1.5 }}>
-              {t('deckBuilder.modals.deckLogImport.note')}
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.25rem' }}>
-              <button
-                type="button"
-                onClick={() => {
-                  if (isImportingDeckLog) return;
-                  applyDeckBuilderModalUiState(buildDismissedDeckLogImportUiState());
-                }}
-                style={{
-                  padding: '0.5rem 0.9rem',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border-light)',
-                  background: 'var(--bg-surface)',
-                  color: 'var(--text-main)',
-                  cursor: isImportingDeckLog ? 'not-allowed' : 'pointer',
-                  opacity: isImportingDeckLog ? 0.7 : 1,
-                }}
-              >
-                {t('common.buttons.cancel')}
-              </button>
-              <button
-                type="button"
-                onClick={handleImportDeckLog}
-                disabled={isImportingDeckLog || deckLogInput.trim().length === 0}
-                style={{
-                  padding: '0.5rem 0.9rem',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  background: 'var(--accent-primary)',
-                  color: '#fff',
-                  fontWeight: 700,
-                  cursor: isImportingDeckLog || deckLogInput.trim().length === 0 ? 'not-allowed' : 'pointer',
-                  opacity: isImportingDeckLog || deckLogInput.trim().length === 0 ? 0.75 : 1,
-                }}
-              >
-                {isImportingDeckLog
-                  ? t('deckBuilder.modals.deckLogImport.importing')
-                  : t('deckBuilder.modals.deckLogImport.confirm')}
-              </button>
-            </div>
-          </div>
-        </div>
+          onImport={handleImportDeckLog}
+        />
       )}
 
       {showDeleteSelectedSavedDecksDialog && (
