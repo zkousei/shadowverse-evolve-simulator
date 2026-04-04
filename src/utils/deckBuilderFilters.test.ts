@@ -4,6 +4,8 @@ import {
   buildDefaultDeckBuilderLibraryFilterState,
   buildSubtypeAddedDeckBuilderLibraryFilterState,
   buildSubtypeRemovedDeckBuilderLibraryFilterState,
+  buildUpdatedDeckBuilderLibraryFilterState,
+  buildUpdatedDeckBuilderLibraryFilterStateWithPageReset,
 } from './deckBuilderFilters';
 
 describe('deckBuilderFilters', () => {
@@ -46,6 +48,38 @@ describe('deckBuilderFilters', () => {
       ...currentState,
       subtypeSearch: '',
       selectedSubtypeTags: ['兵士', '学院'],
+      page: 0,
+    });
+  });
+
+  it('updates filter state with or without resetting the page', () => {
+    const currentState: DeckBuilderLibraryFilterState = {
+      ...buildDefaultDeckBuilderLibraryFilterState(),
+      search: 'alpha',
+      classFilter: 'Royal',
+      page: 4,
+    };
+
+    expect(
+      buildUpdatedDeckBuilderLibraryFilterState(currentState, {
+        page: 2,
+        subtypeSearch: '兵士',
+      })
+    ).toEqual({
+      ...currentState,
+      page: 2,
+      subtypeSearch: '兵士',
+    });
+
+    expect(
+      buildUpdatedDeckBuilderLibraryFilterStateWithPageReset(currentState, {
+        costFilter: '3',
+        hideSameNameVariants: true,
+      })
+    ).toEqual({
+      ...currentState,
+      costFilter: '3',
+      hideSameNameVariants: true,
       page: 0,
     });
   });

@@ -347,6 +347,44 @@ describe('DeckBuilder', () => {
     });
   });
 
+  it('updates deck rule controls across constructed and crossover modes', async () => {
+    render(<DeckBuilder />);
+
+    expect(await screen.findByText('Alpha Knight')).toBeInTheDocument();
+
+    const formatSelect = screen.getByRole('combobox', { name: 'Deck format' }) as HTMLSelectElement;
+    const constructedClass = screen.getByRole('combobox', { name: 'Constructed class' }) as HTMLSelectElement;
+
+    expect(formatSelect.value).toBe('constructed');
+    expect(constructedClass.value).toBe('');
+
+    fireEvent.change(constructedClass, { target: { value: 'ロイヤル' } });
+    expect(constructedClass.value).toBe('ロイヤル');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Title' }));
+    expect(screen.queryByRole('combobox', { name: 'Constructed class' })).not.toBeInTheDocument();
+
+    const constructedTitle = screen.getByRole('combobox', { name: 'Constructed title' }) as HTMLSelectElement;
+    fireEvent.change(constructedTitle, { target: { value: 'Dragon Tale' } });
+    expect(constructedTitle.value).toBe('Dragon Tale');
+
+    fireEvent.change(formatSelect, { target: { value: 'crossover' } });
+    expect(screen.queryByRole('group', { name: 'Deck identity type' })).not.toBeInTheDocument();
+
+    const crossoverClassA = screen.getByRole('combobox', { name: 'Crossover class A' }) as HTMLSelectElement;
+    const crossoverClassB = screen.getByRole('combobox', { name: 'Crossover class B' }) as HTMLSelectElement;
+
+    expect(crossoverClassA.value).toBe('ロイヤル');
+    expect(crossoverClassB.value).toBe('');
+
+    fireEvent.change(crossoverClassB, { target: { value: 'ウィッチ' } });
+    expect(crossoverClassB.value).toBe('ウィッチ');
+
+    fireEvent.change(formatSelect, { target: { value: 'constructed' } });
+    expect(screen.getByRole('group', { name: 'Deck identity type' })).toBeInTheDocument();
+    expect((screen.getByRole('combobox', { name: 'Constructed class' }) as HTMLSelectElement).value).toBe('ロイヤル');
+  });
+
   it('filters cards by deck section and combines with rarity and product filters', async () => {
     render(<DeckBuilder />);
 

@@ -4,6 +4,7 @@ import type { DeckRuleConfig } from '../models/deckRule';
 import { createDeckSnapshot, clearDraft, getSavedDeckById, loadDraft, saveDeck, saveDraft } from './deckStorage';
 import { DeckLogImportError, type DeckLogImportResult } from './decklogImport';
 import {
+  buildClearedSavedDeckTrackingState,
   buildContinuedDraftRestoreSessionState,
   buildDeckBuilderSaveState,
   buildDeckLogImportFeedback,
@@ -130,6 +131,11 @@ describe('deckBuilderPersistence', () => {
       savedBaselineSnapshot: null,
       draftRestored: false,
       pendingDraftRestore: null,
+    });
+
+    expect(buildClearedSavedDeckTrackingState()).toEqual({
+      selectedSavedDeckId: null,
+      savedBaselineSnapshot: null,
     });
 
     expect(buildResetDeckBuilderSessionState()).toEqual({

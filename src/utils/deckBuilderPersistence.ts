@@ -86,6 +86,11 @@ export type DeckBuilderSessionState = {
   pendingDraftRestore: PendingDraftRestoreState | null;
 };
 
+export type DeckBuilderTrackingStatePatch = Partial<Pick<
+  DeckBuilderSessionState,
+  'selectedSavedDeckId' | 'savedBaselineSnapshot' | 'draftRestored' | 'pendingDraftRestore'
+>>;
+
 export type DraftPersistenceAction = 'skip' | 'clear' | 'save';
 
 export const buildDeckBuilderSaveState = (
@@ -147,14 +152,19 @@ export const buildDraftPersistencePayload = (
   deckState,
 });
 
-export const buildDetachedDeckBuilderTrackingState = (): Pick<
-  DeckBuilderSessionState,
-  'selectedSavedDeckId' | 'savedBaselineSnapshot' | 'draftRestored' | 'pendingDraftRestore'
-> => ({
+export const buildDetachedDeckBuilderTrackingState = (): DeckBuilderTrackingStatePatch => ({
   selectedSavedDeckId: null,
   savedBaselineSnapshot: null,
   draftRestored: false,
   pendingDraftRestore: null,
+});
+
+export const buildClearedSavedDeckTrackingState = (): Pick<
+  DeckBuilderSessionState,
+  'selectedSavedDeckId' | 'savedBaselineSnapshot'
+> => ({
+  selectedSavedDeckId: null,
+  savedBaselineSnapshot: null,
 });
 
 export const buildResetDeckBuilderSessionState = (): DeckBuilderSessionState => ({

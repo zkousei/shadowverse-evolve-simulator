@@ -15,6 +15,7 @@ import {
 import {
   createDefaultDeckRuleConfig,
   DECK_FORMAT_VALUES,
+  type DeckRuleConfig,
   type DeckFormat,
 } from '../models/deckRule';
 import { createEmptyDeckState, type DeckState } from '../models/deckState';
@@ -41,6 +42,8 @@ import {
   buildDefaultDeckBuilderLibraryFilterState,
   buildSubtypeAddedDeckBuilderLibraryFilterState,
   buildSubtypeRemovedDeckBuilderLibraryFilterState,
+  buildUpdatedDeckBuilderLibraryFilterState,
+  buildUpdatedDeckBuilderLibraryFilterStateWithPageReset,
 } from '../utils/deckBuilderFilters';
 import {
   type DeckBuilderMyDecksUiStatePatch,
@@ -53,6 +56,15 @@ import {
   buildDismissedDeleteSelectedSavedDecksUiState,
   buildDismissedPendingSavedDeckDeleteUiState,
   buildDismissedPendingSavedDeckLoadUiState,
+  buildEnteredSavedDeckSelectionUiState,
+  buildOpenedDeleteAllSavedDecksUiState,
+  buildOpenedDeleteSelectedSavedDecksUiState,
+  buildOpenedMyDecksUiState,
+  buildOpenedPendingSavedDeckDeleteUiState,
+  buildOpenedPendingSavedDeckLoadUiState,
+  buildToggledSavedDeckSelectionUiState,
+  buildToggledShownSavedDeckSelectionUiState,
+  buildUpdatedSavedDeckSearchUiState,
 } from '../utils/deckBuilderMyDecksState';
 import {
   type DeckBuilderModalUiStatePatch,
@@ -107,7 +119,9 @@ import {
 import { addCardToDeckState, removeCardFromDeckState } from '../utils/deckBuilderMutations';
 import {
   type DeckBuilderSessionState,
+  type DeckBuilderTrackingStatePatch,
   type PendingDraftRestoreState,
+  buildClearedSavedDeckTrackingState,
   buildContinuedDraftRestoreSessionState,
   buildDeckBuilderSaveState,
   buildDeckLogImportFeedback,
@@ -132,8 +146,6 @@ import {
   getFilteredSubtypeOptions,
   getSavedDeckSelectionUiState,
   getShownSavedDeckIds,
-  toggleSavedDeckSelectionId,
-  toggleShownSavedDeckIds,
 } from '../utils/deckBuilderSelections';
 import {
   DECK_HOVER_PREVIEW_MAX_HEIGHT,
@@ -370,6 +382,21 @@ const DeckBuilder: React.FC = () => {
     setSavedDecks(listSavedDecks());
   };
 
+  const applyDeckBuilderTrackingState = (state: DeckBuilderTrackingStatePatch) => {
+    if (state.selectedSavedDeckId !== undefined) {
+      setSelectedSavedDeckId(state.selectedSavedDeckId);
+    }
+    if (state.savedBaselineSnapshot !== undefined) {
+      setSavedBaselineSnapshot(state.savedBaselineSnapshot);
+    }
+    if (state.draftRestored !== undefined) {
+      setDraftRestored(state.draftRestored);
+    }
+    if (state.pendingDraftRestore !== undefined) {
+      setPendingDraftRestore(state.pendingDraftRestore);
+    }
+  };
+
   const applyDeckBuilderSessionState = (state: DeckBuilderSessionState) => {
     if (state.deckName !== undefined) {
       setDeckName(state.deckName);
@@ -377,10 +404,13 @@ const DeckBuilder: React.FC = () => {
 
     setDeckRuleConfig(state.ruleConfig);
     setDeckState(state.deckState);
-    setSelectedSavedDeckId(state.selectedSavedDeckId);
-    setSavedBaselineSnapshot(state.savedBaselineSnapshot);
-    setDraftRestored(state.draftRestored);
-    setPendingDraftRestore(state.pendingDraftRestore);
+    applyDeckBuilderTrackingState(state);
+  };
+
+  const updateDeckRuleConfig = (
+    updater: (current: DeckRuleConfig) => DeckRuleConfig
+  ) => {
+    setDeckRuleConfig(current => updater(current));
   };
 
   const applyDeckBuilderMyDecksUiState = (state: DeckBuilderMyDecksUiStatePatch) => {
@@ -404,6 +434,9 @@ const DeckBuilder: React.FC = () => {
     }
     if (state.selectedSavedDeckIds !== undefined) {
       setSelectedSavedDeckIds(state.selectedSavedDeckIds);
+    }
+    if (state.savedDeckSearch !== undefined) {
+      setSavedDeckSearch(state.savedDeckSearch);
     }
   };
 
@@ -476,6 +509,25 @@ const DeckBuilder: React.FC = () => {
 
   const resetLibraryFilters = () => {
     applyDeckBuilderLibraryFilterState(buildDefaultDeckBuilderLibraryFilterState());
+  };
+
+  const updateLibraryFilters = (
+    patch: Partial<DeckBuilderLibraryFilterState>
+  ) => {
+    applyDeckBuilderLibraryFilterState(
+      buildUpdatedDeckBuilderLibraryFilterState(buildCurrentLibraryFilterState(), patch)
+    );
+  };
+
+  const updateLibraryFiltersWithPageReset = (
+    patch: Omit<Partial<DeckBuilderLibraryFilterState>, 'page'>
+  ) => {
+    applyDeckBuilderLibraryFilterState(
+      buildUpdatedDeckBuilderLibraryFilterStateWithPageReset(
+        buildCurrentLibraryFilterState(),
+        patch
+      )
+    );
   };
 
   const addSubtypeTag = (tag: string) => {
@@ -658,11 +710,7 @@ const DeckBuilder: React.FC = () => {
   const handleMakeUnsavedCopy = () => {
     // Keep the current builder exactly as-is, but stop tracking it against the
     // loaded My Decks record so subsequent saves create/update a new baseline.
-    const detachedTrackingState = buildDetachedDeckBuilderTrackingState();
-    setSelectedSavedDeckId(detachedTrackingState.selectedSavedDeckId);
-    setSavedBaselineSnapshot(detachedTrackingState.savedBaselineSnapshot);
-    setDraftRestored(detachedTrackingState.draftRestored);
-    setPendingDraftRestore(detachedTrackingState.pendingDraftRestore);
+    applyDeckBuilderTrackingState(buildDetachedDeckBuilderTrackingState());
     setSaveFeedback({
       kind: 'success',
       message: t('deckBuilder.alerts.unsavedCopySuccess'),
@@ -684,8 +732,7 @@ const DeckBuilder: React.FC = () => {
     if (!savedDeck) return;
     deleteSavedDeck(deckId);
     if (shouldDetachSavedDeckTracking(selectedSavedDeckId, [deckId])) {
-      setSelectedSavedDeckId(null);
-      setSavedBaselineSnapshot(null);
+      applyDeckBuilderTrackingState(buildClearedSavedDeckTrackingState());
     }
     refreshSavedDecks();
     applyDeckBuilderMyDecksUiState(buildDismissedPendingSavedDeckDeleteUiState());
@@ -696,8 +743,7 @@ const DeckBuilder: React.FC = () => {
     // Deleting saved records never wipes the current builder. It only removes
     // My Decks entries and drops tracking if the loaded baseline was deleted.
     if (selectedSavedDeckId !== null) {
-      setSelectedSavedDeckId(null);
-      setSavedBaselineSnapshot(null);
+      applyDeckBuilderTrackingState(buildClearedSavedDeckTrackingState());
     }
     refreshSavedDecks();
     applyDeckBuilderMyDecksUiState(buildCompletedDeleteAllSavedDecksUiState());
@@ -710,23 +756,46 @@ const DeckBuilder: React.FC = () => {
     // Selected deletion follows the same rule as Delete All: preserve the live
     // builder and only detach it if its saved baseline is among the deletions.
     if (shouldDetachSavedDeckTracking(selectedSavedDeckId, selectedSavedDeckIds)) {
-      setSelectedSavedDeckId(null);
-      setSavedBaselineSnapshot(null);
+      applyDeckBuilderTrackingState(buildClearedSavedDeckTrackingState());
     }
     refreshSavedDecks();
     applyDeckBuilderMyDecksUiState(buildCompletedDeleteSelectedSavedDecksUiState());
   };
 
   const toggleSavedDeckSelection = (deckId: string) => {
-    setSelectedSavedDeckIds(current => toggleSavedDeckSelectionId(current, deckId));
+    setSelectedSavedDeckIds(current => (
+      buildToggledSavedDeckSelectionUiState(current, deckId).selectedSavedDeckIds ?? current
+    ));
   };
 
   const handleToggleShownSavedDeckSelection = () => {
-    setSelectedSavedDeckIds(current => toggleShownSavedDeckIds(current, shownSavedDeckIds));
+    setSelectedSavedDeckIds(current => (
+      buildToggledShownSavedDeckSelectionUiState(current, shownSavedDeckIds).selectedSavedDeckIds ?? current
+    ));
   };
 
   const handleCloseMyDecks = () => {
     applyDeckBuilderMyDecksUiState(buildClosedMyDecksUiState());
+  };
+
+  const handleDeckFormatChange = (nextFormat: DeckFormat) => {
+    updateDeckRuleConfig(current => buildDeckFormatUpdatedRuleConfig(current, nextFormat));
+  };
+
+  const handleDeckIdentityTypeChange = (identityType: 'class' | 'title') => {
+    updateDeckRuleConfig(current => buildDeckIdentityTypeUpdatedRuleConfig(current, identityType));
+  };
+
+  const handleConstructedClassChange = (nextValue: string) => {
+    updateDeckRuleConfig(current => buildConstructedClassUpdatedRuleConfig(current, nextValue));
+  };
+
+  const handleConstructedTitleChange = (nextValue: string) => {
+    updateDeckRuleConfig(current => buildConstructedTitleUpdatedRuleConfig(current, nextValue));
+  };
+
+  const handleCrossoverClassChange = (index: 0 | 1, nextValue: string) => {
+    updateDeckRuleConfig(current => buildCrossoverClassUpdatedRuleConfig(current, index, nextValue));
   };
 
   const pendingDeleteDeck = pendingDeleteDeckId ? getSavedDeckById(pendingDeleteDeckId) : null;
@@ -797,7 +866,7 @@ const DeckBuilder: React.FC = () => {
               type="text"
               placeholder={t('deckBuilder.filters.searchCards')}
               value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+              onChange={(e) => updateLibraryFiltersWithPageReset({ search: e.target.value })}
               style={{
                 width: '100%',
                 padding: '0.75rem 1rem 0.75rem 2.5rem',
@@ -815,7 +884,7 @@ const DeckBuilder: React.FC = () => {
             <input
               type="checkbox"
               checked={hideSameNameVariants}
-              onChange={(e) => { setHideSameNameVariants(e.target.checked); setPage(0); }}
+              onChange={(e) => updateLibraryFiltersWithPageReset({ hideSameNameVariants: e.target.checked })}
             />
             {t('deckBuilder.filters.hideSameNameVariants')}
           </label>
@@ -861,7 +930,7 @@ const DeckBuilder: React.FC = () => {
                 key={section}
                 type="button"
                 aria-pressed={deckSectionFilter === section}
-                onClick={() => { setDeckSectionFilter(section); setPage(0); }}
+                onClick={() => updateLibraryFiltersWithPageReset({ deckSectionFilter: section })}
                 style={{
                   padding: '0.25rem 0.75rem',
                   borderRadius: '4px',
@@ -904,7 +973,7 @@ const DeckBuilder: React.FC = () => {
                   key={cls}
                   type="button"
                   aria-pressed={classFilter === cls}
-                  onClick={() => { setClassFilter(cls); setPage(0); }}
+                  onClick={() => updateLibraryFiltersWithPageReset({ classFilter: cls })}
                   style={{
                     padding: '0.25rem 0.75rem',
                     borderRadius: '4px',
@@ -942,7 +1011,7 @@ const DeckBuilder: React.FC = () => {
                 key={cardType}
                 type="button"
                 aria-pressed={cardTypeFilter === cardType}
-                onClick={() => { setCardTypeFilter(cardType); setPage(0); }}
+                onClick={() => updateLibraryFiltersWithPageReset({ cardTypeFilter: cardType })}
                 style={{
                   padding: '0.25rem 0.75rem',
                   borderRadius: '4px',
@@ -970,7 +1039,7 @@ const DeckBuilder: React.FC = () => {
                 key={c}
                 type="button"
                 aria-pressed={costFilter === c}
-                onClick={() => { setCostFilter(c); setPage(0); }}
+                onClick={() => updateLibraryFiltersWithPageReset({ costFilter: c })}
                 style={{
                   padding: '0.25rem 0.75rem',
                   borderRadius: '4px',
@@ -990,7 +1059,7 @@ const DeckBuilder: React.FC = () => {
             <select
               aria-label={t('deckBuilder.filters.aria.expansion')}
               value={expansionFilter}
-              onChange={(e) => { setExpansionFilter(e.target.value); setPage(0); }}
+              onChange={(e) => updateLibraryFiltersWithPageReset({ expansionFilter: e.target.value })}
               style={{
                 padding: '0.5rem',
                 borderRadius: 'var(--radius-md)',
@@ -1014,7 +1083,7 @@ const DeckBuilder: React.FC = () => {
             <select
               aria-label={t('deckBuilder.filters.aria.rarity')}
               value={rarityFilter}
-              onChange={(e) => { setRarityFilter(e.target.value); setPage(0); }}
+              onChange={(e) => updateLibraryFiltersWithPageReset({ rarityFilter: e.target.value })}
               style={{
                 padding: '0.5rem',
                 borderRadius: 'var(--radius-md)',
@@ -1038,7 +1107,7 @@ const DeckBuilder: React.FC = () => {
             <select
               aria-label={t('deckBuilder.filters.aria.productName')}
               value={productNameFilter}
-              onChange={(e) => { setProductNameFilter(e.target.value); setPage(0); }}
+              onChange={(e) => updateLibraryFiltersWithPageReset({ productNameFilter: e.target.value })}
               style={{
                 padding: '0.5rem',
                 borderRadius: 'var(--radius-md)',
@@ -1067,7 +1136,7 @@ const DeckBuilder: React.FC = () => {
                 list="subtype-filter-options"
                 placeholder={t('deckBuilder.filters.searchSubtype')}
                 value={subtypeSearch}
-                onChange={(e) => setSubtypeSearch(e.target.value)}
+                onChange={(e) => updateLibraryFilters({ subtypeSearch: e.target.value })}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
@@ -1143,7 +1212,7 @@ const DeckBuilder: React.FC = () => {
             <button
               type="button"
               disabled={page === 0}
-              onClick={() => setPage(p => Math.max(0, p - 1))}
+              onClick={() => updateLibraryFilters({ page: Math.max(0, page - 1) })}
               className="glass-panel"
               style={{ padding: '0.5rem 1rem' }}
             >
@@ -1153,7 +1222,7 @@ const DeckBuilder: React.FC = () => {
             <button
               type="button"
               disabled={page >= totalPages - 1}
-              onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+              onClick={() => updateLibraryFilters({ page: Math.min(totalPages - 1, page + 1) })}
               className="glass-panel"
               style={{ padding: '0.5rem 1rem' }}
             >
@@ -1340,7 +1409,7 @@ const DeckBuilder: React.FC = () => {
               </span>
               <button
                 type="button"
-                onClick={() => setIsMyDecksOpen(true)}
+                onClick={() => applyDeckBuilderMyDecksUiState(buildOpenedMyDecksUiState())}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -1459,7 +1528,7 @@ const DeckBuilder: React.FC = () => {
                 value={deckRuleConfig.format}
                 onChange={(e) => {
                   const nextFormat = e.target.value as DeckFormat;
-                  setDeckRuleConfig(current => buildDeckFormatUpdatedRuleConfig(current, nextFormat));
+                  handleDeckFormatChange(nextFormat);
                 }}
                 style={{
                   padding: '0.5rem',
@@ -1500,7 +1569,7 @@ const DeckBuilder: React.FC = () => {
                       key={identityType}
                       type="button"
                       aria-pressed={deckRuleConfig.identityType === identityType}
-                      onClick={() => setDeckRuleConfig(current => buildDeckIdentityTypeUpdatedRuleConfig(current, identityType))}
+                      onClick={() => handleDeckIdentityTypeChange(identityType)}
                       style={{
                         padding: '0.25rem 0.75rem',
                         borderRadius: '4px',
@@ -1521,7 +1590,7 @@ const DeckBuilder: React.FC = () => {
                       id="constructed-class"
                       aria-label={t('deckBuilder.deckRule.aria.constructedClass')}
                       value={deckRuleConfig.selectedClass ?? ''}
-                      onChange={(e) => setDeckRuleConfig(current => buildConstructedClassUpdatedRuleConfig(current, e.target.value))}
+                      onChange={(e) => handleConstructedClassChange(e.target.value)}
                       style={{
                         padding: '0.5rem',
                         borderRadius: 'var(--radius-md)',
@@ -1548,7 +1617,7 @@ const DeckBuilder: React.FC = () => {
                       id="constructed-title"
                       aria-label={t('deckBuilder.deckRule.aria.constructedTitle')}
                       value={deckRuleConfig.selectedTitle ?? ''}
-                      onChange={(e) => setDeckRuleConfig(current => buildConstructedTitleUpdatedRuleConfig(current, e.target.value))}
+                      onChange={(e) => handleConstructedTitleChange(e.target.value)}
                       style={{
                         padding: '0.5rem',
                         borderRadius: 'var(--radius-md)',
@@ -1575,7 +1644,7 @@ const DeckBuilder: React.FC = () => {
                     id="crossover-class-a"
                     aria-label={t('deckBuilder.deckRule.aria.crossoverClassA')}
                     value={deckRuleConfig.selectedClasses[0] ?? ''}
-                    onChange={(e) => setDeckRuleConfig(current => buildCrossoverClassUpdatedRuleConfig(current, 0, e.target.value))}
+                    onChange={(e) => handleCrossoverClassChange(0, e.target.value)}
                     style={{
                       padding: '0.5rem',
                       borderRadius: 'var(--radius-md)',
@@ -1602,7 +1671,7 @@ const DeckBuilder: React.FC = () => {
                     id="crossover-class-b"
                     aria-label={t('deckBuilder.deckRule.aria.crossoverClassB')}
                     value={deckRuleConfig.selectedClasses[1] ?? ''}
-                    onChange={(e) => setDeckRuleConfig(current => buildCrossoverClassUpdatedRuleConfig(current, 1, e.target.value))}
+                    onChange={(e) => handleCrossoverClassChange(1, e.target.value)}
                     style={{
                       padding: '0.5rem',
                       borderRadius: 'var(--radius-md)',
@@ -1989,7 +2058,7 @@ const DeckBuilder: React.FC = () => {
                         clearSavedDeckSelection();
                         return;
                       }
-                      setIsSavedDeckSelectMode(true);
+                      applyDeckBuilderMyDecksUiState(buildEnteredSavedDeckSelectionUiState());
                     }}
                     style={{
                       padding: '0.45rem 0.75rem',
@@ -2009,7 +2078,7 @@ const DeckBuilder: React.FC = () => {
                 {savedDeckSelectionUiState.showDeleteAll && (
                   <button
                     type="button"
-                    onClick={() => setShowDeleteAllSavedDecksDialog(true)}
+                    onClick={() => applyDeckBuilderMyDecksUiState(buildOpenedDeleteAllSavedDecksUiState())}
                     style={{
                       padding: '0.45rem 0.75rem',
                       borderRadius: 'var(--radius-md)',
@@ -2030,7 +2099,9 @@ const DeckBuilder: React.FC = () => {
               <input
                 type="text"
                 value={savedDeckSearch}
-                onChange={(event) => setSavedDeckSearch(event.target.value)}
+                onChange={(event) => applyDeckBuilderMyDecksUiState(
+                  buildUpdatedSavedDeckSearchUiState(event.target.value)
+                )}
                 placeholder={t('deckBuilder.myDecks.search')}
                 aria-label={t('deckBuilder.myDecks.searchAria')}
                 style={{
@@ -2085,7 +2156,7 @@ const DeckBuilder: React.FC = () => {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setShowDeleteSelectedSavedDecksDialog(true)}
+                    onClick={() => applyDeckBuilderMyDecksUiState(buildOpenedDeleteSelectedSavedDecksUiState())}
                     disabled={!savedDeckSelectionUiState.hasSelectedDecks}
                     style={{
                       padding: '0.45rem 0.7rem',
@@ -2184,7 +2255,7 @@ const DeckBuilder: React.FC = () => {
                             type="button"
                             onClick={() => {
                               if (isDirty) {
-                                setPendingLoadDeckId(savedDeck.id);
+                                applyDeckBuilderMyDecksUiState(buildOpenedPendingSavedDeckLoadUiState(savedDeck.id));
                                 return;
                               }
 
@@ -2240,7 +2311,7 @@ const DeckBuilder: React.FC = () => {
                           </button>
                           <button
                             type="button"
-                            onClick={() => setPendingDeleteDeckId(savedDeck.id)}
+                            onClick={() => applyDeckBuilderMyDecksUiState(buildOpenedPendingSavedDeckDeleteUiState(savedDeck.id))}
                             style={{
                               padding: '0.45rem 0.7rem',
                               borderRadius: 'var(--radius-md)',

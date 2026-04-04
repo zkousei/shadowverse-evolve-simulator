@@ -39,6 +39,23 @@ export const buildDefaultDeckBuilderLibraryFilterState = (): DeckBuilderLibraryF
   page: 0,
 });
 
+export const buildUpdatedDeckBuilderLibraryFilterState = (
+  currentState: DeckBuilderLibraryFilterState,
+  patch: Partial<DeckBuilderLibraryFilterState>
+): DeckBuilderLibraryFilterState => ({
+  ...currentState,
+  ...patch,
+});
+
+export const buildUpdatedDeckBuilderLibraryFilterStateWithPageReset = (
+  currentState: DeckBuilderLibraryFilterState,
+  patch: Omit<Partial<DeckBuilderLibraryFilterState>, 'page'>
+): DeckBuilderLibraryFilterState => ({
+  ...currentState,
+  ...patch,
+  page: 0,
+});
+
 export const buildSubtypeAddedDeckBuilderLibraryFilterState = (
   currentState: DeckBuilderLibraryFilterState,
   subtypeTags: string[],
