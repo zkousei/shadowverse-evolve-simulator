@@ -1,18 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ClassFilter } from '../models/class';
-import DeckBuilderDeckControls from '../components/DeckBuilderDeckControls';
+import DeckBuilderDeckPane from '../components/DeckBuilderDeckPane';
 import DeckBuilderDeckLogImportDialog from '../components/DeckBuilderDeckLogImportDialog';
-import DeckBuilderDeckHeader from '../components/DeckBuilderDeckHeader';
 import DeckBuilderDeleteSavedDecksDialog from '../components/DeckBuilderDeleteSavedDecksDialog';
-import DeckBuilderDeckSection from '../components/DeckBuilderDeckSection';
 import DeckBuilderDraftRestoreDialog from '../components/DeckBuilderDraftRestoreDialog';
 import DeckBuilderHoverPreview from '../components/DeckBuilderHoverPreview';
 import DeckBuilderLibraryPane from '../components/DeckBuilderLibraryPane';
 import DeckBuilderMyDecksModal from '../components/DeckBuilderMyDecksModal';
 import DeckBuilderPreviewModal from '../components/DeckBuilderPreviewModal';
 import DeckBuilderResetDialog from '../components/DeckBuilderResetDialog';
-import DeckBuilderRulePanel from '../components/DeckBuilderRulePanel';
 import DeckBuilderSaveFeedback from '../components/DeckBuilderSaveFeedback';
 import DeckBuilderSavedDeckConfirmDialog from '../components/DeckBuilderSavedDeckConfirmDialog';
 import {
@@ -32,7 +29,6 @@ import { createEmptyDeckState, type DeckState } from '../models/deckState';
 import {
   appendRelatedTokensToDeckState,
   canAddCardToDeckState,
-  DECK_LIMITS,
   getDeckLimit,
   getAllowedSections,
   getDeckValidationMessages,
@@ -887,116 +883,62 @@ const DeckBuilder: React.FC = () => {
         onAddToSection={addToDeck}
       />
 
-      {/* Right: Deck Checklist */}
-      <div className="glass-panel" style={{ width: '350px', display: 'flex', flexDirection: 'column', borderRight: 'none', borderTop: 'none', borderBottom: 'none', borderRadius: 0 }}>
-        <DeckBuilderDeckHeader
-          deckName={deckName}
-          canSaveCurrentDeck={canSaveCurrentDeck}
-          canExportDeck={canExportDeck}
-          selectedSavedDeckId={selectedSavedDeckId}
-          saveStateMessage={saveStateMessage}
-          draftRestored={draftRestored}
-          hasReachedSoftLimit={hasReachedSoftLimit}
-          hasReachedHardLimit={hasReachedHardLimit}
-          savedDeckCount={savedDeckCount}
-          hardSavedDeckLimit={HARD_SAVED_DECK_LIMIT}
-          onDeckNameChange={setDeckName}
-          onSave={() => handleSaveDeck(false)}
-          onMakeUnsavedCopy={handleMakeUnsavedCopy}
-          onOpenMyDecks={() => applyDeckBuilderMyDecksUiState(buildOpenedMyDecksUiState())}
-          onImportDeck={handleImportDeck}
-          onOpenDeckLogImport={() => applyDeckBuilderModalUiState(buildOpenedDeckLogImportUiState())}
-          onExportDeck={exportDeck}
-        />
-
-        <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
-          <DeckBuilderRulePanel
-            deckRuleConfig={deckRuleConfig}
-            titles={titles}
-            crossoverClassOptionsA={crossoverClassOptionsA}
-            crossoverClassOptionsB={crossoverClassOptionsB}
-            isRuleReady={isRuleReady}
-            deckIssueMessages={deckIssueMessages}
-            onDeckFormatChange={handleDeckFormatChange}
-            onDeckIdentityTypeChange={handleDeckIdentityTypeChange}
-            onConstructedClassChange={handleConstructedClassChange}
-            onConstructedTitleChange={handleConstructedTitleChange}
-            onCrossoverClassChange={handleCrossoverClassChange}
-          />
-
-          <DeckBuilderDeckControls
-            deckSortMode={deckSortMode}
-            onDeckSortModeChange={setDeckSortMode}
-            onOpenResetDeckDialog={() => applyDeckBuilderModalUiState(buildOpenedResetDeckDialogUiState())}
-            onOpenResetBuilderDialog={() => applyDeckBuilderModalUiState(buildOpenedResetBuilderDialogUiState())}
-          />
-
-          <DeckBuilderDeckSection
-            title={t('deckBuilder.deckArea.leader')}
-            countLabel={`${leaderCards.length}/${leaderLimit}`}
-            countColor={leaderCards.length >= leaderLimit ? 'var(--brand-accent)' : 'var(--text-muted)'}
-            groupedCards={groupedLeaderCards}
-            targetSection="leader"
-            removeTitle={t('deckBuilder.deckArea.actions.removeLeader')}
-            emptyMessage={t('deckBuilder.deckArea.noLeader')}
-            rowsMarginBottom="2rem"
-            showCountWhenSingle={false}
-            countTextAlign="right"
-            onRemove={(cardId) => removeFromDeck('leader', cardId)}
-            onCardMouseEnter={handleDeckCardMouseEnter}
-            onCardMouseMove={handleDeckCardMouseMove}
-            onCardMouseLeave={handleDeckCardMouseLeave}
-          />
-
-          <DeckBuilderDeckSection
-            title={t('deckBuilder.deckArea.mainDeck')}
-            countLabel={`${mainDeck.length}/${DECK_LIMITS.main}`}
-            countColor={mainDeck.length >= 40 ? 'var(--vivid-green-cyan)' : 'var(--text-muted)'}
-            groupedCards={groupedMainDeck}
-            targetSection="main"
-            removeTitle={t('deckBuilder.deckArea.actions.removeMain')}
-            addTitle={t('deckBuilder.addActions.mainLabel')}
-            canAddCard={(card) => canAddCardToDeckState(card, 'main', deckState, deckRuleConfig)}
-            rowsMarginBottom="2rem"
-            onRemove={(cardId) => removeFromDeck('main', cardId)}
-            onAdd={(card) => addToDeck(card, 'main')}
-            onCardMouseEnter={handleDeckCardMouseEnter}
-            onCardMouseMove={handleDeckCardMouseMove}
-            onCardMouseLeave={handleDeckCardMouseLeave}
-          />
-
-          <DeckBuilderDeckSection
-            title={t('deckBuilder.deckArea.evolveDeck')}
-            countLabel={`${evolveDeck.length}/${DECK_LIMITS.evolve}`}
-            groupedCards={groupedEvolveDeck}
-            targetSection="evolve"
-            removeTitle={t('deckBuilder.deckArea.actions.removeEvolve')}
-            addTitle={t('deckBuilder.addActions.evolveLabel')}
-            canAddCard={(card) => canAddCardToDeckState(card, 'evolve', deckState, deckRuleConfig)}
-            onRemove={(cardId) => removeFromDeck('evolve', cardId)}
-            onAdd={(card) => addToDeck(card, 'evolve')}
-            onCardMouseEnter={handleDeckCardMouseEnter}
-            onCardMouseMove={handleDeckCardMouseMove}
-            onCardMouseLeave={handleDeckCardMouseLeave}
-          />
-
-          <DeckBuilderDeckSection
-            title={t('deckBuilder.deckArea.tokenDeck')}
-            countLabel={tokenDeck.length}
-            groupedCards={groupedTokenDeck}
-            targetSection="token"
-            removeTitle={t('deckBuilder.deckArea.actions.removeToken')}
-            addTitle={t('deckBuilder.addActions.tokenLabel')}
-            canAddCard={(card) => canAddCardToDeckState(card, 'token', deckState, deckRuleConfig)}
-            headingMarginTop="2rem"
-            onRemove={(cardId) => removeFromDeck('token', cardId)}
-            onAdd={(card) => addToDeck(card, 'token')}
-            onCardMouseEnter={handleDeckCardMouseEnter}
-            onCardMouseMove={handleDeckCardMouseMove}
-            onCardMouseLeave={handleDeckCardMouseLeave}
-          />
-        </div>
-      </div>
+      <DeckBuilderDeckPane
+        deckName={deckName}
+        canSaveCurrentDeck={canSaveCurrentDeck}
+        canExportDeck={canExportDeck}
+        selectedSavedDeckId={selectedSavedDeckId}
+        saveStateMessage={saveStateMessage}
+        draftRestored={draftRestored}
+        hasReachedSoftLimit={hasReachedSoftLimit}
+        hasReachedHardLimit={hasReachedHardLimit}
+        savedDeckCount={savedDeckCount}
+        hardSavedDeckLimit={HARD_SAVED_DECK_LIMIT}
+        deckRuleConfig={deckRuleConfig}
+        titles={titles}
+        crossoverClassOptionsA={crossoverClassOptionsA}
+        crossoverClassOptionsB={crossoverClassOptionsB}
+        isRuleReady={isRuleReady}
+        deckIssueMessages={deckIssueMessages}
+        deckSortMode={deckSortMode}
+        leaderCount={leaderCards.length}
+        leaderLimit={leaderLimit}
+        groupedLeaderCards={groupedLeaderCards}
+        mainDeckCount={mainDeck.length}
+        groupedMainDeck={groupedMainDeck}
+        evolveDeckCount={evolveDeck.length}
+        groupedEvolveDeck={groupedEvolveDeck}
+        tokenDeckCount={tokenDeck.length}
+        groupedTokenDeck={groupedTokenDeck}
+        onDeckNameChange={setDeckName}
+        onSave={() => handleSaveDeck(false)}
+        onMakeUnsavedCopy={handleMakeUnsavedCopy}
+        onOpenMyDecks={() => applyDeckBuilderMyDecksUiState(buildOpenedMyDecksUiState())}
+        onImportDeck={handleImportDeck}
+        onOpenDeckLogImport={() => applyDeckBuilderModalUiState(buildOpenedDeckLogImportUiState())}
+        onExportDeck={exportDeck}
+        onDeckFormatChange={handleDeckFormatChange}
+        onDeckIdentityTypeChange={handleDeckIdentityTypeChange}
+        onConstructedClassChange={handleConstructedClassChange}
+        onConstructedTitleChange={handleConstructedTitleChange}
+        onCrossoverClassChange={handleCrossoverClassChange}
+        onDeckSortModeChange={setDeckSortMode}
+        onOpenResetDeckDialog={() => applyDeckBuilderModalUiState(buildOpenedResetDeckDialogUiState())}
+        onOpenResetBuilderDialog={() => applyDeckBuilderModalUiState(buildOpenedResetBuilderDialogUiState())}
+        canAddMainCard={(card) => canAddCardToDeckState(card, 'main', deckState, deckRuleConfig)}
+        canAddEvolveCard={(card) => canAddCardToDeckState(card, 'evolve', deckState, deckRuleConfig)}
+        canAddTokenCard={(card) => canAddCardToDeckState(card, 'token', deckState, deckRuleConfig)}
+        onRemoveLeader={(cardId) => removeFromDeck('leader', cardId)}
+        onRemoveMain={(cardId) => removeFromDeck('main', cardId)}
+        onAddMain={(card) => addToDeck(card, 'main')}
+        onRemoveEvolve={(cardId) => removeFromDeck('evolve', cardId)}
+        onAddEvolve={(card) => addToDeck(card, 'evolve')}
+        onRemoveToken={(cardId) => removeFromDeck('token', cardId)}
+        onAddToken={(card) => addToDeck(card, 'token')}
+        onDeckCardMouseEnter={handleDeckCardMouseEnter}
+        onDeckCardMouseMove={handleDeckCardMouseMove}
+        onDeckCardMouseLeave={handleDeckCardMouseLeave}
+      />
 
       {isMyDecksOpen && (
         <DeckBuilderMyDecksModal
