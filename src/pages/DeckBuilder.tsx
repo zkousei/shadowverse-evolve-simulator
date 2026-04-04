@@ -4,6 +4,7 @@ import { Search, Plus, Minus, Download, Upload } from 'lucide-react';
 import { CLASS, CLASS_FILTER_VALUES } from '../models/class';
 import type { ClassFilter } from '../models/class';
 import DeckBuilderRulePanel from '../components/DeckBuilderRulePanel';
+import DeckBuilderSavedDeckItem from '../components/DeckBuilderSavedDeckItem';
 import { getBaseCardType } from '../models/cardClassification';
 import {
   getAvailableExpansions,
@@ -151,7 +152,6 @@ import {
   DECK_HOVER_PREVIEW_VIEWPORT_PADDING,
   DECK_HOVER_PREVIEW_WIDTH,
   DECK_SORT_VALUES,
-  formatSavedDeckUpdatedAt,
   getDeckHoverPreviewPosition,
   groupDeckCardsForDisplay,
   parseNullableStat,
@@ -161,7 +161,6 @@ import {
 } from '../utils/deckBuilderDisplay';
 import { loadCardCatalog } from '../utils/cardCatalog';
 import { fetchDeckLogImport } from '../utils/decklogImport';
-import { formatSavedDeckCountSummary, formatSavedDeckRuleSummary } from '../utils/savedDeckPresentation';
 import CardArtwork from '../components/CardArtwork';
 
 const PAGE_SIZE = 50;
@@ -182,7 +181,7 @@ type SaveFeedback = {
 };
 
 const DeckBuilder: React.FC = () => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [cards, setCards] = useState<DeckBuilderCardData[]>([]);
   const [search, setSearch] = useState('');
   const [costFilter, setCostFilter] = useState('All');
@@ -1978,151 +1977,28 @@ const DeckBuilder: React.FC = () => {
                 </div>
               ) : (
                 filteredSavedDecks.map(({ savedDeck, canExport }) => (
-                  <div
+                  <DeckBuilderSavedDeckItem
                     key={savedDeck.id}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      gap: '1rem',
-                      padding: '0.9rem',
-                      borderRadius: 'var(--radius-md)',
-                      background: 'var(--bg-surface)',
-                      border: savedDeck.id === selectedSavedDeckId
-                        ? '1px solid rgba(56, 189, 248, 0.5)'
-                        : '1px solid rgba(255,255,255,0.06)',
-                      flexWrap: 'wrap',
+                    savedDeck={savedDeck}
+                    canExport={canExport}
+                    isSavedDeckSelectMode={isSavedDeckSelectMode}
+                    isSelected={selectedSavedDeckIds.includes(savedDeck.id)}
+                    isCurrent={savedDeck.id === selectedSavedDeckId}
+                    canCreateNewSavedDeck={canCreateNewSavedDeck}
+                    hardSavedDeckLimit={HARD_SAVED_DECK_LIMIT}
+                    onToggleSelection={() => toggleSavedDeckSelection(savedDeck.id)}
+                    onLoad={() => {
+                      if (isDirty) {
+                        applyDeckBuilderMyDecksUiState(buildOpenedPendingSavedDeckLoadUiState(savedDeck.id));
+                        return;
+                      }
+
+                      handleLoadSavedDeck(savedDeck.id);
                     }}
-                  >
-                    {isSavedDeckSelectMode && (
-                      <label
-                        style={{
-                          display: 'flex',
-                          alignItems: 'flex-start',
-                          justifyContent: 'center',
-                          paddingTop: '0.2rem',
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          aria-label={t('deckBuilder.myDecks.selectDeck', { name: savedDeck.name })}
-                          checked={selectedSavedDeckIds.includes(savedDeck.id)}
-                          onChange={() => toggleSavedDeckSelection(savedDeck.id)}
-                        />
-                      </label>
-                    )}
-                    <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                        <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>{savedDeck.name}</div>
-                        {savedDeck.id === selectedSavedDeckId && (
-                          <span style={{ fontSize: '0.72rem', color: '#67e8f9', border: '1px solid rgba(103, 232, 249, 0.35)', borderRadius: '999px', padding: '0.12rem 0.45rem' }}>
-                            {t('deckBuilder.myDecks.current')}
-                          </span>
-                        )}
-                        {!canExport && (
-                          <span style={{ fontSize: '0.72rem', color: '#fca5a5', border: '1px solid rgba(248, 113, 113, 0.35)', borderRadius: '999px', padding: '0.12rem 0.45rem' }}>
-                            {t('deckBuilder.modals.loadDeck.illegalDeck')}
-                          </span>
-                        )}
-                      </div>
-                      <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '0.25rem' }}>
-                        {formatSavedDeckRuleSummary(savedDeck, t)}
-                      </div>
-                      <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '0.15rem' }}>
-                        {formatSavedDeckCountSummary(savedDeck, t)}
-                      </div>
-                      <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '0.15rem' }}>
-                        {t('deckBuilder.modals.loadDeck.updated', { at: formatSavedDeckUpdatedAt(savedDeck.updatedAt, i18n.language) })}
-                      </div>
-                      {!canExport && (
-                        <div style={{ color: '#fca5a5', fontSize: '0.75rem', marginTop: '0.3rem', lineHeight: 1.5 }}>
-                          {t('deckBuilder.modals.loadDeck.resolveIssues')}
-                        </div>
-                      )}
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'flex-end' }}>
-                      {isSavedDeckSelectMode ? (
-                        <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', paddingTop: '0.35rem' }}>
-                          {t('deckBuilder.modals.loadDeck.deleteBulkHint')}
-                        </span>
-                      ) : (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (isDirty) {
-                                applyDeckBuilderMyDecksUiState(buildOpenedPendingSavedDeckLoadUiState(savedDeck.id));
-                                return;
-                              }
-
-                              handleLoadSavedDeck(savedDeck.id);
-                            }}
-                            style={{
-                              padding: '0.45rem 0.7rem',
-                              borderRadius: 'var(--radius-md)',
-                              border: '1px solid rgba(255,255,255,0.08)',
-                              background: 'var(--accent-primary)',
-                              color: '#fff',
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                            }}
-                          >
-                            {t('deckBuilder.myDecks.actions.load')}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDuplicateSavedDeck(savedDeck.id)}
-                            disabled={!canCreateNewSavedDeck}
-                            title={canCreateNewSavedDeck
-                              ? t('deckBuilder.myDecks.actions.duplicateTitle')
-                              : t('deckBuilder.deckArea.actions.duplicateDisabledTitle', { limit: HARD_SAVED_DECK_LIMIT })}
-                            style={{
-                              padding: '0.45rem 0.7rem',
-                              borderRadius: 'var(--radius-md)',
-                              border: '1px solid var(--border-light)',
-                              background: canCreateNewSavedDeck ? 'var(--bg-overlay)' : 'var(--bg-surface-elevated)',
-                              color: canCreateNewSavedDeck ? 'var(--text-main)' : 'var(--text-muted)',
-                              cursor: canCreateNewSavedDeck ? 'pointer' : 'not-allowed',
-                              opacity: canCreateNewSavedDeck ? 1 : 0.7,
-                            }}
-                          >
-                            {t('deckBuilder.myDecks.actions.duplicate')}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleExportSavedDeck(savedDeck.id)}
-                            disabled={!canExport}
-                            title={canExport ? t('deckBuilder.myDecks.actions.exportTitle') : t('deckBuilder.modals.loadDeck.resolveIssues')}
-                            style={{
-                              padding: '0.45rem 0.7rem',
-                              borderRadius: 'var(--radius-md)',
-                              border: '1px solid var(--border-light)',
-                              background: canExport ? 'var(--bg-overlay)' : 'var(--bg-surface-elevated)',
-                              color: canExport ? 'var(--text-main)' : 'var(--text-muted)',
-                              cursor: canExport ? 'pointer' : 'not-allowed',
-                              opacity: canExport ? 1 : 0.7,
-                            }}
-                          >
-                            {t('deckBuilder.myDecks.actions.export')}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => applyDeckBuilderMyDecksUiState(buildOpenedPendingSavedDeckDeleteUiState(savedDeck.id))}
-                            style={{
-                              padding: '0.45rem 0.7rem',
-                              borderRadius: 'var(--radius-md)',
-                              border: '1px solid rgba(248, 113, 113, 0.45)',
-                              background: 'rgba(239, 68, 68, 0.12)',
-                              color: '#fca5a5',
-                              cursor: 'pointer',
-                            }}
-                          >
-                            {t('deckBuilder.modals.buttons.delete')}
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
+                    onDuplicate={() => handleDuplicateSavedDeck(savedDeck.id)}
+                    onExport={() => handleExportSavedDeck(savedDeck.id)}
+                    onDelete={() => applyDeckBuilderMyDecksUiState(buildOpenedPendingSavedDeckDeleteUiState(savedDeck.id))}
+                  />
                 ))
               )}
             </div>
