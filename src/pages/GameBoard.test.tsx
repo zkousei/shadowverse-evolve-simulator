@@ -381,6 +381,16 @@ describe('GameBoard', () => {
     expect(screen.getByRole('status')).toHaveTextContent('6');
   });
 
+  it('shows the coin toss result overlay', () => {
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      coinMessage: 'Host goes first!',
+    }));
+
+    render(<GameBoard />);
+
+    expect(screen.getByRole('status')).toHaveTextContent('Host goes first!');
+  });
+
   it('shows the revealed cards overlay when cards are revealed', () => {
     mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
       revealedCardsOverlay: {

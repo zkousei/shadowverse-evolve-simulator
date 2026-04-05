@@ -5,6 +5,7 @@ import Zone from '../components/Zone';
 import type { CardInspectAnchor, CardInstance } from '../components/Card';
 import CardSearchModal from '../components/CardSearchModal';
 import GameBoardAttackModeBanner from '../components/GameBoardAttackModeBanner';
+import GameBoardCoinMessageOverlay from '../components/GameBoardCoinMessageOverlay';
 import GameBoardPreparationPanel from '../components/GameBoardPreparationPanel';
 import GameBoardRecentEventsPanel from '../components/GameBoardRecentEventsPanel';
 import GameBoardDiceOverlay from '../components/GameBoardDiceOverlay';
@@ -2094,9 +2095,7 @@ const GameBoard: React.FC = () => {
 
       {/* Custom Global Overlays */}
       {coinMessage && (
-        <div style={{ position: 'fixed', top: '20%', left: '50%', transform: 'translate(-50%, -50%)', background: 'rgba(0,0,0,0.85)', color: 'var(--vivid-green-cyan)', padding: '1.5rem 2.5rem', borderRadius: 'var(--radius-lg)', border: '2px solid var(--vivid-green-cyan)', fontSize: '1.25rem', fontWeight: 'bold', zIndex: 1000, boxShadow: 'var(--shadow-lg)' }}>
-          {coinMessage}
-        </div>
+        <GameBoardCoinMessageOverlay message={coinMessage} />
       )}
 
       {turnMessage && (

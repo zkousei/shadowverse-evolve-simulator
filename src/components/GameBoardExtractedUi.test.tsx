@@ -2,6 +2,7 @@ import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import GameBoardAttackModeBanner from './GameBoardAttackModeBanner';
+import GameBoardCoinMessageOverlay from './GameBoardCoinMessageOverlay';
 import GameBoardDiceOverlay from './GameBoardDiceOverlay';
 import GameBoardPreparationPanel from './GameBoardPreparationPanel';
 import GameBoardRecentEventsPanel from './GameBoardRecentEventsPanel';
@@ -167,6 +168,12 @@ describe('GameBoard extracted UI components', () => {
     render(<GameBoardDiceOverlay value={6} />);
 
     expect(screen.getByRole('status')).toHaveTextContent('6');
+  });
+
+  it('renders coin message overlay text', () => {
+    render(<GameBoardCoinMessageOverlay message="Host goes first!" />);
+
+    expect(screen.getByRole('status')).toHaveTextContent('Host goes first!');
   });
 
   it('renders revealed cards overlay with summary lines', () => {
