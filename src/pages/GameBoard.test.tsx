@@ -632,6 +632,28 @@ describe('GameBoard', () => {
     expect(setPhase).toHaveBeenCalledWith('End');
   });
 
+  it('renders the solo end turn button and ends the active player turn', () => {
+    const endTurn = vi.fn();
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      mode: 'solo',
+      isSoloMode: true,
+      isHost: true,
+      role: 'host',
+      endTurn,
+      gameState: createGameState([], {
+        gameStatus: 'playing',
+        turnPlayer: 'host',
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'End Player 1 Turn' }));
+
+    expect(endTurn).toHaveBeenCalledWith('host');
+  });
+
   it('shows the reconnecting alert when guest actions are locked', () => {
     mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
       isHost: false,

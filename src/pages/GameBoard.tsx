@@ -12,6 +12,7 @@ import GameBoardPreparationPanel from '../components/GameBoardPreparationPanel';
 import GameBoardRecentEventsPanel from '../components/GameBoardRecentEventsPanel';
 import GameBoardDiceOverlay from '../components/GameBoardDiceOverlay';
 import GameBoardEvolveAutoAttachDialog from '../components/GameBoardEvolveAutoAttachDialog';
+import GameBoardEndTurnButton from '../components/GameBoardEndTurnButton';
 import GameBoardReconnectAlert from '../components/GameBoardReconnectAlert';
 import GameBoardRevealedCardsOverlay from '../components/GameBoardRevealedCardsOverlay';
 import GameBoardResetDialog from '../components/GameBoardResetDialog';
@@ -736,22 +737,13 @@ const GameBoard: React.FC = () => {
     const isEnabled = gameState.gameStatus === 'playing' && isCurrentTurn && canInteract;
 
     return (
-      <button
+      <GameBoardEndTurnButton
+        label={label}
+        background={background}
+        isEnabled={isEnabled}
+        disabledTitle={interactionBlockedTitle ?? t('gameBoard.board.endTurnDisabled')}
         onClick={() => endTurn(playerRole)}
-        disabled={!isEnabled}
-        title={!isEnabled ? interactionBlockedTitle ?? t('gameBoard.board.endTurnDisabled') : undefined}
-        className="glass-panel"
-        style={{
-          padding: '0.5rem',
-          background,
-          color: 'black',
-          fontWeight: 'bold',
-          opacity: isEnabled ? 1 : 0.5,
-          cursor: isEnabled ? 'pointer' : 'not-allowed'
-        }}
-      >
-        {t('gameBoard.board.endTurn', { label })}
-      </button>
+      />
     );
   };
 

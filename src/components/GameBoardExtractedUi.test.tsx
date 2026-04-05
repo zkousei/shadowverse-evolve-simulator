@@ -7,6 +7,7 @@ import GameBoardCardInspector from './GameBoardCardInspector';
 import GameBoardCoinMessageOverlay from './GameBoardCoinMessageOverlay';
 import GameBoardDiceOverlay from './GameBoardDiceOverlay';
 import GameBoardEvolveAutoAttachDialog from './GameBoardEvolveAutoAttachDialog';
+import GameBoardEndTurnButton from './GameBoardEndTurnButton';
 import GameBoardPreparationPanel from './GameBoardPreparationPanel';
 import GameBoardRecentEventsPanel from './GameBoardRecentEventsPanel';
 import GameBoardReconnectAlert from './GameBoardReconnectAlert';
@@ -232,6 +233,34 @@ describe('GameBoard extracted UI components', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
 
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders end turn button and wires click/disabled state', () => {
+    const onClick = vi.fn();
+    const { rerender } = render(
+      <GameBoardEndTurnButton
+        label="Player 1"
+        background="#f59e0b"
+        isEnabled={true}
+        onClick={onClick}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'End Player 1 Turn' }));
+    expect(onClick).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <GameBoardEndTurnButton
+        label="Player 1"
+        background="#f59e0b"
+        isEnabled={false}
+        disabledTitle="Available during your turn only."
+        onClick={onClick}
+      />
+    );
+
+    expect(screen.getByRole('button', { name: 'End Player 1 Turn' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'End Player 1 Turn' })).toHaveAttribute('title', 'Available during your turn only.');
   });
 
   it('renders attack line overlay with source and target coordinates', () => {
