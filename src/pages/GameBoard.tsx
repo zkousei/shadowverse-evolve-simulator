@@ -7,8 +7,10 @@ import CardSearchModal from '../components/CardSearchModal';
 import GameBoardAttackModeBanner from '../components/GameBoardAttackModeBanner';
 import GameBoardPreparationPanel from '../components/GameBoardPreparationPanel';
 import GameBoardRecentEventsPanel from '../components/GameBoardRecentEventsPanel';
+import GameBoardReconnectAlert from '../components/GameBoardReconnectAlert';
 import GameBoardRoomStatus from '../components/GameBoardRoomStatus';
 import GameBoardSavedSessionPrompt from '../components/GameBoardSavedSessionPrompt';
+import GameBoardTurnPanel from '../components/GameBoardTurnPanel';
 import TopDeckModal from '../components/TopDeckModal';
 import { useGameBoardLogic } from '../hooks/useGameBoardLogic';
 import { canImportDeck, canUndoLastTurn, isHandCardMovementLocked } from '../utils/gameRules';
@@ -1296,68 +1298,21 @@ const GameBoard: React.FC = () => {
 
           {/* Turn Management */}
           {gameState.gameStatus === 'playing' && (
-            <div style={{
-              display: 'flex',
-              gap: '1rem',
-              alignItems: 'center',
-              background: isBottomTurnActive
-                ? 'linear-gradient(90deg, rgba(0, 208, 132, 0.18), rgba(17, 24, 39, 0.92))'
-                : 'var(--bg-overlay)',
-              padding: '0.55rem 1rem',
-              borderRadius: '10px',
-              border: isBottomTurnActive ? '1px solid rgba(0, 208, 132, 0.28)' : '1px solid transparent',
-              boxShadow: isBottomTurnActive ? '0 0 18px rgba(0, 208, 132, 0.16)' : 'none',
-              transition: 'all 0.2s ease'
-            }}>
-              <span style={{
-                color: isSoloMode || gameState.turnPlayer === role ? 'var(--vivid-green-cyan)' : 'var(--vivid-red)',
-                fontSize: isBottomTurnActive ? '1rem' : '0.92rem',
-                fontWeight: 900,
-                letterSpacing: '0.06em',
-                textShadow: isBottomTurnActive ? '0 0 12px rgba(0, 208, 132, 0.35)' : 'none'
-              }}>
-                {isSoloMode
-                  ? t('gameBoard.turn.p1', { label: currentTurnLabel.toUpperCase() })
-                  : gameState.turnPlayer === role ? t('gameBoard.turn.your') : t('gameBoard.turn.opponent')}
-              </span>
-              <span className="Garamond" style={{ fontSize: isBottomTurnActive ? '1.08rem' : undefined }}>
-                {t('gameBoard.turn.count', { count: gameState.turnCount })}
-              </span>
-              <select
-                value={gameState.phase}
-                onChange={(e) => setPhase(e.target.value as 'Start' | 'Main' | 'End')}
-                disabled={!isSoloMode && gameState.turnPlayer !== role}
-                style={{
-                  padding: '0.2rem',
-                  borderRadius: '4px',
-                  background: 'black',
-                  color: 'white',
-                  border: isBottomTurnActive ? '1px solid rgba(0, 208, 132, 0.35)' : undefined
-                }}
-              >
-                <option value="Start">{t('gameBoard.turn.phaseStart')}</option>
-                <option value="Main">{t('gameBoard.turn.phaseMain')}</option>
-                <option value="End">{t('gameBoard.turn.phaseEnd')}</option>
-              </select>
-            </div>
+            <GameBoardTurnPanel
+              isSoloMode={isSoloMode}
+              isCurrentPlayerTurn={gameState.turnPlayer === role}
+              currentTurnLabel={currentTurnLabel}
+              turnCount={gameState.turnCount}
+              phase={gameState.phase}
+              isBottomTurnActive={isBottomTurnActive}
+              canChangePhase={isSoloMode || gameState.turnPlayer === role}
+              onPhaseChange={setPhase}
+            />
           )}
         </div>
 
         {isGuestConnectionBlocked && (
-          <div
-            style={{
-              marginTop: '-0.35rem',
-              background: 'rgba(245, 158, 11, 0.12)',
-              border: '1px solid rgba(245, 158, 11, 0.32)',
-              color: '#fde68a',
-              borderRadius: '10px',
-              padding: '0.6rem 0.85rem',
-              fontSize: '0.82rem',
-              fontWeight: 600
-            }}
-          >
-            {t('gameBoard.alerts.reconnectingLocked')}
-          </div>
+          <GameBoardReconnectAlert />
         )}
 
         {!isSoloMode && isHost && savedSessionCandidate && (

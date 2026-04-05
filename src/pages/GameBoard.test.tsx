@@ -370,6 +370,45 @@ describe('GameBoard', () => {
     expect(screen.getByText('Guest evolved Alpha Knight.')).toBeInTheDocument();
   });
 
+  it('shows the turn panel while playing and updates the phase', () => {
+    const setPhase = vi.fn();
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      setPhase,
+      gameState: createGameState([], {
+        gameStatus: 'playing',
+        turnPlayer: 'host',
+        turnCount: 3,
+        phase: 'Main',
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    expect(screen.getByText('YOUR TURN')).toBeInTheDocument();
+    expect(screen.getByText('TURN 3')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Phase' }), { target: { value: 'End' } });
+
+    expect(setPhase).toHaveBeenCalledWith('End');
+  });
+
+  it('shows the reconnecting alert when guest actions are locked', () => {
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      isHost: false,
+      role: 'guest',
+      canInteract: false,
+      connectionState: 'reconnecting',
+      status: 'Reconnecting...',
+    }));
+
+    render(<GameBoard />);
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Reconnecting to host. Actions are temporarily locked until the latest state is synced.'
+    );
+  });
+
   it('opens the saved deck picker, filters saved decks, and imports the selected deck', async () => {
     saveDeck({
       name: 'Alpha Deck',

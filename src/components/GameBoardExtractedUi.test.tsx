@@ -4,8 +4,10 @@ import { describe, expect, it, vi } from 'vitest';
 import GameBoardAttackModeBanner from './GameBoardAttackModeBanner';
 import GameBoardPreparationPanel from './GameBoardPreparationPanel';
 import GameBoardRecentEventsPanel from './GameBoardRecentEventsPanel';
+import GameBoardReconnectAlert from './GameBoardReconnectAlert';
 import GameBoardRoomStatus from './GameBoardRoomStatus';
 import GameBoardSavedSessionPrompt from './GameBoardSavedSessionPrompt';
+import GameBoardTurnPanel from './GameBoardTurnPanel';
 
 describe('GameBoard extracted UI components', () => {
   it('renders room status in multiplayer and wires copy action', () => {
@@ -149,5 +151,36 @@ describe('GameBoard extracted UI components', () => {
     expect(screen.getByText('Recent Events')).toBeInTheDocument();
     expect(screen.getByText('Host drew a card.')).toBeInTheDocument();
     expect(screen.getByText('Guest evolved Alpha Knight.')).toBeInTheDocument();
+  });
+
+  it('renders turn panel and wires phase changes', () => {
+    const onPhaseChange = vi.fn();
+
+    render(
+      <GameBoardTurnPanel
+        isSoloMode={false}
+        isCurrentPlayerTurn={true}
+        currentTurnLabel="Self"
+        turnCount={3}
+        phase="Main"
+        isBottomTurnActive={true}
+        canChangePhase={true}
+        onPhaseChange={onPhaseChange}
+      />
+    );
+
+    expect(screen.getByText('YOUR TURN')).toBeInTheDocument();
+    expect(screen.getByText('TURN 3')).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Phase' }), { target: { value: 'End' } });
+
+    expect(onPhaseChange).toHaveBeenCalledWith('End');
+  });
+
+  it('renders reconnect alert message', () => {
+    render(<GameBoardReconnectAlert />);
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Reconnecting to host. Actions are temporarily locked until the latest state is synced.'
+    );
   });
 });
