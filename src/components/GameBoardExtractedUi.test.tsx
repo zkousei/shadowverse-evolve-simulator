@@ -1,6 +1,7 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import GameBoardAttackLineOverlay from './GameBoardAttackLineOverlay';
 import GameBoardAttackModeBanner from './GameBoardAttackModeBanner';
 import GameBoardCoinMessageOverlay from './GameBoardCoinMessageOverlay';
 import GameBoardDiceOverlay from './GameBoardDiceOverlay';
@@ -174,6 +175,22 @@ describe('GameBoard extracted UI components', () => {
     render(<GameBoardCoinMessageOverlay message="Host goes first!" />);
 
     expect(screen.getByRole('status')).toHaveTextContent('Host goes first!');
+  });
+
+  it('renders attack line overlay with source and target coordinates', () => {
+    const { container } = render(
+      <GameBoardAttackLineOverlay
+        sourcePoint={{ x: 10, y: 20 }}
+        targetPoint={{ x: 110, y: 220 }}
+      />
+    );
+
+    const line = container.querySelector('line');
+    expect(line).not.toBeNull();
+    expect(line).toHaveAttribute('x1', '10');
+    expect(line).toHaveAttribute('y1', '20');
+    expect(line).toHaveAttribute('x2', '110');
+    expect(line).toHaveAttribute('y2', '220');
   });
 
   it('renders revealed cards overlay with summary lines', () => {

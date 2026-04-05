@@ -5,6 +5,7 @@ import Zone from '../components/Zone';
 import type { CardInspectAnchor, CardInstance } from '../components/Card';
 import CardSearchModal from '../components/CardSearchModal';
 import GameBoardAttackModeBanner from '../components/GameBoardAttackModeBanner';
+import GameBoardAttackLineOverlay from '../components/GameBoardAttackLineOverlay';
 import GameBoardCoinMessageOverlay from '../components/GameBoardCoinMessageOverlay';
 import GameBoardPreparationPanel from '../components/GameBoardPreparationPanel';
 import GameBoardRecentEventsPanel from '../components/GameBoardRecentEventsPanel';
@@ -2120,44 +2121,10 @@ const GameBoard: React.FC = () => {
       )}
 
       {attackLine && (
-        <svg
-          width="100vw"
-          height="100vh"
-          viewBox={`0 0 ${window.innerWidth} ${window.innerHeight}`}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            pointerEvents: 'none',
-            zIndex: 1940,
-            overflow: 'visible'
-          }}
-        >
-          <defs>
-            <marker
-              id="attack-arrowhead"
-              markerWidth="12"
-              markerHeight="12"
-              refX="10"
-              refY="6"
-              orient="auto"
-            >
-              <path d="M0,0 L12,6 L0,12 z" fill="#fb923c" />
-            </marker>
-          </defs>
-          <line
-            x1={attackLine.sourcePoint.x}
-            y1={attackLine.sourcePoint.y}
-            x2={attackLine.targetPoint.x}
-            y2={attackLine.targetPoint.y}
-            stroke="#fdba74"
-            strokeWidth="4"
-            strokeLinecap="round"
-            markerEnd="url(#attack-arrowhead)"
-            style={{
-              filter: 'drop-shadow(0 0 10px rgba(249,115,22,0.55))'
-            }}
-          />
-        </svg>
+        <GameBoardAttackLineOverlay
+          sourcePoint={attackLine.sourcePoint}
+          targetPoint={attackLine.targetPoint}
+        />
       )}
 
       {revealedCardsOverlay && (

@@ -440,6 +440,46 @@ describe('GameBoard', () => {
     expect(screen.getByText('Alpha Knight attacks!')).toBeInTheDocument();
   });
 
+  it('shows the attack line overlay when an attack target is highlighted', () => {
+    const attacker = makeCard({
+      id: 'card-1',
+      zone: 'field-host',
+      owner: 'host',
+    });
+    const defender = makeCard({
+      id: 'card-2',
+      name: 'Beta Guard',
+      zone: 'field-guest',
+      owner: 'guest',
+    });
+
+    const gameState = createGameState([attacker, defender], {
+      gameStatus: 'playing',
+    });
+    const attackVisual = {
+      attackerCardId: 'card-1',
+      target: {
+        type: 'card',
+        cardId: 'card-2',
+      },
+    } as ReturnType<typeof useGameBoardLogic>['attackVisual'];
+
+    mockUseGameBoardLogic
+      .mockReturnValueOnce(buildMockGameBoardLogic({
+        gameState,
+        attackVisual: null,
+      }))
+      .mockReturnValue(buildMockGameBoardLogic({
+        gameState,
+        attackVisual,
+      }));
+
+    const { container, rerender } = render(<GameBoard />);
+    rerender(<GameBoard />);
+
+    expect(container.querySelector('svg line')).not.toBeNull();
+  });
+
   it('shows the turn panel while playing and updates the phase', () => {
     const setPhase = vi.fn();
 
