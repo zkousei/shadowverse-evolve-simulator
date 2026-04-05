@@ -9,8 +9,8 @@ import GameBoardAttackLineOverlay from '../components/GameBoardAttackLineOverlay
 import GameBoardCardInspector from '../components/GameBoardCardInspector';
 import GameBoardCoinMessageOverlay from '../components/GameBoardCoinMessageOverlay';
 import GameBoardLeaderZone from '../components/GameBoardLeaderZone';
+import GameBoardPreparationControls from '../components/GameBoardPreparationControls';
 import GameBoardPreparationPanel from '../components/GameBoardPreparationPanel';
-import GameBoardPreparationReadyStatus from '../components/GameBoardPreparationReadyStatus';
 import GameBoardPlayerTracker from '../components/GameBoardPlayerTracker';
 import GameBoardRecentEventsPanel from '../components/GameBoardRecentEventsPanel';
 import GameBoardReadOnlyStatusPanel from '../components/GameBoardReadOnlyStatusPanel';
@@ -671,101 +671,24 @@ const GameBoard: React.FC = () => {
             />
 
             {gameState.gameStatus === 'preparing' ? (
-              <div style={{ display: 'flex', gap: '0.4rem' }}>
-                <button
-                  onClick={() => handleSetInitialTurnOrder()}
-                  disabled={!isHost && !isSoloMode}
-                  style={{ padding: '0.3rem 0.5rem', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', opacity: (isHost || isSoloMode) ? 1 : 0.5 }}
-                >
-                  {t('gameBoard.controls.decideTurnOrder')}
-                </button>
-                <button
-                  onClick={() => handleSetInitialTurnOrder(bottomRole)}
-                  disabled={!isHost && !isSoloMode}
-                  style={{ padding: '0.3rem 0.5rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', opacity: (isHost || isSoloMode) ? 1 : 0.5 }}
-                >
-                  {isSoloMode ? t('gameBoard.controls.p1First') : t('gameBoard.controls.meFirst')}
-                </button>
-                <button
-                  onClick={() => handleSetInitialTurnOrder(topRole)}
-                  disabled={!isHost && !isSoloMode}
-                  style={{ padding: '0.3rem 0.5rem', background: '#6366f1', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', opacity: (isHost || isSoloMode) ? 1 : 0.5 }}
-                >
-                  {isSoloMode ? t('gameBoard.controls.p2First') : t('gameBoard.controls.oppFirst')}
-                </button>
-                {!gameState[bottomRole].initialHandDrawn && (
-                  <button
-                    onClick={() => handleDrawInitialHand(bottomRole)}
-                    style={{ padding: '0.3rem 0.6rem', background: '#3b82f6', color: 'white', fontWeight: 'bold', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
-                  >
-                    {t('gameBoard.controls.drawHand')}
-                  </button>
-                )}
-
-                {gameState[bottomRole].initialHandDrawn && (
-                  <button
-                    onClick={() => handleToggleReady(bottomRole)}
-                    style={{
-                      padding: '0.3rem 0.6rem',
-                      background: gameState[bottomRole].isReady ? '#ef4444' : 'var(--vivid-green-cyan)',
-                      color: gameState[bottomRole].isReady ? 'white' : 'black',
-                      fontWeight: 'bold', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem'
-                    }}
-                  >
-                    {gameState[bottomRole].isReady ? t('gameBoard.controls.cancelReady') : (isSoloMode ? t('gameBoard.controls.p1Ready') : t('gameBoard.controls.ready'))}
-                  </button>
-                )}
-                {isSoloMode && !gameState[topRole].initialHandDrawn && (
-                  <button
-                    onClick={() => handleDrawInitialHand(topRole)}
-                    style={{ padding: '0.3rem 0.6rem', background: '#6366f1', color: 'white', fontWeight: 'bold', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
-                  >
-                    {t('gameBoard.controls.drawP2Hand')}
-                  </button>
-                )}
-                {isSoloMode && gameState[topRole].initialHandDrawn && (
-                  <button
-                    onClick={() => handleToggleReady(topRole)}
-                    style={{
-                      padding: '0.3rem 0.6rem',
-                      background: gameState[topRole].isReady ? '#ef4444' : '#6366f1',
-                      color: 'white',
-                      fontWeight: 'bold', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem'
-                    }}
-                  >
-                    {gameState[topRole].isReady ? t('gameBoard.controls.cancelP2Ready') : t('gameBoard.controls.p2Ready')}
-                  </button>
-                )}
-                <button
-                  onClick={handleStartGame}
-                  disabled={(!isHost && !isSoloMode) || !gameState.host.isReady || !gameState.guest.isReady}
-                  style={{
-                    padding: '0.3rem 0.6rem',
-                    background: 'var(--vivid-green-cyan)',
-                    color: 'black',
-                    fontWeight: 'bold',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: ((isHost || isSoloMode) && gameState.host.isReady && gameState.guest.isReady) ? 'pointer' : 'not-allowed',
-                    fontSize: '0.75rem',
-                    opacity: ((isHost || isSoloMode) && gameState.host.isReady && gameState.guest.isReady) ? 1 : 0.5,
-                    boxShadow: ((isHost || isSoloMode) && gameState.host.isReady && gameState.guest.isReady) ? '0 0 10px rgba(0, 208, 132, 0.4)' : 'none',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseOver={(e) => { if ((isHost || isSoloMode) && gameState.host.isReady && gameState.guest.isReady) e.currentTarget.style.filter = 'brightness(1.1)'; }}
-                  onMouseOut={(e) => e.currentTarget.style.filter = 'none'}
-                >
-                  {t('gameBoard.controls.startGame')}
-                </button>
-
-                <GameBoardPreparationReadyStatus
-                  isSoloMode={isSoloMode}
-                  hostInitialHandDrawn={gameState.host.initialHandDrawn}
-                  guestInitialHandDrawn={gameState.guest.initialHandDrawn}
-                  hostReady={gameState.host.isReady}
-                  guestReady={gameState.guest.isReady}
-                />
-              </div>
+              <GameBoardPreparationControls
+                isSoloMode={isSoloMode}
+                isHost={isHost}
+                topRole={topRole}
+                bottomRole={bottomRole}
+                bottomInitialHandDrawn={gameState[bottomRole].initialHandDrawn}
+                bottomReady={gameState[bottomRole].isReady}
+                topInitialHandDrawn={gameState[topRole].initialHandDrawn}
+                topReady={gameState[topRole].isReady}
+                hostInitialHandDrawn={gameState.host.initialHandDrawn}
+                guestInitialHandDrawn={gameState.guest.initialHandDrawn}
+                hostReady={gameState.host.isReady}
+                guestReady={gameState.guest.isReady}
+                onSetInitialTurnOrder={handleSetInitialTurnOrder}
+                onDrawInitialHand={handleDrawInitialHand}
+                onToggleReady={handleToggleReady}
+                onStartGame={handleStartGame}
+              />
             ) : (
               <>
                 <button

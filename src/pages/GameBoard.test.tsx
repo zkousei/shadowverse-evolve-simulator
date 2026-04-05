@@ -378,6 +378,38 @@ describe('GameBoard', () => {
     expect(screen.getByTestId('preparation-ready-status-guest')).toHaveTextContent('READY');
   });
 
+  it('wires solo preparation controls for turn order and start game', () => {
+    const handleSetInitialTurnOrder = vi.fn();
+    const handleStartGame = vi.fn();
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      mode: 'solo',
+      isSoloMode: true,
+      handleSetInitialTurnOrder,
+      handleStartGame,
+      gameState: createGameState([], {
+        host: {
+          ...initialState.host,
+          initialHandDrawn: true,
+          isReady: true,
+        },
+        guest: {
+          ...initialState.guest,
+          initialHandDrawn: true,
+          isReady: true,
+        },
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Player 1 1st' }));
+    fireEvent.click(screen.getByRole('button', { name: '▶ START GAME' }));
+
+    expect(handleSetInitialTurnOrder).toHaveBeenCalledWith('host');
+    expect(handleStartGame).toHaveBeenCalledTimes(1);
+  });
+
   it('shows recent events while playing', () => {
     mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
       gameState: createGameState([], {

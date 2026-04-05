@@ -9,6 +9,7 @@ import GameBoardDiceOverlay from './GameBoardDiceOverlay';
 import GameBoardEvolveAutoAttachDialog from './GameBoardEvolveAutoAttachDialog';
 import GameBoardEndTurnButton from './GameBoardEndTurnButton';
 import GameBoardLeaderZone from './GameBoardLeaderZone';
+import GameBoardPreparationControls from './GameBoardPreparationControls';
 import GameBoardPreparationPanel from './GameBoardPreparationPanel';
 import GameBoardPreparationReadyStatus from './GameBoardPreparationReadyStatus';
 import GameBoardPlayerTracker from './GameBoardPlayerTracker';
@@ -194,6 +195,45 @@ describe('GameBoard extracted UI components', () => {
     expect(hostStatus).toHaveTextContent('DECIDING');
     expect(guestStatus).toHaveTextContent('PLAYER 2');
     expect(guestStatus).toHaveTextContent('READY');
+  });
+
+  it('renders preparation controls and wires solo handlers', () => {
+    const onSetInitialTurnOrder = vi.fn();
+    const onDrawInitialHand = vi.fn();
+    const onToggleReady = vi.fn();
+    const onStartGame = vi.fn();
+
+    render(
+      <GameBoardPreparationControls
+        isSoloMode={true}
+        isHost={true}
+        topRole="guest"
+        bottomRole="host"
+        bottomInitialHandDrawn={true}
+        bottomReady={false}
+        topInitialHandDrawn={true}
+        topReady={true}
+        hostInitialHandDrawn={true}
+        guestInitialHandDrawn={true}
+        hostReady={true}
+        guestReady={true}
+        onSetInitialTurnOrder={onSetInitialTurnOrder}
+        onDrawInitialHand={onDrawInitialHand}
+        onToggleReady={onToggleReady}
+        onStartGame={onStartGame}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Player 1 1st' }));
+    fireEvent.click(screen.getByRole('button', { name: '✅ Player 1 Ready' }));
+    fireEvent.click(screen.getByRole('button', { name: '✕ Cancel P2 Ready' }));
+    fireEvent.click(screen.getByRole('button', { name: '▶ START GAME' }));
+
+    expect(onSetInitialTurnOrder).toHaveBeenCalledWith('host');
+    expect(onToggleReady).toHaveBeenCalledWith('host');
+    expect(onToggleReady).toHaveBeenCalledWith('guest');
+    expect(onStartGame).toHaveBeenCalledTimes(1);
+    expect(onDrawInitialHand).not.toHaveBeenCalled();
   });
 
   it('renders recent events in order', () => {
