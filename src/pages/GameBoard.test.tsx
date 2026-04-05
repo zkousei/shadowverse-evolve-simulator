@@ -381,6 +381,55 @@ describe('GameBoard', () => {
     expect(screen.getByRole('status')).toHaveTextContent('6');
   });
 
+  it('shows the revealed cards overlay when cards are revealed', () => {
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      revealedCardsOverlay: {
+        type: 'look-top',
+        title: 'Look at Top 3 Cards',
+        cards: [
+          { cardId: 'TEST-001', name: 'Alpha Knight', image: '/alpha.png' },
+        ],
+        summaryLines: ['1 to hand', '2 to bottom'],
+      },
+      cardDetailLookup: {
+        'TEST-001': {
+          id: 'TEST-001',
+          name: 'Alpha Knight',
+          image: '/alpha-detail.png',
+          className: 'Royal',
+          title: 'Hero Tale',
+          type: 'Follower',
+          subtype: 'Soldier',
+          cost: '2',
+          atk: 2,
+          hp: 2,
+          abilityText: '[Fanfare] Test ability.',
+        },
+      },
+    }));
+
+    render(<GameBoard />);
+
+    expect(screen.getByRole('status')).toHaveTextContent('Look at Top 3 Cards');
+    expect(screen.getByText('Alpha Knight')).toBeInTheDocument();
+    expect(screen.getByText('1 to hand')).toBeInTheDocument();
+    expect(screen.getByText('2 to bottom')).toBeInTheDocument();
+  });
+
+  it('shows transient turn, card play, and attack messages', () => {
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      turnMessage: 'YOUR TURN',
+      cardPlayMessage: 'Alpha Knight was played.',
+      attackMessage: 'Alpha Knight attacks!',
+    }));
+
+    render(<GameBoard />);
+
+    expect(screen.getByText('YOUR TURN')).toBeInTheDocument();
+    expect(screen.getByText('Alpha Knight was played.')).toBeInTheDocument();
+    expect(screen.getByText('Alpha Knight attacks!')).toBeInTheDocument();
+  });
+
   it('shows the turn panel while playing and updates the phase', () => {
     const setPhase = vi.fn();
 

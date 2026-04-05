@@ -9,10 +9,12 @@ import GameBoardPreparationPanel from '../components/GameBoardPreparationPanel';
 import GameBoardRecentEventsPanel from '../components/GameBoardRecentEventsPanel';
 import GameBoardDiceOverlay from '../components/GameBoardDiceOverlay';
 import GameBoardReconnectAlert from '../components/GameBoardReconnectAlert';
+import GameBoardRevealedCardsOverlay from '../components/GameBoardRevealedCardsOverlay';
 import GameBoardResetDialog from '../components/GameBoardResetDialog';
 import GameBoardRoomStatus from '../components/GameBoardRoomStatus';
 import GameBoardSavedSessionPrompt from '../components/GameBoardSavedSessionPrompt';
 import GameBoardTopNDialog from '../components/GameBoardTopNDialog';
+import GameBoardTransientMessage from '../components/GameBoardTransientMessage';
 import GameBoardTurnPanel from '../components/GameBoardTurnPanel';
 import GameBoardUndoTurnDialog from '../components/GameBoardUndoTurnDialog';
 import TopDeckModal from '../components/TopDeckModal';
@@ -2098,71 +2100,24 @@ const GameBoard: React.FC = () => {
       )}
 
       {turnMessage && (
-        <div style={{
-          position: 'fixed',
-          top: '40%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          background: 'rgba(0,0,0,0.9)',
-          color: '#f59e0b',
-          padding: '2rem 4rem',
-          borderRadius: 'var(--radius-lg)',
-          border: '4px double #f59e0b',
-          fontSize: '3rem',
-          fontWeight: '900',
-          zIndex: 2000,
-          boxShadow: '0 0 30px rgba(245,158,11,0.4)',
-          textShadow: '0 0 10px rgba(0,0,0,0.5)',
-          pointerEvents: 'none',
-          letterSpacing: '8px'
-        }}>
-          {turnMessage}
-        </div>
+        <GameBoardTransientMessage
+          message={turnMessage}
+          tone="turn"
+        />
       )}
 
       {cardPlayMessage && (
-        <div style={{
-          position: 'fixed',
-          top: '80px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          background: 'rgba(15, 23, 42, 0.96)',
-          color: '#eff6ff',
-          padding: '0.8rem 1.2rem',
-          borderRadius: '12px',
-          border: '1px solid rgba(59, 130, 246, 0.45)',
-          fontSize: '0.98rem',
-          fontWeight: 'bold',
-          zIndex: 1975,
-          boxShadow: '0 12px 28px rgba(0,0,0,0.32)',
-          pointerEvents: 'none',
-          textAlign: 'center',
-          maxWidth: 'min(90vw, 560px)'
-        }}>
-          {cardPlayMessage}
-        </div>
+        <GameBoardTransientMessage
+          message={cardPlayMessage}
+          tone="card-play"
+        />
       )}
 
       {attackMessage && (
-        <div style={{
-          position: 'fixed',
-          top: '27%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          background: 'rgba(15, 23, 42, 0.95)',
-          color: '#fdba74',
-          padding: '1rem 1.7rem',
-          borderRadius: '14px',
-          border: '2px solid rgba(249, 115, 22, 0.55)',
-          fontSize: '1rem',
-          fontWeight: 'bold',
-          zIndex: 1950,
-          boxShadow: '0 0 24px rgba(249,115,22,0.24)',
-          pointerEvents: 'none',
-          textAlign: 'center'
-        }}>
-          {attackMessage}
-        </div>
+        <GameBoardTransientMessage
+          message={attackMessage}
+          tone="attack"
+        />
       )}
 
       {attackLine && (
@@ -2207,66 +2162,10 @@ const GameBoard: React.FC = () => {
       )}
 
       {revealedCardsOverlay && (
-        <div style={{
-          position: 'fixed',
-          top: '18%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          background: 'rgba(3, 7, 18, 0.96)',
-          border: '2px solid #14b8a6',
-          borderRadius: '16px',
-          padding: '1.25rem 1.5rem',
-          zIndex: 2100,
-          boxShadow: '0 0 30px rgba(20,184,166,0.25)',
-          minWidth: '320px',
-          maxWidth: '90vw'
-        }}>
-          <div style={{ color: '#99f6e4', fontWeight: 'bold', fontSize: '1rem', marginBottom: '0.9rem', textAlign: 'center' }}>
-            {revealedCardsOverlay.title}
-          </div>
-          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-            {revealedCardsOverlay.cards.map((card) => (
-              <div key={`${card.cardId}-${card.name}`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem', maxWidth: '120px' }}>
-                <CardArtwork
-                  image={cardDetailLookup[card.cardId]?.image || card.image}
-                  alt={card.name}
-                  detail={cardDetailLookup[card.cardId]}
-                  style={{ width: '90px', height: '126px', borderRadius: '8px', boxShadow: '0 4px 14px rgba(0,0,0,0.45)' }}
-                  draggable={false}
-                />
-                <div style={{ color: 'white', fontSize: '0.7rem', textAlign: 'center', lineHeight: 1.3 }}>
-                  {card.name}
-                </div>
-              </div>
-            ))}
-          </div>
-          {revealedCardsOverlay.summaryLines && revealedCardsOverlay.summaryLines.length > 0 && (
-            <div style={{
-              marginTop: '1rem',
-              paddingTop: '0.9rem',
-              borderTop: '1px solid rgba(153, 246, 228, 0.22)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.35rem',
-              alignItems: 'center'
-            }}>
-              {revealedCardsOverlay.summaryLines.map((line) => (
-                <div
-                  key={line}
-                  style={{
-                    color: '#e2e8f0',
-                    fontSize: '0.82rem',
-                    lineHeight: 1.35,
-                    textAlign: 'center',
-                    whiteSpace: 'pre-wrap'
-                  }}
-                >
-                  {line}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <GameBoardRevealedCardsOverlay
+          overlay={revealedCardsOverlay}
+          cardDetailLookup={cardDetailLookup}
+        />
       )}
 
       {showResetConfirm && canResetGame && (

@@ -6,11 +6,17 @@ import GameBoardDiceOverlay from './GameBoardDiceOverlay';
 import GameBoardPreparationPanel from './GameBoardPreparationPanel';
 import GameBoardRecentEventsPanel from './GameBoardRecentEventsPanel';
 import GameBoardReconnectAlert from './GameBoardReconnectAlert';
+import GameBoardRevealedCardsOverlay from './GameBoardRevealedCardsOverlay';
 import GameBoardResetDialog from './GameBoardResetDialog';
 import GameBoardRoomStatus from './GameBoardRoomStatus';
 import GameBoardSavedSessionPrompt from './GameBoardSavedSessionPrompt';
 import GameBoardTopNDialog from './GameBoardTopNDialog';
+import GameBoardTransientMessage from './GameBoardTransientMessage';
 import GameBoardTurnPanel from './GameBoardTurnPanel';
+
+vi.mock('./CardArtwork', () => ({
+  default: ({ alt }: { alt: string }) => <img alt={alt} />,
+}));
 import GameBoardUndoTurnDialog from './GameBoardUndoTurnDialog';
 
 describe('GameBoard extracted UI components', () => {
@@ -161,6 +167,69 @@ describe('GameBoard extracted UI components', () => {
     render(<GameBoardDiceOverlay value={6} />);
 
     expect(screen.getByRole('status')).toHaveTextContent('6');
+  });
+
+  it('renders revealed cards overlay with summary lines', () => {
+    render(
+      <GameBoardRevealedCardsOverlay
+        overlay={{
+          title: 'Look at Top 3 Cards',
+          cards: [
+            { cardId: 'TEST-001', name: 'Alpha Knight', image: '/alpha.png' },
+          ],
+          summaryLines: ['1 to hand', '2 to bottom'],
+        }}
+        cardDetailLookup={{
+          'TEST-001': {
+            id: 'TEST-001',
+            name: 'Alpha Knight',
+            image: '/alpha-detail.png',
+            className: 'Royal',
+            title: 'Hero Tale',
+            type: 'Follower',
+            subtype: 'Soldier',
+            cost: '2',
+            atk: 2,
+            hp: 2,
+            abilityText: '',
+          },
+        }}
+      />
+    );
+
+    expect(screen.getByRole('status')).toHaveTextContent('Look at Top 3 Cards');
+    expect(screen.getByRole('img', { name: 'Alpha Knight' })).toBeInTheDocument();
+    expect(screen.getByText('1 to hand')).toBeInTheDocument();
+    expect(screen.getByText('2 to bottom')).toBeInTheDocument();
+  });
+
+  it('renders transient messages for turn, card play, and attack tones', () => {
+    const { rerender } = render(
+      <GameBoardTransientMessage
+        message="YOUR TURN"
+        tone="turn"
+      />
+    );
+
+    expect(screen.getByRole('status')).toHaveTextContent('YOUR TURN');
+
+    rerender(
+      <GameBoardTransientMessage
+        message="Alpha Knight was played."
+        tone="card-play"
+      />
+    );
+
+    expect(screen.getByRole('status')).toHaveTextContent('Alpha Knight was played.');
+
+    rerender(
+      <GameBoardTransientMessage
+        message="Alpha Knight attacks!"
+        tone="attack"
+      />
+    );
+
+    expect(screen.getByRole('status')).toHaveTextContent('Alpha Knight attacks!');
   });
 
   it('renders turn panel and wires phase changes', () => {
