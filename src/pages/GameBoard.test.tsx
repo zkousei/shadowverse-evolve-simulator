@@ -410,6 +410,27 @@ describe('GameBoard', () => {
     expect(handleStartGame).toHaveBeenCalledTimes(1);
   });
 
+  it('wires playing header controls for coin toss and dice roll', () => {
+    const handlePureCoinFlip = vi.fn();
+    const handleRollDice = vi.fn();
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      handlePureCoinFlip,
+      handleRollDice,
+      gameState: createGameState([], {
+        gameStatus: 'playing',
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    fireEvent.click(screen.getByRole('button', { name: '🪙 Toss Coin' }));
+    fireEvent.click(screen.getByRole('button', { name: '🎲 Roll Dice' }));
+
+    expect(handlePureCoinFlip).toHaveBeenCalledTimes(1);
+    expect(handleRollDice).toHaveBeenCalledTimes(1);
+  });
+
   it('shows recent events while playing', () => {
     mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
       gameState: createGameState([], {

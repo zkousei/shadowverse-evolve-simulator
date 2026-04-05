@@ -11,6 +11,7 @@ import GameBoardCoinMessageOverlay from '../components/GameBoardCoinMessageOverl
 import GameBoardLeaderZone from '../components/GameBoardLeaderZone';
 import GameBoardPreparationControls from '../components/GameBoardPreparationControls';
 import GameBoardPreparationPanel from '../components/GameBoardPreparationPanel';
+import GameBoardPlayingControls from '../components/GameBoardPlayingControls';
 import GameBoardPlayerTracker from '../components/GameBoardPlayerTracker';
 import GameBoardRecentEventsPanel from '../components/GameBoardRecentEventsPanel';
 import GameBoardReadOnlyStatusPanel from '../components/GameBoardReadOnlyStatusPanel';
@@ -690,41 +691,12 @@ const GameBoard: React.FC = () => {
                 onStartGame={handleStartGame}
               />
             ) : (
-              <>
-                <button
-                  onClick={handlePureCoinFlip}
-                  style={{ padding: '0.3rem 0.6rem', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', color: 'white', borderRadius: '4px', cursor: 'pointer', fontSize: '0.875rem' }}
-                >
-                  {t('gameBoard.controls.tossCoin')}
-                </button>
-                <button
-                  onClick={handleRollDice}
-                  style={{ padding: '0.3rem 0.6rem', background: '#8b5cf6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 'bold' }}
-                >
-                  {t('gameBoard.controls.rollDice')}
-                </button>
-              </>
-            )}
-
-            {canShowUndoTurn && (
-              <button
-                onClick={() => setShowUndoConfirm(true)}
-                style={{
-                  padding: '0.3rem 0.6rem',
-                  background: '#ec4899',
-                  color: 'white',
-                  fontWeight: 'bold',
-                  border: '1px solid rgba(255,255,255,0.5)',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '0.75rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}
-              >
-                {t('gameBoard.turn.undo')}
-              </button>
+              <GameBoardPlayingControls
+                canShowUndoTurn={canShowUndoTurn}
+                onTossCoin={handlePureCoinFlip}
+                onRollDice={handleRollDice}
+                onOpenUndo={() => setShowUndoConfirm(true)}
+              />
             )}
           </div>
 

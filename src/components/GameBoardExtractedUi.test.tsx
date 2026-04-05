@@ -12,6 +12,7 @@ import GameBoardLeaderZone from './GameBoardLeaderZone';
 import GameBoardPreparationControls from './GameBoardPreparationControls';
 import GameBoardPreparationPanel from './GameBoardPreparationPanel';
 import GameBoardPreparationReadyStatus from './GameBoardPreparationReadyStatus';
+import GameBoardPlayingControls from './GameBoardPlayingControls';
 import GameBoardPlayerTracker from './GameBoardPlayerTracker';
 import GameBoardReadOnlyStatusPanel from './GameBoardReadOnlyStatusPanel';
 import GameBoardRecentEventsPanel from './GameBoardRecentEventsPanel';
@@ -234,6 +235,29 @@ describe('GameBoard extracted UI components', () => {
     expect(onToggleReady).toHaveBeenCalledWith('guest');
     expect(onStartGame).toHaveBeenCalledTimes(1);
     expect(onDrawInitialHand).not.toHaveBeenCalled();
+  });
+
+  it('renders playing controls and wires coin, dice, and undo actions', () => {
+    const onTossCoin = vi.fn();
+    const onRollDice = vi.fn();
+    const onOpenUndo = vi.fn();
+
+    render(
+      <GameBoardPlayingControls
+        canShowUndoTurn={true}
+        onTossCoin={onTossCoin}
+        onRollDice={onRollDice}
+        onOpenUndo={onOpenUndo}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: '🪙 Toss Coin' }));
+    fireEvent.click(screen.getByRole('button', { name: '🎲 Roll Dice' }));
+    fireEvent.click(screen.getByRole('button', { name: '↺ UNDO LAST END TURN' }));
+
+    expect(onTossCoin).toHaveBeenCalledTimes(1);
+    expect(onRollDice).toHaveBeenCalledTimes(1);
+    expect(onOpenUndo).toHaveBeenCalledTimes(1);
   });
 
   it('renders recent events in order', () => {
