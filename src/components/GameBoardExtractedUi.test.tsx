@@ -2,6 +2,7 @@ import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import GameBoardAttackModeBanner from './GameBoardAttackModeBanner';
+import GameBoardDiceOverlay from './GameBoardDiceOverlay';
 import GameBoardPreparationPanel from './GameBoardPreparationPanel';
 import GameBoardRecentEventsPanel from './GameBoardRecentEventsPanel';
 import GameBoardReconnectAlert from './GameBoardReconnectAlert';
@@ -153,6 +154,12 @@ describe('GameBoard extracted UI components', () => {
     expect(screen.getByText('Recent Events')).toBeInTheDocument();
     expect(screen.getByText('Host drew a card.')).toBeInTheDocument();
     expect(screen.getByText('Guest evolved Alpha Knight.')).toBeInTheDocument();
+  });
+
+  it('renders dice overlay with current value', () => {
+    render(<GameBoardDiceOverlay value={6} />);
+
+    expect(screen.getByRole('status')).toHaveTextContent('6');
   });
 
   it('renders turn panel and wires phase changes', () => {

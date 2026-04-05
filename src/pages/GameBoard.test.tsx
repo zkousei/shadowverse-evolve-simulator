@@ -370,6 +370,17 @@ describe('GameBoard', () => {
     expect(screen.getByText('Guest evolved Alpha Knight.')).toBeInTheDocument();
   });
 
+  it('shows the dice overlay while rolling', () => {
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      isRollingDice: true,
+      diceValue: 6,
+    }));
+
+    render(<GameBoard />);
+
+    expect(screen.getByRole('status')).toHaveTextContent('6');
+  });
+
   it('shows the turn panel while playing and updates the phase', () => {
     const setPhase = vi.fn();
 

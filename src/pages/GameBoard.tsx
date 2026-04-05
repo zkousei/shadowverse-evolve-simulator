@@ -7,6 +7,7 @@ import CardSearchModal from '../components/CardSearchModal';
 import GameBoardAttackModeBanner from '../components/GameBoardAttackModeBanner';
 import GameBoardPreparationPanel from '../components/GameBoardPreparationPanel';
 import GameBoardRecentEventsPanel from '../components/GameBoardRecentEventsPanel';
+import GameBoardDiceOverlay from '../components/GameBoardDiceOverlay';
 import GameBoardReconnectAlert from '../components/GameBoardReconnectAlert';
 import GameBoardResetDialog from '../components/GameBoardResetDialog';
 import GameBoardRoomStatus from '../components/GameBoardRoomStatus';
@@ -2295,41 +2296,7 @@ const GameBoard: React.FC = () => {
       )}
 
       {isRollingDice && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          backgroundColor: 'rgba(0,0,0,0.4)',
-          backdropFilter: 'blur(4px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 3000,
-          pointerEvents: 'none'
-        }}>
-          <div style={{
-            width: '120px',
-            height: '120px',
-            background: 'white',
-            borderRadius: '20px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '4rem',
-            fontWeight: '900',
-            color: '#1f2937',
-            boxShadow: '0 0 40px rgba(139, 92, 246, 0.6)',
-            border: '4px solid #8b5cf6',
-            animation: 'diceRoll 0.1s infinite alternate'
-          }}>
-            {diceValue}
-          </div>
-          <style>{`
-            @keyframes diceRoll {
-              from { transform: rotate(-10deg) scale(0.9); }
-              to { transform: rotate(10deg) scale(1.1); }
-            }
-          `}</style>
-        </div>
+        <GameBoardDiceOverlay value={diceValue ?? 1} />
       )}
 
       {renderSavedDeckPicker()}
