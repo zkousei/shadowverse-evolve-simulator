@@ -5,9 +5,8 @@ import Zone from '../components/Zone';
 import type { CardInspectAnchor, CardInstance } from '../components/Card';
 import CardSearchModal from '../components/CardSearchModal';
 import GameBoardAttackModeBanner from '../components/GameBoardAttackModeBanner';
-import GameBoardAttackLineOverlay from '../components/GameBoardAttackLineOverlay';
 import GameBoardCardInspector from '../components/GameBoardCardInspector';
-import GameBoardCoinMessageOverlay from '../components/GameBoardCoinMessageOverlay';
+import GameBoardGlobalOverlays from '../components/GameBoardGlobalOverlays';
 import GameBoardLeaderZone from '../components/GameBoardLeaderZone';
 import GameBoardPreparationControls from '../components/GameBoardPreparationControls';
 import GameBoardPreparationPanel from '../components/GameBoardPreparationPanel';
@@ -15,18 +14,15 @@ import GameBoardPlayingControls from '../components/GameBoardPlayingControls';
 import GameBoardPlayerTracker from '../components/GameBoardPlayerTracker';
 import GameBoardRecentEventsPanel from '../components/GameBoardRecentEventsPanel';
 import GameBoardReadOnlyStatusPanel from '../components/GameBoardReadOnlyStatusPanel';
-import GameBoardDiceOverlay from '../components/GameBoardDiceOverlay';
 import GameBoardEvolveAutoAttachDialog from '../components/GameBoardEvolveAutoAttachDialog';
 import GameBoardEndTurnButton from '../components/GameBoardEndTurnButton';
 import GameBoardReconnectAlert from '../components/GameBoardReconnectAlert';
-import GameBoardRevealedCardsOverlay from '../components/GameBoardRevealedCardsOverlay';
 import GameBoardResetDialog from '../components/GameBoardResetDialog';
 import GameBoardRoomStatus from '../components/GameBoardRoomStatus';
 import GameBoardSavedDeckPickerDialog from '../components/GameBoardSavedDeckPickerDialog';
 import GameBoardSavedSessionPrompt from '../components/GameBoardSavedSessionPrompt';
 import GameBoardTopNDialog from '../components/GameBoardTopNDialog';
 import GameBoardTokenSpawnDialog from '../components/GameBoardTokenSpawnDialog';
-import GameBoardTransientMessage from '../components/GameBoardTransientMessage';
 import GameBoardTurnPanel from '../components/GameBoardTurnPanel';
 import GameBoardUndoTurnDialog from '../components/GameBoardUndoTurnDialog';
 import GameBoardZoneActionsMenu from '../components/GameBoardZoneActionsMenu';
@@ -1361,45 +1357,17 @@ const GameBoard: React.FC = () => {
         />
       )}
 
-      {/* Custom Global Overlays */}
-      {coinMessage && (
-        <GameBoardCoinMessageOverlay message={coinMessage} />
-      )}
-
-      {turnMessage && (
-        <GameBoardTransientMessage
-          message={turnMessage}
-          tone="turn"
-        />
-      )}
-
-      {cardPlayMessage && (
-        <GameBoardTransientMessage
-          message={cardPlayMessage}
-          tone="card-play"
-        />
-      )}
-
-      {attackMessage && (
-        <GameBoardTransientMessage
-          message={attackMessage}
-          tone="attack"
-        />
-      )}
-
-      {attackLine && (
-        <GameBoardAttackLineOverlay
-          sourcePoint={attackLine.sourcePoint}
-          targetPoint={attackLine.targetPoint}
-        />
-      )}
-
-      {revealedCardsOverlay && (
-        <GameBoardRevealedCardsOverlay
-          overlay={revealedCardsOverlay}
-          cardDetailLookup={cardDetailLookup}
-        />
-      )}
+      <GameBoardGlobalOverlays
+        coinMessage={coinMessage}
+        turnMessage={turnMessage}
+        cardPlayMessage={cardPlayMessage}
+        attackMessage={attackMessage}
+        attackLine={attackLine}
+        revealedCardsOverlay={revealedCardsOverlay}
+        cardDetailLookup={cardDetailLookup}
+        isRollingDice={isRollingDice}
+        diceValue={diceValue}
+      />
 
       {showResetConfirm && canResetGame && (
         <GameBoardResetDialog
@@ -1416,10 +1384,6 @@ const GameBoard: React.FC = () => {
             handleUndoTurn();
           }}
         />
-      )}
-
-      {isRollingDice && (
-        <GameBoardDiceOverlay value={diceValue ?? 1} />
       )}
 
       {renderSavedDeckPicker()}

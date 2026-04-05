@@ -8,6 +8,7 @@ import GameBoardCoinMessageOverlay from './GameBoardCoinMessageOverlay';
 import GameBoardDiceOverlay from './GameBoardDiceOverlay';
 import GameBoardEvolveAutoAttachDialog from './GameBoardEvolveAutoAttachDialog';
 import GameBoardEndTurnButton from './GameBoardEndTurnButton';
+import GameBoardGlobalOverlays from './GameBoardGlobalOverlays';
 import GameBoardLeaderZone from './GameBoardLeaderZone';
 import GameBoardPreparationControls from './GameBoardPreparationControls';
 import GameBoardPreparationPanel from './GameBoardPreparationPanel';
@@ -258,6 +259,40 @@ describe('GameBoard extracted UI components', () => {
     expect(onTossCoin).toHaveBeenCalledTimes(1);
     expect(onRollDice).toHaveBeenCalledTimes(1);
     expect(onOpenUndo).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders global overlays host with active overlays', () => {
+    render(
+      <GameBoardGlobalOverlays
+        coinMessage="Host goes first!"
+        turnMessage="YOUR TURN"
+        cardPlayMessage="Alpha Knight was played."
+        attackMessage="Alpha Knight attacks."
+        attackLine={{ sourcePoint: { x: 10, y: 20 }, targetPoint: { x: 100, y: 120 } }}
+        revealedCardsOverlay={{
+          title: 'Revealed Cards',
+          cards: [{ cardId: 'TEST-001', name: 'Alpha Knight', image: '/alpha.png' }],
+          summaryLines: ['1 card revealed'],
+        }}
+        cardDetailLookup={{
+          'TEST-001': {
+            id: 'TEST-001',
+            name: 'Alpha Knight',
+            image: '/alpha.png',
+          },
+        }}
+        isRollingDice={true}
+        diceValue={6}
+      />
+    );
+
+    expect(screen.getByText('Host goes first!')).toBeInTheDocument();
+    expect(screen.getByText('YOUR TURN')).toBeInTheDocument();
+    expect(screen.getByText('Alpha Knight was played.')).toBeInTheDocument();
+    expect(screen.getByText('Alpha Knight attacks.')).toBeInTheDocument();
+    expect(screen.getByText('Revealed Cards')).toBeInTheDocument();
+    expect(screen.getByText('1 card revealed')).toBeInTheDocument();
+    expect(screen.getAllByRole('status').some((element) => element.textContent?.includes('6'))).toBe(true);
   });
 
   it('renders recent events in order', () => {
