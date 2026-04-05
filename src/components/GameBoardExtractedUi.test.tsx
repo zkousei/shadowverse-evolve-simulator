@@ -22,6 +22,7 @@ import GameBoardTopNDialog from './GameBoardTopNDialog';
 import GameBoardTokenSpawnDialog from './GameBoardTokenSpawnDialog';
 import GameBoardTransientMessage from './GameBoardTransientMessage';
 import GameBoardTurnPanel from './GameBoardTurnPanel';
+import GameBoardZoneActionsMenu from './GameBoardZoneActionsMenu';
 
 vi.mock('./CardArtwork', () => ({
   default: ({ alt }: { alt: string }) => <img alt={alt} />,
@@ -316,6 +317,32 @@ describe('GameBoard extracted UI components', () => {
     expect(onAdjustStat).toHaveBeenCalledWith('ep', -1);
     expect(onAdjustStat).toHaveBeenCalledWith('maxPp', 1);
     expect(onAdjustStat).toHaveBeenCalledWith('pp', -1);
+  });
+
+  it('renders zone actions menu and delegates toggle and action clicks', () => {
+    const searchAction = vi.fn();
+    const onToggle = vi.fn();
+    const onActionClick = vi.fn((action: () => void) => action());
+
+    render(
+      <GameBoardZoneActionsMenu
+        actionsLabel="Actions"
+        isOpen={true}
+        actions={[
+          { label: 'Search', onClick: searchAction },
+          { label: 'Look Top', onClick: vi.fn(), tone: 'accent' },
+        ]}
+        onToggle={onToggle}
+        onActionClick={onActionClick}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Actions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+
+    expect(onToggle).toHaveBeenCalledTimes(1);
+    expect(onActionClick).toHaveBeenCalledTimes(1);
+    expect(searchAction).toHaveBeenCalledTimes(1);
   });
 
   it('renders attack line overlay with source and target coordinates', () => {

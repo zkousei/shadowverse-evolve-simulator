@@ -677,6 +677,28 @@ describe('GameBoard', () => {
     expect(handleStatChange).toHaveBeenCalledWith('host', 'pp', -1);
   });
 
+  it('opens the zone actions menu and shuffles the selected deck', () => {
+    const handleShuffleDeck = vi.fn();
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      mode: 'solo',
+      isSoloMode: true,
+      isHost: true,
+      role: 'host',
+      handleShuffleDeck,
+      gameState: createGameState([], {
+        gameStatus: 'playing',
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Actions' })[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Shuffle' }));
+
+    expect(handleShuffleDeck).toHaveBeenCalledWith('guest');
+  });
+
   it('shows the reconnecting alert when guest actions are locked', () => {
     mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
       isHost: false,
