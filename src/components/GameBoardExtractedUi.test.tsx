@@ -8,7 +8,9 @@ import GameBoardCoinMessageOverlay from './GameBoardCoinMessageOverlay';
 import GameBoardDiceOverlay from './GameBoardDiceOverlay';
 import GameBoardEvolveAutoAttachDialog from './GameBoardEvolveAutoAttachDialog';
 import GameBoardEndTurnButton from './GameBoardEndTurnButton';
+import GameBoardLeaderZone from './GameBoardLeaderZone';
 import GameBoardPreparationPanel from './GameBoardPreparationPanel';
+import GameBoardPreparationReadyStatus from './GameBoardPreparationReadyStatus';
 import GameBoardPlayerTracker from './GameBoardPlayerTracker';
 import GameBoardReadOnlyStatusPanel from './GameBoardReadOnlyStatusPanel';
 import GameBoardRecentEventsPanel from './GameBoardRecentEventsPanel';
@@ -26,6 +28,22 @@ import GameBoardZoneActionsMenu from './GameBoardZoneActionsMenu';
 
 vi.mock('./CardArtwork', () => ({
   default: ({ alt }: { alt: string }) => <img alt={alt} />,
+}));
+vi.mock('./Zone', () => ({
+  default: ({
+    id,
+    label,
+    cards,
+  }: {
+    id: string;
+    label: string;
+    cards: Array<{ id: string }>;
+  }) => (
+    <section data-testid={`zone-${id}`}>
+      <h3>{label}</h3>
+      <span>{cards.length} cards</span>
+    </section>
+  ),
 }));
 import GameBoardUndoTurnDialog from './GameBoardUndoTurnDialog';
 
@@ -156,6 +174,26 @@ describe('GameBoard extracted UI components', () => {
     fireEvent.click(screen.getByRole('button', { name: 'OFF' }));
 
     expect(onToggleRevealHandsMode).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders preparation ready status labels for solo mode', () => {
+    render(
+      <GameBoardPreparationReadyStatus
+        isSoloMode={true}
+        hostInitialHandDrawn={true}
+        guestInitialHandDrawn={false}
+        hostReady={false}
+        guestReady={true}
+      />
+    );
+
+    const hostStatus = screen.getByTestId('preparation-ready-status-host');
+    const guestStatus = screen.getByTestId('preparation-ready-status-guest');
+
+    expect(hostStatus).toHaveTextContent('PLAYER 1');
+    expect(hostStatus).toHaveTextContent('DECIDING');
+    expect(guestStatus).toHaveTextContent('PLAYER 2');
+    expect(guestStatus).toHaveTextContent('READY');
   });
 
   it('renders recent events in order', () => {
@@ -343,6 +381,35 @@ describe('GameBoard extracted UI components', () => {
     expect(onToggle).toHaveBeenCalledTimes(1);
     expect(onActionClick).toHaveBeenCalledTimes(1);
     expect(searchAction).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders leader zone and wires the search button', () => {
+    const onSearch = vi.fn();
+
+    render(
+      <GameBoardLeaderZone
+        leaderZoneId="leader-host"
+        label="Player 1"
+        zoneLabel="Player 1 Leader"
+        leaderCards={[
+          { id: 'leader-1', cardId: 'TEST-LEADER-1', name: 'Leader A' } as never,
+          { id: 'leader-2', cardId: 'TEST-LEADER-2', name: 'Leader B' } as never,
+        ]}
+        side="left"
+        sideZoneWidth={140}
+        cardDetailLookup={{}}
+        isAttackTargetLeader={false}
+        searchLabel="Search"
+        onSearch={onSearch}
+      />
+    );
+
+    expect(screen.getByTestId('leader-zone-leader-host')).toBeInTheDocument();
+    expect(screen.getByTestId('zone-leader-host')).toHaveTextContent('Player 1 Leader');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Player 1 leader search' }));
+
+    expect(onSearch).toHaveBeenCalledTimes(1);
   });
 
   it('renders attack line overlay with source and target coordinates', () => {

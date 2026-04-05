@@ -8,7 +8,9 @@ import GameBoardAttackModeBanner from '../components/GameBoardAttackModeBanner';
 import GameBoardAttackLineOverlay from '../components/GameBoardAttackLineOverlay';
 import GameBoardCardInspector from '../components/GameBoardCardInspector';
 import GameBoardCoinMessageOverlay from '../components/GameBoardCoinMessageOverlay';
+import GameBoardLeaderZone from '../components/GameBoardLeaderZone';
 import GameBoardPreparationPanel from '../components/GameBoardPreparationPanel';
+import GameBoardPreparationReadyStatus from '../components/GameBoardPreparationReadyStatus';
 import GameBoardPlayerTracker from '../components/GameBoardPlayerTracker';
 import GameBoardRecentEventsPanel from '../components/GameBoardRecentEventsPanel';
 import GameBoardReadOnlyStatusPanel from '../components/GameBoardReadOnlyStatusPanel';
@@ -496,55 +498,26 @@ const GameBoard: React.FC = () => {
     const leaderZoneId = `leader-${playerRole}`;
     const leaderCards = getCards(leaderZoneId);
     const isAttackTargetLeader = attackSourceCard ? attackSourceCard.owner !== playerRole : false;
+    const zoneLabel = t('gameBoard.board.leaderLabel', { label });
 
     return (
-      <div
-        data-leader-zone={leaderZoneId}
-        style={{
-          position: 'absolute',
-          top: 0,
-          ...(side === 'left'
-            ? { right: `calc(100% + ${12 + extraOffset}px)` }
-            : { left: `calc(100% + ${12 + extraOffset}px)` }),
-          width: `${sideZoneWidth}px`,
-        }}
-      >
-        <Zone
-          id={leaderZoneId}
-          label={t('gameBoard.board.leaderLabel', { label })}
-          cards={leaderCards}
-          cardDetailLookup={cardDetailLookup}
-          layout="stack"
-          getHighlightTone={getAttackHighlightTone}
-          onInspectCard={handleInspectCard}
-          viewerRole={viewerRole}
-          containerStyle={{
-            minWidth: `${sideZoneWidth}px`,
-            minHeight: '150px',
-            border: isAttackTargetLeader ? '2px solid rgba(250, 204, 21, 0.65)' : undefined,
-            boxShadow: isAttackTargetLeader ? '0 0 18px rgba(250, 204, 21, 0.18)' : undefined
-          }}
-          isDebug={isDebug}
-        />
-        {leaderCards.length >= 2 && (
-          <button
-            onClick={() => openSearchZone(leaderZoneId, t('gameBoard.board.leaderLabel', { label }))}
-            style={{
-              width: '100%',
-              marginTop: '4px',
-              fontSize: '0.75rem',
-              padding: '4px',
-              background: 'var(--bg-surface-elevated)',
-              border: '1px solid var(--border-light)',
-              color: 'white',
-              borderRadius: '4px',
-              cursor: 'pointer',
-            }}
-          >
-            {t('gameBoard.board.search')}
-          </button>
-        )}
-      </div>
+      <GameBoardLeaderZone
+        leaderZoneId={leaderZoneId}
+        label={label}
+        zoneLabel={zoneLabel}
+        leaderCards={leaderCards}
+        side={side}
+        sideZoneWidth={sideZoneWidth}
+        extraOffset={extraOffset}
+        cardDetailLookup={cardDetailLookup}
+        getHighlightTone={getAttackHighlightTone}
+        onInspectCard={handleInspectCard}
+        viewerRole={viewerRole}
+        isAttackTargetLeader={isAttackTargetLeader}
+        isDebug={isDebug}
+        searchLabel={t('gameBoard.board.search')}
+        onSearch={() => openSearchZone(leaderZoneId, zoneLabel)}
+      />
     );
   };
 
@@ -785,20 +758,13 @@ const GameBoard: React.FC = () => {
                   {t('gameBoard.controls.startGame')}
                 </button>
 
-                <div style={{ display: 'flex', gap: '0.8rem', marginLeft: '0.5rem', borderLeft: '1px solid var(--border-light)', paddingLeft: '0.8rem' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', fontSize: '0.65rem', alignItems: 'center' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>{isSoloMode ? t('gameBoard.controls.p1') : t('gameBoard.controls.host')}</span>
-                    <span style={{ color: gameState.host.isReady ? 'var(--vivid-green-cyan)' : '#ef4444', fontWeight: 'bold' }}>
-                      {gameState.host.isReady ? t('gameBoard.controls.statusReady') : (gameState.host.initialHandDrawn ? t('gameBoard.controls.statusDeciding') : t('gameBoard.controls.statusWaiting'))}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', fontSize: '0.65rem', alignItems: 'center' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>{isSoloMode ? t('gameBoard.controls.p2') : t('gameBoard.controls.guest')}</span>
-                    <span style={{ color: gameState.guest.isReady ? 'var(--vivid-green-cyan)' : '#ef4444', fontWeight: 'bold' }}>
-                      {gameState.guest.isReady ? t('gameBoard.controls.statusReady') : (gameState.guest.initialHandDrawn ? t('gameBoard.controls.statusDeciding') : t('gameBoard.controls.statusWaiting'))}
-                    </span>
-                  </div>
-                </div>
+                <GameBoardPreparationReadyStatus
+                  isSoloMode={isSoloMode}
+                  hostInitialHandDrawn={gameState.host.initialHandDrawn}
+                  guestInitialHandDrawn={gameState.guest.initialHandDrawn}
+                  hostReady={gameState.host.isReady}
+                  guestReady={gameState.guest.isReady}
+                />
               </div>
             ) : (
               <>

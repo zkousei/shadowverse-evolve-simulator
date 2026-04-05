@@ -352,6 +352,32 @@ describe('GameBoard', () => {
     expect(handleSetRevealHandsMode).toHaveBeenCalledWith(true);
   });
 
+  it('shows the solo preparation ready status summary', () => {
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      mode: 'solo',
+      isSoloMode: true,
+      gameState: createGameState([], {
+        host: {
+          ...initialState.host,
+          initialHandDrawn: true,
+          isReady: false,
+        },
+        guest: {
+          ...initialState.guest,
+          initialHandDrawn: false,
+          isReady: true,
+        },
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    expect(screen.getByTestId('preparation-ready-status-host')).toHaveTextContent('PLAYER 1');
+    expect(screen.getByTestId('preparation-ready-status-host')).toHaveTextContent('DECIDING');
+    expect(screen.getByTestId('preparation-ready-status-guest')).toHaveTextContent('PLAYER 2');
+    expect(screen.getByTestId('preparation-ready-status-guest')).toHaveTextContent('READY');
+  });
+
   it('shows recent events while playing', () => {
     mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
       gameState: createGameState([], {
@@ -697,6 +723,46 @@ describe('GameBoard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Shuffle' }));
 
     expect(handleShuffleDeck).toHaveBeenCalledWith('guest');
+  });
+
+  it('opens leader zone search from the solo board', async () => {
+    const setSearchZone = vi.fn();
+    const hostLeaderA = makeCard({
+      id: 'leader-host-a',
+      cardId: 'TEST-LEADER-A',
+      name: 'Leader A',
+      zone: 'leader-host',
+      owner: 'host',
+    });
+    const hostLeaderB = makeCard({
+      id: 'leader-host-b',
+      cardId: 'TEST-LEADER-B',
+      name: 'Leader B',
+      zone: 'leader-host',
+      owner: 'host',
+    });
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      mode: 'solo',
+      isSoloMode: true,
+      isHost: true,
+      role: 'host',
+      setSearchZone,
+      gameState: createGameState([hostLeaderA, hostLeaderB], {
+        gameStatus: 'playing',
+      }),
+    }));
+
+    const { container } = render(<GameBoard />);
+    const leaderZone = container.querySelector('[data-testid="leader-zone-leader-host"]');
+
+    expect(leaderZone).not.toBeNull();
+    fireEvent.click(within(leaderZone as HTMLElement).getByRole('button', { name: 'Player 1 leader search' }));
+
+    expect(setSearchZone).toHaveBeenCalledWith({
+      id: 'leader-host',
+      title: 'Player 1 Leader',
+    });
   });
 
   it('shows the reconnecting alert when guest actions are locked', () => {
