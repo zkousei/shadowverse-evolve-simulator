@@ -9,6 +9,7 @@ import GameBoardReconnectAlert from './GameBoardReconnectAlert';
 import GameBoardResetDialog from './GameBoardResetDialog';
 import GameBoardRoomStatus from './GameBoardRoomStatus';
 import GameBoardSavedSessionPrompt from './GameBoardSavedSessionPrompt';
+import GameBoardTopNDialog from './GameBoardTopNDialog';
 import GameBoardTurnPanel from './GameBoardTurnPanel';
 import GameBoardUndoTurnDialog from './GameBoardUndoTurnDialog';
 
@@ -231,6 +232,30 @@ describe('GameBoard extracted UI components', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     fireEvent.click(screen.getByRole('button', { name: 'Yes, Reset' }));
 
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders top-n dialog and wires value, cancel, and confirm', () => {
+    const onValueChange = vi.fn();
+    const onCancel = vi.fn();
+    const onConfirm = vi.fn();
+
+    render(
+      <GameBoardTopNDialog
+        value={3}
+        onValueChange={onValueChange}
+        onCancel={onCancel}
+        onConfirm={onConfirm}
+      />
+    );
+
+    expect(screen.getByRole('dialog', { name: 'How many cards to look at?' })).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'How many cards to look at?' }), { target: { value: '5' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Look' }));
+
+    expect(onValueChange).toHaveBeenCalledWith(5);
     expect(onCancel).toHaveBeenCalledTimes(1);
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });

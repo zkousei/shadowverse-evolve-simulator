@@ -12,6 +12,7 @@ import GameBoardReconnectAlert from '../components/GameBoardReconnectAlert';
 import GameBoardResetDialog from '../components/GameBoardResetDialog';
 import GameBoardRoomStatus from '../components/GameBoardRoomStatus';
 import GameBoardSavedSessionPrompt from '../components/GameBoardSavedSessionPrompt';
+import GameBoardTopNDialog from '../components/GameBoardTopNDialog';
 import GameBoardTurnPanel from '../components/GameBoardTurnPanel';
 import GameBoardUndoTurnDialog from '../components/GameBoardUndoTurnDialog';
 import TopDeckModal from '../components/TopDeckModal';
@@ -2078,25 +2079,15 @@ const GameBoard: React.FC = () => {
       {renderEvolveAutoAttachModal()}
 
       {isTopNInputOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 5000 }}>
-          <div style={{ background: 'var(--bg-surface)', padding: '2rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', textAlign: 'center' }}>
-            <h3 style={{ marginBottom: '1rem', color: 'white' }}>{t('gameBoard.modals.topN.title')}</h3>
-            <input 
-              type="number" 
-              value={topNValue} 
-              onChange={(e) => setTopNValue(Number(e.target.value))} 
-              min="1" max="50"
-              style={{ padding: '0.5rem', borderRadius: '4px', background: 'black', color: 'white', border: '1px solid #444', fontSize: '1.25rem', textAlign: 'center', width: '80px', marginBottom: '1.5rem' }}
-            />
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-              <button onClick={() => setIsTopNInputOpen(false)} style={{ padding: '0.5rem 1.5rem', background: '#333', color: 'white', borderRadius: '4px', cursor: 'pointer', border: 'none' }}>{t('common.buttons.cancel')}</button>
-              <button onClick={() => {
-                handleLookAtTop(topNValue, topDeckTargetRole);
-                setIsTopNInputOpen(false);
-              }} style={{ padding: '0.5rem 1.5rem', background: 'var(--accent-primary)', color: 'white', borderRadius: '4px', cursor: 'pointer', border: 'none', fontWeight: 'bold' }}>{t('gameBoard.modals.topN.confirm')}</button>
-            </div>
-          </div>
-        </div>
+        <GameBoardTopNDialog
+          value={topNValue}
+          onValueChange={setTopNValue}
+          onCancel={() => setIsTopNInputOpen(false)}
+          onConfirm={() => {
+            handleLookAtTop(topNValue, topDeckTargetRole);
+            setIsTopNInputOpen(false);
+          }}
+        />
       )}
 
       {/* Custom Global Overlays */}
