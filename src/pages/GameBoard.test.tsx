@@ -435,6 +435,26 @@ describe('GameBoard', () => {
     });
   });
 
+  it('shows the reset game dialog and wires cancel/confirm actions', () => {
+    const setShowResetConfirm = vi.fn();
+    const confirmResetGame = vi.fn();
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      showResetConfirm: true,
+      setShowResetConfirm,
+      confirmResetGame,
+    }));
+
+    render(<GameBoard />);
+
+    expect(screen.getByRole('dialog', { name: 'Reset Game' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, Reset' }));
+
+    expect(setShowResetConfirm).toHaveBeenCalledWith(false);
+    expect(confirmResetGame).toHaveBeenCalledTimes(1);
+  });
+
   it('opens the saved deck picker, filters saved decks, and imports the selected deck', async () => {
     saveDeck({
       name: 'Alpha Deck',

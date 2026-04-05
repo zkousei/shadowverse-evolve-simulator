@@ -5,6 +5,7 @@ import GameBoardAttackModeBanner from './GameBoardAttackModeBanner';
 import GameBoardPreparationPanel from './GameBoardPreparationPanel';
 import GameBoardRecentEventsPanel from './GameBoardRecentEventsPanel';
 import GameBoardReconnectAlert from './GameBoardReconnectAlert';
+import GameBoardResetDialog from './GameBoardResetDialog';
 import GameBoardRoomStatus from './GameBoardRoomStatus';
 import GameBoardSavedSessionPrompt from './GameBoardSavedSessionPrompt';
 import GameBoardTurnPanel from './GameBoardTurnPanel';
@@ -201,6 +202,27 @@ describe('GameBoard extracted UI components', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     fireEvent.click(screen.getByRole('button', { name: 'Yes, Undo' }));
+
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders reset game dialog and wires cancel/confirm actions', () => {
+    const onCancel = vi.fn();
+    const onConfirm = vi.fn();
+
+    render(
+      <GameBoardResetDialog
+        onCancel={onCancel}
+        onConfirm={onConfirm}
+      />
+    );
+
+    expect(screen.getByRole('dialog', { name: 'Reset Game' })).toBeInTheDocument();
+    expect(screen.getByText('Are you sure you want to reset the game to its initial state? All cards will return to their starting decks.')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, Reset' }));
 
     expect(onCancel).toHaveBeenCalledTimes(1);
     expect(onConfirm).toHaveBeenCalledTimes(1);
