@@ -409,6 +409,32 @@ describe('GameBoard', () => {
     );
   });
 
+  it('opens the undo turn dialog and confirms undo', async () => {
+    const handleUndoTurn = vi.fn();
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      handleUndoTurn,
+      lastGameState: initialState,
+      canUndoTurn: initialState,
+      gameState: createGameState([], {
+        gameStatus: 'playing',
+        turnPlayer: 'guest',
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    fireEvent.click(screen.getByRole('button', { name: '↺ UNDO LAST END TURN' }));
+
+    expect(await screen.findByRole('dialog', { name: 'Undo Last End Turn' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, Undo' }));
+
+    await waitFor(() => {
+      expect(handleUndoTurn).toHaveBeenCalledTimes(1);
+      expect(screen.queryByRole('dialog', { name: 'Undo Last End Turn' })).not.toBeInTheDocument();
+    });
+  });
+
   it('opens the saved deck picker, filters saved decks, and imports the selected deck', async () => {
     saveDeck({
       name: 'Alpha Deck',

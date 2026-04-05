@@ -8,6 +8,7 @@ import GameBoardReconnectAlert from './GameBoardReconnectAlert';
 import GameBoardRoomStatus from './GameBoardRoomStatus';
 import GameBoardSavedSessionPrompt from './GameBoardSavedSessionPrompt';
 import GameBoardTurnPanel from './GameBoardTurnPanel';
+import GameBoardUndoTurnDialog from './GameBoardUndoTurnDialog';
 
 describe('GameBoard extracted UI components', () => {
   it('renders room status in multiplayer and wires copy action', () => {
@@ -182,5 +183,26 @@ describe('GameBoard extracted UI components', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(
       'Reconnecting to host. Actions are temporarily locked until the latest state is synced.'
     );
+  });
+
+  it('renders undo turn dialog and wires cancel/confirm actions', () => {
+    const onCancel = vi.fn();
+    const onConfirm = vi.fn();
+
+    render(
+      <GameBoardUndoTurnDialog
+        onCancel={onCancel}
+        onConfirm={onConfirm}
+      />
+    );
+
+    expect(screen.getByRole('dialog', { name: 'Undo Last End Turn' })).toBeInTheDocument();
+    expect(screen.getByText('This will rewind the board state to just before you ended your turn. Do you want to proceed?')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, Undo' }));
+
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(onConfirm).toHaveBeenCalledTimes(1);
   });
 });
