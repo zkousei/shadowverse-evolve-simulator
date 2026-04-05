@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import GameBoardAttackLineOverlay from './GameBoardAttackLineOverlay';
 import GameBoardAttackModeBanner from './GameBoardAttackModeBanner';
 import GameBoardCardInspector from './GameBoardCardInspector';
+import GameBoardDialogsHost from './GameBoardDialogsHost';
 import GameBoardCoinMessageOverlay from './GameBoardCoinMessageOverlay';
 import GameBoardDiceOverlay from './GameBoardDiceOverlay';
 import GameBoardEvolveAutoAttachDialog from './GameBoardEvolveAutoAttachDialog';
@@ -293,6 +294,90 @@ describe('GameBoard extracted UI components', () => {
     expect(screen.getByText('Revealed Cards')).toBeInTheDocument();
     expect(screen.getByText('1 card revealed')).toBeInTheDocument();
     expect(screen.getAllByRole('status').some((element) => element.textContent?.includes('6'))).toBe(true);
+  });
+
+  it('renders dialogs host with saved deck picker and evolve attach dialog', () => {
+    render(
+      <GameBoardDialogsHost
+        savedDeckPicker={{
+          targetLabel: 'Player 1',
+          savedDeckSearch: '',
+          filteredSavedDeckOptions: [],
+          onBackdropClick: vi.fn(),
+          onClose: vi.fn(),
+          onSearchChange: vi.fn(),
+          onLoadDeck: vi.fn(),
+        }}
+        evolveAutoAttach={{
+          selection: {
+            sourceCard: {
+              id: 'source-1',
+              cardId: 'TEST-EVO',
+              name: 'Evolved Knight',
+              image: '/evo.png',
+              zone: 'field-host',
+              owner: 'host',
+              isTapped: false,
+              isFlipped: false,
+              counters: { atk: 0, hp: 0 },
+              genericCounter: 0,
+              baseCardType: 'follower',
+              cardKindNormalized: 'follower',
+            },
+            candidateCards: [
+              {
+                id: 'candidate-1',
+                cardId: 'TEST-001',
+                name: 'Alpha Knight',
+                image: '/alpha.png',
+                zone: 'field-host',
+                owner: 'host',
+                isTapped: false,
+                isFlipped: false,
+                counters: { atk: 0, hp: 0 },
+                genericCounter: 0,
+                baseCardType: 'follower',
+                cardKindNormalized: 'follower',
+              },
+            ],
+          },
+          cardDetailLookup: {
+            'TEST-001': {
+              id: 'TEST-001',
+              name: 'Alpha Knight',
+              image: '/alpha.png',
+              className: 'Royal',
+              title: 'Hero Tale',
+              type: 'Follower',
+              subtype: 'Soldier',
+              cost: '2',
+              atk: 2,
+              hp: 2,
+              abilityText: '[Fanfare] Test ability.',
+            },
+            'TEST-EVO': {
+              id: 'TEST-EVO',
+              name: 'Evolved Knight',
+              image: '/evo.png',
+              className: 'Royal',
+              title: 'Hero Tale',
+              type: 'Follower',
+              subtype: 'Soldier',
+              cost: '4',
+              atk: 4,
+              hp: 4,
+              abilityText: '',
+            },
+          },
+          onBackdropClick: vi.fn(),
+          onCancel: vi.fn(),
+          onConfirm: vi.fn(),
+        }}
+      />
+    );
+
+    expect(screen.getByTestId('saved-deck-picker-backdrop')).toBeInTheDocument();
+    expect(screen.getByTestId('evolve-auto-attach-backdrop')).toBeInTheDocument();
   });
 
   it('renders recent events in order', () => {

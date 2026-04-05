@@ -6,6 +6,7 @@ import type { CardInspectAnchor, CardInstance } from '../components/Card';
 import CardSearchModal from '../components/CardSearchModal';
 import GameBoardAttackModeBanner from '../components/GameBoardAttackModeBanner';
 import GameBoardCardInspector from '../components/GameBoardCardInspector';
+import GameBoardDialogsHost from '../components/GameBoardDialogsHost';
 import GameBoardGlobalOverlays from '../components/GameBoardGlobalOverlays';
 import GameBoardLeaderZone from '../components/GameBoardLeaderZone';
 import GameBoardPreparationControls from '../components/GameBoardPreparationControls';
@@ -14,12 +15,10 @@ import GameBoardPlayingControls from '../components/GameBoardPlayingControls';
 import GameBoardPlayerTracker from '../components/GameBoardPlayerTracker';
 import GameBoardRecentEventsPanel from '../components/GameBoardRecentEventsPanel';
 import GameBoardReadOnlyStatusPanel from '../components/GameBoardReadOnlyStatusPanel';
-import GameBoardEvolveAutoAttachDialog from '../components/GameBoardEvolveAutoAttachDialog';
 import GameBoardEndTurnButton from '../components/GameBoardEndTurnButton';
 import GameBoardReconnectAlert from '../components/GameBoardReconnectAlert';
 import GameBoardResetDialog from '../components/GameBoardResetDialog';
 import GameBoardRoomStatus from '../components/GameBoardRoomStatus';
-import GameBoardSavedDeckPickerDialog from '../components/GameBoardSavedDeckPickerDialog';
 import GameBoardSavedSessionPrompt from '../components/GameBoardSavedSessionPrompt';
 import GameBoardTopNDialog from '../components/GameBoardTopNDialog';
 import GameBoardTokenSpawnDialog from '../components/GameBoardTokenSpawnDialog';
@@ -595,10 +594,10 @@ const GameBoard: React.FC = () => {
     );
   };
 
-  const renderSavedDeckPicker = () => {
+  const savedDeckPickerTargetLabel = React.useMemo(() => {
     if (!savedDeckImportTargetRole) return null;
 
-    const targetLabel = getPlayerLabel(
+    return getPlayerLabel(
       savedDeckImportTargetRole,
       isSoloMode,
       t('common.labels.self'),
@@ -607,42 +606,7 @@ const GameBoard: React.FC = () => {
       t('common.labels.player1'),
       t('common.labels.player2')
     );
-
-    return (
-      <GameBoardSavedDeckPickerDialog
-        targetLabel={targetLabel}
-        savedDeckSearch={savedDeckSearch}
-        filteredSavedDeckOptions={filteredSavedDeckOptions}
-        onBackdropClick={(event) => {
-          if (!shouldDismissModalOnBackdropClick(event.target, event.currentTarget)) return;
-
-          closeSavedDeckPicker();
-        }}
-        onClose={closeSavedDeckPicker}
-        onSearchChange={setSavedDeckSearch}
-        onLoadDeck={handleSavedDeckImport}
-      />
-    );
-  };
-
-  const renderEvolveAutoAttachModal = () => {
-    if (!evolveAutoAttachSelection) return null;
-
-    return (
-      <GameBoardEvolveAutoAttachDialog
-        sourceCard={evolveAutoAttachSelection.sourceCard}
-        candidateCards={evolveAutoAttachSelection.candidateCards}
-        cardDetailLookup={cardDetailLookup}
-        onBackdropClick={(event) => {
-          if (!shouldDismissModalOnBackdropClick(event.target, event.currentTarget)) return;
-
-          cancelEvolveAutoAttachSelection();
-        }}
-        onCancel={cancelEvolveAutoAttachSelection}
-        onConfirm={confirmEvolveAutoAttachSelection}
-      />
-    );
-  };
+  }, [savedDeckImportTargetRole, isSoloMode, role, t]);
 
   return (
     <DndContext onDragEnd={(event) => {
@@ -1343,8 +1307,6 @@ const GameBoard: React.FC = () => {
         />
       )}
 
-      {renderEvolveAutoAttachModal()}
-
       {isTopNInputOpen && (
         <GameBoardTopNDialog
           value={topNValue}
@@ -1386,7 +1348,38 @@ const GameBoard: React.FC = () => {
         />
       )}
 
-      {renderSavedDeckPicker()}
+      <GameBoardDialogsHost
+        savedDeckPicker={
+          savedDeckImportTargetRole && savedDeckPickerTargetLabel
+            ? {
+                targetLabel: savedDeckPickerTargetLabel,
+                savedDeckSearch,
+                filteredSavedDeckOptions,
+                onBackdropClick: (event) => {
+                  if (!shouldDismissModalOnBackdropClick(event.target, event.currentTarget)) return;
+                  closeSavedDeckPicker();
+                },
+                onClose: closeSavedDeckPicker,
+                onSearchChange: setSavedDeckSearch,
+                onLoadDeck: handleSavedDeckImport,
+              }
+            : null
+        }
+        evolveAutoAttach={
+          evolveAutoAttachSelection
+            ? {
+                selection: evolveAutoAttachSelection,
+                cardDetailLookup,
+                onBackdropClick: (event) => {
+                  if (!shouldDismissModalOnBackdropClick(event.target, event.currentTarget)) return;
+                  cancelEvolveAutoAttachSelection();
+                },
+                onCancel: cancelEvolveAutoAttachSelection,
+                onConfirm: confirmEvolveAutoAttachSelection,
+              }
+            : null
+        }
+      />
       {renderCardInspector()}
     </DndContext>
   );
