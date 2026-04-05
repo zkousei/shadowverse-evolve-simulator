@@ -9,6 +9,7 @@ import GameBoardDiceOverlay from './GameBoardDiceOverlay';
 import GameBoardEvolveAutoAttachDialog from './GameBoardEvolveAutoAttachDialog';
 import GameBoardEndTurnButton from './GameBoardEndTurnButton';
 import GameBoardPreparationPanel from './GameBoardPreparationPanel';
+import GameBoardReadOnlyStatusPanel from './GameBoardReadOnlyStatusPanel';
 import GameBoardRecentEventsPanel from './GameBoardRecentEventsPanel';
 import GameBoardReconnectAlert from './GameBoardReconnectAlert';
 import GameBoardRevealedCardsOverlay from './GameBoardRevealedCardsOverlay';
@@ -261,6 +262,27 @@ describe('GameBoard extracted UI components', () => {
 
     expect(screen.getByRole('button', { name: 'End Player 1 Turn' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'End Player 1 Turn' })).toHaveAttribute('title', 'Available during your turn only.');
+  });
+
+  it('renders read-only status panel values', () => {
+    render(
+      <GameBoardReadOnlyStatusPanel
+        label="Opponent"
+        hp={18}
+        pp={3}
+        maxPp={5}
+        ep={2}
+        sep={1}
+        combo={4}
+      />
+    );
+
+    expect(screen.getByText('Opponent Status')).toBeInTheDocument();
+    expect(screen.getByText((_, node) => node?.textContent === '3 / 5')).toBeInTheDocument();
+    expect(screen.getByText('18')).toBeInTheDocument();
+    expect(screen.getByText('2')).toBeInTheDocument();
+    expect(screen.getByText('1')).toBeInTheDocument();
+    expect(screen.getByText('4')).toBeInTheDocument();
   });
 
   it('renders attack line overlay with source and target coordinates', () => {

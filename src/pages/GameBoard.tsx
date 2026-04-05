@@ -10,6 +10,7 @@ import GameBoardCardInspector from '../components/GameBoardCardInspector';
 import GameBoardCoinMessageOverlay from '../components/GameBoardCoinMessageOverlay';
 import GameBoardPreparationPanel from '../components/GameBoardPreparationPanel';
 import GameBoardRecentEventsPanel from '../components/GameBoardRecentEventsPanel';
+import GameBoardReadOnlyStatusPanel from '../components/GameBoardReadOnlyStatusPanel';
 import GameBoardDiceOverlay from '../components/GameBoardDiceOverlay';
 import GameBoardEvolveAutoAttachDialog from '../components/GameBoardEvolveAutoAttachDialog';
 import GameBoardEndTurnButton from '../components/GameBoardEndTurnButton';
@@ -695,41 +696,15 @@ const GameBoard: React.FC = () => {
   );
 
   const renderReadOnlyStatusPanel = (playerRole: PlayerRole, label: string) => (
-    <div style={{
-      width: '100%',
-      boxSizing: 'border-box',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '0.55rem',
-      padding: '0.9rem 1rem',
-      background: 'rgba(0, 0, 0, 0.55)',
-      borderRadius: 'var(--radius-md)',
-      border: '1px solid rgba(255,255,255,0.12)'
-    }}>
-      <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#fff' }}>
-        {t('gameBoard.board.statusLabel', { label })}
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', fontSize: '0.95rem' }}>
-        <span>{t('gameBoard.board.stats.hp')}</span>
-        <strong style={{ color: '#ef4444' }}>{gameState[playerRole].hp}</strong>
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', fontSize: '0.95rem' }}>
-        <span>PP</span>
-        <strong><span style={{ color: '#3b82f6' }}>{gameState[playerRole].pp}</span> / {gameState[playerRole].maxPp}</strong>
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', fontSize: '0.95rem' }}>
-        <span>{t('gameBoard.board.stats.ep')}</span>
-        <strong style={{ color: '#fbbf24' }}>{gameState[playerRole].ep}</strong>
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', fontSize: '0.95rem' }}>
-        <span>{t('gameBoard.board.stats.sep')}</span>
-        <strong style={{ color: '#facc15' }}>{gameState[playerRole].sep}</strong>
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', fontSize: '0.95rem' }}>
-        <span>{t('gameBoard.board.stats.combo')}</span>
-        <strong>{gameState[playerRole].combo}</strong>
-      </div>
-    </div>
+    <GameBoardReadOnlyStatusPanel
+      label={label}
+      hp={gameState[playerRole].hp}
+      pp={gameState[playerRole].pp}
+      maxPp={gameState[playerRole].maxPp}
+      ep={gameState[playerRole].ep}
+      sep={gameState[playerRole].sep}
+      combo={gameState[playerRole].combo}
+    />
   );
 
   const renderEndTurnButton = (playerRole: PlayerRole, label: string, background: string) => {
