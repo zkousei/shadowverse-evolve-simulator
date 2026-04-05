@@ -6,6 +6,7 @@ import GameBoardAttackModeBanner from './GameBoardAttackModeBanner';
 import GameBoardCardInspector from './GameBoardCardInspector';
 import GameBoardCoinMessageOverlay from './GameBoardCoinMessageOverlay';
 import GameBoardDiceOverlay from './GameBoardDiceOverlay';
+import GameBoardEvolveAutoAttachDialog from './GameBoardEvolveAutoAttachDialog';
 import GameBoardPreparationPanel from './GameBoardPreparationPanel';
 import GameBoardRecentEventsPanel from './GameBoardRecentEventsPanel';
 import GameBoardReconnectAlert from './GameBoardReconnectAlert';
@@ -520,5 +521,87 @@ describe('GameBoard extracted UI components', () => {
     expect(onCountChange).toHaveBeenCalledWith('TOKEN-001', -1);
     expect(onCancel).toHaveBeenCalledTimes(1);
     expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders evolve auto attach dialog and wires cancel, confirm, and backdrop', () => {
+    const onBackdropClick = vi.fn();
+    const onCancel = vi.fn();
+    const onConfirm = vi.fn();
+
+    render(
+      <GameBoardEvolveAutoAttachDialog
+        sourceCard={{
+          id: 'evolve-1',
+          cardId: 'EVOLVE-001',
+          name: 'Evolved Alpha',
+          image: '/evolve.png',
+          zone: 'evolveDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+          genericCounter: 0,
+          baseCardType: 'follower',
+          cardKindNormalized: 'evolve',
+          isEvolveCard: true,
+        }}
+        candidateCards={[
+          {
+            id: 'candidate-1',
+            cardId: 'TEST-001',
+            name: 'Alpha Knight',
+            image: '/alpha.png',
+            zone: 'field-host',
+            owner: 'host',
+            isTapped: false,
+            isFlipped: false,
+            counters: { atk: 0, hp: 0 },
+            genericCounter: 0,
+            baseCardType: 'follower',
+            cardKindNormalized: 'follower',
+          },
+        ]}
+        cardDetailLookup={{
+          'EVOLVE-001': {
+            id: 'EVOLVE-001',
+            name: 'Evolved Alpha',
+            image: '/evolve.png',
+            className: 'Royal',
+            title: 'Hero Tale',
+            type: 'Follower',
+            subtype: 'Evolve',
+            cost: '4',
+            atk: 4,
+            hp: 4,
+            abilityText: '',
+          },
+          'TEST-001': {
+            id: 'TEST-001',
+            name: 'Alpha Knight',
+            image: '/alpha.png',
+            className: 'Royal',
+            title: 'Hero Tale',
+            type: 'Follower',
+            subtype: 'Soldier',
+            cost: '2',
+            atk: 2,
+            hp: 2,
+            abilityText: '',
+          },
+        }}
+        onBackdropClick={onBackdropClick}
+        onCancel={onCancel}
+        onConfirm={onConfirm}
+      />
+    );
+
+    expect(screen.getByRole('dialog', { name: 'Choose Target Card' })).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('evolve-auto-attach-backdrop'));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    fireEvent.click(screen.getByRole('button', { name: /Alpha Knight.*TEST-001/ }));
+
+    expect(onBackdropClick).toHaveBeenCalledTimes(1);
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(onConfirm).toHaveBeenCalledWith('candidate-1');
   });
 });

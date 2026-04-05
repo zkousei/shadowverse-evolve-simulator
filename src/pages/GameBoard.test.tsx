@@ -540,6 +540,75 @@ describe('GameBoard', () => {
     });
   });
 
+  it('shows the evolve auto attach dialog and wires cancel and confirm actions', async () => {
+    const confirmEvolveAutoAttachSelection = vi.fn();
+    const cancelEvolveAutoAttachSelection = vi.fn();
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      evolveAutoAttachSelection: {
+        actor: 'host',
+        sourceCard: makeCard({
+          id: 'evolve-1',
+          cardId: 'EVOLVE-001',
+          name: 'Evolved Alpha',
+          image: '/evolve.png',
+          zone: 'evolveDeck-host',
+          isEvolveCard: true,
+          cardKindNormalized: 'evolve',
+        }),
+        candidateCards: [
+          makeCard({
+            id: 'candidate-1',
+            cardId: 'TEST-001',
+            name: 'Alpha Knight',
+            zone: 'field-host',
+          }),
+        ],
+        placement: 'attach',
+      } as ReturnType<typeof useGameBoardLogic>['evolveAutoAttachSelection'],
+      confirmEvolveAutoAttachSelection,
+      cancelEvolveAutoAttachSelection,
+      cardDetailLookup: {
+        'EVOLVE-001': {
+          id: 'EVOLVE-001',
+          name: 'Evolved Alpha',
+          image: '/evolve.png',
+          className: 'Royal',
+          title: 'Hero Tale',
+          type: 'Follower',
+          subtype: 'Evolve',
+          cost: '4',
+          atk: 4,
+          hp: 4,
+          abilityText: '',
+        },
+        'TEST-001': {
+          id: 'TEST-001',
+          name: 'Alpha Knight',
+          image: '/alpha.png',
+          className: 'Royal',
+          title: 'Hero Tale',
+          type: 'Follower',
+          subtype: 'Soldier',
+          cost: '2',
+          atk: 2,
+          hp: 2,
+          abilityText: '',
+        },
+      },
+    }));
+
+    render(<GameBoard />);
+
+    expect(await screen.findByRole('dialog', { name: 'Choose Target Card' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    fireEvent.click(screen.getByRole('button', { name: /Alpha Knight.*TEST-001/ }));
+
+    expect(cancelEvolveAutoAttachSelection).toHaveBeenCalledTimes(1);
+    expect(confirmEvolveAutoAttachSelection).toHaveBeenCalledWith('candidate-1');
+  });
+
   it('shows the turn panel while playing and updates the phase', () => {
     const setPhase = vi.fn();
 
