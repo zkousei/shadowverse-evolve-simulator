@@ -11,6 +11,7 @@ import GameBoardReconnectAlert from './GameBoardReconnectAlert';
 import GameBoardRevealedCardsOverlay from './GameBoardRevealedCardsOverlay';
 import GameBoardResetDialog from './GameBoardResetDialog';
 import GameBoardRoomStatus from './GameBoardRoomStatus';
+import GameBoardSavedDeckPickerDialog from './GameBoardSavedDeckPickerDialog';
 import GameBoardSavedSessionPrompt from './GameBoardSavedSessionPrompt';
 import GameBoardTopNDialog from './GameBoardTopNDialog';
 import GameBoardTokenSpawnDialog from './GameBoardTokenSpawnDialog';
@@ -307,6 +308,64 @@ describe('GameBoard extracted UI components', () => {
 
     expect(onCancel).toHaveBeenCalledTimes(1);
     expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders saved deck picker dialog and wires close, search, load, and backdrop', () => {
+    const onBackdropClick = vi.fn();
+    const onClose = vi.fn();
+    const onSearchChange = vi.fn();
+    const onLoadDeck = vi.fn();
+    const option = {
+      deck: {
+        id: 'deck-1',
+        name: 'Alpha Deck',
+        savedAt: '2026-04-05T00:00:00.000Z',
+        deckState: {
+          mainDeck: [],
+          evolveDeck: [],
+          leaderCards: [],
+          tokenDeck: [],
+        },
+        ruleConfig: {
+          format: 'other',
+          identityType: 'class',
+          selectedClass: null,
+          selectedTitle: null,
+          selectedClasses: [null, null],
+        },
+      },
+      summary: 'Royal / Hero Tale',
+      counts: 'Main 40 / Evolve 10 / Leader 1',
+      deckData: {
+        mainDeck: [],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [],
+      },
+    };
+
+    render(
+      <GameBoardSavedDeckPickerDialog
+        targetLabel="My"
+        savedDeckSearch="alpha"
+        filteredSavedDeckOptions={[option]}
+        onBackdropClick={onBackdropClick}
+        onClose={onClose}
+        onSearchChange={onSearchChange}
+        onLoadDeck={onLoadDeck}
+      />
+    );
+
+    expect(screen.getByRole('dialog', { name: 'Load from My Decks' })).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('saved-deck-picker-backdrop'));
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search saved decks' }), { target: { value: 'beta' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Load' }));
+
+    expect(onBackdropClick).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(onSearchChange).toHaveBeenCalledWith('beta');
+    expect(onLoadDeck).toHaveBeenCalledWith(option);
   });
 
   it('renders reset game dialog and wires cancel/confirm actions', () => {
