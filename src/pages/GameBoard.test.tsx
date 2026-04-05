@@ -654,6 +654,29 @@ describe('GameBoard', () => {
     expect(endTurn).toHaveBeenCalledWith('host');
   });
 
+  it('updates solo player tracker stats from the tracker controls', () => {
+    const handleStatChange = vi.fn();
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      mode: 'solo',
+      isSoloMode: true,
+      isHost: true,
+      role: 'host',
+      handleStatChange,
+      gameState: createGameState([], {
+        gameStatus: 'playing',
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    fireEvent.click(screen.getByTestId('player-tracker-host-hp-increase'));
+    fireEvent.click(screen.getByTestId('player-tracker-host-pp-decrease'));
+
+    expect(handleStatChange).toHaveBeenCalledWith('host', 'hp', 1);
+    expect(handleStatChange).toHaveBeenCalledWith('host', 'pp', -1);
+  });
+
   it('shows the reconnecting alert when guest actions are locked', () => {
     mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
       isHost: false,

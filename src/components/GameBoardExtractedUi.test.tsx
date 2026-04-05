@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import GameBoardAttackLineOverlay from './GameBoardAttackLineOverlay';
 import GameBoardAttackModeBanner from './GameBoardAttackModeBanner';
@@ -9,6 +9,7 @@ import GameBoardDiceOverlay from './GameBoardDiceOverlay';
 import GameBoardEvolveAutoAttachDialog from './GameBoardEvolveAutoAttachDialog';
 import GameBoardEndTurnButton from './GameBoardEndTurnButton';
 import GameBoardPreparationPanel from './GameBoardPreparationPanel';
+import GameBoardPlayerTracker from './GameBoardPlayerTracker';
 import GameBoardReadOnlyStatusPanel from './GameBoardReadOnlyStatusPanel';
 import GameBoardRecentEventsPanel from './GameBoardRecentEventsPanel';
 import GameBoardReconnectAlert from './GameBoardReconnectAlert';
@@ -283,6 +284,38 @@ describe('GameBoard extracted UI components', () => {
     expect(screen.getByText('2')).toBeInTheDocument();
     expect(screen.getByText('1')).toBeInTheDocument();
     expect(screen.getByText('4')).toBeInTheDocument();
+  });
+
+  it('renders player tracker values and wires stat adjustments', () => {
+    const onAdjustStat = vi.fn();
+
+    render(
+      <GameBoardPlayerTracker
+        testId="player-tracker-host"
+        label="Player 1"
+        hp={20}
+        ep={3}
+        sep={1}
+        combo={0}
+        pp={2}
+        maxPp={5}
+        onAdjustStat={onAdjustStat}
+      />
+    );
+
+    const tracker = screen.getByTestId('player-tracker-host');
+    expect(within(tracker).getByText('Player 1 Status')).toBeInTheDocument();
+    expect(tracker).toHaveTextContent('2/5');
+
+    fireEvent.click(screen.getByTestId('player-tracker-host-hp-increase'));
+    fireEvent.click(screen.getByTestId('player-tracker-host-ep-decrease'));
+    fireEvent.click(screen.getByTestId('player-tracker-host-maxPp-increase'));
+    fireEvent.click(screen.getByTestId('player-tracker-host-pp-decrease'));
+
+    expect(onAdjustStat).toHaveBeenCalledWith('hp', 1);
+    expect(onAdjustStat).toHaveBeenCalledWith('ep', -1);
+    expect(onAdjustStat).toHaveBeenCalledWith('maxPp', 1);
+    expect(onAdjustStat).toHaveBeenCalledWith('pp', -1);
   });
 
   it('renders attack line overlay with source and target coordinates', () => {
