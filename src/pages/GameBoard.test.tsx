@@ -480,6 +480,66 @@ describe('GameBoard', () => {
     expect(container.querySelector('svg line')).not.toBeNull();
   });
 
+  it('opens the token spawn dialog, updates the count, and generates tokens', async () => {
+    const spawnTokens = vi.fn();
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      gameState: createGameState([], {
+        gameStatus: 'playing',
+      }),
+      spawnTokens,
+      getTokenOptions: vi.fn(() => ([
+        {
+          cardId: 'TOKEN-001',
+          name: 'Knight Token',
+          image: '/token.png',
+          baseCardType: 'follower',
+        },
+      ])),
+      cardDetailLookup: {
+        'TOKEN-001': {
+          id: 'TOKEN-001',
+          name: 'Knight Token',
+          image: '/token.png',
+          className: 'Royal',
+          title: 'Hero Tale',
+          type: 'Follower',
+          subtype: 'Token',
+          cost: '1',
+          atk: 1,
+          hp: 1,
+          abilityText: '',
+        },
+      },
+    }));
+
+    render(<GameBoard />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Spawn My Token' }));
+
+    const dialog = await screen.findByRole('dialog', { name: 'Generate Tokens' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Increase Knight Token count' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Generate' }));
+
+    expect(spawnTokens).toHaveBeenCalledWith(
+      'host',
+      [{
+        tokenOption: {
+          cardId: 'TOKEN-001',
+          name: 'Knight Token',
+          image: '/token.png',
+          baseCardType: 'follower',
+        },
+        count: 1,
+      }],
+      'ex'
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Generate Tokens' })).not.toBeInTheDocument();
+    });
+  });
+
   it('shows the turn panel while playing and updates the phase', () => {
     const setPhase = vi.fn();
 

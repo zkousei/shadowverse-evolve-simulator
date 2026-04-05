@@ -13,6 +13,7 @@ import GameBoardResetDialog from './GameBoardResetDialog';
 import GameBoardRoomStatus from './GameBoardRoomStatus';
 import GameBoardSavedSessionPrompt from './GameBoardSavedSessionPrompt';
 import GameBoardTopNDialog from './GameBoardTopNDialog';
+import GameBoardTokenSpawnDialog from './GameBoardTokenSpawnDialog';
 import GameBoardTransientMessage from './GameBoardTransientMessage';
 import GameBoardTurnPanel from './GameBoardTurnPanel';
 
@@ -349,6 +350,61 @@ describe('GameBoard extracted UI components', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Look' }));
 
     expect(onValueChange).toHaveBeenCalledWith(5);
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders token spawn dialog and wires destination, count, cancel, and confirm', () => {
+    const onDestinationChange = vi.fn();
+    const onCountChange = vi.fn();
+    const onCancel = vi.fn();
+    const onConfirm = vi.fn();
+
+    render(
+      <GameBoardTokenSpawnDialog
+        tokenSpawnOptions={[
+          {
+            cardId: 'TOKEN-001',
+            name: 'Knight Token',
+            image: '/token.png',
+            baseCardType: 'follower',
+          },
+        ]}
+        tokenSpawnCounts={{ 'TOKEN-001': 1 }}
+        tokenSpawnDestination="ex"
+        totalTokenSpawnCount={1}
+        cardDetailLookup={{
+          'TOKEN-001': {
+            id: 'TOKEN-001',
+            name: 'Knight Token',
+            image: '/token.png',
+            className: 'Royal',
+            title: 'Hero Tale',
+            type: 'Follower',
+            subtype: 'Token',
+            cost: '1',
+            atk: 1,
+            hp: 1,
+            abilityText: '',
+          },
+        }}
+        onDestinationChange={onDestinationChange}
+        onCountChange={onCountChange}
+        onCancel={onCancel}
+        onConfirm={onConfirm}
+      />
+    );
+
+    expect(screen.getByRole('dialog', { name: 'Generate Tokens' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Field' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Increase Knight Token count' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Decrease Knight Token count' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Generate' }));
+
+    expect(onDestinationChange).toHaveBeenCalledWith('field');
+    expect(onCountChange).toHaveBeenCalledWith('TOKEN-001', 1);
+    expect(onCountChange).toHaveBeenCalledWith('TOKEN-001', -1);
     expect(onCancel).toHaveBeenCalledTimes(1);
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });
