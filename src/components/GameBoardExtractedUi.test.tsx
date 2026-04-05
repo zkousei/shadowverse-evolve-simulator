@@ -28,6 +28,7 @@ import GameBoardTopNDialog from './GameBoardTopNDialog';
 import GameBoardTokenSpawnDialog from './GameBoardTokenSpawnDialog';
 import GameBoardTransientMessage from './GameBoardTransientMessage';
 import GameBoardTurnPanel from './GameBoardTurnPanel';
+import GameBoardZoneSearchButton from './GameBoardZoneSearchButton';
 import GameBoardZoneActionsMenu from './GameBoardZoneActionsMenu';
 
 vi.mock('./CardArtwork', () => ({
@@ -152,6 +153,28 @@ describe('GameBoard extracted UI components', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
     expect(onCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders zone search button and wires click action', () => {
+    const onClick = vi.fn();
+
+    render(
+      <GameBoardZoneSearchButton
+        label="Search"
+        onClick={onClick}
+        title="Unavailable"
+        isInteractive={false}
+      />
+    );
+
+    const button = screen.getByRole('button', { name: 'Search' });
+
+    expect(button).toHaveAttribute('title', 'Unavailable');
+    expect(button).toHaveStyle({ cursor: 'not-allowed' });
+
+    fireEvent.click(button);
+
+    expect(onClick).toHaveBeenCalledTimes(1);
   });
 
   it('renders preparation panel and toggles reveal hands mode', () => {

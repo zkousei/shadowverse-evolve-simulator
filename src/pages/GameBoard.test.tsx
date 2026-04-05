@@ -818,6 +818,29 @@ describe('GameBoard', () => {
     });
   });
 
+  it('opens cemetery search from the opponent board', () => {
+    const setSearchZone = vi.fn();
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      gameState: createGameState([]),
+      setSearchZone,
+    }));
+
+    render(<GameBoard />);
+
+    const cemeteryZone = screen.getByTestId('zone-cemetery-guest');
+    const cemeteryPanel = cemeteryZone.parentElement;
+
+    expect(cemeteryPanel).not.toBeNull();
+
+    fireEvent.click(within(cemeteryPanel as HTMLElement).getByRole('button', { name: 'Search' }));
+
+    expect(setSearchZone).toHaveBeenCalledWith({
+      id: 'cemetery-guest',
+      title: 'Opponent Cemetery',
+    });
+  });
+
   it('shows the reconnecting alert when guest actions are locked', () => {
     mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
       isHost: false,
