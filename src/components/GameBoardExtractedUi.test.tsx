@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import GameBoardAttackLineOverlay from './GameBoardAttackLineOverlay';
 import GameBoardAttackModeBanner from './GameBoardAttackModeBanner';
+import GameBoardCardInspector from './GameBoardCardInspector';
 import GameBoardCoinMessageOverlay from './GameBoardCoinMessageOverlay';
 import GameBoardDiceOverlay from './GameBoardDiceOverlay';
 import GameBoardPreparationPanel from './GameBoardPreparationPanel';
@@ -177,6 +178,59 @@ describe('GameBoard extracted UI components', () => {
     render(<GameBoardCoinMessageOverlay message="Host goes first!" />);
 
     expect(screen.getByRole('status')).toHaveTextContent('Host goes first!');
+  });
+
+  it('renders card inspector and wires close action', () => {
+    const onClose = vi.fn();
+
+    render(
+      <GameBoardCardInspector
+        selectedInspectorCard={{
+          id: 'card-1',
+          cardId: 'TEST-001',
+          name: 'Alpha Knight',
+          image: '/alpha.png',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+          genericCounter: 0,
+          baseCardType: 'follower',
+          cardKindNormalized: 'follower',
+        }}
+        selectedInspectorDetail={{
+          id: 'TEST-001',
+          name: 'Alpha Knight',
+          image: '/alpha-detail.png',
+          className: 'Royal',
+          title: 'Hero Tale',
+          type: 'Follower',
+          subtype: 'Soldier',
+          cost: '2',
+          atk: 2,
+          hp: 2,
+          abilityText: '[Fanfare] Test ability.',
+        }}
+        inspectorPresentation={{
+          primaryMeta: 'Royal / Hero Tale',
+          secondaryMeta: 'Follower / Soldier',
+          stats: '2 / 2',
+        }}
+        inspectorPopoverStyle={{ position: 'fixed', top: 40, left: 40 }}
+        onClose={onClose}
+      />
+    );
+
+    expect(screen.getByTestId('card-inspector')).toBeInTheDocument();
+    expect(screen.getByText('Alpha Knight')).toBeInTheDocument();
+    expect(screen.getByText('Royal / Hero Tale')).toBeInTheDocument();
+    expect(screen.getByText('Follower / Soldier')).toBeInTheDocument();
+    expect(screen.getByText('2 / 2')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('renders attack line overlay with source and target coordinates', () => {
