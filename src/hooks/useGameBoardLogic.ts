@@ -1197,6 +1197,45 @@ export const useGameBoardLogic = () => {
     }
   }, [clearSnapshotRequestTimer, isHost, maybeApplySnapshot, playIncomingSharedUiEffects, resetTransientUiState]);
 
+  const handleIncomingConnectionData = useCallback((
+    conn: DataConnection,
+    token: string,
+    rawData: unknown
+  ) => {
+    if (activeConnectionTokenRef.current !== token) return;
+    const data = rawData as SyncMessage;
+
+    if (data.type === 'EVENT') {
+      handleIncomingEvent(data);
+      return;
+    }
+
+    if (data.type === 'REQUEST_SNAPSHOT') {
+      handleIncomingSnapshotRequest(data, conn);
+      return;
+    }
+
+    if (data.type === 'SHARED_UI_EFFECT') {
+      playIncomingSharedUiEffects(data);
+      return;
+    }
+
+    if (data.type === 'WAITING_FOR_HOST_SESSION') {
+      handleIncomingWaitingForHostSession();
+      return;
+    }
+
+    if (data.type === 'STATE_SNAPSHOT') {
+      handleIncomingSnapshot(data);
+    }
+  }, [
+    handleIncomingEvent,
+    handleIncomingSnapshot,
+    handleIncomingSnapshotRequest,
+    handleIncomingWaitingForHostSession,
+    playIncomingSharedUiEffects,
+  ]);
+
   const clearActiveConnectionLifecycleState = useCallback(() => {
     connRef.current = null;
     activeConnectionTokenRef.current = null;
@@ -1222,6 +1261,26 @@ export const useGameBoardLogic = () => {
     scheduleReconnect(terminationDecision.statusKey);
   }, [clearActiveConnectionLifecycleState, isHost, scheduleReconnect]);
 
+  const handleConnectionOpen = useCallback((conn: DataConnection, token: string) => {
+    if (activeConnectionTokenRef.current !== token) return;
+    setConnectionState('connected');
+
+    const openDecision = getConnectionOpenDecision({ isHost });
+    setStatusKey(openDecision.statusKey);
+
+    if (openDecision.type === 'host') {
+      return;
+    }
+
+    if (openDecision.shouldAwaitInitialSnapshot) {
+      awaitingInitialSnapshotRef.current = true;
+    }
+
+    if (openDecision.shouldRequestSnapshot) {
+      requestSnapshotWithRetry(conn, token);
+    }
+  }, [isHost, requestSnapshotWithRetry]);
+
   const setupConnection = useCallback((conn: DataConnection) => {
     const token = uuid();
     activeConnectionTokenRef.current = token;
@@ -1239,46 +1298,10 @@ export const useGameBoardLogic = () => {
     clearPendingSnapshotMessage();
     connRef.current = conn;
     conn.on('open', () => {
-      if (activeConnectionTokenRef.current !== token) return;
-      setConnectionState('connected');
-
-      const openDecision = getConnectionOpenDecision({ isHost });
-      setStatusKey(openDecision.statusKey);
-
-      if (openDecision.type === 'host') {
-        return;
-      }
-
-      if (openDecision.shouldAwaitInitialSnapshot) {
-        awaitingInitialSnapshotRef.current = true;
-      }
-
-      if (openDecision.shouldRequestSnapshot) {
-        requestSnapshotWithRetry(conn, token);
-      }
+      handleConnectionOpen(conn, token);
     });
     conn.on('data', (rawData: unknown) => {
-      if (activeConnectionTokenRef.current !== token) return;
-      const data = rawData as SyncMessage;
-      if (data.type === 'EVENT') {
-        handleIncomingEvent(data);
-        return;
-      }
-      if (data.type === 'REQUEST_SNAPSHOT') {
-        handleIncomingSnapshotRequest(data, conn);
-        return;
-      }
-      if (data.type === 'SHARED_UI_EFFECT') {
-        playIncomingSharedUiEffects(data);
-        return;
-      }
-      if (data.type === 'WAITING_FOR_HOST_SESSION') {
-        handleIncomingWaitingForHostSession();
-        return;
-      }
-      if (data.type === 'STATE_SNAPSHOT') {
-        handleIncomingSnapshot(data);
-      }
+      handleIncomingConnectionData(conn, token, rawData);
     });
     conn.on('close', () => {
       if (activeConnectionTokenRef.current !== token) return;
@@ -1288,7 +1311,7 @@ export const useGameBoardLogic = () => {
       if (activeConnectionTokenRef.current !== token) return;
       handleConnectionTermination('error');
     });
-  }, [clearPendingSnapshotMessage, clearReconnectTimer, clearSnapshotRequestTimer, handleConnectionTermination, handleIncomingEvent, handleIncomingSnapshot, handleIncomingSnapshotRequest, handleIncomingWaitingForHostSession, isHost, playIncomingSharedUiEffects, requestSnapshotWithRetry, role]);
+  }, [clearPendingSnapshotMessage, clearReconnectTimer, clearSnapshotRequestTimer, handleConnectionOpen, handleConnectionTermination, handleIncomingConnectionData, role]);
 
   useEffect(() => {
     setupConnectionRef.current = setupConnection;
