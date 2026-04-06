@@ -40,13 +40,14 @@ import {
 import { getConnectionOpenDecision } from '../utils/gameBoardConnectionOpen';
 import { getConnectionTerminationDecision } from '../utils/gameBoardConnectionTermination';
 import { getIncomingEventDecision } from '../utils/gameBoardIncomingEvent';
+import { getIncomingSnapshotHandling } from '../utils/gameBoardIncomingSnapshot';
+import { getIncomingSharedUiEffects } from '../utils/gameBoardIncomingSharedUiEffects';
 import { getPeerOpenDecision } from '../utils/gameBoardPeerOpen';
 import { getPeerIncomingConnectionDecision } from '../utils/gameBoardPeerIncomingConnection';
 import { getPeerTerminationDecision } from '../utils/gameBoardPeerTermination';
-import { getSnapshotPostProcessingDecision } from '../utils/gameBoardSnapshotPostProcessing';
+import { getSnapshotApplicationDecision } from '../utils/gameBoardSnapshotApplication';
 import { getSnapshotRequestDecision } from '../utils/gameBoardSnapshotRequest';
 import { getWaitingForHostSessionDecision } from '../utils/gameBoardWaitingForHostSession';
-import { shouldApplyIncomingSnapshot } from '../utils/gameBoardSnapshotAcceptance';
 import { getSnapshotRetryTimeoutDecision } from '../utils/gameBoardSnapshotRetry';
 import { mergeQueuedSnapshotMessage } from '../utils/gameBoardSnapshotQueue';
 import {
@@ -742,21 +743,19 @@ export const useGameBoardLogic = () => {
   }, [clearAttackMessageTimer, clearCoinMessageTimer, clearDiceTimers, clearRevealedCardsTimer, isSoloMode, pushEventHistory, role, showTimedCardPlayMessage, showTimedCoinMessage]);
 
   const maybeApplySnapshot = useCallback((incomingState: SyncState, source: PlayerRole) => {
-    const currentState = gameStateRef.current;
-
-    const shouldApply = shouldApplyIncomingSnapshot({
-      currentState,
+    const snapshotDecision = getSnapshotApplicationDecision({
+      currentState: gameStateRef.current,
       incomingState,
       source,
       isHost,
       isAwaitingInitialSnapshot: awaitingInitialSnapshotRef.current,
     });
 
-    if (!shouldApply) {
+    if (!snapshotDecision.shouldApply) {
       return;
     }
 
-    if (!isHost && source === 'host' && awaitingInitialSnapshotRef.current) {
+    if (snapshotDecision.shouldClearAwaitingInitialSnapshot) {
       awaitingInitialSnapshotRef.current = false;
     }
 
@@ -1201,7 +1200,9 @@ export const useGameBoardLogic = () => {
         return;
       }
       if (data.type === 'SHARED_UI_EFFECT') {
-        playSharedUiEffect(data.effect);
+        for (const effect of getIncomingSharedUiEffects(data)) {
+          playSharedUiEffect(effect);
+        }
         return;
       }
       if (data.type === 'WAITING_FOR_HOST_SESSION') {
@@ -1214,25 +1215,22 @@ export const useGameBoardLogic = () => {
         return;
       }
       if (data.type === 'STATE_SNAPSHOT') {
-        clearSnapshotRequestTimer();
-        maybeApplySnapshot(data.state, data.source);
-        // Play any SharedUiEffects that were piggybacked onto this snapshot.
-        if (data.pendingEffects) {
-          for (const effect of data.pendingEffects) {
-            playSharedUiEffect(effect);
-          }
-        }
-        const snapshotPostProcessing = getSnapshotPostProcessingDecision({
+        const snapshotHandling = getIncomingSnapshotHandling({
           isHost,
-          source: data.source,
+          message: data,
         });
 
-        if (snapshotPostProcessing.type === 'guest-ready') {
+        clearSnapshotRequestTimer();
+        maybeApplySnapshot(snapshotHandling.state, snapshotHandling.source);
+        for (const effect of snapshotHandling.sharedUiEffects) {
+          playSharedUiEffect(effect);
+        }
+        if (snapshotHandling.postProcessing.type === 'guest-ready') {
           // Do NOT clear undo state on every snapshot. Only clear things like
           // search overlays or mulligan modals if the revision jumped significantly,
           // or if the game status changed.
-          resetTransientUiState(!snapshotPostProcessing.preserveUndoState);
-          setStatusKey(snapshotPostProcessing.statusKey);
+          resetTransientUiState(!snapshotHandling.postProcessing.preserveUndoState);
+          setStatusKey(snapshotHandling.postProcessing.statusKey);
         }
       }
     });
