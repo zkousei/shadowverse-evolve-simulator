@@ -9,6 +9,7 @@ import GameBoardCoinMessageOverlay from './GameBoardCoinMessageOverlay';
 import GameBoardDiceOverlay from './GameBoardDiceOverlay';
 import GameBoardEvolveAutoAttachDialog from './GameBoardEvolveAutoAttachDialog';
 import GameBoardEndTurnButton from './GameBoardEndTurnButton';
+import GameBoardEndTurnSection from './GameBoardEndTurnSection';
 import GameBoardGlobalOverlays from './GameBoardGlobalOverlays';
 import GameBoardLeaderZone from './GameBoardLeaderZone';
 import GameBoardLeaderZoneSection from './GameBoardLeaderZoneSection';
@@ -787,6 +788,27 @@ describe('GameBoard extracted UI components', () => {
 
     expect(searchAction).toHaveBeenCalledTimes(1);
     expect(onActiveMenuChange).toHaveBeenCalledWith(null);
+  });
+
+  it('renders end turn section and delegates end turn for the active player', () => {
+    const onEndTurn = vi.fn();
+
+    render(
+      <GameBoardEndTurnSection
+        playerRole="host"
+        label="Player 1"
+        background="#f59e0b"
+        turnPlayer="host"
+        gameStatus="playing"
+        canInteract={true}
+        disabledTitle="Blocked"
+        onEndTurn={onEndTurn}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'End Player 1 Turn' }));
+
+    expect(onEndTurn).toHaveBeenCalledWith('host');
   });
 
   it('renders leader zone and wires the search button', () => {
