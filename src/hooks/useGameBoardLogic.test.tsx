@@ -1379,6 +1379,17 @@ describe('useGameBoardLogic P2P reconnect', () => {
     expect(window.sessionStorage.getItem('sv-evolve:host-session:ROOM123')).toBeNull();
   });
 
+  it('destroys the peer on unmount', () => {
+    const { unmount } = renderHarness('/game?host=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    expect(peer.destroy).not.toHaveBeenCalled();
+
+    unmount();
+
+    expect(peer.destroy).toHaveBeenCalledTimes(1);
+  });
+
   it('persists a meaningful host board after a local game change', () => {
     renderHarness('/game?host=true&room=ROOM123');
 

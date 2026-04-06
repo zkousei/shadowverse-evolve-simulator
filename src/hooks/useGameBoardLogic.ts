@@ -49,7 +49,7 @@ import { getSnapshotApplicationDecision } from '../utils/gameBoardSnapshotApplic
 import { getSnapshotRequestDecision } from '../utils/gameBoardSnapshotRequest';
 import { getWaitingForHostSessionDecision } from '../utils/gameBoardWaitingForHostSession';
 import { getSnapshotRetryTimeoutDecision } from '../utils/gameBoardSnapshotRetry';
-import { mergeQueuedSnapshotMessage } from '../utils/gameBoardSnapshotQueue';
+import { mergeQueuedSnapshotMessage, shouldDeferSnapshotMessageSend } from '../utils/gameBoardSnapshotQueue';
 import {
   mergeLookTopSummaryIntoOverlay,
   prependAttackHistoryEntry,
@@ -255,14 +255,6 @@ export const useGameBoardLogic = () => {
     clearSnapshotFlushTimer();
   }, [clearSnapshotFlushTimer]);
 
-  const shouldDeferSnapshotSend = useCallback((conn: DataConnection | null): boolean => {
-    if (!conn?.open) return false;
-    const bufferedMessageCount = 'bufferSize' in conn && typeof conn.bufferSize === 'number'
-      ? conn.bufferSize
-      : 0;
-    return bufferedMessageCount > 0 || (conn.dataChannel?.bufferedAmount ?? 0) > 0;
-  }, []);
-
   const sendImmediate = useCallback((message: SyncMessage) => {
     if (!connRef.current?.open) return;
     connRef.current.send(message);
@@ -280,7 +272,7 @@ export const useGameBoardLogic = () => {
     const pendingSnapshot = pendingSnapshotMessageRef.current;
     if (!pendingSnapshot) return;
 
-    if (shouldDeferSnapshotSend(conn)) {
+    if (shouldDeferSnapshotMessageSend(conn)) {
       snapshotFlushTimeoutRef.current = setTimeout(() => {
         snapshotFlushTimeoutRef.current = null;
         flushPendingSnapshotMessage();
@@ -297,7 +289,7 @@ export const useGameBoardLogic = () => {
         flushPendingSnapshotMessage();
       }, SNAPSHOT_FLUSH_INTERVAL_MS);
     }
-  }, [clearSnapshotFlushTimer, sendImmediate, shouldDeferSnapshotSend]);
+  }, [clearSnapshotFlushTimer, sendImmediate]);
 
   const queueOrSendSnapshotMessage = useCallback((message: SnapshotMessage) => {
     const conn = connRef.current;
@@ -316,7 +308,7 @@ export const useGameBoardLogic = () => {
       return;
     }
 
-    if (shouldDeferSnapshotSend(conn)) {
+    if (shouldDeferSnapshotMessageSend(conn)) {
       pendingSnapshotMessageRef.current = message;
       snapshotFlushTimeoutRef.current = setTimeout(() => {
         snapshotFlushTimeoutRef.current = null;
@@ -326,7 +318,7 @@ export const useGameBoardLogic = () => {
     }
 
     sendImmediate(message);
-  }, [flushPendingSnapshotMessage, sendImmediate, shouldDeferSnapshotSend]);
+  }, [flushPendingSnapshotMessage, sendImmediate]);
 
   const sendMessage = useCallback((message: SyncMessage) => {
     if (message.type === 'STATE_SNAPSHOT') {
@@ -1281,8 +1273,7 @@ export const useGameBoardLogic = () => {
     }
   }, [isHost, requestSnapshotWithRetry]);
 
-  const setupConnection = useCallback((conn: DataConnection) => {
-    const token = uuid();
+  const prepareActiveConnection = useCallback((conn: DataConnection, token: string) => {
     activeConnectionTokenRef.current = token;
     clearReconnectTimer();
     clearSnapshotRequestTimer();
@@ -1297,6 +1288,11 @@ export const useGameBoardLogic = () => {
 
     clearPendingSnapshotMessage();
     connRef.current = conn;
+  }, [clearPendingSnapshotMessage, clearReconnectTimer, clearSnapshotRequestTimer]);
+
+  const setupConnection = useCallback((conn: DataConnection) => {
+    const token = uuid();
+    prepareActiveConnection(conn, token);
     conn.on('open', () => {
       handleConnectionOpen(conn, token);
     });
@@ -1311,7 +1307,7 @@ export const useGameBoardLogic = () => {
       if (activeConnectionTokenRef.current !== token) return;
       handleConnectionTermination('error');
     });
-  }, [clearPendingSnapshotMessage, clearReconnectTimer, clearSnapshotRequestTimer, handleConnectionOpen, handleConnectionTermination, handleIncomingConnectionData, role]);
+  }, [handleConnectionOpen, handleConnectionTermination, handleIncomingConnectionData, prepareActiveConnection]);
 
   useEffect(() => {
     setupConnectionRef.current = setupConnection;
@@ -1433,6 +1429,12 @@ export const useGameBoardLogic = () => {
     scheduleReconnect(terminationDecision.statusKey);
   }, [isHost, scheduleReconnect]);
 
+  const cleanupPeerLifecycle = useCallback((peer: Peer) => {
+    clearReconnectTimer();
+    clearActiveConnectionLifecycleState();
+    peer.destroy();
+  }, [clearActiveConnectionLifecycleState, clearReconnectTimer]);
+
   useEffect(() => {
     if (isSoloMode) {
       setStatusKey('gameBoard.status.soloMode');
@@ -1457,15 +1459,9 @@ export const useGameBoardLogic = () => {
     });
 
     return () => {
-      clearPendingSnapshotMessage();
-      clearReconnectTimer();
-      clearSnapshotRequestTimer();
-      awaitingInitialSnapshotRef.current = false;
-      activeConnectionTokenRef.current = null;
-      connRef.current = null;
-      peer.destroy();
+      cleanupPeerLifecycle(peer);
     };
-  }, [clearPendingSnapshotMessage, clearReconnectTimer, clearSnapshotRequestTimer, handlePeerIncomingConnection, handlePeerOpen, handlePeerTermination, room, isHost, isSoloMode]); // gameState を除外して接続ループを防ぐ
+  }, [cleanupPeerLifecycle, handlePeerIncomingConnection, handlePeerOpen, handlePeerTermination, room, isHost, isSoloMode]); // gameState を除外して接続ループを防ぐ
 
   useEffect(() => {
     if (!isDebug) return;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { SyncMessage } from '../types/sync';
 import { initialState } from '../types/game';
-import { mergeQueuedSnapshotMessage } from './gameBoardSnapshotQueue';
+import { mergeQueuedSnapshotMessage, shouldDeferSnapshotMessageSend } from './gameBoardSnapshotQueue';
 
 type SnapshotMessage = Extract<SyncMessage, { type: 'STATE_SNAPSHOT' }>;
 
@@ -45,5 +45,25 @@ describe('mergeQueuedSnapshotMessage', () => {
     );
 
     expect(merged.pendingEffects).toEqual([]);
+  });
+});
+
+describe('shouldDeferSnapshotMessageSend', () => {
+  it('does not defer when there is no open connection', () => {
+    expect(shouldDeferSnapshotMessageSend(null)).toBe(false);
+    expect(shouldDeferSnapshotMessageSend({ open: false, bufferSize: 2 })).toBe(false);
+  });
+
+  it('defers while PeerJS or data-channel buffers are non-empty', () => {
+    expect(shouldDeferSnapshotMessageSend({ open: true, bufferSize: 1 })).toBe(true);
+    expect(shouldDeferSnapshotMessageSend({ open: true, dataChannel: { bufferedAmount: 1 } })).toBe(true);
+  });
+
+  it('sends immediately when the open connection has no buffered data', () => {
+    expect(shouldDeferSnapshotMessageSend({
+      open: true,
+      bufferSize: 0,
+      dataChannel: { bufferedAmount: 0 },
+    })).toBe(false);
   });
 });
