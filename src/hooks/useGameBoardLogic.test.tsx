@@ -1331,6 +1331,7 @@ describe('useGameBoardLogic P2P reconnect', () => {
       type: 'WAITING_FOR_HOST_SESSION',
       source: 'host',
     });
+    expect(screen.getByTestId('status')).toHaveTextContent('Guest connected. Choose whether to resume the saved session.');
   });
 
   it('keeps host-side turn undo available after ending the turn', () => {

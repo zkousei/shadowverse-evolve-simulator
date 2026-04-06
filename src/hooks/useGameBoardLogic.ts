@@ -41,6 +41,7 @@ import { getConnectionOpenDecision } from '../utils/gameBoardConnectionOpen';
 import { getConnectionTerminationDecision } from '../utils/gameBoardConnectionTermination';
 import { getPeerOpenDecision } from '../utils/gameBoardPeerOpen';
 import { getPeerTerminationDecision } from '../utils/gameBoardPeerTermination';
+import { getSnapshotRequestDecision } from '../utils/gameBoardSnapshotRequest';
 import { shouldApplyIncomingSnapshot } from '../utils/gameBoardSnapshotAcceptance';
 import { getSnapshotRetryTimeoutDecision } from '../utils/gameBoardSnapshotRetry';
 import { mergeQueuedSnapshotMessage } from '../utils/gameBoardSnapshotQueue';
@@ -1175,14 +1176,20 @@ export const useGameBoardLogic = () => {
         return;
       }
       if (data.type === 'REQUEST_SNAPSHOT') {
-        if (isHost) {
-          if (savedSessionCandidateRef.current) {
-            // While the host is deciding whether to resume a saved session,
-            // guests should wait instead of reconnect-looping.
-            setStatusKey('gameBoard.status.guestConnectedChooseResume');
-            conn.send(buildWaitingForHostSessionMessage());
-            return;
-          }
+        const snapshotRequestDecision = getSnapshotRequestDecision({
+          isHost,
+          hasSavedSessionCandidate: Boolean(savedSessionCandidateRef.current),
+        });
+
+        if (snapshotRequestDecision.type === 'wait-for-host-session') {
+          // While the host is deciding whether to resume a saved session,
+          // guests should wait instead of reconnect-looping.
+          setStatusKey(snapshotRequestDecision.statusKey);
+          conn.send(buildWaitingForHostSessionMessage());
+          return;
+        }
+
+        if (snapshotRequestDecision.type === 'send-snapshot') {
           sendMessage(buildSnapshotSyncMessage(gameStateRef.current, 'host', cardDetailLookupRef.current));
         }
         return;
