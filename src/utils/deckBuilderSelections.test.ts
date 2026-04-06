@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { DeckBuilderCardData } from '../models/deckBuilderCard';
-import { createDefaultDeckRuleConfig } from '../models/deckRule';
+import { createDefaultDeckRuleConfig, type DeckRuleConfig } from '../models/deckRule';
 import { serializeDeckState, type SavedDeckRecordV1 } from './deckStorage';
 import {
   addSubtypeTagSelection,
@@ -66,7 +66,7 @@ const createSavedDeckRecord = (
     leaderCards: DeckBuilderCardData[];
     tokenDeck: DeckBuilderCardData[];
   },
-  ruleConfig = otherRuleConfig
+  ruleConfig: DeckRuleConfig = otherRuleConfig
 ): SavedDeckRecordV1 => ({
   schemaVersion: 1,
   id,

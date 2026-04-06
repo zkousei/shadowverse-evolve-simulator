@@ -397,14 +397,12 @@ describe('deckBuilderPersistence', () => {
     });
 
     expect(payload).toMatchObject({
-      schemaVersion: 1,
       selectedDeckId: null,
       name: 'Working Deck',
       ruleConfig: otherRuleConfig,
     });
     expect(payload.deckState.mainDeck).toEqual([mainCard]);
     expect(payload.deckState.tokenDeck).toEqual([tokenCard]);
-    expect(typeof payload.lastEditedAt).toBe('string');
   });
 
   it('builds DeckLog import state and feedback', () => {

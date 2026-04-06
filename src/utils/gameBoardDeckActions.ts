@@ -9,7 +9,6 @@ export type ImportableDeckCard = {
   deck_section?: string;
   card_kind_normalized?: string;
   type?: string;
-  [key: string]: unknown;
 };
 
 export type ImportableDeckData = {

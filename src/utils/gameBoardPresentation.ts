@@ -1,3 +1,5 @@
+import type { CSSProperties } from 'react';
+
 export type GameBoardConnectionState =
   | 'idle'
   | 'connecting'
@@ -96,7 +98,7 @@ export const filterSavedDeckOptionsBySearch = <T extends { deck: { name: string 
 export const getInspectorPopoverStyle = (
   anchor: InspectorAnchor,
   viewport: ViewportSize
-) => {
+): CSSProperties => {
   let left = anchor.right + INSPECTOR_POPOVER_GAP;
   if (left + INSPECTOR_POPOVER_WIDTH > viewport.width - INSPECTOR_VIEWPORT_PADDING) {
     left = anchor.left - INSPECTOR_POPOVER_WIDTH - INSPECTOR_POPOVER_GAP;

@@ -4,7 +4,7 @@ import { buildGameBoardCatalogResources } from './gameBoardCatalog';
 
 describe('buildGameBoardCatalogResources', () => {
   it('builds lookup tables and resolver inputs from card catalog data', () => {
-    const cards = [
+    const cards: DeckBuilderCardData[] = [
       {
         id: 'main-follower',
         name: 'Main Follower',
@@ -12,7 +12,7 @@ describe('buildGameBoardCatalogResources', () => {
         image: '/main.png',
         deck_section: 'main',
         card_kind_normalized: 'follower',
-        card_type: 'Follower',
+        type: 'Follower',
         atk: '3',
         hp: '2',
       },
@@ -22,9 +22,9 @@ describe('buildGameBoardCatalogResources', () => {
         title: 'Test Title',
         image: '/evolve.png',
         deck_section: 'evolve',
-        card_kind_normalized: 'follower',
-        card_type: 'Follower',
-        evolves_from: ['main-follower'],
+        card_kind_normalized: 'evolve_follower',
+        type: 'Follower',
+        related_cards: [{ id: 'main-follower', name: 'Main Follower' }],
       },
       {
         id: 'field-link',
@@ -33,7 +33,7 @@ describe('buildGameBoardCatalogResources', () => {
         image: '/field-link.png',
         deck_section: 'evolve',
         card_kind_normalized: 'evolve_spell',
-        card_type: 'Spell',
+        type: 'Spell',
       },
       {
         id: 'token-equipment',
@@ -42,9 +42,9 @@ describe('buildGameBoardCatalogResources', () => {
         image: '/token-equipment.png',
         deck_section: 'token',
         card_kind_normalized: 'token_equipment',
-        card_type: 'Amulet',
+        type: 'Amulet',
       },
-    ] as DeckBuilderCardData[];
+    ];
 
     const resources = buildGameBoardCatalogResources(cards);
 

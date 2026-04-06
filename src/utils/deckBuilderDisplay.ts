@@ -18,6 +18,11 @@ type Point = {
   y: number;
 };
 
+export type DeckHoverPreviewPosition = {
+  left: number;
+  top: number;
+};
+
 type ViewportSize = {
   width: number;
   height: number;
@@ -87,7 +92,7 @@ export const resolveDeckName = (value: string): string => value.trim() || DEFAUL
 export const getDeckHoverPreviewPosition = (
   hoverPos: Point,
   viewport: ViewportSize
-): Point => ({
+): DeckHoverPreviewPosition => ({
   left: Math.max(
     DECK_HOVER_PREVIEW_VIEWPORT_PADDING,
     Math.min(

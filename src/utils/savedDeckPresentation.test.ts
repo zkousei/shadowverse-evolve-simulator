@@ -67,7 +67,7 @@ describe('savedDeckPresentation', () => {
       ruleConfig: {
         format: 'constructed',
         identityType: 'class',
-        selectedClass: 'Royal',
+        selectedClass: 'ロイヤル',
         selectedTitle: null,
         selectedClasses: [null, null],
       },
@@ -82,7 +82,7 @@ describe('savedDeckPresentation', () => {
       },
     });
 
-    expect(formatSavedDeckRuleSummary(selectedDeck, t)).toBe('Constructed Class: Royal');
+    expect(formatSavedDeckRuleSummary(selectedDeck, t)).toBe('Constructed Class: ロイヤル');
     expect(formatSavedDeckRuleSummary(unselectedDeck, t)).toBe('Constructed Class: Unselected');
   });
 
@@ -93,11 +93,11 @@ describe('savedDeckPresentation', () => {
         identityType: 'class',
         selectedClass: null,
         selectedTitle: null,
-        selectedClasses: ['Royal', 'Witch'],
+        selectedClasses: ['ロイヤル', 'ウィッチ'],
       },
     });
 
-    expect(formatSavedDeckRuleSummary(crossoverDeck, t)).toBe('Crossover: Royal / Witch');
+    expect(formatSavedDeckRuleSummary(crossoverDeck, t)).toBe('Crossover: ロイヤル / ウィッチ');
     expect(formatSavedDeckRuleSummary(createDeck(), t)).toBe('Other');
   });
 

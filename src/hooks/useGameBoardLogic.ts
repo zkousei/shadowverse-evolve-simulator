@@ -1159,7 +1159,7 @@ export const useGameBoardLogic = () => {
     }
   }, [applyAuthoritativeEvent, isHost]);
 
-  const handleIncomingSnapshotRequest = useCallback((message: Extract<SyncMessage, { type: 'REQUEST_SNAPSHOT' }>, conn: DataConnection) => {
+  const handleIncomingSnapshotRequest = useCallback((_message: Extract<SyncMessage, { type: 'REQUEST_SNAPSHOT' }>, conn: DataConnection) => {
     const snapshotRequestDecision = getSnapshotRequestDecision({
       isHost,
       hasSavedSessionCandidate: Boolean(savedSessionCandidateRef.current),

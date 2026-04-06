@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { initialState } from '../types/game';
 import { getIncomingSnapshotHandling } from './gameBoardIncomingSnapshot';
 
 describe('getIncomingSnapshotHandling', () => {
@@ -9,14 +10,8 @@ describe('getIncomingSnapshotHandling', () => {
         type: 'STATE_SNAPSHOT',
         source: 'host',
         state: {
-          host: { hp: 20, pp: 0, maxPp: 0, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
-          guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
-          cards: [],
-          turnPlayer: 'host',
-          turnCount: 1,
-          phase: 'Start',
+          ...initialState,
           gameStatus: 'playing',
-          tokenOptions: { host: [], guest: [] },
           revision: 1,
         },
         pendingEffects: [{ type: 'SEARCHED_CARD_TO_HAND', actor: 'host' }],
@@ -42,14 +37,7 @@ describe('getIncomingSnapshotHandling', () => {
         type: 'STATE_SNAPSHOT',
         source: 'guest',
         state: {
-          host: { hp: 20, pp: 0, maxPp: 0, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
-          guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
-          cards: [],
-          turnPlayer: 'host',
-          turnCount: 1,
-          phase: 'Start',
-          gameStatus: 'preparing',
-          tokenOptions: { host: [], guest: [] },
+          ...initialState,
           revision: 1,
         },
       },

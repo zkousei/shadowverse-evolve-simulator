@@ -31,7 +31,7 @@ describe('deckBuilderFilters', () => {
       search: 'beta',
       costFilter: '2',
       expansionFilter: 'BP02',
-      classFilter: 'Witch',
+      classFilter: 'ウィッチ',
       cardTypeFilter: 'spell',
       rarityFilter: 'GR',
       productNameFilter: 'Booster Pack 2',
@@ -56,7 +56,7 @@ describe('deckBuilderFilters', () => {
     const currentState: DeckBuilderLibraryFilterState = {
       ...buildDefaultDeckBuilderLibraryFilterState(),
       search: 'alpha',
-      classFilter: 'Royal',
+      classFilter: 'ロイヤル',
       page: 4,
     };
 

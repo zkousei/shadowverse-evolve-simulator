@@ -91,6 +91,13 @@ export type DeckBuilderTrackingStatePatch = Partial<Pick<
   'selectedSavedDeckId' | 'savedBaselineSnapshot' | 'draftRestored' | 'pendingDraftRestore'
 >>;
 
+type DraftPersistencePayload = {
+  selectedDeckId: string | null;
+  name: string;
+  ruleConfig: DeckRuleConfig;
+  deckState: DeckState;
+};
+
 export type DraftPersistenceAction = 'skip' | 'clear' | 'save';
 
 export const buildDeckBuilderSaveState = (
@@ -143,16 +150,17 @@ export const buildDraftPersistencePayload = (
   deckName: string,
   ruleConfig: DeckRuleConfig,
   deckState: DeckState
-): DeckBuilderDraftV1 => ({
-  schemaVersion: 1,
+): DraftPersistencePayload => ({
   selectedDeckId,
-  lastEditedAt: new Date().toISOString(),
   name: resolveDeckName(deckName),
   ruleConfig,
   deckState,
 });
 
-export const buildDetachedDeckBuilderTrackingState = (): DeckBuilderTrackingStatePatch => ({
+export const buildDetachedDeckBuilderTrackingState = (): Pick<
+  DeckBuilderSessionState,
+  'selectedSavedDeckId' | 'savedBaselineSnapshot' | 'draftRestored' | 'pendingDraftRestore'
+> => ({
   selectedSavedDeckId: null,
   savedBaselineSnapshot: null,
   draftRestored: false,

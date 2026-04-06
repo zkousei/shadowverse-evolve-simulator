@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import GameBoard from './GameBoard';
 import { useGameBoardLogic } from '../hooks/useGameBoardLogic';
 import { saveDeck } from '../utils/deckStorage';
-import { initialState, type SyncState } from '../types/game';
+import { initialState, type SyncState, type TokenOption } from '../types/game';
 import type { CardInspectAnchor, CardInstance } from '../components/Card';
 import type { DeckBuilderCardData } from '../models/deckBuilderCard';
 import type { DeckState } from '../models/deckState';
@@ -567,7 +567,7 @@ describe('GameBoard', () => {
         gameStatus: 'playing',
       }),
       spawnTokens,
-      getTokenOptions: vi.fn(() => ([
+      getTokenOptions: vi.fn((): TokenOption[] => ([
         {
           cardId: 'TOKEN-001',
           name: 'Knight Token',
@@ -643,7 +643,7 @@ describe('GameBoard', () => {
             zone: 'field-host',
           }),
         ],
-        placement: 'attach',
+        placement: 'stack',
       } as ReturnType<typeof useGameBoardLogic>['evolveAutoAttachSelection'],
       confirmEvolveAutoAttachSelection,
       cancelEvolveAutoAttachSelection,
@@ -964,7 +964,7 @@ describe('GameBoard', () => {
     mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
       handleUndoTurn,
       lastGameState: initialState,
-      canUndoTurn: initialState,
+      canUndoTurn: true,
       gameState: createGameState([], {
         gameStatus: 'playing',
         turnPlayer: 'guest',

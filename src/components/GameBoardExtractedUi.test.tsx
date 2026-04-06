@@ -1,4 +1,3 @@
-import React from 'react';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import GameBoardAttackLineOverlay from './GameBoardAttackLineOverlay';
@@ -263,7 +262,7 @@ describe('GameBoard extracted UI components', () => {
             isFlipped: false,
             counters: { atk: 0, hp: 0 },
             genericCounter: 0,
-            baseCardType: 'leader',
+            baseCardType: null,
             cardKindNormalized: 'leader',
             isLeaderCard: true,
           },
@@ -278,7 +277,7 @@ describe('GameBoard extracted UI components', () => {
             isFlipped: false,
             counters: { atk: 0, hp: 0 },
             genericCounter: 0,
-            baseCardType: 'leader',
+            baseCardType: null,
             cardKindNormalized: 'leader',
             isLeaderCard: true,
           },
@@ -468,6 +467,15 @@ describe('GameBoard extracted UI components', () => {
             id: 'TEST-001',
             name: 'Alpha Knight',
             image: '/alpha.png',
+            className: 'ロイヤル',
+            title: 'Hero Tale',
+            type: 'フォロワー',
+            subtype: '兵士',
+            cardKindNormalized: 'follower',
+            cost: '2',
+            atk: 2,
+            hp: 2,
+            abilityText: '',
           },
         }}
         isRollingDice={true}
@@ -1091,21 +1099,23 @@ describe('GameBoard extracted UI components', () => {
     const onLoadDeck = vi.fn();
     const option = {
       deck: {
+        schemaVersion: 1 as const,
         id: 'deck-1',
         name: 'Alpha Deck',
-        savedAt: '2026-04-05T00:00:00.000Z',
-        deckState: {
-          mainDeck: [],
-          evolveDeck: [],
-          leaderCards: [],
-          tokenDeck: [],
-        },
+        createdAt: '2026-04-04T00:00:00.000Z',
+        updatedAt: '2026-04-05T00:00:00.000Z',
         ruleConfig: {
-          format: 'other',
-          identityType: 'class',
+          format: 'other' as const,
+          identityType: 'class' as const,
           selectedClass: null,
           selectedTitle: null,
-          selectedClasses: [null, null],
+          selectedClasses: [null, null] as [null, null],
+        },
+        sections: {
+          main: [],
+          evolve: [],
+          leader: [],
+          token: [],
         },
       },
       summary: 'Royal / Hero Tale',

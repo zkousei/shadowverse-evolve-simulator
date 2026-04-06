@@ -1,16 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { getSnapshotApplicationDecision } from './gameBoardSnapshotApplication';
-import type { SyncState } from '../types/game';
+import { initialState, type SyncState } from '../types/game';
 
 const buildState = (revision: number): SyncState => ({
-  host: { hp: 20, pp: 0, maxPp: 0, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
-  guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
-  cards: [],
-  turnPlayer: 'host',
-  turnCount: 1,
-  phase: 'Start',
-  gameStatus: 'preparing',
-  tokenOptions: { host: [], guest: [] },
+  ...initialState,
   revision,
 });
 
