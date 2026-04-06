@@ -54,6 +54,10 @@ import { buildDebugGameBoardState } from '../utils/gameBoardDebugState';
 import { getCanUndoMove, getCanUndoTurn } from '../utils/gameBoardUndoAvailability';
 import { getTurnMessageDecision } from '../utils/gameBoardTurnMessage';
 import {
+  buildGameBoardEvolveAutoAttachSelection,
+  type PendingGameBoardEvolveAutoAttachSelection,
+} from '../utils/gameBoardEvolveAutoAttachSelection';
+import {
   mergeLookTopSummaryIntoOverlay,
   prependAttackHistoryEntry,
   prependEventHistoryEntry,
@@ -109,11 +113,6 @@ const RECONNECT_DELAY_MS = 1000;
 type SnapshotMessage = Extract<SyncMessage, { type: 'STATE_SNAPSHOT' }>;
 type GameBoardStatusKey = `gameBoard.status.${string}`;
 
-type PendingEvolveAutoAttachSelection = {
-  sourceCardId: string;
-  actor: PlayerRole;
-};
-
 const findUnitRootCard = (cards: CardInstance[], card: CardInstance): CardInstance => {
   let rootCard = card;
   const visited = new Set<string>();
@@ -160,6 +159,7 @@ export const useGameBoardLogic = () => {
   const isDebug = searchParams.get('debug') === 'true';
 
   const { t } = useTranslation();
+  const tRef = useRef(t);
   // Keep the status as an i18n key so language switches update the current
   // connection message without waiting for another network event.
   const [statusKey, setStatusKey] = useState<GameBoardStatusKey>('gameBoard.status.initializing');
@@ -193,7 +193,7 @@ export const useGameBoardLogic = () => {
   const [mulliganOrder, setMulliganOrder] = useState<string[]>([]);
   const [isMulliganModalOpen, setIsMulliganModalOpen] = useState(false);
   const [topDeckCards, setTopDeckCards] = useState<CardInstance[]>([]);
-  const [pendingEvolveAutoAttachSelection, setPendingEvolveAutoAttachSelection] = useState<PendingEvolveAutoAttachSelection | null>(null);
+  const [pendingEvolveAutoAttachSelection, setPendingEvolveAutoAttachSelection] = useState<PendingGameBoardEvolveAutoAttachSelection | null>(null);
   const defaultTokenOption = useRef<TokenOption>({
     cardId: 'token',
     name: 'Token',
@@ -236,6 +236,10 @@ export const useGameBoardLogic = () => {
   // Stores the game state immediately before the last card-move action so it
   // can be restored via the undo button.  Only one level of undo is supported.
   const processedEventDeduperRef = useRef(createEventDeduper());
+
+  useEffect(() => {
+    tRef.current = t;
+  }, [t]);
 
   const applyLocalState = useCallback((newState: SyncState) => {
     const guardedCards = CardLogic.applyStateWithGuards(newState.cards);
@@ -510,13 +514,15 @@ export const useGameBoardLogic = () => {
   }, [revealedCardsOverlay]);
 
   const playSharedUiEffect = useCallback((effect: SharedUiEffect) => {
+    const translate = tRef.current;
+
     if (effect.type === 'COIN_FLIP_RESULT') {
-      showTimedCoinMessage(formatSharedUiMessage(effect, role, isSoloMode, t), 3000);
+      showTimedCoinMessage(formatSharedUiMessage(effect, role, isSoloMode, translate), 3000);
       return;
     }
 
     if (effect.type === 'STARTER_DECIDED') {
-      showTimedCoinMessage(formatSharedUiMessage(effect, role, isSoloMode, t), 4000);
+      showTimedCoinMessage(formatSharedUiMessage(effect, role, isSoloMode, translate), 4000);
       return;
     }
 
@@ -525,10 +531,10 @@ export const useGameBoardLogic = () => {
       const pendingSummary = pendingLookTopSummaryLinesRef.current ?? [];
       pendingLookTopSummaryLinesRef.current = null;
       revealTopIsActiveRef.current = true;
-      const actorLabel = getSharedActorLabel(effect.actor, role, isSoloMode, t);
+      const actorLabel = getSharedActorLabel(effect.actor, role, isSoloMode, translate);
       setRevealedCardsOverlay({
         type: 'look-top',
-        title: t('gameBoard.modals.shared.messages.revealLookTop', { actor: actorLabel }),
+        title: translate('gameBoard.modals.shared.messages.revealLookTop', { actor: actorLabel }),
         cards: effect.cards,
         summaryLines: pendingSummary,
       });
@@ -542,8 +548,8 @@ export const useGameBoardLogic = () => {
 
     if (effect.type === 'REVEAL_SEARCHED_CARD_TO_HAND') {
       clearRevealedCardsTimer();
-      const actorLabel = getSharedActorLabel(effect.actor, role, isSoloMode, t);
-      const message = t('gameBoard.modals.shared.messages.revealSearch', { actor: actorLabel });
+      const actorLabel = getSharedActorLabel(effect.actor, role, isSoloMode, translate);
+      const message = translate('gameBoard.modals.shared.messages.revealSearch', { actor: actorLabel });
       const cards = effect.cardIds
         .map((id) => gameStateRef.current.cards.find((card) => card.id === id))
         .filter((card): card is NonNullable<typeof card> => Boolean(card))
@@ -569,7 +575,7 @@ export const useGameBoardLogic = () => {
     }
 
     if (effect.type === 'ATTACK_DECLARED') {
-      const formattedAttack = formatAttackEffect(effect, role, isSoloMode, t);
+      const formattedAttack = formatAttackEffect(effect, role, isSoloMode, translate);
       clearAttackMessageTimer();
       setAttackMessage(formattedAttack.announcement);
       setAttackVisual(effect);
@@ -588,76 +594,76 @@ export const useGameBoardLogic = () => {
     if (effect.type === 'CARD_PLAYED') {
       // Play/Play to Field uses the transient dialog only. Keeping it out of the
       // recent-event log avoids overwhelming the log with routine actions.
-      const message = formatCardPlayedEffect(effect, role, isSoloMode, t);
+      const message = formatCardPlayedEffect(effect, role, isSoloMode, translate);
       showTimedCardPlayMessage(message, 2600);
       return;
     }
 
     if (effect.type === 'RESET_GAME_COMPLETED') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode, t);
+      const message = formatSharedUiMessage(effect, role, isSoloMode, translate);
       showTimedCardPlayMessage(message, 2600);
       return;
     }
 
     if (effect.type === 'SHUFFLE_DECK_COMPLETED') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode, t);
+      const message = formatSharedUiMessage(effect, role, isSoloMode, translate);
       showTimedCardPlayMessage(message, 2600);
       pushEventHistory(message);
       return;
     }
 
     if (effect.type === 'DRAW_CARD_COMPLETED') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode, t);
+      const message = formatSharedUiMessage(effect, role, isSoloMode, translate);
       showTimedCardPlayMessage(message, 2600);
       return;
     }
 
     if (effect.type === 'MILL_CARD_COMPLETED') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode, t);
+      const message = formatSharedUiMessage(effect, role, isSoloMode, translate);
       showTimedCardPlayMessage(message, 2600);
       return;
     }
 
     if (effect.type === 'TOP_CARD_TO_EX_COMPLETED') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode, t);
+      const message = formatSharedUiMessage(effect, role, isSoloMode, translate);
       showTimedCardPlayMessage(message, 2600);
       return;
     }
 
     if (effect.type === 'SEARCHED_CARD_TO_HAND') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode, t);
+      const message = formatSharedUiMessage(effect, role, isSoloMode, translate);
       showTimedCardPlayMessage(message, 2600);
       pushEventHistory(message);
       return;
     }
 
     if (effect.type === 'SEARCHED_CARD_PLACED') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode, t);
+      const message = formatSharedUiMessage(effect, role, isSoloMode, translate);
       showTimedCardPlayMessage(message, 2600);
       return;
     }
 
     if (effect.type === 'CEMETERY_CARD_TO_HAND') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode, t);
+      const message = formatSharedUiMessage(effect, role, isSoloMode, translate);
       showTimedCardPlayMessage(message, 2600);
       pushEventHistory(message);
       return;
     }
 
     if (effect.type === 'CEMETERY_CARD_PLACED') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode, t);
+      const message = formatSharedUiMessage(effect, role, isSoloMode, translate);
       showTimedCardPlayMessage(message, 2600);
       return;
     }
 
     if (effect.type === 'EVOLVE_CARD_PLACED') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode, t);
+      const message = formatSharedUiMessage(effect, role, isSoloMode, translate);
       showTimedCardPlayMessage(message, 2600);
       return;
     }
 
     if (effect.type === 'EVOLVE_USAGE_TOGGLED') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode, t);
+      const message = formatSharedUiMessage(effect, role, isSoloMode, translate);
       showTimedCardPlayMessage(message, 2600);
       if (gameStateRef.current.gameStatus === 'playing') {
         pushEventHistory(message);
@@ -666,20 +672,20 @@ export const useGameBoardLogic = () => {
     }
 
     if (effect.type === 'BANISHED_CARD_TO_HAND') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode, t);
+      const message = formatSharedUiMessage(effect, role, isSoloMode, translate);
       showTimedCardPlayMessage(message, 2600);
       pushEventHistory(message);
       return;
     }
 
     if (effect.type === 'BANISHED_CARD_PLACED') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode, t);
+      const message = formatSharedUiMessage(effect, role, isSoloMode, translate);
       showTimedCardPlayMessage(message, 2600);
       return;
     }
 
     if (effect.type === 'LOOK_TOP_RESOLVED') {
-      const summaryLines = formatSharedUiMessage(effect, role, isSoloMode, t).split('\n').filter(Boolean);
+      const summaryLines = formatSharedUiMessage(effect, role, isSoloMode, translate).split('\n').filter(Boolean);
       pushEventHistory(summaryLines.join('\n'));
       if (revealTopIsActiveRef.current) {
         // When Look Top also reveals cards publicly, keep the summary inside the
@@ -723,7 +729,7 @@ export const useGameBoardLogic = () => {
         diceRollIntervalRef.current = null;
       }
       setDiceValue(effect.value);
-      showTimedCoinMessage(formatSharedUiMessage(effect, role, isSoloMode, t), 3000);
+      showTimedCoinMessage(formatSharedUiMessage(effect, role, isSoloMode, translate), 3000);
       diceMessageTimeoutRef.current = setTimeout(() => {
         setIsRollingDice(false);
         setDiceValue(null);
@@ -1531,25 +1537,11 @@ export const useGameBoardLogic = () => {
   }, [clearAttackUiState, gameState.gameStatus]);
 
   const evolveAutoAttachSelection = React.useMemo(() => {
-    if (!pendingEvolveAutoAttachSelection) return null;
-
-    const resolvedSelection = resolveEvolveAutoAttachSelection(
-      pendingEvolveAutoAttachSelection.sourceCardId,
-      gameState.cards
-    );
-    const sourceCard = resolvedSelection?.sourceCard;
-    if (!sourceCard || sourceCard.zone !== `evolveDeck-${pendingEvolveAutoAttachSelection.actor}`) return null;
-
-    const candidateCards = resolvedSelection?.candidateCards ?? [];
-
-    if (candidateCards.length === 0) return null;
-
-    return {
-      actor: pendingEvolveAutoAttachSelection.actor,
-      sourceCard,
-      candidateCards,
-      placement: resolvedSelection.placement,
-    };
+    return buildGameBoardEvolveAutoAttachSelection({
+      pendingSelection: pendingEvolveAutoAttachSelection,
+      cards: gameState.cards,
+      resolveSelection: resolveEvolveAutoAttachSelection,
+    });
   }, [gameState.cards, pendingEvolveAutoAttachSelection, resolveEvolveAutoAttachSelection]);
 
   useEffect(() => {
