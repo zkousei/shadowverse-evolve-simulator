@@ -38,6 +38,7 @@ import {
   buildWaitingForHostSessionMessage,
 } from '../utils/gameBoardNetworkMessages';
 import { shouldApplyIncomingSnapshot } from '../utils/gameBoardSnapshotAcceptance';
+import { getSnapshotRetryTimeoutDecision } from '../utils/gameBoardSnapshotRetry';
 import { mergeQueuedSnapshotMessage } from '../utils/gameBoardSnapshotQueue';
 import {
   mergeLookTopSummaryIntoOverlay,
@@ -1101,12 +1102,18 @@ export const useGameBoardLogic = () => {
     }
 
     snapshotRequestTimeoutRef.current = setTimeout(() => {
-      if (activeConnectionTokenRef.current !== token || connRef.current !== conn) {
+      const retryDecision = getSnapshotRetryTimeoutDecision({
+        isCurrentConnection: activeConnectionTokenRef.current === token && connRef.current === conn,
+        retryCount: snapshotRetryCountRef.current,
+        maxRetries: MAX_SNAPSHOT_REQUEST_RETRIES,
+      });
+
+      if (retryDecision === 'cancel') {
         clearSnapshotRequestTimer();
         return;
       }
 
-      if (snapshotRetryCountRef.current >= MAX_SNAPSHOT_REQUEST_RETRIES) {
+      if (retryDecision === 'reconnect') {
         clearSnapshotRequestTimer();
         setStatusKey('gameBoard.status.syncTimedOut');
         attemptReconnect();

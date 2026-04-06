@@ -703,6 +703,42 @@ describe('useGameBoardLogic P2P reconnect', () => {
     expect(peer.connect).toHaveBeenCalledTimes(2);
   });
 
+  it('ignores a stale snapshot retry timer after the guest reconnects on a new connection', () => {
+    renderHarness('/game?host=false&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const firstConn = peer.connections[0];
+    act(() => {
+      firstConn.open = true;
+      firstConn.emit('open');
+    });
+
+    act(() => {
+      firstConn.emit('close');
+      vi.advanceTimersByTime(1000);
+    });
+
+    const secondConn = peer.connections[1];
+    act(() => {
+      secondConn.open = true;
+      secondConn.emit('open');
+    });
+
+    const secondConnSendCount = secondConn.send.mock.calls.length;
+
+    act(() => {
+      vi.advanceTimersByTime(2000);
+    });
+
+    expect(peer.connect).toHaveBeenCalledTimes(2);
+    expect(secondConn.send).toHaveBeenCalledTimes(secondConnSendCount + 1);
+    expect(screen.getByTestId('status')).toHaveTextContent('Waiting for host session restore... retrying sync.');
+  });
+
   it('accepts the first snapshot from a new host connection even when the revision goes backwards', () => {
     renderHarness('/game?host=false&room=ROOM123');
 
