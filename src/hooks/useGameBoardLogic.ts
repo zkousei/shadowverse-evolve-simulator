@@ -50,6 +50,9 @@ import { getSnapshotRequestDecision } from '../utils/gameBoardSnapshotRequest';
 import { getWaitingForHostSessionDecision } from '../utils/gameBoardWaitingForHostSession';
 import { getSnapshotRetryTimeoutDecision } from '../utils/gameBoardSnapshotRetry';
 import { mergeQueuedSnapshotMessage, shouldDeferSnapshotMessageSend } from '../utils/gameBoardSnapshotQueue';
+import { buildDebugGameBoardState } from '../utils/gameBoardDebugState';
+import { getCanUndoMove, getCanUndoTurn } from '../utils/gameBoardUndoAvailability';
+import { getTurnMessageDecision } from '../utils/gameBoardTurnMessage';
 import {
   mergeLookTopSummaryIntoOverlay,
   prependAttackHistoryEntry,
@@ -101,6 +104,7 @@ const APP_VERSION = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '0.0
 const SNAPSHOT_REQUEST_TIMEOUT_MS = 2000;
 const MAX_SNAPSHOT_REQUEST_RETRIES = 2;
 const SNAPSHOT_FLUSH_INTERVAL_MS = 50;
+const RECONNECT_DELAY_MS = 1000;
 
 type SnapshotMessage = Extract<SyncMessage, { type: 'STATE_SNAPSHOT' }>;
 type GameBoardStatusKey = `gameBoard.status.${string}`;
@@ -260,6 +264,13 @@ export const useGameBoardLogic = () => {
     connRef.current.send(message);
   }, []);
 
+  const scheduleSnapshotFlush = useCallback((flush: () => void) => {
+    snapshotFlushTimeoutRef.current = setTimeout(() => {
+      snapshotFlushTimeoutRef.current = null;
+      flush();
+    }, SNAPSHOT_FLUSH_INTERVAL_MS);
+  }, []);
+
   const flushPendingSnapshotMessage = useCallback(() => {
     clearSnapshotFlushTimer();
 
@@ -273,10 +284,7 @@ export const useGameBoardLogic = () => {
     if (!pendingSnapshot) return;
 
     if (shouldDeferSnapshotMessageSend(conn)) {
-      snapshotFlushTimeoutRef.current = setTimeout(() => {
-        snapshotFlushTimeoutRef.current = null;
-        flushPendingSnapshotMessage();
-      }, SNAPSHOT_FLUSH_INTERVAL_MS);
+      scheduleSnapshotFlush(flushPendingSnapshotMessage);
       return;
     }
 
@@ -284,12 +292,9 @@ export const useGameBoardLogic = () => {
     sendImmediate(pendingSnapshot);
 
     if (pendingSnapshotMessageRef.current) {
-      snapshotFlushTimeoutRef.current = setTimeout(() => {
-        snapshotFlushTimeoutRef.current = null;
-        flushPendingSnapshotMessage();
-      }, SNAPSHOT_FLUSH_INTERVAL_MS);
+      scheduleSnapshotFlush(flushPendingSnapshotMessage);
     }
-  }, [clearSnapshotFlushTimer, sendImmediate]);
+  }, [clearSnapshotFlushTimer, scheduleSnapshotFlush, sendImmediate]);
 
   const queueOrSendSnapshotMessage = useCallback((message: SnapshotMessage) => {
     const conn = connRef.current;
@@ -300,25 +305,19 @@ export const useGameBoardLogic = () => {
       pendingSnapshotMessageRef.current = mergeQueuedSnapshotMessage(existingSnapshot, message);
 
       if (!snapshotFlushTimeoutRef.current) {
-        snapshotFlushTimeoutRef.current = setTimeout(() => {
-          snapshotFlushTimeoutRef.current = null;
-          flushPendingSnapshotMessage();
-        }, SNAPSHOT_FLUSH_INTERVAL_MS);
+        scheduleSnapshotFlush(flushPendingSnapshotMessage);
       }
       return;
     }
 
     if (shouldDeferSnapshotMessageSend(conn)) {
       pendingSnapshotMessageRef.current = message;
-      snapshotFlushTimeoutRef.current = setTimeout(() => {
-        snapshotFlushTimeoutRef.current = null;
-        flushPendingSnapshotMessage();
-      }, SNAPSHOT_FLUSH_INTERVAL_MS);
+      scheduleSnapshotFlush(flushPendingSnapshotMessage);
       return;
     }
 
     sendImmediate(message);
-  }, [flushPendingSnapshotMessage, sendImmediate]);
+  }, [flushPendingSnapshotMessage, scheduleSnapshotFlush, sendImmediate]);
 
   const sendMessage = useCallback((message: SyncMessage) => {
     if (message.type === 'STATE_SNAPSHOT') {
@@ -1073,17 +1072,21 @@ export const useGameBoardLogic = () => {
     setupConnectionRef.current(conn);
   }, [isHost, isSoloMode, room]);
 
+  const scheduleReconnectAttempt = useCallback(() => {
+    reconnectTimeoutRef.current = setTimeout(() => {
+      reconnectTimeoutRef.current = null;
+      connectToHost();
+    }, RECONNECT_DELAY_MS);
+  }, [connectToHost]);
+
   const scheduleReconnect = useCallback((messageKey: GameBoardStatusKey) => {
     if (isSoloMode || isHost) return;
     clearReconnectTimer();
     setConnectionState('reconnecting');
     setStatusKey(messageKey);
     resetTransientUiState();
-    reconnectTimeoutRef.current = setTimeout(() => {
-      reconnectTimeoutRef.current = null;
-      connectToHost();
-    }, 1000);
-  }, [clearReconnectTimer, connectToHost, isHost, isSoloMode, resetTransientUiState]);
+    scheduleReconnectAttempt();
+  }, [clearReconnectTimer, isHost, isSoloMode, resetTransientUiState, scheduleReconnectAttempt]);
 
   const attemptReconnect = useCallback(() => {
     if (isSoloMode || isHost) return;
@@ -1091,9 +1094,45 @@ export const useGameBoardLogic = () => {
     connectToHost();
   }, [clearReconnectTimer, connectToHost, isHost, isSoloMode]);
 
+  const isActiveConnectionToken = useCallback((token: string) => {
+    return activeConnectionTokenRef.current === token;
+  }, []);
+
+  const isCurrentActiveConnection = useCallback((conn: DataConnection, token: string) => {
+    return isActiveConnectionToken(token) && connRef.current === conn;
+  }, [isActiveConnectionToken]);
+
+  const handleSnapshotRequestTimeout = useCallback((
+    conn: DataConnection,
+    token: string,
+    retrySnapshotRequest: (conn: DataConnection, token: string) => void
+  ) => {
+    const retryDecision = getSnapshotRetryTimeoutDecision({
+      isCurrentConnection: isCurrentActiveConnection(conn, token),
+      retryCount: snapshotRetryCountRef.current,
+      maxRetries: MAX_SNAPSHOT_REQUEST_RETRIES,
+    });
+
+    if (retryDecision === 'cancel') {
+      clearSnapshotRequestTimer();
+      return;
+    }
+
+    if (retryDecision === 'reconnect') {
+      clearSnapshotRequestTimer();
+      setStatusKey('gameBoard.status.syncTimedOut');
+      attemptReconnect();
+      return;
+    }
+
+    snapshotRetryCountRef.current += 1;
+    setStatusKey('gameBoard.status.waitingForRestore');
+    retrySnapshotRequest(conn, token);
+  }, [attemptReconnect, clearSnapshotRequestTimer, isCurrentActiveConnection]);
+
   const requestSnapshotWithRetry = useCallback(function requestSnapshotWithRetry(conn: DataConnection, token: string) {
     if (isSoloMode || isHost) return;
-    if (activeConnectionTokenRef.current !== token || !conn.open) return;
+    if (!isActiveConnectionToken(token) || !conn.open) return;
 
     conn.send(buildSnapshotRequestMessage(gameStateRef.current.revision, role));
 
@@ -1102,29 +1141,9 @@ export const useGameBoardLogic = () => {
     }
 
     snapshotRequestTimeoutRef.current = setTimeout(() => {
-      const retryDecision = getSnapshotRetryTimeoutDecision({
-        isCurrentConnection: activeConnectionTokenRef.current === token && connRef.current === conn,
-        retryCount: snapshotRetryCountRef.current,
-        maxRetries: MAX_SNAPSHOT_REQUEST_RETRIES,
-      });
-
-      if (retryDecision === 'cancel') {
-        clearSnapshotRequestTimer();
-        return;
-      }
-
-      if (retryDecision === 'reconnect') {
-        clearSnapshotRequestTimer();
-        setStatusKey('gameBoard.status.syncTimedOut');
-        attemptReconnect();
-        return;
-      }
-
-      snapshotRetryCountRef.current += 1;
-      setStatusKey('gameBoard.status.waitingForRestore');
-      requestSnapshotWithRetry(conn, token);
+      handleSnapshotRequestTimeout(conn, token, requestSnapshotWithRetry);
     }, SNAPSHOT_REQUEST_TIMEOUT_MS);
-  }, [attemptReconnect, clearSnapshotRequestTimer, isHost, isSoloMode, role]);
+  }, [handleSnapshotRequestTimeout, isActiveConnectionToken, isHost, isSoloMode, role]);
 
   const playIncomingSharedUiEffects = useCallback((
     message: Extract<SyncMessage, { type: 'SHARED_UI_EFFECT' }> | SnapshotMessage
@@ -1194,7 +1213,7 @@ export const useGameBoardLogic = () => {
     token: string,
     rawData: unknown
   ) => {
-    if (activeConnectionTokenRef.current !== token) return;
+    if (!isActiveConnectionToken(token)) return;
     const data = rawData as SyncMessage;
 
     if (data.type === 'EVENT') {
@@ -1225,6 +1244,7 @@ export const useGameBoardLogic = () => {
     handleIncomingSnapshot,
     handleIncomingSnapshotRequest,
     handleIncomingWaitingForHostSession,
+    isActiveConnectionToken,
     playIncomingSharedUiEffects,
   ]);
 
@@ -1254,7 +1274,7 @@ export const useGameBoardLogic = () => {
   }, [clearActiveConnectionLifecycleState, isHost, scheduleReconnect]);
 
   const handleConnectionOpen = useCallback((conn: DataConnection, token: string) => {
-    if (activeConnectionTokenRef.current !== token) return;
+    if (!isActiveConnectionToken(token)) return;
     setConnectionState('connected');
 
     const openDecision = getConnectionOpenDecision({ isHost });
@@ -1271,7 +1291,7 @@ export const useGameBoardLogic = () => {
     if (openDecision.shouldRequestSnapshot) {
       requestSnapshotWithRetry(conn, token);
     }
-  }, [isHost, requestSnapshotWithRetry]);
+  }, [isActiveConnectionToken, isHost, requestSnapshotWithRetry]);
 
   const prepareActiveConnection = useCallback((conn: DataConnection, token: string) => {
     activeConnectionTokenRef.current = token;
@@ -1290,6 +1310,11 @@ export const useGameBoardLogic = () => {
     connRef.current = conn;
   }, [clearPendingSnapshotMessage, clearReconnectTimer, clearSnapshotRequestTimer]);
 
+  const handleConnectionLifecycleEvent = useCallback((token: string, kind: 'close' | 'error') => {
+    if (!isActiveConnectionToken(token)) return;
+    handleConnectionTermination(kind);
+  }, [handleConnectionTermination, isActiveConnectionToken]);
+
   const setupConnection = useCallback((conn: DataConnection) => {
     const token = uuid();
     prepareActiveConnection(conn, token);
@@ -1300,14 +1325,12 @@ export const useGameBoardLogic = () => {
       handleIncomingConnectionData(conn, token, rawData);
     });
     conn.on('close', () => {
-      if (activeConnectionTokenRef.current !== token) return;
-      handleConnectionTermination('close');
+      handleConnectionLifecycleEvent(token, 'close');
     });
     conn.on('error', () => {
-      if (activeConnectionTokenRef.current !== token) return;
-      handleConnectionTermination('error');
+      handleConnectionLifecycleEvent(token, 'error');
     });
-  }, [handleConnectionOpen, handleConnectionTermination, handleIncomingConnectionData, prepareActiveConnection]);
+  }, [handleConnectionLifecycleEvent, handleConnectionOpen, handleIncomingConnectionData, prepareActiveConnection]);
 
   useEffect(() => {
     setupConnectionRef.current = setupConnection;
@@ -1465,28 +1488,7 @@ export const useGameBoardLogic = () => {
 
   useEffect(() => {
     if (!isDebug) return;
-    const makeMockCards = (playerRole: 'host' | 'guest') =>
-      Array.from({ length: 20 }, (_, i) => ({
-        id: `debug-${playerRole}-${i}`,
-        cardId: `debug-card-${i}`,
-        name: `Debug Card ${i + 1}`,
-        image: '',
-        zone: `mainDeck-${playerRole}`,
-        owner: playerRole,
-        isTapped: false,
-        isFlipped: true,
-        counters: { atk: 0, hp: 0 },
-      }));
-    const debugCards = [...makeMockCards('host'), ...makeMockCards('guest')];
-    const debugState: SyncState = {
-      ...initialState,
-      cards: debugCards,
-      host: { ...initialState.host, pp: 1, maxPp: 1, initialHandDrawn: true, isReady: true },
-      guest: { ...initialState.guest, initialHandDrawn: true, isReady: true },
-      gameStatus: 'playing',
-      turnPlayer: 'host',
-    };
-    applyLocalState(debugState);
+    applyLocalState(buildDebugGameBoardState());
     setStatusKey('gameBoard.status.debugAutoStarted');
   }, [applyLocalState, isDebug]);
 
@@ -1558,19 +1560,26 @@ export const useGameBoardLogic = () => {
   }, [evolveAutoAttachSelection, pendingEvolveAutoAttachSelection]);
 
   useEffect(() => {
-    const canUndoMove = isSoloMode || isHost
-      ? !!gameState.lastUndoableCardMoveState
-      : !!(gameState.networkHasUndoableCardMove ?? gameState.lastUndoableCardMoveState);
-
-    setHasUndoableMove(
-      canUndoMove &&
-      (isSoloMode || gameState.lastUndoableCardMoveActor === role)
-    );
+    setHasUndoableMove(getCanUndoMove({
+      isHost,
+      isSoloMode,
+      role,
+      state: {
+        lastUndoableCardMoveActor: gameState.lastUndoableCardMoveActor,
+        lastUndoableCardMoveState: gameState.lastUndoableCardMoveState,
+        networkHasUndoableCardMove: gameState.networkHasUndoableCardMove,
+      },
+    }));
   }, [gameState.lastUndoableCardMoveActor, gameState.lastUndoableCardMoveState, gameState.networkHasUndoableCardMove, isHost, isSoloMode, role]);
 
-  const canUndoTurn = isSoloMode || isHost
-    ? !!gameState.lastGameState
-    : !!(gameState.networkHasUndoableTurn ?? gameState.lastGameState);
+  const canUndoTurn = getCanUndoTurn({
+    isHost,
+    isSoloMode,
+    state: {
+      lastGameState: gameState.lastGameState,
+      networkHasUndoableTurn: gameState.networkHasUndoableTurn,
+    },
+  });
 
   useEffect(() => {
     return () => {
@@ -1586,24 +1595,29 @@ export const useGameBoardLogic = () => {
   }, [clearAttackUiState, clearCardPlayMessageTimer, clearCoinMessageTimer, clearDiceTimers, clearReconnectTimer, clearRevealedCardsTimer, clearSnapshotRequestTimer, clearTurnMessageTimer]);
 
   useEffect(() => {
-    if (gameState.gameStatus !== 'playing') {
+    const turnMessageDecision = getTurnMessageDecision({
+      gameStatus: gameState.gameStatus,
+      isSoloMode,
+      role,
+      turnCount: gameState.turnCount,
+      turnPlayer: gameState.turnPlayer,
+    });
+
+    if (turnMessageDecision.type === 'clear') {
       clearTurnMessageTimer();
       setTurnMessage(null);
       return;
     }
-    if (!isSoloMode && gameState.turnPlayer !== role) {
-      clearTurnMessageTimer();
-      setTurnMessage(null);
+
+    if (turnMessageDecision.type === 'skip') {
       return;
     }
-    if (gameState.turnCount === 0) return;
+
     showTimedTurnMessage(
-      isSoloMode
-        ? t('gameBoard.turn.p1', { label: gameState.turnPlayer === 'host' ? 'PLAYER 1' : 'PLAYER 2' })
-        : t('gameBoard.turn.your'),
-      2500
+      t(turnMessageDecision.key, turnMessageDecision.options),
+      turnMessageDecision.durationMs
     );
-  }, [clearTurnMessageTimer, gameState.turnPlayer, gameState.turnCount, gameState.gameStatus, isSoloMode, role, showTimedTurnMessage]);
+  }, [clearTurnMessageTimer, gameState.gameStatus, gameState.turnCount, gameState.turnPlayer, isSoloMode, role, showTimedTurnMessage, t]);
 
   const handleStatChange = (playerKey: 'host' | 'guest', stat: 'hp' | 'pp' | 'maxPp' | 'ep' | 'sep' | 'combo', delta: number) => {
     dispatchGameEvent({ type: 'MODIFY_PLAYER_STAT', playerKey, stat, delta });
