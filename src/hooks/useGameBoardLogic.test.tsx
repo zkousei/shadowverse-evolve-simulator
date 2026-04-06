@@ -642,6 +642,39 @@ describe('useGameBoardLogic P2P reconnect', () => {
     expect(screen.getByTestId('status')).toHaveTextContent('Guest connected! Game ready.');
   });
 
+  it('does not replace the host ready status when the host receives a guest snapshot', () => {
+    renderHarness('/game?host=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const conn = mockPeerJs.createConnection('guest');
+    act(() => {
+      peer.emit('connection', conn);
+      conn.open = true;
+      conn.emit('open');
+      conn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'guest',
+        state: {
+          host: { hp: 20, pp: 0, maxPp: 0, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          cards: [],
+          turnPlayer: 'host',
+          turnCount: 1,
+          phase: 'Start',
+          gameStatus: 'preparing',
+          tokenOptions: { host: [], guest: [] },
+          revision: 1,
+        },
+      });
+    });
+
+    expect(screen.getByTestId('status')).toHaveTextContent('Guest connected! Game ready.');
+  });
+
   it('retries snapshot requests when the host does not respond yet', () => {
     renderHarness('/game?host=false&room=ROOM123');
 
@@ -722,6 +755,61 @@ describe('useGameBoardLogic P2P reconnect', () => {
 
     expect(screen.getByTestId('status')).toHaveTextContent('Host is choosing whether to resume the saved session. Waiting...');
     expect(peer.connect).toHaveBeenCalledTimes(1);
+  });
+
+  it('applies guest events on the host side', () => {
+    renderHarness('/game?host=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const conn = mockPeerJs.createConnection('guest');
+    act(() => {
+      peer.emit('connection', conn);
+      conn.open = true;
+      conn.emit('open');
+      conn.emit('data', {
+        type: 'EVENT',
+        event: {
+          type: 'MODIFY_PLAYER_STAT',
+          actor: 'guest',
+          playerKey: 'host',
+          stat: 'hp',
+          delta: -3,
+        },
+      });
+    });
+
+    expect(screen.getByTestId('host-hp')).toHaveTextContent('17');
+  });
+
+  it('ignores incoming events on the guest side', () => {
+    renderHarness('/game?host=false&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const conn = peer.connections[0];
+    act(() => {
+      conn.open = true;
+      conn.emit('open');
+      conn.emit('data', {
+        type: 'EVENT',
+        event: {
+          type: 'MODIFY_PLAYER_STAT',
+          actor: 'host',
+          playerKey: 'host',
+          stat: 'hp',
+          delta: -3,
+        },
+      });
+    });
+
+    expect(screen.getByTestId('host-hp')).toHaveTextContent('20');
   });
 
   it('ignores WAITING_FOR_HOST_SESSION on the host side and keeps the current status', () => {

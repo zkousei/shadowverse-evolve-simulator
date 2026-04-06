@@ -39,8 +39,10 @@ import {
 } from '../utils/gameBoardNetworkMessages';
 import { getConnectionOpenDecision } from '../utils/gameBoardConnectionOpen';
 import { getConnectionTerminationDecision } from '../utils/gameBoardConnectionTermination';
+import { getIncomingEventDecision } from '../utils/gameBoardIncomingEvent';
 import { getPeerOpenDecision } from '../utils/gameBoardPeerOpen';
 import { getPeerTerminationDecision } from '../utils/gameBoardPeerTermination';
+import { getSnapshotPostProcessingDecision } from '../utils/gameBoardSnapshotPostProcessing';
 import { getSnapshotRequestDecision } from '../utils/gameBoardSnapshotRequest';
 import { getWaitingForHostSessionDecision } from '../utils/gameBoardWaitingForHostSession';
 import { shouldApplyIncomingSnapshot } from '../utils/gameBoardSnapshotAcceptance';
@@ -1171,8 +1173,10 @@ export const useGameBoardLogic = () => {
       if (activeConnectionTokenRef.current !== token) return;
       const data = rawData as SyncMessage;
       if (data.type === 'EVENT') {
-        if (isHost) {
-          applyAuthoritativeEvent(data.event, 'guest');
+        const incomingEventDecision = getIncomingEventDecision({ isHost });
+
+        if (incomingEventDecision.type === 'apply') {
+          applyAuthoritativeEvent(data.event, incomingEventDecision.source);
         }
         return;
       }
@@ -1217,12 +1221,17 @@ export const useGameBoardLogic = () => {
             playSharedUiEffect(effect);
           }
         }
-        if (!isHost && data.source === 'host') {
+        const snapshotPostProcessing = getSnapshotPostProcessingDecision({
+          isHost,
+          source: data.source,
+        });
+
+        if (snapshotPostProcessing.type === 'guest-ready') {
           // Do NOT clear undo state on every snapshot. Only clear things like
           // search overlays or mulligan modals if the revision jumped significantly,
           // or if the game status changed.
-          resetTransientUiState(false); // Keep undo buttons on normal sync
-          setStatusKey('gameBoard.status.connectedHostReady');
+          resetTransientUiState(!snapshotPostProcessing.preserveUndoState);
+          setStatusKey(snapshotPostProcessing.statusKey);
         }
       }
     });
