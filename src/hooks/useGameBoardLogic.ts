@@ -21,8 +21,8 @@ import { buildTopDeckSummaryEffect } from '../utils/topDeckSummary';
 import { buildSingleCardRevealEffect } from '../utils/cardReveal';
 import { buildAttackDeclaredEffect, formatAttackEffect } from '../utils/attackUi';
 import { buildCardPlayedEffect, formatCardPlayedEffect } from '../utils/cardPlayUi';
-import { normalizeBaseCardType } from '../utils/cardType';
 import { loadCardCatalog } from '../utils/cardCatalog';
+import { buildImportedDeckPayload, buildSpawnTokenInstance, buildSpawnTokens, type ImportableDeckData } from '../utils/gameBoardDeckActions';
 import { buildEvolveAutoAttachResolver, type EvolveAutoAttachResolver } from '../utils/evolveAutoAttach';
 import { buildFieldLinkAutoAttachResolver, type FieldLinkAutoAttachResolver } from '../utils/fieldLinkAutoAttach';
 import { getFieldLinkGroupId } from '../data/fieldLinkRules';
@@ -70,14 +70,6 @@ type SavedHostSession = {
   savedAt: string;
   appVersion: string;
   state: SyncState;
-};
-
-type ImportableDeckData = {
-  mainDeck?: Array<Record<string, any>>;
-  evolveDeck?: Array<Record<string, any>>;
-  leaderCards?: Array<Record<string, any>>;
-  leaderCard?: Record<string, any>;
-  tokenDeck?: Array<Record<string, any>>;
 };
 
 const APP_VERSION = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '0.0.0';
@@ -1555,13 +1547,13 @@ export const useGameBoardLogic = () => {
         fieldLinkAutoAttachResolverRef.current = buildFieldLinkAutoAttachResolver(data);
         fieldLinkCardIdsRef.current = new Set(
           data
-            .filter((card: any) => Boolean(getFieldLinkGroupId(card)))
-            .map((card: any) => card.id)
+            .filter((card: DeckBuilderCardData) => Boolean(getFieldLinkGroupId(card)))
+            .map((card: DeckBuilderCardData) => card.id)
         );
         tokenEquipmentCardIdsRef.current = new Set(
           data
-            .filter((card: any) => card.card_kind_normalized === 'token_equipment')
-            .map((card: any) => card.id)
+            .filter((card: DeckBuilderCardData) => card.card_kind_normalized === 'token_equipment')
+            .map((card: DeckBuilderCardData) => card.id)
         );
       })
       .catch(err => console.error('Could not load card stats', err));
@@ -1793,94 +1785,13 @@ export const useGameBoardLogic = () => {
   };
 
   const importDeckData = (data: ImportableDeckData, targetRole: PlayerRole = role) => {
-    const newCards: CardInstance[] = [];
-    const tokenOptionsById = new Map<string, TokenOption>();
-    const shuffledMain = [...(data.mainDeck || [])]
-      .filter((c: any) => !c.deck_section || c.deck_section === 'main')
-      .sort(() => Math.random() - 0.5);
-
-    shuffledMain.forEach((c: any) => {
-      newCards.push({
-        id: uuid(),
-        cardId: c.id,
-        name: c.name,
-        image: c.image,
-        zone: `mainDeck-${targetRole}`,
-        owner: targetRole,
-        isTapped: false,
-        isFlipped: true,
-        counters: { atk: 0, hp: 0 },
-        genericCounter: 0,
-        baseCardType: normalizeBaseCardType(c.card_kind_normalized ?? c.type),
-        cardKindNormalized: c.card_kind_normalized ?? undefined,
-      });
-    });
-
-    (data.evolveDeck || [])
-      .filter((c: any) => !c.deck_section || c.deck_section === 'evolve')
-      .forEach((c: any) => {
-        newCards.push({
-          id: uuid(),
-          cardId: c.id,
-          name: c.name,
-          image: c.image,
-          zone: `evolveDeck-${targetRole}`,
-          owner: targetRole,
-          isTapped: false,
-          isFlipped: true,
-          counters: { atk: 0, hp: 0 },
-          genericCounter: 0,
-          isEvolveCard: true,
-          baseCardType: normalizeBaseCardType(c.card_kind_normalized ?? c.type),
-          cardKindNormalized: c.card_kind_normalized ?? undefined,
-        });
-      });
-
-    const importedLeaderCards = Array.isArray(data.leaderCards)
-      ? data.leaderCards
-      : data.leaderCard
-        ? [data.leaderCard]
-        : [];
-
-    importedLeaderCards
-      .filter((c: any) => c?.deck_section === 'leader')
-      .forEach((c: any) => {
-        newCards.push({
-          id: uuid(),
-          cardId: c.id,
-          name: c.name,
-          image: c.image,
-          zone: `leader-${targetRole}`,
-          owner: targetRole,
-          isTapped: false,
-          isFlipped: false,
-          counters: { atk: 0, hp: 0 },
-          genericCounter: 0,
-          isLeaderCard: true,
-          baseCardType: normalizeBaseCardType(c.card_kind_normalized ?? c.type),
-          cardKindNormalized: c.card_kind_normalized ?? undefined,
-        });
-      });
-
-    (data.tokenDeck || [])
-      .filter((c: any) => c.deck_section === 'token')
-      .forEach((c: any) => {
-        if (!tokenOptionsById.has(c.id)) {
-          tokenOptionsById.set(c.id, {
-            cardId: c.id,
-            name: c.name,
-            image: c.image,
-            baseCardType: normalizeBaseCardType(c.card_kind_normalized ?? c.type),
-            cardKindNormalized: c.card_kind_normalized ?? undefined,
-          });
-        }
-      });
+    const payload = buildImportedDeckPayload(data, targetRole, uuid);
 
     dispatchGameEvent({
       type: 'IMPORT_DECK',
       actor: targetRole,
-      cards: newCards,
-      tokenOptions: Array.from(tokenOptionsById.values()),
+      cards: payload.cards,
+      tokenOptions: payload.tokenOptions,
     });
   };
 
@@ -1912,21 +1823,7 @@ export const useGameBoardLogic = () => {
     destination: 'ex' | 'field' = 'ex'
   ) => {
     const selectedToken = tokenOption ?? defaultTokenOption.current;
-    const newCard: CardInstance = {
-      id: uuid(),
-      cardId: selectedToken.cardId,
-      name: selectedToken.name,
-      image: selectedToken.image,
-      zone: `${destination}-${targetRole}`,
-      owner: targetRole,
-      isTapped: false,
-      isFlipped: false,
-      counters: selectedToken.cardId === 'token' ? { atk: 1, hp: 1 } : { atk: 0, hp: 0 },
-      genericCounter: 0,
-      isTokenCard: true,
-      baseCardType: selectedToken.baseCardType ?? null,
-      cardKindNormalized: selectedToken.cardKindNormalized ?? undefined,
-    };
+    const newCard = buildSpawnTokenInstance(targetRole, selectedToken, destination, uuid);
     dispatchGameEvent({ type: 'SPAWN_TOKEN', actor: targetRole, token: newCard });
   };
 
@@ -1935,23 +1832,7 @@ export const useGameBoardLogic = () => {
     tokenSelections: Array<{ tokenOption: TokenOption; count: number }>,
     destination: 'ex' | 'field' = 'ex'
   ) => {
-    const tokens = tokenSelections.flatMap(({ tokenOption, count }) => (
-      Array.from({ length: Math.max(0, count) }, () => ({
-        id: uuid(),
-        cardId: tokenOption.cardId,
-        name: tokenOption.name,
-        image: tokenOption.image,
-        zone: `${destination}-${targetRole}`,
-        owner: targetRole,
-        isTapped: false,
-        isFlipped: false,
-        counters: tokenOption.cardId === 'token' ? { atk: 1, hp: 1 } : { atk: 0, hp: 0 },
-        genericCounter: 0,
-        isTokenCard: true,
-        baseCardType: tokenOption.baseCardType ?? null,
-        cardKindNormalized: tokenOption.cardKindNormalized ?? undefined,
-      } satisfies CardInstance))
-    ));
+    const tokens = buildSpawnTokens(targetRole, tokenSelections, destination, uuid);
 
     if (tokens.length === 0) return;
     if (tokens.length === 1) {
