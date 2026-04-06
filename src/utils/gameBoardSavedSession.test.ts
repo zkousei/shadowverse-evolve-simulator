@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { initialState, type SyncState } from '../types/game';
 import {
+  buildSavedHostSessionPayload,
   getHostSessionStorageKey,
   hasMeaningfulGameSessionState,
   parseSavedHostSession,
@@ -26,6 +27,17 @@ const buildState = (overrides: Partial<SyncState> = {}): SyncState => ({
 describe('gameBoardSavedSession', () => {
   it('builds the host session storage key', () => {
     expect(getHostSessionStorageKey('ROOM123')).toBe('sv-evolve:host-session:ROOM123');
+  });
+
+  it('builds a saved host session payload without reshaping the state', () => {
+    const state = buildState({ revision: 7, turnCount: 3, phase: 'Main', gameStatus: 'playing' });
+
+    expect(buildSavedHostSessionPayload('ROOM123', '1.2.3', state, '2026-03-19T10:00:00.000Z')).toEqual({
+      room: 'ROOM123',
+      savedAt: '2026-03-19T10:00:00.000Z',
+      appVersion: '1.2.3',
+      state,
+    });
   });
 
   it('parses a saved session only when room, version, and state shape are valid', () => {

@@ -64,6 +64,18 @@ const isInitialGuestHud = (hud: SyncState['guest']): boolean => (
 
 export const getHostSessionStorageKey = (room: string) => `sv-evolve:host-session:${room}`;
 
+export const buildSavedHostSessionPayload = (
+  room: string,
+  appVersion: string,
+  state: SyncState,
+  savedAt: string
+): SavedHostSession => ({
+  room,
+  savedAt,
+  appVersion,
+  state,
+});
+
 export const parseSavedHostSession = (
   rawValue: string | null,
   room: string,

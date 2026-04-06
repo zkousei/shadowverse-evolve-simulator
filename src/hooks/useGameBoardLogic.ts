@@ -25,7 +25,13 @@ import { loadCardCatalog } from '../utils/cardCatalog';
 import { buildGameBoardCatalogResources } from '../utils/gameBoardCatalog';
 import { buildImportedDeckPayload, buildSpawnTokenInstance, buildSpawnTokens, type ImportableDeckData } from '../utils/gameBoardDeckActions';
 import { buildClosedMulliganState, buildStartedMulliganState, toggleMulliganOrderSelection } from '../utils/gameBoardMulligan';
-import { getHostSessionStorageKey, hasMeaningfulGameSessionState, parseSavedHostSession, type SavedHostSession } from '../utils/gameBoardSavedSession';
+import {
+  buildSavedHostSessionPayload,
+  getHostSessionStorageKey,
+  hasMeaningfulGameSessionState,
+  parseSavedHostSession,
+  type SavedHostSession,
+} from '../utils/gameBoardSavedSession';
 import {
   buildSnapshotRequestMessage,
   buildSnapshotSyncMessage,
@@ -1266,12 +1272,12 @@ export const useGameBoardLogic = () => {
       return;
     }
 
-    const payload: SavedHostSession = {
+    const payload = buildSavedHostSessionPayload(
       room,
-      savedAt: new Date().toISOString(),
-      appVersion: APP_VERSION,
-      state: gameState,
-    };
+      APP_VERSION,
+      gameState,
+      new Date().toISOString()
+    );
 
     window.sessionStorage.setItem(storageKey, JSON.stringify(payload));
   }, [gameState, hasCheckedSavedSession, isHost, isSoloMode, room, savedSessionCandidate]);
