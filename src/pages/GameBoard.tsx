@@ -8,7 +8,7 @@ import GameBoardAttackModeBanner from '../components/GameBoardAttackModeBanner';
 import GameBoardCardInspector from '../components/GameBoardCardInspector';
 import GameBoardDialogsHost from '../components/GameBoardDialogsHost';
 import GameBoardGlobalOverlays from '../components/GameBoardGlobalOverlays';
-import GameBoardLeaderZone from '../components/GameBoardLeaderZone';
+import GameBoardLeaderZoneSection from '../components/GameBoardLeaderZoneSection';
 import GameBoardMulliganDialog from '../components/GameBoardMulliganDialog';
 import GameBoardMulliganButton from '../components/GameBoardMulliganButton';
 import GameBoardPreparationControls from '../components/GameBoardPreparationControls';
@@ -488,38 +488,6 @@ const GameBoard: React.FC = () => {
     return resolveAttackHighlightTone(attackSourceCard, card, cardStatLookup);
   }, [attackSourceCard, cardStatLookup]);
 
-  const renderLeaderZone = (
-    playerRole: PlayerRole,
-    label: string,
-    side: 'left' | 'right',
-    extraOffset = 0
-  ) => {
-    const leaderZoneId = `leader-${playerRole}`;
-    const leaderCards = getCards(leaderZoneId);
-    const isAttackTargetLeader = attackSourceCard ? attackSourceCard.owner !== playerRole : false;
-    const zoneLabel = t('gameBoard.board.leaderLabel', { label });
-
-    return (
-      <GameBoardLeaderZone
-        leaderZoneId={leaderZoneId}
-        label={label}
-        zoneLabel={zoneLabel}
-        leaderCards={leaderCards}
-        side={side}
-        sideZoneWidth={sideZoneWidth}
-        extraOffset={extraOffset}
-        cardDetailLookup={cardDetailLookup}
-        getHighlightTone={getAttackHighlightTone}
-        onInspectCard={handleInspectCard}
-        viewerRole={viewerRole}
-        isAttackTargetLeader={isAttackTargetLeader}
-        isDebug={isDebug}
-        searchLabel={t('gameBoard.board.search')}
-        onSearch={() => openSearchZone(leaderZoneId, zoneLabel)}
-      />
-    );
-  };
-
   const renderZoneActions = (
     menuId: string,
     actions: Array<{ label: string; onClick: () => void; tone?: 'default' | 'accent' }>,
@@ -895,7 +863,23 @@ const GameBoard: React.FC = () => {
                         isSearchInteractive={canInteract}
                       />
                     </div>
-                    {renderLeaderZone(topRole, topLabel, 'right', 20)}
+                    <GameBoardLeaderZoneSection
+                      playerRole={topRole}
+                      label={topLabel}
+                      zoneLabel={t('gameBoard.board.leaderLabel', { label: topLabel })}
+                      side="right"
+                      extraOffset={20}
+                      leaderCards={getCards(`leader-${topRole}`)}
+                      sideZoneWidth={sideZoneWidth}
+                      cardDetailLookup={cardDetailLookup}
+                      getHighlightTone={getAttackHighlightTone}
+                      onInspectCard={handleInspectCard}
+                      viewerRole={viewerRole}
+                      attackSourceOwner={attackSourceCard?.owner ?? null}
+                      isDebug={isDebug}
+                      searchLabel={t('gameBoard.board.search')}
+                      onSearch={openSearchZone}
+                    />
                   </div>
                 </div>
                 <div />
@@ -978,7 +962,23 @@ const GameBoard: React.FC = () => {
                         onSearch={() => openSearchZone(`evolveDeck-${topRole}`, t('gameBoard.zones.evolveDeck', { label: topLabel }))}
                       />
                     </div>
-                    {renderLeaderZone(topRole, topLabel, 'right', 20)}
+                    <GameBoardLeaderZoneSection
+                      playerRole={topRole}
+                      label={topLabel}
+                      zoneLabel={t('gameBoard.board.leaderLabel', { label: topLabel })}
+                      side="right"
+                      extraOffset={20}
+                      leaderCards={getCards(`leader-${topRole}`)}
+                      sideZoneWidth={sideZoneWidth}
+                      cardDetailLookup={cardDetailLookup}
+                      getHighlightTone={getAttackHighlightTone}
+                      onInspectCard={handleInspectCard}
+                      viewerRole={viewerRole}
+                      attackSourceOwner={attackSourceCard?.owner ?? null}
+                      isDebug={isDebug}
+                      searchLabel={t('gameBoard.board.search')}
+                      onSearch={openSearchZone}
+                    />
                   </div>
                 </div>
                 <div />
@@ -1012,7 +1012,22 @@ const GameBoard: React.FC = () => {
                     ])}
                   </div>
                   </div>
-                  {renderLeaderZone(bottomRole, bottomLabel, 'left')}
+                  <GameBoardLeaderZoneSection
+                    playerRole={bottomRole}
+                    label={bottomLabel}
+                    zoneLabel={t('gameBoard.board.leaderLabel', { label: bottomLabel })}
+                    side="left"
+                    leaderCards={getCards(`leader-${bottomRole}`)}
+                    sideZoneWidth={sideZoneWidth}
+                    cardDetailLookup={cardDetailLookup}
+                    getHighlightTone={getAttackHighlightTone}
+                    onInspectCard={handleInspectCard}
+                    viewerRole={viewerRole}
+                    attackSourceOwner={attackSourceCard?.owner ?? null}
+                    isDebug={isDebug}
+                    searchLabel={t('gameBoard.board.search')}
+                    onSearch={openSearchZone}
+                  />
                 </div>
 
 	                <div style={{ display: 'grid', gridTemplateColumns: boardColumns, gap: '0.75rem', width: `${boardContentWidth}px`, alignItems: 'start' }}>

@@ -11,6 +11,7 @@ import GameBoardEvolveAutoAttachDialog from './GameBoardEvolveAutoAttachDialog';
 import GameBoardEndTurnButton from './GameBoardEndTurnButton';
 import GameBoardGlobalOverlays from './GameBoardGlobalOverlays';
 import GameBoardLeaderZone from './GameBoardLeaderZone';
+import GameBoardLeaderZoneSection from './GameBoardLeaderZoneSection';
 import GameBoardMulliganButton from './GameBoardMulliganButton';
 import GameBoardMulliganDialog from './GameBoardMulliganDialog';
 import GameBoardPreparationControls from './GameBoardPreparationControls';
@@ -234,6 +235,61 @@ describe('GameBoard extracted UI components', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Mulligan (Player 1)' }));
 
     expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders leader zone section and wires search action', () => {
+    const onSearch = vi.fn();
+
+    render(
+      <GameBoardLeaderZoneSection
+        playerRole="host"
+        label="Player 1"
+        zoneLabel="Player 1 Leader"
+        side="left"
+        leaderCards={[
+          {
+            id: 'leader-1',
+            cardId: 'TEST-LEADER',
+            name: 'Leader Alice',
+            image: '/leader.png',
+            zone: 'leader-host',
+            owner: 'host',
+            isTapped: false,
+            isFlipped: false,
+            counters: { atk: 0, hp: 0 },
+            genericCounter: 0,
+            baseCardType: 'leader',
+            cardKindNormalized: 'leader',
+            isLeaderCard: true,
+          },
+          {
+            id: 'leader-2',
+            cardId: 'TEST-LEADER-2',
+            name: 'Leader Bob',
+            image: '/leader-b.png',
+            zone: 'leader-host',
+            owner: 'host',
+            isTapped: false,
+            isFlipped: false,
+            counters: { atk: 0, hp: 0 },
+            genericCounter: 0,
+            baseCardType: 'leader',
+            cardKindNormalized: 'leader',
+            isLeaderCard: true,
+          },
+        ]}
+        sideZoneWidth={120}
+        cardDetailLookup={{}}
+        viewerRole="host"
+        attackSourceOwner="guest"
+        searchLabel="Search"
+        onSearch={onSearch}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Player 1 leader search' }));
+
+    expect(onSearch).toHaveBeenCalledWith('leader-host', 'Player 1 Leader');
   });
 
   it('renders zone search button and wires click action', () => {
