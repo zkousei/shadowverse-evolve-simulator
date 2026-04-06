@@ -24,6 +24,7 @@ import GameBoardReconnectAlert from './GameBoardReconnectAlert';
 import GameBoardRevealedCardsOverlay from './GameBoardRevealedCardsOverlay';
 import GameBoardResetDialog from './GameBoardResetDialog';
 import GameBoardRoomStatus from './GameBoardRoomStatus';
+import GameBoardSearchableZoneStack from './GameBoardSearchableZoneStack';
 import GameBoardSavedDeckPickerDialog from './GameBoardSavedDeckPickerDialog';
 import GameBoardSavedSessionPrompt from './GameBoardSavedSessionPrompt';
 import GameBoardTopNDialog from './GameBoardTopNDialog';
@@ -255,6 +256,29 @@ describe('GameBoard extracted UI components', () => {
     fireEvent.click(button);
 
     expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders searchable zone stack and wires search action', () => {
+    const onSearch = vi.fn();
+
+    render(
+      <GameBoardSearchableZoneStack
+        zone={<div data-testid="mock-zone">Zone Content</div>}
+        searchLabel="Search"
+        onSearch={onSearch}
+        searchTitle="Search this zone"
+        isSearchInteractive={false}
+      />
+    );
+
+    expect(screen.getByTestId('mock-zone')).toBeInTheDocument();
+
+    const button = screen.getByRole('button', { name: 'Search' });
+    expect(button).toHaveAttribute('title', 'Search this zone');
+
+    fireEvent.click(button);
+
+    expect(onSearch).toHaveBeenCalledTimes(1);
   });
 
   it('renders preparation panel and toggles reveal hands mode', () => {
