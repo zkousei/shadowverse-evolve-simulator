@@ -54,6 +54,7 @@ import { buildDebugGameBoardState } from '../utils/gameBoardDebugState';
 import { getCanUndoMove, getCanUndoTurn } from '../utils/gameBoardUndoAvailability';
 import { getTurnMessageDecision } from '../utils/gameBoardTurnMessage';
 import { findUnitRootCard, isEquipmentLinkTargetCard, isTokenEquipmentCard } from '../utils/gameBoardManualLink';
+import { canLookAtTopDeck, getCanInteractWithGameBoard } from '../utils/gameBoardInteraction';
 import {
   buildGameBoardEvolveAutoAttachSelection,
   type PendingGameBoardEvolveAutoAttachSelection,
@@ -130,6 +131,7 @@ export const useGameBoardLogic = () => {
   const [statusKey, setStatusKey] = useState<GameBoardStatusKey>('gameBoard.status.initializing');
   const status = t(statusKey);
   const [connectionState, setConnectionState] = useState<ConnectionState>('idle');
+  const canInteract = getCanInteractWithGameBoard({ isSoloMode, isHost, connectionState });
   const [gameState, setGameState] = useState<SyncState>(initialState);
   const [savedSessionCandidate, setSavedSessionCandidate] = useState<SavedHostSession | null>(null);
   const [hasCheckedSavedSession, setHasCheckedSavedSession] = useState(false);
@@ -959,7 +961,7 @@ export const useGameBoardLogic = () => {
   }, [applyLocalState, playSharedUiEffect, role, sendSharedUiEffect, sendSnapshot]);
 
   const dispatchGameEvent = useCallback((event: DispatchableGameSyncEvent) => {
-    if (!isSoloMode && !isHost && connectionState !== 'connected') {
+    if (!canInteract) {
       return;
     }
 
@@ -975,7 +977,7 @@ export const useGameBoardLogic = () => {
     }
 
     sendMessage({ type: 'EVENT', event: fullEvent });
-  }, [applyAuthoritativeEvent, connectionState, isHost, isSoloMode, role, sendMessage]);
+  }, [applyAuthoritativeEvent, canInteract, isHost, isSoloMode, role, sendMessage]);
 
   const executeEvolveAutoAttach = useCallback((
     sourceCardId: string,
@@ -1649,8 +1651,7 @@ export const useGameBoardLogic = () => {
   };
 
   const handleLookAtTop = (n: number, targetRole: PlayerRole = role) => {
-    if (!isSoloMode && !isHost && connectionState !== 'connected') return;
-    if (gameState.gameStatus !== 'playing') return;
+    if (!canLookAtTopDeck({ canInteract, gameStatus: gameState.gameStatus })) return;
     const myDeck = gameState.cards.filter(c => c.zone === `mainDeck-${targetRole}`);
     setTopDeckCards(myDeck.slice(0, n));
   };
@@ -1720,7 +1721,7 @@ export const useGameBoardLogic = () => {
   };
 
   const handleDeckUpload = (event: React.ChangeEvent<HTMLInputElement>, targetRole: PlayerRole = role) => {
-    if (!isSoloMode && !isHost && connectionState !== 'connected') {
+    if (!canInteract) {
       event.target.value = '';
       return;
     }
@@ -1894,7 +1895,6 @@ export const useGameBoardLogic = () => {
     defaultTokenOption.current,
     ...gameState.tokenOptions[targetRole],
   ];
-  const canInteract = isSoloMode || isHost || connectionState === 'connected';
 
   return {
     room, mode, isSoloMode, isHost, role, status, connectionState, canInteract, attemptReconnect, gameState, savedSessionCandidate, resumeSavedSession, discardSavedSession, searchZone, setSearchZone,
