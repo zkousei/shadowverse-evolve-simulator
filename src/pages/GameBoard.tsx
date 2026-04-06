@@ -15,7 +15,7 @@ import GameBoardMulliganButton from '../components/GameBoardMulliganButton';
 import GameBoardPreparationControls from '../components/GameBoardPreparationControls';
 import GameBoardPreparationPanel from '../components/GameBoardPreparationPanel';
 import GameBoardPlayingControls from '../components/GameBoardPlayingControls';
-import GameBoardPlayerTracker from '../components/GameBoardPlayerTracker';
+import GameBoardPlayerTrackerSection from '../components/GameBoardPlayerTrackerSection';
 import GameBoardRecentEventsPanel from '../components/GameBoardRecentEventsPanel';
 import GameBoardReadOnlyStatusSection from '../components/GameBoardReadOnlyStatusSection';
 import GameBoardReconnectAlert from '../components/GameBoardReconnectAlert';
@@ -488,20 +488,6 @@ const GameBoard: React.FC = () => {
     return resolveAttackHighlightTone(attackSourceCard, card, cardStatLookup);
   }, [attackSourceCard, cardStatLookup]);
 
-  const renderPlayerTracker = (playerRole: PlayerRole, label: string) => (
-    <GameBoardPlayerTracker
-      testId={`player-tracker-${playerRole}`}
-      label={label}
-      hp={gameState[playerRole].hp}
-      ep={gameState[playerRole].ep}
-      sep={gameState[playerRole].sep}
-      combo={gameState[playerRole].combo}
-      pp={gameState[playerRole].pp}
-      maxPp={gameState[playerRole].maxPp}
-      onAdjustStat={(stat, delta) => handleStatChange(playerRole, stat, delta)}
-    />
-  );
-
   const renderCardInspector = () => {
     if (!selectedInspectorCard || !inspectorPopoverStyle) return null;
 
@@ -715,7 +701,12 @@ const GameBoard: React.FC = () => {
                   <button onClick={() => openTokenSpawnModal(topRole)} className="glass-panel" style={{ padding: '0.5rem', background: '#7c3aed' }}>
                     {t('gameBoard.zones.spawnToken', { label: topLabel })}
                   </button>
-                  {renderPlayerTracker(topRole, topLabel)}
+                  <GameBoardPlayerTrackerSection
+                    testId={`player-tracker-${topRole}`}
+                    label={topLabel}
+                    playerState={gameState[topRole]}
+                    onAdjustStat={(stat, delta) => handleStatChange(topRole, stat, delta)}
+                  />
                 </div>
 
                 <div style={{ width: `${boardContentWidth}px`, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.65rem', alignItems: 'flex-start' }}>
@@ -1204,7 +1195,12 @@ const GameBoard: React.FC = () => {
                     {t('gameBoard.turn.undoMove')}
                   </button>
                 )}
-                {renderPlayerTracker(bottomRole, bottomLabel)}
+                <GameBoardPlayerTrackerSection
+                  testId={`player-tracker-${bottomRole}`}
+                  label={bottomLabel}
+                  playerState={gameState[bottomRole]}
+                  onAdjustStat={(stat, delta) => handleStatChange(bottomRole, stat, delta)}
+                />
               </div>
             </div>
           </div>

@@ -20,6 +20,7 @@ import GameBoardPreparationPanel from './GameBoardPreparationPanel';
 import GameBoardPreparationReadyStatus from './GameBoardPreparationReadyStatus';
 import GameBoardPlayingControls from './GameBoardPlayingControls';
 import GameBoardPlayerTracker from './GameBoardPlayerTracker';
+import GameBoardPlayerTrackerSection from './GameBoardPlayerTrackerSection';
 import GameBoardReadOnlyStatusPanel from './GameBoardReadOnlyStatusPanel';
 import GameBoardReadOnlyStatusSection from './GameBoardReadOnlyStatusSection';
 import GameBoardRecentEventsPanel from './GameBoardRecentEventsPanel';
@@ -725,6 +726,34 @@ describe('GameBoard extracted UI components', () => {
     expect(onAdjustStat).toHaveBeenCalledWith('ep', -1);
     expect(onAdjustStat).toHaveBeenCalledWith('maxPp', 1);
     expect(onAdjustStat).toHaveBeenCalledWith('pp', -1);
+  });
+
+  it('renders player tracker section from player state', () => {
+    const onAdjustStat = vi.fn();
+
+    render(
+      <GameBoardPlayerTrackerSection
+        testId="player-tracker-host"
+        label="Player 1"
+        playerState={{
+          hp: 20,
+          pp: 2,
+          maxPp: 5,
+          ep: 3,
+          sep: 1,
+          combo: 0,
+          initialHandDrawn: false,
+          mulliganUsed: false,
+          isReady: false,
+        }}
+        onAdjustStat={onAdjustStat}
+      />
+    );
+
+    fireEvent.click(screen.getByTestId('player-tracker-host-hp-increase'));
+
+    expect(screen.getByText('Player 1 Status')).toBeInTheDocument();
+    expect(onAdjustStat).toHaveBeenCalledWith('hp', 1);
   });
 
   it('renders zone actions menu and delegates toggle and action clicks', () => {
