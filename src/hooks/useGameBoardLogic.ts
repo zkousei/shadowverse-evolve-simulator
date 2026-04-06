@@ -1134,6 +1134,94 @@ export const useGameBoardLogic = () => {
     }, SNAPSHOT_REQUEST_TIMEOUT_MS);
   }, [attemptReconnect, clearSnapshotRequestTimer, isHost, isSoloMode, role]);
 
+  const playIncomingSharedUiEffects = useCallback((
+    message: Extract<SyncMessage, { type: 'SHARED_UI_EFFECT' }> | SnapshotMessage
+  ) => {
+    for (const effect of getIncomingSharedUiEffects(message)) {
+      playSharedUiEffect(effect);
+    }
+  }, [playSharedUiEffect]);
+
+  const handleIncomingWaitingForHostSession = useCallback(() => {
+    clearSnapshotRequestTimer();
+    const waitingDecision = getWaitingForHostSessionDecision({ isHost });
+
+    if (waitingDecision.type === 'set-status') {
+      setStatusKey(waitingDecision.statusKey);
+    }
+  }, [clearSnapshotRequestTimer, isHost]);
+
+  const handleIncomingEvent = useCallback((message: Extract<SyncMessage, { type: 'EVENT' }>) => {
+    const incomingEventDecision = getIncomingEventDecision({ isHost });
+
+    if (incomingEventDecision.type === 'apply') {
+      applyAuthoritativeEvent(message.event, incomingEventDecision.source);
+    }
+  }, [applyAuthoritativeEvent, isHost]);
+
+  const handleIncomingSnapshotRequest = useCallback((message: Extract<SyncMessage, { type: 'REQUEST_SNAPSHOT' }>, conn: DataConnection) => {
+    const snapshotRequestDecision = getSnapshotRequestDecision({
+      isHost,
+      hasSavedSessionCandidate: Boolean(savedSessionCandidateRef.current),
+    });
+
+    if (snapshotRequestDecision.type === 'wait-for-host-session') {
+      // While the host is deciding whether to resume a saved session,
+      // guests should wait instead of reconnect-looping.
+      setStatusKey(snapshotRequestDecision.statusKey);
+      conn.send(buildWaitingForHostSessionMessage());
+      return;
+    }
+
+    if (snapshotRequestDecision.type === 'send-snapshot') {
+      sendMessage(buildSnapshotSyncMessage(gameStateRef.current, 'host', cardDetailLookupRef.current));
+    }
+  }, [isHost, sendMessage]);
+
+  const handleIncomingSnapshot = useCallback((message: SnapshotMessage) => {
+    const snapshotHandling = getIncomingSnapshotHandling({
+      isHost,
+      message,
+    });
+
+    clearSnapshotRequestTimer();
+    maybeApplySnapshot(snapshotHandling.state, snapshotHandling.source);
+    playIncomingSharedUiEffects(message);
+
+    if (snapshotHandling.postProcessing.type === 'guest-ready') {
+      // Do NOT clear undo state on every snapshot. Only clear things like
+      // search overlays or mulligan modals if the revision jumped significantly,
+      // or if the game status changed.
+      resetTransientUiState(!snapshotHandling.postProcessing.preserveUndoState);
+      setStatusKey(snapshotHandling.postProcessing.statusKey);
+    }
+  }, [clearSnapshotRequestTimer, isHost, maybeApplySnapshot, playIncomingSharedUiEffects, resetTransientUiState]);
+
+  const clearActiveConnectionLifecycleState = useCallback(() => {
+    connRef.current = null;
+    activeConnectionTokenRef.current = null;
+    clearPendingSnapshotMessage();
+    clearSnapshotRequestTimer();
+    awaitingInitialSnapshotRef.current = false;
+  }, [clearPendingSnapshotMessage, clearSnapshotRequestTimer]);
+
+  const handleConnectionTermination = useCallback((kind: 'close' | 'error') => {
+    clearActiveConnectionLifecycleState();
+
+    const terminationDecision = getConnectionTerminationDecision({
+      isHost,
+      kind,
+    });
+
+    if (terminationDecision.type === 'host') {
+      setConnectionState(terminationDecision.nextConnectionState);
+      setStatusKey(terminationDecision.statusKey);
+      return;
+    }
+
+    scheduleReconnect(terminationDecision.statusKey);
+  }, [clearActiveConnectionLifecycleState, isHost, scheduleReconnect]);
+
   const setupConnection = useCallback((conn: DataConnection) => {
     const token = uuid();
     activeConnectionTokenRef.current = token;
@@ -1173,110 +1261,34 @@ export const useGameBoardLogic = () => {
       if (activeConnectionTokenRef.current !== token) return;
       const data = rawData as SyncMessage;
       if (data.type === 'EVENT') {
-        const incomingEventDecision = getIncomingEventDecision({ isHost });
-
-        if (incomingEventDecision.type === 'apply') {
-          applyAuthoritativeEvent(data.event, incomingEventDecision.source);
-        }
+        handleIncomingEvent(data);
         return;
       }
       if (data.type === 'REQUEST_SNAPSHOT') {
-        const snapshotRequestDecision = getSnapshotRequestDecision({
-          isHost,
-          hasSavedSessionCandidate: Boolean(savedSessionCandidateRef.current),
-        });
-
-        if (snapshotRequestDecision.type === 'wait-for-host-session') {
-          // While the host is deciding whether to resume a saved session,
-          // guests should wait instead of reconnect-looping.
-          setStatusKey(snapshotRequestDecision.statusKey);
-          conn.send(buildWaitingForHostSessionMessage());
-          return;
-        }
-
-        if (snapshotRequestDecision.type === 'send-snapshot') {
-          sendMessage(buildSnapshotSyncMessage(gameStateRef.current, 'host', cardDetailLookupRef.current));
-        }
+        handleIncomingSnapshotRequest(data, conn);
         return;
       }
       if (data.type === 'SHARED_UI_EFFECT') {
-        for (const effect of getIncomingSharedUiEffects(data)) {
-          playSharedUiEffect(effect);
-        }
+        playIncomingSharedUiEffects(data);
         return;
       }
       if (data.type === 'WAITING_FOR_HOST_SESSION') {
-        clearSnapshotRequestTimer();
-        const waitingDecision = getWaitingForHostSessionDecision({ isHost });
-
-        if (waitingDecision.type === 'set-status') {
-          setStatusKey(waitingDecision.statusKey);
-        }
+        handleIncomingWaitingForHostSession();
         return;
       }
       if (data.type === 'STATE_SNAPSHOT') {
-        const snapshotHandling = getIncomingSnapshotHandling({
-          isHost,
-          message: data,
-        });
-
-        clearSnapshotRequestTimer();
-        maybeApplySnapshot(snapshotHandling.state, snapshotHandling.source);
-        for (const effect of snapshotHandling.sharedUiEffects) {
-          playSharedUiEffect(effect);
-        }
-        if (snapshotHandling.postProcessing.type === 'guest-ready') {
-          // Do NOT clear undo state on every snapshot. Only clear things like
-          // search overlays or mulligan modals if the revision jumped significantly,
-          // or if the game status changed.
-          resetTransientUiState(!snapshotHandling.postProcessing.preserveUndoState);
-          setStatusKey(snapshotHandling.postProcessing.statusKey);
-        }
+        handleIncomingSnapshot(data);
       }
     });
     conn.on('close', () => {
       if (activeConnectionTokenRef.current !== token) return;
-      connRef.current = null;
-      activeConnectionTokenRef.current = null;
-      clearPendingSnapshotMessage();
-      clearSnapshotRequestTimer();
-      awaitingInitialSnapshotRef.current = false;
-
-      const terminationDecision = getConnectionTerminationDecision({
-        isHost,
-        kind: 'close',
-      });
-
-      if (terminationDecision.type === 'host') {
-        setConnectionState(terminationDecision.nextConnectionState);
-        setStatusKey(terminationDecision.statusKey);
-        return;
-      }
-
-      scheduleReconnect(terminationDecision.statusKey);
+      handleConnectionTermination('close');
     });
     conn.on('error', () => {
       if (activeConnectionTokenRef.current !== token) return;
-      connRef.current = null;
-      activeConnectionTokenRef.current = null;
-      clearPendingSnapshotMessage();
-      clearSnapshotRequestTimer();
-      awaitingInitialSnapshotRef.current = false;
-
-      const terminationDecision = getConnectionTerminationDecision({
-        isHost,
-        kind: 'error',
-      });
-
-      if (terminationDecision.type === 'host') {
-        setConnectionState(terminationDecision.nextConnectionState);
-        setStatusKey(terminationDecision.statusKey);
-        return;
-      }
-
-      scheduleReconnect(terminationDecision.statusKey);
+      handleConnectionTermination('error');
     });
-  }, [applyAuthoritativeEvent, clearPendingSnapshotMessage, clearReconnectTimer, clearSnapshotRequestTimer, isHost, maybeApplySnapshot, playSharedUiEffect, requestSnapshotWithRetry, resetTransientUiState, role, scheduleReconnect, sendMessage]);
+  }, [clearPendingSnapshotMessage, clearReconnectTimer, clearSnapshotRequestTimer, handleConnectionTermination, handleIncomingEvent, handleIncomingSnapshot, handleIncomingSnapshotRequest, handleIncomingWaitingForHostSession, isHost, playIncomingSharedUiEffects, requestSnapshotWithRetry, role]);
 
   useEffect(() => {
     setupConnectionRef.current = setupConnection;
@@ -1362,6 +1374,42 @@ export const useGameBoardLogic = () => {
     sendSnapshotToCurrentConnection(gameStateRef.current, 'host');
   }, [room, sendSnapshotToCurrentConnection]);
 
+  const handlePeerOpen = useCallback(() => {
+    const openDecision = getPeerOpenDecision({ isHost });
+    setStatusKey(openDecision.statusKey);
+
+    if (openDecision.type === 'host') {
+      setConnectionState(openDecision.nextConnectionState);
+      return;
+    }
+
+    if (openDecision.shouldConnectToHost) {
+      connectToHost();
+    }
+  }, [connectToHost, isHost]);
+
+  const handlePeerIncomingConnection = useCallback((conn: DataConnection) => {
+    const incomingConnectionDecision = getPeerIncomingConnectionDecision({ isHost });
+
+    if (incomingConnectionDecision.type === 'setup-connection') {
+      setupConnection(conn);
+    }
+  }, [isHost, setupConnection]);
+
+  const handlePeerTermination = useCallback((kind: 'disconnected' | 'error') => {
+    const terminationDecision = getPeerTerminationDecision({
+      isHost,
+      kind,
+    });
+
+    if (terminationDecision.type === 'host') {
+      setStatusKey(terminationDecision.statusKey);
+      return;
+    }
+
+    scheduleReconnect(terminationDecision.statusKey);
+  }, [isHost, scheduleReconnect]);
+
   useEffect(() => {
     if (isSoloMode) {
       setStatusKey('gameBoard.status.soloMode');
@@ -1376,51 +1424,13 @@ export const useGameBoardLogic = () => {
     const peer = peerId ? new Peer(peerId) : new Peer();
     peerRef.current = peer;
 
-    peer.on('open', () => {
-      const openDecision = getPeerOpenDecision({ isHost });
-      setStatusKey(openDecision.statusKey);
-      if (openDecision.type === 'host') {
-        setConnectionState(openDecision.nextConnectionState);
-      }
-      if (openDecision.type === 'guest' && openDecision.shouldConnectToHost) {
-        connectToHost();
-      }
-    });
-
-    peer.on('connection', (conn) => {
-      const incomingConnectionDecision = getPeerIncomingConnectionDecision({ isHost });
-
-      if (incomingConnectionDecision.type === 'setup-connection') {
-        setupConnection(conn);
-      }
-    });
-
+    peer.on('open', handlePeerOpen);
+    peer.on('connection', handlePeerIncomingConnection);
     peer.on('disconnected', () => {
-      const terminationDecision = getPeerTerminationDecision({
-        isHost,
-        kind: 'disconnected',
-      });
-
-      if (terminationDecision.type === 'host') {
-        setStatusKey(terminationDecision.statusKey);
-        return;
-      }
-
-      scheduleReconnect(terminationDecision.statusKey);
+      handlePeerTermination('disconnected');
     });
-
     peer.on('error', () => {
-      const terminationDecision = getPeerTerminationDecision({
-        isHost,
-        kind: 'error',
-      });
-
-      if (terminationDecision.type === 'host') {
-        setStatusKey(terminationDecision.statusKey);
-        return;
-      }
-
-      scheduleReconnect(terminationDecision.statusKey);
+      handlePeerTermination('error');
     });
 
     return () => {
@@ -1432,7 +1442,7 @@ export const useGameBoardLogic = () => {
       connRef.current = null;
       peer.destroy();
     };
-  }, [clearPendingSnapshotMessage, clearReconnectTimer, clearSnapshotRequestTimer, connectToHost, room, isHost, isSoloMode, scheduleReconnect, setupConnection]); // gameState を除外して接続ループを防ぐ
+  }, [clearPendingSnapshotMessage, clearReconnectTimer, clearSnapshotRequestTimer, handlePeerIncomingConnection, handlePeerOpen, handlePeerTermination, room, isHost, isSoloMode]); // gameState を除外して接続ループを防ぐ
 
   useEffect(() => {
     if (!isDebug) return;
