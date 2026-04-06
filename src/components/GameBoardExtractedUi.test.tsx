@@ -11,6 +11,7 @@ import GameBoardEvolveAutoAttachDialog from './GameBoardEvolveAutoAttachDialog';
 import GameBoardEndTurnButton from './GameBoardEndTurnButton';
 import GameBoardGlobalOverlays from './GameBoardGlobalOverlays';
 import GameBoardLeaderZone from './GameBoardLeaderZone';
+import GameBoardMulliganDialog from './GameBoardMulliganDialog';
 import GameBoardPreparationControls from './GameBoardPreparationControls';
 import GameBoardPreparationPanel from './GameBoardPreparationPanel';
 import GameBoardPreparationReadyStatus from './GameBoardPreparationReadyStatus';
@@ -153,6 +154,68 @@ describe('GameBoard extracted UI components', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
     expect(onCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders mulligan dialog and wires selection, cancel, and confirm', () => {
+    const onSelectCard = vi.fn();
+    const onCancel = vi.fn();
+    const onConfirm = vi.fn();
+
+    render(
+      <GameBoardMulliganDialog
+        isOpen={true}
+        title="Mulligan: Select Return Order"
+        instructions="Select cards"
+        disclaimer="Cards are returned in this order."
+        cards={[
+          {
+            id: 'card-1',
+            cardId: 'TEST-001',
+            name: 'Alpha Knight',
+            image: '/alpha.png',
+            zone: 'hand-host',
+            owner: 'host',
+            isTapped: false,
+            isFlipped: false,
+            counters: { atk: 0, hp: 0 },
+            genericCounter: 0,
+            baseCardType: 'follower',
+            cardKindNormalized: 'follower',
+          },
+        ]}
+        mulliganOrder={['card-1', 'card-2', 'card-3', 'card-4']}
+        cardDetailLookup={{
+          'TEST-001': {
+            id: 'TEST-001',
+            name: 'Alpha Knight',
+            image: '/alpha.png',
+            className: 'Royal',
+            title: 'Hero Tale',
+            type: 'Follower',
+            subtype: 'Soldier',
+            cost: '2',
+            atk: 2,
+            hp: 2,
+            abilityText: '[Fanfare] Test ability.',
+          },
+        }}
+        cancelLabel="Cancel"
+        confirmLabel="Exchange"
+        onSelectCard={onSelectCard}
+        onCancel={onCancel}
+        onConfirm={onConfirm}
+      />
+    );
+
+    expect(screen.getByRole('dialog', { name: 'Mulligan: Select Return Order' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByAltText('Alpha Knight'));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Exchange' }));
+
+    expect(onSelectCard).toHaveBeenCalledWith('card-1');
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(onConfirm).toHaveBeenCalledTimes(1);
   });
 
   it('renders zone search button and wires click action', () => {

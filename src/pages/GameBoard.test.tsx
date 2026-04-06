@@ -841,6 +841,59 @@ describe('GameBoard', () => {
     });
   });
 
+  it('renders the search modal and closes it through the page handler', () => {
+    const setSearchZone = vi.fn();
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      setSearchZone,
+      searchZone: {
+        id: 'cemetery-guest',
+        title: 'Opponent Cemetery',
+      },
+      gameState: createGameState([]),
+    }));
+
+    render(<GameBoard />);
+
+    expect(screen.getByRole('dialog', { name: 'Opponent Cemetery' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close Search' }));
+
+    expect(setSearchZone).toHaveBeenCalledWith(null);
+  });
+
+  it('renders the top deck modal and closes it through the page handler', () => {
+    const setTopDeckCards = vi.fn();
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      topDeckCards: [
+        makeCard({
+          id: 'topdeck-1',
+          zone: 'mainDeck-host',
+          owner: 'host',
+        }),
+      ],
+      setTopDeckCards,
+      gameState: createGameState([
+        makeCard({
+          id: 'hand-host-1',
+          zone: 'hand-host',
+          owner: 'host',
+        }),
+      ], {
+        gameStatus: 'playing',
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    expect(screen.getByRole('dialog', { name: 'Top Deck Modal' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close Top Deck' }));
+
+    expect(setTopDeckCards).toHaveBeenCalledWith([]);
+  });
+
   it('shows the reconnecting alert when guest actions are locked', () => {
     mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
       isHost: false,
