@@ -42,6 +42,7 @@ import { getConnectionTerminationDecision } from '../utils/gameBoardConnectionTe
 import { getPeerOpenDecision } from '../utils/gameBoardPeerOpen';
 import { getPeerTerminationDecision } from '../utils/gameBoardPeerTermination';
 import { getSnapshotRequestDecision } from '../utils/gameBoardSnapshotRequest';
+import { getWaitingForHostSessionDecision } from '../utils/gameBoardWaitingForHostSession';
 import { shouldApplyIncomingSnapshot } from '../utils/gameBoardSnapshotAcceptance';
 import { getSnapshotRetryTimeoutDecision } from '../utils/gameBoardSnapshotRetry';
 import { mergeQueuedSnapshotMessage } from '../utils/gameBoardSnapshotQueue';
@@ -1200,8 +1201,10 @@ export const useGameBoardLogic = () => {
       }
       if (data.type === 'WAITING_FOR_HOST_SESSION') {
         clearSnapshotRequestTimer();
-        if (!isHost) {
-          setStatusKey('gameBoard.status.waitingForHostDecision');
+        const waitingDecision = getWaitingForHostSessionDecision({ isHost });
+
+        if (waitingDecision.type === 'set-status') {
+          setStatusKey(waitingDecision.statusKey);
         }
         return;
       }

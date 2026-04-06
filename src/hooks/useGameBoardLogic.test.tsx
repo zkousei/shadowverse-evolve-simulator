@@ -724,6 +724,28 @@ describe('useGameBoardLogic P2P reconnect', () => {
     expect(peer.connect).toHaveBeenCalledTimes(1);
   });
 
+  it('ignores WAITING_FOR_HOST_SESSION on the host side and keeps the current status', () => {
+    renderHarness('/game?host=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const conn = mockPeerJs.createConnection('guest');
+    act(() => {
+      peer.emit('connection', conn);
+      conn.open = true;
+      conn.emit('open');
+      conn.emit('data', {
+        type: 'WAITING_FOR_HOST_SESSION',
+        source: 'guest',
+      });
+    });
+
+    expect(screen.getByTestId('status')).toHaveTextContent('Guest connected! Game ready.');
+  });
+
   it('falls back to reconnecting after snapshot retries are exhausted', () => {
     renderHarness('/game?host=false&room=ROOM123');
 
