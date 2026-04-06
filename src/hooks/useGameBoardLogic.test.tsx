@@ -203,6 +203,11 @@ function HookHarness() {
     savedSessionCandidate,
     resumeSavedSession,
     discardSavedSession,
+    mulliganOrder,
+    isMulliganModalOpen,
+    startMulligan,
+    handleMulliganOrderSelect,
+    executeMulligan,
     endTurn,
     handleUndoTurn,
     drawCard,
@@ -243,6 +248,7 @@ function HookHarness() {
       <div data-testid="host-banish-count">{gameState.cards.filter(card => card.zone === 'banish-host').length}</div>
       <div data-testid="host-evolve-count">{gameState.cards.filter(card => card.zone === 'evolveDeck-host').length}</div>
       <div data-testid="host-main-deck-count">{gameState.cards.filter(card => card.zone === 'mainDeck-host').length}</div>
+      <div data-testid="host-mulligan-used">{String(gameState.host.mulliganUsed)}</div>
       <div data-testid="counter-card-atk">{String(gameState.cards.find(card => card.id === 'counter-card')?.counters.atk ?? 'missing')}</div>
       <div data-testid="counter-card-generic">{String(gameState.cards.find(card => card.id === 'counter-card')?.genericCounter ?? 'missing')}</div>
       <div data-testid="tap-card-state">{String(gameState.cards.find(card => card.id === 'tap-card')?.isTapped ?? 'missing')}</div>
@@ -274,6 +280,8 @@ function HookHarness() {
       <div data-testid="drag-linked-linked-to">{gameState.cards.find(card => card.id === 'drag-linked-card')?.linkedTo ?? 'none'}</div>
       <div data-testid="drag-linked-zone">{gameState.cards.find(card => card.id === 'drag-linked-card')?.zone ?? 'none'}</div>
       <div data-testid="drag-linked-tapped">{String(gameState.cards.find(card => card.id === 'drag-linked-card')?.isTapped ?? 'missing')}</div>
+      <div data-testid="mulligan-open">{String(isMulliganModalOpen)}</div>
+      <div data-testid="mulligan-order">{mulliganOrder.join(',') || 'none'}</div>
       {savedSessionCandidate && (
         <>
           <button onClick={resumeSavedSession}>Resume Saved Session</button>
@@ -281,6 +289,13 @@ function HookHarness() {
         </>
       )}
       <button onClick={() => endTurn('host')}>Host End Turn</button>
+      <button onClick={startMulligan}>Start Mulligan</button>
+      <button onClick={() => handleMulliganOrderSelect('hand1')}>Select Mulligan Hand 1</button>
+      <button onClick={() => handleMulliganOrderSelect('hand2')}>Select Mulligan Hand 2</button>
+      <button onClick={() => handleMulliganOrderSelect('hand3')}>Select Mulligan Hand 3</button>
+      <button onClick={() => handleMulliganOrderSelect('hand4')}>Select Mulligan Hand 4</button>
+      <button onClick={() => handleMulliganOrderSelect('hand5')}>Select Mulligan Hand 5</button>
+      <button onClick={() => executeMulligan('host')}>Execute Host Mulligan</button>
       <button onClick={handleUndoTurn}>Undo Turn</button>
       <button onClick={() => drawCard('host')}>Host Draw</button>
       <button onClick={() => moveTopCardToEx('host')}>Host Top to EX</button>
@@ -1669,6 +1684,58 @@ describe('useGameBoardLogic action handlers', () => {
 
     expect(screen.getByTestId('host-ex-count')).toHaveTextContent('0');
     expect(screen.getByTestId('can-undo-move')).toHaveTextContent('false');
+  });
+
+  it('starts mulligan by clearing any local selection and opening the modal', () => {
+    renderHarness('/game?mode=solo');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Select Mulligan Hand 1' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Select Mulligan Hand 2' }));
+    expect(screen.getByTestId('mulligan-order')).toHaveTextContent('hand1,hand2');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start Mulligan' }));
+
+    expect(screen.getByTestId('mulligan-order')).toHaveTextContent('none');
+    expect(screen.getByTestId('mulligan-open')).toHaveTextContent('true');
+  });
+
+  it('preserves the current mulligan selection behavior and closes after execution', () => {
+    renderResumedHostHarness({
+      cards: [
+        { id: 'deck1', cardId: 'BP01-023', name: 'Deck1', image: '', zone: 'mainDeck-host', owner: 'host', isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 } },
+        { id: 'deck2', cardId: 'BP01-024', name: 'Deck2', image: '', zone: 'mainDeck-host', owner: 'host', isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 } },
+        { id: 'deck3', cardId: 'BP01-025', name: 'Deck3', image: '', zone: 'mainDeck-host', owner: 'host', isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 } },
+        { id: 'deck4', cardId: 'BP01-026', name: 'Deck4', image: '', zone: 'mainDeck-host', owner: 'host', isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 } },
+        { id: 'deck5', cardId: 'BP01-027', name: 'Deck5', image: '', zone: 'mainDeck-host', owner: 'host', isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 } },
+        { id: 'hand1', cardId: 'BP01-028', name: 'Hand1', image: '', zone: 'hand-host', owner: 'host', isTapped: false, isFlipped: false, counters: { atk: 0, hp: 0 } },
+        { id: 'hand2', cardId: 'BP01-029', name: 'Hand2', image: '', zone: 'hand-host', owner: 'host', isTapped: false, isFlipped: false, counters: { atk: 0, hp: 0 } },
+        { id: 'hand3', cardId: 'BP01-030', name: 'Hand3', image: '', zone: 'hand-host', owner: 'host', isTapped: false, isFlipped: false, counters: { atk: 0, hp: 0 } },
+        { id: 'hand4', cardId: 'BP01-031', name: 'Hand4', image: '', zone: 'hand-host', owner: 'host', isTapped: false, isFlipped: false, counters: { atk: 0, hp: 0 } },
+        { id: 'hand5', cardId: 'BP01-032', name: 'Hand5', image: '', zone: 'hand-host', owner: 'host', isTapped: false, isFlipped: false, counters: { atk: 0, hp: 0 } },
+      ],
+      host: {
+        initialHandDrawn: true,
+        mulliganUsed: false,
+      },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start Mulligan' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Select Mulligan Hand 1' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Select Mulligan Hand 2' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Select Mulligan Hand 3' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Select Mulligan Hand 4' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Select Mulligan Hand 5' }));
+
+    expect(screen.getByTestId('mulligan-order')).toHaveTextContent('hand1,hand2,hand3,hand4,hand5');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Select Mulligan Hand 5' }));
+    expect(screen.getByTestId('mulligan-order')).toHaveTextContent('hand1,hand2,hand3,hand4');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Execute Host Mulligan' }));
+
+    expect(screen.getByTestId('mulligan-open')).toHaveTextContent('false');
+    expect(screen.getByTestId('host-mulligan-used')).toHaveTextContent('true');
+    expect(screen.getByTestId('host-hand-count')).toHaveTextContent('4');
   });
 
   it('returns an evolve card from the field to the evolve deck', () => {

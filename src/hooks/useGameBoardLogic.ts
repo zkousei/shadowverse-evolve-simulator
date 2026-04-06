@@ -24,6 +24,7 @@ import { buildCardPlayedEffect, formatCardPlayedEffect } from '../utils/cardPlay
 import { loadCardCatalog } from '../utils/cardCatalog';
 import { buildGameBoardCatalogResources } from '../utils/gameBoardCatalog';
 import { buildImportedDeckPayload, buildSpawnTokenInstance, buildSpawnTokens, type ImportableDeckData } from '../utils/gameBoardDeckActions';
+import { buildClosedMulliganState, buildStartedMulliganState, toggleMulliganOrderSelection } from '../utils/gameBoardMulligan';
 import { type EvolveAutoAttachResolver } from '../utils/evolveAutoAttach';
 import { type FieldLinkAutoAttachResolver } from '../utils/fieldLinkAutoAttach';
 
@@ -1689,21 +1690,18 @@ export const useGameBoardLogic = () => {
   };
 
   const startMulligan = () => {
-    setMulliganOrder([]);
-    setIsMulliganModalOpen(true);
+    const nextState = buildStartedMulliganState();
+    setMulliganOrder(nextState.mulliganOrder);
+    setIsMulliganModalOpen(nextState.isMulliganModalOpen);
   };
 
   const handleMulliganOrderSelect = (cardId: string) => {
-    if (mulliganOrder.includes(cardId)) {
-      setMulliganOrder(prev => prev.filter(id => id !== cardId));
-    } else {
-      setMulliganOrder(prev => [...prev, cardId]);
-    }
+    setMulliganOrder((prev) => toggleMulliganOrderSelection(prev, cardId));
   };
 
   const executeMulligan = (targetRole?: PlayerRole) => {
     dispatchGameEvent({ type: 'EXECUTE_MULLIGAN', actor: targetRole, selectedIds: mulliganOrder });
-    setIsMulliganModalOpen(false);
+    setIsMulliganModalOpen(buildClosedMulliganState().isMulliganModalOpen);
   };
 
   const drawCard = (targetRole?: PlayerRole) => {
