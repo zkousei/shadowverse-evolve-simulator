@@ -4,18 +4,26 @@ import { describe, expect, it, vi } from 'vitest';
 import DeckBuilderDeckControls from './DeckBuilderDeckControls';
 import DeckBuilderDeckHeader from './DeckBuilderDeckHeader';
 import DeckBuilderDeckLogImportDialog from './DeckBuilderDeckLogImportDialog';
+import DeckBuilderDeckPane from './DeckBuilderDeckPane';
+import DeckBuilderDeckSection from './DeckBuilderDeckSection';
 import DeckBuilderDeleteSavedDecksDialog from './DeckBuilderDeleteSavedDecksDialog';
 import DeckBuilderDraftRestoreDialog from './DeckBuilderDraftRestoreDialog';
+import DeckBuilderHoverPreview from './DeckBuilderHoverPreview';
+import DeckBuilderLibraryCard from './DeckBuilderLibraryCard';
 import DeckBuilderLibraryFilters from './DeckBuilderLibraryFilters';
+import DeckBuilderLibraryPane from './DeckBuilderLibraryPane';
 import DeckBuilderMyDecksModal from './DeckBuilderMyDecksModal';
 import DeckBuilderMyDecksToolbar from './DeckBuilderMyDecksToolbar';
 import DeckBuilderPaginationControls from './DeckBuilderPaginationControls';
+import DeckBuilderPreviewModal from './DeckBuilderPreviewModal';
 import DeckBuilderResetDialog from './DeckBuilderResetDialog';
 import DeckBuilderRulePanel from './DeckBuilderRulePanel';
 import DeckBuilderSaveFeedback from './DeckBuilderSaveFeedback';
 import DeckBuilderSavedDeckItem from './DeckBuilderSavedDeckItem';
 import DeckBuilderSavedDeckConfirmDialog from './DeckBuilderSavedDeckConfirmDialog';
+import type { DeckBuilderCardData } from '../models/deckBuilderCard';
 import type { FilteredSavedDeckEntry, SavedDeckSelectionUiState } from '../utils/deckBuilderSelections';
+import type { CardDetail } from '../utils/cardDetails';
 import type { SavedDeckRecordV1 } from '../utils/deckStorage';
 
 const sampleSavedDeck: SavedDeckRecordV1 = {
@@ -54,6 +62,41 @@ const singleSavedDeckEntry: FilteredSavedDeckEntry[] = [
     canExport: true,
   },
 ];
+
+const sampleCard: DeckBuilderCardData = {
+  id: 'BP01-001',
+  name: 'Alpha Knight',
+  image: '/alpha.png',
+  cost: '1',
+  class: 'ロイヤル',
+  title: 'Hero Tale',
+  type: 'フォロワー',
+  subtype: '兵士',
+  rarity: 'LG',
+  product_name: 'Booster Pack 1',
+  atk: '2',
+  hp: '2',
+  ability_text: '[ファンファーレ] テスト能力。',
+  card_kind_normalized: 'follower',
+  deck_section: 'main',
+  is_token: false,
+  is_evolve_card: false,
+  is_deck_build_legal: true,
+};
+
+const sampleCardDetail: CardDetail = {
+  id: 'BP01-001',
+  name: 'Alpha Knight',
+  image: '/alpha.png',
+  className: 'ロイヤル',
+  title: 'Hero Tale',
+  type: 'フォロワー',
+  subtype: '兵士',
+  cost: '1',
+  atk: 2,
+  hp: 2,
+  abilityText: '[ファンファーレ] テスト能力。',
+};
 
 describe('DeckBuilder extracted UI components', () => {
   it('renders deck header actions and wires callbacks', () => {
@@ -657,5 +700,298 @@ describe('DeckBuilder extracted UI components', () => {
 
     fireEvent.click(dialog.parentElement as HTMLElement);
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders a library card and wires preview and add actions', () => {
+    const onOpenPreview = vi.fn();
+    const onAddToSection = vi.fn();
+
+    render(
+      <DeckBuilderLibraryCard
+        card={sampleCard}
+        detail={sampleCardDetail}
+        allowedSections={['main', 'token']}
+        canAddToSection={(section) => section === 'main'}
+        onOpenPreview={onOpenPreview}
+        onAddToSection={onAddToSection}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Preview Alpha Knight' }));
+    fireEvent.click(screen.getByTitle('Add to Main Deck'));
+    expect(screen.getByTitle('Add to Token Deck')).toBeDisabled();
+
+    expect(onOpenPreview).toHaveBeenCalledWith(sampleCard);
+    expect(onAddToSection).toHaveBeenCalledWith(sampleCard, 'main');
+  });
+
+  it('renders deck section rows and wires hover, add, and remove actions', () => {
+    const onRemove = vi.fn();
+    const onAdd = vi.fn();
+    const onCardMouseEnter = vi.fn();
+    const onCardMouseMove = vi.fn();
+    const onCardMouseLeave = vi.fn();
+
+    render(
+      <DeckBuilderDeckSection
+        title="Main Deck"
+        countLabel="1/50"
+        groupedCards={[{ card: sampleCard, count: 2 }]}
+        targetSection="main"
+        removeTitle="Remove one copy from Main Deck"
+        addTitle="Add to Main Deck"
+        canAddCard={() => true}
+        onRemove={onRemove}
+        onAdd={onAdd}
+        onCardMouseEnter={onCardMouseEnter}
+        onCardMouseMove={onCardMouseMove}
+        onCardMouseLeave={onCardMouseLeave}
+      />
+    );
+
+    const cardName = screen.getByText('Alpha Knight');
+    fireEvent.mouseEnter(cardName);
+    fireEvent.mouseMove(cardName);
+    fireEvent.mouseLeave(cardName);
+    fireEvent.click(screen.getByTitle('Remove one copy from Main Deck'));
+    fireEvent.click(screen.getByTitle('Add to Main Deck'));
+
+    expect(screen.getByText('× 2')).toBeInTheDocument();
+    expect(onCardMouseEnter).toHaveBeenCalled();
+    expect(onCardMouseMove).toHaveBeenCalled();
+    expect(onCardMouseLeave).toHaveBeenCalledTimes(1);
+    expect(onRemove).toHaveBeenCalledWith('BP01-001');
+    expect(onAdd).toHaveBeenCalledWith(sampleCard);
+  });
+
+  it('renders the preview modal and wires overlay and close button actions', () => {
+    const onClose = vi.fn();
+
+    render(
+      <DeckBuilderPreviewModal
+        previewCard={sampleCard}
+        previewDetail={sampleCardDetail}
+        onClose={onClose}
+      />
+    );
+
+    const dialog = screen.getByRole('dialog', { name: 'Alpha Knight preview' });
+    expect(dialog).toBeInTheDocument();
+    expect(screen.getByText('BP01-001')).toBeInTheDocument();
+    expect(screen.getByText('[ファンファーレ] テスト能力。')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close card preview' }));
+    fireEvent.click(dialog.parentElement as HTMLElement);
+
+    expect(onClose).toHaveBeenCalledTimes(2);
+  });
+
+  it('renders hover preview content with the expected fixed position', () => {
+    const { container } = render(
+      <DeckBuilderHoverPreview
+        hoveredDeckCard={sampleCard}
+        hoveredDetail={sampleCardDetail}
+        left={120}
+        top={240}
+        width={180}
+        maxHeight={320}
+      />
+    );
+
+    expect(screen.getByText('Alpha Knight')).toBeInTheDocument();
+    const image = screen.getByAltText('Alpha Knight');
+    expect(image).toBeInTheDocument();
+    const wrapper = container.firstElementChild as HTMLElement;
+    expect(wrapper.style.left).toBe('120px');
+    expect(wrapper.style.top).toBe('240px');
+    expect(wrapper.style.width).toBe('180px');
+    expect(wrapper.style.maxHeight).toBe('320px');
+  });
+
+  it('renders the library pane and delegates filter, pagination, and card actions', () => {
+    const onSearchChange = vi.fn();
+    const onHideSameNameVariantsChange = vi.fn();
+    const onReset = vi.fn();
+    const onDeckSectionFilterChange = vi.fn();
+    const onClassFilterChange = vi.fn();
+    const onCardTypeFilterChange = vi.fn();
+    const onCostFilterChange = vi.fn();
+    const onExpansionFilterChange = vi.fn();
+    const onRarityFilterChange = vi.fn();
+    const onProductNameFilterChange = vi.fn();
+    const onSubtypeSearchChange = vi.fn();
+    const onAddSubtype = vi.fn();
+    const onRemoveSubtype = vi.fn();
+    const onPrev = vi.fn();
+    const onNext = vi.fn();
+    const onOpenPreview = vi.fn();
+    const onAddToSection = vi.fn();
+
+    render(
+      <DeckBuilderLibraryPane
+        isLoading={false}
+        paginatedCards={[sampleCard]}
+        cardDetailLookup={{ 'BP01-001': sampleCardDetail }}
+        search=""
+        hideSameNameVariants={false}
+        deckSectionFilter="All"
+        classFilter="All"
+        cardTypeFilter="All"
+        costFilter="All"
+        expansionFilter="All"
+        rarityFilter="All"
+        productNameFilter="All"
+        subtypeSearch=""
+        selectedSubtypeTags={[]}
+        filteredSubtypeOptions={['兵士']}
+        costFilterValues={['All', '1']}
+        deckSectionFilterValues={['All', 'main']}
+        cardTypeFilterValues={['All', 'follower']}
+        expansions={['Booster Pack 1']}
+        rarities={['LG']}
+        productNames={['Booster Pack 1']}
+        canAddSubtype={true}
+        page={0}
+        totalPages={2}
+        canGoPrev={false}
+        canGoNext={true}
+        getAllowedSections={() => ['main']}
+        canAddToSection={() => true}
+        onSearchChange={onSearchChange}
+        onHideSameNameVariantsChange={onHideSameNameVariantsChange}
+        onReset={onReset}
+        onDeckSectionFilterChange={onDeckSectionFilterChange}
+        onClassFilterChange={onClassFilterChange}
+        onCardTypeFilterChange={onCardTypeFilterChange}
+        onCostFilterChange={onCostFilterChange}
+        onExpansionFilterChange={onExpansionFilterChange}
+        onRarityFilterChange={onRarityFilterChange}
+        onProductNameFilterChange={onProductNameFilterChange}
+        onSubtypeSearchChange={onSubtypeSearchChange}
+        onAddSubtype={onAddSubtype}
+        onRemoveSubtype={onRemoveSubtype}
+        onPrev={onPrev}
+        onNext={onNext}
+        onOpenPreview={onOpenPreview}
+        onAddToSection={onAddToSection}
+      />
+    );
+
+    expect(screen.getByRole('heading', { name: 'Card Library' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Preview Alpha Knight' }));
+    fireEvent.click(screen.getByTitle('Add to Main Deck'));
+
+    expect(onNext).toHaveBeenCalledTimes(1);
+    expect(onOpenPreview).toHaveBeenCalledWith(sampleCard);
+    expect(onAddToSection).toHaveBeenCalledWith(sampleCard, 'main');
+  });
+
+  it('renders the deck pane and delegates header, rules, controls, and section actions', () => {
+    const onDeckNameChange = vi.fn();
+    const onSave = vi.fn();
+    const onMakeUnsavedCopy = vi.fn();
+    const onOpenMyDecks = vi.fn();
+    const onImportDeck = vi.fn();
+    const onOpenDeckLogImport = vi.fn();
+    const onExportDeck = vi.fn();
+    const onDeckFormatChange = vi.fn();
+    const onDeckIdentityTypeChange = vi.fn();
+    const onConstructedClassChange = vi.fn();
+    const onConstructedTitleChange = vi.fn();
+    const onCrossoverClassChange = vi.fn();
+    const onDeckSortModeChange = vi.fn();
+    const onOpenResetDeckDialog = vi.fn();
+    const onOpenResetBuilderDialog = vi.fn();
+    const onRemoveLeader = vi.fn();
+    const onRemoveMain = vi.fn();
+    const onAddMain = vi.fn();
+    const onRemoveEvolve = vi.fn();
+    const onAddEvolve = vi.fn();
+    const onRemoveToken = vi.fn();
+    const onAddToken = vi.fn();
+    const onDeckCardMouseEnter = vi.fn();
+    const onDeckCardMouseMove = vi.fn();
+    const onDeckCardMouseLeave = vi.fn();
+
+    const { container } = render(
+      <DeckBuilderDeckPane
+        deckName="Alpha Deck"
+        canSaveCurrentDeck={true}
+        canExportDeck={true}
+        selectedSavedDeckId={null}
+        saveStateMessage="Unsaved changes"
+        draftRestored={false}
+        hasReachedSoftLimit={false}
+        hasReachedHardLimit={false}
+        savedDeckCount={1}
+        hardSavedDeckLimit={200}
+        deckRuleConfig={{
+          format: 'constructed',
+          identityType: 'class',
+          selectedClass: 'ロイヤル',
+          selectedTitle: null,
+          selectedClasses: [null, null],
+        }}
+        titles={['Hero Tale']}
+        crossoverClassOptionsA={['ロイヤル', 'ウィッチ']}
+        crossoverClassOptionsB={['ウィッチ']}
+        isRuleReady={true}
+        deckIssueMessages={[]}
+        deckSortMode="added"
+        leaderCount={1}
+        leaderLimit={1}
+        groupedLeaderCards={[{ card: { ...sampleCard, id: 'LDR01-001', name: 'Leader Luna', deck_section: 'leader', card_kind_normalized: 'leader' }, count: 1 }]}
+        mainDeckCount={1}
+        groupedMainDeck={[{ card: sampleCard, count: 1 }]}
+        evolveDeckCount={1}
+        groupedEvolveDeck={[{ card: { ...sampleCard, id: 'EV01-001', name: 'Evolve Angel', deck_section: 'evolve', is_evolve_card: true, card_kind_normalized: 'evolve_follower' }, count: 1 }]}
+        tokenDeckCount={1}
+        groupedTokenDeck={[{ card: { ...sampleCard, id: 'TK01-001', name: 'Knight Token', deck_section: 'token', is_token: true, card_kind_normalized: 'token_amulet' }, count: 1 }]}
+        onDeckNameChange={onDeckNameChange}
+        onSave={onSave}
+        onMakeUnsavedCopy={onMakeUnsavedCopy}
+        onOpenMyDecks={onOpenMyDecks}
+        onImportDeck={onImportDeck}
+        onOpenDeckLogImport={onOpenDeckLogImport}
+        onExportDeck={onExportDeck}
+        onDeckFormatChange={onDeckFormatChange}
+        onDeckIdentityTypeChange={onDeckIdentityTypeChange}
+        onConstructedClassChange={onConstructedClassChange}
+        onConstructedTitleChange={onConstructedTitleChange}
+        onCrossoverClassChange={onCrossoverClassChange}
+        onDeckSortModeChange={onDeckSortModeChange}
+        onOpenResetDeckDialog={onOpenResetDeckDialog}
+        onOpenResetBuilderDialog={onOpenResetBuilderDialog}
+        canAddMainCard={() => true}
+        canAddEvolveCard={() => true}
+        canAddTokenCard={() => true}
+        onRemoveLeader={onRemoveLeader}
+        onRemoveMain={onRemoveMain}
+        onAddMain={onAddMain}
+        onRemoveEvolve={onRemoveEvolve}
+        onAddEvolve={onAddEvolve}
+        onRemoveToken={onRemoveToken}
+        onAddToken={onAddToken}
+        onDeckCardMouseEnter={onDeckCardMouseEnter}
+        onDeckCardMouseMove={onDeckCardMouseMove}
+        onDeckCardMouseLeave={onDeckCardMouseLeave}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reset Builder' }));
+    fireEvent.click(screen.getAllByTitle('Remove one copy from Main Deck')[0]);
+
+    const fileInput = container.querySelector('input[type="file"]');
+    fireEvent.change(fileInput as HTMLInputElement, {
+      target: { files: [new File(['{}'], 'deck.json', { type: 'application/json' })] },
+    });
+
+    expect(onSave).toHaveBeenCalledTimes(1);
+    expect(onOpenResetBuilderDialog).toHaveBeenCalledTimes(1);
+    expect(onRemoveMain).toHaveBeenCalledWith('BP01-001');
+    expect(onAddMain).not.toHaveBeenCalled();
+    expect(onImportDeck).toHaveBeenCalledTimes(1);
   });
 });
