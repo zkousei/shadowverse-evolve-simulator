@@ -25,6 +25,7 @@ import { loadCardCatalog } from '../utils/cardCatalog';
 import { buildGameBoardCatalogResources } from '../utils/gameBoardCatalog';
 import { buildImportedDeckPayload, buildSpawnTokenInstance, buildSpawnTokens, type ImportableDeckData } from '../utils/gameBoardDeckActions';
 import { buildClosedMulliganState, buildStartedMulliganState, toggleMulliganOrderSelection } from '../utils/gameBoardMulligan';
+import { getHostSessionStorageKey, hasMeaningfulGameSessionState, parseSavedHostSession, type SavedHostSession } from '../utils/gameBoardSavedSession';
 import {
   mergeLookTopSummaryIntoOverlay,
   prependAttackHistoryEntry,
@@ -71,15 +72,8 @@ type DispatchableGameSyncEvent =
   | { type: 'ATTACK_DECLARATION'; actor?: PlayerRole; attackerCardId: string; target: AttackTarget };
 
 type ConnectionState = 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'disconnected';
-type SavedHostSession = {
-  room: string;
-  savedAt: string;
-  appVersion: string;
-  state: SyncState;
-};
 
 const APP_VERSION = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '0.0.0';
-const getHostSessionStorageKey = (room: string) => `sv-evolve:host-session:${room}`;
 const SNAPSHOT_REQUEST_TIMEOUT_MS = 2000;
 const MAX_SNAPSHOT_REQUEST_RETRIES = 2;
 const SNAPSHOT_FLUSH_INTERVAL_MS = 50;
@@ -126,96 +120,6 @@ const isEquipmentLinkTargetCard = (
   }
 
   return !card.isLeaderCard && !card.isEvolveCard && !card.isTokenCard && card.baseCardType === 'follower';
-};
-
-const isPlayerHud = (value: unknown): value is SyncState['host'] => (
-  typeof value === 'object' &&
-  value !== null &&
-  typeof (value as SyncState['host']).hp === 'number' &&
-  typeof (value as SyncState['host']).pp === 'number' &&
-  typeof (value as SyncState['host']).maxPp === 'number' &&
-  typeof (value as SyncState['host']).ep === 'number' &&
-  typeof (value as SyncState['host']).sep === 'number' &&
-  typeof (value as SyncState['host']).combo === 'number' &&
-  typeof (value as SyncState['host']).initialHandDrawn === 'boolean' &&
-  typeof (value as SyncState['host']).mulliganUsed === 'boolean' &&
-  typeof (value as SyncState['host']).isReady === 'boolean'
-);
-
-const isSyncState = (value: unknown): value is SyncState => (
-  typeof value === 'object' &&
-  value !== null &&
-  isPlayerHud((value as SyncState).host) &&
-  isPlayerHud((value as SyncState).guest) &&
-  Array.isArray((value as SyncState).cards) &&
-  ((value as SyncState).turnPlayer === 'host' || (value as SyncState).turnPlayer === 'guest') &&
-  typeof (value as SyncState).turnCount === 'number' &&
-  ['Start', 'Main', 'End'].includes((value as SyncState).phase) &&
-  ['preparing', 'playing'].includes((value as SyncState).gameStatus) &&
-  typeof (value as SyncState).tokenOptions === 'object' &&
-  (value as SyncState).tokenOptions !== null &&
-  Array.isArray((value as SyncState).tokenOptions.host) &&
-  Array.isArray((value as SyncState).tokenOptions.guest) &&
-  typeof (value as SyncState).revision === 'number'
-);
-
-const parseSavedHostSession = (rawValue: string | null, room: string): SavedHostSession | null => {
-  if (!rawValue) return null;
-
-  try {
-    const parsed = JSON.parse(rawValue) as Partial<SavedHostSession>;
-    if (!parsed || parsed.room !== room) return null;
-    if (parsed.appVersion !== APP_VERSION) return null;
-    if (typeof parsed.savedAt !== 'string') return null;
-    if (!isSyncState(parsed.state)) return null;
-    return {
-      room: parsed.room,
-      savedAt: parsed.savedAt,
-      appVersion: parsed.appVersion,
-      state: parsed.state,
-    };
-  } catch {
-    return null;
-  }
-};
-
-const isInitialPlayerHud = (hud: SyncState['host']): boolean => (
-  hud.hp === 20 &&
-  hud.pp === 0 &&
-  hud.maxPp === 0 &&
-  hud.ep === 0 &&
-  hud.sep === 1 &&
-  hud.combo === 0 &&
-  hud.initialHandDrawn === false &&
-  hud.mulliganUsed === false &&
-  hud.isReady === false
-);
-
-const isInitialGuestHud = (hud: SyncState['guest']): boolean => (
-  hud.hp === 20 &&
-  hud.pp === 0 &&
-  hud.maxPp === 0 &&
-  hud.ep === 3 &&
-  hud.sep === 1 &&
-  hud.combo === 0 &&
-  hud.initialHandDrawn === false &&
-  hud.mulliganUsed === false &&
-  hud.isReady === false
-);
-
-const hasMeaningfulGameSessionState = (state: SyncState): boolean => {
-  // Fresh host boards are not resumable sessions. Only persist states that
-  // represent meaningful progress so "Start Fresh" stays fresh on revisit.
-  if (state.cards.length > 0) return true;
-  if (state.phase !== 'Start') return true;
-  if (state.turnPlayer !== 'host') return true;
-  if (state.turnCount !== 1) return true;
-  if (state.gameStatus !== 'preparing') return true;
-  if (state.revealHandsMode) return true;
-  if (state.tokenOptions.host.length > 0 || state.tokenOptions.guest.length > 0) return true;
-  if (!isInitialPlayerHud(state.host)) return true;
-  if (!isInitialGuestHud(state.guest)) return true;
-  return false;
 };
 
 export const useGameBoardLogic = () => {
@@ -1382,7 +1286,7 @@ export const useGameBoardLogic = () => {
     }
 
     const storageKey = getHostSessionStorageKey(room);
-    const parsed = parseSavedHostSession(window.sessionStorage.getItem(storageKey), room);
+    const parsed = parseSavedHostSession(window.sessionStorage.getItem(storageKey), room, APP_VERSION);
 
     if (!parsed || !hasMeaningfulGameSessionState(parsed.state)) {
       window.sessionStorage.removeItem(storageKey);
