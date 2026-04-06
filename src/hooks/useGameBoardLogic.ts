@@ -26,8 +26,8 @@ import { buildGameBoardCatalogResources } from '../utils/gameBoardCatalog';
 import { buildImportedDeckPayload, buildSpawnTokenInstance, buildSpawnTokens, type ImportableDeckData } from '../utils/gameBoardDeckActions';
 import { buildClosedMulliganState, buildStartedMulliganState, toggleMulliganOrderSelection } from '../utils/gameBoardMulligan';
 import {
-  buildSavedHostSessionPayload,
   getHostSessionStorageKey,
+  getSavedHostSessionPersistenceDecision,
   hasMeaningfulGameSessionState,
   parseSavedHostSession,
   type SavedHostSession,
@@ -1263,23 +1263,27 @@ export const useGameBoardLogic = () => {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (!hasCheckedSavedSession || isSoloMode || !isHost || !room) return;
-    if (savedSessionCandidate) return;
+    const decision = getSavedHostSessionPersistenceDecision({
+      hasCheckedSavedSession,
+      isSoloMode,
+      isHost,
+      room,
+      savedSessionCandidate,
+      state: gameState,
+      appVersion: APP_VERSION,
+      savedAt: new Date().toISOString(),
+    });
 
-    const storageKey = getHostSessionStorageKey(room);
-    if (!hasMeaningfulGameSessionState(gameState)) {
-      window.sessionStorage.removeItem(storageKey);
+    if (decision.type === 'skip') {
       return;
     }
 
-    const payload = buildSavedHostSessionPayload(
-      room,
-      APP_VERSION,
-      gameState,
-      new Date().toISOString()
-    );
+    if (decision.type === 'remove') {
+      window.sessionStorage.removeItem(decision.storageKey);
+      return;
+    }
 
-    window.sessionStorage.setItem(storageKey, JSON.stringify(payload));
+    window.sessionStorage.setItem(decision.storageKey, JSON.stringify(decision.payload));
   }, [gameState, hasCheckedSavedSession, isHost, isSoloMode, room, savedSessionCandidate]);
 
   const resumeSavedSession = useCallback(() => {

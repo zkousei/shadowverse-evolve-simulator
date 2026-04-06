@@ -3,6 +3,7 @@ import { initialState, type SyncState } from '../types/game';
 import {
   buildSavedHostSessionPayload,
   getHostSessionStorageKey,
+  getSavedHostSessionPersistenceDecision,
   hasMeaningfulGameSessionState,
   parseSavedHostSession,
 } from './gameBoardSavedSession';
@@ -37,6 +38,69 @@ describe('gameBoardSavedSession', () => {
       savedAt: '2026-03-19T10:00:00.000Z',
       appVersion: '1.2.3',
       state,
+    });
+  });
+
+  it('decides to skip persistence before saved-session bootstrapping completes or while a candidate is pending', () => {
+    const state = buildState({ turnCount: 3, phase: 'Main', gameStatus: 'playing' });
+
+    expect(getSavedHostSessionPersistenceDecision({
+      hasCheckedSavedSession: false,
+      isSoloMode: false,
+      isHost: true,
+      room: 'ROOM123',
+      savedSessionCandidate: null,
+      state,
+      appVersion: '1.2.3',
+      savedAt: '2026-03-19T10:00:00.000Z',
+    })).toEqual({ type: 'skip' });
+
+    expect(getSavedHostSessionPersistenceDecision({
+      hasCheckedSavedSession: true,
+      isSoloMode: false,
+      isHost: true,
+      room: 'ROOM123',
+      savedSessionCandidate: buildSavedHostSessionPayload('ROOM123', '1.2.3', state, '2026-03-19T10:00:00.000Z'),
+      state,
+      appVersion: '1.2.3',
+      savedAt: '2026-03-19T10:00:00.000Z',
+    })).toEqual({ type: 'skip' });
+  });
+
+  it('decides to remove fresh boards and persist meaningful boards', () => {
+    expect(getSavedHostSessionPersistenceDecision({
+      hasCheckedSavedSession: true,
+      isSoloMode: false,
+      isHost: true,
+      room: 'ROOM123',
+      savedSessionCandidate: null,
+      state: buildState(),
+      appVersion: '1.2.3',
+      savedAt: '2026-03-19T10:00:00.000Z',
+    })).toEqual({
+      type: 'remove',
+      storageKey: 'sv-evolve:host-session:ROOM123',
+    });
+
+    const meaningfulState = buildState({ turnCount: 3, phase: 'Main', gameStatus: 'playing' });
+    expect(getSavedHostSessionPersistenceDecision({
+      hasCheckedSavedSession: true,
+      isSoloMode: false,
+      isHost: true,
+      room: 'ROOM123',
+      savedSessionCandidate: null,
+      state: meaningfulState,
+      appVersion: '1.2.3',
+      savedAt: '2026-03-19T10:00:00.000Z',
+    })).toEqual({
+      type: 'persist',
+      storageKey: 'sv-evolve:host-session:ROOM123',
+      payload: {
+        room: 'ROOM123',
+        savedAt: '2026-03-19T10:00:00.000Z',
+        appVersion: '1.2.3',
+        state: meaningfulState,
+      },
     });
   });
 

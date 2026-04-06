@@ -7,6 +7,11 @@ export type SavedHostSession = {
   state: SyncState;
 };
 
+export type SavedHostSessionPersistenceDecision =
+  | { type: 'skip' }
+  | { type: 'remove'; storageKey: string }
+  | { type: 'persist'; storageKey: string; payload: SavedHostSession };
+
 const isPlayerHud = (value: unknown): value is SyncState['host'] => (
   typeof value === 'object' &&
   value !== null &&
@@ -75,6 +80,48 @@ export const buildSavedHostSessionPayload = (
   appVersion,
   state,
 });
+
+export const getSavedHostSessionPersistenceDecision = ({
+  hasCheckedSavedSession,
+  isSoloMode,
+  isHost,
+  room,
+  savedSessionCandidate,
+  state,
+  appVersion,
+  savedAt,
+}: {
+  hasCheckedSavedSession: boolean;
+  isSoloMode: boolean;
+  isHost: boolean;
+  room: string;
+  savedSessionCandidate: SavedHostSession | null;
+  state: SyncState;
+  appVersion: string;
+  savedAt: string;
+}): SavedHostSessionPersistenceDecision => {
+  if (!hasCheckedSavedSession || isSoloMode || !isHost || !room) {
+    return { type: 'skip' };
+  }
+
+  if (savedSessionCandidate) {
+    return { type: 'skip' };
+  }
+
+  const storageKey = getHostSessionStorageKey(room);
+  if (!hasMeaningfulGameSessionState(state)) {
+    return {
+      type: 'remove',
+      storageKey,
+    };
+  }
+
+  return {
+    type: 'persist',
+    storageKey,
+    payload: buildSavedHostSessionPayload(room, appVersion, state, savedAt),
+  };
+};
 
 export const parseSavedHostSession = (
   rawValue: string | null,

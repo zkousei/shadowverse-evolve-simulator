@@ -985,6 +985,22 @@ describe('useGameBoardLogic P2P reconnect', () => {
     expect(window.sessionStorage.getItem('sv-evolve:host-session:ROOM123')).toBeNull();
   });
 
+  it('persists a meaningful host board after a local game change', () => {
+    renderHarness('/game?host=true&room=ROOM123');
+
+    expect(window.sessionStorage.getItem('sv-evolve:host-session:ROOM123')).toBeNull();
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Spawn Token to EX' }));
+    });
+
+    const stored = JSON.parse(window.sessionStorage.getItem('sv-evolve:host-session:ROOM123') ?? '{}');
+    expect(stored.room).toBe('ROOM123');
+    expect(stored.appVersion).toBe('0.0.0');
+    expect(stored.state.cards).toHaveLength(1);
+    expect(stored.state.cards[0]?.zone).toBe('ex-host');
+  });
+
   it('ignores a stored fresh host board when checking for a saved session candidate', () => {
     window.sessionStorage.setItem('sv-evolve:host-session:ROOM123', JSON.stringify({
       room: 'ROOM123',
