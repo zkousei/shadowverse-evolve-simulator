@@ -546,6 +546,31 @@ describe('useGameBoardLogic P2P reconnect', () => {
     vi.useRealTimers();
   });
 
+  it('enters waiting state when the host peer opens', () => {
+    renderHarness('/game?host=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('disconnected');
+    expect(screen.getByTestId('status')).toHaveTextContent('Connected! Waiting for guest...');
+  });
+
+  it('starts connecting to the host when the guest peer opens', () => {
+    renderHarness('/game?host=false&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    expect(peer.connect).toHaveBeenCalledWith('sv-evolve-ROOM123');
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('connecting');
+    expect(screen.getByTestId('status')).toHaveTextContent('Connecting to host...');
+  });
+
   it('requests a fresh snapshot on initial connect and after reconnecting as guest', () => {
     renderHarness('/game?host=false&room=ROOM123');
 
@@ -596,6 +621,25 @@ describe('useGameBoardLogic P2P reconnect', () => {
       source: 'guest',
     }));
     expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
+  });
+
+  it('marks the host ready when a guest connection opens', () => {
+    renderHarness('/game?host=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const conn = mockPeerJs.createConnection('guest');
+    act(() => {
+      peer.emit('connection', conn);
+      conn.open = true;
+      conn.emit('open');
+    });
+
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
+    expect(screen.getByTestId('status')).toHaveTextContent('Guest connected! Game ready.');
   });
 
   it('retries snapshot requests when the host does not respond yet', () => {

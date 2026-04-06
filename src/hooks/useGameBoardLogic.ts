@@ -37,7 +37,9 @@ import {
   buildSnapshotSyncMessage,
   buildWaitingForHostSessionMessage,
 } from '../utils/gameBoardNetworkMessages';
+import { getConnectionOpenDecision } from '../utils/gameBoardConnectionOpen';
 import { getConnectionTerminationDecision } from '../utils/gameBoardConnectionTermination';
+import { getPeerOpenDecision } from '../utils/gameBoardPeerOpen';
 import { getPeerTerminationDecision } from '../utils/gameBoardPeerTermination';
 import { shouldApplyIncomingSnapshot } from '../utils/gameBoardSnapshotAcceptance';
 import { getSnapshotRetryTimeoutDecision } from '../utils/gameBoardSnapshotRetry';
@@ -1148,14 +1150,20 @@ export const useGameBoardLogic = () => {
       if (activeConnectionTokenRef.current !== token) return;
       setConnectionState('connected');
 
-      if (isHost) {
-        setStatusKey('gameBoard.status.guestConnectedReady');
+      const openDecision = getConnectionOpenDecision({ isHost });
+      setStatusKey(openDecision.statusKey);
+
+      if (openDecision.type === 'host') {
         return;
       }
 
-      awaitingInitialSnapshotRef.current = true;
-      setStatusKey('gameBoard.status.connectedHostSyncing');
-      requestSnapshotWithRetry(conn, token);
+      if (openDecision.shouldAwaitInitialSnapshot) {
+        awaitingInitialSnapshotRef.current = true;
+      }
+
+      if (openDecision.shouldRequestSnapshot) {
+        requestSnapshotWithRetry(conn, token);
+      }
     });
     conn.on('data', (rawData: unknown) => {
       if (activeConnectionTokenRef.current !== token) return;
@@ -1351,11 +1359,12 @@ export const useGameBoardLogic = () => {
     peerRef.current = peer;
 
     peer.on('open', () => {
-      setStatusKey(`gameBoard.status.${isHost ? 'connectedWaitingGuest' : 'connectedJoiningRoom'}`);
-      if (isHost) {
-        setConnectionState('disconnected');
+      const openDecision = getPeerOpenDecision({ isHost });
+      setStatusKey(openDecision.statusKey);
+      if (openDecision.type === 'host') {
+        setConnectionState(openDecision.nextConnectionState);
       }
-      if (!isHost) {
+      if (openDecision.type === 'guest' && openDecision.shouldConnectToHost) {
         connectToHost();
       }
     });
