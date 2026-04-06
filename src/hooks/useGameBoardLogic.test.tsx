@@ -571,6 +571,25 @@ describe('useGameBoardLogic P2P reconnect', () => {
     expect(screen.getByTestId('status')).toHaveTextContent('Connecting to host...');
   });
 
+  it('ignores incoming peer connections on the guest side', () => {
+    renderHarness('/game?host=false&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const rogueConn = mockPeerJs.createConnection('rogue-guest');
+    act(() => {
+      peer.emit('connection', rogueConn);
+      rogueConn.open = true;
+      rogueConn.emit('open');
+    });
+
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('connecting');
+    expect(screen.getByTestId('status')).toHaveTextContent('Connecting to host...');
+  });
+
   it('requests a fresh snapshot on initial connect and after reconnecting as guest', () => {
     renderHarness('/game?host=false&room=ROOM123');
 

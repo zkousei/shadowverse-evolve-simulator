@@ -41,6 +41,7 @@ import { getConnectionOpenDecision } from '../utils/gameBoardConnectionOpen';
 import { getConnectionTerminationDecision } from '../utils/gameBoardConnectionTermination';
 import { getIncomingEventDecision } from '../utils/gameBoardIncomingEvent';
 import { getPeerOpenDecision } from '../utils/gameBoardPeerOpen';
+import { getPeerIncomingConnectionDecision } from '../utils/gameBoardPeerIncomingConnection';
 import { getPeerTerminationDecision } from '../utils/gameBoardPeerTermination';
 import { getSnapshotPostProcessingDecision } from '../utils/gameBoardSnapshotPostProcessing';
 import { getSnapshotRequestDecision } from '../utils/gameBoardSnapshotRequest';
@@ -1389,7 +1390,9 @@ export const useGameBoardLogic = () => {
     });
 
     peer.on('connection', (conn) => {
-      if (isHost) {
+      const incomingConnectionDecision = getPeerIncomingConnectionDecision({ isHost });
+
+      if (incomingConnectionDecision.type === 'setup-connection') {
         setupConnection(conn);
       }
     });
