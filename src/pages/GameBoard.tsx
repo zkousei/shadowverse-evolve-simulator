@@ -27,7 +27,7 @@ import GameBoardTopNDialog from '../components/GameBoardTopNDialog';
 import GameBoardTokenSpawnDialog from '../components/GameBoardTokenSpawnDialog';
 import GameBoardTurnPanel from '../components/GameBoardTurnPanel';
 import GameBoardUndoTurnDialog from '../components/GameBoardUndoTurnDialog';
-import GameBoardZoneActionsMenu from '../components/GameBoardZoneActionsMenu';
+import GameBoardZoneActionsSection from '../components/GameBoardZoneActionsSection';
 import TopDeckModal from '../components/TopDeckModal';
 import { useGameBoardLogic } from '../hooks/useGameBoardLogic';
 import { canImportDeck, canUndoLastTurn, isHandCardMovementLocked } from '../utils/gameRules';
@@ -488,24 +488,6 @@ const GameBoard: React.FC = () => {
     return resolveAttackHighlightTone(attackSourceCard, card, cardStatLookup);
   }, [attackSourceCard, cardStatLookup]);
 
-  const renderZoneActions = (
-    menuId: string,
-    actions: Array<{ label: string; onClick: () => void; tone?: 'default' | 'accent' }>,
-    direction: 'down' | 'up' = 'down'
-  ) => (
-    <GameBoardZoneActionsMenu
-      actionsLabel={t('gameBoard.board.actions')}
-      isOpen={activeZoneActions === menuId}
-      actions={actions}
-      direction={direction}
-      onToggle={() => setActiveZoneActions(current => current === menuId ? null : menuId)}
-      onActionClick={(action) => {
-        action();
-        setActiveZoneActions(null);
-      }}
-    />
-  );
-
   const renderPlayerTracker = (playerRole: PlayerRole, label: string) => (
     <GameBoardPlayerTracker
       testId={`player-tracker-${playerRole}`}
@@ -827,11 +809,18 @@ const GameBoard: React.FC = () => {
                     <div style={{ display: 'grid', gridTemplateColumns: boardColumns, gap: '0.75rem', width: `${boardContentWidth}px`, alignItems: 'start' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <Zone id={`mainDeck-${topRole}`} label={t('gameBoard.zones.mainDeck', { label: topLabel })} cards={getCards(`mainDeck-${topRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
-                        {renderZoneActions(`mainDeck-${topRole}`, [
-                          { label: t('gameBoard.zones.search'), onClick: () => openSearchZone(`mainDeck-${topRole}`, t('gameBoard.zones.mainDeck', { label: topLabel })) },
-                          { label: t('gameBoard.zones.shuffle'), onClick: () => handleShuffleDeck(topRole) },
-                          { label: t('gameBoard.zones.lookTop'), onClick: () => openTopDeckModal(topRole), tone: 'accent' }
-                        ], 'up')}
+                        <GameBoardZoneActionsSection
+                          menuId={`mainDeck-${topRole}`}
+                          activeMenuId={activeZoneActions}
+                          actionsLabel={t('gameBoard.board.actions')}
+                          actions={[
+                            { label: t('gameBoard.zones.search'), onClick: () => openSearchZone(`mainDeck-${topRole}`, t('gameBoard.zones.mainDeck', { label: topLabel })) },
+                            { label: t('gameBoard.zones.shuffle'), onClick: () => handleShuffleDeck(topRole) },
+                            { label: t('gameBoard.zones.lookTop'), onClick: () => openTopDeckModal(topRole), tone: 'accent' }
+                          ]}
+                          direction="up"
+                          onActiveMenuChange={setActiveZoneActions}
+                        />
                       </div>
                       <Zone
                         id={`field-${topRole}`}
@@ -1005,11 +994,17 @@ const GameBoard: React.FC = () => {
                   <Zone id={`field-${bottomRole}`} label={t('gameBoard.zones.field', { label: bottomLabel })} cards={getCards(`field-${bottomRole}`)} cardStatLookup={cardStatLookup} cardDetailLookup={cardDetailLookup} getHighlightTone={getAttackHighlightTone} onInspectCard={handleInspectCard} onAttack={gameState.turnPlayer === bottomRole ? handleStartAttack : undefined} onTap={toggleTap} onModifyCounter={handleModifyCounter} onModifyGenericCounter={handleModifyGenericCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} disableQuickActionsForCard={shouldDisableQuickActionsForAttackTarget} viewerRole={viewerRole} containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: '160px', width: `${centerZoneWidth}px`, flex: 'none' }} isDebug={isDebug} />
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <Zone id={`mainDeck-${bottomRole}`} label={t('gameBoard.zones.mainDeck', { label: bottomLabel })} cards={getCards(`mainDeck-${bottomRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
-                    {renderZoneActions(`mainDeck-${bottomRole}`, [
-                      { label: t('gameBoard.zones.search'), onClick: () => openSearchZone(`mainDeck-${bottomRole}`, t('gameBoard.zones.mainDeck', { label: bottomLabel })) },
-                      { label: t('gameBoard.zones.shuffle'), onClick: () => handleShuffleDeck(bottomRole) },
-                      { label: t('gameBoard.zones.lookTop'), onClick: () => openTopDeckModal(bottomRole), tone: 'accent' }
-                    ])}
+                    <GameBoardZoneActionsSection
+                      menuId={`mainDeck-${bottomRole}`}
+                      activeMenuId={activeZoneActions}
+                      actionsLabel={t('gameBoard.board.actions')}
+                      actions={[
+                        { label: t('gameBoard.zones.search'), onClick: () => openSearchZone(`mainDeck-${bottomRole}`, t('gameBoard.zones.mainDeck', { label: bottomLabel })) },
+                        { label: t('gameBoard.zones.shuffle'), onClick: () => handleShuffleDeck(bottomRole) },
+                        { label: t('gameBoard.zones.lookTop'), onClick: () => openTopDeckModal(bottomRole), tone: 'accent' }
+                      ]}
+                      onActiveMenuChange={setActiveZoneActions}
+                    />
                   </div>
                   </div>
                   <GameBoardLeaderZoneSection

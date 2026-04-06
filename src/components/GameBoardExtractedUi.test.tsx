@@ -32,6 +32,7 @@ import GameBoardTopNDialog from './GameBoardTopNDialog';
 import GameBoardTokenSpawnDialog from './GameBoardTokenSpawnDialog';
 import GameBoardTransientMessage from './GameBoardTransientMessage';
 import GameBoardTurnPanel from './GameBoardTurnPanel';
+import GameBoardZoneActionsSection from './GameBoardZoneActionsSection';
 import GameBoardZoneSearchButton from './GameBoardZoneSearchButton';
 import GameBoardZoneActionsMenu from './GameBoardZoneActionsMenu';
 
@@ -748,6 +749,44 @@ describe('GameBoard extracted UI components', () => {
     expect(onToggle).toHaveBeenCalledTimes(1);
     expect(onActionClick).toHaveBeenCalledTimes(1);
     expect(searchAction).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders zone actions section and delegates open and close behavior', () => {
+    const searchAction = vi.fn();
+    const onActiveMenuChange = vi.fn();
+
+    const { rerender } = render(
+      <GameBoardZoneActionsSection
+        menuId="mainDeck-host"
+        activeMenuId={null}
+        actionsLabel="Actions"
+        actions={[
+          { label: 'Search', onClick: searchAction },
+        ]}
+        onActiveMenuChange={onActiveMenuChange}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Actions' }));
+
+    expect(onActiveMenuChange).toHaveBeenCalledWith('mainDeck-host');
+
+    rerender(
+      <GameBoardZoneActionsSection
+        menuId="mainDeck-host"
+        activeMenuId="mainDeck-host"
+        actionsLabel="Actions"
+        actions={[
+          { label: 'Search', onClick: searchAction },
+        ]}
+        onActiveMenuChange={onActiveMenuChange}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+
+    expect(searchAction).toHaveBeenCalledTimes(1);
+    expect(onActiveMenuChange).toHaveBeenCalledWith(null);
   });
 
   it('renders leader zone and wires the search button', () => {
