@@ -703,6 +703,51 @@ describe('useGameBoardLogic P2P reconnect', () => {
     expect(peer.connect).toHaveBeenCalledTimes(2);
   });
 
+  it('reconnects after a guest-side connection error', () => {
+    renderHarness('/game?host=false&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const conn = peer.connections[0];
+    act(() => {
+      conn.open = true;
+      conn.emit('open');
+      conn.emit('error');
+    });
+
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('reconnecting');
+    expect(screen.getByTestId('status')).toHaveTextContent('Connection error. Reconnecting...');
+  });
+
+  it('reconnects after a guest-side peer disconnect', () => {
+    renderHarness('/game?host=false&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+      peer.emit('disconnected');
+    });
+
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('reconnecting');
+    expect(screen.getByTestId('status')).toHaveTextContent('Peer connection lost. Reconnecting...');
+  });
+
+  it('reconnects after a guest-side peer error', () => {
+    renderHarness('/game?host=false&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+      peer.emit('error');
+    });
+
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('reconnecting');
+    expect(screen.getByTestId('status')).toHaveTextContent('Unable to reach host. Reconnecting...');
+  });
+
   it('ignores a stale snapshot retry timer after the guest reconnects on a new connection', () => {
     renderHarness('/game?host=false&room=ROOM123');
 
@@ -997,6 +1042,52 @@ describe('useGameBoardLogic P2P reconnect', () => {
     });
     expect(snapshotCall?.[0]?.state?.cards?.[0]?.image).toBe('');
     expect(screen.getByTestId('status')).toHaveTextContent('Guest connected! Game ready.');
+  });
+
+  it('waits for the guest after a host-side connection error', () => {
+    renderHarness('/game?host=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const conn = mockPeerJs.createConnection('guest');
+    act(() => {
+      peer.emit('connection', conn);
+      conn.open = true;
+      conn.emit('open');
+      conn.emit('error');
+    });
+
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('disconnected');
+    expect(screen.getByTestId('status')).toHaveTextContent('Connection error. Waiting for guest...');
+  });
+
+  it('waits after a host-side peer disconnect', () => {
+    renderHarness('/game?host=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+      peer.emit('disconnected');
+    });
+
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('disconnected');
+    expect(screen.getByTestId('status')).toHaveTextContent('Disconnected from Peer server. Reopen room if needed.');
+  });
+
+  it('waits after a host-side peer error', () => {
+    renderHarness('/game?host=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+      peer.emit('error');
+    });
+
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('disconnected');
+    expect(screen.getByTestId('status')).toHaveTextContent('P2P error. Waiting for guest...');
   });
 
   it('coalesces deferred host snapshots and flushes only the newest state once the buffer clears', () => {

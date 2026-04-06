@@ -37,6 +37,8 @@ import {
   buildSnapshotSyncMessage,
   buildWaitingForHostSessionMessage,
 } from '../utils/gameBoardNetworkMessages';
+import { getConnectionTerminationDecision } from '../utils/gameBoardConnectionTermination';
+import { getPeerTerminationDecision } from '../utils/gameBoardPeerTermination';
 import { shouldApplyIncomingSnapshot } from '../utils/gameBoardSnapshotAcceptance';
 import { getSnapshotRetryTimeoutDecision } from '../utils/gameBoardSnapshotRetry';
 import { mergeQueuedSnapshotMessage } from '../utils/gameBoardSnapshotQueue';
@@ -1214,13 +1216,18 @@ export const useGameBoardLogic = () => {
       clearSnapshotRequestTimer();
       awaitingInitialSnapshotRef.current = false;
 
-      if (isHost) {
-        setConnectionState('disconnected');
-        setStatusKey('gameBoard.status.guestDisconnectedWaiting');
+      const terminationDecision = getConnectionTerminationDecision({
+        isHost,
+        kind: 'close',
+      });
+
+      if (terminationDecision.type === 'host') {
+        setConnectionState(terminationDecision.nextConnectionState);
+        setStatusKey(terminationDecision.statusKey);
         return;
       }
 
-      scheduleReconnect('gameBoard.status.connectionLostReconnecting');
+      scheduleReconnect(terminationDecision.statusKey);
     });
     conn.on('error', () => {
       if (activeConnectionTokenRef.current !== token) return;
@@ -1230,13 +1237,18 @@ export const useGameBoardLogic = () => {
       clearSnapshotRequestTimer();
       awaitingInitialSnapshotRef.current = false;
 
-      if (isHost) {
-        setConnectionState('disconnected');
-        setStatusKey('gameBoard.status.connectionErrorWaiting');
+      const terminationDecision = getConnectionTerminationDecision({
+        isHost,
+        kind: 'error',
+      });
+
+      if (terminationDecision.type === 'host') {
+        setConnectionState(terminationDecision.nextConnectionState);
+        setStatusKey(terminationDecision.statusKey);
         return;
       }
 
-      scheduleReconnect('gameBoard.status.connectionErrorReconnecting');
+      scheduleReconnect(terminationDecision.statusKey);
     });
   }, [applyAuthoritativeEvent, clearPendingSnapshotMessage, clearReconnectTimer, clearSnapshotRequestTimer, isHost, maybeApplySnapshot, playSharedUiEffect, requestSnapshotWithRetry, resetTransientUiState, role, scheduleReconnect, sendMessage]);
 
@@ -1355,21 +1367,31 @@ export const useGameBoardLogic = () => {
     });
 
     peer.on('disconnected', () => {
-      if (isHost) {
-        setStatusKey('gameBoard.status.disconnectedFromPeer');
+      const terminationDecision = getPeerTerminationDecision({
+        isHost,
+        kind: 'disconnected',
+      });
+
+      if (terminationDecision.type === 'host') {
+        setStatusKey(terminationDecision.statusKey);
         return;
       }
 
-      scheduleReconnect('gameBoard.status.peerConnectionLostReconnecting');
+      scheduleReconnect(terminationDecision.statusKey);
     });
 
     peer.on('error', () => {
-      if (isHost) {
-        setStatusKey('gameBoard.status.p2pErrorWaiting');
+      const terminationDecision = getPeerTerminationDecision({
+        isHost,
+        kind: 'error',
+      });
+
+      if (terminationDecision.type === 'host') {
+        setStatusKey(terminationDecision.statusKey);
         return;
       }
 
-      scheduleReconnect('gameBoard.status.unableToReachHostReconnecting');
+      scheduleReconnect(terminationDecision.statusKey);
     });
 
     return () => {
