@@ -26,6 +26,7 @@ import { buildGameBoardCatalogResources } from '../utils/gameBoardCatalog';
 import { buildImportedDeckPayload, buildSpawnTokenInstance, buildSpawnTokens, type ImportableDeckData } from '../utils/gameBoardDeckActions';
 import { buildClosedMulliganState, buildStartedMulliganState, toggleMulliganOrderSelection } from '../utils/gameBoardMulligan';
 import { getHostSessionStorageKey, hasMeaningfulGameSessionState, parseSavedHostSession, type SavedHostSession } from '../utils/gameBoardSavedSession';
+import { buildGameBoardNetworkSnapshotState } from '../utils/gameBoardSnapshot';
 import {
   mergeLookTopSummaryIntoOverlay,
   prependAttackHistoryEntry,
@@ -232,27 +233,7 @@ export const useGameBoardLogic = () => {
   }, [clearSnapshotFlushTimer]);
 
   const buildNetworkSnapshotState = useCallback((state: SyncState): SyncState => {
-    const detailLookup = cardDetailLookupRef.current;
-
-    return {
-      ...state,
-      cards: state.cards.map((card) => {
-        const canRestoreImageFromLookup =
-          !card.isTokenCard &&
-          !!detailLookup[card.cardId]?.image &&
-          card.image === detailLookup[card.cardId].image;
-
-        return canRestoreImageFromLookup
-          ? { ...card, image: '' }
-          : { ...card };
-      }),
-      // Keep the network snapshot lean. Full undo backups are only needed on the
-      // authoritative side; guests only need to know whether undo is available.
-      lastGameState: null,
-      lastUndoableCardMoveState: null,
-      networkHasUndoableTurn: !!state.lastGameState,
-      networkHasUndoableCardMove: !!state.lastUndoableCardMoveState,
-    };
+    return buildGameBoardNetworkSnapshotState(state, cardDetailLookupRef.current);
   }, []);
 
   const shouldDeferSnapshotSend = useCallback((conn: DataConnection | null): boolean => {

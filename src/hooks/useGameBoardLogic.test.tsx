@@ -763,8 +763,59 @@ describe('useGameBoardLogic P2P reconnect', () => {
     expect(screen.getByTestId('status')).toHaveTextContent('Connected to host! Game ready.');
   });
 
-  it('responds to snapshot requests as host and ignores stale connection closes', () => {
-    renderHarness('/game?host=true&room=ROOM123');
+  it('responds to snapshot requests as host and ignores stale connection closes', async () => {
+    installMockCatalogFetch([
+      createCatalogCard({
+        id: 'CARD-RESTORE',
+        image: '/catalog-card.png',
+      }),
+    ]);
+
+    seedHostSavedSession({
+      cards: [
+        {
+          id: 'restorable-card',
+          cardId: 'CARD-RESTORE',
+          name: 'Catalog Card',
+          image: '/catalog-card.png',
+          zone: 'hand-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+      lastGameState: buildSyncState({ revision: 41 }),
+      lastUndoableCardMoveState: buildSyncState({ revision: 42 }),
+      revision: 7,
+      gameStatus: 'playing',
+      turnCount: 3,
+      phase: 'Main',
+    });
+
+    renderResumedHostHarness({
+      cards: [
+        {
+          id: 'restorable-card',
+          cardId: 'CARD-RESTORE',
+          name: 'Catalog Card',
+          image: '/catalog-card.png',
+          zone: 'hand-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+      lastGameState: buildSyncState({ revision: 41 }),
+      lastUndoableCardMoveState: buildSyncState({ revision: 42 }),
+      revision: 7,
+      gameStatus: 'playing',
+      turnCount: 3,
+      phase: 'Main',
+    });
+
+    await act(async () => {});
 
     const peer = mockPeerJs.peers[0];
 
@@ -804,6 +855,16 @@ describe('useGameBoardLogic P2P reconnect', () => {
       type: 'STATE_SNAPSHOT',
       source: 'host',
     }));
+    const snapshotCall = secondConn.send.mock.calls.find(([message]) => message?.type === 'STATE_SNAPSHOT');
+    expect(snapshotCall?.[0]).toMatchObject({
+      state: expect.objectContaining({
+        lastGameState: null,
+        lastUndoableCardMoveState: null,
+        networkHasUndoableTurn: true,
+        networkHasUndoableCardMove: true,
+      }),
+    });
+    expect(snapshotCall?.[0]?.state?.cards?.[0]?.image).toBe('');
     expect(screen.getByTestId('status')).toHaveTextContent('Guest connected! Game ready.');
   });
 
