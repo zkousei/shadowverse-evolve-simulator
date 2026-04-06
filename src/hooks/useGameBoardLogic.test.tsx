@@ -3,6 +3,7 @@ import * as PeerJsModule from 'peerjs';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SyncState } from '../types/game';
+import type { SyncMessage } from '../types/sync';
 import { useGameBoardLogic } from './useGameBoardLogic';
 
 vi.mock('react-i18next', () => ({
@@ -866,6 +867,48 @@ describe('useGameBoardLogic P2P reconnect', () => {
     });
     expect(snapshotCall?.[0]?.state?.cards?.[0]?.image).toBe('');
     expect(screen.getByTestId('status')).toHaveTextContent('Guest connected! Game ready.');
+  });
+
+  it('coalesces deferred host snapshots and flushes only the newest state once the buffer clears', () => {
+    renderHarness('/game?host=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const conn = mockPeerJs.createConnection('guest') as ReturnType<typeof mockPeerJs.createConnection> & {
+      bufferSize?: number;
+    };
+
+    act(() => {
+      peer.emit('connection', conn);
+      conn.open = true;
+      conn.emit('open');
+    });
+
+    conn.send.mockClear();
+    conn.bufferSize = 1;
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Spawn Token to EX' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Spawn Token Batch to EX' }));
+    });
+
+    expect(screen.getByTestId('host-ex-count')).toHaveTextContent('4');
+    expect(conn.send).not.toHaveBeenCalled();
+
+    act(() => {
+      conn.bufferSize = 0;
+      vi.advanceTimersByTime(50);
+    });
+
+    const snapshotCalls = conn.send.mock.calls
+      .map(([message]) => message as SyncMessage)
+      .filter((message): message is Extract<SyncMessage, { type: 'STATE_SNAPSHOT' }> => message.type === 'STATE_SNAPSHOT');
+
+    expect(snapshotCalls).toHaveLength(1);
+    expect(snapshotCalls[0].state.cards.filter((card) => card.zone === 'ex-host')).toHaveLength(4);
   });
 
   it('loads a saved host session candidate and restores it when requested', () => {

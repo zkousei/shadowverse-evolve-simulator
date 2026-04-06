@@ -27,6 +27,7 @@ import { buildImportedDeckPayload, buildSpawnTokenInstance, buildSpawnTokens, ty
 import { buildClosedMulliganState, buildStartedMulliganState, toggleMulliganOrderSelection } from '../utils/gameBoardMulligan';
 import { getHostSessionStorageKey, hasMeaningfulGameSessionState, parseSavedHostSession, type SavedHostSession } from '../utils/gameBoardSavedSession';
 import { buildGameBoardNetworkSnapshotState } from '../utils/gameBoardSnapshot';
+import { mergeQueuedSnapshotMessage } from '../utils/gameBoardSnapshotQueue';
 import {
   mergeLookTopSummaryIntoOverlay,
   prependAttackHistoryEntry,
@@ -286,13 +287,7 @@ export const useGameBoardLogic = () => {
 
     const existingSnapshot = pendingSnapshotMessageRef.current;
     if (existingSnapshot) {
-      pendingSnapshotMessageRef.current = {
-        ...message,
-        pendingEffects: [
-          ...(existingSnapshot.pendingEffects ?? []),
-          ...(message.pendingEffects ?? []),
-        ],
-      };
+      pendingSnapshotMessageRef.current = mergeQueuedSnapshotMessage(existingSnapshot, message);
 
       if (!snapshotFlushTimeoutRef.current) {
         snapshotFlushTimeoutRef.current = setTimeout(() => {
