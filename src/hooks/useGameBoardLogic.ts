@@ -25,6 +25,11 @@ import { loadCardCatalog } from '../utils/cardCatalog';
 import { buildGameBoardCatalogResources } from '../utils/gameBoardCatalog';
 import { buildImportedDeckPayload, buildSpawnTokenInstance, buildSpawnTokens, type ImportableDeckData } from '../utils/gameBoardDeckActions';
 import { buildClosedMulliganState, buildStartedMulliganState, toggleMulliganOrderSelection } from '../utils/gameBoardMulligan';
+import {
+  mergeLookTopSummaryIntoOverlay,
+  prependAttackHistoryEntry,
+  prependEventHistoryEntry,
+} from '../utils/gameBoardTransientUi';
 import { type EvolveAutoAttachResolver } from '../utils/evolveAutoAttach';
 import { type FieldLinkAutoAttachResolver } from '../utils/fieldLinkAutoAttach';
 
@@ -605,7 +610,7 @@ export const useGameBoardLogic = () => {
   }, [clearTurnMessageTimer]);
 
   const pushEventHistory = useCallback((entry: string) => {
-    setEventHistory((previous) => [entry, ...previous].slice(0, 5));
+    setEventHistory((previous) => prependEventHistoryEntry(previous, entry));
   }, []);
 
   useEffect(() => {
@@ -620,11 +625,7 @@ export const useGameBoardLogic = () => {
     const summaryLines = pendingLookTopSummaryLinesRef.current;
     pendingLookTopSummaryLinesRef.current = null;
     setRevealedCardsOverlay((previous) => {
-      if (!previous || previous.type !== 'look-top') return previous;
-      return {
-        ...previous,
-        summaryLines,
-      };
+      return mergeLookTopSummaryIntoOverlay(previous, summaryLines);
     });
   }, [revealedCardsOverlay]);
 
@@ -692,7 +693,7 @@ export const useGameBoardLogic = () => {
       clearAttackMessageTimer();
       setAttackMessage(formattedAttack.announcement);
       setAttackVisual(effect);
-      setAttackHistory(previous => [formattedAttack.history, ...previous].slice(0, 3));
+      setAttackHistory((previous) => prependAttackHistoryEntry(previous, formattedAttack.history));
       // Attacks remain in the recent-event log because they are high-signal game
       // actions; ordinary Play actions intentionally do not.
       pushEventHistory(formattedAttack.history);
@@ -805,11 +806,7 @@ export const useGameBoardLogic = () => {
         // same overlay so the user sees one combined resolution instead of two
         // competing notifications.
         setRevealedCardsOverlay((previous) => {
-          if (!previous || previous.type !== 'look-top') return previous;
-          return {
-            ...previous,
-            summaryLines,
-          };
+          return mergeLookTopSummaryIntoOverlay(previous, summaryLines);
         });
       } else if (effect.revealedHandCards.length > 0) {
         // Reveal dialog is expected (revealedHand cards exist) but hasn't opened yet
