@@ -14,18 +14,18 @@ import { canImportDeck } from '../utils/gameRules';
 import { applyGameSyncEvent } from '../utils/gameSyncReducer';
 import { flipSharedCoin, formatSharedUiMessage, getSharedActorLabel, rollSharedDie } from '../utils/sharedRandom';
 import { createEventDeduper } from '../utils/eventDeduper';
-import { buildCardStatLookup, type CardStatLookup } from '../utils/cardStats';
-import { buildCardDetailLookup, type CardDetailLookup } from '../utils/cardDetails';
+import { type CardStatLookup } from '../utils/cardStats';
+import { type CardDetailLookup } from '../utils/cardDetails';
 import { buildTopDeckRevealEffect } from '../utils/topDeckReveal';
 import { buildTopDeckSummaryEffect } from '../utils/topDeckSummary';
 import { buildSingleCardRevealEffect } from '../utils/cardReveal';
 import { buildAttackDeclaredEffect, formatAttackEffect } from '../utils/attackUi';
 import { buildCardPlayedEffect, formatCardPlayedEffect } from '../utils/cardPlayUi';
 import { loadCardCatalog } from '../utils/cardCatalog';
+import { buildGameBoardCatalogResources } from '../utils/gameBoardCatalog';
 import { buildImportedDeckPayload, buildSpawnTokenInstance, buildSpawnTokens, type ImportableDeckData } from '../utils/gameBoardDeckActions';
-import { buildEvolveAutoAttachResolver, type EvolveAutoAttachResolver } from '../utils/evolveAutoAttach';
-import { buildFieldLinkAutoAttachResolver, type FieldLinkAutoAttachResolver } from '../utils/fieldLinkAutoAttach';
-import { getFieldLinkGroupId } from '../data/fieldLinkRules';
+import { type EvolveAutoAttachResolver } from '../utils/evolveAutoAttach';
+import { type FieldLinkAutoAttachResolver } from '../utils/fieldLinkAutoAttach';
 
 type DispatchableGameSyncEvent =
   | { type: 'FLIP_SHARED_COIN'; actor?: PlayerRole }
@@ -1533,28 +1533,22 @@ export const useGameBoardLogic = () => {
     loadCardCatalog()
       .then((data: DeckBuilderCardData[]) => {
         if (!isActive) return;
-        cardCatalogByIdRef.current = data.reduce<Record<string, DeckBuilderCardData>>((lookup, card) => {
-          lookup[card.id] = card;
-          return lookup;
-        }, {});
-        const statLookup = buildCardStatLookup(data);
-        const detailLookup = buildCardDetailLookup(data);
-        console.log('[DEBUG] Card lookups built:', Object.keys(statLookup).length, 'stats,', Object.keys(detailLookup).length, 'details');
-        setCardStatLookup(statLookup);
-        setCardDetailLookup(detailLookup);
-        cardDetailLookupRef.current = detailLookup;
-        evolveAutoAttachResolverRef.current = buildEvolveAutoAttachResolver(data);
-        fieldLinkAutoAttachResolverRef.current = buildFieldLinkAutoAttachResolver(data);
-        fieldLinkCardIdsRef.current = new Set(
-          data
-            .filter((card: DeckBuilderCardData) => Boolean(getFieldLinkGroupId(card)))
-            .map((card: DeckBuilderCardData) => card.id)
+        const resources = buildGameBoardCatalogResources(data);
+        cardCatalogByIdRef.current = resources.catalogById;
+        console.log(
+          '[DEBUG] Card lookups built:',
+          Object.keys(resources.statLookup).length,
+          'stats,',
+          Object.keys(resources.detailLookup).length,
+          'details'
         );
-        tokenEquipmentCardIdsRef.current = new Set(
-          data
-            .filter((card: DeckBuilderCardData) => card.card_kind_normalized === 'token_equipment')
-            .map((card: DeckBuilderCardData) => card.id)
-        );
+        setCardStatLookup(resources.statLookup);
+        setCardDetailLookup(resources.detailLookup);
+        cardDetailLookupRef.current = resources.detailLookup;
+        evolveAutoAttachResolverRef.current = resources.evolveAutoAttachResolver;
+        fieldLinkAutoAttachResolverRef.current = resources.fieldLinkAutoAttachResolver;
+        fieldLinkCardIdsRef.current = resources.fieldLinkCardIds;
+        tokenEquipmentCardIdsRef.current = resources.tokenEquipmentCardIds;
       })
       .catch(err => console.error('Could not load card stats', err));
     return () => {
