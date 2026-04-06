@@ -5,7 +5,7 @@ import Zone from '../components/Zone';
 import type { CardInspectAnchor, CardInstance } from '../components/Card';
 import CardSearchModal from '../components/CardSearchModal';
 import GameBoardAttackModeBanner from '../components/GameBoardAttackModeBanner';
-import GameBoardCardInspector from '../components/GameBoardCardInspector';
+import GameBoardCardInspectorSection from '../components/GameBoardCardInspectorSection';
 import GameBoardDialogsHost from '../components/GameBoardDialogsHost';
 import GameBoardEndTurnSection from '../components/GameBoardEndTurnSection';
 import GameBoardGlobalOverlays from '../components/GameBoardGlobalOverlays';
@@ -487,24 +487,6 @@ const GameBoard: React.FC = () => {
   const getAttackHighlightTone = React.useCallback((card: CardInstance): 'attack-source' | 'attack-target' | undefined => {
     return resolveAttackHighlightTone(attackSourceCard, card, cardStatLookup);
   }, [attackSourceCard, cardStatLookup]);
-
-  const renderCardInspector = () => {
-    if (!selectedInspectorCard || !inspectorPopoverStyle) return null;
-
-    return (
-      <GameBoardCardInspector
-        selectedInspectorCard={selectedInspectorCard}
-        selectedInspectorDetail={selectedInspectorDetail}
-        inspectorPresentation={inspectorPresentation}
-        inspectorPopoverStyle={inspectorPopoverStyle}
-        ref={inspectorRef}
-        onClose={() => {
-          setSelectedInspectorCardId(null);
-          setSelectedInspectorAnchor(null);
-        }}
-      />
-    );
-  };
 
   const savedDeckPickerTargetLabel = React.useMemo(() => {
     if (!savedDeckImportTargetRole) return null;
@@ -1339,7 +1321,17 @@ const GameBoard: React.FC = () => {
             : null
         }
       />
-      {renderCardInspector()}
+      <GameBoardCardInspectorSection
+        ref={inspectorRef}
+        selectedInspectorCard={selectedInspectorCard}
+        selectedInspectorDetail={selectedInspectorDetail}
+        inspectorPresentation={inspectorPresentation}
+        inspectorPopoverStyle={inspectorPopoverStyle}
+        onClose={() => {
+          setSelectedInspectorCardId(null);
+          setSelectedInspectorAnchor(null);
+        }}
+      />
     </DndContext>
   );
 };
