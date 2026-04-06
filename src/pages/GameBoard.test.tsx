@@ -857,6 +857,32 @@ describe('GameBoard', () => {
     );
   });
 
+  it('renders the mulligan modal when it is open', () => {
+    const handCard = makeCard({
+      id: 'hand-host-1',
+      zone: 'hand-host',
+      owner: 'host',
+    });
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      gameState: createGameState([handCard], {
+        gameStatus: 'preparing',
+        host: {
+          ...initialState.host,
+          initialHandDrawn: true,
+        },
+      }),
+      isMulliganModalOpen: true,
+      mulliganOrder: [],
+    }));
+
+    render(<GameBoard />);
+
+    expect(screen.getByText('Mulligan: Select Return Order')).toBeInTheDocument();
+    expect(screen.getByAltText('Alpha Knight')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Exchange (Mulligan)' })).toBeDisabled();
+  });
+
   it('opens the undo turn dialog and confirms undo', async () => {
     const handleUndoTurn = vi.fn();
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { DndContext } from '@dnd-kit/core';
 import { useTranslation } from 'react-i18next';
+import CardArtwork from '../components/CardArtwork';
 import Zone from '../components/Zone';
 import type { CardInspectAnchor, CardInstance } from '../components/Card';
 import CardSearchModal from '../components/CardSearchModal';
