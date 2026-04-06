@@ -37,6 +37,7 @@ import {
   buildSnapshotSyncMessage,
   buildWaitingForHostSessionMessage,
 } from '../utils/gameBoardNetworkMessages';
+import { shouldApplyIncomingSnapshot } from '../utils/gameBoardSnapshotAcceptance';
 import { mergeQueuedSnapshotMessage } from '../utils/gameBoardSnapshotQueue';
 import {
   mergeLookTopSummaryIntoOverlay,
@@ -732,16 +733,22 @@ export const useGameBoardLogic = () => {
 
   const maybeApplySnapshot = useCallback((incomingState: SyncState, source: PlayerRole) => {
     const currentState = gameStateRef.current;
-    
-    if (!isHost && source === 'host' && awaitingInitialSnapshotRef.current) {
-      awaitingInitialSnapshotRef.current = false;
-      applyLocalState(incomingState);
+
+    const shouldApply = shouldApplyIncomingSnapshot({
+      currentState,
+      incomingState,
+      source,
+      isHost,
+      isAwaitingInitialSnapshot: awaitingInitialSnapshotRef.current,
+    });
+
+    if (!shouldApply) {
       return;
     }
 
-    const currentRevision = currentState.revision;
-    if (incomingState.revision < currentRevision) return;
-    if (incomingState.revision === currentRevision && !(source === 'host' && !isHost)) return;
+    if (!isHost && source === 'host' && awaitingInitialSnapshotRef.current) {
+      awaitingInitialSnapshotRef.current = false;
+    }
 
     applyLocalState(incomingState);
   }, [applyLocalState, isHost]);
