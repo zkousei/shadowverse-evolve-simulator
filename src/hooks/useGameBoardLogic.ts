@@ -26,7 +26,11 @@ import { buildGameBoardCatalogResources } from '../utils/gameBoardCatalog';
 import { buildImportedDeckPayload, buildSpawnTokenInstance, buildSpawnTokens, type ImportableDeckData } from '../utils/gameBoardDeckActions';
 import { buildClosedMulliganState, buildStartedMulliganState, toggleMulliganOrderSelection } from '../utils/gameBoardMulligan';
 import { getHostSessionStorageKey, hasMeaningfulGameSessionState, parseSavedHostSession, type SavedHostSession } from '../utils/gameBoardSavedSession';
-import { buildGameBoardNetworkSnapshotState } from '../utils/gameBoardSnapshot';
+import {
+  buildSnapshotRequestMessage,
+  buildSnapshotSyncMessage,
+  buildWaitingForHostSessionMessage,
+} from '../utils/gameBoardNetworkMessages';
 import { mergeQueuedSnapshotMessage } from '../utils/gameBoardSnapshotQueue';
 import {
   mergeLookTopSummaryIntoOverlay,
@@ -233,10 +237,6 @@ export const useGameBoardLogic = () => {
     clearSnapshotFlushTimer();
   }, [clearSnapshotFlushTimer]);
 
-  const buildNetworkSnapshotState = useCallback((state: SyncState): SyncState => {
-    return buildGameBoardNetworkSnapshotState(state, cardDetailLookupRef.current);
-  }, []);
-
   const shouldDeferSnapshotSend = useCallback((conn: DataConnection | null): boolean => {
     if (!conn?.open) return false;
     const bufferedMessageCount = 'bufferSize' in conn && typeof conn.bufferSize === 'number'
@@ -383,21 +383,12 @@ export const useGameBoardLogic = () => {
   }, []);
 
   const sendSnapshot = useCallback((state: SyncState, source: PlayerRole, effects?: SharedUiEffect[]) => {
-    sendMessage({
-      type: 'STATE_SNAPSHOT',
-      state: buildNetworkSnapshotState(state),
-      source,
-      pendingEffects: effects?.length ? effects : undefined,
-    });
-  }, [buildNetworkSnapshotState, sendMessage]);
+    sendMessage(buildSnapshotSyncMessage(state, source, cardDetailLookupRef.current, effects));
+  }, [sendMessage]);
 
   const sendSnapshotToCurrentConnection = useCallback((state: SyncState, source: PlayerRole) => {
-    sendMessage({
-      type: 'STATE_SNAPSHOT',
-      state: buildNetworkSnapshotState(state),
-      source,
-    });
-  }, [buildNetworkSnapshotState, sendMessage]);
+    sendMessage(buildSnapshotSyncMessage(state, source, cardDetailLookupRef.current));
+  }, [sendMessage]);
 
   const sendSharedUiEffect = useCallback((effect: SharedUiEffect) => {
     sendMessage({ type: 'SHARED_UI_EFFECT', effect });
@@ -1090,11 +1081,7 @@ export const useGameBoardLogic = () => {
     if (isSoloMode || isHost) return;
     if (activeConnectionTokenRef.current !== token || !conn.open) return;
 
-    conn.send({
-      type: 'REQUEST_SNAPSHOT',
-      lastKnownRevision: gameStateRef.current.revision,
-      source: role,
-    } satisfies SyncMessage);
+    conn.send(buildSnapshotRequestMessage(gameStateRef.current.revision, role));
 
     if (snapshotRequestTimeoutRef.current) {
       clearTimeout(snapshotRequestTimeoutRef.current);
@@ -1163,17 +1150,10 @@ export const useGameBoardLogic = () => {
             // While the host is deciding whether to resume a saved session,
             // guests should wait instead of reconnect-looping.
             setStatusKey('gameBoard.status.guestConnectedChooseResume');
-            conn.send({
-              type: 'WAITING_FOR_HOST_SESSION',
-              source: 'host',
-            } satisfies SyncMessage);
+            conn.send(buildWaitingForHostSessionMessage());
             return;
           }
-          sendMessage({
-            type: 'STATE_SNAPSHOT',
-            state: buildNetworkSnapshotState(gameStateRef.current),
-            source: 'host',
-          });
+          sendMessage(buildSnapshotSyncMessage(gameStateRef.current, 'host', cardDetailLookupRef.current));
         }
         return;
       }
@@ -1238,7 +1218,7 @@ export const useGameBoardLogic = () => {
 
       scheduleReconnect('gameBoard.status.connectionErrorReconnecting');
     });
-  }, [applyAuthoritativeEvent, buildNetworkSnapshotState, clearPendingSnapshotMessage, clearReconnectTimer, clearSnapshotRequestTimer, isHost, maybeApplySnapshot, playSharedUiEffect, requestSnapshotWithRetry, resetTransientUiState, role, scheduleReconnect, sendMessage]);
+  }, [applyAuthoritativeEvent, clearPendingSnapshotMessage, clearReconnectTimer, clearSnapshotRequestTimer, isHost, maybeApplySnapshot, playSharedUiEffect, requestSnapshotWithRetry, resetTransientUiState, role, scheduleReconnect, sendMessage]);
 
   useEffect(() => {
     setupConnectionRef.current = setupConnection;
