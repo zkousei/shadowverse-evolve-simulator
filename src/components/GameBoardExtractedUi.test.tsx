@@ -21,6 +21,7 @@ import GameBoardPreparationReadyStatus from './GameBoardPreparationReadyStatus';
 import GameBoardPlayingControls from './GameBoardPlayingControls';
 import GameBoardPlayerTracker from './GameBoardPlayerTracker';
 import GameBoardReadOnlyStatusPanel from './GameBoardReadOnlyStatusPanel';
+import GameBoardReadOnlyStatusSection from './GameBoardReadOnlyStatusSection';
 import GameBoardRecentEventsPanel from './GameBoardRecentEventsPanel';
 import GameBoardReconnectAlert from './GameBoardReconnectAlert';
 import GameBoardRevealedCardsOverlay from './GameBoardRevealedCardsOverlay';
@@ -809,6 +810,29 @@ describe('GameBoard extracted UI components', () => {
     fireEvent.click(screen.getByRole('button', { name: 'End Player 1 Turn' }));
 
     expect(onEndTurn).toHaveBeenCalledWith('host');
+  });
+
+  it('renders read only status section from player state', () => {
+    render(
+      <GameBoardReadOnlyStatusSection
+        label="Player 1"
+        playerState={{
+          hp: 20,
+          pp: 2,
+          maxPp: 5,
+          ep: 3,
+          sep: 1,
+          combo: 0,
+          initialHandDrawn: false,
+          mulliganUsed: false,
+          isReady: false,
+        }}
+      />
+    );
+
+    expect(screen.getByText('Player 1 Status')).toBeInTheDocument();
+    expect(screen.getByText('20')).toBeInTheDocument();
+    expect(screen.getByText((_, node) => node?.textContent === '2 / 5')).toBeInTheDocument();
   });
 
   it('renders leader zone and wires the search button', () => {

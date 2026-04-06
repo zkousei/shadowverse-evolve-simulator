@@ -17,7 +17,7 @@ import GameBoardPreparationPanel from '../components/GameBoardPreparationPanel';
 import GameBoardPlayingControls from '../components/GameBoardPlayingControls';
 import GameBoardPlayerTracker from '../components/GameBoardPlayerTracker';
 import GameBoardRecentEventsPanel from '../components/GameBoardRecentEventsPanel';
-import GameBoardReadOnlyStatusPanel from '../components/GameBoardReadOnlyStatusPanel';
+import GameBoardReadOnlyStatusSection from '../components/GameBoardReadOnlyStatusSection';
 import GameBoardReconnectAlert from '../components/GameBoardReconnectAlert';
 import GameBoardResetDialog from '../components/GameBoardResetDialog';
 import GameBoardRoomStatus from '../components/GameBoardRoomStatus';
@@ -502,18 +502,6 @@ const GameBoard: React.FC = () => {
     />
   );
 
-  const renderReadOnlyStatusPanel = (playerRole: PlayerRole, label: string) => (
-    <GameBoardReadOnlyStatusPanel
-      label={label}
-      hp={gameState[playerRole].hp}
-      pp={gameState[playerRole].pp}
-      maxPp={gameState[playerRole].maxPp}
-      ep={gameState[playerRole].ep}
-      sep={gameState[playerRole].sep}
-      combo={gameState[playerRole].combo}
-    />
-  );
-
   const renderCardInspector = () => {
     if (!selectedInspectorCard || !inspectorPopoverStyle) return null;
 
@@ -870,7 +858,10 @@ const GameBoard: React.FC = () => {
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: '1rem', alignItems: 'flex-start', width: '100%', maxWidth: '1568px', justifyContent: 'center' }}>
                 <div style={{ width: `${topPanelWidth}px`, alignSelf: 'end' }}>
-                  {renderReadOnlyStatusPanel(topRole, topLabel)}
+                  <GameBoardReadOnlyStatusSection
+                    label={topLabel}
+                    playerState={gameState[topRole]}
+                  />
                 </div>
 
                 <div style={{ width: `${boardContentWidth}px`, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.65rem', alignItems: 'flex-start' }}>
