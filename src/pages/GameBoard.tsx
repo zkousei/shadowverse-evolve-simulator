@@ -10,6 +10,7 @@ import GameBoardDialogsHost from '../components/GameBoardDialogsHost';
 import GameBoardGlobalOverlays from '../components/GameBoardGlobalOverlays';
 import GameBoardLeaderZone from '../components/GameBoardLeaderZone';
 import GameBoardMulliganDialog from '../components/GameBoardMulliganDialog';
+import GameBoardMulliganButton from '../components/GameBoardMulliganButton';
 import GameBoardPreparationControls from '../components/GameBoardPreparationControls';
 import GameBoardPreparationPanel from '../components/GameBoardPreparationPanel';
 import GameBoardPlayingControls from '../components/GameBoardPlayingControls';
@@ -809,9 +810,11 @@ const GameBoard: React.FC = () => {
                         containerStyle={{ minHeight: '150px' }}
                       />
                       {gameState.gameStatus === 'preparing' && gameState[topRole].initialHandDrawn && !gameState[topRole].mulliganUsed && (
-                        <button onClick={() => openMulliganModal(topRole)} style={soloMulliganButtonStyle}>
-                          {t('gameBoard.preparation.mulliganButton', { label: topLabel })}
-                        </button>
+                        <GameBoardMulliganButton
+                          label={t('gameBoard.preparation.mulliganButton', { label: topLabel })}
+                          onClick={() => openMulliganModal(topRole)}
+                          style={soloMulliganButtonStyle}
+                        />
                       )}
                     </div>
                     <div />
@@ -1052,7 +1055,8 @@ const GameBoard: React.FC = () => {
                     <Zone id={`hand-${bottomRole}`} label={t('gameBoard.zones.hand', { label: bottomLabel })} cards={getCards(`hand-${bottomRole}`)} cardDetailLookup={cardDetailLookup} onInspectCard={handleInspectCard} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} isProtected={true} lockCards={isPreparingHandMoveLocked} viewerRole={viewerRole} containerStyle={{ minHeight: '160px' }} isDebug={isDebug} />
 
                     {gameState.gameStatus === 'preparing' && gameState[bottomRole].initialHandDrawn && !gameState[bottomRole].mulliganUsed && (
-                      <button
+                      <GameBoardMulliganButton
+                        label={t('game.mulligan_desc', { label: isSoloMode ? bottomLabel : t('game.mulligan_action') })}
                         onClick={() => openMulliganModal(bottomRole)}
                         style={isSoloMode ? soloMulliganButtonStyle : {
                           position: 'absolute', top: '-10px', right: '10px',
@@ -1062,9 +1066,7 @@ const GameBoard: React.FC = () => {
                           boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
                           border: '2px solid black'
                         }}
-                      >
-                        {t('game.mulligan_desc', { label: isSoloMode ? bottomLabel : t('game.mulligan_action') })}
-                      </button>
+                      />
                     )}
                 </div>
               </div>

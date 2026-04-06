@@ -11,6 +11,7 @@ import GameBoardEvolveAutoAttachDialog from './GameBoardEvolveAutoAttachDialog';
 import GameBoardEndTurnButton from './GameBoardEndTurnButton';
 import GameBoardGlobalOverlays from './GameBoardGlobalOverlays';
 import GameBoardLeaderZone from './GameBoardLeaderZone';
+import GameBoardMulliganButton from './GameBoardMulliganButton';
 import GameBoardMulliganDialog from './GameBoardMulliganDialog';
 import GameBoardPreparationControls from './GameBoardPreparationControls';
 import GameBoardPreparationPanel from './GameBoardPreparationPanel';
@@ -216,6 +217,22 @@ describe('GameBoard extracted UI components', () => {
     expect(onSelectCard).toHaveBeenCalledWith('card-1');
     expect(onCancel).toHaveBeenCalledTimes(1);
     expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders mulligan button and wires click action', () => {
+    const onClick = vi.fn();
+
+    render(
+      <GameBoardMulliganButton
+        label="Mulligan (Player 1)"
+        onClick={onClick}
+        style={{ background: '#eab308', color: 'black' }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mulligan (Player 1)' }));
+
+    expect(onClick).toHaveBeenCalledTimes(1);
   });
 
   it('renders zone search button and wires click action', () => {

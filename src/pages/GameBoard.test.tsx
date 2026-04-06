@@ -936,6 +936,28 @@ describe('GameBoard', () => {
     expect(screen.getByRole('button', { name: 'Exchange (Mulligan)' })).toBeDisabled();
   });
 
+  it('opens mulligan from the preparation button', () => {
+    const startMulligan = vi.fn();
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      startMulligan,
+      gameState: createGameState([], {
+        gameStatus: 'preparing',
+        host: {
+          ...initialState.host,
+          initialHandDrawn: true,
+          mulliganUsed: false,
+        },
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mulligan (Mulligan)' }));
+
+    expect(startMulligan).toHaveBeenCalledTimes(1);
+  });
+
   it('opens the undo turn dialog and confirms undo', async () => {
     const handleUndoTurn = vi.fn();
 
