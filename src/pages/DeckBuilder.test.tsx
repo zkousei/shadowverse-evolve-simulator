@@ -347,6 +347,59 @@ describe('DeckBuilder', () => {
     });
   });
 
+  it('updates the deck sort control without affecting the reset flow', async () => {
+    render(<DeckBuilder />);
+
+    expect(await screen.findByText('Alpha Knight')).toBeInTheDocument();
+
+    const deckSort = screen.getByRole('combobox', { name: 'Deck sort' }) as HTMLSelectElement;
+    expect(deckSort.value).toBe('added');
+
+    fireEvent.change(deckSort, { target: { value: 'id' } });
+    expect(deckSort.value).toBe('id');
+
+    fireEvent.change(deckSort, { target: { value: 'cost' } });
+    expect(deckSort.value).toBe('cost');
+  });
+
+  it('updates deck rule controls across constructed and crossover modes', async () => {
+    render(<DeckBuilder />);
+
+    expect(await screen.findByText('Alpha Knight')).toBeInTheDocument();
+
+    const formatSelect = screen.getByRole('combobox', { name: 'Deck format' }) as HTMLSelectElement;
+    const constructedClass = screen.getByRole('combobox', { name: 'Constructed class' }) as HTMLSelectElement;
+
+    expect(formatSelect.value).toBe('constructed');
+    expect(constructedClass.value).toBe('');
+
+    fireEvent.change(constructedClass, { target: { value: 'ロイヤル' } });
+    expect(constructedClass.value).toBe('ロイヤル');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Title' }));
+    expect(screen.queryByRole('combobox', { name: 'Constructed class' })).not.toBeInTheDocument();
+
+    const constructedTitle = screen.getByRole('combobox', { name: 'Constructed title' }) as HTMLSelectElement;
+    fireEvent.change(constructedTitle, { target: { value: 'Dragon Tale' } });
+    expect(constructedTitle.value).toBe('Dragon Tale');
+
+    fireEvent.change(formatSelect, { target: { value: 'crossover' } });
+    expect(screen.queryByRole('group', { name: 'Deck identity type' })).not.toBeInTheDocument();
+
+    const crossoverClassA = screen.getByRole('combobox', { name: 'Crossover class A' }) as HTMLSelectElement;
+    const crossoverClassB = screen.getByRole('combobox', { name: 'Crossover class B' }) as HTMLSelectElement;
+
+    expect(crossoverClassA.value).toBe('ロイヤル');
+    expect(crossoverClassB.value).toBe('');
+
+    fireEvent.change(crossoverClassB, { target: { value: 'ウィッチ' } });
+    expect(crossoverClassB.value).toBe('ウィッチ');
+
+    fireEvent.change(formatSelect, { target: { value: 'constructed' } });
+    expect(screen.getByRole('group', { name: 'Deck identity type' })).toBeInTheDocument();
+    expect((screen.getByRole('combobox', { name: 'Constructed class' }) as HTMLSelectElement).value).toBe('ロイヤル');
+  });
+
   it('filters cards by deck section and combines with rarity and product filters', async () => {
     render(<DeckBuilder />);
 
@@ -866,6 +919,34 @@ describe('DeckBuilder', () => {
     });
   });
 
+  it('updates pagination controls between the first and last library pages', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        json: vi.fn().mockResolvedValue(createUniqueCards(mockCards[0], 55)),
+      } as unknown as Response)
+    );
+
+    render(<DeckBuilder />);
+
+    expect(await screen.findByText('Alpha Knight 1')).toBeInTheDocument();
+
+    const prevButton = screen.getByRole('button', { name: 'Prev' });
+    const nextButton = screen.getByRole('button', { name: 'Next' });
+
+    expect(screen.getByText('1 / 2')).toBeInTheDocument();
+    expect(prevButton).toBeDisabled();
+    expect(nextButton).toBeEnabled();
+
+    fireEvent.click(nextButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('2 / 2')).toBeInTheDocument();
+    });
+    expect(prevButton).toBeEnabled();
+    expect(nextButton).toBeDisabled();
+  });
+
   it('exports a legal crossover deck file with selected classes and leader cards', async () => {
     const createObjectURL = vi.fn().mockReturnValue('blob:deck');
     const revokeObjectURL = vi.fn();
@@ -1247,6 +1328,28 @@ describe('DeckBuilder', () => {
     expect(within(evolveDeckSection).getByText('Evolve Angel')).toBeInTheDocument();
     expect(within(leaderSection).getByText('Leader Luna')).toBeInTheDocument();
     expect(within(tokenDeckSection).getByText('Knight Token')).toBeInTheDocument();
+  });
+
+  it('closes the DeckLog import modal on cancel and clears the pending input', async () => {
+    render(<DeckBuilder />);
+    await screen.findByText('Alpha Knight');
+
+    fireEvent.click(screen.getByRole('button', { name: /Import from DeckLog/i }));
+    const deckLogDialog = screen.getByRole('dialog', { name: 'Import from DeckLog dialog' });
+    const deckLogInput = within(deckLogDialog).getByPlaceholderText('e.g. a DeckLog code or a public DeckLog URL');
+
+    fireEvent.change(deckLogInput, {
+      target: { value: 'https://decklog.bushiroad.com/view/7H9K2' },
+    });
+    fireEvent.click(within(deckLogDialog).getByRole('button', { name: 'Cancel' }));
+
+    expect(screen.queryByRole('dialog', { name: 'Import from DeckLog dialog' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Import from DeckLog/i }));
+    const reopenedDialog = screen.getByRole('dialog', { name: 'Import from DeckLog dialog' });
+    expect(
+      within(reopenedDialog).getByPlaceholderText('e.g. a DeckLog code or a public DeckLog URL')
+    ).toHaveValue('');
   });
 
   it('keeps the My Decks modal open when load is canceled', async () => {

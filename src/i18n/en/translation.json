@@ -521,6 +521,7 @@
       "your": "YOUR TURN",
       "opponent": "OPPONENT'S TURN",
       "count": "TURN {{count}}",
+      "phaseLabel": "Phase",
       "phaseStart": "Start Phase",
       "phaseMain": "Main Phase",
       "phaseEnd": "End Phase"

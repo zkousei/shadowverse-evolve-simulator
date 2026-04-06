@@ -474,6 +474,7 @@
       "your": "あなたのターン",
       "opponent": "相手のターン",
       "count": "ターン {{count}}",
+      "phaseLabel": "フェイズ",
       "phaseStart": "スタートフェイズ",
       "phaseMain": "メインフェイズ",
       "phaseEnd": "エンドフェイズ"

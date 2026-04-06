@@ -14,6 +14,11 @@ export interface CardDetail {
 }
 
 export type CardDetailLookup = Record<string, CardDetail>;
+export type CardDetailPresentation = {
+  primaryMeta: string;
+  secondaryMeta: string;
+  stats: string | null;
+};
 
 interface CardDetailSource {
   id: string;
@@ -66,3 +71,13 @@ export const formatAbilityText = (abilityText: string): string => (
     .replaceAll(' ---------- ', '\n\n----------\n\n')
     .replaceAll(' ――――――――――――――― ', '\n\n―――――――――――――――\n\n')
 );
+
+export const buildCardDetailPresentation = (
+  detail?: Pick<CardDetail, 'className' | 'title' | 'type' | 'subtype' | 'atk' | 'hp'> | null
+): CardDetailPresentation => ({
+  primaryMeta: [detail?.className, detail?.title].filter(Boolean).join(' / '),
+  secondaryMeta: [detail?.type, detail?.subtype].filter(Boolean).join(' / '),
+  stats: detail && detail.atk !== null && detail.hp !== null
+    ? `${detail.atk} / ${detail.hp}`
+    : null,
+});
