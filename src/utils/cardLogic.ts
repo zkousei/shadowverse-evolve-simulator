@@ -298,7 +298,9 @@ export const moveCardToEnd = (
   const linkedCards = workingCards.filter(c => linkedChildIds.has(c.id));
 
   const movedAttachments = attachments.map(a => {
-    const attachmentZone = options.zone ? resolveMoveDestination(a, options.zone) : a.zone;
+    const attachmentZone = options.zone
+      ? resolveMoveDestination(a, resolveOwnedRequestedZone(a, options.zone))
+      : a.zone;
     return {
       ...a,
       ...options,
@@ -332,7 +334,9 @@ export const moveCardToEnd = (
   };
 
   const movedLinkedCards = linkedCards.map(linkedCard => {
-    const linkedZone = options.zone ? resolveMoveDestination(linkedCard, options.zone) : linkedCard.zone;
+    const linkedZone = options.zone
+      ? resolveMoveDestination(linkedCard, resolveOwnedRequestedZone(linkedCard, options.zone))
+      : linkedCard.zone;
     const linkedZonePrefix = getZonePrefix(linkedZone);
     return {
       ...linkedCard,
@@ -376,7 +380,9 @@ export const moveCardToFront = (
   const linkedCards = workingCards.filter(c => linkedChildIds.has(c.id));
 
   const movedAttachments = attachments.map(a => {
-    const attachmentZone = options.zone ? resolveMoveDestination(a, options.zone) : a.zone;
+    const attachmentZone = options.zone
+      ? resolveMoveDestination(a, resolveOwnedRequestedZone(a, options.zone))
+      : a.zone;
     return {
       ...a,
       ...options,
@@ -410,7 +416,9 @@ export const moveCardToFront = (
   };
 
   const movedLinkedCards = linkedCards.map(linkedCard => {
-    const linkedZone = options.zone ? resolveMoveDestination(linkedCard, options.zone) : linkedCard.zone;
+    const linkedZone = options.zone
+      ? resolveMoveDestination(linkedCard, resolveOwnedRequestedZone(linkedCard, options.zone))
+      : linkedCard.zone;
     const linkedZonePrefix = getZonePrefix(linkedZone);
     return {
       ...linkedCard,
