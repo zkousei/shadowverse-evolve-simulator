@@ -635,6 +635,7 @@
       "tapToReturn": "Tap card to move back",
       "reorderBackward": "Move {{destination}} order backward for {{card}}",
       "reorderForward": "Move {{destination}} order forward for {{card}}",
+      "randomizeBottom": "Randomize bottom order",
       "remaining": "{{count}} cards remaining to assign",
         "allOrganized": "All cards organized",
         "yourHand": "Your Hand ({{count}})",

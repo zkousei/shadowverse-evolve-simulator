@@ -27,12 +27,14 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
   const [assignedCards, setAssignedCards] = useState<AssignedCard[]>([]);
   const [currentAction, setCurrentAction] = useState<TopDeckAction>('top');
   const [isHandOpen, setIsHandOpen] = useState(true);
+  const [isBottomOrderRandomized, setIsBottomOrderRandomized] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       setPendingCards([...cards]);
       setAssignedCards([]);
       setCurrentAction('field');
+      setIsBottomOrderRandomized(false);
     }
   }, [isOpen, cards]);
 
@@ -108,15 +110,18 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
   };
 
   const getConfirmResults = () => {
-    const orderedDeckAssignments = assignedCards
-      .filter(a => a.action === 'top' || a.action === 'bottom')
-      .sort((a, b) => {
-        if (a.action !== b.action) return 0;
-        return (a.order || 0) - (b.order || 0);
-      });
+    const topAssignments = assignedCards
+      .filter(a => a.action === 'top')
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
+    const bottomAssignments = assignedCards
+      .filter(a => a.action === 'bottom')
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
+    const orderedBottomAssignments = isBottomOrderRandomized
+      ? shuffleAssignments(bottomAssignments).map((assignment, index) => ({ ...assignment, order: index + 1 }))
+      : bottomAssignments;
     const nonOrderedAssignments = assignedCards.filter(a => a.action !== 'top' && a.action !== 'bottom');
 
-    return [...nonOrderedAssignments, ...orderedDeckAssignments].map(a => ({
+    return [...nonOrderedAssignments, ...topAssignments, ...orderedBottomAssignments].map(a => ({
       cardId: a.card.id,
       action: a.action,
       order: a.order,
@@ -224,6 +229,26 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
                     <span>{btn.label}</span>
                     <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>{t('gameBoard.modals.topDeck.tapToReturn')}</span>
                   </h4>
+                  {btn.id === 'bottom' && (
+                    <label
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.45rem',
+                        margin: '-0.35rem 0 0.9rem 0',
+                        color: '#c9d1d9',
+                        fontSize: '0.78rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isBottomOrderRandomized}
+                        onChange={(event) => setIsBottomOrderRandomized(event.target.checked)}
+                      />
+                      {t('gameBoard.modals.topDeck.randomizeBottom')}
+                    </label>
+                  )}
                   <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                     {group.map(a => (
                       <div key={a.card.id} onClick={() => handleUnassign(a.card.id)} style={{ position: 'relative', cursor: 'pointer' }}>
@@ -397,6 +422,17 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
       </div>
     </div>
   );
+};
+
+const shuffleAssignments = <T,>(assignments: T[]): T[] => {
+  const shuffled = [...assignments];
+
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+
+  return shuffled;
 };
 
 export default TopDeckModal;
