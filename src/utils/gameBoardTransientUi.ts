@@ -16,6 +16,12 @@ export type GameBoardRevealedCardsOverlay =
       title: string;
       cards: GameBoardRevealCard[];
       summaryLines?: string[];
+    }
+  | {
+      type: 'hand';
+      title: string;
+      cards: GameBoardRevealCard[];
+      summaryLines?: string[];
     };
 
 export const prependHistoryEntry = (

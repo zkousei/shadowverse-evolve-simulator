@@ -168,6 +168,11 @@ export const formatSharedUiMessage = (
     return t('gameBoard.modals.shared.messages.revealLookTop', { actor: actorLabel });
   }
 
+  if (effect.type === 'REVEAL_HAND_CARDS') {
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    return t('gameBoard.modals.shared.messages.revealHand', { actor: actorLabel });
+  }
+
   if (effect.type === 'REVEAL_SEARCHED_CARD_TO_HAND') {
     const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
     return t('gameBoard.modals.shared.messages.revealSearch', { actor: actorLabel });

@@ -525,6 +525,7 @@
       "shuffle": "シャッフル",
       "lookTop": "上からN枚見る",
       "randomDiscardHand": "ランダムに墓地へ",
+      "revealHand": "手札を公開",
       "importDeckJson": "デッキをインポート (.json)",
       "loadFromMyDecksGeneric": "マイデッキから読み込む"
     },
@@ -652,6 +653,7 @@
           "banishPlayedField": "{{actor}} が消滅させた {{cardName}} を場に出しました",
           "banishToEx": "{{actor}} が消滅させた {{cardName}} をEXエリアに置きました",
           "revealLookTop": "{{actor}} が山札の上を公開中",
+          "revealHand": "{{actor}} が手札のカードを公開しました",
           "revealSearch": "{{actor}} がサーチしたカードを公開中",
           "cardPlayed": "{{actor}} が {{cardName}} をプレーしました",
           "cardPlayedToField": "{{actor}} が {{cardName}} を場に出しました",

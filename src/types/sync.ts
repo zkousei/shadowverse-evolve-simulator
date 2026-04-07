@@ -86,6 +86,7 @@ export type SharedUiEffect =
     }
   | { type: 'CARD_PLAYED'; actor: PlayerRole; cardId: string; cardName: string; mode: 'play' | 'playToField' }
   | { type: 'REVEAL_TOP_DECK_CARDS'; actor: PlayerRole; cards: PublicCardView[] }
+  | { type: 'REVEAL_HAND_CARDS'; actor: PlayerRole; cards: PublicCardView[] }
   | { type: 'REVEAL_SEARCHED_CARD_TO_HAND'; actor: PlayerRole; cardIds: string[] }
   | { type: 'ATTACK_DECLARED'; actor: PlayerRole; attackerCardId: string; attackerName: string; target: AttackTargetView };
 

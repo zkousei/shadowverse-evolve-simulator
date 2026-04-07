@@ -18,7 +18,7 @@ import { type CardStatLookup } from '../utils/cardStats';
 import { type CardDetailLookup } from '../utils/cardDetails';
 import { buildTopDeckRevealEffect } from '../utils/topDeckReveal';
 import { buildTopDeckSummaryEffect } from '../utils/topDeckSummary';
-import { buildSingleCardRevealEffect } from '../utils/cardReveal';
+import { buildHandRevealEffect, buildSingleCardRevealEffect } from '../utils/cardReveal';
 import { buildAttackDeclaredEffect, formatAttackEffect } from '../utils/attackUi';
 import { buildCardPlayedEffect, formatCardPlayedEffect } from '../utils/cardPlayUi';
 import { loadCardCatalog } from '../utils/cardCatalog';
@@ -147,7 +147,7 @@ export const useGameBoardLogic = () => {
   const [eventHistory, setEventHistory] = useState<string[]>([]);
   const [attackVisual, setAttackVisual] = useState<Extract<SharedUiEffect, { type: 'ATTACK_DECLARED' }> | null>(null);
   const [revealedCardsOverlay, setRevealedCardsOverlay] = useState<{
-    type: 'look-top' | 'search';
+    type: 'look-top' | 'search' | 'hand';
     title: string;
     cards: PublicCardView[];
     summaryLines?: string[]
@@ -535,6 +535,25 @@ export const useGameBoardLogic = () => {
       });
       revealedCardsTimeoutRef.current = setTimeout(() => {
         revealTopIsActiveRef.current = false;
+        setRevealedCardsOverlay(null);
+        revealedCardsTimeoutRef.current = null;
+      }, 5000);
+      return;
+    }
+
+    if (effect.type === 'REVEAL_HAND_CARDS') {
+      clearRevealedCardsTimer();
+      const actorLabel = getSharedActorLabel(effect.actor, role, isSoloMode, translate);
+      const message = translate('gameBoard.modals.shared.messages.revealHand', { actor: actorLabel });
+      const cardNames = effect.cards.map((card) => card.name).join(', ');
+
+      pushEventHistory(cardNames ? `${message}: ${cardNames}` : message);
+      setRevealedCardsOverlay({
+        type: 'hand',
+        title: message,
+        cards: effect.cards,
+      });
+      revealedCardsTimeoutRef.current = setTimeout(() => {
         setRevealedCardsOverlay(null);
         revealedCardsTimeoutRef.current = null;
       }, 5000);
@@ -1718,6 +1737,15 @@ export const useGameBoardLogic = () => {
     });
   };
 
+  const revealHand = () => {
+    if (isSoloMode || !canInteract || gameStateRef.current.gameStatus !== 'playing') return;
+    const effect = buildHandRevealEffect(gameStateRef.current.cards, role);
+    if (!effect) return;
+
+    playSharedUiEffect(effect);
+    sendSharedUiEffect(effect);
+  };
+
   const handleLookAtTop = (n: number, targetRole: PlayerRole = role) => {
     if (!canLookAtTopDeck({ canInteract, gameStatus: gameState.gameStatus })) return;
     const myDeck = gameState.cards.filter(c => c.zone === `mainDeck-${targetRole}`);
@@ -1991,7 +2019,7 @@ export const useGameBoardLogic = () => {
     handleBanish, handlePlayToField, handleSendToCemetery, handleReturnEvolve, handleShuffleDeck, handleDeclareAttack,
     handleSetRevealHandsMode,
     evolveAutoAttachSelection, confirmEvolveAutoAttachSelection, cancelEvolveAutoAttachSelection,
-    getCards, getTokenOptions, lastGameState: gameState.lastGameState, millCard, moveTopCardToEx, discardRandomHandCards,
+    getCards, getTokenOptions, lastGameState: gameState.lastGameState, millCard, moveTopCardToEx, discardRandomHandCards, revealHand,
     topDeckCards, topDeckTargetRole, setTopDeckTargetRole, handleLookAtTop, handleResolveTopDeck, setTopDeckCards,
     handleUndoCardMove, hasUndoableMove, canUndoTurn,
     isDebug

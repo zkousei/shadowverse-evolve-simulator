@@ -572,6 +572,7 @@
       "shuffle": "Shuffle",
       "lookTop": "Look Top (N)",
       "randomDiscardHand": "Random Discard",
+      "revealHand": "Reveal Hand",
       "importDeckJson": "Import Deck (.json)",
       "loadFromMyDecksGeneric": "Load from My Decks"
     },
@@ -699,6 +700,7 @@
           "banishPlayedField": "{{actor}} played to field {{cardName}} from Banish",
           "banishToEx": "{{actor}} added {{cardName}} from Banish to EX Area",
           "revealLookTop": "{{actor}} revealed from Look Top",
+          "revealHand": "{{actor}} revealed cards from hand",
           "revealSearch": "{{actor}} revealed from Search",
           "attackDeclared": "{{actor}} declared an attack",
           "attackAnnouncement": "{{attacker}} attacks {{target}}",

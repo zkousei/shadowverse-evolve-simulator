@@ -34,3 +34,22 @@ export const buildSingleCardRevealEffect = (
     cards: [toPublicCardView(card)],
   };
 };
+
+export const buildHandRevealEffect = (
+  cards: CardInstance[],
+  actor: PlayerRole
+): SharedUiEffect | null => {
+  const handCards = cards
+    .filter((card) => card.zone === `hand-${actor}`)
+    // Hand cards can be resolved from the local catalog/snapshot on both peers,
+    // so omit image URLs from the transient message to keep the payload small.
+    .map((card) => toPublicCardView(card, false));
+
+  if (handCards.length === 0) return null;
+
+  return {
+    type: 'REVEAL_HAND_CARDS',
+    actor,
+    cards: handCards,
+  };
+};

@@ -68,6 +68,7 @@ vi.mock('react-i18next', () => ({
         'gameBoard.modals.shared.messages.banishPlayedField': '{{actor}} played to field {{cardName}} from Banish',
         'gameBoard.modals.shared.messages.banishToEx': '{{actor}} added {{cardName}} from Banish to EX Area',
         'gameBoard.modals.shared.messages.revealLookTop': '{{actor}} revealed from Look Top',
+        'gameBoard.modals.shared.messages.revealHand': '{{actor}} revealed cards from hand',
         'gameBoard.modals.shared.messages.revealSearch': '{{actor}} revealed from Search',
         'gameBoard.modals.shared.messages.attackDeclared': '{{actor}} declared an attack',
         'gameBoard.modals.shared.messages.attackAnnouncement': '{{attacker}} attacks {{target}}',
@@ -236,6 +237,7 @@ function HookHarness() {
     handleShuffleDeck,
     handleDeclareAttack,
     handleSetRevealHandsMode,
+    revealHand,
     topDeckCards,
     handleLookAtTop,
     evolveAutoAttachSelection,
@@ -273,6 +275,7 @@ function HookHarness() {
       <div data-testid="turn-message">{turnMessage ?? 'none'}</div>
       <div data-testid="event-history">{eventHistory.join(' || ') || 'none'}</div>
       <div data-testid="revealed-overlay-title">{revealedCardsOverlay?.title ?? 'none'}</div>
+      <div data-testid="revealed-overlay-cards">{revealedCardsOverlay?.cards.map(card => card.name).join(', ') || 'none'}</div>
       <div data-testid="revealed-overlay-summary">{revealedCardsOverlay?.summaryLines?.join(' || ') ?? 'none'}</div>
       <div data-testid="saved-session">{savedSessionCandidate ? savedSessionCandidate.room : 'none'}</div>
       <div data-testid="auto-attach-selection-count">{String(evolveAutoAttachSelection?.candidateCards.length ?? 0)}</div>
@@ -346,6 +349,7 @@ function HookHarness() {
       </button>
       <button onClick={() => handleReturnEvolve('evolve-card')}>Return Evolve Card</button>
       <button onClick={() => handleShuffleDeck('host')}>Shuffle Host Deck</button>
+      <button onClick={revealHand}>Reveal Hand</button>
       <button onClick={() => handleDeclareAttack('attacker-card', { type: 'leader', player: 'guest' }, 'host')}>Declare Attack to Guest Leader</button>
       <button onClick={() => handleSetRevealHandsMode(true)}>Enable Reveal Hands</button>
       <button onClick={() => handleSetRevealHandsMode(false)}>Disable Reveal Hands</button>
@@ -1993,6 +1997,81 @@ describe('useGameBoardLogic shared UI notifications', () => {
     expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
     expect(mockPeerJs.peers).toHaveLength(1);
     expect(peer.destroy).not.toHaveBeenCalled();
+  });
+
+  it('shows revealed hand cards in the overlay and recent-event log', () => {
+    const { conn } = connectGuest();
+
+    act(() => {
+      conn.emit('data', {
+        type: 'SHARED_UI_EFFECT',
+        effect: {
+          type: 'REVEAL_HAND_CARDS',
+          actor: 'host',
+          cards: [
+            { cardId: 'BP01-001', name: 'Aurelia', image: '' },
+            { cardId: 'BP01-002', name: 'Quickblader', image: '' },
+          ],
+        },
+      });
+      vi.advanceTimersByTime(0);
+    });
+
+    expect(screen.getByTestId('revealed-overlay-title')).toHaveTextContent('Opponent revealed cards from hand');
+    expect(screen.getByTestId('revealed-overlay-cards')).toHaveTextContent('Aurelia, Quickblader');
+    expect(screen.getByTestId('event-history')).toHaveTextContent('Opponent revealed cards from hand: Aurelia, Quickblader');
+  });
+
+  it('sends the local p2p hand reveal and shows it to the revealer', () => {
+    const { conn } = connectGuest();
+
+    act(() => {
+      conn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: buildSyncState({
+          gameStatus: 'playing',
+          revision: 2,
+          cards: [
+            {
+              id: 'guest-hand-1',
+              cardId: 'BP01-001',
+              name: 'Aurelia',
+              image: '/aurelia.png',
+              zone: 'hand-guest',
+              owner: 'guest',
+              isTapped: false,
+              isFlipped: false,
+              counters: { atk: 0, hp: 0 },
+            },
+          ],
+        }),
+      });
+    });
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Reveal Hand' }));
+      vi.advanceTimersByTime(0);
+    });
+
+    expect(conn.send).toHaveBeenCalledWith({
+      type: 'SHARED_UI_EFFECT',
+      effect: {
+        type: 'REVEAL_HAND_CARDS',
+        actor: 'guest',
+        cards: [
+          {
+            cardId: 'BP01-001',
+            name: 'Aurelia',
+            image: '',
+          },
+        ],
+      },
+    });
+    expect(screen.getByTestId('revealed-overlay-title')).toHaveTextContent('You revealed cards from hand');
+    expect(screen.getByTestId('revealed-overlay-cards')).toHaveTextContent('Aurelia');
+    expect(screen.getByTestId('event-history')).toHaveTextContent('You revealed cards from hand: Aurelia');
+    expect(screen.getByTestId('host-hand-count')).toHaveTextContent('0');
   });
 
   it('does not keep reset or preparing-only evolve usage entries in recent events', () => {
