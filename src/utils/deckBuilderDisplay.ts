@@ -1,4 +1,5 @@
 import type { DeckBuilderCardData } from '../models/deckBuilderCard';
+import { BASE_CARD_TYPE_VALUES, getBaseCardType, type BaseCardType } from '../models/cardClassification';
 import { DEFAULT_DECK_NAME } from './deckStorage';
 
 export const DECK_SORT_VALUES = ['added', 'cost', 'id'] as const;
@@ -12,6 +13,8 @@ export type DeckDisplayGroup = {
   card: DeckBuilderCardData;
   count: number;
 };
+
+export type DeckBaseCardTypeCounts = Record<BaseCardType, number>;
 
 type Point = {
   x: number;
@@ -64,6 +67,21 @@ export const groupDeckCardsForDisplay = (cards: DeckBuilderCardData[]): DeckDisp
   });
 
   return groups;
+};
+
+export const getDeckBaseCardTypeCounts = (groups: DeckDisplayGroup[]): DeckBaseCardTypeCounts => {
+  const counts = Object.fromEntries(
+    BASE_CARD_TYPE_VALUES.map(cardType => [cardType, 0])
+  ) as DeckBaseCardTypeCounts;
+
+  groups.forEach(({ card, count }) => {
+    const baseCardType = getBaseCardType(card.card_kind_normalized);
+    if (baseCardType) {
+      counts[baseCardType] += count;
+    }
+  });
+
+  return counts;
 };
 
 export const parseNullableStat = (value?: string): number | null => {
