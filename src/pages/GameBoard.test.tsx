@@ -984,6 +984,50 @@ describe('GameBoard', () => {
     });
   });
 
+  it('shows move undo during Player 2 turn in solo mode', () => {
+    const handleUndoCardMove = vi.fn();
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      mode: 'solo',
+      isSoloMode: true,
+      isHost: true,
+      role: 'host',
+      handleUndoCardMove,
+      hasUndoableMove: true,
+      gameState: createGameState([], {
+        gameStatus: 'playing',
+        turnPlayer: 'guest',
+        lastUndoableCardMoveActor: 'guest',
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    expect(screen.queryByTestId('undo-move-host')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('undo-move-guest'));
+
+    expect(handleUndoCardMove).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps move undo hidden during the opponent turn in p2p', () => {
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      mode: 'p2p',
+      isSoloMode: false,
+      isHost: true,
+      role: 'host',
+      hasUndoableMove: true,
+      gameState: createGameState([], {
+        gameStatus: 'playing',
+        turnPlayer: 'guest',
+        lastUndoableCardMoveActor: 'host',
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    expect(screen.queryByTestId('undo-move-host')).not.toBeInTheDocument();
+  });
+
   it('shows the reset game dialog and wires cancel/confirm actions', () => {
     const setShowResetConfirm = vi.fn();
     const confirmResetGame = vi.fn();
