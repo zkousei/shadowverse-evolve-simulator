@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canLookAtTopDeck, getCanInteractWithGameBoard } from './gameBoardInteraction';
+import { canLookAtTopDeck, getCanInteractWithGameBoard, getCanViewGameBoard } from './gameBoardInteraction';
 
 describe('gameBoardInteraction', () => {
   describe('getCanInteractWithGameBoard', () => {
@@ -27,6 +27,43 @@ describe('gameBoardInteraction', () => {
         isHost: false,
         connectionState: 'reconnecting',
       })).toBe(false);
+    });
+
+    it('blocks spectator mutations even after connecting', () => {
+      expect(getCanInteractWithGameBoard({
+        isSoloMode: false,
+        isHost: false,
+        isSpectator: true,
+        connectionState: 'connected',
+      })).toBe(false);
+    });
+  });
+
+  describe('getCanViewGameBoard', () => {
+    it('allows connected non-host clients to view the board', () => {
+      expect(getCanViewGameBoard({
+        isSoloMode: false,
+        isHost: false,
+        connectionState: 'connected',
+      })).toBe(true);
+      expect(getCanViewGameBoard({
+        isSoloMode: false,
+        isHost: false,
+        connectionState: 'reconnecting',
+      })).toBe(false);
+    });
+
+    it('allows solo mode and host viewers without requiring a connected p2p state', () => {
+      expect(getCanViewGameBoard({
+        isSoloMode: true,
+        isHost: false,
+        connectionState: 'disconnected',
+      })).toBe(true);
+      expect(getCanViewGameBoard({
+        isSoloMode: false,
+        isHost: true,
+        connectionState: 'connecting',
+      })).toBe(true);
     });
   });
 

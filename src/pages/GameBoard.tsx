@@ -71,7 +71,7 @@ import { loadCardCatalog } from '../utils/cardCatalog';
 const GameBoard: React.FC = () => {
   const { t } = useTranslation();
   const {
-    room, isSoloMode, isHost, role, status, connectionState, canInteract, attemptReconnect, gameState, savedSessionCandidate, resumeSavedSession, discardSavedSession, searchZone, setSearchZone,
+    room, isSoloMode, isHost, isSpectator, role, status, connectionState, canInteract, canView, attemptReconnect, gameState, savedSessionCandidate, resumeSavedSession, discardSavedSession, searchZone, setSearchZone,
     showResetConfirm, setShowResetConfirm, coinMessage, turnMessage, cardPlayMessage, attackMessage, eventHistory, attackVisual, revealedCardsOverlay,
     cardStatLookup, cardDetailLookup,
     isRollingDice, diceValue, mulliganOrder, isMulliganModalOpen, setIsMulliganModalOpen,
@@ -112,18 +112,18 @@ const GameBoard: React.FC = () => {
   const canOpenSavedDeckPicker = allCards.length > 0;
   // Solo mode renders both players for a single viewer. The top board is the
   // "other side" of the same local match, not a protected remote opponent.
-  const viewerRole = isSoloMode ? 'all' : role;
+  const viewerRole = isSpectator ? 'spectator' : isSoloMode ? 'all' : role;
   const isPreparingHandMoveLocked = isHandCardMovementLocked(gameState);
   const topRole = (isSoloMode ? 'guest' : role === 'host' ? 'guest' : 'host') as PlayerRole;
   const bottomRole = (isSoloMode ? 'host' : role) as PlayerRole;
-  const canImportTopDeck = canImportDeck(gameState, topRole);
-  const canImportBottomDeck = canImportDeck(gameState, bottomRole);
+  const canImportTopDeck = canInteract && canImportDeck(gameState, topRole);
+  const canImportBottomDeck = canInteract && canImportDeck(gameState, bottomRole);
   const savedDeckPickerUnavailableTitle = !canOpenSavedDeckPicker
     ? t('gameBoard.status.loadingCatalog')
     : t('gameBoard.status.availableBeforeStart');
   const topLabel = getPlayerLabel(
     topRole,
-    isSoloMode,
+    isSoloMode || isSpectator,
     t('common.labels.self'),
     t('common.labels.opponent'),
     role,
@@ -132,7 +132,7 @@ const GameBoard: React.FC = () => {
   );
   const bottomLabel = getPlayerLabel(
     bottomRole,
-    isSoloMode,
+    isSoloMode || isSpectator,
     t('common.labels.self'),
     t('common.labels.opponent'),
     role,
@@ -149,6 +149,7 @@ const GameBoard: React.FC = () => {
   );
   const undoMoveActor = gameState.lastUndoableCardMoveActor ?? bottomRole;
   const canShowUndoMoveForRole = (playerRole: PlayerRole) => gameState.gameStatus === 'playing' &&
+    !isSpectator &&
     hasUndoableMove &&
     (isSoloMode ? undoMoveActor === playerRole : playerRole === role && gameState.turnPlayer === role);
   const renderUndoMoveButton = (playerRole: PlayerRole) => canShowUndoMoveForRole(playerRole) ? (
@@ -172,11 +173,12 @@ const GameBoard: React.FC = () => {
   ) : null;
   // P2P can optionally hide the opponent hand, but solo always shows both
   // hands to the same player.
-  const shouldHideTopHand = !isSoloMode && !gameState.revealHandsMode;
+  const shouldHideTopHand = !isSoloMode && !isSpectator && !gameState.revealHandsMode;
   const isBottomTurnActive = gameState.gameStatus === 'playing' && gameState.turnPlayer === bottomRole;
   const isTopTurnActive = gameState.gameStatus === 'playing' && gameState.turnPlayer === topRole;
+  const shouldHighlightTopBoard = (isSoloMode || isSpectator) && isTopTurnActive;
   const canResetGame = isSoloMode || isHost;
-  const isGuestConnectionBlocked = !isSoloMode && !isHost && !canInteract;
+  const isGuestConnectionBlocked = !isSoloMode && !isSpectator && !isHost && !canInteract;
   const connectionBadgeTone = getConnectionBadgeTone(connectionState, t);
   const interactionBlockedTitle = getInteractionBlockedTitle(isGuestConnectionBlocked, connectionState, t);
   const savedSessionTimestamp = React.useMemo(() => {
@@ -517,9 +519,9 @@ const GameBoard: React.FC = () => {
   }, [canInteract, cardStatLookup, gameState.cards, gameState.gameStatus, gameState.turnPlayer]);
 
   const openSearchZone = React.useCallback((id: string, title: string) => {
-    if (!canInteract) return;
+    if (!canView) return;
     setSearchZone({ id, title });
-  }, [canInteract, setSearchZone]);
+  }, [canView, setSearchZone]);
 
   const getAttackHighlightTone = React.useCallback((card: CardInstance): 'attack-source' | 'attack-target' | undefined => {
     return resolveAttackHighlightTone(attackSourceCard, card, cardStatLookup);
@@ -562,7 +564,7 @@ const GameBoard: React.FC = () => {
               onReconnect={attemptReconnect}
             />
 
-            {gameState.gameStatus === 'preparing' ? (
+            {!isSpectator && gameState.gameStatus === 'preparing' ? (
               <GameBoardPreparationControls
                 isSoloMode={isSoloMode}
                 isHost={isHost}
@@ -581,26 +583,26 @@ const GameBoard: React.FC = () => {
                 onToggleReady={handleToggleReady}
                 onStartGame={handleStartGame}
               />
-            ) : (
+            ) : !isSpectator ? (
               <GameBoardPlayingControls
                 canShowUndoTurn={canShowUndoTurn}
                 onTossCoin={handlePureCoinFlip}
                 onRollDice={handleRollDice}
                 onOpenUndo={() => setShowUndoConfirm(true)}
               />
-            )}
+            ) : null}
           </div>
 
           {/* Turn Management */}
           {gameState.gameStatus === 'playing' && (
             <GameBoardTurnPanel
-              isSoloMode={isSoloMode}
+              isSoloMode={isSoloMode || isSpectator}
               isCurrentPlayerTurn={gameState.turnPlayer === role}
               currentTurnLabel={currentTurnLabel}
               turnCount={gameState.turnCount}
               phase={gameState.phase}
               isBottomTurnActive={isBottomTurnActive}
-              canChangePhase={isSoloMode || gameState.turnPlayer === role}
+              canChangePhase={!isSpectator && (isSoloMode || gameState.turnPlayer === role)}
               onPhaseChange={setPhase}
             />
           )}
@@ -646,7 +648,11 @@ const GameBoard: React.FC = () => {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'url("https://shadowverse-evolve.com/wordpress/wp-content/themes/shadowverse-evolve-release_v0/assets/images/common/bg.jpg")', backgroundSize: 'cover', backgroundPosition: 'center', borderRadius: 'var(--radius-lg)', padding: '1rem', overflowY: 'auto', alignItems: 'center' }}>
 
           {/* OPPONENT BOARD */}
-          <div style={{ ...activeBoardSectionStyle(isSoloMode && isTopTurnActive), opacity: 0.9 }}>
+          <div
+            data-testid="board-section-top"
+            data-turn-active={String(shouldHighlightTopBoard)}
+            style={{ ...activeBoardSectionStyle(shouldHighlightTopBoard), opacity: 0.9 }}
+          >
             {isSoloMode ? (
               <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: '1rem', alignItems: 'flex-start', width: '100%', maxWidth: '1568px', justifyContent: 'center' }}>
                 <div style={{ width: `${topPanelWidth}px`, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(0,0,0,0.8)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
@@ -717,7 +723,7 @@ const GameBoard: React.FC = () => {
                     disabledTitle={interactionBlockedTitle ?? t('gameBoard.board.endTurnDisabled')}
                     onEndTurn={endTurn}
                   />
-                  <button onClick={() => openTokenSpawnModal(topRole)} className="glass-panel" style={{ padding: '0.5rem', background: '#7c3aed' }}>
+                  <button onClick={() => openTokenSpawnModal(topRole)} className="glass-panel" disabled={!canInteract} style={{ padding: '0.5rem', background: '#7c3aed', opacity: canInteract ? 1 : 0.5, cursor: canInteract ? 'pointer' : 'not-allowed' }}>
                     {t('gameBoard.zones.spawnToken', { label: topLabel })}
                   </button>
                   {renderUndoMoveButton(topRole)}
@@ -726,6 +732,7 @@ const GameBoard: React.FC = () => {
                     label={topLabel}
                     playerState={gameState[topRole]}
                     onAdjustStat={(stat, delta) => handleStatChange(topRole, stat, delta)}
+                    readOnly={isSpectator}
                   />
                 </div>
 
@@ -786,7 +793,7 @@ const GameBoard: React.FC = () => {
                       searchLabel={t('gameBoard.zones.search')}
                       onSearch={() => openSearchZone(`cemetery-${topRole}`, t('gameBoard.zones.cemetery', { label: topLabel }))}
                       searchTitle={interactionBlockedTitle}
-                      isSearchInteractive={canInteract}
+                      isSearchInteractive={canView}
                     />
                     <Zone
                       id={`ex-${topRole}`}
@@ -811,7 +818,7 @@ const GameBoard: React.FC = () => {
                       searchLabel={t('gameBoard.zones.search')}
                       onSearch={() => openSearchZone(`banish-${topRole}`, t('gameBoard.zones.banish', { label: topLabel }))}
                       searchTitle={interactionBlockedTitle}
-                      isSearchInteractive={canInteract}
+                      isSearchInteractive={canView}
                     />
                   </div>
 
@@ -825,8 +832,10 @@ const GameBoard: React.FC = () => {
                           actionsLabel={t('gameBoard.board.actions')}
                           actions={[
                             { label: t('gameBoard.zones.search'), onClick: () => openSearchZone(`mainDeck-${topRole}`, t('gameBoard.zones.mainDeck', { label: topLabel })) },
-                            { label: t('gameBoard.zones.shuffle'), onClick: () => handleShuffleDeck(topRole) },
-                            { label: t('gameBoard.zones.lookTop'), onClick: () => openTopDeckModal(topRole), tone: 'accent' }
+                            ...(!isSpectator ? [
+                              { label: t('gameBoard.zones.shuffle'), onClick: () => handleShuffleDeck(topRole) },
+                              { label: t('gameBoard.zones.lookTop'), onClick: () => openTopDeckModal(topRole), tone: 'accent' as const },
+                            ] : []),
                           ]}
                           direction="up"
                           onActiveMenuChange={setActiveZoneActions}
@@ -859,7 +868,7 @@ const GameBoard: React.FC = () => {
                         searchLabel={t('gameBoard.zones.search')}
                         onSearch={() => openSearchZone(`evolveDeck-${topRole}`, t('gameBoard.zones.evolveDeck', { label: topLabel }))}
                         searchTitle={interactionBlockedTitle}
-                        isSearchInteractive={canInteract}
+                        isSearchInteractive={canView}
                       />
                     </div>
                     <GameBoardLeaderZoneSection
@@ -958,6 +967,17 @@ const GameBoard: React.FC = () => {
                     <div style={{ display: 'grid', gridTemplateColumns: boardColumns, gap: '0.75rem', width: `${boardContentWidth}px`, alignItems: 'start' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <Zone id={`mainDeck-${topRole}`} label={t('gameBoard.zones.mainDeck', { label: topLabel })} cards={getCards(`mainDeck-${topRole}`)} cardDetailLookup={cardDetailLookup} layout="stack" isProtected={true} viewerRole={viewerRole} containerStyle={{ minWidth: `${sideZoneWidth}px`, minHeight: '150px' }} isDebug={isDebug} />
+                        {isSpectator && (
+                          <GameBoardZoneActionsSection
+                            menuId={`mainDeck-${topRole}`}
+                            activeMenuId={activeZoneActions}
+                            actionsLabel={t('gameBoard.board.actions')}
+                            actions={[
+                              { label: t('gameBoard.zones.search'), onClick: () => openSearchZone(`mainDeck-${topRole}`, t('gameBoard.zones.mainDeck', { label: topLabel })) },
+                            ]}
+                            onActiveMenuChange={setActiveZoneActions}
+                          />
+                        )}
                       </div>
                       <Zone
                         id={`field-${topRole}`}
@@ -1008,7 +1028,11 @@ const GameBoard: React.FC = () => {
           <hr style={{ borderColor: 'rgba(255,255,255,0.1)', margin: '1rem 0' }} />
 
           {/* MY BOARD */}
-          <div style={activeBoardSectionStyle(isBottomTurnActive)}>
+          <div
+            data-testid="board-section-bottom"
+            data-turn-active={String(isBottomTurnActive)}
+            style={activeBoardSectionStyle(isBottomTurnActive)}
+          >
 	            <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: '1rem', alignItems: 'flex-start', width: '100%', maxWidth: '1568px', justifyContent: 'center' }}>
                 <div />
 	              <div style={{ width: `${boardContentWidth}px`, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.65rem', alignItems: 'flex-start' }}>
@@ -1019,7 +1043,7 @@ const GameBoard: React.FC = () => {
                     searchLabel={t('common.buttons.search')}
                     onSearch={() => openSearchZone(`evolveDeck-${bottomRole}`, t('gameBoard.zones.evolveDeck', { label: bottomLabel }))}
                     searchTitle={interactionBlockedTitle}
-                    isSearchInteractive={canInteract}
+                    isSearchInteractive={canView}
                   />
                   <Zone id={`field-${bottomRole}`} label={t('gameBoard.zones.field', { label: bottomLabel })} cards={getCards(`field-${bottomRole}`)} cardStatLookup={cardStatLookup} cardDetailLookup={cardDetailLookup} getHighlightTone={getAttackHighlightTone} onInspectCard={handleInspectCard} onAttack={gameState.turnPlayer === bottomRole ? handleStartAttack : undefined} onTap={toggleTap} onModifyCounter={handleModifyCounter} onModifyGenericCounter={handleModifyGenericCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} disableQuickActionsForCard={shouldDisableQuickActionsForAttackTarget} viewerRole={viewerRole} containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: '160px', width: `${centerZoneWidth}px`, flex: 'none' }} isDebug={isDebug} />
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -1030,8 +1054,10 @@ const GameBoard: React.FC = () => {
                       actionsLabel={t('gameBoard.board.actions')}
                       actions={[
                         { label: t('gameBoard.zones.search'), onClick: () => openSearchZone(`mainDeck-${bottomRole}`, t('gameBoard.zones.mainDeck', { label: bottomLabel })) },
-                        { label: t('gameBoard.zones.shuffle'), onClick: () => handleShuffleDeck(bottomRole) },
-                        { label: t('gameBoard.zones.lookTop'), onClick: () => openTopDeckModal(bottomRole), tone: 'accent' }
+                        ...(!isSpectator ? [
+                          { label: t('gameBoard.zones.shuffle'), onClick: () => handleShuffleDeck(bottomRole) },
+                          { label: t('gameBoard.zones.lookTop'), onClick: () => openTopDeckModal(bottomRole), tone: 'accent' as const },
+                        ] : []),
                       ]}
                       onActiveMenuChange={setActiveZoneActions}
                     />
@@ -1061,7 +1087,7 @@ const GameBoard: React.FC = () => {
                     searchLabel={t('common.buttons.search')}
                     onSearch={() => openSearchZone(`banish-${bottomRole}`, t('gameBoard.zones.banish', { label: bottomLabel }))}
                     searchTitle={interactionBlockedTitle}
-                    isSearchInteractive={canInteract}
+                    isSearchInteractive={canView}
                   />
 	                  <Zone id={`ex-${bottomRole}`} label={t('gameBoard.zones.exArea', { label: bottomLabel })} cards={getCards(`ex-${bottomRole}`)} cardStatLookup={cardStatLookup} cardDetailLookup={cardDetailLookup} onInspectCard={handleInspectCard} onModifyCounter={handleModifyCounter} onModifyGenericCounter={handleModifyGenericCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} viewerRole={viewerRole} containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: '150px', flex: 'none', width: `${centerZoneWidth}px` }} isDebug={isDebug} />
                   <GameBoardSearchableZoneStack
@@ -1069,7 +1095,7 @@ const GameBoard: React.FC = () => {
                     searchLabel={t('common.buttons.search')}
                     onSearch={() => openSearchZone(`cemetery-${bottomRole}`, t('gameBoard.zones.cemetery', { label: bottomLabel }))}
                     searchTitle={interactionBlockedTitle}
-                    isSearchInteractive={canInteract}
+                    isSearchInteractive={canView}
                   />
 	                </div>
 
@@ -1110,7 +1136,7 @@ const GameBoard: React.FC = () => {
                       </div>
                     )}
 
-                    {gameState.gameStatus === 'preparing' && gameState[bottomRole].initialHandDrawn && !gameState[bottomRole].mulliganUsed && (
+                    {gameState.gameStatus === 'preparing' && canInteract && gameState[bottomRole].initialHandDrawn && !gameState[bottomRole].mulliganUsed && (
                       <GameBoardMulliganButton
                         label={t('game.mulligan_desc', { label: isSoloMode ? bottomLabel : t('game.mulligan_action') })}
                         onClick={() => openMulliganModal(bottomRole)}
@@ -1127,150 +1153,159 @@ const GameBoard: React.FC = () => {
                 </div>
               </div>
 
-              <div style={{ width: `${sidePanelWidth}px`, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(0,0,0,0.8)', padding: '1rem', borderRadius: 'var(--radius-md)', marginLeft: '1.25rem' }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'white', marginBottom: '0.25rem' }}>{t('gameBoard.zones.controls', { label: bottomLabel })}</div>
-                {isSoloMode ? (
-                  <>
-                    <label
-                      className="glass-panel"
-                      style={{
-                        padding: '0.5rem',
-                        background: 'var(--bg-surface-elevated)',
-                        textAlign: 'center',
-                        cursor: canImportBottomDeck ? 'pointer' : 'not-allowed',
-                        fontSize: '0.875rem',
-                        opacity: canImportBottomDeck ? 1 : 0.5
-                      }}
-                    >
-                      {t('gameBoard.zones.importDeck', { label: bottomLabel })}
-                      <input
-                        type="file"
-                        accept=".json"
-                        style={{ display: 'none' }}
-                        onChange={(event) => handleDeckUpload(event, bottomRole)}
-                        disabled={!canImportBottomDeck}
-                      />
-                    </label>
-                    <button
-                      type="button"
-                      className="glass-panel"
-                      onClick={() => openSavedDeckPicker(bottomRole)}
-                      disabled={!canImportBottomDeck || !canOpenSavedDeckPicker}
-                      title={!canImportBottomDeck || !canOpenSavedDeckPicker ? savedDeckPickerUnavailableTitle : undefined}
-                      style={{
-                        padding: '0.5rem',
-                        background: canImportBottomDeck && canOpenSavedDeckPicker
-                          ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.9), rgba(5, 150, 105, 0.9))'
-                          : 'rgba(34, 197, 94, 0.18)',
-                        border: canImportBottomDeck && canOpenSavedDeckPicker
-                          ? '1px solid rgba(110, 231, 183, 0.45)'
-                          : '1px solid var(--border-light)',
-                        color: '#f8fafc',
-                        fontWeight: 700,
-                        textAlign: 'center',
-                        cursor: canImportBottomDeck && canOpenSavedDeckPicker ? 'pointer' : 'not-allowed',
-                        fontSize: '0.875rem',
-                        boxShadow: canImportBottomDeck && canOpenSavedDeckPicker
-                          ? '0 8px 18px rgba(5, 150, 105, 0.28)'
-                          : 'none',
-                        opacity: canImportBottomDeck && canOpenSavedDeckPicker ? 1 : 0.5
-                      }}
-                    >
-                      {t('gameBoard.zones.loadFromMyDecks', { label: bottomLabel })}
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <label
-                      className="glass-panel"
-                      style={{
-                        padding: '0.5rem',
-                        background: 'var(--bg-surface-elevated)',
-                        textAlign: 'center',
-                        cursor: canImportBottomDeck ? 'pointer' : 'not-allowed',
-                        fontSize: '0.875rem',
-                        opacity: canImportBottomDeck ? 1 : 0.5
-                      }}
-                    >
-                      {t('gameBoard.zones.importDeckJson')}
-                      <input
-                        type="file"
-                        accept=".json"
-                        style={{ display: 'none' }}
-                        onChange={(event) => handleDeckUpload(event, bottomRole)}
-                        disabled={!canImportBottomDeck}
-                      />
-                    </label>
-                    <button
-                      type="button"
-                      className="glass-panel"
-                      onClick={() => openSavedDeckPicker(bottomRole)}
-                      disabled={!canImportBottomDeck || !canOpenSavedDeckPicker}
-                      title={!canImportBottomDeck || !canOpenSavedDeckPicker ? savedDeckPickerUnavailableTitle : undefined}
-                      style={{
-                        padding: '0.5rem',
-                        background: canImportBottomDeck && canOpenSavedDeckPicker
-                          ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.9), rgba(5, 150, 105, 0.9))'
-                          : 'rgba(34, 197, 94, 0.18)',
-                        border: canImportBottomDeck && canOpenSavedDeckPicker
-                          ? '1px solid rgba(110, 231, 183, 0.45)'
-                          : '1px solid var(--border-light)',
-                        color: '#f8fafc',
-                        fontWeight: 700,
-                        textAlign: 'center',
-                        cursor: canImportBottomDeck && canOpenSavedDeckPicker ? 'pointer' : 'not-allowed',
-                        fontSize: '0.875rem',
-                        boxShadow: canImportBottomDeck && canOpenSavedDeckPicker
-                          ? '0 8px 18px rgba(5, 150, 105, 0.28)'
-                          : 'none',
-                        opacity: canImportBottomDeck && canOpenSavedDeckPicker ? 1 : 0.5
-                      }}
-                    >
-                      {t('gameBoard.zones.loadFromMyDecksGeneric')}
-                    </button>
-                  </>
-                )}
-                <button onClick={() => drawCard(bottomRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing' || !canInteract} title={gameState.gameStatus !== 'playing' || !canInteract ? interactionBlockedTitle ?? t('gameBoard.board.availableDuringGameOnly') : undefined} style={{ padding: '0.5rem', background: 'var(--accent-primary)', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' && canInteract ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' && canInteract ? 'pointer' : 'not-allowed' }}>
-                  {t('gameBoard.zones.draw', { label: bottomLabel })}
-                </button>
-                <button onClick={() => millCard(bottomRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing' || !canInteract} title={gameState.gameStatus !== 'playing' || !canInteract ? interactionBlockedTitle ?? t('gameBoard.board.availableDuringGameOnly') : undefined} style={{ padding: '0.5rem', background: '#475569', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' && canInteract ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' && canInteract ? 'pointer' : 'not-allowed' }}>
-                  {t('gameBoard.zones.mill', { label: bottomLabel })}
-                </button>
-                <button onClick={() => moveTopCardToEx(bottomRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing' || !canInteract} title={gameState.gameStatus !== 'playing' || !canInteract ? interactionBlockedTitle ?? t('gameBoard.board.availableDuringGameOnly') : undefined} style={{ padding: '0.5rem', background: '#334155', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' && canInteract ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' && canInteract ? 'pointer' : 'not-allowed' }}>
-                  {t('gameBoard.zones.topToEx', { label: bottomLabel })}
-                </button>
-                {isSoloMode ? (
-                  <GameBoardEndTurnSection
-                    playerRole={bottomRole}
+              {isSpectator ? (
+                <div style={{ width: `${sidePanelWidth}px`, boxSizing: 'border-box', marginLeft: '1.25rem' }}>
+                  <GameBoardReadOnlyStatusSection
                     label={bottomLabel}
-                    background="#f59e0b"
-                    turnPlayer={gameState.turnPlayer}
-                    gameStatus={gameState.gameStatus}
-                    canInteract={canInteract}
-                    disabledTitle={interactionBlockedTitle ?? t('gameBoard.board.endTurnDisabled')}
-                    onEndTurn={endTurn}
+                    playerState={gameState[bottomRole]}
                   />
-                ) : (gameState.turnPlayer === role && gameState.gameStatus === 'playing') && (
-                  <button onClick={() => endTurn()} className="glass-panel" style={{ padding: '0.5rem', background: '#f59e0b', color: 'black', fontWeight: 'bold' }}>
-                    {t('gameBoard.board.endTurnSelf')}
+                </div>
+              ) : (
+                <div style={{ width: `${sidePanelWidth}px`, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(0,0,0,0.8)', padding: '1rem', borderRadius: 'var(--radius-md)', marginLeft: '1.25rem' }}>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'white', marginBottom: '0.25rem' }}>{t('gameBoard.zones.controls', { label: bottomLabel })}</div>
+                  {isSoloMode ? (
+                    <>
+                      <label
+                        className="glass-panel"
+                        style={{
+                          padding: '0.5rem',
+                          background: 'var(--bg-surface-elevated)',
+                          textAlign: 'center',
+                          cursor: canImportBottomDeck ? 'pointer' : 'not-allowed',
+                          fontSize: '0.875rem',
+                          opacity: canImportBottomDeck ? 1 : 0.5
+                        }}
+                      >
+                        {t('gameBoard.zones.importDeck', { label: bottomLabel })}
+                        <input
+                          type="file"
+                          accept=".json"
+                          style={{ display: 'none' }}
+                          onChange={(event) => handleDeckUpload(event, bottomRole)}
+                          disabled={!canImportBottomDeck}
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        className="glass-panel"
+                        onClick={() => openSavedDeckPicker(bottomRole)}
+                        disabled={!canImportBottomDeck || !canOpenSavedDeckPicker}
+                        title={!canImportBottomDeck || !canOpenSavedDeckPicker ? savedDeckPickerUnavailableTitle : undefined}
+                        style={{
+                          padding: '0.5rem',
+                          background: canImportBottomDeck && canOpenSavedDeckPicker
+                            ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.9), rgba(5, 150, 105, 0.9))'
+                            : 'rgba(34, 197, 94, 0.18)',
+                          border: canImportBottomDeck && canOpenSavedDeckPicker
+                            ? '1px solid rgba(110, 231, 183, 0.45)'
+                            : '1px solid var(--border-light)',
+                          color: '#f8fafc',
+                          fontWeight: 700,
+                          textAlign: 'center',
+                          cursor: canImportBottomDeck && canOpenSavedDeckPicker ? 'pointer' : 'not-allowed',
+                          fontSize: '0.875rem',
+                          boxShadow: canImportBottomDeck && canOpenSavedDeckPicker
+                            ? '0 8px 18px rgba(5, 150, 105, 0.28)'
+                            : 'none',
+                          opacity: canImportBottomDeck && canOpenSavedDeckPicker ? 1 : 0.5
+                        }}
+                      >
+                        {t('gameBoard.zones.loadFromMyDecks', { label: bottomLabel })}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <label
+                        className="glass-panel"
+                        style={{
+                          padding: '0.5rem',
+                          background: 'var(--bg-surface-elevated)',
+                          textAlign: 'center',
+                          cursor: canImportBottomDeck ? 'pointer' : 'not-allowed',
+                          fontSize: '0.875rem',
+                          opacity: canImportBottomDeck ? 1 : 0.5
+                        }}
+                      >
+                        {t('gameBoard.zones.importDeckJson')}
+                        <input
+                          type="file"
+                          accept=".json"
+                          style={{ display: 'none' }}
+                          onChange={(event) => handleDeckUpload(event, bottomRole)}
+                          disabled={!canImportBottomDeck}
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        className="glass-panel"
+                        onClick={() => openSavedDeckPicker(bottomRole)}
+                        disabled={!canImportBottomDeck || !canOpenSavedDeckPicker}
+                        title={!canImportBottomDeck || !canOpenSavedDeckPicker ? savedDeckPickerUnavailableTitle : undefined}
+                        style={{
+                          padding: '0.5rem',
+                          background: canImportBottomDeck && canOpenSavedDeckPicker
+                            ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.9), rgba(5, 150, 105, 0.9))'
+                            : 'rgba(34, 197, 94, 0.18)',
+                          border: canImportBottomDeck && canOpenSavedDeckPicker
+                            ? '1px solid rgba(110, 231, 183, 0.45)'
+                            : '1px solid var(--border-light)',
+                          color: '#f8fafc',
+                          fontWeight: 700,
+                          textAlign: 'center',
+                          cursor: canImportBottomDeck && canOpenSavedDeckPicker ? 'pointer' : 'not-allowed',
+                          fontSize: '0.875rem',
+                          boxShadow: canImportBottomDeck && canOpenSavedDeckPicker
+                            ? '0 8px 18px rgba(5, 150, 105, 0.28)'
+                            : 'none',
+                          opacity: canImportBottomDeck && canOpenSavedDeckPicker ? 1 : 0.5
+                        }}
+                      >
+                        {t('gameBoard.zones.loadFromMyDecksGeneric')}
+                      </button>
+                    </>
+                  )}
+                  <button onClick={() => drawCard(bottomRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing' || !canInteract} title={gameState.gameStatus !== 'playing' || !canInteract ? interactionBlockedTitle ?? t('gameBoard.board.availableDuringGameOnly') : undefined} style={{ padding: '0.5rem', background: 'var(--accent-primary)', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' && canInteract ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' && canInteract ? 'pointer' : 'not-allowed' }}>
+                    {t('gameBoard.zones.draw', { label: bottomLabel })}
                   </button>
-                )}
-                <button onClick={() => openTokenSpawnModal(bottomRole)} className="glass-panel" style={{ padding: '0.5rem', background: 'var(--accent-secondary)' }}>
-                  {t('gameBoard.zones.spawnToken', { label: bottomLabel })}
-                </button>
-                {canResetGame && (
-                  <button onClick={() => setShowResetConfirm(true)} className="glass-panel" style={{ padding: '0.5rem', background: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', fontWeight: 'bold' }}>
-                    {t('gameBoard.controls.resetGame')}
+                  <button onClick={() => millCard(bottomRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing' || !canInteract} title={gameState.gameStatus !== 'playing' || !canInteract ? interactionBlockedTitle ?? t('gameBoard.board.availableDuringGameOnly') : undefined} style={{ padding: '0.5rem', background: '#475569', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' && canInteract ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' && canInteract ? 'pointer' : 'not-allowed' }}>
+                    {t('gameBoard.zones.mill', { label: bottomLabel })}
                   </button>
-                )}
-                {renderUndoMoveButton(bottomRole)}
-                <GameBoardPlayerTrackerSection
-                  testId={`player-tracker-${bottomRole}`}
-                  label={bottomLabel}
-                  playerState={gameState[bottomRole]}
-                  onAdjustStat={(stat, delta) => handleStatChange(bottomRole, stat, delta)}
-                />
-              </div>
+                  <button onClick={() => moveTopCardToEx(bottomRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing' || !canInteract} title={gameState.gameStatus !== 'playing' || !canInteract ? interactionBlockedTitle ?? t('gameBoard.board.availableDuringGameOnly') : undefined} style={{ padding: '0.5rem', background: '#334155', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' && canInteract ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' && canInteract ? 'pointer' : 'not-allowed' }}>
+                    {t('gameBoard.zones.topToEx', { label: bottomLabel })}
+                  </button>
+                  {isSoloMode ? (
+                    <GameBoardEndTurnSection
+                      playerRole={bottomRole}
+                      label={bottomLabel}
+                      background="#f59e0b"
+                      turnPlayer={gameState.turnPlayer}
+                      gameStatus={gameState.gameStatus}
+                      canInteract={canInteract}
+                      disabledTitle={interactionBlockedTitle ?? t('gameBoard.board.endTurnDisabled')}
+                      onEndTurn={endTurn}
+                    />
+                  ) : (gameState.turnPlayer === role && gameState.gameStatus === 'playing') && (
+                    <button onClick={() => endTurn()} className="glass-panel" style={{ padding: '0.5rem', background: '#f59e0b', color: 'black', fontWeight: 'bold' }}>
+                      {t('gameBoard.board.endTurnSelf')}
+                    </button>
+                  )}
+                  <button onClick={() => openTokenSpawnModal(bottomRole)} className="glass-panel" disabled={!canInteract} style={{ padding: '0.5rem', background: 'var(--accent-secondary)', opacity: canInteract ? 1 : 0.5, cursor: canInteract ? 'pointer' : 'not-allowed' }}>
+                    {t('gameBoard.zones.spawnToken', { label: bottomLabel })}
+                  </button>
+                  {canResetGame && (
+                    <button onClick={() => setShowResetConfirm(true)} className="glass-panel" style={{ padding: '0.5rem', background: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', fontWeight: 'bold' }}>
+                      {t('gameBoard.controls.resetGame')}
+                    </button>
+                  )}
+                  {renderUndoMoveButton(bottomRole)}
+                  <GameBoardPlayerTrackerSection
+                    testId={`player-tracker-${bottomRole}`}
+                    label={bottomLabel}
+                    playerState={gameState[bottomRole]}
+                    onAdjustStat={(stat, delta) => handleStatChange(bottomRole, stat, delta)}
+                  />
+                </div>
+              )}
             </div>
           </div>
 
@@ -1298,10 +1333,10 @@ const GameBoard: React.FC = () => {
         title={searchZone?.title || ''}
         zoneId={searchZone?.id}
         allowHandExtraction={gameState.gameStatus === 'playing'}
-        readOnly={searchZone?.id.startsWith('leader-') ?? false}
+        readOnly={isSpectator || (searchZone?.id.startsWith('leader-') ?? false)}
         cardDetailLookup={cardDetailLookup}
         cards={searchZone ? (
-          (searchZone.id.startsWith('evolveDeck-') && !isSoloMode && !searchZone.id.endsWith(role)
+          (searchZone.id.startsWith('evolveDeck-') && !isSoloMode && !isSpectator && !searchZone.id.endsWith(role)
             ? getCards(searchZone.id).filter(c => !c.isFlipped)
             : getCards(searchZone.id)
           ).slice()

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Play, PenTool, Sword, Users } from 'lucide-react';
+import { Eye, Play, PenTool, Sword, Users } from 'lucide-react';
 import { isDummyCardArtEnabled } from '../utils/cardArtMode';
 import { generateRoomCode } from '../utils/roomCode';
 
@@ -12,6 +12,7 @@ const Home: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [roomId, setRoomId] = useState('');
+  const [spectatorRoomId, setSpectatorRoomId] = useState('');
 
   const handleCreateRoom = () => {
     navigate(`/game?host=true&room=${generateRoomCode()}`);
@@ -21,6 +22,13 @@ const Home: React.FC = () => {
     e.preventDefault();
     if (roomId.trim()) {
       navigate(`/game?host=false&room=${roomId.trim()}`);
+    }
+  };
+
+  const handleSpectateRoom = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (spectatorRoomId.trim()) {
+      navigate(`/game?spectator=true&room=${spectatorRoomId.trim()}`);
     }
   };
 
@@ -133,45 +141,90 @@ const Home: React.FC = () => {
           </button>
         </div>
 
-        <div className="glass-panel" style={{ padding: '2rem' }}>
-          <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-            <Users size={24} /> {t('home.joinGame.title')}
-          </h2>
-          <form onSubmit={handleJoinRoom} style={{ display: 'flex', gap: '1rem' }}>
-            <input 
-              type="text" 
-              placeholder={t('home.joinGame.placeholder')} 
-              value={roomId}
-              onChange={(e) => setRoomId(e.target.value)}
-              style={{
-                flex: 1,
-                padding: '0.75rem 1rem',
-                fontSize: '1rem',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--border-light)',
-                background: 'rgba(0,0,0,0.2)',
-                color: 'var(--text-main)',
-                outline: 'none'
-              }}
-              onFocus={(e) => e.target.style.borderColor = 'var(--border-focus)'}
-              onBlur={(e) => e.target.style.borderColor = 'var(--border-light)'}
-            />
-            <button 
-              type="submit"
-              disabled={!roomId.trim()}
-              style={{
-                padding: '0 1.5rem',
-                fontSize: '1rem',
-                fontWeight: '600',
-                borderRadius: 'var(--radius-md)',
-                backgroundColor: roomId.trim() ? 'var(--accent-primary)' : 'var(--bg-surface-elevated)',
-                color: roomId.trim() ? '#fff' : 'var(--text-muted)',
-                transition: 'var(--transition-fast)'
-              }}
-            >
-              {t('home.joinGame.button')}
-            </button>
-          </form>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.5rem' }}>
+          <div className="glass-panel" style={{ padding: '2rem' }}>
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+              <Users size={24} /> {t('home.joinGame.title')}
+            </h2>
+            <form onSubmit={handleJoinRoom} style={{ display: 'flex', gap: '1rem' }}>
+              <input
+                type="text"
+                placeholder={t('home.joinGame.placeholder')}
+                value={roomId}
+                onChange={(e) => setRoomId(e.target.value)}
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  padding: '0.75rem 1rem',
+                  fontSize: '1rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border-light)',
+                  background: 'rgba(0,0,0,0.2)',
+                  color: 'var(--text-main)',
+                  outline: 'none'
+                }}
+                onFocus={(e) => e.target.style.borderColor = 'var(--border-focus)'}
+                onBlur={(e) => e.target.style.borderColor = 'var(--border-light)'}
+              />
+              <button
+                type="submit"
+                disabled={!roomId.trim()}
+                style={{
+                  padding: '0 1.5rem',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  borderRadius: 'var(--radius-md)',
+                  backgroundColor: roomId.trim() ? 'var(--accent-primary)' : 'var(--bg-surface-elevated)',
+                  color: roomId.trim() ? '#fff' : 'var(--text-muted)',
+                  transition: 'var(--transition-fast)'
+                }}
+              >
+                {t('home.joinGame.button')}
+              </button>
+            </form>
+          </div>
+
+          <div className="glass-panel" style={{ padding: '2rem' }}>
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+              <Eye size={24} /> {t('home.spectateGame.title')}
+            </h2>
+            <form onSubmit={handleSpectateRoom} style={{ display: 'flex', gap: '1rem' }}>
+              <input
+                type="text"
+                placeholder={t('home.spectateGame.placeholder')}
+                value={spectatorRoomId}
+                onChange={(e) => setSpectatorRoomId(e.target.value)}
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  padding: '0.75rem 1rem',
+                  fontSize: '1rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border-light)',
+                  background: 'rgba(0,0,0,0.2)',
+                  color: 'var(--text-main)',
+                  outline: 'none'
+                }}
+                onFocus={(e) => e.target.style.borderColor = 'var(--border-focus)'}
+                onBlur={(e) => e.target.style.borderColor = 'var(--border-light)'}
+              />
+              <button
+                type="submit"
+                disabled={!spectatorRoomId.trim()}
+                style={{
+                  padding: '0 1.5rem',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  borderRadius: 'var(--radius-md)',
+                  backgroundColor: spectatorRoomId.trim() ? 'var(--accent-secondary)' : 'var(--bg-surface-elevated)',
+                  color: spectatorRoomId.trim() ? '#fff' : 'var(--text-muted)',
+                  transition: 'var(--transition-fast)'
+                }}
+              >
+                {t('home.spectateGame.button')}
+              </button>
+            </form>
+          </div>
         </div>
 
       </div>

@@ -715,6 +715,11 @@
       "placeholder": "ルームコードを入力...",
       "button": "参加する"
     },
+    "spectateGame": {
+      "title": "観戦する",
+      "placeholder": "観戦するルームコードを入力...",
+      "button": "観戦する"
+    },
     "footer": {
       "version": "バージョン {{version}}",
       "copyright": "このサイトで使用されているカード画像は、ガイドラインに従ってShadowverse EVOLVE公式サイトから複製されたものです。無断転載は禁止されています。 © Cygames, Inc. ©bushiroad All Rights Reserved."
@@ -727,7 +732,9 @@
     "solo": "ソロ",
     "hostGame": "部屋を作成",
     "joinGame": "部屋に参加",
+    "spectateGame": "観戦する",
     "join": "参加",
+    "spectate": "観戦",
     "roomCode": "ルームコード"
   },
   "zone": {

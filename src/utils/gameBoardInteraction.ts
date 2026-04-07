@@ -5,6 +5,21 @@ type ConnectionStateLike = 'idle' | 'connecting' | 'connected' | 'reconnecting' 
 export const getCanInteractWithGameBoard = ({
   isSoloMode,
   isHost,
+  isSpectator = false,
+  connectionState,
+}: {
+  isSoloMode: boolean;
+  isHost: boolean;
+  isSpectator?: boolean;
+  connectionState: ConnectionStateLike;
+}): boolean => {
+  if (isSpectator) return false;
+  return isSoloMode || isHost || connectionState === 'connected';
+};
+
+export const getCanViewGameBoard = ({
+  isSoloMode,
+  isHost,
   connectionState,
 }: {
   isSoloMode: boolean;

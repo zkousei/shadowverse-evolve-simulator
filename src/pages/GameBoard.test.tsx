@@ -21,14 +21,18 @@ vi.mock('../components/Zone', () => ({
     cards,
     onInspectCard,
     onAttack,
+    hideCards,
+    viewerRole,
   }: {
     id: string;
     label: string;
     cards: CardInstance[];
     onInspectCard?: (card: CardInstance, anchor: CardInspectAnchor) => void;
     onAttack?: (id: string) => void;
+    hideCards?: boolean;
+    viewerRole?: string;
   }) => (
-    <section data-testid={`zone-${id}`}>
+    <section data-testid={`zone-${id}`} data-hide-cards={String(Boolean(hideCards))} data-viewer-role={viewerRole ?? ''}>
       <h3>{label}</h3>
       {cards.map((card) => (
         <div key={card.id} className="game-card" data-card-id={card.id}>
@@ -63,14 +67,20 @@ vi.mock('../components/CardSearchModal', () => ({
   default: ({
     isOpen,
     title,
+    cards,
+    readOnly,
     onClose,
   }: {
     isOpen: boolean;
     title: string;
+    cards: CardInstance[];
+    readOnly?: boolean;
     onClose: () => void;
   }) => (
     isOpen ? (
       <div role="dialog" aria-label={title}>
+        <div data-testid="search-modal-read-only">{String(Boolean(readOnly))}</div>
+        <div data-testid="search-modal-card-count">{cards.length}</div>
         <button type="button" onClick={onClose}>Close Search</button>
       </div>
     ) : null
@@ -193,10 +203,12 @@ const buildMockGameBoardLogic = (
     mode: 'p2p',
     isSoloMode: false,
     isHost: true,
+    isSpectator: false,
     role: 'host',
     status: 'Connected! Waiting for guest...',
     connectionState: 'connected',
     canInteract: true,
+    canView: true,
     attemptReconnect: vi.fn(),
     gameState,
     savedSessionCandidate: null,
@@ -931,6 +943,219 @@ describe('GameBoard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Close Search' }));
 
     expect(setSearchZone).toHaveBeenCalledWith(null);
+  });
+
+  it('renders spectator searches as read-only with private zone contents visible', () => {
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      isHost: false,
+      isSpectator: true,
+      role: 'host',
+      canInteract: false,
+      canView: true,
+      searchZone: {
+        id: 'mainDeck-guest',
+        title: 'Player 2 Main Deck',
+      },
+      gameState: createGameState([
+        makeCard({
+          id: 'guest-deck-1',
+          name: 'Guest Deck 1',
+          zone: 'mainDeck-guest',
+          owner: 'guest',
+        }),
+        makeCard({
+          id: 'guest-deck-2',
+          name: 'Guest Deck 2',
+          zone: 'mainDeck-guest',
+          owner: 'guest',
+        }),
+      ], {
+        gameStatus: 'playing',
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    expect(screen.getByRole('dialog', { name: 'Player 2 Main Deck' })).toBeInTheDocument();
+    expect(screen.getByTestId('search-modal-read-only')).toHaveTextContent('true');
+    expect(screen.getByTestId('search-modal-card-count')).toHaveTextContent('2');
+  });
+
+  it('renders spectator private hands as visible full-view zones without preparation controls', () => {
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      isHost: false,
+      isSpectator: true,
+      role: 'host',
+      canInteract: false,
+      canView: true,
+      gameState: createGameState([
+        makeCard({
+          id: 'host-hand-1',
+          name: 'Host Hand Card',
+          zone: 'hand-host',
+          owner: 'host',
+        }),
+        makeCard({
+          id: 'guest-hand-1',
+          name: 'Guest Hand Card',
+          zone: 'hand-guest',
+          owner: 'guest',
+        }),
+      ], {
+        gameStatus: 'preparing',
+        host: {
+          ...initialState.host,
+          initialHandDrawn: true,
+        },
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    expect(screen.queryByRole('button', { name: '▶ START GAME' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Mulligan/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'OFF' })).toBeDisabled();
+    expect(screen.getByText('Host Hand Card')).toBeInTheDocument();
+    expect(screen.getByText('Guest Hand Card')).toBeInTheDocument();
+
+    expect(screen.getByTestId('zone-hand-host')).toHaveAttribute('data-hide-cards', 'false');
+    expect(screen.getByTestId('zone-hand-host')).toHaveAttribute('data-viewer-role', 'spectator');
+    expect(screen.getByTestId('zone-hand-guest')).toHaveAttribute('data-hide-cards', 'false');
+    expect(screen.getByTestId('zone-hand-guest')).toHaveAttribute('data-viewer-role', 'spectator');
+  });
+
+  it('renders spectator playing controls as readonly while leaving search available', () => {
+    const drawCard = vi.fn();
+    const millCard = vi.fn();
+    const moveTopCardToEx = vi.fn();
+    const handlePureCoinFlip = vi.fn();
+    const handleRollDice = vi.fn();
+    const spawnTokens = vi.fn();
+    const handleShuffleDeck = vi.fn();
+    const handleLookAtTop = vi.fn();
+    const setSearchZone = vi.fn();
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      isHost: false,
+      isSpectator: true,
+      role: 'host',
+      canInteract: false,
+      canView: true,
+      drawCard,
+      millCard,
+      moveTopCardToEx,
+      handlePureCoinFlip,
+      handleRollDice,
+      spawnTokens,
+      handleShuffleDeck,
+      handleLookAtTop,
+      setSearchZone,
+      gameState: createGameState([
+        makeCard({
+          id: 'guest-main-1',
+          name: 'Guest Main Deck Card',
+          zone: 'mainDeck-guest',
+          owner: 'guest',
+        }),
+      ], {
+        gameStatus: 'playing',
+      }),
+      getTokenOptions: vi.fn((): TokenOption[] => ([
+        {
+          cardId: 'TOKEN-001',
+          name: 'Knight Token',
+          image: '/token.png',
+          baseCardType: 'follower',
+        },
+      ])),
+    }));
+
+    render(<GameBoard />);
+
+    expect(screen.queryByRole('button', { name: '🪙 Toss Coin' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '🎲 Roll Dice' })).not.toBeInTheDocument();
+    expect(screen.queryByTestId('player-tracker-host-hp-increase')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('player-tracker-guest-hp-increase')).not.toBeInTheDocument();
+
+    expect(screen.getByText('Player 1 Status')).toBeInTheDocument();
+    expect(screen.queryByText('Player 1 Controls')).not.toBeInTheDocument();
+    expect(screen.queryByText('Draw Player 1')).not.toBeInTheDocument();
+    expect(screen.queryByText('Mill Player 1')).not.toBeInTheDocument();
+    expect(screen.queryByText('Move Top to EX Player 1')).not.toBeInTheDocument();
+    expect(drawCard).not.toHaveBeenCalled();
+    expect(millCard).not.toHaveBeenCalled();
+    expect(moveTopCardToEx).not.toHaveBeenCalled();
+
+    expect(screen.queryByText('Spawn Player 1 Token')).not.toBeInTheDocument();
+    expect(spawnTokens).not.toHaveBeenCalled();
+
+    const guestMainDeckPanel = screen.getByTestId('zone-mainDeck-guest').parentElement;
+    expect(guestMainDeckPanel).not.toBeNull();
+    fireEvent.click(within(guestMainDeckPanel as HTMLElement).getByRole('button', { name: 'Actions' }));
+    expect(within(guestMainDeckPanel as HTMLElement).getByRole('button', { name: 'Search' })).toBeInTheDocument();
+    expect(within(guestMainDeckPanel as HTMLElement).queryByRole('button', { name: 'Shuffle' })).not.toBeInTheDocument();
+    expect(within(guestMainDeckPanel as HTMLElement).queryByRole('button', { name: 'Look Top' })).not.toBeInTheDocument();
+  });
+
+  it('highlights the Player 2 board during the Player 2 turn for spectators', () => {
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      isHost: false,
+      isSpectator: true,
+      role: 'host',
+      canInteract: false,
+      canView: true,
+      gameState: createGameState([], {
+        gameStatus: 'playing',
+        turnPlayer: 'guest',
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    expect(screen.getByText('PLAYER 2 TURN')).toBeInTheDocument();
+    expect(screen.queryByText("OPPONENT'S TURN")).not.toBeInTheDocument();
+    expect(screen.getByTestId('board-section-top')).toHaveAttribute('data-turn-active', 'true');
+    expect(screen.getByTestId('board-section-bottom')).toHaveAttribute('data-turn-active', 'false');
+  });
+
+  it('keeps the Player 1 board highlighted during the Player 1 turn for spectators', () => {
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      isHost: false,
+      isSpectator: true,
+      role: 'host',
+      canInteract: false,
+      canView: true,
+      gameState: createGameState([], {
+        gameStatus: 'playing',
+        turnPlayer: 'host',
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    expect(screen.getByText('PLAYER 1 TURN')).toBeInTheDocument();
+    expect(screen.getByTestId('board-section-top')).toHaveAttribute('data-turn-active', 'false');
+    expect(screen.getByTestId('board-section-bottom')).toHaveAttribute('data-turn-active', 'true');
+  });
+
+  it('does not open zone search while board viewing is unavailable', () => {
+    const setSearchZone = vi.fn();
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      canView: false,
+      setSearchZone,
+      gameState: createGameState([]),
+    }));
+
+    render(<GameBoard />);
+
+    const cemeteryZone = screen.getByTestId('zone-cemetery-guest');
+    const cemeteryPanel = cemeteryZone.parentElement;
+    expect(cemeteryPanel).not.toBeNull();
+
+    fireEvent.click(within(cemeteryPanel as HTMLElement).getByRole('button', { name: 'Search' }));
+
+    expect(setSearchZone).not.toHaveBeenCalled();
   });
 
   it('renders the top deck modal and closes it through the page handler', () => {

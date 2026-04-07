@@ -67,6 +67,21 @@ describe('Home', () => {
     expect(navigateMock).toHaveBeenCalledWith('/game?host=false&room=ROOM42');
   });
 
+  it('spectates a trimmed room id and disables empty submits', () => {
+    render(<Home />);
+
+    const spectateButton = screen.getByRole('button', { name: enTranslations.home.spectateGame.button });
+    expect(spectateButton).toBeDisabled();
+
+    fireEvent.change(screen.getByPlaceholderText(enTranslations.home.spectateGame.placeholder), {
+      target: { value: '  ROOM77  ' },
+    });
+    expect(spectateButton).toBeEnabled();
+
+    fireEvent.click(spectateButton);
+    expect(navigateMock).toHaveBeenCalledWith('/game?spectator=true&room=ROOM77');
+  });
+
   it('updates button and input styles on hover/focus and shows footer copy', () => {
     render(<Home />);
 

@@ -311,6 +311,11 @@
       "placeholder": "Enter Room Code...",
       "button": "Join"
     },
+    "spectateGame": {
+      "title": "Spectate Game",
+      "placeholder": "Enter Spectator Room Code...",
+      "button": "Spectate"
+    },
     "footer": {
       "version": "Version {{version}}",
       "copyright": "The card images used on this site are reproduced from the Shadowverse EVOLVE official website (https://shadowverse-evolve.com/) in accordance with their guidelines. Unauthorized reuse (reproduction, distribution, etc.) of these images is prohibited. © Cygames, Inc. ©bushiroad All Rights Reserved."
@@ -323,7 +328,9 @@
     "solo": "Solo",
     "hostGame": "Host Game",
     "joinGame": "Join Game",
+    "spectateGame": "Spectate Game",
     "join": "Join",
+    "spectate": "Spectate",
     "roomCode": "Room Code"
   },
   "common": {
