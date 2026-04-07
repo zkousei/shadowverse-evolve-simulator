@@ -903,6 +903,44 @@ describe('CardLogic utils', () => {
       expect(result[1].id).toBe('evo');
     });
 
+    it('should send opposing attached cards to their owner private zones when sending a base card to cemetery', () => {
+      const base = createMockCard('base', 'field-host', 'host');
+      const opposingFollower = {
+        ...createMockCard('opposing-follower', 'field-host', 'guest'),
+        attachedTo: 'base',
+      };
+
+      const result = CardLogic.sendCardToCemetery([base, opposingFollower], 'base');
+
+      expect(result.find(c => c.id === 'base')).toMatchObject({
+        zone: 'cemetery-host',
+        attachedTo: undefined,
+      });
+      expect(result.find(c => c.id === 'opposing-follower')).toMatchObject({
+        zone: 'cemetery-guest',
+        attachedTo: undefined,
+      });
+    });
+
+    it('should send opposing attached cards to their owner private zones when banishing a base card', () => {
+      const base = createMockCard('base', 'field-host', 'host');
+      const opposingFollower = {
+        ...createMockCard('opposing-follower', 'field-host', 'guest'),
+        attachedTo: 'base',
+      };
+
+      const result = CardLogic.banishCard([base, opposingFollower], 'base');
+
+      expect(result.find(c => c.id === 'base')).toMatchObject({
+        zone: 'banish-host',
+        attachedTo: undefined,
+      });
+      expect(result.find(c => c.id === 'opposing-follower')).toMatchObject({
+        zone: 'banish-guest',
+        attachedTo: undefined,
+      });
+    });
+
     it('should leave invalid non-evolve attachments on the field when sending an evolve root to cemetery', () => {
       const evolveRoot = { ...createMockCard('evo-root', 'field-host'), isEvolveCard: true };
       const invalidTop = {
