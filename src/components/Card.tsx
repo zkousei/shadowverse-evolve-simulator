@@ -123,6 +123,16 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
     whiteSpace: 'nowrap',
     lineHeight: 1.2,
   };
+  const counterAdjustButtonStyle: React.CSSProperties = {
+    padding: '4px 5px',
+    fontSize: '11px',
+    borderRadius: '4px',
+    minWidth: '28px',
+    minHeight: '24px',
+    border: '1px solid rgba(255,255,255,0.55)',
+    fontWeight: 'bold',
+    lineHeight: 1,
+  };
   const currentStats = !hideCurrentStats && isStatDisplayZone && !isHidden && !card.isFlipped && baseStats
     ? {
         atk: baseStats.atk + effectiveDisplayCounters.atk,
@@ -321,13 +331,13 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
               )}
               {onModifyCounter && !card.zone.startsWith('hand') && !disableCombatAndCounterControls && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onModifyCounter(card.id, 'atk', 1); }} style={{ background: '#3b82f6', color: '#fff', padding: '2px', fontSize: '10px', borderRadius: '2px' }}>+A</button>
-                    <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onModifyCounter(card.id, 'atk', -1); }} style={{ background: '#1a1d24', color: '#fff', padding: '2px', fontSize: '10px', borderRadius: '2px', marginTop: '2px' }}>-A</button>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onModifyCounter(card.id, 'atk', 1); }} style={{ ...counterAdjustButtonStyle, background: '#3b82f6', color: '#fff' }}>+A</button>
+                    <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onModifyCounter(card.id, 'atk', -1); }} style={{ ...counterAdjustButtonStyle, background: '#1a1d24', color: '#fff' }}>-A</button>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onModifyCounter(card.id, 'hp', 1); }} style={{ background: '#ef4444', color: '#fff', padding: '2px', fontSize: '10px', borderRadius: '2px' }}>+H</button>
-                    <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onModifyCounter(card.id, 'hp', -1); }} style={{ background: '#1a1d24', color: '#fff', padding: '2px', fontSize: '10px', borderRadius: '2px', marginTop: '2px' }}>-H</button>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onModifyCounter(card.id, 'hp', 1); }} style={{ ...counterAdjustButtonStyle, background: '#ef4444', color: '#fff' }}>+H</button>
+                    <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onModifyCounter(card.id, 'hp', -1); }} style={{ ...counterAdjustButtonStyle, background: '#1a1d24', color: '#fff' }}>-H</button>
                   </div>
                 </div>
               )}
