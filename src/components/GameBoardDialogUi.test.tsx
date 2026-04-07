@@ -215,7 +215,7 @@ describe('GameBoard extracted UI components - dialogs', () => {
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });
 
-  it('renders top-n dialog and wires value, cancel, and confirm', () => {
+  it('renders top-n dialog and immediately confirms preset values', () => {
     const onValueChange = vi.fn();
     const onCancel = vi.fn();
     const onConfirm = vi.fn();
@@ -230,13 +230,59 @@ describe('GameBoard extracted UI components - dialogs', () => {
     );
 
     expect(screen.getByRole('dialog', { name: 'How many cards to look at?' })).toBeInTheDocument();
-    fireEvent.change(screen.getByRole('spinbutton', { name: 'How many cards to look at?' }), { target: { value: '5' } });
+    fireEvent.click(screen.getByRole('button', { name: '5' }));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Look' }));
 
     expect(onValueChange).toHaveBeenCalledWith(5);
     expect(onCancel).toHaveBeenCalledTimes(1);
-    expect(onConfirm).toHaveBeenCalledTimes(1);
+    expect(onConfirm).toHaveBeenCalledWith(5);
+  });
+
+  it('shows the top-n custom input only when Other is selected', () => {
+    const onValueChange = vi.fn();
+    const onConfirm = vi.fn();
+
+    render(
+      <GameBoardTopNDialog
+        value={3}
+        onValueChange={onValueChange}
+        onCancel={vi.fn()}
+        onConfirm={onConfirm}
+      />
+    );
+
+    expect(screen.queryByRole('spinbutton', { name: 'Custom card count' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Other' }));
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Custom card count' }), { target: { value: '7' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Look' }));
+
+    expect(onValueChange).toHaveBeenCalledWith(7);
+    expect(onConfirm).toHaveBeenCalledWith(7);
+  });
+
+  it('normalizes leading zeros in the top-n custom input', () => {
+    const onValueChange = vi.fn();
+    const onConfirm = vi.fn();
+
+    render(
+      <GameBoardTopNDialog
+        value={3}
+        onValueChange={onValueChange}
+        onCancel={vi.fn()}
+        onConfirm={onConfirm}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Other' }));
+    const customInput = screen.getByRole('spinbutton', { name: 'Custom card count' });
+
+    fireEvent.change(customInput, { target: { value: '09' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Look' }));
+
+    expect(customInput).toHaveValue(9);
+    expect(onValueChange).toHaveBeenCalledWith(9);
+    expect(onConfirm).toHaveBeenCalledWith(9);
   });
 
   it('renders token spawn dialog and wires destination, count, cancel, and confirm', () => {

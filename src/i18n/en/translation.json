@@ -606,6 +606,8 @@
       },
       "topN": {
         "title": "How many cards to look at?",
+        "custom": "Other",
+        "customInput": "Custom card count",
         "confirm": "Look"
       },
       "search": {

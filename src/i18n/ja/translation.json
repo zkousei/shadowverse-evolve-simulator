@@ -559,6 +559,8 @@
       },
       "topN": {
         "title": "上から何枚見ますか？",
+        "custom": "その他",
+        "customInput": "見る枚数を入力",
         "confirm": "見る"
       },
       "search": {
