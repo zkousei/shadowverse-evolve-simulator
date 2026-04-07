@@ -1,9 +1,16 @@
 import type { CardInstance } from '../components/Card';
 import type { AttackTarget } from '../types/sync';
 import type { CardStatLookup } from './cardStats';
+import { getZoneOwner } from './soloMode';
 
 const getOpponentRole = (owner: CardInstance['owner']): CardInstance['owner'] => (
   owner === 'host' ? 'guest' : 'host'
+);
+
+const getFieldController = (zone: string): CardInstance['owner'] | null => (
+  // Borrowed cards keep their original owner, but attack controls and targets
+  // should be based on which player's field currently controls the card.
+  zone.startsWith('field-') ? getZoneOwner(zone) : null
 );
 
 export const isInspectableZone = (zone: string): boolean => (
@@ -34,8 +41,9 @@ export const canStartAttack = (
   if (card.isTapped || card.isFlipped || card.isLeaderCard) return false;
   if (card.baseCardType !== 'follower' && !cardStatLookup[card.cardId]) return false;
   if (gameStatus !== 'playing') return false;
-  if (!card.zone.startsWith(`field-${card.owner}`)) return false;
-  if (turnPlayer !== card.owner) return false;
+  const controller = getFieldController(card.zone);
+  if (!controller) return false;
+  if (turnPlayer !== controller) return false;
 
   return true;
 };
@@ -48,9 +56,8 @@ export const shouldClearAttackSource = (
   !sourceCard
   || sourceCard.isTapped
   || sourceCard.isFlipped
-  || !sourceCard.zone.startsWith('field-')
   || gameStatus !== 'playing'
-  || turnPlayer !== sourceCard.owner
+  || getFieldController(sourceCard.zone) !== turnPlayer
 );
 
 export const getAttackTargetFromCard = (
@@ -60,7 +67,10 @@ export const getAttackTargetFromCard = (
 ): AttackTarget | null => {
   if (!attackSourceCard) return null;
 
-  const opponentRole = getOpponentRole(attackSourceCard.owner);
+  const attackController = getFieldController(attackSourceCard.zone);
+  if (!attackController) return null;
+
+  const opponentRole = getOpponentRole(attackController);
 
   if (card.zone === `leader-${opponentRole}`) {
     return { type: 'leader', player: opponentRole };
@@ -83,7 +93,10 @@ export const shouldDisableQuickActionsForAttackTarget = (
 ): boolean => {
   if (!attackSourceCard) return false;
 
-  const opponentRole = getOpponentRole(attackSourceCard.owner);
+  const attackController = getFieldController(attackSourceCard.zone);
+  if (!attackController) return false;
+
+  const opponentRole = getOpponentRole(attackController);
   return card.zone.startsWith(`field-${opponentRole}`) && !card.isLeaderCard;
 };
 
@@ -95,7 +108,10 @@ export const getAttackHighlightTone = (
   if (!attackSourceCard) return undefined;
   if (card.id === attackSourceCard.id) return 'attack-source';
 
-  const opponentRole = getOpponentRole(attackSourceCard.owner);
+  const attackController = getFieldController(attackSourceCard.zone);
+  if (!attackController) return undefined;
+
+  const opponentRole = getOpponentRole(attackController);
 
   if (card.zone === `leader-${opponentRole}`) return 'attack-target';
 

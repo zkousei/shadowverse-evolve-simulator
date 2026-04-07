@@ -16,7 +16,7 @@ type GameBoardLeaderZoneSectionProps = {
   getHighlightTone?: (card: CardInstance) => 'attack-source' | 'attack-target' | undefined;
   onInspectCard?: (card: CardInstance, anchor: import('./Card').CardInspectAnchor) => void;
   viewerRole: PlayerRole | 'all';
-  attackSourceOwner?: PlayerRole | null;
+  attackSourceController?: PlayerRole | null;
   isDebug?: boolean;
   searchLabel: string;
   onSearch: (leaderZoneId: string, zoneLabel: string) => void;
@@ -34,13 +34,15 @@ const GameBoardLeaderZoneSection: React.FC<GameBoardLeaderZoneSectionProps> = ({
   getHighlightTone,
   onInspectCard,
   viewerRole,
-  attackSourceOwner = null,
+  attackSourceController = null,
   isDebug = false,
   searchLabel,
   onSearch,
 }) => {
   const leaderZoneId = `leader-${playerRole}`;
-  const isAttackTargetLeader = attackSourceOwner ? attackSourceOwner !== playerRole : false;
+  // Leader target highlighting follows the attacking card's current field
+  // controller, not its original owner, for borrowed-card combat.
+  const isAttackTargetLeader = attackSourceController ? attackSourceController !== playerRole : false;
 
   return (
     <GameBoardLeaderZone

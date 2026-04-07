@@ -22,12 +22,14 @@ vi.mock('./Zone', () => ({
     id,
     label,
     cards,
+    containerStyle,
   }: {
     id: string;
     label: string;
     cards: Array<{ id: string }>;
+    containerStyle?: React.CSSProperties;
   }) => (
-    <section data-testid={`zone-${id}`}>
+    <section data-testid={`zone-${id}`} data-border={containerStyle?.border ?? ''}>
       <h3>{label}</h3>
       <span>{cards.length} cards</span>
     </section>
@@ -79,7 +81,7 @@ describe('GameBoard extracted UI components - zones and controls', () => {
         sideZoneWidth={120}
         cardDetailLookup={{}}
         viewerRole="host"
-        attackSourceOwner="guest"
+        attackSourceController="guest"
         searchLabel="Search"
         onSearch={onSearch}
       />
@@ -88,6 +90,26 @@ describe('GameBoard extracted UI components - zones and controls', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Player 1 leader search' }));
 
     expect(onSearch).toHaveBeenCalledWith('leader-host', 'Player 1 Leader');
+  });
+
+  it('uses attack source controller when highlighting leader targets', () => {
+    render(
+      <GameBoardLeaderZoneSection
+        playerRole="host"
+        label="Player 1"
+        zoneLabel="Player 1 Leader"
+        side="left"
+        leaderCards={[]}
+        sideZoneWidth={120}
+        cardDetailLookup={{}}
+        viewerRole="host"
+        attackSourceController="host"
+        searchLabel="Search"
+        onSearch={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('zone-leader-host')).toHaveAttribute('data-border', '');
   });
 
   it('renders zone search button and wires click action', () => {
