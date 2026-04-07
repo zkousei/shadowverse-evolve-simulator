@@ -99,6 +99,33 @@ describe('Card', () => {
     expect(onTap).toHaveBeenCalledWith('card-1');
   });
 
+  it('keeps counter buttons easier to press without triggering card inspection', () => {
+    const onInspect = vi.fn();
+    const onModifyCounter = vi.fn();
+
+    render(
+      <Card
+        card={createCard()}
+        onInspect={onInspect}
+        onModifyCounter={onModifyCounter}
+      />
+    );
+
+    const atkIncreaseButton = screen.getByText('+A');
+    expect(atkIncreaseButton).toHaveStyle({
+      minWidth: '28px',
+      minHeight: '24px',
+      padding: '4px 5px',
+    });
+
+    fireEvent.pointerDown(atkIncreaseButton, { clientX: 10, clientY: 20, button: 0 });
+    fireEvent.pointerUp(atkIncreaseButton, { clientX: 10, clientY: 20, button: 0 });
+    fireEvent.click(atkIncreaseButton);
+
+    expect(onModifyCounter).toHaveBeenCalledWith('card-1', 'atk', 1);
+    expect(onInspect).not.toHaveBeenCalled();
+  });
+
   it('keeps quick-action buttons compact while exposing descriptive labels', () => {
     render(
       <Card
