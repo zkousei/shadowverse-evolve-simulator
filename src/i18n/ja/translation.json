@@ -524,6 +524,7 @@
       "search": "検索",
       "shuffle": "シャッフル",
       "lookTop": "上からN枚見る",
+      "randomDiscardHand": "ランダムに墓地へ",
       "importDeckJson": "デッキをインポート (.json)",
       "loadFromMyDecksGeneric": "マイデッキから読み込む"
     },
@@ -562,6 +563,12 @@
         "custom": "その他",
         "customInput": "見る枚数を入力",
         "confirm": "見る"
+      },
+      "randomDiscard": {
+        "title": "{{label}} の手札から何枚ランダムに墓地へ送りますか？",
+        "custom": "その他",
+        "customInput": "墓地へ送る枚数を入力",
+        "confirm": "墓地へ送る"
       },
       "search": {
         "setFaceDown": "裏向きで場に出す",
@@ -629,6 +636,7 @@
           "drawCard": "{{actor}} がカードを引きました",
           "millCard": "{{actor}} が {{cardName}} を墓地に置きました",
           "topCardToEx": "{{actor}} が {{cardName}} をEXエリアに置きました",
+          "randomHandDiscard": "{{actor}} が {{target}} の手札からランダムに {{count}} 枚を墓地へ送りました",
           "searchToHand": "{{actor}} がサーチしたカードを手札に加えました",
           "searchPlayedField": "{{actor}} がサーチした {{cardName}} を場に出しました",
           "searchSetField": "{{actor}} がサーチしたカードを場に伏せました",

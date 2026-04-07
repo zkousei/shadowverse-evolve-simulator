@@ -1158,6 +1158,80 @@ describe('gameSyncReducer', () => {
     expect(result.cards.find(c => c.id === 'evo')?.attachedTo).toBeUndefined();
   });
 
+  it('discards random cards from the opponent hand as one authoritative card move', () => {
+    const state = createState({
+      revision: 30,
+      gameStatus: 'playing',
+      cards: [
+        { id: 'host-hand', cardId: 'BP01-101', name: 'Host Hand', image: '', zone: 'hand-host', owner: 'host', isTapped: false, isFlipped: false, counters: { atk: 0, hp: 0 } },
+        { id: 'guest-hand-1', cardId: 'BP01-102', name: 'Guest Hand 1', image: '', zone: 'hand-guest', owner: 'guest', isTapped: false, isFlipped: false, counters: { atk: 0, hp: 0 } },
+        { id: 'guest-hand-2', cardId: 'BP01-103', name: 'Guest Hand 2', image: '', zone: 'hand-guest', owner: 'guest', isTapped: false, isFlipped: false, counters: { atk: 0, hp: 0 } },
+        { id: 'guest-hand-3', cardId: 'BP01-104', name: 'Guest Hand 3', image: '', zone: 'hand-guest', owner: 'guest', isTapped: false, isFlipped: false, counters: { atk: 0, hp: 0 } },
+      ],
+    });
+    const randomSpy = vi.spyOn(Math, 'random')
+      .mockReturnValueOnce(0.99)
+      .mockReturnValueOnce(0);
+
+    try {
+      const result = applyGameSyncEvent(state, {
+        id: 'evt-random-discard',
+        type: 'DISCARD_RANDOM_HAND_CARDS',
+        actor: 'host',
+        target: 'guest',
+        count: 2,
+      });
+
+      expect(result.revision).toBe(31);
+      expect(result.lastUndoableCardMoveActor).toBe('host');
+      expect(result.lastUndoableCardMoveState?.revision).toBe(30);
+      expect(result.cards.find(c => c.id === 'host-hand')?.zone).toBe('hand-host');
+      expect(result.cards.find(c => c.id === 'guest-hand-1')?.zone).toBe('cemetery-guest');
+      expect(result.cards.find(c => c.id === 'guest-hand-2')?.zone).toBe('cemetery-guest');
+      expect(result.cards.find(c => c.id === 'guest-hand-3')?.zone).toBe('hand-guest');
+    } finally {
+      randomSpy.mockRestore();
+    }
+  });
+
+  it('rejects random hand discard outside opponent-hand authoritative conditions', () => {
+    const state = createState({
+      revision: 31,
+      gameStatus: 'playing',
+      cards: [
+        { id: 'guest-hand-1', cardId: 'BP01-105', name: 'Guest Hand 1', image: '', zone: 'hand-guest', owner: 'guest', isTapped: false, isFlipped: false, counters: { atk: 0, hp: 0 } },
+      ],
+    });
+
+    const wrongRequester = applyGameSyncEvent(state, {
+      id: 'evt-random-discard-wrong-requester',
+      type: 'DISCARD_RANDOM_HAND_CARDS',
+      actor: 'host',
+      target: 'guest',
+      count: 1,
+    }, 'guest');
+    expect(wrongRequester).toBe(state);
+
+    const selfTarget = applyGameSyncEvent(state, {
+      id: 'evt-random-discard-self',
+      type: 'DISCARD_RANDOM_HAND_CARDS',
+      actor: 'guest',
+      target: 'guest',
+      count: 1,
+    });
+    expect(selfTarget).toBe(state);
+
+    const preparingState = { ...state, gameStatus: 'preparing' as const };
+    const preparing = applyGameSyncEvent(preparingState, {
+      id: 'evt-random-discard-preparing',
+      type: 'DISCARD_RANDOM_HAND_CARDS',
+      actor: 'host',
+      target: 'guest',
+      count: 1,
+    });
+    expect(preparing).toBe(preparingState);
+  });
+
   it('applies extract and play-to-field events through shared card rules', () => {
     const state = createState({
       revision: 2,

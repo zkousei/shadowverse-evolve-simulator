@@ -329,6 +329,15 @@ export const applyGameSyncEvent = (
       return withCardMoveCheckpoint(state, event.actor, nextCards);
     }
 
+    case 'DISCARD_RANDOM_HAND_CARDS': {
+      if (!isActorRequester(requester, event.actor)) return state;
+      if (state.gameStatus !== 'playing') return state;
+      if (event.actor === event.target) return state;
+      const nextCards = CardLogic.discardRandomHandCards(state.cards, event.target, event.count);
+      if (nextCards === state.cards) return state;
+      return withCardMoveCheckpoint(state, event.actor, nextCards);
+    }
+
     case 'RETURN_EVOLVE': {
       const nextCards = CardLogic.returnEvolveCard(state.cards, event.cardId);
       if (nextCards === state.cards) return state;

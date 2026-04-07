@@ -1232,6 +1232,47 @@ describe('CardLogic utils', () => {
     });
   });
 
+  describe('discardRandomHandCards', () => {
+    it('moves only randomly selected cards from the target hand to the target cemetery', () => {
+      const cards = [
+        createMockCard('host-hand', 'hand-host', 'host'),
+        createMockCard('guest-hand-1', 'hand-guest', 'guest'),
+        createMockCard('guest-hand-2', 'hand-guest', 'guest'),
+        createMockCard('guest-hand-3', 'hand-guest', 'guest'),
+        createMockCard('guest-deck', 'mainDeck-guest', 'guest'),
+      ];
+      const randomValues = [0.99, 0];
+      const random = () => randomValues.shift() ?? 0;
+
+      const result = CardLogic.discardRandomHandCards(cards, 'guest', 2, random);
+
+      expect(result.find(card => card.id === 'host-hand')?.zone).toBe('hand-host');
+      expect(result.find(card => card.id === 'guest-deck')?.zone).toBe('mainDeck-guest');
+      expect(result.find(card => card.id === 'guest-hand-1')?.zone).toBe('cemetery-guest');
+      expect(result.find(card => card.id === 'guest-hand-2')?.zone).toBe('cemetery-guest');
+      expect(result.find(card => card.id === 'guest-hand-3')?.zone).toBe('hand-guest');
+    });
+
+    it('clamps the discard count to the target hand size', () => {
+      const cards = [
+        createMockCard('guest-hand-1', 'hand-guest', 'guest'),
+        createMockCard('guest-hand-2', 'hand-guest', 'guest'),
+      ];
+
+      const result = CardLogic.discardRandomHandCards(cards, 'guest', 10, () => 0);
+
+      expect(result.filter(card => card.zone === 'hand-guest')).toHaveLength(0);
+      expect(result.filter(card => card.zone === 'cemetery-guest')).toHaveLength(2);
+    });
+
+    it('returns the original card array for non-positive counts', () => {
+      const cards = [createMockCard('guest-hand-1', 'hand-guest', 'guest')];
+
+      expect(CardLogic.discardRandomHandCards(cards, 'guest', 0)).toBe(cards);
+      expect(CardLogic.discardRandomHandCards(cards, 'guest', -1)).toBe(cards);
+    });
+  });
+
   describe('applyStateWithGuards', () => {
     it('should prevent duplicate IDs by keeping the FIRST one', () => {
       const cards = [

@@ -36,6 +36,7 @@ export type GameSyncEvent =
   | { id: string; type: 'SEND_TO_BOTTOM'; actor: PlayerRole; cardId: string }
   | { id: string; type: 'BANISH_CARD'; actor: PlayerRole; cardId: string }
   | { id: string; type: 'SEND_TO_CEMETERY'; actor: PlayerRole; cardId: string }
+  | { id: string; type: 'DISCARD_RANDOM_HAND_CARDS'; actor: PlayerRole; target: PlayerRole; count: number }
   | { id: string; type: 'RETURN_EVOLVE'; actor: PlayerRole; cardId: string }
   | { id: string; type: 'PLAY_TO_FIELD'; actor: PlayerRole; cardId: string }
   | { id: string; type: 'EXTRACT_CARD'; actor: PlayerRole; cardId: string; destination?: string; revealToOpponent?: boolean; attachToCardId?: string }
@@ -62,6 +63,7 @@ export type SharedUiEffect =
   | { type: 'DRAW_CARD_COMPLETED'; actor: PlayerRole }
   | { type: 'MILL_CARD_COMPLETED'; actor: PlayerRole; cardName: string }
   | { type: 'TOP_CARD_TO_EX_COMPLETED'; actor: PlayerRole; cardName: string }
+  | { type: 'RANDOM_HAND_DISCARD_COMPLETED'; actor: PlayerRole; target: PlayerRole; count: number }
   | { type: 'SEARCHED_CARD_TO_HAND'; actor: PlayerRole }
   | { type: 'SEARCHED_CARD_PLACED'; actor: PlayerRole; destination: 'field' | 'ex'; cardName?: string }
   | { type: 'CEMETERY_CARD_TO_HAND'; actor: PlayerRole; cardName: string }

@@ -262,6 +262,7 @@ const buildMockGameBoardLogic = (
     lastGameState: null,
     millCard: vi.fn(),
     moveTopCardToEx: vi.fn(),
+    discardRandomHandCards: vi.fn(),
     topDeckCards: [],
     topDeckTargetRole: 'host',
     setTopDeckTargetRole: vi.fn(),
@@ -778,6 +779,33 @@ describe('GameBoard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Shuffle' }));
 
     expect(handleShuffleDeck).toHaveBeenCalledWith('guest');
+  });
+
+  it('opens random opponent hand discard from the hand actions menu', () => {
+    const discardRandomHandCards = vi.fn();
+    const guestHandCard = makeCard({
+      id: 'hand-guest-1',
+      zone: 'hand-guest',
+      owner: 'guest',
+    });
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      discardRandomHandCards,
+      gameState: createGameState([guestHandCard], {
+        gameStatus: 'playing',
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    const opponentHandPanel = screen.getByTestId('zone-hand-guest').parentElement;
+    expect(opponentHandPanel).not.toBeNull();
+
+    fireEvent.click(within(opponentHandPanel as HTMLElement).getByRole('button', { name: 'Actions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Random Discard' }));
+    fireEvent.click(screen.getByRole('button', { name: '2' }));
+
+    expect(discardRandomHandCards).toHaveBeenCalledWith('guest', 2, 'host');
   });
 
   it('opens leader zone search from the solo board', async () => {

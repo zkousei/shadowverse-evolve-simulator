@@ -859,6 +859,41 @@ export const sendCardToCemetery = (
   });
 };
 
+const getRandomArrayIndex = (
+  length: number,
+  random: () => number
+): number => {
+  const value = random();
+  if (!Number.isFinite(value)) return 0;
+  return Math.min(length - 1, Math.max(0, Math.floor(value * length)));
+};
+
+export const discardRandomHandCards = (
+  cards: CardInstance[],
+  targetRole: 'host' | 'guest',
+  count: number,
+  random: () => number = Math.random
+): CardInstance[] => {
+  if (!Number.isFinite(count)) return cards;
+  const discardCount = Math.max(0, Math.floor(count));
+  if (discardCount === 0) return cards;
+
+  const handCards = cards.filter(card => card.zone === `hand-${targetRole}`);
+  if (handCards.length === 0) return cards;
+
+  const selectedCount = Math.min(discardCount, handCards.length);
+  const shuffledHandCards = [...handCards];
+
+  for (let index = shuffledHandCards.length - 1; index > 0; index -= 1) {
+    const swapIndex = getRandomArrayIndex(index + 1, random);
+    [shuffledHandCards[index], shuffledHandCards[swapIndex]] = [shuffledHandCards[swapIndex], shuffledHandCards[index]];
+  }
+
+  return shuffledHandCards
+    .slice(0, selectedCount)
+    .reduce((nextCards, card) => sendCardToCemetery(nextCards, card.id), cards);
+};
+
 export const returnEvolveCard = (
   cards: CardInstance[],
   cardId: string

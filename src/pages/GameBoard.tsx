@@ -6,6 +6,7 @@ import type { CardInspectAnchor, CardInstance } from '../components/Card';
 import CardSearchModal from '../components/CardSearchModal';
 import GameBoardAttackModeBanner from '../components/GameBoardAttackModeBanner';
 import GameBoardCardInspectorSection from '../components/GameBoardCardInspectorSection';
+import GameBoardCountDialog from '../components/GameBoardCountDialog';
 import GameBoardDialogsHost from '../components/GameBoardDialogsHost';
 import GameBoardEndTurnSection from '../components/GameBoardEndTurnSection';
 import GameBoardGlobalOverlays from '../components/GameBoardGlobalOverlays';
@@ -82,7 +83,7 @@ const GameBoard: React.FC = () => {
     handleBanish, handlePlayToField, handleSendToCemetery, handleReturnEvolve, handleShuffleDeck, handleDeclareAttack,
     handleSetRevealHandsMode,
     evolveAutoAttachSelection, confirmEvolveAutoAttachSelection, cancelEvolveAutoAttachSelection,
-    getCards, getTokenOptions, millCard, moveTopCardToEx,
+    getCards, getTokenOptions, millCard, moveTopCardToEx, discardRandomHandCards,
     topDeckCards, topDeckTargetRole, setTopDeckTargetRole, handleLookAtTop, handleResolveTopDeck, setTopDeckCards,
     handleUndoCardMove, hasUndoableMove, canUndoTurn,
     isDebug
@@ -90,6 +91,9 @@ const GameBoard: React.FC = () => {
 
   const [isTopNInputOpen, setIsTopNInputOpen] = React.useState(false);
   const [topNValue, setTopNValue] = React.useState(3);
+  const [randomDiscardValue, setRandomDiscardValue] = React.useState(1);
+  const [randomDiscardTargetRole, setRandomDiscardTargetRole] = React.useState<PlayerRole | null>(null);
+  const [randomDiscardActorRole, setRandomDiscardActorRole] = React.useState<PlayerRole | null>(null);
   const [tokenSpawnTargetRole, setTokenSpawnTargetRole] = React.useState<PlayerRole | null>(null);
   const [tokenSpawnCounts, setTokenSpawnCounts] = React.useState<Record<string, number>>({});
   const [tokenSpawnDestination, setTokenSpawnDestination] = React.useState<'ex' | 'field'>('ex');
@@ -464,6 +468,16 @@ const GameBoard: React.FC = () => {
     setIsTopNInputOpen(true);
   };
 
+  const openRandomDiscardDialog = (targetRole: PlayerRole, actorRole: PlayerRole) => {
+    if (!canInteract) return;
+    if (gameState.gameStatus !== 'playing') return;
+    if (targetRole === actorRole) return;
+    if (getCards(`hand-${targetRole}`).length === 0) return;
+    setRandomDiscardValue(1);
+    setRandomDiscardTargetRole(targetRole);
+    setRandomDiscardActorRole(actorRole);
+  };
+
   const openMulliganModal = (targetRole: PlayerRole) => {
     if (!canInteract) return;
     setMulliganTargetRole(targetRole);
@@ -738,6 +752,23 @@ const GameBoard: React.FC = () => {
                         onPlayToField={(cardId) => handlePlayToField(cardId, topRole)}
                         containerStyle={{ minHeight: '150px' }}
                       />
+                      {gameState.gameStatus === 'playing' && canInteract && getCards(`hand-${topRole}`).length > 0 && (
+                        <div style={{ position: 'absolute', right: '10px', bottom: '-32px', width: '180px', zIndex: 30 }}>
+                          <GameBoardZoneActionsSection
+                            menuId={`hand-random-discard-${topRole}`}
+                            activeMenuId={activeZoneActions}
+                            actionsLabel={t('gameBoard.board.actions')}
+                            actions={[
+                              {
+                                label: t('gameBoard.zones.randomDiscardHand'),
+                                onClick: () => openRandomDiscardDialog(topRole, bottomRole),
+                                tone: 'accent',
+                              },
+                            ]}
+                            onActiveMenuChange={setActiveZoneActions}
+                          />
+                        </div>
+                      )}
                       {gameState.gameStatus === 'preparing' && gameState[topRole].initialHandDrawn && !gameState[topRole].mulliganUsed && (
                         <GameBoardMulliganButton
                           label={t('gameBoard.preparation.mulliganButton', { label: topLabel })}
@@ -864,7 +895,7 @@ const GameBoard: React.FC = () => {
                 <div style={{ width: `${boardContentWidth}px`, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.65rem', alignItems: 'flex-start' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: boardColumns, gap: '0.75rem', width: `${boardContentWidth}px`, alignItems: 'start' }}>
                     <div />
-                    <div style={{ width: `${centerZoneWidth}px`, display: 'flex', justifyContent: 'center' }}>
+                    <div style={{ width: `${centerZoneWidth}px`, display: 'flex', justifyContent: 'center', position: 'relative' }}>
                       <Zone
                         id={`hand-${topRole}`}
                         label={t('gameBoard.zones.hand', { label: topLabel })}
@@ -878,6 +909,23 @@ const GameBoard: React.FC = () => {
                         viewerRole={viewerRole}
                         containerStyle={{ minHeight: '150px' }}
                       />
+                      {gameState.gameStatus === 'playing' && canInteract && getCards(`hand-${topRole}`).length > 0 && (
+                        <div style={{ position: 'absolute', right: '10px', bottom: '-32px', width: '180px', zIndex: 30 }}>
+                          <GameBoardZoneActionsSection
+                            menuId={`hand-random-discard-${topRole}`}
+                            activeMenuId={activeZoneActions}
+                            actionsLabel={t('gameBoard.board.actions')}
+                            actions={[
+                              {
+                                label: t('gameBoard.zones.randomDiscardHand'),
+                                onClick: () => openRandomDiscardDialog(topRole, bottomRole),
+                                tone: 'accent',
+                              },
+                            ]}
+                            onActiveMenuChange={setActiveZoneActions}
+                          />
+                        </div>
+                      )}
                     </div>
                     <div />
                   </div>
@@ -1027,6 +1075,23 @@ const GameBoard: React.FC = () => {
 
 	                <div style={{ width: `${boardContentWidth}px`, minHeight: '160px', position: 'relative' }}>
                     <Zone id={`hand-${bottomRole}`} label={t('gameBoard.zones.hand', { label: bottomLabel })} cards={getCards(`hand-${bottomRole}`)} cardDetailLookup={cardDetailLookup} onInspectCard={handleInspectCard} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} isProtected={true} lockCards={isPreparingHandMoveLocked} viewerRole={viewerRole} containerStyle={{ minHeight: '160px' }} isDebug={isDebug} />
+                    {isSoloMode && gameState.gameStatus === 'playing' && canInteract && getCards(`hand-${bottomRole}`).length > 0 && (
+                      <div style={{ position: 'absolute', right: '10px', bottom: '-32px', width: '180px', zIndex: 30 }}>
+                        <GameBoardZoneActionsSection
+                          menuId={`hand-random-discard-${bottomRole}`}
+                          activeMenuId={activeZoneActions}
+                          actionsLabel={t('gameBoard.board.actions')}
+                          actions={[
+                            {
+                              label: t('gameBoard.zones.randomDiscardHand'),
+                              onClick: () => openRandomDiscardDialog(bottomRole, topRole),
+                              tone: 'accent',
+                            },
+                          ]}
+                          onActiveMenuChange={setActiveZoneActions}
+                        />
+                      </div>
+                    )}
 
                     {gameState.gameStatus === 'preparing' && gameState[bottomRole].initialHandDrawn && !gameState[bottomRole].mulliganUsed && (
                       <GameBoardMulliganButton
@@ -1238,6 +1303,29 @@ const GameBoard: React.FC = () => {
         onConfirm={(results) => handleResolveTopDeck(results, topDeckTargetRole)}
         onCancel={() => setTopDeckCards([])}
       />
+
+      {randomDiscardTargetRole && randomDiscardActorRole && (
+        <GameBoardCountDialog
+          value={randomDiscardValue}
+          title={t('gameBoard.modals.randomDiscard.title', {
+            label: randomDiscardTargetRole === topRole ? topLabel : bottomLabel,
+          })}
+          customLabel={t('gameBoard.modals.randomDiscard.custom')}
+          customInputLabel={t('gameBoard.modals.randomDiscard.customInput')}
+          confirmLabel={t('gameBoard.modals.randomDiscard.confirm')}
+          onValueChange={setRandomDiscardValue}
+          onCancel={() => {
+            setRandomDiscardTargetRole(null);
+            setRandomDiscardActorRole(null);
+          }}
+          onConfirm={(selectedValue) => {
+            setRandomDiscardValue(selectedValue);
+            discardRandomHandCards(randomDiscardTargetRole, selectedValue, randomDiscardActorRole);
+            setRandomDiscardTargetRole(null);
+            setRandomDiscardActorRole(null);
+          }}
+        />
+      )}
 
       {tokenSpawnTargetRole && (
         <GameBoardTokenSpawnDialog

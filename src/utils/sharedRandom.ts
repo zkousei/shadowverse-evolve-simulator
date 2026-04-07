@@ -99,6 +99,16 @@ export const formatSharedUiMessage = (
     return t('gameBoard.modals.shared.messages.topCardToEx', { actor: actorLabel, cardName: effect.cardName });
   }
 
+  if (effect.type === 'RANDOM_HAND_DISCARD_COMPLETED') {
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    const targetLabel = getSharedActorLabel(effect.target, viewerRole, isSoloMode, t);
+    return t('gameBoard.modals.shared.messages.randomHandDiscard', {
+      actor: actorLabel,
+      target: targetLabel,
+      count: effect.count,
+    });
+  }
+
   if (effect.type === 'SEARCHED_CARD_TO_HAND') {
     const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
     return t('gameBoard.modals.shared.messages.searchToHand', { actor: actorLabel });
