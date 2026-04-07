@@ -1666,7 +1666,10 @@ export const useGameBoardLogic = () => {
       ? !!gameState.lastUndoableCardMoveState
       : !!(gameState.networkHasUndoableCardMove ?? gameState.lastUndoableCardMoveState);
     if (!canUndo) return;
-    dispatchGameEvent({ type: 'UNDO_CARD_MOVE' });
+    const undoActor = isSoloMode
+      ? gameState.lastUndoableCardMoveActor ?? role
+      : role;
+    dispatchGameEvent({ type: 'UNDO_CARD_MOVE', actor: undoActor });
   };
 
   const handleExtractCard = (
@@ -1776,6 +1779,11 @@ export const useGameBoardLogic = () => {
     dispatchGameEvent({ type: 'MODIFY_GENERIC_COUNTER', actor, cardId, delta });
   };
 
+  const getSoloCardMoveActor = (cardId: string): PlayerRole | undefined => {
+    if (!isSoloMode) return undefined;
+    return gameStateRef.current.cards.find(card => card.id === cardId)?.owner;
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over) return;
@@ -1843,7 +1851,12 @@ export const useGameBoardLogic = () => {
       }
     }
 
-    dispatchGameEvent({ type: 'MOVE_CARD', cardId, overId });
+    dispatchGameEvent({
+      type: 'MOVE_CARD',
+      actor: isSoloMode ? sourceCard?.owner : undefined,
+      cardId,
+      overId,
+    });
   };
 
   const toggleTap = (cardId: string) => {
@@ -1855,15 +1868,15 @@ export const useGameBoardLogic = () => {
   };
 
   const handleSendToBottom = (cardId: string) => {
-    dispatchGameEvent({ type: 'SEND_TO_BOTTOM', cardId });
+    dispatchGameEvent({ type: 'SEND_TO_BOTTOM', actor: getSoloCardMoveActor(cardId), cardId });
   };
 
   const handleBanish = (cardId: string) => {
-    dispatchGameEvent({ type: 'BANISH_CARD', cardId });
+    dispatchGameEvent({ type: 'BANISH_CARD', actor: getSoloCardMoveActor(cardId), cardId });
   };
 
   const handlePlayToField = (cardId: string, targetRole?: PlayerRole) => {
-    dispatchGameEvent({ type: 'PLAY_TO_FIELD', actor: targetRole, cardId });
+    dispatchGameEvent({ type: 'PLAY_TO_FIELD', actor: targetRole ?? getSoloCardMoveActor(cardId), cardId });
   };
 
   const handleDeclareAttack = (
@@ -1879,11 +1892,11 @@ export const useGameBoardLogic = () => {
   };
 
   const handleSendToCemetery = (cardId: string) => {
-    dispatchGameEvent({ type: 'SEND_TO_CEMETERY', cardId });
+    dispatchGameEvent({ type: 'SEND_TO_CEMETERY', actor: getSoloCardMoveActor(cardId), cardId });
   };
 
   const handleReturnEvolve = (cardId: string) => {
-    dispatchGameEvent({ type: 'RETURN_EVOLVE', cardId });
+    dispatchGameEvent({ type: 'RETURN_EVOLVE', actor: getSoloCardMoveActor(cardId), cardId });
   };
 
   const handleShuffleDeck = (targetRole?: PlayerRole) => {

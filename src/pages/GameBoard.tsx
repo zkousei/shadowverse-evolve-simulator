@@ -144,6 +144,29 @@ const GameBoard: React.FC = () => {
     role,
     isSoloMode
   );
+  const undoMoveActor = gameState.lastUndoableCardMoveActor ?? bottomRole;
+  const canShowUndoMoveForRole = (playerRole: PlayerRole) => gameState.gameStatus === 'playing' &&
+    hasUndoableMove &&
+    (isSoloMode ? undoMoveActor === playerRole : playerRole === role && gameState.turnPlayer === role);
+  const renderUndoMoveButton = (playerRole: PlayerRole) => canShowUndoMoveForRole(playerRole) ? (
+    <button
+      data-testid={`undo-move-${playerRole}`}
+      onClick={handleUndoCardMove}
+      className="glass-panel"
+      style={{
+        padding: '0.5rem',
+        background: '#f59e0b',
+        color: 'black',
+        fontWeight: 'bold',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '0.5rem'
+      }}
+    >
+      {t('gameBoard.turn.undoMove')}
+    </button>
+  ) : null;
   // P2P can optionally hide the opponent hand, but solo always shows both
   // hands to the same player.
   const shouldHideTopHand = !isSoloMode && !gameState.revealHandsMode;
@@ -683,6 +706,7 @@ const GameBoard: React.FC = () => {
                   <button onClick={() => openTokenSpawnModal(topRole)} className="glass-panel" style={{ padding: '0.5rem', background: '#7c3aed' }}>
                     {t('gameBoard.zones.spawnToken', { label: topLabel })}
                   </button>
+                  {renderUndoMoveButton(topRole)}
                   <GameBoardPlayerTrackerSection
                     testId={`player-tracker-${topRole}`}
                     label={topLabel}
@@ -1157,26 +1181,7 @@ const GameBoard: React.FC = () => {
                     {t('gameBoard.controls.resetGame')}
                   </button>
                 )}
-                 {gameState.gameStatus === 'playing' &&
-                  (isSoloMode ? gameState.turnPlayer === 'host' : gameState.turnPlayer === role) &&
-                  hasUndoableMove && (
-                  <button
-                    onClick={handleUndoCardMove}
-                    className="glass-panel"
-                    style={{
-                      padding: '0.5rem',
-                      background: '#f59e0b',
-                      color: 'black',
-                      fontWeight: 'bold',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.5rem'
-                    }}
-                  >
-                    {t('gameBoard.turn.undoMove')}
-                  </button>
-                )}
+                {renderUndoMoveButton(bottomRole)}
                 <GameBoardPlayerTrackerSection
                   testId={`player-tracker-${bottomRole}`}
                   label={bottomLabel}

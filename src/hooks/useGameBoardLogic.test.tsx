@@ -245,6 +245,9 @@ function HookHarness() {
       <div data-testid="host-hand-count">{gameState.cards.filter(card => card.zone === 'hand-host').length}</div>
       <div data-testid="host-ex-count">{gameState.cards.filter(card => card.zone === 'ex-host').length}</div>
       <div data-testid="host-field-count">{gameState.cards.filter(card => card.zone === 'field-host').length}</div>
+      <div data-testid="guest-ex-count">{gameState.cards.filter(card => card.zone === 'ex-guest').length}</div>
+      <div data-testid="guest-field-count">{gameState.cards.filter(card => card.zone === 'field-guest').length}</div>
+      <div data-testid="guest-cemetery-count">{gameState.cards.filter(card => card.zone === 'cemetery-guest').length}</div>
       <div data-testid="host-cemetery-count">{gameState.cards.filter(card => card.zone === 'cemetery-host').length}</div>
       <div data-testid="host-banish-count">{gameState.cards.filter(card => card.zone === 'banish-host').length}</div>
       <div data-testid="host-evolve-count">{gameState.cards.filter(card => card.zone === 'evolveDeck-host').length}</div>
@@ -323,6 +326,15 @@ function HookHarness() {
       <button onClick={() => confirmEvolveAutoAttachSelection('attach-base-2')}>Confirm Auto Attach Base 2</button>
       <button onClick={cancelEvolveAutoAttachSelection}>Cancel Auto Attach</button>
       <button onClick={() => handleSendToCemetery('field-card')}>Send Field Card to Cemetery</button>
+      <button onClick={() => handleSendToCemetery('guest-field-card')}>Send Guest Field Card to Cemetery</button>
+      <button
+        onClick={() => {
+          const guestExCard = gameState.cards.find(card => card.zone === 'ex-guest');
+          if (guestExCard) handleSendToCemetery(guestExCard.id);
+        }}
+      >
+        Send First Guest EX Card to Cemetery
+      </button>
       <button onClick={() => handleReturnEvolve('evolve-card')}>Return Evolve Card</button>
       <button onClick={() => handleShuffleDeck('host')}>Shuffle Host Deck</button>
       <button onClick={() => handleDeclareAttack('attacker-card', { type: 'leader', player: 'guest' }, 'host')}>Declare Attack to Guest Leader</button>
@@ -371,6 +383,21 @@ function HookHarness() {
         ], 'ex')}
       >
         Spawn Token Batch to EX
+      </button>
+      <button
+        onClick={() => spawnTokens('guest', [
+          {
+            tokenOption: {
+              cardId: 'token-alpha',
+              name: 'Alpha Token',
+              image: '/token-alpha.png',
+              baseCardType: 'follower',
+            },
+            count: 2,
+          },
+        ], 'ex')}
+      >
+        Spawn Guest Token Batch to EX
       </button>
       <button
         onClick={() => spawnTokens('host', [{
@@ -1975,6 +2002,19 @@ describe('useGameBoardLogic shared UI notifications', () => {
 
     expect(screen.getByTestId('host-ex-count')).toHaveTextContent('0');
   });
+
+  it('can undo a solo Player 2 token batch move', () => {
+    renderHarness('/game?mode=solo');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Spawn Guest Token Batch to EX' }));
+
+    expect(screen.getByTestId('guest-ex-count')).toHaveTextContent('2');
+    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Undo Move' }));
+
+    expect(screen.getByTestId('guest-ex-count')).toHaveTextContent('0');
+  });
 });
 
 describe('useGameBoardLogic action handlers', () => {
@@ -2023,6 +2063,26 @@ describe('useGameBoardLogic action handlers', () => {
 
     expect(screen.getByTestId('host-field-count')).toHaveTextContent('1');
     expect(screen.getByTestId('host-cemetery-count')).toHaveTextContent('0');
+  });
+
+  it('uses the Player 2 actor for solo Player 2 quick card moves', () => {
+    renderHarness('/game?mode=solo');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Spawn Guest Token Batch to EX' }));
+
+    expect(screen.getByTestId('guest-ex-count')).toHaveTextContent('2');
+    expect(screen.getByTestId('guest-cemetery-count')).toHaveTextContent('0');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send First Guest EX Card to Cemetery' }));
+
+    expect(screen.getByTestId('guest-ex-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('guest-cemetery-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Undo Move' }));
+
+    expect(screen.getByTestId('guest-ex-count')).toHaveTextContent('2');
+    expect(screen.getByTestId('guest-cemetery-count')).toHaveTextContent('0');
   });
 
   it('updates atk and generic counters without creating an undoable move', () => {
