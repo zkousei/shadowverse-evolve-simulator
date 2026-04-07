@@ -2,7 +2,7 @@ import type { TFunction } from 'i18next';
 import type { CardInstance } from '../components/Card';
 import type { PlayerRole } from '../types/game';
 import type { SharedUiEffect } from '../types/sync';
-import { getSharedActorLabel } from './sharedRandom';
+import { getSharedActorLabel } from './sharedUiMessage';
 import { isMainDeckSpellCard } from './cardType';
 
 export const buildCardPlayedEffect = (
@@ -34,4 +34,3 @@ export const formatCardPlayedEffect = (
     ? t('gameBoard.modals.shared.messages.cardPlayed', { actor: actorLabel, cardName: effect.cardName })
     : t('gameBoard.modals.shared.messages.cardPlayedToField', { actor: actorLabel, cardName: effect.cardName });
 };
-

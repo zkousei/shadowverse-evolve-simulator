@@ -2,7 +2,7 @@ import type { TFunction } from 'i18next';
 import type { PlayerRole } from '../types/game';
 import type { AttackTarget, AttackTargetView, SharedUiEffect } from '../types/sync';
 import type { CardInstance } from '../components/Card';
-import { getSharedActorLabel } from './sharedRandom';
+import { getSharedActorLabel } from './sharedUiMessage';
 import { getZoneOwner } from './soloMode';
 
 const getFieldController = (zone: string): PlayerRole | null => (
