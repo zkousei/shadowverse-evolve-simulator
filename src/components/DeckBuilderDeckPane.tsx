@@ -3,8 +3,9 @@ import { useTranslation } from 'react-i18next';
 import type { CardClass } from '../models/class';
 import type { DeckBuilderCardData } from '../models/deckBuilderCard';
 import type { DeckRuleConfig, DeckFormat } from '../models/deckRule';
+import { BASE_CARD_TYPE_VALUES } from '../models/cardClassification';
 import { DECK_LIMITS, type DeckValidationMessage } from '../utils/deckBuilderRules';
-import type { DeckDisplayGroup, DeckSortMode } from '../utils/deckBuilderDisplay';
+import { getDeckBaseCardTypeCounts, type DeckDisplayGroup, type DeckSortMode } from '../utils/deckBuilderDisplay';
 import DeckBuilderDeckControls from './DeckBuilderDeckControls';
 import DeckBuilderDeckHeader from './DeckBuilderDeckHeader';
 import DeckBuilderDeckSection from './DeckBuilderDeckSection';
@@ -124,6 +125,10 @@ const DeckBuilderDeckPane: React.FC<DeckBuilderDeckPaneProps> = ({
   onDeckCardMouseLeave,
 }) => {
   const { t } = useTranslation();
+  const mainDeckTypeCounts = getDeckBaseCardTypeCounts(groupedMainDeck);
+  const mainDeckTypeSummaryLabel = BASE_CARD_TYPE_VALUES
+    .map(cardType => `${t(`deckBuilder.filters.cardType.${cardType}`)}: ${mainDeckTypeCounts[cardType]}`)
+    .join(' / ');
 
   return (
     <div className="glass-panel" style={{ width: '350px', display: 'flex', flexDirection: 'column', borderRight: 'none', borderTop: 'none', borderBottom: 'none', borderRadius: 0 }}>
@@ -196,6 +201,7 @@ const DeckBuilderDeckPane: React.FC<DeckBuilderDeckPaneProps> = ({
           addTitle={t('deckBuilder.addActions.mainLabel')}
           canAddCard={canAddMainCard}
           rowsMarginBottom="2rem"
+          summaryLabel={mainDeckTypeSummaryLabel}
           onRemove={onRemoveMain}
           onAdd={onAddMain}
           onCardMouseEnter={onDeckCardMouseEnter}

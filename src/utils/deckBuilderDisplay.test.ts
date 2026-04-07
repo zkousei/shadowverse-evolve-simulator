@@ -4,6 +4,7 @@ import {
   DECK_HOVER_PREVIEW_MAX_HEIGHT,
   DECK_HOVER_PREVIEW_WIDTH,
   formatSavedDeckUpdatedAt,
+  getDeckBaseCardTypeCounts,
   getDeckHoverPreviewPosition,
   groupDeckCardsForDisplay,
   parseNullableStat,
@@ -67,6 +68,19 @@ describe('deckBuilderDisplay', () => {
       { card: cards[0], count: 2 },
       { card: cards[1], count: 1 },
     ]);
+  });
+
+  it('counts grouped cards by base card type using group counts', () => {
+    expect(getDeckBaseCardTypeCounts([
+      { card: makeCard({ id: 'follower-1', card_kind_normalized: 'follower' }), count: 3 },
+      { card: makeCard({ id: 'spell-1', card_kind_normalized: 'spell' }), count: 2 },
+      { card: makeCard({ id: 'amulet-1', card_kind_normalized: 'amulet' }), count: 1 },
+      { card: makeCard({ id: 'unknown-1', card_kind_normalized: 'leader' }), count: 4 },
+    ])).toEqual({
+      follower: 3,
+      spell: 2,
+      amulet: 1,
+    });
   });
 
   it('parses nullable stats and keeps invalid values as null', () => {

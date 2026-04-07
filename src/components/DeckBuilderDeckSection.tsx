@@ -18,6 +18,7 @@ type DeckBuilderDeckSectionProps = {
   rowsMarginBottom?: string;
   showCountWhenSingle?: boolean;
   countTextAlign?: 'center' | 'right';
+  summaryLabel?: React.ReactNode;
   onRemove: (cardId: string) => void;
   onAdd?: (card: DeckBuilderCardData) => void;
   onCardMouseEnter: (
@@ -42,6 +43,7 @@ const DeckBuilderDeckSection: React.FC<DeckBuilderDeckSectionProps> = ({
   rowsMarginBottom,
   showCountWhenSingle = true,
   countTextAlign = 'center',
+  summaryLabel,
   onRemove,
   onAdd,
   onCardMouseEnter,
@@ -55,9 +57,28 @@ const DeckBuilderDeckSection: React.FC<DeckBuilderDeckSectionProps> = ({
         marginBottom: '0.5rem',
         display: 'flex',
         justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        gap: '0.75rem',
       }}
     >
-      <span>{title}</span>
+      <span style={{ minWidth: 0 }}>
+        <span>{title}</span>
+        {summaryLabel && (
+          <span
+            data-testid="deck-section-summary"
+            style={{
+              display: 'block',
+              marginTop: '0.2rem',
+              color: 'var(--text-muted)',
+              fontSize: '0.75rem',
+              lineHeight: 1.35,
+              fontWeight: 400,
+            }}
+          >
+            {summaryLabel}
+          </span>
+        )}
+      </span>
       <span style={{ color: countColor }}>{countLabel}</span>
     </h3>
     <div

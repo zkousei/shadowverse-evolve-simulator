@@ -29,6 +29,22 @@ const sampleCard: DeckBuilderCardData = {
   is_deck_build_legal: true,
 };
 
+const spellCard: DeckBuilderCardData = {
+  ...sampleCard,
+  id: 'BP01-002',
+  name: 'Magic Missile',
+  type: 'スペル',
+  card_kind_normalized: 'spell',
+};
+
+const amuletCard: DeckBuilderCardData = {
+  ...sampleCard,
+  id: 'BP01-003',
+  name: 'Sacred Bell',
+  type: 'アミュレット',
+  card_kind_normalized: 'amulet',
+};
+
 describe('DeckBuilder extracted UI components - deck', () => {
   it('renders deck header actions and wires callbacks', () => {
     const onDeckNameChange = vi.fn();
@@ -295,8 +311,12 @@ describe('DeckBuilder extracted UI components - deck', () => {
         leaderCount={1}
         leaderLimit={1}
         groupedLeaderCards={[{ card: { ...sampleCard, id: 'LDR01-001', name: 'Leader Luna', deck_section: 'leader', card_kind_normalized: 'leader' }, count: 1 }]}
-        mainDeckCount={1}
-        groupedMainDeck={[{ card: sampleCard, count: 1 }]}
+        mainDeckCount={6}
+        groupedMainDeck={[
+          { card: sampleCard, count: 3 },
+          { card: spellCard, count: 2 },
+          { card: amuletCard, count: 1 },
+        ]}
         evolveDeckCount={1}
         groupedEvolveDeck={[{ card: { ...sampleCard, id: 'EV01-001', name: 'Evolve Angel', deck_section: 'evolve', is_evolve_card: true, card_kind_normalized: 'evolve_follower' }, count: 1 }]}
         tokenDeckCount={1}
@@ -346,5 +366,9 @@ describe('DeckBuilder extracted UI components - deck', () => {
     expect(onRemoveMain).toHaveBeenCalledWith('BP01-001');
     expect(onAddMain).not.toHaveBeenCalled();
     expect(onImportDeck).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('Main Deck')).toBeInTheDocument();
+    expect(screen.getByText('6/50')).toBeInTheDocument();
+    expect(screen.getByText('Follower: 3 / Spell: 2 / Amulet: 1')).toBeInTheDocument();
+    expect(screen.getAllByTestId('deck-section-summary')).toHaveLength(1);
   });
 });
