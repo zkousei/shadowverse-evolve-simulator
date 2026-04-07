@@ -6,6 +6,8 @@ describe('getIncomingSnapshotHandling', () => {
   it('combines guest-side host snapshot handling', () => {
     const handling = getIncomingSnapshotHandling({
       isHost: false,
+      isAwaitingInitialSnapshot: true,
+      currentGameStatus: 'preparing',
       message: {
         type: 'STATE_SNAPSHOT',
         source: 'host',
@@ -33,6 +35,8 @@ describe('getIncomingSnapshotHandling', () => {
   it('does not request extra post-processing for host-side snapshots', () => {
     const handling = getIncomingSnapshotHandling({
       isHost: true,
+      isAwaitingInitialSnapshot: true,
+      currentGameStatus: 'preparing',
       message: {
         type: 'STATE_SNAPSHOT',
         source: 'guest',

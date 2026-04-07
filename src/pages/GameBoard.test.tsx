@@ -263,6 +263,8 @@ const buildMockGameBoardLogic = (
     millCard: vi.fn(),
     moveTopCardToEx: vi.fn(),
     topDeckCards: [],
+    topDeckTargetRole: 'host',
+    setTopDeckTargetRole: vi.fn(),
     handleLookAtTop: vi.fn(),
     handleResolveTopDeck: vi.fn(),
     setTopDeckCards: vi.fn(),

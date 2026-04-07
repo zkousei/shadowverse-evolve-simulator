@@ -83,7 +83,7 @@ const GameBoard: React.FC = () => {
     handleSetRevealHandsMode,
     evolveAutoAttachSelection, confirmEvolveAutoAttachSelection, cancelEvolveAutoAttachSelection,
     getCards, getTokenOptions, millCard, moveTopCardToEx,
-    topDeckCards, handleLookAtTop, handleResolveTopDeck, setTopDeckCards,
+    topDeckCards, topDeckTargetRole, setTopDeckTargetRole, handleLookAtTop, handleResolveTopDeck, setTopDeckCards,
     handleUndoCardMove, hasUndoableMove, canUndoTurn,
     isDebug
   } = useGameBoardLogic();
@@ -94,7 +94,6 @@ const GameBoard: React.FC = () => {
   const [tokenSpawnCounts, setTokenSpawnCounts] = React.useState<Record<string, number>>({});
   const [tokenSpawnDestination, setTokenSpawnDestination] = React.useState<'ex' | 'field'>('ex');
   const [showUndoConfirm, setShowUndoConfirm] = React.useState(false);
-  const [topDeckTargetRole, setTopDeckTargetRole] = React.useState<PlayerRole>('host');
   const [mulliganTargetRole, setMulliganTargetRole] = React.useState<PlayerRole>('host');
   const [activeZoneActions, setActiveZoneActions] = React.useState<string | null>(null);
   const [allCards, setAllCards] = React.useState<DeckBuilderCardData[]>([]);

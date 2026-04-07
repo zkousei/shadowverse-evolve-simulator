@@ -159,7 +159,8 @@ export const useGameBoardLogic = () => {
 
   const [mulliganOrder, setMulliganOrder] = useState<string[]>([]);
   const [isMulliganModalOpen, setIsMulliganModalOpen] = useState(false);
-  const [topDeckCards, setTopDeckCards] = useState<CardInstance[]>([]);
+  const [topDeckCards, setTopDeckCardsState] = useState<CardInstance[]>([]);
+  const [topDeckTargetRole, setTopDeckTargetRoleState] = useState<PlayerRole>(role);
   const [pendingEvolveAutoAttachSelection, setPendingEvolveAutoAttachSelection] = useState<PendingGameBoardEvolveAutoAttachSelection | null>(null);
   const defaultTokenOption = useRef<TokenOption>({
     cardId: 'token',
@@ -179,6 +180,8 @@ export const useGameBoardLogic = () => {
   const fieldLinkCardIdsRef = useRef<Set<string>>(new Set());
   const tokenEquipmentCardIdsRef = useRef<Set<string>>(new Set());
   const savedSessionCandidateRef = useRef<SavedHostSession | null>(null);
+  const topDeckCardsRef = useRef<CardInstance[]>([]);
+  const topDeckTargetRoleRef = useRef<PlayerRole>(role);
   const awaitingInitialSnapshotRef = useRef(false);
   const activeConnectionTokenRef = useRef<string | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -224,6 +227,30 @@ export const useGameBoardLogic = () => {
       snapshotFlushTimeoutRef.current = null;
     }
   }, []);
+
+  const setTopDeckCards = useCallback((cards: CardInstance[]) => {
+    topDeckCardsRef.current = cards;
+    setTopDeckCardsState(cards);
+  }, []);
+
+  const setTopDeckTargetRole = useCallback((targetRole: PlayerRole) => {
+    topDeckTargetRoleRef.current = targetRole;
+    setTopDeckTargetRoleState(targetRole);
+  }, []);
+
+  const reconcileOpenTopDeckCards = useCallback((incomingState: SyncState) => {
+    const openTopDeckCards = topDeckCardsRef.current;
+    if (openTopDeckCards.length === 0) return;
+
+    const targetRole = topDeckTargetRoleRef.current;
+    const incomingTopCards = incomingState.cards
+      .filter(card => card.zone === `mainDeck-${targetRole}`)
+      .slice(0, openTopDeckCards.length);
+    const isSameTopDeckSelection = incomingTopCards.length === openTopDeckCards.length
+      && incomingTopCards.every((card, index) => card.id === openTopDeckCards[index].id);
+
+    setTopDeckCards(isSameTopDeckSelection ? incomingTopCards : []);
+  }, [setTopDeckCards]);
 
   const clearPendingSnapshotMessage = useCallback(() => {
     pendingSnapshotMessageRef.current = null;
@@ -324,7 +351,7 @@ export const useGameBoardLogic = () => {
     if (includingUndo) {
       setHasUndoableMove(false);
     }
-  }, []);
+  }, [setTopDeckCards]);
 
   const resolveEvolveAutoAttachSelection = useCallback((cardId: string, boardCards = gameStateRef.current.cards) => {
     const sourceCard = boardCards.find(card => card.id === cardId);
@@ -716,7 +743,7 @@ export const useGameBoardLogic = () => {
     });
 
     if (!snapshotDecision.shouldApply) {
-      return;
+      return false;
     }
 
     if (snapshotDecision.shouldClearAwaitingInitialSnapshot) {
@@ -724,6 +751,7 @@ export const useGameBoardLogic = () => {
     }
 
     applyLocalState(incomingState);
+    return true;
   }, [applyLocalState, isHost]);
 
   const applyAuthoritativeEvent = useCallback((
@@ -1166,20 +1194,25 @@ export const useGameBoardLogic = () => {
     const snapshotHandling = getIncomingSnapshotHandling({
       isHost,
       message,
+      isAwaitingInitialSnapshot: awaitingInitialSnapshotRef.current,
+      currentGameStatus: gameStateRef.current.gameStatus,
     });
 
     clearSnapshotRequestTimer();
-    maybeApplySnapshot(snapshotHandling.state, snapshotHandling.source);
+    const didApplySnapshot = maybeApplySnapshot(snapshotHandling.state, snapshotHandling.source);
     playIncomingSharedUiEffects(message);
 
     if (snapshotHandling.postProcessing.type === 'guest-ready') {
-      // Do NOT clear undo state on every snapshot. Only clear things like
-      // search overlays or mulligan modals if the revision jumped significantly,
-      // or if the game status changed.
-      resetTransientUiState(!snapshotHandling.postProcessing.preserveUndoState);
+      // Do NOT close local modals on every host snapshot. Opponent board actions
+      // should sync in while the guest keeps Search / Look Top work in progress.
+      if (snapshotHandling.postProcessing.shouldResetTransientUi) {
+        resetTransientUiState(!snapshotHandling.postProcessing.preserveUndoState);
+      } else if (didApplySnapshot) {
+        reconcileOpenTopDeckCards(gameStateRef.current);
+      }
       setStatusKey(snapshotHandling.postProcessing.statusKey);
     }
-  }, [clearSnapshotRequestTimer, isHost, maybeApplySnapshot, playIncomingSharedUiEffects, resetTransientUiState]);
+  }, [clearSnapshotRequestTimer, isHost, maybeApplySnapshot, playIncomingSharedUiEffects, reconcileOpenTopDeckCards, resetTransientUiState]);
 
   const handleIncomingConnectionData = useCallback((
     conn: DataConnection,
@@ -1653,6 +1686,7 @@ export const useGameBoardLogic = () => {
   const handleLookAtTop = (n: number, targetRole: PlayerRole = role) => {
     if (!canLookAtTopDeck({ canInteract, gameStatus: gameState.gameStatus })) return;
     const myDeck = gameState.cards.filter(c => c.zone === `mainDeck-${targetRole}`);
+    setTopDeckTargetRole(targetRole);
     setTopDeckCards(myDeck.slice(0, n));
   };
 
@@ -1923,7 +1957,7 @@ export const useGameBoardLogic = () => {
     handleSetRevealHandsMode,
     evolveAutoAttachSelection, confirmEvolveAutoAttachSelection, cancelEvolveAutoAttachSelection,
     getCards, getTokenOptions, lastGameState: gameState.lastGameState, millCard, moveTopCardToEx,
-    topDeckCards, handleLookAtTop, handleResolveTopDeck, setTopDeckCards,
+    topDeckCards, topDeckTargetRole, setTopDeckTargetRole, handleLookAtTop, handleResolveTopDeck, setTopDeckCards,
     handleUndoCardMove, hasUndoableMove, canUndoTurn,
     isDebug
   };
