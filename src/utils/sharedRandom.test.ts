@@ -38,6 +38,7 @@ const t = ((key: string, options?: Record<string, unknown>) => {
     'gameBoard.modals.shared.messages.banishPlayedField': '{{actor}} played to field {{cardName}} from Banish',
     'gameBoard.modals.shared.messages.banishToEx': '{{actor}} added {{cardName}} from Banish to EX Area',
     'gameBoard.modals.shared.messages.revealLookTop': '{{actor}} revealed from Look Top',
+    'gameBoard.modals.shared.messages.revealHand': '{{actor}} revealed cards from hand',
     'gameBoard.modals.shared.messages.revealSearch': '{{actor}} revealed from Search',
     'gameBoard.modals.shared.messages.attackDeclared': '{{actor}} declared an attack',
     'gameBoard.modals.shared.messages.cardPlayed': '{{actor}} played {{cardName}}',
@@ -173,6 +174,13 @@ describe('sharedRandom', () => {
       true,
       t
     )).toBe('Player 1 revealed from Search');
+
+    expect(formatSharedUiMessage(
+      { type: 'REVEAL_HAND_CARDS', actor: 'guest', cards: [] },
+      'host',
+      false,
+      t
+    )).toBe('Opponent revealed cards from hand');
 
     expect(formatSharedUiMessage(
       {

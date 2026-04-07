@@ -263,6 +263,7 @@ const buildMockGameBoardLogic = (
     millCard: vi.fn(),
     moveTopCardToEx: vi.fn(),
     discardRandomHandCards: vi.fn(),
+    revealHand: vi.fn(),
     topDeckCards: [],
     topDeckTargetRole: 'host',
     setTopDeckTargetRole: vi.fn(),
@@ -806,6 +807,46 @@ describe('GameBoard', () => {
     fireEvent.click(screen.getByRole('button', { name: '2' }));
 
     expect(discardRandomHandCards).toHaveBeenCalledWith('guest', 2, 'host');
+  });
+
+  it('reveals the local hand from the p2p hand actions menu only when cards exist', () => {
+    const revealHand = vi.fn();
+    const hostHandCard = makeCard({
+      id: 'hand-host-1',
+      zone: 'hand-host',
+      owner: 'host',
+    });
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      revealHand,
+      gameState: createGameState([hostHandCard], {
+        gameStatus: 'playing',
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    const localHandPanel = screen.getByTestId('zone-hand-host').parentElement;
+    expect(localHandPanel).not.toBeNull();
+
+    fireEvent.click(within(localHandPanel as HTMLElement).getByRole('button', { name: 'Actions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reveal Hand' }));
+
+    expect(revealHand).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not show the p2p hand reveal action for an empty local hand', () => {
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      gameState: createGameState([], {
+        gameStatus: 'playing',
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    const localHandPanel = screen.getByTestId('zone-hand-host').parentElement;
+    expect(localHandPanel).not.toBeNull();
+    expect(within(localHandPanel as HTMLElement).queryByRole('button', { name: 'Actions' })).not.toBeInTheDocument();
   });
 
   it('opens leader zone search from the solo board', async () => {

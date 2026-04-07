@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CardInstance } from '../components/Card';
-import { buildSingleCardRevealEffect } from './cardReveal';
+import { buildHandRevealEffect, buildSingleCardRevealEffect } from './cardReveal';
 
 const createCard = (id: string): CardInstance => ({
   id,
@@ -12,6 +12,11 @@ const createCard = (id: string): CardInstance => ({
   isTapped: false,
   isFlipped: true,
   counters: { atk: 0, hp: 0 },
+});
+
+const createCardInZone = (id: string, zone: string): CardInstance => ({
+  ...createCard(id),
+  zone,
 });
 
 describe('cardReveal', () => {
@@ -49,5 +54,36 @@ describe('cardReveal', () => {
         },
       ],
     });
+  });
+
+  it('builds a hand reveal effect only from the actor hand', () => {
+    expect(buildHandRevealEffect(
+      [
+        createCardInZone('host-hand-1', 'hand-host'),
+        createCardInZone('host-hand-2', 'hand-host'),
+        createCardInZone('guest-hand-1', 'hand-guest'),
+        createCardInZone('host-deck-1', 'mainDeck-host'),
+      ],
+      'host'
+    )).toEqual({
+      type: 'REVEAL_HAND_CARDS',
+      actor: 'host',
+      cards: [
+        {
+          cardId: 'host-hand-1',
+          name: 'Card host-hand-1',
+          image: '',
+        },
+        {
+          cardId: 'host-hand-2',
+          name: 'Card host-hand-2',
+          image: '',
+        },
+      ],
+    });
+  });
+
+  it('does not build a hand reveal effect for an empty actor hand', () => {
+    expect(buildHandRevealEffect([createCardInZone('guest-hand-1', 'hand-guest')], 'host')).toBeNull();
   });
 });

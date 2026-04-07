@@ -83,7 +83,7 @@ const GameBoard: React.FC = () => {
     handleBanish, handlePlayToField, handleSendToCemetery, handleReturnEvolve, handleShuffleDeck, handleDeclareAttack,
     handleSetRevealHandsMode,
     evolveAutoAttachSelection, confirmEvolveAutoAttachSelection, cancelEvolveAutoAttachSelection,
-    getCards, getTokenOptions, millCard, moveTopCardToEx, discardRandomHandCards,
+    getCards, getTokenOptions, millCard, moveTopCardToEx, discardRandomHandCards, revealHand,
     topDeckCards, topDeckTargetRole, setTopDeckTargetRole, handleLookAtTop, handleResolveTopDeck, setTopDeckCards,
     handleUndoCardMove, hasUndoableMove, canUndoTurn,
     isDebug
@@ -1085,6 +1085,23 @@ const GameBoard: React.FC = () => {
                             {
                               label: t('gameBoard.zones.randomDiscardHand'),
                               onClick: () => openRandomDiscardDialog(bottomRole, topRole),
+                              tone: 'accent',
+                            },
+                          ]}
+                          onActiveMenuChange={setActiveZoneActions}
+                        />
+                      </div>
+                    )}
+                    {!isSoloMode && gameState.gameStatus === 'playing' && canInteract && getCards(`hand-${bottomRole}`).length > 0 && (
+                      <div style={{ position: 'absolute', right: '10px', bottom: '-32px', width: '180px', zIndex: 30 }}>
+                        <GameBoardZoneActionsSection
+                          menuId={`hand-reveal-${bottomRole}`}
+                          activeMenuId={activeZoneActions}
+                          actionsLabel={t('gameBoard.board.actions')}
+                          actions={[
+                            {
+                              label: t('gameBoard.zones.revealHand'),
+                              onClick: revealHand,
                               tone: 'accent',
                             },
                           ]}
