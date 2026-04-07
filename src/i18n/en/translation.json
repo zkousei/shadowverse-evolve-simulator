@@ -571,6 +571,7 @@
       "search": "Search",
       "shuffle": "Shuffle",
       "lookTop": "Look Top (N)",
+      "randomDiscardHand": "Random Discard",
       "importDeckJson": "Import Deck (.json)",
       "loadFromMyDecksGeneric": "Load from My Decks"
     },
@@ -609,6 +610,12 @@
         "custom": "Other",
         "customInput": "Custom card count",
         "confirm": "Look"
+      },
+      "randomDiscard": {
+        "title": "How many cards should be randomly discarded from {{label}}'s hand?",
+        "custom": "Other",
+        "customInput": "Custom discard count",
+        "confirm": "Discard"
       },
       "search": {
         "setFaceDown": "Set Face-Down to Field",
@@ -676,6 +683,7 @@
           "drawCard": "{{actor}} drew a card",
           "millCard": "{{actor}} milled {{cardName}}",
           "topCardToEx": "{{actor}} moved {{cardName}} to EX Area",
+          "randomHandDiscard": "{{actor}} randomly discarded {{count}} card(s) from {{target}}'s hand",
           "searchToHand": "{{actor}} added a card from Search to hand",
           "searchPlayedField": "{{actor}} played to field {{cardName}} from Search",
           "searchSetField": "{{actor}} set a card from Search to field",

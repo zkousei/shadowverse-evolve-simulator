@@ -87,6 +87,7 @@ type DispatchableGameSyncEvent =
   | { type: 'SEND_TO_BOTTOM'; actor?: PlayerRole; cardId: string }
   | { type: 'BANISH_CARD'; actor?: PlayerRole; cardId: string }
   | { type: 'SEND_TO_CEMETERY'; actor?: PlayerRole; cardId: string }
+  | { type: 'DISCARD_RANDOM_HAND_CARDS'; actor?: PlayerRole; target: PlayerRole; count: number }
   | { type: 'RETURN_EVOLVE'; actor?: PlayerRole; cardId: string }
   | { type: 'PLAY_TO_FIELD'; actor?: PlayerRole; cardId: string }
   | { type: 'EXTRACT_CARD'; actor?: PlayerRole; cardId: string; destination?: string; revealToOpponent?: boolean; attachToCardId?: string }
@@ -624,6 +625,13 @@ export const useGameBoardLogic = () => {
       return;
     }
 
+    if (effect.type === 'RANDOM_HAND_DISCARD_COMPLETED') {
+      const message = formatSharedUiMessage(effect, role, isSoloMode, translate);
+      showTimedCardPlayMessage(message, 2600);
+      pushEventHistory(message);
+      return;
+    }
+
     if (effect.type === 'SEARCHED_CARD_TO_HAND') {
       const message = formatSharedUiMessage(effect, role, isSoloMode, translate);
       showTimedCardPlayMessage(message, 2600);
@@ -974,6 +982,21 @@ export const useGameBoardLogic = () => {
           type: 'TOP_CARD_TO_EX_COMPLETED',
           actor: event.actor,
           cardName: movedCard.name,
+        };
+        playSharedUiEffect(effect);
+        sendSharedUiEffect(effect);
+      }
+    }
+    if (event.type === 'DISCARD_RANDOM_HAND_CARDS') {
+      const beforeCount = currentState.cards.filter(card => card.zone === `hand-${event.target}`).length;
+      const afterCount = nextState.cards.filter(card => card.zone === `hand-${event.target}`).length;
+      const discardedCount = Math.max(0, beforeCount - afterCount);
+      if (discardedCount > 0) {
+        const effect: SharedUiEffect = {
+          type: 'RANDOM_HAND_DISCARD_COMPLETED',
+          actor: event.actor,
+          target: event.target,
+          count: discardedCount,
         };
         playSharedUiEffect(effect);
         sendSharedUiEffect(effect);
@@ -1683,6 +1706,18 @@ export const useGameBoardLogic = () => {
     dispatchGameEvent({ type: 'MOVE_TOP_CARD_TO_EX', actor: targetRole });
   };
 
+  const discardRandomHandCards = (targetRole: PlayerRole, count: number, actor: PlayerRole = role) => {
+    if (!Number.isFinite(count)) return;
+    const normalizedCount = Math.floor(count);
+    if (normalizedCount <= 0) return;
+    dispatchGameEvent({
+      type: 'DISCARD_RANDOM_HAND_CARDS',
+      actor,
+      target: targetRole,
+      count: normalizedCount,
+    });
+  };
+
   const handleLookAtTop = (n: number, targetRole: PlayerRole = role) => {
     if (!canLookAtTopDeck({ canInteract, gameStatus: gameState.gameStatus })) return;
     const myDeck = gameState.cards.filter(c => c.zone === `mainDeck-${targetRole}`);
@@ -1956,7 +1991,7 @@ export const useGameBoardLogic = () => {
     handleBanish, handlePlayToField, handleSendToCemetery, handleReturnEvolve, handleShuffleDeck, handleDeclareAttack,
     handleSetRevealHandsMode,
     evolveAutoAttachSelection, confirmEvolveAutoAttachSelection, cancelEvolveAutoAttachSelection,
-    getCards, getTokenOptions, lastGameState: gameState.lastGameState, millCard, moveTopCardToEx,
+    getCards, getTokenOptions, lastGameState: gameState.lastGameState, millCard, moveTopCardToEx, discardRandomHandCards,
     topDeckCards, topDeckTargetRole, setTopDeckTargetRole, handleLookAtTop, handleResolveTopDeck, setTopDeckCards,
     handleUndoCardMove, hasUndoableMove, canUndoTurn,
     isDebug

@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import GameBoardCountDialog from './GameBoardCountDialog';
 import GameBoardDialogsHost from './GameBoardDialogsHost';
 import GameBoardEvolveAutoAttachDialog from './GameBoardEvolveAutoAttachDialog';
 import GameBoardResetDialog from './GameBoardResetDialog';
@@ -236,6 +237,32 @@ describe('GameBoard extracted UI components - dialogs', () => {
     expect(onValueChange).toHaveBeenCalledWith(5);
     expect(onCancel).toHaveBeenCalledTimes(1);
     expect(onConfirm).toHaveBeenCalledWith(5);
+  });
+
+  it('renders a generic count dialog with custom labels', () => {
+    const onValueChange = vi.fn();
+    const onConfirm = vi.fn();
+
+    render(
+      <GameBoardCountDialog
+        value={1}
+        title="Discard random cards"
+        customLabel="Custom"
+        customInputLabel="Custom discard count"
+        confirmLabel="Discard"
+        onValueChange={onValueChange}
+        onCancel={vi.fn()}
+        onConfirm={onConfirm}
+      />
+    );
+
+    expect(screen.getByRole('dialog', { name: 'Discard random cards' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Custom' }));
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Custom discard count' }), { target: { value: '4' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
+
+    expect(onValueChange).toHaveBeenCalledWith(4);
+    expect(onConfirm).toHaveBeenCalledWith(4);
   });
 
   it('shows the top-n custom input only when Other is selected', () => {
