@@ -2,6 +2,13 @@ import type { PlayerRole } from '../types/game';
 import type { AttackTarget, AttackTargetView, SharedUiEffect } from '../types/sync';
 import type { CardInstance } from '../components/Card';
 import { getSharedActorLabel } from './sharedRandom';
+import { getZoneOwner } from './soloMode';
+
+const getFieldController = (zone: string): PlayerRole | null => (
+  // A card can be controlled from the opposite field without changing owner;
+  // combat should follow the field side, while return zones still use owner.
+  zone.startsWith('field-') ? getZoneOwner(zone) : null
+);
 
 export const canDeclareAttack = (
   cards: CardInstance[],
@@ -16,11 +23,10 @@ export const canDeclareAttack = (
 
   const attacker = cards.find(card => card.id === attackerCardId);
   if (!attacker) return false;
-  if (attacker.owner !== actor) return false;
+  if (getFieldController(attacker.zone) !== actor) return false;
   if (attacker.isLeaderCard) return false;
   if (attacker.isFlipped) return false;
   if (attacker.isTapped) return false;
-  if (!attacker.zone.startsWith(`field-${actor}`)) return false;
 
   const opponent = actor === 'host' ? 'guest' : 'host';
   if (target.type === 'leader') {
@@ -29,9 +35,9 @@ export const canDeclareAttack = (
 
   const targetCard = cards.find(card => card.id === target.cardId);
   if (!targetCard) return false;
-  if (targetCard.owner !== opponent) return false;
+  if (getFieldController(targetCard.zone) !== opponent) return false;
   if (targetCard.isLeaderCard) return false;
-  return targetCard.zone.startsWith(`field-${opponent}`);
+  return true;
 };
 
 export const buildAttackDeclaredEffect = (
@@ -52,7 +58,7 @@ export const buildAttackDeclaredEffect = (
     targetView = {
       type: 'card',
       cardId: targetCard.id,
-      player: targetCard.owner,
+      player: getFieldController(targetCard.zone) ?? targetCard.owner,
       name: targetCard.name,
       isTokenCard: targetCard.isTokenCard,
     };

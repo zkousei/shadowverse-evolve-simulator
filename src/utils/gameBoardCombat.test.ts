@@ -63,6 +63,23 @@ describe('gameBoardCombat', () => {
     ).toEqual({ type: 'card', cardId: 'token-1' });
   });
 
+  it('uses field controller rather than original owner for attack controls', () => {
+    const borrowedAttacker = makeCard({ owner: 'guest', zone: 'field-host' });
+
+    expect(canStartAttack(borrowedAttacker, {}, 'playing', 'host')).toBe(true);
+    expect(shouldClearAttackSource(borrowedAttacker, 'playing', 'host')).toBe(false);
+    expect(
+      getAttackTargetFromCard(borrowedAttacker, makeCard({ id: 'borrowed-target', owner: 'host', zone: 'field-guest' }), {
+        'TEST-001': { atk: 2, hp: 2 },
+      })
+    ).toEqual({ type: 'card', cardId: 'borrowed-target' });
+    expect(
+      getAttackHighlightTone(borrowedAttacker, makeCard({ id: 'borrowed-highlight-target', owner: 'host', zone: 'field-guest' }), {
+        'TEST-001': { atk: 2, hp: 2 },
+      })
+    ).toBe('attack-target');
+  });
+
   it('rejects invalid attack targets', () => {
     const attacker = makeCard({ owner: 'host' });
 

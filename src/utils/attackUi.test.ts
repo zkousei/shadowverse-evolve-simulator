@@ -50,6 +50,22 @@ describe('attackUi', () => {
     expect(canDeclareAttack(cards, 'host', 'attacker', { type: 'card', cardId: 'target' }, 'host', 'playing')).toBe(true);
   });
 
+  it('uses field controller rather than original owner for borrowed followers', () => {
+    const cards = [
+      createCard({ id: 'borrowed-attacker', owner: 'guest', zone: 'field-host' }),
+      createCard({ id: 'borrowed-target', owner: 'host', zone: 'field-guest', name: 'Borrowed Target' }),
+    ];
+
+    expect(canDeclareAttack(cards, 'host', 'borrowed-attacker', { type: 'card', cardId: 'borrowed-target' }, 'host', 'playing')).toBe(true);
+
+    const effect = buildAttackDeclaredEffect(cards, 'host', 'borrowed-attacker', { type: 'card', cardId: 'borrowed-target' });
+    expect(effect).toMatchObject({
+      type: 'ATTACK_DECLARED',
+      actor: 'host',
+      target: { type: 'card', player: 'guest' },
+    });
+  });
+
   it('rejects attacks while preparing, off-turn, or when the attacker is invalid', () => {
     const cards = [
       createCard({ id: 'attacker', owner: 'host', zone: 'field-host' }),

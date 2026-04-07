@@ -199,6 +199,7 @@ const GameBoard: React.FC = () => {
   const attackSourceCard = attackSourceCardId
     ? gameState.cards.find(card => card.id === attackSourceCardId) ?? null
     : null;
+  const attackSourceController = attackSourceCard ? getZoneOwner(attackSourceCard.zone) : null;
 
   const handleCopyRoomId = React.useCallback(async () => {
     if (!room) return;
@@ -344,9 +345,9 @@ const GameBoard: React.FC = () => {
 
   const handleAttackTargetSelect = React.useCallback((target: AttackTarget) => {
     if (!attackSourceCard) return;
-    handleDeclareAttack(attackSourceCard.id, target, attackSourceCard.owner);
+    handleDeclareAttack(attackSourceCard.id, target, attackSourceController ?? attackSourceCard.owner);
     setAttackSourceCardId(null);
-  }, [attackSourceCard, handleDeclareAttack]);
+  }, [attackSourceCard, attackSourceController, handleDeclareAttack]);
 
   const handleInspectCard = React.useCallback((card: CardInstance, anchor: CardInspectAnchor) => {
     const attackTarget = getAttackTargetFromCard(card);
@@ -843,7 +844,7 @@ const GameBoard: React.FC = () => {
                       getHighlightTone={getAttackHighlightTone}
                       onInspectCard={handleInspectCard}
                       viewerRole={viewerRole}
-                      attackSourceOwner={attackSourceCard?.owner ?? null}
+                      attackSourceController={attackSourceController}
                       isDebug={isDebug}
                       searchLabel={t('gameBoard.board.search')}
                       onSearch={openSearchZone}
@@ -945,7 +946,7 @@ const GameBoard: React.FC = () => {
                       getHighlightTone={getAttackHighlightTone}
                       onInspectCard={handleInspectCard}
                       viewerRole={viewerRole}
-                      attackSourceOwner={attackSourceCard?.owner ?? null}
+                      attackSourceController={attackSourceController}
                       isDebug={isDebug}
                       searchLabel={t('gameBoard.board.search')}
                       onSearch={openSearchZone}
@@ -1000,7 +1001,7 @@ const GameBoard: React.FC = () => {
                     getHighlightTone={getAttackHighlightTone}
                     onInspectCard={handleInspectCard}
                     viewerRole={viewerRole}
-                    attackSourceOwner={attackSourceCard?.owner ?? null}
+                    attackSourceController={attackSourceController}
                     isDebug={isDebug}
                     searchLabel={t('gameBoard.board.search')}
                     onSearch={openSearchZone}
