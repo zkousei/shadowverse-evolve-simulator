@@ -1571,6 +1571,37 @@ describe('gameSyncReducer', () => {
     expect(shuffled.cards.filter(c => c.zone === 'mainDeck-host')).toHaveLength(5);
   });
 
+  it('ignores duplicate initial hand draw events for the same player', () => {
+    const baseState = createState({
+      revision: 0,
+      cards: [
+        { id: 'd1', cardId: 'BP01-018', name: 'Deck 1', image: '', zone: 'mainDeck-host', owner: 'host', isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 } },
+        { id: 'd2', cardId: 'BP01-019', name: 'Deck 2', image: '', zone: 'mainDeck-host', owner: 'host', isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 } },
+        { id: 'd3', cardId: 'BP01-020', name: 'Deck 3', image: '', zone: 'mainDeck-host', owner: 'host', isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 } },
+        { id: 'd4', cardId: 'BP01-021', name: 'Deck 4', image: '', zone: 'mainDeck-host', owner: 'host', isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 } },
+        { id: 'd5', cardId: 'BP01-022', name: 'Deck 5', image: '', zone: 'mainDeck-host', owner: 'host', isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 } },
+        { id: 'd6', cardId: 'BP01-023', name: 'Deck 6', image: '', zone: 'mainDeck-host', owner: 'host', isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 } },
+        { id: 'd7', cardId: 'BP01-024', name: 'Deck 7', image: '', zone: 'mainDeck-host', owner: 'host', isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 } },
+        { id: 'd8', cardId: 'BP01-025', name: 'Deck 8', image: '', zone: 'mainDeck-host', owner: 'host', isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 } },
+      ],
+    });
+
+    const firstDraw = applyGameSyncEvent(baseState, {
+      id: 'evt-initial-hand-first',
+      type: 'DRAW_INITIAL_HAND',
+      actor: 'host',
+    });
+    const duplicateDraw = applyGameSyncEvent(firstDraw, {
+      id: 'evt-initial-hand-duplicate',
+      type: 'DRAW_INITIAL_HAND',
+      actor: 'host',
+    });
+
+    expect(duplicateDraw).toBe(firstDraw);
+    expect(duplicateDraw.cards.filter(card => card.zone === 'hand-host')).toHaveLength(4);
+    expect(duplicateDraw.cards.filter(card => card.zone === 'mainDeck-host')).toHaveLength(4);
+  });
+
   it('blocks deck import after the target player has started preparing', () => {
     const state = createState({
       revision: 6,

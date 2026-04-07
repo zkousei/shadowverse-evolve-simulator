@@ -405,6 +405,7 @@ export const applyGameSyncEvent = (
 
     case 'DRAW_INITIAL_HAND': {
       if (!isActorRequester(requester, event.actor)) return state;
+      if (state[event.actor].initialHandDrawn) return state;
       const nextCards = CardLogic.drawInitialHand(state.cards, event.actor);
       if (nextCards === state.cards) return state;
       return bumpRevision({
