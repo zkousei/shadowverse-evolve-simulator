@@ -1258,8 +1258,9 @@ const GameBoard: React.FC = () => {
           value={topNValue}
           onValueChange={setTopNValue}
           onCancel={() => setIsTopNInputOpen(false)}
-          onConfirm={() => {
-            handleLookAtTop(topNValue, topDeckTargetRole);
+          onConfirm={(selectedValue) => {
+            setTopNValue(selectedValue);
+            handleLookAtTop(selectedValue, topDeckTargetRole);
             setIsTopNInputOpen(false);
           }}
         />
