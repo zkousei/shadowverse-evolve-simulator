@@ -2,6 +2,7 @@ import React from 'react';
 import type { CardInstance } from './Card';
 import type { PlayerRole } from '../types/game';
 import { formatAbilityText, type CardDetailLookup } from '../utils/cardDetails';
+import { normalizeBaseCardType, type RuntimeBaseCardType } from '../utils/cardType';
 import CardArtwork from './CardArtwork';
 import { useTranslation } from 'react-i18next';
 
@@ -19,6 +20,8 @@ interface CardSearchModalProps {
   allowHandExtraction?: boolean;
   readOnly?: boolean;
 }
+
+type SearchTypeCounts = Record<RuntimeBaseCardType, number>;
 
 const CardSearchModal: React.FC<CardSearchModalProps> = ({
   isOpen,
@@ -96,7 +99,26 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
   const isMainDeckSearch = sourceZonePrefix === 'mainDeck';
   const isPreparingMainDeckSearch = !allowHandExtraction && isMainDeckSearch;
   const isEvolveDeck = sourceZonePrefix === 'evolveDeck';
+  const shouldShowTypeCounts = sourceZonePrefix === 'cemetery' || sourceZonePrefix === 'mainDeck';
   const isPublicRecoveryZone = sourceZonePrefix === 'cemetery' || sourceZonePrefix === 'banish';
+  const searchTypeCounts = shouldShowTypeCounts
+    ? cards.reduce<SearchTypeCounts>((counts, card) => {
+      const cardDetail = cardDetailLookup[card.cardId];
+      const baseCardType = card.baseCardType
+        ?? normalizeBaseCardType(card.cardKindNormalized)
+        ?? normalizeBaseCardType(cardDetail?.cardKindNormalized)
+        ?? normalizeBaseCardType(cardDetail?.type);
+
+      if (baseCardType) {
+        counts[baseCardType] += 1;
+      }
+
+      return counts;
+    }, { follower: 0, spell: 0, amulet: 0 })
+    : null;
+  const searchTypeCountLabel = shouldShowTypeCounts
+    ? t('gameBoard.modals.search.typeCounts', searchTypeCounts ?? undefined)
+    : null;
   const actionRole = targetRole ?? viewerRole;
   const selectedCard = selectedCardId ? cards.find(card => card.id === selectedCardId) ?? null : null;
   const selectedCardDetail = selectedCard ? cardDetailLookup[selectedCard.cardId] : null;
@@ -139,8 +161,18 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
         position: 'relative'
       }}
     >
-        <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2 className="Garamond" style={{ margin: 0 }}>{title} ({cards.length})</h2>
+        <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
+          <div>
+            <h2 className="Garamond" style={{ margin: 0 }}>{title} ({cards.length})</h2>
+            {searchTypeCountLabel && (
+              <div
+                data-testid="search-card-type-counts"
+                style={{ marginTop: '0.35rem', color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: 1.4 }}
+              >
+                {searchTypeCountLabel}
+              </div>
+            )}
+          </div>
           <button
             onClick={onClose}
             style={{
