@@ -231,6 +231,8 @@ function HookHarness() {
     handleShuffleDeck,
     handleDeclareAttack,
     handleSetRevealHandsMode,
+    topDeckCards,
+    handleLookAtTop,
     evolveAutoAttachSelection,
     confirmEvolveAutoAttachSelection,
     cancelEvolveAutoAttachSelection,
@@ -286,6 +288,7 @@ function HookHarness() {
       <div data-testid="drag-linked-tapped">{String(gameState.cards.find(card => card.id === 'drag-linked-card')?.isTapped ?? 'missing')}</div>
       <div data-testid="mulligan-open">{String(isMulliganModalOpen)}</div>
       <div data-testid="mulligan-order">{mulliganOrder.join(',') || 'none'}</div>
+      <div data-testid="top-deck-count">{String(topDeckCards.length)}</div>
       {savedSessionCandidate && (
         <>
           <button onClick={resumeSavedSession}>Resume Saved Session</button>
@@ -303,6 +306,7 @@ function HookHarness() {
       <button onClick={handleUndoTurn}>Undo Turn</button>
       <button onClick={() => drawCard('host')}>Host Draw</button>
       <button onClick={() => moveTopCardToEx('host')}>Host Top to EX</button>
+      <button onClick={() => handleLookAtTop(2, 'guest')}>Guest Look Top 2</button>
       <button onClick={handleUndoCardMove}>Undo Move</button>
       <input data-testid="deck-upload-input" type="file" onChange={(event) => handleDeckUpload(event, 'host')} />
       <button onClick={() => handleModifyCounter('counter-card', 'atk', 2, 'host')}>Add ATK Counter</button>
@@ -1090,6 +1094,173 @@ describe('useGameBoardLogic P2P reconnect', () => {
     });
 
     expect(screen.getByTestId('host-hp')).toHaveTextContent('14');
+  });
+
+  it('keeps guest Look Top work in progress during normal host snapshots', () => {
+    const { conn } = connectGuest();
+
+    const guestDeckCards = [
+      {
+        id: 'guest-top-1',
+        cardId: 'BP01-001',
+        name: 'Guest Top 1',
+        image: '',
+        zone: 'mainDeck-guest',
+        owner: 'guest' as const,
+        isTapped: false,
+        isFlipped: false,
+        counters: { atk: 0, hp: 0 },
+      },
+      {
+        id: 'guest-top-2',
+        cardId: 'BP01-002',
+        name: 'Guest Top 2',
+        image: '',
+        zone: 'mainDeck-guest',
+        owner: 'guest' as const,
+        isTapped: false,
+        isFlipped: false,
+        counters: { atk: 0, hp: 0 },
+      },
+    ];
+
+    act(() => {
+      conn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: {
+          host: { hp: 20, pp: 0, maxPp: 0, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          cards: guestDeckCards,
+          turnPlayer: 'host',
+          turnCount: 1,
+          phase: 'Start',
+          gameStatus: 'playing',
+          tokenOptions: { host: [], guest: [] },
+          revision: 2,
+        },
+      });
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Guest Look Top 2' }));
+    expect(screen.getByTestId('top-deck-count')).toHaveTextContent('2');
+
+    act(() => {
+      conn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: {
+          host: { hp: 19, pp: 0, maxPp: 0, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          cards: guestDeckCards,
+          turnPlayer: 'host',
+          turnCount: 1,
+          phase: 'Main',
+          gameStatus: 'playing',
+          tokenOptions: { host: [], guest: [] },
+          revision: 3,
+        },
+      });
+    });
+
+    expect(screen.getByTestId('host-hp')).toHaveTextContent('19');
+    expect(screen.getByTestId('top-deck-count')).toHaveTextContent('2');
+  });
+
+  it('closes guest Look Top work in progress when a host snapshot changes the target deck top', () => {
+    const { conn } = connectGuest();
+
+    const guestDeckCards = [
+      {
+        id: 'guest-top-1',
+        cardId: 'BP01-001',
+        name: 'Guest Top 1',
+        image: '',
+        zone: 'mainDeck-guest',
+        owner: 'guest' as const,
+        isTapped: false,
+        isFlipped: false,
+        counters: { atk: 0, hp: 0 },
+      },
+      {
+        id: 'guest-top-2',
+        cardId: 'BP01-002',
+        name: 'Guest Top 2',
+        image: '',
+        zone: 'mainDeck-guest',
+        owner: 'guest' as const,
+        isTapped: false,
+        isFlipped: false,
+        counters: { atk: 0, hp: 0 },
+      },
+    ];
+
+    act(() => {
+      conn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: {
+          host: { hp: 20, pp: 0, maxPp: 0, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          cards: guestDeckCards,
+          turnPlayer: 'host',
+          turnCount: 1,
+          phase: 'Start',
+          gameStatus: 'playing',
+          tokenOptions: { host: [], guest: [] },
+          revision: 2,
+        },
+      });
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Guest Look Top 2' }));
+    expect(screen.getByTestId('top-deck-count')).toHaveTextContent('2');
+
+    act(() => {
+      conn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: {
+          host: { hp: 19, pp: 0, maxPp: 0, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          cards: [
+            { ...guestDeckCards[0], zone: 'hand-guest' },
+            { ...guestDeckCards[1], zone: 'cemetery-guest' },
+            {
+              id: 'guest-top-3',
+              cardId: 'BP01-003',
+              name: 'Guest Top 3',
+              image: '',
+              zone: 'mainDeck-guest',
+              owner: 'guest' as const,
+              isTapped: false,
+              isFlipped: false,
+              counters: { atk: 0, hp: 0 },
+            },
+            {
+              id: 'guest-top-4',
+              cardId: 'BP01-004',
+              name: 'Guest Top 4',
+              image: '',
+              zone: 'mainDeck-guest',
+              owner: 'guest' as const,
+              isTapped: false,
+              isFlipped: false,
+              counters: { atk: 0, hp: 0 },
+            },
+          ],
+          turnPlayer: 'host',
+          turnCount: 1,
+          phase: 'Main',
+          gameStatus: 'playing',
+          tokenOptions: { host: [], guest: [] },
+          revision: 3,
+        },
+      });
+    });
+
+    expect(screen.getByTestId('host-hp')).toHaveTextContent('19');
+    expect(screen.getByTestId('top-deck-count')).toHaveTextContent('0');
   });
 
   it('ignores stale host snapshots after the initial guest sync has completed', () => {
