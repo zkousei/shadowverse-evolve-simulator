@@ -146,6 +146,43 @@ describe('TopDeckModal', () => {
     ]);
   });
 
+  it('randomizes only bottom cards when confirming with the randomize option enabled', () => {
+    const randomSpy = vi.spyOn(Math, 'random')
+      .mockReturnValueOnce(0.9)
+      .mockReturnValueOnce(0.1);
+    const onConfirm = vi.fn();
+
+    try {
+      render(
+        <TopDeckModal
+          isOpen={true}
+          cards={[createCard('c1'), createCard('c2'), createCard('c3'), createCard('c4')]}
+          onConfirm={onConfirm}
+          onCancel={vi.fn()}
+        />
+      );
+
+      fireEvent.click(screen.getAllByText('Bottom of Deck')[0]);
+      fireEvent.click(screen.getByAltText('Card c1'));
+      fireEvent.click(screen.getByAltText('Card c2'));
+      fireEvent.click(screen.getByAltText('Card c3'));
+      fireEvent.click(screen.getByLabelText('Randomize bottom order'));
+
+      fireEvent.click(screen.getAllByText('Top of Deck')[0]);
+      fireEvent.click(screen.getByAltText('Card c4'));
+      fireEvent.click(screen.getByText('Confirm'));
+
+      expect(onConfirm).toHaveBeenCalledWith([
+        { cardId: 'c4', action: 'top', order: 1 },
+        { cardId: 'c2', action: 'bottom', order: 1 },
+        { cardId: 'c1', action: 'bottom', order: 2 },
+        { cardId: 'c3', action: 'bottom', order: 3 },
+      ]);
+    } finally {
+      randomSpy.mockRestore();
+    }
+  });
+
   it('reorders top cards backward and preserves non-deck assignments when unassigning', () => {
     const onConfirm = vi.fn();
     render(

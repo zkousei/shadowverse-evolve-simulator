@@ -588,6 +588,7 @@
       "tapToReturn": "カードをタップして戻す",
       "reorderBackward": "{{destination}} の順番を前へ移動: {{card}}",
       "reorderForward": "{{destination}} の順番を後へ移動: {{card}}",
+      "randomizeBottom": "山下の順番をランダムにする",
       "remaining": "残り{{count}}枚",
         "allOrganized": "整理完了",
         "yourHand": "手札 ({{count}})",
