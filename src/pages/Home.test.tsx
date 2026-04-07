@@ -17,10 +17,10 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string) => {
       const parts = key.split('.');
-      let result: any = enTranslations;
+      let result: unknown = enTranslations;
       for (const p of parts) {
         if (result == null) return key;
-        result = result[p];
+        result = typeof result === 'object' ? (result as Record<string, unknown>)[p] : undefined;
       }
       return typeof result === 'string' ? result : key;
     },

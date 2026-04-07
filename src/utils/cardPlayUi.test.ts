@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import type { TFunction } from 'i18next';
 import type { CardInstance } from '../components/Card';
 import { buildCardPlayedEffect, formatCardPlayedEffect } from './cardPlayUi';
 
-const t = ((key: string, options?: any) => {
+const t = ((key: string, options?: Record<string, unknown>) => {
   const map: Record<string, string> = {
     'gameBoard.modals.shared.actor.you': 'You',
     'gameBoard.modals.shared.actor.opponent': 'Opponent',
@@ -19,7 +20,7 @@ const t = ((key: string, options?: any) => {
     });
   }
   return value;
-}) as any;
+}) as TFunction;
 
 const createCard = (overrides: Partial<CardInstance>): CardInstance => ({
   id: 'card-1',
