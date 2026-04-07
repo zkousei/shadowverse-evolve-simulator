@@ -621,6 +621,7 @@
         "setUsed": "Set USED",
         "setUnused": "Set UNUSED",
         "empty": "This zone is empty.",
+        "typeCounts": "Follower: {{follower}} / Spell: {{spell}} / Amulet: {{amulet}}",
         "stats": "Stats",
         "noDetailText": "No detailed text was found for this card."
       },

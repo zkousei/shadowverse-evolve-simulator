@@ -78,6 +78,60 @@ describe('CardSearchModal', () => {
     expect(screen.getByText('Add to EX Area')).toBeInTheDocument();
   });
 
+  it('shows card type counts only when searching the cemetery or main deck', () => {
+    const cards = [
+      createCard({ id: 'follower-1', zone: 'cemetery-host', baseCardType: 'follower' }),
+      createCard({ id: 'follower-2', zone: 'cemetery-host', baseCardType: 'follower' }),
+      createCard({ id: 'spell-1', zone: 'cemetery-host', baseCardType: 'spell' }),
+      createCard({ id: 'amulet-1', zone: 'cemetery-host', baseCardType: 'amulet' }),
+    ];
+    const { rerender } = render(
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Cemetery"
+        zoneId="cemetery-host"
+        cards={cards}
+        onExtractCard={vi.fn()}
+        viewerRole="host"
+        allowHandExtraction={true}
+      />
+    );
+
+    expect(screen.getByRole('heading', { name: 'Cemetery (4)' })).toBeInTheDocument();
+    expect(screen.getByTestId('search-card-type-counts')).toHaveTextContent('Follower: 2 / Spell: 1 / Amulet: 1');
+
+    rerender(
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Main Deck"
+        zoneId="mainDeck-host"
+        cards={cards}
+        onExtractCard={vi.fn()}
+        viewerRole="host"
+        allowHandExtraction={true}
+      />
+    );
+
+    expect(screen.getByTestId('search-card-type-counts')).toHaveTextContent('Follower: 2 / Spell: 1 / Amulet: 1');
+
+    rerender(
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Evolve Deck"
+        zoneId="evolveDeck-host"
+        cards={cards}
+        onExtractCard={vi.fn()}
+        viewerRole="host"
+        allowHandExtraction={true}
+      />
+    );
+
+    expect(screen.queryByTestId('search-card-type-counts')).not.toBeInTheDocument();
+  });
+
   it('only allows face-down field set when searching the main deck during preparation', () => {
     render(
       <CardSearchModal
