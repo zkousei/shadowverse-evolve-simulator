@@ -8,12 +8,12 @@ import enTranslations from '../i18n/en/translation.json';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string, params?: Record<string, any>) => {
+    t: (key: string, params?: Record<string, unknown>) => {
       const parts = key.split('.');
-      let result: any = enTranslations;
+      let result: unknown = enTranslations;
       for (const p of parts) {
         if (result == null) return key;
-        result = result[p];
+        result = typeof result === 'object' ? (result as Record<string, unknown>)[p] : undefined;
       }
       if (typeof result !== 'string') return key;
       let finalStr = result;

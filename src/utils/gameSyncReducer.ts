@@ -14,25 +14,25 @@ const bumpRevision = (state: SyncState): SyncState => ({
 const createReducerStateSnapshot = (
   state: SyncState
 ): NonNullable<SyncState['lastGameState']> => {
-  const {
-    lastGameState: _lastGameState,
-    lastUndoableCardMoveState: _lastUndoableCardMoveState,
-    lastUndoableCardMoveActor: _lastUndoableCardMoveActor,
-    ...rest
-  } = state;
-
   return {
-  ...rest,
-  host: { ...state.host },
-  guest: { ...state.guest },
-  cards: state.cards.map(card => ({ ...card })),
-  tokenOptions: {
-    host: state.tokenOptions.host.map(option => ({ ...option })),
-    guest: state.tokenOptions.guest.map(option => ({ ...option })),
-  },
-  // Reducer-side checkpoints must stay flat. If we copy nested undo/turn
-  // backups into every snapshot, the authoritative STATE_SNAPSHOT balloons
-  // on card moves/look-top resolution and can overwhelm the WebRTC channel.
+    host: { ...state.host },
+    guest: { ...state.guest },
+    cards: state.cards.map(card => ({ ...card })),
+    turnPlayer: state.turnPlayer,
+    turnCount: state.turnCount,
+    phase: state.phase,
+    gameStatus: state.gameStatus,
+    tokenOptions: {
+      host: state.tokenOptions.host.map(option => ({ ...option })),
+      guest: state.tokenOptions.guest.map(option => ({ ...option })),
+    },
+    revealHandsMode: state.revealHandsMode,
+    revision: state.revision,
+    networkHasUndoableTurn: state.networkHasUndoableTurn,
+    networkHasUndoableCardMove: state.networkHasUndoableCardMove,
+    // Reducer-side checkpoints must stay flat. If we copy nested undo/turn
+    // backups into every snapshot, the authoritative STATE_SNAPSHOT balloons
+    // on card moves/look-top resolution and can overwhelm the WebRTC channel.
   };
 };
 

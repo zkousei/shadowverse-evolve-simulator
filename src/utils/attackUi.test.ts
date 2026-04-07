@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { TFunction } from 'i18next';
 import type { CardInstance } from '../components/Card';
 import { buildAttackDeclaredEffect, canDeclareAttack, formatAttackEffect } from './attackUi';
 
@@ -15,7 +16,7 @@ const createCard = (overrides: Partial<CardInstance>): CardInstance => ({
   ...overrides,
 });
 
-const t = (key: string, options?: any) => {
+const t = ((key: string, options: Record<string, unknown> = {}) => {
   if (key === 'gameBoard.modals.shared.messages.attackAnnouncement') {
     return `${options.attacker} attacks ${options.target}`;
   }
@@ -38,7 +39,7 @@ const t = (key: string, options?: any) => {
     return 'Player 2';
   }
   return key;
-};
+}) as TFunction;
 
 describe('attackUi', () => {
   it('allows a current-turn field follower to attack an opposing field follower', () => {

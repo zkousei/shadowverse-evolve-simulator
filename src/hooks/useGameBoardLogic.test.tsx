@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
+import type { DragEndEvent } from '@dnd-kit/core';
 import * as PeerJsModule from 'peerjs';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -8,7 +9,7 @@ import { useGameBoardLogic } from './useGameBoardLogic';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string, options?: any) => {
+    t: (key: string, options?: Record<string, unknown>) => {
       const map: Record<string, string> = {
         'gameBoard.status.initializing': 'Initializing P2P...',
         'gameBoard.status.connectingToHost': 'Connecting to host...',
@@ -90,6 +91,10 @@ vi.mock('react-i18next', () => ({
     },
   }),
 }));
+
+const dragEvent = (activeId: string, overId: string): DragEndEvent => (
+  { active: { id: activeId }, over: { id: overId } } as unknown as DragEndEvent
+);
 
 vi.mock('peerjs', () => ({
   ...(() => {
@@ -311,7 +316,7 @@ function HookHarness() {
       <input data-testid="deck-upload-input" type="file" onChange={(event) => handleDeckUpload(event, 'host')} />
       <button onClick={() => handleModifyCounter('counter-card', 'atk', 2, 'host')}>Add ATK Counter</button>
       <button onClick={() => handleModifyGenericCounter('counter-card', 1, 'host')}>Add Generic Counter</button>
-      <button onClick={() => handleDragEnd({ active: { id: 'drag-card' }, over: { id: 'ex-host' } } as any)}>Drag Card to EX</button>
+      <button onClick={() => handleDragEnd(dragEvent('drag-card', 'ex-host'))}>Drag Card to EX</button>
       <button onClick={() => toggleTap('tap-card')}>Toggle Tap Stack</button>
       <button onClick={() => handleFlipCard('flip-card', 'host')}>Toggle Evolve Usage</button>
       <button onClick={() => handleSendToBottom('bottom-card')}>Send Field Card to Bottom</button>
@@ -320,12 +325,12 @@ function HookHarness() {
       <button onClick={() => handlePlayToField('equipment-play-card', 'host')}>Play Equipment to Field</button>
       <button onClick={() => handleExtractCard('evolve-search-card', 'field-host', 'host')}>Extract Evolve to Field</button>
       <button onClick={() => handleExtractCard('link-search-card', 'field-host', 'host')}>Extract Linked to Field</button>
-      <button onClick={() => handleDragEnd({ active: { id: 'drag-evolve-card' }, over: { id: 'field-host' } } as any)}>Drag Evolve to Field</button>
-      <button onClick={() => handleDragEnd({ active: { id: 'drag-equipment-card' }, over: { id: 'equipment-base-card' } } as any)}>Drag Equipment to Base</button>
-      <button onClick={() => handleDragEnd({ active: { id: 'drag-equipment-card' }, over: { id: 'equipment-base-evolved-card' } } as any)}>Drag Equipment to Evolved Base</button>
-      <button onClick={() => handleDragEnd({ active: { id: 'drag-linked-card' }, over: { id: 'link-base-card' } } as any)}>Drag Linked Card to Base</button>
-      <button onClick={() => handleDragEnd({ active: { id: 'drag-linked-card' }, over: { id: 'field-host' } } as any)}>Drag Linked Card to Field</button>
-      <button onClick={() => handleDragEnd({ active: { id: 'attach-base-1' }, over: { id: 'attach-base-2' } } as any)}>Attach Base 1 Under Base 2</button>
+      <button onClick={() => handleDragEnd(dragEvent('drag-evolve-card', 'field-host'))}>Drag Evolve to Field</button>
+      <button onClick={() => handleDragEnd(dragEvent('drag-equipment-card', 'equipment-base-card'))}>Drag Equipment to Base</button>
+      <button onClick={() => handleDragEnd(dragEvent('drag-equipment-card', 'equipment-base-evolved-card'))}>Drag Equipment to Evolved Base</button>
+      <button onClick={() => handleDragEnd(dragEvent('drag-linked-card', 'link-base-card'))}>Drag Linked Card to Base</button>
+      <button onClick={() => handleDragEnd(dragEvent('drag-linked-card', 'field-host'))}>Drag Linked Card to Field</button>
+      <button onClick={() => handleDragEnd(dragEvent('attach-base-1', 'attach-base-2'))}>Attach Base 1 Under Base 2</button>
       <button onClick={() => confirmEvolveAutoAttachSelection('attach-base-1')}>Confirm Auto Attach Base 1</button>
       <button onClick={() => confirmEvolveAutoAttachSelection('attach-base-2')}>Confirm Auto Attach Base 2</button>
       <button onClick={cancelEvolveAutoAttachSelection}>Cancel Auto Attach</button>

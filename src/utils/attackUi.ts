@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next';
 import type { PlayerRole } from '../types/game';
 import type { AttackTarget, AttackTargetView, SharedUiEffect } from '../types/sync';
 import type { CardInstance } from '../components/Card';
@@ -79,7 +80,7 @@ const getAttackTargetLabel = (
   target: AttackTargetView,
   viewerRole: PlayerRole,
   isSoloMode: boolean,
-  t: any
+  t: TFunction
 ): string => {
   if (target.type === 'card') {
     const ownerLabel = getSharedActorLabel(target.player, viewerRole, isSoloMode, t);
@@ -94,7 +95,7 @@ export const formatAttackEffect = (
   effect: Extract<SharedUiEffect, { type: 'ATTACK_DECLARED' }>,
   viewerRole: PlayerRole,
   isSoloMode: boolean,
-  t: any
+  t: TFunction
 ): { announcement: string; history: string } => {
   const attackerOwnerLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
   const targetLabel = getAttackTargetLabel(effect.target, viewerRole, isSoloMode, t);
