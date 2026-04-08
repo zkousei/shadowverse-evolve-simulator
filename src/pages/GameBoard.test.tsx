@@ -636,6 +636,43 @@ describe('GameBoard', () => {
     });
   });
 
+  it('closes the token spawn dialog when the p2p connection leaves the connected state', async () => {
+    const tokenOptions = [
+      {
+        cardId: 'TOKEN-001',
+        name: 'Knight Token',
+        image: '/token.png',
+        baseCardType: 'follower',
+      },
+    ] satisfies TokenOption[];
+
+    let currentLogic = buildMockGameBoardLogic({
+      gameState: createGameState([], {
+        gameStatus: 'playing',
+      }),
+      getTokenOptions: vi.fn(() => tokenOptions),
+    });
+    mockUseGameBoardLogic.mockImplementation(() => currentLogic);
+
+    const { rerender } = render(<GameBoard />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Spawn My Token' }));
+    expect(await screen.findByRole('dialog', { name: 'Generate Tokens' })).toBeInTheDocument();
+
+    currentLogic = buildMockGameBoardLogic({
+      connectionState: 'reconnecting',
+      gameState: createGameState([], {
+        gameStatus: 'playing',
+      }),
+      getTokenOptions: vi.fn(() => tokenOptions),
+    });
+    rerender(<GameBoard />);
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Generate Tokens' })).not.toBeInTheDocument();
+    });
+  });
+
   it('shows the evolve auto attach dialog and wires cancel and confirm actions', async () => {
     const confirmEvolveAutoAttachSelection = vi.fn();
     const cancelEvolveAutoAttachSelection = vi.fn();
@@ -1250,6 +1287,64 @@ describe('GameBoard', () => {
     expect(setTopDeckCards).toHaveBeenCalledWith([]);
   });
 
+  it('closes the top-n dialog when the p2p connection leaves the connected state', async () => {
+    let currentLogic = buildMockGameBoardLogic({
+      gameState: createGameState([], {
+        gameStatus: 'playing',
+      }),
+    });
+    mockUseGameBoardLogic.mockImplementation(() => currentLogic);
+
+    const { rerender } = render(<GameBoard />);
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Actions' })[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Look Top (N)' }));
+    expect(await screen.findByRole('dialog', { name: 'How many cards to look at?' })).toBeInTheDocument();
+
+    currentLogic = buildMockGameBoardLogic({
+      connectionState: 'reconnecting',
+      gameState: createGameState([], {
+        gameStatus: 'playing',
+      }),
+    });
+    rerender(<GameBoard />);
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'How many cards to look at?' })).not.toBeInTheDocument();
+    });
+  });
+
+  it('keeps the top-n dialog open in solo mode even if the connection state changes', async () => {
+    let currentLogic = buildMockGameBoardLogic({
+      mode: 'solo',
+      isSoloMode: true,
+      gameState: createGameState([], {
+        gameStatus: 'playing',
+        turnPlayer: 'host',
+      }),
+    });
+    mockUseGameBoardLogic.mockImplementation(() => currentLogic);
+
+    const { rerender } = render(<GameBoard />);
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Actions' })[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Look Top (N)' }));
+    expect(await screen.findByRole('dialog', { name: 'How many cards to look at?' })).toBeInTheDocument();
+
+    currentLogic = buildMockGameBoardLogic({
+      mode: 'solo',
+      isSoloMode: true,
+      connectionState: 'reconnecting',
+      gameState: createGameState([], {
+        gameStatus: 'playing',
+        turnPlayer: 'host',
+      }),
+    });
+    rerender(<GameBoard />);
+
+    expect(screen.getByRole('dialog', { name: 'How many cards to look at?' })).toBeInTheDocument();
+  });
+
   it('shows the reconnecting alert when guest actions are locked', () => {
     mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
       isHost: false,
@@ -1490,6 +1585,57 @@ describe('GameBoard', () => {
     await waitFor(() => {
       expect(screen.queryByRole('dialog', { name: 'Load from My Decks' })).not.toBeInTheDocument();
     });
+  });
+
+  it('resets the saved deck picker search when reopening the dialog', async () => {
+    saveDeck({
+      name: 'Alpha Deck',
+      ruleConfig,
+      deckState: {
+        mainDeck: [catalogCards[0]],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [],
+      },
+    });
+    saveDeck({
+      name: 'Beta Deck',
+      ruleConfig,
+      deckState: {
+        mainDeck: [catalogCards[0]],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [],
+      },
+    });
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic());
+
+    render(<GameBoard />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Load from My Decks' })).toBeEnabled();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Load from My Decks' }));
+
+    const firstOpenPicker = await screen.findByRole('dialog', { name: 'Load from My Decks' });
+    const firstSearchInput = within(firstOpenPicker).getByRole('textbox', { name: 'Search saved decks' });
+    fireEvent.change(firstSearchInput, { target: { value: 'beta' } });
+    expect(firstSearchInput).toHaveValue('beta');
+
+    fireEvent.click(within(firstOpenPicker).getByRole('button', { name: 'Close' }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Load from My Decks' })).not.toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Load from My Decks' }));
+
+    const secondOpenPicker = await screen.findByRole('dialog', { name: 'Load from My Decks' });
+    expect(within(secondOpenPicker).getByRole('textbox', { name: 'Search saved decks' })).toHaveValue('');
+    expect(within(secondOpenPicker).getByText('Alpha Deck')).toBeInTheDocument();
+    expect(within(secondOpenPicker).getByText('Beta Deck')).toBeInTheDocument();
   });
 
   it('opens the card inspector for an inspectable card and closes it from outside click', async () => {
