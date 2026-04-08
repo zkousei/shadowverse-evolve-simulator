@@ -445,6 +445,9 @@
       "endTurn": "End {{label}} Turn",
       "endTurnSelf": "End Turn",
       "endTurnDisabled": "Available during your turn only.",
+      "endStopOn": "End Stop ON",
+      "endStopOff": "End Stop OFF",
+      "endStopBlocked": "{{label}} has End Stop enabled.",
       "availableDuringGameOnly": "Available during the game only."
     },
     "inspector": {

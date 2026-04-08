@@ -81,7 +81,7 @@ const GameBoard: React.FC = () => {
     drawCard, handleExtractCard, confirmResetGame, handleDeckUpload, importDeckData, spawnTokens,
     handleModifyCounter, handleModifyGenericCounter, handleDragEnd, toggleTap, handleFlipCard, handleSendToBottom,
     handleBanish, handlePlayToField, handleSendToCemetery, handleReturnEvolve, handleShuffleDeck, handleDeclareAttack,
-    handleSetRevealHandsMode,
+    handleSetRevealHandsMode, handleSetEndStop,
     evolveAutoAttachSelection, confirmEvolveAutoAttachSelection, cancelEvolveAutoAttachSelection,
     getCards, getTokenOptions, millCard, moveTopCardToEx, discardRandomHandCards, revealHand,
     topDeckCards, topDeckTargetRole, setTopDeckTargetRole, handleLookAtTop, handleResolveTopDeck, setTopDeckCards,
@@ -181,6 +181,13 @@ const GameBoard: React.FC = () => {
   const isGuestConnectionBlocked = !isSoloMode && !isSpectator && !isHost && !canInteract;
   const connectionBadgeTone = getConnectionBadgeTone(connectionState, t);
   const interactionBlockedTitle = getInteractionBlockedTitle(isGuestConnectionBlocked, connectionState, t);
+  const isOwnEndStopActive = !isSoloMode && !isSpectator && gameState.endStop[role];
+  const isOpponentEndStopActive = !isSoloMode && !isSpectator && gameState.endStop[topRole];
+  const canShowEndStopToggle = !isSoloMode && !isSpectator && gameState.gameStatus === 'playing' && gameState.turnPlayer !== role;
+  const endTurnBlockedByEndStop = !isSoloMode && !isSpectator && gameState.gameStatus === 'playing' && gameState.turnPlayer === role && isOpponentEndStopActive;
+  const endTurnDisabledTitle = endTurnBlockedByEndStop
+    ? t('gameBoard.board.endStopBlocked', { label: topLabel })
+    : interactionBlockedTitle ?? t('gameBoard.board.endTurnDisabled');
   const savedSessionTimestamp = React.useMemo(() => {
     if (!savedSessionCandidate) return null;
 
@@ -1273,6 +1280,26 @@ const GameBoard: React.FC = () => {
                   <button onClick={() => moveTopCardToEx(bottomRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing' || !canInteract} title={gameState.gameStatus !== 'playing' || !canInteract ? interactionBlockedTitle ?? t('gameBoard.board.availableDuringGameOnly') : undefined} style={{ padding: '0.5rem', background: '#334155', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' && canInteract ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' && canInteract ? 'pointer' : 'not-allowed' }}>
                     {t('gameBoard.zones.topToEx', { label: bottomLabel })}
                   </button>
+                  {canShowEndStopToggle && (
+                    <button
+                      onClick={() => handleSetEndStop(!isOwnEndStopActive)}
+                      className="glass-panel"
+                      disabled={!canInteract}
+                      title={!canInteract ? interactionBlockedTitle ?? t('gameBoard.board.availableDuringGameOnly') : undefined}
+                      aria-pressed={isOwnEndStopActive}
+                      style={{
+                        padding: '0.5rem',
+                        background: isOwnEndStopActive ? '#ef4444' : '#1d4ed8',
+                        fontWeight: 'bold',
+                        opacity: canInteract ? 1 : 0.5,
+                        cursor: canInteract ? 'pointer' : 'not-allowed',
+                      }}
+                    >
+                      {isOwnEndStopActive
+                        ? t('gameBoard.board.endStopOn')
+                        : t('gameBoard.board.endStopOff')}
+                    </button>
+                  )}
                   {isSoloMode ? (
                     <GameBoardEndTurnSection
                       playerRole={bottomRole}
@@ -1285,9 +1312,36 @@ const GameBoard: React.FC = () => {
                       onEndTurn={endTurn}
                     />
                   ) : (gameState.turnPlayer === role && gameState.gameStatus === 'playing') && (
-                    <button onClick={() => endTurn()} className="glass-panel" style={{ padding: '0.5rem', background: '#f59e0b', color: 'black', fontWeight: 'bold' }}>
+                    <button
+                      onClick={() => endTurn()}
+                      className="glass-panel"
+                      disabled={!canInteract || endTurnBlockedByEndStop}
+                      title={!canInteract || endTurnBlockedByEndStop ? endTurnDisabledTitle : undefined}
+                      style={{
+                        padding: '0.5rem',
+                        background: '#f59e0b',
+                        color: 'black',
+                        fontWeight: 'bold',
+                        opacity: !canInteract || endTurnBlockedByEndStop ? 0.5 : 1,
+                        cursor: !canInteract || endTurnBlockedByEndStop ? 'not-allowed' : 'pointer',
+                      }}
+                    >
                       {t('gameBoard.board.endTurnSelf')}
                     </button>
+                  )}
+                  {endTurnBlockedByEndStop && (
+                    <div
+                      className="glass-panel"
+                      style={{
+                        padding: '0.5rem 0.75rem',
+                        background: 'rgba(239, 68, 68, 0.16)',
+                        border: '1px solid rgba(248, 113, 113, 0.45)',
+                        color: '#fecaca',
+                        fontWeight: 600,
+                      }}
+                    >
+                      {t('gameBoard.board.endStopBlocked', { label: topLabel })}
+                    </div>
                   )}
                   <button onClick={() => openTokenSpawnModal(bottomRole)} className="glass-panel" disabled={!canInteract} style={{ padding: '0.5rem', background: 'var(--accent-secondary)', opacity: canInteract ? 1 : 0.5, cursor: canInteract ? 'pointer' : 'not-allowed' }}>
                     {t('gameBoard.zones.spawnToken', { label: bottomLabel })}

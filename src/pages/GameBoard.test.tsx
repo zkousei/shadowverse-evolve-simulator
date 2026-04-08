@@ -266,6 +266,7 @@ const buildMockGameBoardLogic = (
     handleShuffleDeck: vi.fn(),
     handleDeclareAttack: vi.fn(),
     handleSetRevealHandsMode: vi.fn(),
+    handleSetEndStop: vi.fn(),
     evolveAutoAttachSelection: null,
     confirmEvolveAutoAttachSelection: vi.fn(),
     cancelEvolveAutoAttachSelection: vi.fn(),
@@ -747,6 +748,65 @@ describe('GameBoard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'End Player 1 Turn' }));
 
     expect(endTurn).toHaveBeenCalledWith('host');
+  });
+
+  it('shows the End Stop toggle only in p2p during the opponent turn', () => {
+    const handleSetEndStop = vi.fn();
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      handleSetEndStop,
+      gameState: createGameState([], {
+        gameStatus: 'playing',
+        turnPlayer: 'guest',
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'End Stop OFF' }));
+
+    expect(handleSetEndStop).toHaveBeenCalledWith(true);
+  });
+
+  it('does not show the End Stop toggle in solo mode', () => {
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      mode: 'solo',
+      isSoloMode: true,
+      gameState: createGameState([], {
+        gameStatus: 'playing',
+        turnPlayer: 'guest',
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    expect(screen.queryByRole('button', { name: 'End Stop OFF' })).not.toBeInTheDocument();
+  });
+
+  it('disables end turn while the opponent End Stop is active', () => {
+    const endTurn = vi.fn();
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      endTurn,
+      gameState: createGameState([], {
+        gameStatus: 'playing',
+        turnPlayer: 'host',
+        endStop: {
+          host: false,
+          guest: true,
+        },
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    const endTurnButton = screen.getByRole('button', { name: 'End Turn' });
+    expect(endTurnButton).toBeDisabled();
+    expect(screen.getByText('Opponent has End Stop enabled.')).toBeInTheDocument();
+
+    fireEvent.click(endTurnButton);
+
+    expect(endTurn).not.toHaveBeenCalled();
   });
 
   it('updates solo player tracker stats from the tracker controls', () => {

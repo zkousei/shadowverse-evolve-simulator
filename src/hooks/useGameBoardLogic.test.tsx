@@ -515,6 +515,7 @@ const buildSyncState = (overrides: SyncStateOverrides = {}): SyncState => ({
   phase: overrides.phase ?? 'Start',
   gameStatus: overrides.gameStatus ?? 'preparing',
   tokenOptions: overrides.tokenOptions ?? { host: [], guest: [] },
+  endStop: overrides.endStop ?? { host: false, guest: false },
   revision: overrides.revision ?? 1,
   lastGameState: overrides.lastGameState,
   lastUndoableCardMoveActor: overrides.lastUndoableCardMoveActor ?? null,

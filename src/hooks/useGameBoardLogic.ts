@@ -102,6 +102,7 @@ type DispatchableGameSyncEvent =
   | { type: 'UNDO_LAST_TURN'; actor?: PlayerRole }
   | { type: 'UNDO_CARD_MOVE'; actor?: PlayerRole }
   | { type: 'SET_REVEAL_HANDS_MODE'; actor?: PlayerRole; enabled: boolean }
+  | { type: 'SET_END_STOP'; actor?: PlayerRole; enabled: boolean }
   | { type: 'SPAWN_TOKEN'; actor?: PlayerRole; token: CardInstance }
   | { type: 'SPAWN_TOKENS_BATCH'; actor?: PlayerRole; tokens: CardInstance[] }
   | { type: 'ATTACK_DECLARATION'; actor?: PlayerRole; attackerCardId: string; target: AttackTarget };
@@ -2082,6 +2083,10 @@ export const useGameBoardLogic = () => {
     dispatchGameEvent({ type: 'SET_REVEAL_HANDS_MODE', enabled });
   };
 
+  const handleSetEndStop = (enabled: boolean) => {
+    dispatchGameEvent({ type: 'SET_END_STOP', enabled });
+  };
+
   const handleSendToCemetery = (cardId: string) => {
     dispatchGameEvent({ type: 'SEND_TO_CEMETERY', actor: getSoloCardMoveActor(cardId), cardId });
   };
@@ -2111,7 +2116,7 @@ export const useGameBoardLogic = () => {
     drawCard, handleExtractCard, confirmResetGame, handleDeckUpload, importDeckData, spawnToken, spawnTokens,
     handleModifyCounter, handleModifyGenericCounter, handleDragEnd, toggleTap, handleFlipCard, handleSendToBottom,
     handleBanish, handlePlayToField, handleSendToCemetery, handleReturnEvolve, handleShuffleDeck, handleDeclareAttack,
-    handleSetRevealHandsMode,
+    handleSetRevealHandsMode, handleSetEndStop,
     evolveAutoAttachSelection, confirmEvolveAutoAttachSelection, cancelEvolveAutoAttachSelection,
     getCards, getTokenOptions, lastGameState: gameState.lastGameState, millCard, moveTopCardToEx, discardRandomHandCards, revealHand,
     topDeckCards, topDeckTargetRole, setTopDeckTargetRole, handleLookAtTop, handleResolveTopDeck, setTopDeckCards,
