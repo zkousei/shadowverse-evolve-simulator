@@ -131,6 +131,23 @@ describe('gameBoardSavedSession', () => {
     ).toBeNull();
   });
 
+  it('fills in missing end stop flags when parsing older saved sessions', () => {
+    const legacyState = { ...buildState({ revision: 7 }), endStop: undefined };
+    const raw = JSON.stringify({
+      room: 'ROOM123',
+      savedAt: '2026-03-19T10:00:00.000Z',
+      appVersion: '1.2.3',
+      state: legacyState,
+    });
+
+    expect(parseSavedHostSession(raw, 'ROOM123', '1.2.3')).toEqual({
+      room: 'ROOM123',
+      savedAt: '2026-03-19T10:00:00.000Z',
+      appVersion: '1.2.3',
+      state: buildState({ revision: 7 }),
+    });
+  });
+
   it('treats only non-fresh boards as meaningful resumable sessions', () => {
     expect(hasMeaningfulGameSessionState(buildState())).toBe(false);
     expect(hasMeaningfulGameSessionState(buildState({
@@ -147,5 +164,11 @@ describe('gameBoardSavedSession', () => {
       }],
     }))).toBe(true);
     expect(hasMeaningfulGameSessionState(buildState({ turnCount: 2 }))).toBe(true);
+    expect(hasMeaningfulGameSessionState(buildState({
+      endStop: {
+        host: true,
+        guest: false,
+      },
+    }))).toBe(true);
   });
 });

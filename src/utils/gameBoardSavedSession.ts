@@ -43,6 +43,20 @@ const isSyncState = (value: unknown): value is SyncState => (
   typeof (value as SyncState).revision === 'number'
 );
 
+const isEndStopState = (value: unknown): value is SyncState['endStop'] => (
+  typeof value === 'object' &&
+  value !== null &&
+  typeof (value as SyncState['endStop']).host === 'boolean' &&
+  typeof (value as SyncState['endStop']).guest === 'boolean'
+);
+
+const normalizeSyncState = (state: SyncState): SyncState => ({
+  ...state,
+  endStop: isEndStopState((state as SyncState & { endStop?: unknown }).endStop)
+    ? state.endStop
+    : { host: false, guest: false },
+});
+
 const isInitialPlayerHud = (hud: SyncState['host']): boolean => (
   hud.hp === 20 &&
   hud.pp === 0 &&
@@ -141,7 +155,7 @@ export const parseSavedHostSession = (
       room: parsed.room,
       savedAt: parsed.savedAt,
       appVersion: parsed.appVersion,
-      state: parsed.state,
+      state: normalizeSyncState(parsed.state),
     };
   } catch {
     return null;
@@ -149,12 +163,16 @@ export const parseSavedHostSession = (
 };
 
 export const hasMeaningfulGameSessionState = (state: SyncState): boolean => {
+  const endStop = isEndStopState((state as SyncState & { endStop?: unknown }).endStop)
+    ? state.endStop
+    : { host: false, guest: false };
   if (state.cards.length > 0) return true;
   if (state.phase !== 'Start') return true;
   if (state.turnPlayer !== 'host') return true;
   if (state.turnCount !== 1) return true;
   if (state.gameStatus !== 'preparing') return true;
   if (state.revealHandsMode) return true;
+  if (endStop.host || endStop.guest) return true;
   if (state.tokenOptions.host.length > 0 || state.tokenOptions.guest.length > 0) return true;
   if (!isInitialPlayerHud(state.host)) return true;
   if (!isInitialGuestHud(state.guest)) return true;

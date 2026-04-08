@@ -391,6 +391,9 @@
       "endTurn": "{{label}} ターン終了",
       "endTurnSelf": "ターン終了",
       "endTurnDisabled": "自分のターン中のみ使用可能です。",
+      "endStopOn": "End Stop ON",
+      "endStopOff": "End Stop OFF",
+      "endStopBlocked": "{{label}} が End Stop 中です。",
       "availableDuringGameOnly": "対戦中のみ使用可能です。"
     },
     "inspector": {

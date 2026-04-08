@@ -335,11 +335,59 @@ describe('gameSyncReducer', () => {
     expect(allowed.revision).toBe(11);
   });
 
+  it('sets end stop only for the non-turn player while playing', () => {
+    const state = createState({
+      gameStatus: 'playing',
+      turnPlayer: 'host',
+      revision: 10,
+    });
+
+    const sameTurnDenied = applyGameSyncEvent(state, {
+      id: 'evt-end-stop-denied',
+      type: 'SET_END_STOP',
+      actor: 'host',
+      enabled: true,
+    }, 'host');
+    expect(sameTurnDenied).toBe(state);
+
+    const allowed = applyGameSyncEvent(state, {
+      id: 'evt-end-stop-allowed',
+      type: 'SET_END_STOP',
+      actor: 'guest',
+      enabled: true,
+    }, 'guest');
+    expect(allowed.endStop.guest).toBe(true);
+    expect(allowed.revision).toBe(11);
+  });
+
+  it('blocks end turn when the next player has end stop enabled', () => {
+    const state = createState({
+      gameStatus: 'playing',
+      turnPlayer: 'host',
+      endStop: {
+        host: false,
+        guest: true,
+      },
+    });
+
+    const result = applyGameSyncEvent(state, {
+      id: 'evt-end-stop-block',
+      type: 'END_TURN',
+      actor: 'host',
+    });
+
+    expect(result).toBe(state);
+  });
+
   it('ends turn, advances resources, and draws for the next player', () => {
     const state = createState({
       gameStatus: 'playing',
       turnPlayer: 'host',
       revision: 4,
+      endStop: {
+        host: true,
+        guest: false,
+      },
       cards: [
         {
           id: 'deck-guest',
@@ -374,6 +422,7 @@ describe('gameSyncReducer', () => {
 
     expect(result.turnPlayer).toBe('guest');
     expect(result.phase).toBe('Start');
+    expect(result.endStop.guest).toBe(false);
     expect(result.guest.maxPp).toBe(1);
     expect(result.guest.pp).toBe(1);
     expect(result.cards.find(c => c.id === 'deck-guest')?.zone).toBe('hand-guest');

@@ -32,6 +32,7 @@ export interface SyncState {
   gameStatus: 'preparing' | 'playing';
   tokenOptions: Record<PlayerRole, TokenOption[]>;
   revealHandsMode: boolean;
+  endStop: Record<PlayerRole, boolean>;
   revision: number;
   lastGameState?: Omit<SyncState, 'lastGameState' | 'lastUndoableCardMoveState' | 'lastUndoableCardMoveActor'> | null;
   lastUndoableCardMoveState?: Omit<SyncState, 'lastGameState' | 'lastUndoableCardMoveState' | 'lastUndoableCardMoveActor'> | null;
@@ -53,6 +54,10 @@ export const initialState: SyncState = {
     guest: [],
   },
   revealHandsMode: false,
+  endStop: {
+    host: false,
+    guest: false,
+  },
   revision: 0,
   lastGameState: null,
   lastUndoableCardMoveState: null,

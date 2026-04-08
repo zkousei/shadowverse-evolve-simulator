@@ -27,6 +27,7 @@ const createReducerStateSnapshot = (
       guest: state.tokenOptions.guest.map(option => ({ ...option })),
     },
     revealHandsMode: state.revealHandsMode,
+    endStop: { ...state.endStop },
     revision: state.revision,
     networkHasUndoableTurn: state.networkHasUndoableTurn,
     networkHasUndoableCardMove: state.networkHasUndoableCardMove,
@@ -141,12 +142,26 @@ export const applyGameSyncEvent = (
         revealHandsMode: event.enabled,
       });
 
+    case 'SET_END_STOP':
+      if (!isActorRequester(requester, event.actor)) return state;
+      if (state.gameStatus !== 'playing') return state;
+      if (state.turnPlayer === event.actor) return state;
+      if (state.endStop[event.actor] === event.enabled) return state;
+      return bumpRevision({
+        ...state,
+        endStop: {
+          ...state.endStop,
+          [event.actor]: event.enabled,
+        },
+      });
+
     case 'END_TURN': {
       if (!isActorRequester(requester, event.actor)) return state;
       if (state.gameStatus !== 'playing') return state;
       if (state.turnPlayer !== event.actor) return state;
 
       const nextPlayer = state.turnPlayer === 'host' ? 'guest' : 'host';
+      if (state.endStop[nextPlayer]) return state;
       const isNewTurnRound = nextPlayer === 'host';
       const newTurnCount = isNewTurnRound ? state.turnCount + 1 : state.turnCount;
       const nextPlayerState = { ...state[nextPlayer] };
@@ -174,6 +189,10 @@ export const applyGameSyncEvent = (
         turnPlayer: nextPlayer,
         turnCount: newTurnCount,
         phase: 'Start',
+        endStop: {
+          ...state.endStop,
+          [nextPlayer]: false,
+        },
         [nextPlayer]: nextPlayerState,
         cards: finalCards,
         lastGameState: stateBackup,
@@ -189,6 +208,7 @@ export const applyGameSyncEvent = (
         ...state,
         gameStatus: 'playing',
         cards: state.cards.map(card => card.zone.startsWith('field-') ? { ...card, isFlipped: false } : card),
+        endStop: { host: false, guest: false },
         [starter]: { ...state[starter], pp: 1, maxPp: 1 },
         lastGameState: null,
         lastUndoableCardMoveState: null,
@@ -221,6 +241,7 @@ export const applyGameSyncEvent = (
         ...initialState,
         cards: shuffledResetCards,
         tokenOptions: state.tokenOptions,
+        endStop: { host: false, guest: false },
         lastGameState: null,
         lastUndoableCardMoveState: null,
         lastUndoableCardMoveActor: null,
@@ -483,6 +504,7 @@ export const applyGameSyncEvent = (
         turnPlayer: starter,
         turnCount: 1,
         phase: 'Start',
+        endStop: { host: false, guest: false },
         [starter]: { ...state[starter], ep: 0 },
         [second]: { ...state[second], ep: 3 },
         lastUndoableCardMoveState: null,
@@ -495,6 +517,7 @@ export const applyGameSyncEvent = (
       if (!state.lastGameState) return state;
       return {
         ...state.lastGameState,
+        endStop: { host: false, guest: false },
         revision: state.revision + 1,
         lastGameState: null,
         lastUndoableCardMoveState: null,
