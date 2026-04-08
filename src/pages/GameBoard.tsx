@@ -57,6 +57,17 @@ import {
   updateTokenSpawnCounts,
 } from '../utils/gameBoardTokens';
 import {
+  activeBoardSectionStyle,
+  boardColumns,
+  boardContentWidth,
+  boardShellColumns,
+  centerZoneWidth,
+  sidePanelWidth,
+  sideZoneWidth,
+  soloMulliganButtonStyle,
+  topPanelWidth,
+} from './gameBoardLayout';
+import {
   canInspectCard,
   canStartAttack,
   getAttackHighlightTone as resolveAttackHighlightTone,
@@ -201,13 +212,6 @@ const GameBoard: React.FC = () => {
     () => getTotalTokenSpawnCount(tokenSpawnOptions, tokenSpawnCounts),
     [tokenSpawnCounts, tokenSpawnOptions]
   );
-  const sidePanelWidth = 220;
-  const topPanelWidth = 188;
-  const sideZoneWidth = 140;
-  const centerZoneWidth = 800;
-  const boardContentWidth = sideZoneWidth * 2 + centerZoneWidth;
-  const boardColumns = `${sideZoneWidth}px ${centerZoneWidth}px ${sideZoneWidth}px`;
-  const boardShellColumns = `${topPanelWidth}px ${boardContentWidth}px ${sidePanelWidth}px`;
   const attackSourceCard = attackSourceCardId
     ? gameState.cards.find(card => card.id === attackSourceCardId) ?? null
     : null;
@@ -275,35 +279,6 @@ const GameBoard: React.FC = () => {
 
     return { sourcePoint, targetPoint };
   }, [attackVisual]);
-  const soloMulliganButtonStyle: React.CSSProperties = {
-    position: 'absolute',
-    top: '-10px',
-    right: '10px',
-    padding: '0.5rem 1rem',
-    background: '#eab308',
-    color: 'black',
-    fontWeight: 'bold',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '0.875rem',
-    zIndex: 10,
-    boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-    border: '2px solid black'
-  };
-  const activeBoardSectionStyle = (isActive: boolean): React.CSSProperties => ({
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.5rem',
-    width: '100%',
-    alignItems: 'center',
-    padding: '0.55rem 0.6rem',
-    borderRadius: '16px',
-    border: isActive ? '1px solid rgba(34, 211, 238, 0.38)' : '1px solid transparent',
-    background: isActive ? 'linear-gradient(180deg, rgba(34, 211, 238, 0.08), rgba(15, 23, 42, 0.02))' : 'transparent',
-    boxShadow: isActive ? '0 0 0 1px rgba(34, 211, 238, 0.12), 0 0 28px rgba(34, 211, 238, 0.14)' : 'none',
-    transition: 'all 0.2s ease'
-  });
-
   React.useEffect(() => {
     loadCardCatalog()
       .then(data => {
