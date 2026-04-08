@@ -329,7 +329,7 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
                   </button>
                 </div>
               )}
-              {onModifyCounter && !card.zone.startsWith('hand') && !disableCombatAndCounterControls && (
+              {onModifyCounter && isStatDisplayZone && !disableCombatAndCounterControls && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                     <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onModifyCounter(card.id, 'atk', 1); }} style={{ ...counterAdjustButtonStyle, background: '#3b82f6', color: '#fff' }}>+A</button>

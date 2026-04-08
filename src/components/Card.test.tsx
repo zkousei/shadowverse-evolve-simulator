@@ -160,6 +160,33 @@ describe('Card', () => {
     expect(onModifyGenericCounter).toHaveBeenNthCalledWith(2, 'card-1', -1);
   });
 
+  it('does not render atk/hp counter controls in cemetery or banish zones', () => {
+    const onModifyCounter = vi.fn();
+    const { rerender } = render(
+      <Card
+        card={createCard({ zone: 'cemetery-host' })}
+        onModifyCounter={onModifyCounter}
+      />
+    );
+
+    expect(screen.queryByText('+A')).not.toBeInTheDocument();
+    expect(screen.queryByText('-A')).not.toBeInTheDocument();
+    expect(screen.queryByText('+H')).not.toBeInTheDocument();
+    expect(screen.queryByText('-H')).not.toBeInTheDocument();
+
+    rerender(
+      <Card
+        card={createCard({ zone: 'banish-host' })}
+        onModifyCounter={onModifyCounter}
+      />
+    );
+
+    expect(screen.queryByText('+A')).not.toBeInTheDocument();
+    expect(screen.queryByText('-A')).not.toBeInTheDocument();
+    expect(screen.queryByText('+H')).not.toBeInTheDocument();
+    expect(screen.queryByText('-H')).not.toBeInTheDocument();
+  });
+
   it('hides combat and counter controls for lower stacked cards while keeping move shortcuts', () => {
     const onTap = vi.fn();
     const onAttack = vi.fn();
