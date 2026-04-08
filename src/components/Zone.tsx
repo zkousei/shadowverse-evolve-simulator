@@ -27,7 +27,7 @@ interface Props {
   lockCards?: boolean; // if true, disable drag and quick controls for cards in this zone
   disableQuickActionsForCard?: (card: CardInstance) => boolean;
   getHighlightTone?: (card: CardInstance) => 'attack-source' | 'attack-target' | undefined;
-  viewerRole?: PlayerRole | 'all'; // current player's role
+  viewerRole?: PlayerRole | 'all' | 'spectator'; // current player's role or read-only spectator
   containerStyle?: React.CSSProperties;
   isDebug?: boolean;
 }
@@ -43,6 +43,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
   const isStack = layout === 'stack';
   const isFieldZone = id.startsWith('field-');
   const isExZone = id.startsWith('ex-');
+  const isReadOnlySpectator = viewerRole === 'spectator';
 
   const displayLabel = label.replace(/^(My|Opponent|Player 1|Player 2|自分|相手|1P|2P)\s+/, '');
   const hasCardOnTop = React.useCallback((cardId: string) => cards.some(card => card.attachedTo === cardId), [cards]);
@@ -81,14 +82,14 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
           onReturnEvolve={onReturnEvolve}
           onCemetery={linkedCard.isTokenCard ? onCemetery : undefined}
           isHidden={hideCards}
-          isLocked={lockCards || (isProtected && viewerRole !== 'all' && linkedCard.owner !== viewerRole)}
+          isLocked={lockCards || isReadOnlySpectator || (isProtected && viewerRole !== 'all' && linkedCard.owner !== viewerRole)}
           quickActionsDisabled={disableQuickActionsForCard?.(linkedCard)}
           disableCombatAndCounterControls={true}
           debugIndex={isDebug ? index : undefined}
         />
       </div>
     ));
-  }, [attachmentLeftOffset, attachmentTopOffset, cardDetailLookup, cardStatLookup, disableQuickActionsForCard, getHighlightTone, hideCards, isDebug, isProtected, linkedCardLeftOffset, linkedCardTopOffset, lockCards, onBanish, onCemetery, onInspectCard, onReturnEvolve, onSendToBottom, viewerRole]);
+  }, [attachmentLeftOffset, attachmentTopOffset, cardDetailLookup, cardStatLookup, disableQuickActionsForCard, getHighlightTone, hideCards, isDebug, isProtected, isReadOnlySpectator, linkedCardLeftOffset, linkedCardTopOffset, lockCards, onBanish, onCemetery, onInspectCard, onReturnEvolve, onSendToBottom, viewerRole]);
 
   return (
     <div
@@ -215,7 +216,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
                       onCemetery={onCemetery}
                       onPlayToField={onPlayToField}
                       isHidden={hideCards}
-                      isLocked={lockCards || (isProtected && viewerRole !== 'all' && card.owner !== viewerRole)}
+                      isLocked={lockCards || isReadOnlySpectator || (isProtected && viewerRole !== 'all' && card.owner !== viewerRole)}
                       quickActionsDisabled={disableQuickActionsForCard?.(card)}
                       disableCombatAndCounterControls={hasCardOnTop(card.id)}
                       debugIndex={isDebug ? index : undefined}
@@ -243,7 +244,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
                           onCemetery={onCemetery}
                           onPlayToField={onPlayToField}
                           isHidden={hideCards}
-                          isLocked={lockCards || (isProtected && viewerRole !== 'all' && attachedCard.owner !== viewerRole)}
+                          isLocked={lockCards || isReadOnlySpectator || (isProtected && viewerRole !== 'all' && attachedCard.owner !== viewerRole)}
                           quickActionsDisabled={disableQuickActionsForCard?.(attachedCard)}
                           disableCombatAndCounterControls={hasCardOnTop(attachedCard.id)}
                           debugIndex={isDebug ? i : undefined}
@@ -287,7 +288,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
                 onCemetery={onCemetery}
                 onPlayToField={onPlayToField}
                 isHidden={hideCards}
-                isLocked={lockCards || (isProtected && viewerRole !== 'all' && card.owner !== viewerRole)}
+                isLocked={lockCards || isReadOnlySpectator || (isProtected && viewerRole !== 'all' && card.owner !== viewerRole)}
                 quickActionsDisabled={disableQuickActionsForCard?.(card)}
                 disableCombatAndCounterControls={hasCardOnTop(card.id)}
                 debugIndex={isDebug ? topLevelCards.indexOf(card) : undefined}
@@ -315,7 +316,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
                     onCemetery={onCemetery}
                     onPlayToField={onPlayToField}
                     isHidden={hideCards}
-                    isLocked={lockCards || (isProtected && viewerRole !== 'all' && attachedCard.owner !== viewerRole)}
+                    isLocked={lockCards || isReadOnlySpectator || (isProtected && viewerRole !== 'all' && attachedCard.owner !== viewerRole)}
                     quickActionsDisabled={disableQuickActionsForCard?.(attachedCard)}
                     disableCombatAndCounterControls={hasCardOnTop(attachedCard.id)}
                     debugIndex={isDebug ? i : undefined}

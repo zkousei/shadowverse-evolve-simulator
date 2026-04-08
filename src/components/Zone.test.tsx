@@ -166,6 +166,28 @@ describe('Zone', () => {
     expect(cards[1]).toHaveAttribute('data-display-counters', '1/-1');
   });
 
+  it('shows but locks every card for spectator view, including the viewed player own cards', () => {
+    render(
+      <Zone
+        id="field-host"
+        label="Player 1 Field"
+        viewerRole="spectator"
+        cards={[
+          createCard('host-card', { owner: 'host' }),
+          createCard('guest-card', { owner: 'guest' }),
+        ]}
+      />
+    );
+
+    expect(screen.getByText('Field')).toBeInTheDocument();
+
+    const cards = screen.getAllByTestId('mock-card');
+    expect(cards[0]).toHaveAttribute('data-hidden', 'false');
+    expect(cards[0]).toHaveAttribute('data-locked', 'true');
+    expect(cards[1]).toHaveAttribute('data-hidden', 'false');
+    expect(cards[1]).toHaveAttribute('data-locked', 'true');
+  });
+
   it('does not count linked cards as top-level field cards', () => {
     render(
       <Zone

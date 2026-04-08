@@ -55,7 +55,7 @@ import { buildDebugGameBoardState } from '../utils/gameBoardDebugState';
 import { getCanUndoMove, getCanUndoTurn } from '../utils/gameBoardUndoAvailability';
 import { getTurnMessageDecision } from '../utils/gameBoardTurnMessage';
 import { findUnitRootCard, isEquipmentLinkTargetCard, isTokenEquipmentCard } from '../utils/gameBoardManualLink';
-import { canLookAtTopDeck, getCanInteractWithGameBoard } from '../utils/gameBoardInteraction';
+import { canLookAtTopDeck, getCanInteractWithGameBoard, getCanViewGameBoard } from '../utils/gameBoardInteraction';
 import {
   buildGameBoardEvolveAutoAttachSelection,
   type PendingGameBoardEvolveAutoAttachSelection,
@@ -116,14 +116,22 @@ const RECONNECT_DELAY_MS = 1000;
 
 type SnapshotMessage = Extract<SyncMessage, { type: 'STATE_SNAPSHOT' }>;
 type GameBoardStatusKey = `gameBoard.status.${string}`;
+type ConnectionRole = 'guest' | 'spectator';
+
+type DataConnectionWithMetadata = DataConnection & {
+  metadata?: {
+    connectionRole?: ConnectionRole;
+  };
+};
 
 export const useGameBoardLogic = () => {
   const [searchParams] = useSearchParams();
   const room = searchParams.get('room') || '';
   const mode = searchParams.get('mode') === 'solo' ? 'solo' : 'p2p';
   const isSoloMode = mode === 'solo';
-  const isHost = searchParams.get('host') === 'true';
-  const role = (isSoloMode ? 'host' : (isHost ? 'host' : 'guest')) as 'host' | 'guest';
+  const isSpectator = !isSoloMode && searchParams.get('spectator') === 'true';
+  const isHost = !isSpectator && searchParams.get('host') === 'true';
+  const role = (isSoloMode || isHost || isSpectator ? 'host' : 'guest') as PlayerRole;
   const isDebug = searchParams.get('debug') === 'true';
 
   const { t } = useTranslation();
@@ -133,7 +141,8 @@ export const useGameBoardLogic = () => {
   const [statusKey, setStatusKey] = useState<GameBoardStatusKey>('gameBoard.status.initializing');
   const status = t(statusKey);
   const [connectionState, setConnectionState] = useState<ConnectionState>('idle');
-  const canInteract = getCanInteractWithGameBoard({ isSoloMode, isHost, connectionState });
+  const canInteract = getCanInteractWithGameBoard({ isSoloMode, isHost, isSpectator, connectionState });
+  const canView = getCanViewGameBoard({ isSoloMode, isHost, connectionState });
   const [gameState, setGameState] = useState<SyncState>(initialState);
   const [savedSessionCandidate, setSavedSessionCandidate] = useState<SavedHostSession | null>(null);
   const [hasCheckedSavedSession, setHasCheckedSavedSession] = useState(false);
@@ -173,6 +182,7 @@ export const useGameBoardLogic = () => {
 
   const peerRef = useRef<Peer | null>(null);
   const connRef = useRef<DataConnection | null>(null);
+  const spectatorConnRef = useRef<DataConnection | null>(null);
   const setupConnectionRef = useRef<(conn: DataConnection) => void>(() => undefined);
   const gameStateRef = useRef<SyncState>(initialState);
   const cardDetailLookupRef = useRef<CardDetailLookup>({});
@@ -186,6 +196,7 @@ export const useGameBoardLogic = () => {
   const topDeckTargetRoleRef = useRef<PlayerRole>(role);
   const awaitingInitialSnapshotRef = useRef(false);
   const activeConnectionTokenRef = useRef<string | null>(null);
+  const activeSpectatorConnectionTokenRef = useRef<string | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const snapshotRequestTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const snapshotRetryCountRef = useRef(0);
@@ -264,6 +275,11 @@ export const useGameBoardLogic = () => {
     connRef.current.send(message);
   }, []);
 
+  const sendSpectatorImmediate = useCallback((message: SyncMessage) => {
+    if (!spectatorConnRef.current?.open) return;
+    spectatorConnRef.current.send(message);
+  }, []);
+
   const scheduleSnapshotFlush = useCallback((flush: () => void) => {
     snapshotFlushTimeoutRef.current = setTimeout(() => {
       snapshotFlushTimeoutRef.current = null;
@@ -322,11 +338,13 @@ export const useGameBoardLogic = () => {
   const sendMessage = useCallback((message: SyncMessage) => {
     if (message.type === 'STATE_SNAPSHOT') {
       queueOrSendSnapshotMessage(message);
+      sendSpectatorImmediate(message);
       return;
     }
 
     sendImmediate(message);
-  }, [queueOrSendSnapshotMessage, sendImmediate]);
+    sendSpectatorImmediate(message);
+  }, [queueOrSendSnapshotMessage, sendImmediate, sendSpectatorImmediate]);
 
   const clearReconnectTimer = useCallback(() => {
     if (reconnectTimeoutRef.current) {
@@ -511,14 +529,15 @@ export const useGameBoardLogic = () => {
 
   const playSharedUiEffect = useCallback((effect: SharedUiEffect) => {
     const translate = tRef.current;
+    const usesPlayerLabels = isSoloMode || isSpectator;
 
     if (effect.type === 'COIN_FLIP_RESULT') {
-      showTimedCoinMessage(formatSharedUiMessage(effect, role, isSoloMode, translate), 3000);
+      showTimedCoinMessage(formatSharedUiMessage(effect, role, usesPlayerLabels, translate), 3000);
       return;
     }
 
     if (effect.type === 'STARTER_DECIDED') {
-      showTimedCoinMessage(formatSharedUiMessage(effect, role, isSoloMode, translate), 4000);
+      showTimedCoinMessage(formatSharedUiMessage(effect, role, usesPlayerLabels, translate), 4000);
       return;
     }
 
@@ -527,7 +546,7 @@ export const useGameBoardLogic = () => {
       const pendingSummary = pendingLookTopSummaryLinesRef.current ?? [];
       pendingLookTopSummaryLinesRef.current = null;
       revealTopIsActiveRef.current = true;
-      const actorLabel = getSharedActorLabel(effect.actor, role, isSoloMode, translate);
+      const actorLabel = getSharedActorLabel(effect.actor, role, usesPlayerLabels, translate);
       setRevealedCardsOverlay({
         type: 'look-top',
         title: translate('gameBoard.modals.shared.messages.revealLookTop', { actor: actorLabel }),
@@ -544,7 +563,7 @@ export const useGameBoardLogic = () => {
 
     if (effect.type === 'REVEAL_HAND_CARDS') {
       clearRevealedCardsTimer();
-      const actorLabel = getSharedActorLabel(effect.actor, role, isSoloMode, translate);
+      const actorLabel = getSharedActorLabel(effect.actor, role, usesPlayerLabels, translate);
       const message = translate('gameBoard.modals.shared.messages.revealHand', { actor: actorLabel });
       const cardNames = effect.cards.map((card) => card.name).join(', ');
 
@@ -563,7 +582,7 @@ export const useGameBoardLogic = () => {
 
     if (effect.type === 'REVEAL_SEARCHED_CARD_TO_HAND') {
       clearRevealedCardsTimer();
-      const actorLabel = getSharedActorLabel(effect.actor, role, isSoloMode, translate);
+      const actorLabel = getSharedActorLabel(effect.actor, role, usesPlayerLabels, translate);
       const message = translate('gameBoard.modals.shared.messages.revealSearch', { actor: actorLabel });
       const cards = effect.cardIds
         .map((id) => gameStateRef.current.cards.find((card) => card.id === id))
@@ -590,7 +609,7 @@ export const useGameBoardLogic = () => {
     }
 
     if (effect.type === 'ATTACK_DECLARED') {
-      const formattedAttack = formatAttackEffect(effect, role, isSoloMode, translate);
+      const formattedAttack = formatAttackEffect(effect, role, usesPlayerLabels, translate);
       clearAttackMessageTimer();
       setAttackMessage(formattedAttack.announcement);
       setAttackVisual(effect);
@@ -609,83 +628,83 @@ export const useGameBoardLogic = () => {
     if (effect.type === 'CARD_PLAYED') {
       // Play/Play to Field uses the transient dialog only. Keeping it out of the
       // recent-event log avoids overwhelming the log with routine actions.
-      const message = formatCardPlayedEffect(effect, role, isSoloMode, translate);
+      const message = formatCardPlayedEffect(effect, role, usesPlayerLabels, translate);
       showTimedCardPlayMessage(message, 2600);
       return;
     }
 
     if (effect.type === 'RESET_GAME_COMPLETED') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode, translate);
+      const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
       showTimedCardPlayMessage(message, 2600);
       return;
     }
 
     if (effect.type === 'SHUFFLE_DECK_COMPLETED') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode, translate);
+      const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
       showTimedCardPlayMessage(message, 2600);
       pushEventHistory(message);
       return;
     }
 
     if (effect.type === 'DRAW_CARD_COMPLETED') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode, translate);
+      const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
       showTimedCardPlayMessage(message, 2600);
       return;
     }
 
     if (effect.type === 'MILL_CARD_COMPLETED') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode, translate);
+      const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
       showTimedCardPlayMessage(message, 2600);
       return;
     }
 
     if (effect.type === 'TOP_CARD_TO_EX_COMPLETED') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode, translate);
+      const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
       showTimedCardPlayMessage(message, 2600);
       return;
     }
 
     if (effect.type === 'RANDOM_HAND_DISCARD_COMPLETED') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode, translate);
+      const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
       showTimedCardPlayMessage(message, 2600);
       pushEventHistory(message);
       return;
     }
 
     if (effect.type === 'SEARCHED_CARD_TO_HAND') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode, translate);
+      const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
       showTimedCardPlayMessage(message, 2600);
       pushEventHistory(message);
       return;
     }
 
     if (effect.type === 'SEARCHED_CARD_PLACED') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode, translate);
+      const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
       showTimedCardPlayMessage(message, 2600);
       return;
     }
 
     if (effect.type === 'CEMETERY_CARD_TO_HAND') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode, translate);
+      const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
       showTimedCardPlayMessage(message, 2600);
       pushEventHistory(message);
       return;
     }
 
     if (effect.type === 'CEMETERY_CARD_PLACED') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode, translate);
+      const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
       showTimedCardPlayMessage(message, 2600);
       return;
     }
 
     if (effect.type === 'EVOLVE_CARD_PLACED') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode, translate);
+      const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
       showTimedCardPlayMessage(message, 2600);
       return;
     }
 
     if (effect.type === 'EVOLVE_USAGE_TOGGLED') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode, translate);
+      const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
       showTimedCardPlayMessage(message, 2600);
       if (gameStateRef.current.gameStatus === 'playing') {
         pushEventHistory(message);
@@ -694,20 +713,20 @@ export const useGameBoardLogic = () => {
     }
 
     if (effect.type === 'BANISHED_CARD_TO_HAND') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode, translate);
+      const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
       showTimedCardPlayMessage(message, 2600);
       pushEventHistory(message);
       return;
     }
 
     if (effect.type === 'BANISHED_CARD_PLACED') {
-      const message = formatSharedUiMessage(effect, role, isSoloMode, translate);
+      const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
       showTimedCardPlayMessage(message, 2600);
       return;
     }
 
     if (effect.type === 'LOOK_TOP_RESOLVED') {
-      const summaryLines = formatSharedUiMessage(effect, role, isSoloMode, translate).split('\n').filter(Boolean);
+      const summaryLines = formatSharedUiMessage(effect, role, usesPlayerLabels, translate).split('\n').filter(Boolean);
       pushEventHistory(summaryLines.join('\n'));
       if (revealTopIsActiveRef.current) {
         // When Look Top also reveals cards publicly, keep the summary inside the
@@ -751,7 +770,7 @@ export const useGameBoardLogic = () => {
         diceRollIntervalRef.current = null;
       }
       setDiceValue(effect.value);
-      showTimedCoinMessage(formatSharedUiMessage(effect, role, isSoloMode, translate), 3000);
+      showTimedCoinMessage(formatSharedUiMessage(effect, role, usesPlayerLabels, translate), 3000);
       diceMessageTimeoutRef.current = setTimeout(() => {
         setIsRollingDice(false);
         setDiceValue(null);
@@ -759,7 +778,7 @@ export const useGameBoardLogic = () => {
       }, 800);
       diceFinalizeTimeoutRef.current = null;
     }, 900);
-  }, [clearAttackMessageTimer, clearCoinMessageTimer, clearDiceTimers, clearRevealedCardsTimer, isSoloMode, pushEventHistory, role, showTimedCardPlayMessage, showTimedCoinMessage]);
+  }, [clearAttackMessageTimer, clearCoinMessageTimer, clearDiceTimers, clearRevealedCardsTimer, isSoloMode, isSpectator, pushEventHistory, role, showTimedCardPlayMessage, showTimedCoinMessage]);
 
   const maybeApplySnapshot = useCallback((incomingState: SyncState, source: PlayerRole) => {
     const snapshotDecision = getSnapshotApplicationDecision({
@@ -1112,9 +1131,11 @@ export const useGameBoardLogic = () => {
 
     setConnectionState(current => current === 'connected' ? 'reconnecting' : 'connecting');
     setStatusKey('gameBoard.status.connectingToHost');
-    const conn = peer.connect(`sv-evolve-${room}`);
+    const conn = isSpectator
+      ? peer.connect(`sv-evolve-${room}`, { metadata: { connectionRole: 'spectator' } })
+      : peer.connect(`sv-evolve-${room}`);
     setupConnectionRef.current(conn);
-  }, [isHost, isSoloMode, room]);
+  }, [isHost, isSoloMode, isSpectator, room]);
 
   const scheduleReconnectAttempt = useCallback(() => {
     reconnectTimeoutRef.current = setTimeout(() => {
@@ -1140,6 +1161,10 @@ export const useGameBoardLogic = () => {
 
   const isActiveConnectionToken = useCallback((token: string) => {
     return activeConnectionTokenRef.current === token;
+  }, []);
+
+  const isActiveSpectatorConnectionToken = useCallback((token: string) => {
+    return activeSpectatorConnectionTokenRef.current === token;
   }, []);
 
   const isCurrentActiveConnection = useCallback((conn: DataConnection, token: string) => {
@@ -1178,7 +1203,7 @@ export const useGameBoardLogic = () => {
     if (isSoloMode || isHost) return;
     if (!isActiveConnectionToken(token) || !conn.open) return;
 
-    conn.send(buildSnapshotRequestMessage(gameStateRef.current.revision, role));
+    conn.send(buildSnapshotRequestMessage(gameStateRef.current.revision, isSpectator ? 'guest' : role));
 
     if (snapshotRequestTimeoutRef.current) {
       clearTimeout(snapshotRequestTimeoutRef.current);
@@ -1187,7 +1212,7 @@ export const useGameBoardLogic = () => {
     snapshotRequestTimeoutRef.current = setTimeout(() => {
       handleSnapshotRequestTimeout(conn, token, requestSnapshotWithRetry);
     }, SNAPSHOT_REQUEST_TIMEOUT_MS);
-  }, [handleSnapshotRequestTimeout, isActiveConnectionToken, isHost, isSoloMode, role]);
+  }, [handleSnapshotRequestTimeout, isActiveConnectionToken, isHost, isSoloMode, isSpectator, role]);
 
   const playIncomingSharedUiEffects = useCallback((
     message: Extract<SyncMessage, { type: 'SHARED_UI_EFFECT' }> | SnapshotMessage
@@ -1229,9 +1254,9 @@ export const useGameBoardLogic = () => {
     }
 
     if (snapshotRequestDecision.type === 'send-snapshot') {
-      sendMessage(buildSnapshotSyncMessage(gameStateRef.current, 'host', cardDetailLookupRef.current));
+      conn.send(buildSnapshotSyncMessage(gameStateRef.current, 'host', cardDetailLookupRef.current));
     }
-  }, [isHost, sendMessage]);
+  }, [isHost]);
 
   const handleIncomingSnapshot = useCallback((message: SnapshotMessage) => {
     const snapshotHandling = getIncomingSnapshotHandling({
@@ -1305,6 +1330,11 @@ export const useGameBoardLogic = () => {
     awaitingInitialSnapshotRef.current = false;
   }, [clearPendingSnapshotMessage, clearSnapshotRequestTimer]);
 
+  const clearSpectatorConnectionLifecycleState = useCallback(() => {
+    spectatorConnRef.current = null;
+    activeSpectatorConnectionTokenRef.current = null;
+  }, []);
+
   const handleConnectionTermination = useCallback((kind: 'close' | 'error') => {
     clearActiveConnectionLifecycleState();
 
@@ -1359,6 +1389,20 @@ export const useGameBoardLogic = () => {
     connRef.current = conn;
   }, [clearPendingSnapshotMessage, clearReconnectTimer, clearSnapshotRequestTimer]);
 
+  const prepareSpectatorConnection = useCallback((conn: DataConnection, token: string) => {
+    activeSpectatorConnectionTokenRef.current = token;
+
+    if (spectatorConnRef.current && spectatorConnRef.current !== conn) {
+      try {
+        spectatorConnRef.current.close();
+      } catch {
+        // Ignore close races on replaced spectator connections.
+      }
+    }
+
+    spectatorConnRef.current = conn;
+  }, []);
+
   const handleConnectionLifecycleEvent = useCallback((token: string, kind: 'close' | 'error') => {
     if (!isActiveConnectionToken(token)) return;
     handleConnectionTermination(kind);
@@ -1380,6 +1424,42 @@ export const useGameBoardLogic = () => {
       handleConnectionLifecycleEvent(token, 'error');
     });
   }, [handleConnectionLifecycleEvent, handleConnectionOpen, handleIncomingConnectionData, prepareActiveConnection]);
+
+  const handleSpectatorConnectionLifecycleEvent = useCallback((token: string) => {
+    if (!isActiveSpectatorConnectionToken(token)) return;
+    clearSpectatorConnectionLifecycleState();
+  }, [clearSpectatorConnectionLifecycleState, isActiveSpectatorConnectionToken]);
+
+  const handleIncomingSpectatorConnectionData = useCallback((
+    conn: DataConnection,
+    token: string,
+    rawData: unknown
+  ) => {
+    if (!isActiveSpectatorConnectionToken(token)) return;
+    const data = rawData as SyncMessage;
+
+    if (data.type === 'REQUEST_SNAPSHOT') {
+      handleIncomingSnapshotRequest(data, conn);
+    }
+  }, [handleIncomingSnapshotRequest, isActiveSpectatorConnectionToken]);
+
+  const setupSpectatorConnection = useCallback((conn: DataConnection) => {
+    const token = uuid();
+    prepareSpectatorConnection(conn, token);
+    conn.on('data', (rawData: unknown) => {
+      handleIncomingSpectatorConnectionData(conn, token, rawData);
+    });
+    conn.on('close', () => {
+      handleSpectatorConnectionLifecycleEvent(token);
+    });
+    conn.on('error', () => {
+      handleSpectatorConnectionLifecycleEvent(token);
+    });
+  }, [
+    handleIncomingSpectatorConnectionData,
+    handleSpectatorConnectionLifecycleEvent,
+    prepareSpectatorConnection,
+  ]);
 
   useEffect(() => {
     setupConnectionRef.current = setupConnection;
@@ -1483,9 +1563,18 @@ export const useGameBoardLogic = () => {
     const incomingConnectionDecision = getPeerIncomingConnectionDecision({ isHost });
 
     if (incomingConnectionDecision.type === 'setup-connection') {
+      const connectionRole = (conn as DataConnectionWithMetadata).metadata?.connectionRole === 'spectator'
+        ? 'spectator'
+        : 'guest';
+
+      if (connectionRole === 'spectator') {
+        setupSpectatorConnection(conn);
+        return;
+      }
+
       setupConnection(conn);
     }
-  }, [isHost, setupConnection]);
+  }, [isHost, setupConnection, setupSpectatorConnection]);
 
   const handlePeerTermination = useCallback((kind: 'disconnected' | 'error') => {
     const terminationDecision = getPeerTerminationDecision({
@@ -1504,8 +1593,9 @@ export const useGameBoardLogic = () => {
   const cleanupPeerLifecycle = useCallback((peer: Peer) => {
     clearReconnectTimer();
     clearActiveConnectionLifecycleState();
+    clearSpectatorConnectionLifecycleState();
     peer.destroy();
-  }, [clearActiveConnectionLifecycleState, clearReconnectTimer]);
+  }, [clearActiveConnectionLifecycleState, clearReconnectTimer, clearSpectatorConnectionLifecycleState]);
 
   useEffect(() => {
     if (isSoloMode) {
@@ -1632,7 +1722,7 @@ export const useGameBoardLogic = () => {
   useEffect(() => {
     const turnMessageDecision = getTurnMessageDecision({
       gameStatus: gameState.gameStatus,
-      isSoloMode,
+      isSoloMode: isSoloMode || isSpectator,
       role,
       turnCount: gameState.turnCount,
       turnPlayer: gameState.turnPlayer,
@@ -1652,7 +1742,7 @@ export const useGameBoardLogic = () => {
       t(turnMessageDecision.key, turnMessageDecision.options),
       turnMessageDecision.durationMs
     );
-  }, [clearTurnMessageTimer, gameState.gameStatus, gameState.turnCount, gameState.turnPlayer, isSoloMode, role, showTimedTurnMessage, t]);
+  }, [clearTurnMessageTimer, gameState.gameStatus, gameState.turnCount, gameState.turnPlayer, isSoloMode, isSpectator, role, showTimedTurnMessage, t]);
 
   const handleStatChange = (playerKey: 'host' | 'guest', stat: 'hp' | 'pp' | 'maxPp' | 'ep' | 'sep' | 'combo', delta: number) => {
     dispatchGameEvent({ type: 'MODIFY_PLAYER_STAT', playerKey, stat, delta });
@@ -1687,6 +1777,7 @@ export const useGameBoardLogic = () => {
   };
 
   const handleStartGame = () => {
+    if (!canInteract) return;
     dispatchGameEvent({ type: 'START_GAME' });
     showTimedTurnMessage(t('gameBoard.alerts.gameStart'), 2500);
   };
@@ -1700,12 +1791,14 @@ export const useGameBoardLogic = () => {
   };
 
   const startMulligan = () => {
+    if (!canInteract) return;
     const nextState = buildStartedMulliganState();
     setMulliganOrder(nextState.mulliganOrder);
     setIsMulliganModalOpen(nextState.isMulliganModalOpen);
   };
 
   const handleMulliganOrderSelect = (cardId: string) => {
+    if (!canInteract) return;
     setMulliganOrder((prev) => toggleMulliganOrderSelection(prev, cardId));
   };
 
@@ -2008,7 +2101,7 @@ export const useGameBoardLogic = () => {
   ];
 
   return {
-    room, mode, isSoloMode, isHost, role, status, connectionState, canInteract, attemptReconnect, gameState, savedSessionCandidate, resumeSavedSession, discardSavedSession, searchZone, setSearchZone,
+    room, mode, isSoloMode, isHost, isSpectator, role, status, connectionState, canInteract, canView, attemptReconnect, gameState, savedSessionCandidate, resumeSavedSession, discardSavedSession, searchZone, setSearchZone,
     showResetConfirm, setShowResetConfirm, coinMessage, turnMessage, cardPlayMessage, attackMessage, attackHistory, eventHistory, attackVisual, revealedCardsOverlay,
     cardStatLookup, cardDetailLookup,
     isRollingDice, diceValue, mulliganOrder, isMulliganModalOpen, setIsMulliganModalOpen,

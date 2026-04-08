@@ -10,6 +10,7 @@ type GameBoardPlayerTrackerSectionProps = {
     stat: 'hp' | 'pp' | 'maxPp' | 'ep' | 'sep' | 'combo',
     delta: number
   ) => void;
+  readOnly?: boolean;
 };
 
 const GameBoardPlayerTrackerSection: React.FC<GameBoardPlayerTrackerSectionProps> = ({
@@ -17,6 +18,7 @@ const GameBoardPlayerTrackerSection: React.FC<GameBoardPlayerTrackerSectionProps
   label,
   playerState,
   onAdjustStat,
+  readOnly = false,
 }) => (
   <GameBoardPlayerTracker
     testId={testId}
@@ -28,6 +30,7 @@ const GameBoardPlayerTrackerSection: React.FC<GameBoardPlayerTrackerSectionProps
     pp={playerState.pp}
     maxPp={playerState.maxPp}
     onAdjustStat={onAdjustStat}
+    readOnly={readOnly}
   />
 );
 

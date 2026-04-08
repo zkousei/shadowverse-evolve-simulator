@@ -15,7 +15,7 @@ type GameBoardLeaderZoneProps = {
   cardDetailLookup: CardDetailLookup;
   getHighlightTone?: (card: CardInstance) => 'attack-source' | 'attack-target' | undefined;
   onInspectCard?: (card: CardInstance, anchor: CardInspectAnchor) => void;
-  viewerRole?: PlayerRole | 'all';
+  viewerRole?: PlayerRole | 'all' | 'spectator';
   isAttackTargetLeader: boolean;
   isDebug?: boolean;
   searchLabel: string;

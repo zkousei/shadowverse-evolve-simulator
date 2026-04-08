@@ -20,7 +20,9 @@ vi.mock('react-i18next', () => ({
         'nav.solo': 'Solo',
         'nav.hostGame': 'Host Game',
         'nav.joinGame': 'Join Game',
+        'nav.spectateGame': 'Spectate Game',
         'nav.join': 'Join',
+        'nav.spectate': 'Spectate',
         'nav.roomCode': 'Room Code',
       };
       return translations[key] || key;
@@ -93,7 +95,25 @@ describe('App', () => {
     expect(screen.getByText('Mock Game Board')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Play' }));
-    expect(screen.getByPlaceholderText('Room Code')).toHaveValue('');
+    expect(screen.getByLabelText('Join Game')).toHaveValue('');
+    expect(screen.getByLabelText('Spectate Game')).toHaveValue('');
+  });
+
+  it('spectates a room from the play menu', () => {
+    window.history.pushState({}, '', '/');
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Play' }));
+    const spectateButton = screen.getByRole('button', { name: 'Spectate' });
+    expect(spectateButton).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText('Spectate Game'), { target: { value: '  ROOM77  ' } });
+    expect(spectateButton).toBeEnabled();
+
+    fireEvent.click(spectateButton);
+    expect(window.location.pathname).toBe('/game');
+    expect(window.location.search).toBe('?spectator=true&room=ROOM77');
+    expect(screen.getByText('Mock Game Board')).toBeInTheDocument();
   });
 
   it('keeps join disabled for blank room ids and trims room codes before navigating', () => {

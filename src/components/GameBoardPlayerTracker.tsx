@@ -13,6 +13,7 @@ type GameBoardPlayerTrackerProps = {
   pp: number;
   maxPp: number;
   onAdjustStat: (stat: TrackerStat, delta: number) => void;
+  readOnly?: boolean;
 };
 
 const GameBoardPlayerTracker: React.FC<GameBoardPlayerTrackerProps> = ({
@@ -25,6 +26,7 @@ const GameBoardPlayerTracker: React.FC<GameBoardPlayerTrackerProps> = ({
   pp,
   maxPp,
   onAdjustStat,
+  readOnly = false,
 }) => {
   const { t } = useTranslation();
 
@@ -58,39 +60,39 @@ const GameBoardPlayerTracker: React.FC<GameBoardPlayerTrackerProps> = ({
       <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'white' }}>{t('gameBoard.board.statusLabel', { label })}</div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ color: '#ef4444', fontWeight: 'bold' }}>{t('gameBoard.board.stats.hp')}: {hp}</span>
-        <div style={trackerButtonRowStyle}>
+        {!readOnly && <div style={trackerButtonRowStyle}>
           <button data-testid={`${testId}-hp-increase`} onClick={() => onAdjustStat('hp', 1)} style={trackerIncreaseButtonStyle}>+</button>
           <button data-testid={`${testId}-hp-decrease`} onClick={() => onAdjustStat('hp', -1)} style={trackerDecreaseButtonStyle}>-</button>
-        </div>
+        </div>}
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ color: '#fbbf24', fontWeight: 'bold' }}>{t('gameBoard.board.stats.ep')}: {ep}</span>
-        <div style={trackerButtonRowStyle}>
+        {!readOnly && <div style={trackerButtonRowStyle}>
           <button data-testid={`${testId}-ep-increase`} onClick={() => onAdjustStat('ep', 1)} style={trackerIncreaseButtonStyle}>+</button>
           <button data-testid={`${testId}-ep-decrease`} onClick={() => onAdjustStat('ep', -1)} style={trackerDecreaseButtonStyle}>-</button>
-        </div>
+        </div>}
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ color: '#facc15', fontWeight: 'bold' }}>{t('gameBoard.board.stats.sep')}: {sep}</span>
-        <div style={trackerButtonRowStyle}>
+        {!readOnly && <div style={trackerButtonRowStyle}>
           <button data-testid={`${testId}-sep-increase`} onClick={() => onAdjustStat('sep', 1)} style={trackerIncreaseButtonStyle}>+</button>
           <button data-testid={`${testId}-sep-decrease`} onClick={() => onAdjustStat('sep', -1)} style={trackerDecreaseButtonStyle}>-</button>
-        </div>
+        </div>}
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ color: '#fff', fontWeight: 'bold' }}>{t('gameBoard.board.stats.combo')}: {combo}</span>
-        <div style={trackerButtonRowStyle}>
+        {!readOnly && <div style={trackerButtonRowStyle}>
           <button data-testid={`${testId}-combo-increase`} onClick={() => onAdjustStat('combo', 1)} style={trackerIncreaseButtonStyle}>+</button>
           <button data-testid={`${testId}-combo-decrease`} onClick={() => onAdjustStat('combo', -1)} style={trackerDecreaseButtonStyle}>-</button>
-        </div>
+        </div>}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', padding: '0.6rem', background: 'rgba(59, 130, 246, 0.15)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+          {!readOnly && <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
             <button data-testid={`${testId}-maxPp-increase`} onClick={() => onAdjustStat('maxPp', 1)} style={{ ...trackerIncreaseButtonStyle, width: '24px', height: '20px', minWidth: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, fontSize: '0.75rem' }}>+</button>
             <span style={{ fontSize: '0.6rem', color: '#93c5fd', fontWeight: 'bold' }}>{t('gameBoard.board.stats.max')}</span>
             <button data-testid={`${testId}-maxPp-decrease`} onClick={() => onAdjustStat('maxPp', -1)} style={{ ...trackerDecreaseButtonStyle, width: '24px', height: '20px', minWidth: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, fontSize: '0.75rem' }}>-</button>
-          </div>
+          </div>}
           <div style={{ textAlign: 'center', flex: 1 }}>
             <div style={{ fontSize: '0.7rem', color: '#3b82f6', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '-2px' }}>{t('gameBoard.board.stats.playPoints')}</div>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '2px' }}>
@@ -99,10 +101,10 @@ const GameBoardPlayerTracker: React.FC<GameBoardPlayerTrackerProps> = ({
               <span style={{ color: '#fff', fontSize: '1.25rem', fontWeight: 'bold' }}>{maxPp}</span>
             </div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
+          {!readOnly && <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
             <button data-testid={`${testId}-pp-increase`} onClick={() => onAdjustStat('pp', 1)} style={{ width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', borderRadius: '50%', cursor: 'pointer', fontSize: '1rem', color: '#3b82f6', fontWeight: 'bold' }}>∧</button>
             <button data-testid={`${testId}-pp-decrease`} onClick={() => onAdjustStat('pp', -1)} style={{ width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', borderRadius: '50%', cursor: 'pointer', fontSize: '1rem', color: '#3b82f6', fontWeight: 'bold' }}>∨</button>
-          </div>
+          </div>}
         </div>
       </div>
     </div>

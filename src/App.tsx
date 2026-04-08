@@ -26,6 +26,7 @@ function AppNavigation() {
   const langMenuRef = React.useRef<HTMLDivElement | null>(null);
   const [isLangMenuOpen, setIsLangMenuOpen] = React.useState(false);
   const [roomId, setRoomId] = React.useState('');
+  const [spectatorRoomId, setSpectatorRoomId] = React.useState('');
 
   React.useEffect(() => {
     if (!isPlayMenuOpen && !isLangMenuOpen) return undefined;
@@ -59,6 +60,7 @@ function AppNavigation() {
     setIsPlayMenuOpen(false);
     setIsLangMenuOpen(false);
     setRoomId('');
+    setSpectatorRoomId('');
   }, [location.pathname, location.search]);
 
   const handleSoloPlay = () => {
@@ -73,6 +75,12 @@ function AppNavigation() {
     event.preventDefault();
     if (!roomId.trim()) return;
     navigate(`/game?host=false&room=${roomId.trim()}`);
+  };
+
+  const handleSpectateRoom = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!spectatorRoomId.trim()) return;
+    navigate(`/game?spectator=true&room=${spectatorRoomId.trim()}`);
   };
 
   const { t, i18n } = useTranslation();
@@ -192,6 +200,43 @@ function AppNavigation() {
                   }}
                 >
                   {t('nav.join')}
+                </button>
+              </div>
+            </form>
+            <form onSubmit={handleSpectateRoom} style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+              <label htmlFor="global-spectator-room-code" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                {t('nav.spectateGame')}
+              </label>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <input
+                  id="global-spectator-room-code"
+                  type="text"
+                  value={spectatorRoomId}
+                  onChange={(event) => setSpectatorRoomId(event.target.value)}
+                  placeholder={t('nav.roomCode')}
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    padding: '0.55rem 0.7rem',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--border-light)',
+                    background: 'rgba(0,0,0,0.2)',
+                    color: 'var(--text-main)',
+                    outline: 'none',
+                  }}
+                />
+                <button
+                  type="submit"
+                  disabled={!spectatorRoomId.trim()}
+                  style={{
+                    padding: '0 0.9rem',
+                    borderRadius: 'var(--radius-md)',
+                    background: spectatorRoomId.trim() ? 'var(--accent-secondary)' : 'var(--bg-surface-elevated)',
+                    color: spectatorRoomId.trim() ? '#fff' : 'var(--text-muted)',
+                    fontWeight: 700,
+                  }}
+                >
+                  {t('nav.spectate')}
                 </button>
               </div>
             </form>
