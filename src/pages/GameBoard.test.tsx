@@ -3,12 +3,17 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import GameBoard from './GameBoard';
 import { useGameBoardLogic } from '../hooks/useGameBoardLogic';
-import { saveDeck } from '../utils/deckStorage';
+import {
+  SAVED_DECKS_KEY,
+  serializeDeckState,
+  type SavedDeckRecordV1,
+} from '../utils/deckStorage';
 import { initialState, type SyncState, type TokenOption } from '../types/game';
 import type { CardInspectAnchor, CardInstance } from '../components/Card';
 import type { DeckBuilderCardData } from '../models/deckBuilderCard';
 import type { DeckState } from '../models/deckState';
 import type { DeckRuleConfig } from '../models/deckRule';
+import { loadCardCatalog } from '../utils/cardCatalog';
 
 vi.mock('@dnd-kit/core', () => ({
   DndContext: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
@@ -111,6 +116,10 @@ vi.mock('../hooks/useGameBoardLogic', () => ({
   useGameBoardLogic: vi.fn(),
 }));
 
+vi.mock('../utils/cardCatalog', () => ({
+  loadCardCatalog: vi.fn(),
+}));
+
 vi.mock('../utils/deckBuilderRules', async () => {
   const actual = await vi.importActual<typeof import('../utils/deckBuilderRules')>('../utils/deckBuilderRules');
 
@@ -122,6 +131,7 @@ vi.mock('../utils/deckBuilderRules', async () => {
 });
 
 const mockUseGameBoardLogic = vi.mocked(useGameBoardLogic);
+const mockLoadCardCatalog = vi.mocked(loadCardCatalog);
 
 const ruleConfig: DeckRuleConfig = {
   format: 'other',
@@ -192,6 +202,41 @@ const createGameState = (cards: CardInstance[], overrides: Partial<SyncState> = 
   cards,
   ...overrides,
 });
+
+const seedSavedDecks = (
+  decks: Array<{
+    id: string;
+    name: string;
+    deckState: DeckState;
+  }>
+) => {
+  const savedDecks: SavedDeckRecordV1[] = decks.map((deck, index) => {
+    const updatedAt = new Date(Date.UTC(2026, 0, 1, 0, 0, decks.length - index)).toISOString();
+
+    return {
+      schemaVersion: 1,
+      id: deck.id,
+      name: deck.name,
+      createdAt: updatedAt,
+      updatedAt,
+      ruleConfig,
+      sections: serializeDeckState(deck.deckState),
+    };
+  });
+
+  window.localStorage.setItem(SAVED_DECKS_KEY, JSON.stringify({
+    schemaVersion: 1,
+    decks: savedDecks,
+  }));
+};
+
+const waitForSavedDeckPickerButton = async () => {
+  const button = await screen.findByRole('button', { name: 'Load from My Decks' });
+  await waitFor(() => {
+    expect(button).toBeEnabled();
+  });
+  return button;
+};
 
 const buildMockGameBoardLogic = (
   overrides: Partial<ReturnType<typeof useGameBoardLogic>> = {}
@@ -295,12 +340,8 @@ describe('GameBoard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     window.localStorage.clear();
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        json: vi.fn().mockResolvedValue(catalogCards),
-      } as unknown as Response)
-    );
+    mockLoadCardCatalog.mockReset();
+    mockLoadCardCatalog.mockReturnValue(new Promise(() => {}) as ReturnType<typeof loadCardCatalog>);
 
     const clipboardWriteText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(window.navigator, 'clipboard', {
@@ -1426,11 +1467,11 @@ describe('GameBoard', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '↺ UNDO LAST END TURN' }));
 
-    expect(await screen.findByRole('dialog', { name: 'Undo Last End Turn' })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Undo Last End Turn' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Yes, Undo' }));
 
+    expect(handleUndoTurn).toHaveBeenCalledTimes(1);
     await waitFor(() => {
-      expect(handleUndoTurn).toHaveBeenCalledTimes(1);
       expect(screen.queryByRole('dialog', { name: 'Undo Last End Turn' })).not.toBeInTheDocument();
     });
   });
@@ -1500,26 +1541,29 @@ describe('GameBoard', () => {
   });
 
   it('opens the saved deck picker, filters saved decks, and imports the selected deck', async () => {
-    saveDeck({
-      name: 'Alpha Deck',
-      ruleConfig,
-      deckState: {
-        mainDeck: [catalogCards[0]],
-        evolveDeck: [],
-        leaderCards: [],
-        tokenDeck: [],
+    mockLoadCardCatalog.mockResolvedValue(catalogCards);
+    seedSavedDecks([
+      {
+        id: 'saved-alpha',
+        name: 'Alpha Deck',
+        deckState: {
+          mainDeck: [catalogCards[0]],
+          evolveDeck: [],
+          leaderCards: [],
+          tokenDeck: [],
+        },
       },
-    });
-    saveDeck({
-      name: 'Beta Deck',
-      ruleConfig,
-      deckState: {
-        mainDeck: [catalogCards[0]],
-        evolveDeck: [],
-        leaderCards: [],
-        tokenDeck: [],
+      {
+        id: 'saved-beta',
+        name: 'Beta Deck',
+        deckState: {
+          mainDeck: [catalogCards[0]],
+          evolveDeck: [],
+          leaderCards: [],
+          tokenDeck: [],
+        },
       },
-    });
+    ]);
 
     const importDeckData = vi.fn();
     mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
@@ -1528,11 +1572,7 @@ describe('GameBoard', () => {
 
     render(<GameBoard />);
 
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Load from My Decks' })).toBeEnabled();
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Load from My Decks' }));
+    fireEvent.click(await waitForSavedDeckPickerButton());
 
     const picker = await screen.findByRole('dialog', { name: 'Load from My Decks' });
     fireEvent.change(within(picker).getByRole('textbox', { name: 'Search saved decks' }), {
@@ -1555,29 +1595,26 @@ describe('GameBoard', () => {
   });
 
   it('closes the saved deck picker when the backdrop is clicked', async () => {
-    saveDeck({
+    mockLoadCardCatalog.mockResolvedValue(catalogCards);
+    seedSavedDecks([{
+      id: 'saved-alpha',
       name: 'Alpha Deck',
-      ruleConfig,
       deckState: {
         mainDeck: [catalogCards[0]],
         evolveDeck: [],
         leaderCards: [],
         tokenDeck: [],
       },
-    });
+    }]);
 
     mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic());
 
     render(<GameBoard />);
 
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Load from My Decks' })).toBeEnabled();
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Load from My Decks' }));
+    fireEvent.click(await waitForSavedDeckPickerButton());
 
     const picker = await screen.findByRole('dialog', { name: 'Load from My Decks' });
-    const backdrop = picker.parentElement;
+    const backdrop = picker.closest('[data-testid="saved-deck-picker-backdrop"]');
     expect(backdrop).not.toBeNull();
 
     fireEvent.click(backdrop!);
@@ -1588,36 +1625,36 @@ describe('GameBoard', () => {
   });
 
   it('resets the saved deck picker search when reopening the dialog', async () => {
-    saveDeck({
-      name: 'Alpha Deck',
-      ruleConfig,
-      deckState: {
-        mainDeck: [catalogCards[0]],
-        evolveDeck: [],
-        leaderCards: [],
-        tokenDeck: [],
+    mockLoadCardCatalog.mockResolvedValue(catalogCards);
+    seedSavedDecks([
+      {
+        id: 'saved-alpha',
+        name: 'Alpha Deck',
+        deckState: {
+          mainDeck: [catalogCards[0]],
+          evolveDeck: [],
+          leaderCards: [],
+          tokenDeck: [],
+        },
       },
-    });
-    saveDeck({
-      name: 'Beta Deck',
-      ruleConfig,
-      deckState: {
-        mainDeck: [catalogCards[0]],
-        evolveDeck: [],
-        leaderCards: [],
-        tokenDeck: [],
+      {
+        id: 'saved-beta',
+        name: 'Beta Deck',
+        deckState: {
+          mainDeck: [catalogCards[0]],
+          evolveDeck: [],
+          leaderCards: [],
+          tokenDeck: [],
+        },
       },
-    });
+    ]);
 
     mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic());
 
     render(<GameBoard />);
 
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Load from My Decks' })).toBeEnabled();
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Load from My Decks' }));
+    const openButton = await waitForSavedDeckPickerButton();
+    fireEvent.click(openButton);
 
     const firstOpenPicker = await screen.findByRole('dialog', { name: 'Load from My Decks' });
     const firstSearchInput = within(firstOpenPicker).getByRole('textbox', { name: 'Search saved decks' });
@@ -1630,7 +1667,7 @@ describe('GameBoard', () => {
       expect(screen.queryByRole('dialog', { name: 'Load from My Decks' })).not.toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Load from My Decks' }));
+    fireEvent.click(openButton);
 
     const secondOpenPicker = await screen.findByRole('dialog', { name: 'Load from My Decks' });
     expect(within(secondOpenPicker).getByRole('textbox', { name: 'Search saved decks' })).toHaveValue('');
@@ -1669,11 +1706,14 @@ describe('GameBoard', () => {
     expect(within(inspector).getByText('Alpha Knight')).toBeInTheDocument();
     expect(within(inspector).getByText('TEST-001')).toBeInTheDocument();
 
-    fireEvent.pointerDown(document.body);
+    const outsideTarget = document.createElement('div');
+    document.body.appendChild(outsideTarget);
+    fireEvent.pointerDown(outsideTarget);
 
     await waitFor(() => {
       expect(screen.queryByTestId('card-inspector')).not.toBeInTheDocument();
     });
+    outsideTarget.remove();
   });
 
   it('closes the card inspector with the Escape key', async () => {

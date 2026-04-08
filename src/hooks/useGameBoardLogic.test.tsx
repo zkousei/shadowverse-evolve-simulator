@@ -5,6 +5,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SyncState } from '../types/game';
 import type { SyncMessage } from '../types/sync';
+import { loadCardCatalog } from '../utils/cardCatalog';
 import { useGameBoardLogic } from './useGameBoardLogic';
 
 vi.mock('react-i18next', () => ({
@@ -91,6 +92,10 @@ vi.mock('react-i18next', () => ({
       return value;
     },
   }),
+}));
+
+vi.mock('../utils/cardCatalog', () => ({
+  loadCardCatalog: vi.fn(),
 }));
 
 const dragEvent = (activeId: string, overId: string): DragEndEvent => (
@@ -199,6 +204,7 @@ const mockPeerJs = (PeerJsModule as unknown as {
     reset: () => void;
   };
 }).__mockPeerJs;
+const mockLoadCardCatalog = vi.mocked(loadCardCatalog);
 
 function HookHarness() {
   const {
@@ -557,12 +563,15 @@ const installMockFileReader = (result: string) => {
 };
 
 const installMockCatalogFetch = (cards: Array<Record<string, unknown>>) => {
-  const fetchMock = vi.fn().mockResolvedValue({
-    json: vi.fn().mockResolvedValue(cards),
-  });
+  mockLoadCardCatalog.mockResolvedValue(cards as Awaited<ReturnType<typeof loadCardCatalog>>);
+  return mockLoadCardCatalog;
+};
 
-  vi.stubGlobal('fetch', fetchMock);
-  return fetchMock;
+const flushCatalogEffects = async () => {
+  await act(async () => {
+    await Promise.resolve();
+    await Promise.resolve();
+  });
 };
 
 const createCatalogCard = (overrides: Record<string, unknown>) => ({
@@ -628,6 +637,11 @@ const connectHostWithGuestAndSpectator = (entry = '/game?host=true&room=ROOM123'
   return { peer, guestConn, spectatorConn };
 };
 
+beforeEach(() => {
+  mockLoadCardCatalog.mockReset();
+  mockLoadCardCatalog.mockReturnValue(new Promise(() => {}) as ReturnType<typeof loadCardCatalog>);
+});
+
 describe('useGameBoardLogic P2P reconnect', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -636,7 +650,9 @@ describe('useGameBoardLogic P2P reconnect', () => {
   });
 
   afterEach(() => {
-    vi.runOnlyPendingTimers();
+    act(() => {
+      vi.runOnlyPendingTimers();
+    });
     vi.useRealTimers();
   });
 
@@ -1749,7 +1765,7 @@ describe('useGameBoardLogic P2P reconnect', () => {
       phase: 'Main',
     });
 
-    await act(async () => {});
+    await flushCatalogEffects();
 
     const peer = mockPeerJs.peers[0];
 
@@ -2318,7 +2334,9 @@ describe('useGameBoardLogic shared UI notifications', () => {
   });
 
   afterEach(() => {
-    vi.runOnlyPendingTimers();
+    act(() => {
+      vi.runOnlyPendingTimers();
+    });
     vi.useRealTimers();
   });
 
@@ -2480,7 +2498,7 @@ describe('useGameBoardLogic shared UI notifications', () => {
       });
     });
 
-    await act(async () => {});
+    await flushCatalogEffects();
 
     expect(screen.getByTestId('revealed-overlay-title')).toHaveTextContent('Opponent revealed from Look Top');
     expect(screen.getByTestId('revealed-overlay-summary')).toHaveTextContent('Revealed to Hand: Aurelia');
@@ -2807,7 +2825,9 @@ describe('useGameBoardLogic action handlers', () => {
   });
 
   afterEach(() => {
-    vi.runOnlyPendingTimers();
+    act(() => {
+      vi.runOnlyPendingTimers();
+    });
     vi.useRealTimers();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
@@ -3386,7 +3406,10 @@ describe('useGameBoardLogic action handlers', () => {
 
     await act(async () => {});
 
-    fireEvent.click(screen.getByRole('button', { name: 'Extract Evolve to Field' }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Extract Evolve to Field' }));
+      await Promise.resolve();
+    });
 
     expect(screen.getByTestId('auto-attach-selection-count')).toHaveTextContent('0');
     expect(screen.getByTestId('host-evolve-count')).toHaveTextContent('0');
@@ -3733,7 +3756,10 @@ describe('useGameBoardLogic action handlers', () => {
 
     await act(async () => {});
 
-    fireEvent.click(screen.getByRole('button', { name: 'Drag Evolve to Field' }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Drag Evolve to Field' }));
+      await Promise.resolve();
+    });
 
     expect(screen.getByTestId('host-evolve-count')).toHaveTextContent('0');
     expect(screen.getByTestId('host-field-count')).toHaveTextContent('2');
@@ -4029,7 +4055,7 @@ describe('useGameBoardLogic action handlers', () => {
   });
 
   it('links token equipment even before the card catalog fetch resolves', () => {
-    vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})));
+    mockLoadCardCatalog.mockReturnValue(new Promise(() => {}) as ReturnType<typeof loadCardCatalog>);
 
     renderResumedHostHarness({
       cards: [
