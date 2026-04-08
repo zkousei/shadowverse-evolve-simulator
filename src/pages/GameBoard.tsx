@@ -10,23 +10,20 @@ import GameBoardCountDialog from '../components/GameBoardCountDialog';
 import GameBoardDialogsHost from '../components/GameBoardDialogsHost';
 import GameBoardEndTurnSection from '../components/GameBoardEndTurnSection';
 import GameBoardGlobalOverlays from '../components/GameBoardGlobalOverlays';
+import GameBoardHeader from '../components/GameBoardHeader';
 import GameBoardLeaderZoneSection from '../components/GameBoardLeaderZoneSection';
 import GameBoardMulliganDialog from '../components/GameBoardMulliganDialog';
 import GameBoardMulliganButton from '../components/GameBoardMulliganButton';
-import GameBoardPreparationControls from '../components/GameBoardPreparationControls';
 import GameBoardPreparationPanel from '../components/GameBoardPreparationPanel';
-import GameBoardPlayingControls from '../components/GameBoardPlayingControls';
 import GameBoardPlayerTrackerSection from '../components/GameBoardPlayerTrackerSection';
 import GameBoardRecentEventsPanel from '../components/GameBoardRecentEventsPanel';
 import GameBoardReadOnlyStatusSection from '../components/GameBoardReadOnlyStatusSection';
 import GameBoardReconnectAlert from '../components/GameBoardReconnectAlert';
 import GameBoardResetDialog from '../components/GameBoardResetDialog';
-import GameBoardRoomStatus from '../components/GameBoardRoomStatus';
 import GameBoardSearchableZoneStack from '../components/GameBoardSearchableZoneStack';
 import GameBoardSavedSessionPrompt from '../components/GameBoardSavedSessionPrompt';
 import GameBoardTopNDialog from '../components/GameBoardTopNDialog';
 import GameBoardTokenSpawnDialog from '../components/GameBoardTokenSpawnDialog';
-import GameBoardTurnPanel from '../components/GameBoardTurnPanel';
 import GameBoardUndoTurnDialog from '../components/GameBoardUndoTurnDialog';
 import GameBoardZoneActionsSection from '../components/GameBoardZoneActionsSection';
 import TopDeckModal from '../components/TopDeckModal';
@@ -530,65 +527,33 @@ const GameBoard: React.FC = () => {
     }}>
       <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', height: '100%', gap: '1rem', overflow: 'hidden' }}>
 
-        {/* Header bar */}
-        {/* Header bar tracking Phase / Turn */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-surface)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)' }}>
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-            <GameBoardRoomStatus
-              room={room}
-              isSoloMode={isSoloMode}
-              isHost={isHost}
-              status={status}
-              connectionState={connectionState}
-              connectionBadgeTone={connectionBadgeTone}
-              isRoomCopied={isRoomCopied}
-              onCopyRoomId={handleCopyRoomId}
-              onReconnect={attemptReconnect}
-            />
-
-            {!isSpectator && gameState.gameStatus === 'preparing' ? (
-              <GameBoardPreparationControls
-                isSoloMode={isSoloMode}
-                isHost={isHost}
-                topRole={topRole}
-                bottomRole={bottomRole}
-                bottomInitialHandDrawn={gameState[bottomRole].initialHandDrawn}
-                bottomReady={gameState[bottomRole].isReady}
-                topInitialHandDrawn={gameState[topRole].initialHandDrawn}
-                topReady={gameState[topRole].isReady}
-                hostInitialHandDrawn={gameState.host.initialHandDrawn}
-                guestInitialHandDrawn={gameState.guest.initialHandDrawn}
-                hostReady={gameState.host.isReady}
-                guestReady={gameState.guest.isReady}
-                onSetInitialTurnOrder={handleSetInitialTurnOrder}
-                onDrawInitialHand={handleDrawInitialHand}
-                onToggleReady={handleToggleReady}
-                onStartGame={handleStartGame}
-              />
-            ) : !isSpectator ? (
-              <GameBoardPlayingControls
-                canShowUndoTurn={canShowUndoTurn}
-                onTossCoin={handlePureCoinFlip}
-                onRollDice={handleRollDice}
-                onOpenUndo={() => setShowUndoConfirm(true)}
-              />
-            ) : null}
-          </div>
-
-          {/* Turn Management */}
-          {gameState.gameStatus === 'playing' && (
-            <GameBoardTurnPanel
-              isSoloMode={isSoloMode || isSpectator}
-              isCurrentPlayerTurn={gameState.turnPlayer === role}
-              currentTurnLabel={currentTurnLabel}
-              turnCount={gameState.turnCount}
-              phase={gameState.phase}
-              isBottomTurnActive={isBottomTurnActive}
-              canChangePhase={!isSpectator && (isSoloMode || gameState.turnPlayer === role)}
-              onPhaseChange={setPhase}
-            />
-          )}
-        </div>
+        <GameBoardHeader
+          room={room}
+          isSoloMode={isSoloMode}
+          isHost={isHost}
+          isSpectator={isSpectator}
+          role={role}
+          status={status}
+          connectionState={connectionState}
+          connectionBadgeTone={connectionBadgeTone}
+          isRoomCopied={isRoomCopied}
+          gameState={gameState}
+          topRole={topRole}
+          bottomRole={bottomRole}
+          currentTurnLabel={currentTurnLabel}
+          isBottomTurnActive={isBottomTurnActive}
+          canShowUndoTurn={canShowUndoTurn}
+          onCopyRoomId={handleCopyRoomId}
+          onReconnect={attemptReconnect}
+          onSetInitialTurnOrder={handleSetInitialTurnOrder}
+          onDrawInitialHand={handleDrawInitialHand}
+          onToggleReady={handleToggleReady}
+          onStartGame={handleStartGame}
+          onTossCoin={handlePureCoinFlip}
+          onRollDice={handleRollDice}
+          onOpenUndo={() => setShowUndoConfirm(true)}
+          onPhaseChange={setPhase}
+        />
 
         {isGuestConnectionBlocked && (
           <GameBoardReconnectAlert />
