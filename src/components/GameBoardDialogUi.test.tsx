@@ -315,6 +315,7 @@ describe('GameBoard extracted UI components - dialogs', () => {
   it('renders token spawn dialog and wires destination, count, cancel, and confirm', () => {
     const onDestinationChange = vi.fn();
     const onCountChange = vi.fn();
+    const onQuickSpawnToken = vi.fn();
     const onCancel = vi.fn();
     const onConfirm = vi.fn();
 
@@ -348,12 +349,14 @@ describe('GameBoard extracted UI components - dialogs', () => {
         }}
         onDestinationChange={onDestinationChange}
         onCountChange={onCountChange}
+        onQuickSpawnToken={onQuickSpawnToken}
         onCancel={onCancel}
         onConfirm={onConfirm}
       />
     );
 
     expect(screen.getByRole('dialog', { name: 'Generate Tokens' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Knight Token' }));
     fireEvent.click(screen.getByRole('button', { name: 'Field' }));
     fireEvent.click(screen.getByRole('button', { name: 'Increase Knight Token count' }));
     fireEvent.click(screen.getByRole('button', { name: 'Decrease Knight Token count' }));
@@ -361,10 +364,41 @@ describe('GameBoard extracted UI components - dialogs', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Generate' }));
 
     expect(onDestinationChange).toHaveBeenCalledWith('field');
+    expect(onQuickSpawnToken).toHaveBeenCalledWith('TOKEN-001');
     expect(onCountChange).toHaveBeenCalledWith('TOKEN-001', 1);
     expect(onCountChange).toHaveBeenCalledWith('TOKEN-001', -1);
     expect(onCancel).toHaveBeenCalledTimes(1);
     expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the token spawn dialog actions reachable when many token options exist', () => {
+    render(
+      <GameBoardTokenSpawnDialog
+        tokenSpawnOptions={Array.from({ length: 12 }, (_, index) => ({
+          cardId: `TOKEN-${index + 1}`,
+          name: `Token ${index + 1}`,
+          image: `/token-${index + 1}.png`,
+          baseCardType: 'follower',
+        }))}
+        tokenSpawnCounts={{}}
+        tokenSpawnDestination="ex"
+        totalTokenSpawnCount={0}
+        cardDetailLookup={{}}
+        onDestinationChange={vi.fn()}
+        onCountChange={vi.fn()}
+        onCancel={vi.fn()}
+        onConfirm={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('token-spawn-dialog')).toHaveStyle({
+      maxHeight: 'min(88vh, 960px)',
+      overflow: 'hidden',
+    });
+    expect(screen.getByTestId('token-spawn-options')).toHaveStyle({
+      overflowY: 'auto',
+    });
+    expect(screen.getByRole('button', { name: 'Generate' })).toBeVisible();
   });
 
   it('renders evolve auto attach dialog and wires cancel, confirm, and backdrop', () => {

@@ -10,23 +10,20 @@ import GameBoardCountDialog from '../components/GameBoardCountDialog';
 import GameBoardDialogsHost from '../components/GameBoardDialogsHost';
 import GameBoardEndTurnSection from '../components/GameBoardEndTurnSection';
 import GameBoardGlobalOverlays from '../components/GameBoardGlobalOverlays';
+import GameBoardHeader from '../components/GameBoardHeader';
 import GameBoardLeaderZoneSection from '../components/GameBoardLeaderZoneSection';
 import GameBoardMulliganDialog from '../components/GameBoardMulliganDialog';
 import GameBoardMulliganButton from '../components/GameBoardMulliganButton';
-import GameBoardPreparationControls from '../components/GameBoardPreparationControls';
+import GameBoardPlayerControlsPanel from '../components/GameBoardPlayerControlsPanel';
 import GameBoardPreparationPanel from '../components/GameBoardPreparationPanel';
-import GameBoardPlayingControls from '../components/GameBoardPlayingControls';
-import GameBoardPlayerTrackerSection from '../components/GameBoardPlayerTrackerSection';
 import GameBoardRecentEventsPanel from '../components/GameBoardRecentEventsPanel';
 import GameBoardReadOnlyStatusSection from '../components/GameBoardReadOnlyStatusSection';
 import GameBoardReconnectAlert from '../components/GameBoardReconnectAlert';
 import GameBoardResetDialog from '../components/GameBoardResetDialog';
-import GameBoardRoomStatus from '../components/GameBoardRoomStatus';
 import GameBoardSearchableZoneStack from '../components/GameBoardSearchableZoneStack';
 import GameBoardSavedSessionPrompt from '../components/GameBoardSavedSessionPrompt';
 import GameBoardTopNDialog from '../components/GameBoardTopNDialog';
 import GameBoardTokenSpawnDialog from '../components/GameBoardTokenSpawnDialog';
-import GameBoardTurnPanel from '../components/GameBoardTurnPanel';
 import GameBoardUndoTurnDialog from '../components/GameBoardUndoTurnDialog';
 import GameBoardZoneActionsSection from '../components/GameBoardZoneActionsSection';
 import TopDeckModal from '../components/TopDeckModal';
@@ -56,6 +53,17 @@ import {
   getTotalTokenSpawnCount,
   updateTokenSpawnCounts,
 } from '../utils/gameBoardTokens';
+import {
+  activeBoardSectionStyle,
+  boardColumns,
+  boardContentWidth,
+  boardShellColumns,
+  centerZoneWidth,
+  sidePanelWidth,
+  sideZoneWidth,
+  soloMulliganButtonStyle,
+  topPanelWidth,
+} from './gameBoardLayout';
 import {
   canInspectCard,
   canStartAttack,
@@ -201,13 +209,6 @@ const GameBoard: React.FC = () => {
     () => getTotalTokenSpawnCount(tokenSpawnOptions, tokenSpawnCounts),
     [tokenSpawnCounts, tokenSpawnOptions]
   );
-  const sidePanelWidth = 220;
-  const topPanelWidth = 188;
-  const sideZoneWidth = 140;
-  const centerZoneWidth = 800;
-  const boardContentWidth = sideZoneWidth * 2 + centerZoneWidth;
-  const boardColumns = `${sideZoneWidth}px ${centerZoneWidth}px ${sideZoneWidth}px`;
-  const boardShellColumns = `${topPanelWidth}px ${boardContentWidth}px ${sidePanelWidth}px`;
   const attackSourceCard = attackSourceCardId
     ? gameState.cards.find(card => card.id === attackSourceCardId) ?? null
     : null;
@@ -275,35 +276,6 @@ const GameBoard: React.FC = () => {
 
     return { sourcePoint, targetPoint };
   }, [attackVisual]);
-  const soloMulliganButtonStyle: React.CSSProperties = {
-    position: 'absolute',
-    top: '-10px',
-    right: '10px',
-    padding: '0.5rem 1rem',
-    background: '#eab308',
-    color: 'black',
-    fontWeight: 'bold',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '0.875rem',
-    zIndex: 10,
-    boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-    border: '2px solid black'
-  };
-  const activeBoardSectionStyle = (isActive: boolean): React.CSSProperties => ({
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.5rem',
-    width: '100%',
-    alignItems: 'center',
-    padding: '0.55rem 0.6rem',
-    borderRadius: '16px',
-    border: isActive ? '1px solid rgba(34, 211, 238, 0.38)' : '1px solid transparent',
-    background: isActive ? 'linear-gradient(180deg, rgba(34, 211, 238, 0.08), rgba(15, 23, 42, 0.02))' : 'transparent',
-    boxShadow: isActive ? '0 0 0 1px rgba(34, 211, 238, 0.12), 0 0 28px rgba(34, 211, 238, 0.14)' : 'none',
-    transition: 'all 0.2s ease'
-  });
-
   React.useEffect(() => {
     loadCardCatalog()
       .then(data => {
@@ -515,6 +487,21 @@ const GameBoard: React.FC = () => {
     setTokenSpawnCounts(current => updateTokenSpawnCounts(current, cardId, delta));
   }, []);
 
+  const handleQuickTokenSpawn = React.useCallback((cardId: string) => {
+    if (!tokenSpawnTargetRole) return;
+
+    const tokenOption = tokenSpawnOptions.find(token => token.cardId === cardId);
+    if (!tokenOption) return;
+
+    spawnTokens(
+      tokenSpawnTargetRole,
+      [{ tokenOption, count: 1 }],
+      tokenSpawnDestination
+    );
+    setTokenSpawnCounts({});
+    setTokenSpawnTargetRole(null);
+  }, [spawnTokens, tokenSpawnDestination, tokenSpawnOptions, tokenSpawnTargetRole]);
+
   const handleStartAttack = React.useCallback((cardId: string) => {
     if (!canInteract) return;
     const card = gameState.cards.find(entry => entry.id === cardId);
@@ -555,65 +542,33 @@ const GameBoard: React.FC = () => {
     }}>
       <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', height: '100%', gap: '1rem', overflow: 'hidden' }}>
 
-        {/* Header bar */}
-        {/* Header bar tracking Phase / Turn */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-surface)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)' }}>
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-            <GameBoardRoomStatus
-              room={room}
-              isSoloMode={isSoloMode}
-              isHost={isHost}
-              status={status}
-              connectionState={connectionState}
-              connectionBadgeTone={connectionBadgeTone}
-              isRoomCopied={isRoomCopied}
-              onCopyRoomId={handleCopyRoomId}
-              onReconnect={attemptReconnect}
-            />
-
-            {!isSpectator && gameState.gameStatus === 'preparing' ? (
-              <GameBoardPreparationControls
-                isSoloMode={isSoloMode}
-                isHost={isHost}
-                topRole={topRole}
-                bottomRole={bottomRole}
-                bottomInitialHandDrawn={gameState[bottomRole].initialHandDrawn}
-                bottomReady={gameState[bottomRole].isReady}
-                topInitialHandDrawn={gameState[topRole].initialHandDrawn}
-                topReady={gameState[topRole].isReady}
-                hostInitialHandDrawn={gameState.host.initialHandDrawn}
-                guestInitialHandDrawn={gameState.guest.initialHandDrawn}
-                hostReady={gameState.host.isReady}
-                guestReady={gameState.guest.isReady}
-                onSetInitialTurnOrder={handleSetInitialTurnOrder}
-                onDrawInitialHand={handleDrawInitialHand}
-                onToggleReady={handleToggleReady}
-                onStartGame={handleStartGame}
-              />
-            ) : !isSpectator ? (
-              <GameBoardPlayingControls
-                canShowUndoTurn={canShowUndoTurn}
-                onTossCoin={handlePureCoinFlip}
-                onRollDice={handleRollDice}
-                onOpenUndo={() => setShowUndoConfirm(true)}
-              />
-            ) : null}
-          </div>
-
-          {/* Turn Management */}
-          {gameState.gameStatus === 'playing' && (
-            <GameBoardTurnPanel
-              isSoloMode={isSoloMode || isSpectator}
-              isCurrentPlayerTurn={gameState.turnPlayer === role}
-              currentTurnLabel={currentTurnLabel}
-              turnCount={gameState.turnCount}
-              phase={gameState.phase}
-              isBottomTurnActive={isBottomTurnActive}
-              canChangePhase={!isSpectator && (isSoloMode || gameState.turnPlayer === role)}
-              onPhaseChange={setPhase}
-            />
-          )}
-        </div>
+        <GameBoardHeader
+          room={room}
+          isSoloMode={isSoloMode}
+          isHost={isHost}
+          isSpectator={isSpectator}
+          role={role}
+          status={status}
+          connectionState={connectionState}
+          connectionBadgeTone={connectionBadgeTone}
+          isRoomCopied={isRoomCopied}
+          gameState={gameState}
+          topRole={topRole}
+          bottomRole={bottomRole}
+          currentTurnLabel={currentTurnLabel}
+          isBottomTurnActive={isBottomTurnActive}
+          canShowUndoTurn={canShowUndoTurn}
+          onCopyRoomId={handleCopyRoomId}
+          onReconnect={attemptReconnect}
+          onSetInitialTurnOrder={handleSetInitialTurnOrder}
+          onDrawInitialHand={handleDrawInitialHand}
+          onToggleReady={handleToggleReady}
+          onStartGame={handleStartGame}
+          onTossCoin={handlePureCoinFlip}
+          onRollDice={handleRollDice}
+          onOpenUndo={() => setShowUndoConfirm(true)}
+          onPhaseChange={setPhase}
+        />
 
         {isGuestConnectionBlocked && (
           <GameBoardReconnectAlert />
@@ -662,86 +617,43 @@ const GameBoard: React.FC = () => {
           >
             {isSoloMode ? (
               <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: '1rem', alignItems: 'flex-start', width: '100%', maxWidth: '1568px', justifyContent: 'center' }}>
-                <div style={{ width: `${topPanelWidth}px`, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(0,0,0,0.8)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
-                  <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'white', marginBottom: '0.25rem' }}>{t('gameBoard.zones.controls', { label: topLabel })}</div>
-                  <label
-                    className="glass-panel"
-                    style={{
-                      padding: '0.5rem',
-                      background: 'var(--bg-surface-elevated)',
-                      textAlign: 'center',
-                      cursor: canImportTopDeck ? 'pointer' : 'not-allowed',
-                      fontSize: '0.875rem',
-                      opacity: canImportTopDeck ? 1 : 0.5
-                    }}
-                  >
-                    {t('gameBoard.zones.importDeck', { label: topLabel })}
-                    <input
-                      type="file"
-                      accept=".json"
-                      style={{ display: 'none' }}
-                      onChange={(event) => handleDeckUpload(event, topRole)}
-                      disabled={!canImportTopDeck}
+                <GameBoardPlayerControlsPanel
+                  label={topLabel}
+                  panelWidth={topPanelWidth}
+                  importDeckLabel={t('gameBoard.zones.importDeck', { label: topLabel })}
+                  loadSavedDeckLabel={t('gameBoard.zones.loadFromMyDecks', { label: topLabel })}
+                  canImportDeck={canImportTopDeck}
+                  canOpenSavedDeckPicker={canOpenSavedDeckPicker}
+                  savedDeckPickerUnavailableTitle={savedDeckPickerUnavailableTitle}
+                  onDeckUpload={(event) => handleDeckUpload(event, topRole)}
+                  onOpenSavedDeckPicker={() => openSavedDeckPicker(topRole)}
+                  canUsePlayingActions={gameState.gameStatus === 'playing' && canInteract}
+                  playingActionsDisabledTitle={interactionBlockedTitle ?? t('gameBoard.board.availableDuringGameOnly')}
+                  onDraw={() => drawCard(topRole)}
+                  onMill={() => millCard(topRole)}
+                  onMoveTopCardToEx={() => moveTopCardToEx(topRole)}
+                  drawButtonBackground="#6366f1"
+                  canOpenTokenSpawn={canInteract}
+                  onOpenTokenSpawn={() => openTokenSpawnModal(topRole)}
+                  spawnButtonBackground="#7c3aed"
+                  middleControls={
+                    <GameBoardEndTurnSection
+                      playerRole={topRole}
+                      label={topLabel}
+                      background="#fbbf24"
+                      turnPlayer={gameState.turnPlayer}
+                      gameStatus={gameState.gameStatus}
+                      canInteract={canInteract}
+                      disabledTitle={interactionBlockedTitle ?? t('gameBoard.board.endTurnDisabled')}
+                      onEndTurn={endTurn}
                     />
-                  </label>
-                  <button
-                    type="button"
-                    className="glass-panel"
-                    onClick={() => openSavedDeckPicker(topRole)}
-                    disabled={!canImportTopDeck || !canOpenSavedDeckPicker}
-                    title={!canImportTopDeck || !canOpenSavedDeckPicker ? savedDeckPickerUnavailableTitle : undefined}
-                    style={{
-                      padding: '0.5rem',
-                      background: canImportTopDeck && canOpenSavedDeckPicker
-                        ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.9), rgba(5, 150, 105, 0.9))'
-                        : 'rgba(34, 197, 94, 0.18)',
-                      border: canImportTopDeck && canOpenSavedDeckPicker
-                        ? '1px solid rgba(110, 231, 183, 0.45)'
-                        : '1px solid var(--border-light)',
-                      color: '#f8fafc',
-                      fontWeight: 700,
-                      textAlign: 'center',
-                      cursor: canImportTopDeck && canOpenSavedDeckPicker ? 'pointer' : 'not-allowed',
-                      fontSize: '0.875rem',
-                      boxShadow: canImportTopDeck && canOpenSavedDeckPicker
-                        ? '0 8px 18px rgba(5, 150, 105, 0.28)'
-                        : 'none',
-                      opacity: canImportTopDeck && canOpenSavedDeckPicker ? 1 : 0.5
-                    }}
-                  >
-                    {t('gameBoard.zones.loadFromMyDecks', { label: topLabel })}
-                  </button>
-                  <button onClick={() => drawCard(topRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing' || !canInteract} title={gameState.gameStatus !== 'playing' || !canInteract ? interactionBlockedTitle ?? t('gameBoard.board.availableDuringGameOnly') : undefined} style={{ padding: '0.5rem', background: '#6366f1', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' && canInteract ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' && canInteract ? 'pointer' : 'not-allowed' }}>
-                    {t('gameBoard.zones.draw', { label: topLabel })}
-                  </button>
-                  <button onClick={() => millCard(topRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing' || !canInteract} title={gameState.gameStatus !== 'playing' || !canInteract ? interactionBlockedTitle ?? t('gameBoard.board.availableDuringGameOnly') : undefined} style={{ padding: '0.5rem', background: '#475569', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' && canInteract ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' && canInteract ? 'pointer' : 'not-allowed' }}>
-                    {t('gameBoard.zones.mill', { label: topLabel })}
-                  </button>
-                  <button onClick={() => moveTopCardToEx(topRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing' || !canInteract} title={gameState.gameStatus !== 'playing' || !canInteract ? interactionBlockedTitle ?? t('gameBoard.board.availableDuringGameOnly') : undefined} style={{ padding: '0.5rem', background: '#334155', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' && canInteract ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' && canInteract ? 'pointer' : 'not-allowed' }}>
-                    {t('gameBoard.zones.topToEx', { label: topLabel })}
-                  </button>
-                  <GameBoardEndTurnSection
-                    playerRole={topRole}
-                    label={topLabel}
-                    background="#fbbf24"
-                    turnPlayer={gameState.turnPlayer}
-                    gameStatus={gameState.gameStatus}
-                    canInteract={canInteract}
-                    disabledTitle={interactionBlockedTitle ?? t('gameBoard.board.endTurnDisabled')}
-                    onEndTurn={endTurn}
-                  />
-                  <button onClick={() => openTokenSpawnModal(topRole)} className="glass-panel" disabled={!canInteract} style={{ padding: '0.5rem', background: '#7c3aed', opacity: canInteract ? 1 : 0.5, cursor: canInteract ? 'pointer' : 'not-allowed' }}>
-                    {t('gameBoard.zones.spawnToken', { label: topLabel })}
-                  </button>
-                  {renderUndoMoveButton(topRole)}
-                  <GameBoardPlayerTrackerSection
-                    testId={`player-tracker-${topRole}`}
-                    label={topLabel}
-                    playerState={gameState[topRole]}
-                    onAdjustStat={(stat, delta) => handleStatChange(topRole, stat, delta)}
-                    readOnly={isSpectator}
-                  />
-                </div>
+                  }
+                  undoMoveButton={renderUndoMoveButton(topRole)}
+                  trackerTestId={`player-tracker-${topRole}`}
+                  playerState={gameState[topRole]}
+                  onAdjustStat={(stat, delta) => handleStatChange(topRole, stat, delta)}
+                  readOnlyTracker={isSpectator}
+                />
 
                 <div style={{ width: `${boardContentWidth}px`, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.65rem', alignItems: 'flex-start' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: boardColumns, gap: '0.75rem', width: `${boardContentWidth}px`, alignItems: 'start' }}>
@@ -1168,197 +1080,107 @@ const GameBoard: React.FC = () => {
                   />
                 </div>
               ) : (
-                <div style={{ width: `${sidePanelWidth}px`, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(0,0,0,0.8)', padding: '1rem', borderRadius: 'var(--radius-md)', marginLeft: '1.25rem' }}>
-                  <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'white', marginBottom: '0.25rem' }}>{t('gameBoard.zones.controls', { label: bottomLabel })}</div>
-                  {isSoloMode ? (
+                <GameBoardPlayerControlsPanel
+                  label={bottomLabel}
+                  panelWidth={sidePanelWidth}
+                  importDeckLabel={isSoloMode
+                    ? t('gameBoard.zones.importDeck', { label: bottomLabel })
+                    : t('gameBoard.zones.importDeckJson')}
+                  loadSavedDeckLabel={isSoloMode
+                    ? t('gameBoard.zones.loadFromMyDecks', { label: bottomLabel })
+                    : t('gameBoard.zones.loadFromMyDecksGeneric')}
+                  canImportDeck={canImportBottomDeck}
+                  canOpenSavedDeckPicker={canOpenSavedDeckPicker}
+                  savedDeckPickerUnavailableTitle={savedDeckPickerUnavailableTitle}
+                  onDeckUpload={(event) => handleDeckUpload(event, bottomRole)}
+                  onOpenSavedDeckPicker={() => openSavedDeckPicker(bottomRole)}
+                  canUsePlayingActions={gameState.gameStatus === 'playing' && canInteract}
+                  playingActionsDisabledTitle={interactionBlockedTitle ?? t('gameBoard.board.availableDuringGameOnly')}
+                  onDraw={() => drawCard(bottomRole)}
+                  onMill={() => millCard(bottomRole)}
+                  onMoveTopCardToEx={() => moveTopCardToEx(bottomRole)}
+                  drawButtonBackground="var(--accent-primary)"
+                  canOpenTokenSpawn={canInteract}
+                  onOpenTokenSpawn={() => openTokenSpawnModal(bottomRole)}
+                  spawnButtonBackground="var(--accent-secondary)"
+                  middleControls={
                     <>
-                      <label
-                        className="glass-panel"
-                        style={{
-                          padding: '0.5rem',
-                          background: 'var(--bg-surface-elevated)',
-                          textAlign: 'center',
-                          cursor: canImportBottomDeck ? 'pointer' : 'not-allowed',
-                          fontSize: '0.875rem',
-                          opacity: canImportBottomDeck ? 1 : 0.5
-                        }}
-                      >
-                        {t('gameBoard.zones.importDeck', { label: bottomLabel })}
-                        <input
-                          type="file"
-                          accept=".json"
-                          style={{ display: 'none' }}
-                          onChange={(event) => handleDeckUpload(event, bottomRole)}
-                          disabled={!canImportBottomDeck}
+                      {canShowEndStopToggle && (
+                        <button
+                          onClick={() => handleSetEndStop(!isOwnEndStopActive)}
+                          className="glass-panel"
+                          disabled={!canInteract}
+                          title={!canInteract ? interactionBlockedTitle ?? t('gameBoard.board.availableDuringGameOnly') : undefined}
+                          aria-pressed={isOwnEndStopActive}
+                          style={{
+                            padding: '0.5rem',
+                            background: isOwnEndStopActive ? '#ef4444' : '#1d4ed8',
+                            fontWeight: 'bold',
+                            opacity: canInteract ? 1 : 0.5,
+                            cursor: canInteract ? 'pointer' : 'not-allowed',
+                          }}
+                        >
+                          {isOwnEndStopActive
+                            ? t('gameBoard.board.endStopOn')
+                            : t('gameBoard.board.endStopOff')}
+                        </button>
+                      )}
+                      {isSoloMode ? (
+                        <GameBoardEndTurnSection
+                          playerRole={bottomRole}
+                          label={bottomLabel}
+                          background="#f59e0b"
+                          turnPlayer={gameState.turnPlayer}
+                          gameStatus={gameState.gameStatus}
+                          canInteract={canInteract}
+                          disabledTitle={interactionBlockedTitle ?? t('gameBoard.board.endTurnDisabled')}
+                          onEndTurn={endTurn}
                         />
-                      </label>
-                      <button
-                        type="button"
-                        className="glass-panel"
-                        onClick={() => openSavedDeckPicker(bottomRole)}
-                        disabled={!canImportBottomDeck || !canOpenSavedDeckPicker}
-                        title={!canImportBottomDeck || !canOpenSavedDeckPicker ? savedDeckPickerUnavailableTitle : undefined}
-                        style={{
-                          padding: '0.5rem',
-                          background: canImportBottomDeck && canOpenSavedDeckPicker
-                            ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.9), rgba(5, 150, 105, 0.9))'
-                            : 'rgba(34, 197, 94, 0.18)',
-                          border: canImportBottomDeck && canOpenSavedDeckPicker
-                            ? '1px solid rgba(110, 231, 183, 0.45)'
-                            : '1px solid var(--border-light)',
-                          color: '#f8fafc',
-                          fontWeight: 700,
-                          textAlign: 'center',
-                          cursor: canImportBottomDeck && canOpenSavedDeckPicker ? 'pointer' : 'not-allowed',
-                          fontSize: '0.875rem',
-                          boxShadow: canImportBottomDeck && canOpenSavedDeckPicker
-                            ? '0 8px 18px rgba(5, 150, 105, 0.28)'
-                            : 'none',
-                          opacity: canImportBottomDeck && canOpenSavedDeckPicker ? 1 : 0.5
-                        }}
-                      >
-                        {t('gameBoard.zones.loadFromMyDecks', { label: bottomLabel })}
-                      </button>
+                      ) : (gameState.turnPlayer === role && gameState.gameStatus === 'playing') && (
+                        <button
+                          onClick={() => endTurn()}
+                          className="glass-panel"
+                          disabled={!canInteract || endTurnBlockedByEndStop}
+                          title={!canInteract || endTurnBlockedByEndStop ? endTurnDisabledTitle : undefined}
+                          style={{
+                            padding: '0.5rem',
+                            background: '#f59e0b',
+                            color: 'black',
+                            fontWeight: 'bold',
+                            opacity: !canInteract || endTurnBlockedByEndStop ? 0.5 : 1,
+                            cursor: !canInteract || endTurnBlockedByEndStop ? 'not-allowed' : 'pointer',
+                          }}
+                        >
+                          {t('gameBoard.board.endTurnSelf')}
+                        </button>
+                      )}
+                      {endTurnBlockedByEndStop && (
+                        <div
+                          className="glass-panel"
+                          style={{
+                            padding: '0.5rem 0.75rem',
+                            background: 'rgba(239, 68, 68, 0.16)',
+                            border: '1px solid rgba(248, 113, 113, 0.45)',
+                            color: '#fecaca',
+                            fontWeight: 600,
+                          }}
+                        >
+                          {t('gameBoard.board.endStopBlocked', { label: topLabel })}
+                        </div>
+                      )}
                     </>
-                  ) : (
-                    <>
-                      <label
-                        className="glass-panel"
-                        style={{
-                          padding: '0.5rem',
-                          background: 'var(--bg-surface-elevated)',
-                          textAlign: 'center',
-                          cursor: canImportBottomDeck ? 'pointer' : 'not-allowed',
-                          fontSize: '0.875rem',
-                          opacity: canImportBottomDeck ? 1 : 0.5
-                        }}
-                      >
-                        {t('gameBoard.zones.importDeckJson')}
-                        <input
-                          type="file"
-                          accept=".json"
-                          style={{ display: 'none' }}
-                          onChange={(event) => handleDeckUpload(event, bottomRole)}
-                          disabled={!canImportBottomDeck}
-                        />
-                      </label>
-                      <button
-                        type="button"
-                        className="glass-panel"
-                        onClick={() => openSavedDeckPicker(bottomRole)}
-                        disabled={!canImportBottomDeck || !canOpenSavedDeckPicker}
-                        title={!canImportBottomDeck || !canOpenSavedDeckPicker ? savedDeckPickerUnavailableTitle : undefined}
-                        style={{
-                          padding: '0.5rem',
-                          background: canImportBottomDeck && canOpenSavedDeckPicker
-                            ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.9), rgba(5, 150, 105, 0.9))'
-                            : 'rgba(34, 197, 94, 0.18)',
-                          border: canImportBottomDeck && canOpenSavedDeckPicker
-                            ? '1px solid rgba(110, 231, 183, 0.45)'
-                            : '1px solid var(--border-light)',
-                          color: '#f8fafc',
-                          fontWeight: 700,
-                          textAlign: 'center',
-                          cursor: canImportBottomDeck && canOpenSavedDeckPicker ? 'pointer' : 'not-allowed',
-                          fontSize: '0.875rem',
-                          boxShadow: canImportBottomDeck && canOpenSavedDeckPicker
-                            ? '0 8px 18px rgba(5, 150, 105, 0.28)'
-                            : 'none',
-                          opacity: canImportBottomDeck && canOpenSavedDeckPicker ? 1 : 0.5
-                        }}
-                      >
-                        {t('gameBoard.zones.loadFromMyDecksGeneric')}
-                      </button>
-                    </>
-                  )}
-                  <button onClick={() => drawCard(bottomRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing' || !canInteract} title={gameState.gameStatus !== 'playing' || !canInteract ? interactionBlockedTitle ?? t('gameBoard.board.availableDuringGameOnly') : undefined} style={{ padding: '0.5rem', background: 'var(--accent-primary)', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' && canInteract ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' && canInteract ? 'pointer' : 'not-allowed' }}>
-                    {t('gameBoard.zones.draw', { label: bottomLabel })}
-                  </button>
-                  <button onClick={() => millCard(bottomRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing' || !canInteract} title={gameState.gameStatus !== 'playing' || !canInteract ? interactionBlockedTitle ?? t('gameBoard.board.availableDuringGameOnly') : undefined} style={{ padding: '0.5rem', background: '#475569', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' && canInteract ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' && canInteract ? 'pointer' : 'not-allowed' }}>
-                    {t('gameBoard.zones.mill', { label: bottomLabel })}
-                  </button>
-                  <button onClick={() => moveTopCardToEx(bottomRole)} className="glass-panel" disabled={gameState.gameStatus !== 'playing' || !canInteract} title={gameState.gameStatus !== 'playing' || !canInteract ? interactionBlockedTitle ?? t('gameBoard.board.availableDuringGameOnly') : undefined} style={{ padding: '0.5rem', background: '#334155', fontWeight: 'bold', opacity: gameState.gameStatus === 'playing' && canInteract ? 1 : 0.5, cursor: gameState.gameStatus === 'playing' && canInteract ? 'pointer' : 'not-allowed' }}>
-                    {t('gameBoard.zones.topToEx', { label: bottomLabel })}
-                  </button>
-                  {canShowEndStopToggle && (
-                    <button
-                      onClick={() => handleSetEndStop(!isOwnEndStopActive)}
-                      className="glass-panel"
-                      disabled={!canInteract}
-                      title={!canInteract ? interactionBlockedTitle ?? t('gameBoard.board.availableDuringGameOnly') : undefined}
-                      aria-pressed={isOwnEndStopActive}
-                      style={{
-                        padding: '0.5rem',
-                        background: isOwnEndStopActive ? '#ef4444' : '#1d4ed8',
-                        fontWeight: 'bold',
-                        opacity: canInteract ? 1 : 0.5,
-                        cursor: canInteract ? 'pointer' : 'not-allowed',
-                      }}
-                    >
-                      {isOwnEndStopActive
-                        ? t('gameBoard.board.endStopOn')
-                        : t('gameBoard.board.endStopOff')}
-                    </button>
-                  )}
-                  {isSoloMode ? (
-                    <GameBoardEndTurnSection
-                      playerRole={bottomRole}
-                      label={bottomLabel}
-                      background="#f59e0b"
-                      turnPlayer={gameState.turnPlayer}
-                      gameStatus={gameState.gameStatus}
-                      canInteract={canInteract}
-                      disabledTitle={interactionBlockedTitle ?? t('gameBoard.board.endTurnDisabled')}
-                      onEndTurn={endTurn}
-                    />
-                  ) : (gameState.turnPlayer === role && gameState.gameStatus === 'playing') && (
-                    <button
-                      onClick={() => endTurn()}
-                      className="glass-panel"
-                      disabled={!canInteract || endTurnBlockedByEndStop}
-                      title={!canInteract || endTurnBlockedByEndStop ? endTurnDisabledTitle : undefined}
-                      style={{
-                        padding: '0.5rem',
-                        background: '#f59e0b',
-                        color: 'black',
-                        fontWeight: 'bold',
-                        opacity: !canInteract || endTurnBlockedByEndStop ? 0.5 : 1,
-                        cursor: !canInteract || endTurnBlockedByEndStop ? 'not-allowed' : 'pointer',
-                      }}
-                    >
-                      {t('gameBoard.board.endTurnSelf')}
-                    </button>
-                  )}
-                  {endTurnBlockedByEndStop && (
-                    <div
-                      className="glass-panel"
-                      style={{
-                        padding: '0.5rem 0.75rem',
-                        background: 'rgba(239, 68, 68, 0.16)',
-                        border: '1px solid rgba(248, 113, 113, 0.45)',
-                        color: '#fecaca',
-                        fontWeight: 600,
-                      }}
-                    >
-                      {t('gameBoard.board.endStopBlocked', { label: topLabel })}
-                    </div>
-                  )}
-                  <button onClick={() => openTokenSpawnModal(bottomRole)} className="glass-panel" disabled={!canInteract} style={{ padding: '0.5rem', background: 'var(--accent-secondary)', opacity: canInteract ? 1 : 0.5, cursor: canInteract ? 'pointer' : 'not-allowed' }}>
-                    {t('gameBoard.zones.spawnToken', { label: bottomLabel })}
-                  </button>
-                  {canResetGame && (
+                  }
+                  afterSpawnControls={canResetGame ? (
                     <button onClick={() => setShowResetConfirm(true)} className="glass-panel" style={{ padding: '0.5rem', background: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', fontWeight: 'bold' }}>
                       {t('gameBoard.controls.resetGame')}
                     </button>
-                  )}
-                  {renderUndoMoveButton(bottomRole)}
-                  <GameBoardPlayerTrackerSection
-                    testId={`player-tracker-${bottomRole}`}
-                    label={bottomLabel}
-                    playerState={gameState[bottomRole]}
-                    onAdjustStat={(stat, delta) => handleStatChange(bottomRole, stat, delta)}
-                  />
-                </div>
+                  ) : null}
+                  undoMoveButton={renderUndoMoveButton(bottomRole)}
+                  trackerTestId={`player-tracker-${bottomRole}`}
+                  playerState={gameState[bottomRole]}
+                  onAdjustStat={(stat, delta) => handleStatChange(bottomRole, stat, delta)}
+                  containerStyle={{ marginLeft: '1.25rem' }}
+                />
               )}
             </div>
           </div>
@@ -1442,6 +1264,7 @@ const GameBoard: React.FC = () => {
           cardDetailLookup={cardDetailLookup}
           onDestinationChange={setTokenSpawnDestination}
           onCountChange={handleTokenSpawnCountChange}
+          onQuickSpawnToken={handleQuickTokenSpawn}
           onCancel={() => setTokenSpawnTargetRole(null)}
           onConfirm={handleTokenSpawn}
         />

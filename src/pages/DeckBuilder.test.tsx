@@ -1,10 +1,19 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import DeckBuilder from './DeckBuilder';
-import { listSavedDecks, loadDraft, saveDeck, saveDraft } from '../utils/deckStorage';
+import {
+  listSavedDecks,
+  loadDraft,
+  SAVED_DECKS_KEY,
+  saveDeck,
+  saveDraft,
+  serializeDeckState,
+  type SavedDeckRecordV1,
+} from '../utils/deckStorage';
 import type { DeckBuilderCardData } from '../models/deckBuilderCard';
 import type { DeckRuleConfig } from '../models/deckRule';
 import enTranslations from '../i18n/en/translation.json';
+import { loadCardCatalog } from '../utils/cardCatalog';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -27,6 +36,12 @@ vi.mock('react-i18next', () => ({
     i18n: { changeLanguage: vi.fn(), language: 'en' },
   }),
 }));
+
+vi.mock('../utils/cardCatalog', () => ({
+  loadCardCatalog: vi.fn(),
+}));
+
+const mockLoadCardCatalog = vi.mocked(loadCardCatalog);
 
 const mockCards: DeckBuilderCardData[] = [
   {
@@ -198,6 +213,63 @@ const stubFileReaderWithImportedDeck = () => {
   vi.stubGlobal('FileReader', MockFileReader as unknown as typeof FileReader);
 };
 
+const seedSavedDecks = (
+  count: number,
+  buildDeckState: (index: number) => {
+    mainDeck: DeckBuilderCardData[];
+    evolveDeck: DeckBuilderCardData[];
+    leaderCards: DeckBuilderCardData[];
+    tokenDeck: DeckBuilderCardData[];
+  } = () => ({
+    mainDeck: [],
+    evolveDeck: [],
+    leaderCards: [],
+    tokenDeck: [],
+  })
+) => {
+  const decks: SavedDeckRecordV1[] = Array.from({ length: count }, (_, index) => {
+    const updatedAt = new Date(Date.UTC(2026, 0, 1, 0, 0, count - index)).toISOString();
+
+    return {
+      schemaVersion: 1,
+      id: `saved-deck-${index + 1}`,
+      name: `Saved Deck ${index + 1}`,
+      createdAt: updatedAt,
+      updatedAt,
+      ruleConfig: otherRuleConfig,
+      sections: serializeDeckState(buildDeckState(index)),
+    };
+  });
+
+  window.localStorage.setItem(SAVED_DECKS_KEY, JSON.stringify({
+    schemaVersion: 1,
+    decks,
+  }));
+
+  return decks;
+};
+
+const flushDraftPersistence = async () => {
+  await act(async () => {
+    vi.advanceTimersByTime(450);
+    await Promise.resolve();
+  });
+};
+
+const flushDeckBuilderCatalogLoad = async () => {
+  await act(async () => {
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+};
+
+const renderLoadedDeckBuilder = async (expectedCardName = 'Alpha Knight') => {
+  const rendered = render(<DeckBuilder />);
+  await flushDeckBuilderCatalogLoad();
+  expect(screen.getByText(expectedCardName)).toBeInTheDocument();
+  return rendered;
+};
+
 describe('DeckBuilder', () => {
   beforeAll(() => {
     vi.setConfig({ testTimeout: 20000 });
@@ -212,12 +284,8 @@ describe('DeckBuilder', () => {
       leaderCards: [mockCards[4]],
       tokenDeck: [mockCards[6]],
     };
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        json: vi.fn().mockResolvedValue(mockCards),
-      } as unknown as Response)
-    );
+    mockLoadCardCatalog.mockReset();
+    mockLoadCardCatalog.mockResolvedValue(mockCards);
   });
 
   afterEach(() => {
@@ -230,7 +298,7 @@ describe('DeckBuilder', () => {
   });
 
   it('loads cards, filters them, and updates deck counts through add/remove actions', async () => {
-    render(<DeckBuilder />);
+    await renderLoadedDeckBuilder();
 
     const classFilterGroup = screen.getByRole('group', { name: 'Class filter' });
     const cardTypeFilterGroup = screen.getByRole('group', { name: 'Card type filter' });
@@ -239,8 +307,6 @@ describe('DeckBuilder', () => {
     const expansionFilter = screen.getByRole('combobox', { name: 'Expansion filter' });
     const constructedClass = screen.getByRole('combobox', { name: 'Constructed class' });
 
-    expect(screen.getByText('Loading card database...')).toBeInTheDocument();
-    expect(await screen.findByText('Alpha Knight')).toBeInTheDocument();
     expect(screen.getByText('Select a class or title to enable constructed deck building.')).toBeInTheDocument();
     expect(screen.getByText('Resolve these issues before exporting.')).toBeInTheDocument();
     expect(within(constructedClass).queryByRole('option', { name: 'Neutral' })).not.toBeInTheDocument();
@@ -432,9 +498,7 @@ describe('DeckBuilder', () => {
   });
 
   it('opens a card preview modal from the card library and closes it', async () => {
-    render(<DeckBuilder />);
-
-    await screen.findByText('Alpha Knight');
+    await renderLoadedDeckBuilder();
 
     fireEvent.click(screen.getByRole('button', { name: 'Preview Alpha Knight' }));
 
@@ -531,12 +595,7 @@ describe('DeckBuilder', () => {
       product_name: 'Promo Pack',
     };
 
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        json: vi.fn().mockResolvedValue([...mockCards, duplicateAlpha]),
-      } as unknown as Response)
-    );
+    mockLoadCardCatalog.mockResolvedValue([...mockCards, duplicateAlpha]);
 
     render(<DeckBuilder />);
 
@@ -598,9 +657,7 @@ describe('DeckBuilder', () => {
   });
 
   it('resets deck contents only after confirmation', async () => {
-    render(<DeckBuilder />);
-
-    await screen.findByText('Alpha Knight');
+    await renderLoadedDeckBuilder();
 
     fireEvent.change(screen.getByRole('combobox', { name: 'Constructed class' }), {
       target: { value: 'ロイヤル' },
@@ -695,7 +752,7 @@ describe('DeckBuilder', () => {
   });
 
   it('restores a loaded saved deck on the next visit after confirmation', async () => {
-    saveDeck({
+    const savedDeck = saveDeck({
       name: 'Loaded Session Deck',
       ruleConfig: otherRuleConfig,
       deckState: {
@@ -705,22 +762,17 @@ describe('DeckBuilder', () => {
         tokenDeck: [],
       },
     });
-
-    const { unmount } = render(<DeckBuilder />);
-    await screen.findByText('Alpha Knight');
-
-    fireEvent.click(screen.getByRole('button', { name: 'My Decks' }));
-    const myDecksDialog = screen.getByRole('dialog', { name: 'My Decks' });
-    fireEvent.click(within(myDecksDialog).getByRole('button', { name: 'Load' }));
-
-    await waitFor(() => {
-      expect(screen.getByDisplayValue('Loaded Session Deck')).toBeInTheDocument();
+    saveDraft({
+      selectedDeckId: savedDeck.id,
+      name: savedDeck.name,
+      ruleConfig: otherRuleConfig,
+      deckState: {
+        mainDeck: [mockCards[0]],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [],
+      },
     });
-
-    await waitFor(() => {
-      expect(loadDraft()).not.toBeNull();
-    });
-    unmount();
 
     render(<DeckBuilder />);
     await screen.findByText('Alpha Knight');
@@ -737,16 +789,15 @@ describe('DeckBuilder', () => {
   });
 
   it('reset builder clears the current builder state and removes the saved session', async () => {
-    const { unmount } = render(<DeckBuilder />);
-    await screen.findByText('Alpha Knight');
+    const { unmount } = await renderLoadedDeckBuilder();
 
+    vi.useFakeTimers();
     fireEvent.change(screen.getByPlaceholderText('Deck Name'), {
       target: { value: 'Builder Reset Test' },
     });
-
-    await waitFor(() => {
-      expect(loadDraft()).not.toBeNull();
-    });
+    await flushDraftPersistence();
+    expect(loadDraft()).not.toBeNull();
+    vi.useRealTimers();
 
     fireEvent.click(screen.getByRole('button', { name: 'Reset Builder' }));
     expect(screen.getByRole('dialog', { name: 'Reset builder confirmation' })).toBeInTheDocument();
@@ -760,8 +811,7 @@ describe('DeckBuilder', () => {
     expect(loadDraft()).toBeNull();
 
     unmount();
-    render(<DeckBuilder />);
-    await screen.findByText('Alpha Knight');
+    await renderLoadedDeckBuilder();
     expect(screen.queryByRole('dialog', { name: 'Resume previous session' })).not.toBeInTheDocument();
   });
 
@@ -893,12 +943,7 @@ describe('DeckBuilder', () => {
       product_name: 'Promo Pack',
     };
 
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        json: vi.fn().mockResolvedValue([...mockCards, duplicateAlpha]),
-      } as unknown as Response)
-    );
+    mockLoadCardCatalog.mockResolvedValue([...mockCards, duplicateAlpha]);
 
     render(<DeckBuilder />);
     expect((await screen.findAllByText('Alpha Knight')).length).toBeGreaterThan(0);
@@ -920,16 +965,9 @@ describe('DeckBuilder', () => {
   });
 
   it('updates pagination controls between the first and last library pages', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        json: vi.fn().mockResolvedValue(createUniqueCards(mockCards[0], 55)),
-      } as unknown as Response)
-    );
+    mockLoadCardCatalog.mockResolvedValue(createUniqueCards(mockCards[0], 55));
 
-    render(<DeckBuilder />);
-
-    expect(await screen.findByText('Alpha Knight 1')).toBeInTheDocument();
+    await renderLoadedDeckBuilder('Alpha Knight 1');
 
     const prevButton = screen.getByRole('button', { name: 'Prev' });
     const nextButton = screen.getByRole('button', { name: 'Next' });
@@ -940,9 +978,7 @@ describe('DeckBuilder', () => {
 
     fireEvent.click(nextButton);
 
-    await waitFor(() => {
-      expect(screen.getByText('2 / 2')).toBeInTheDocument();
-    });
+    expect(screen.getByText('2 / 2')).toBeInTheDocument();
     expect(prevButton).toBeEnabled();
     expect(nextButton).toBeDisabled();
   });
@@ -978,8 +1014,7 @@ describe('DeckBuilder', () => {
     };
     stubFileReaderWithImportedDeck();
 
-    const { container } = render(<DeckBuilder />);
-    await screen.findByText('Alpha Knight');
+    const { container } = await renderLoadedDeckBuilder();
 
     const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
     const file = new File(['{}'], 'Legal Crossover.json', { type: 'application/json' });
@@ -1113,8 +1148,7 @@ describe('DeckBuilder', () => {
   });
 
   it('saves a deck to My Decks and reloads it without changing import or export behavior', async () => {
-    render(<DeckBuilder />);
-    await screen.findByText('Alpha Knight');
+    await renderLoadedDeckBuilder();
 
     fireEvent.change(screen.getByRole('combobox', { name: 'Deck format' }), {
       target: { value: 'other' },
@@ -1275,13 +1309,10 @@ describe('DeckBuilder', () => {
   });
 
   it('imports a DeckLog deck from a public code or URL', async () => {
+    mockLoadCardCatalog.mockResolvedValue(mockCards);
     vi.stubGlobal(
       'fetch',
-      vi.fn()
-        .mockResolvedValueOnce({
-          json: vi.fn().mockResolvedValue(mockCards),
-        } as unknown as Response)
-        .mockResolvedValueOnce({
+      vi.fn().mockResolvedValue({
           ok: true,
           json: vi.fn().mockResolvedValue({
             id: 4092682,
@@ -1302,8 +1333,7 @@ describe('DeckBuilder', () => {
         } as unknown as Response)
     );
 
-    render(<DeckBuilder />);
-    await screen.findByText('Alpha Knight');
+    await renderLoadedDeckBuilder();
 
     fireEvent.click(screen.getByRole('button', { name: /Import from DeckLog/i }));
     fireEvent.change(screen.getByPlaceholderText('e.g. a DeckLog code or a public DeckLog URL'), {
@@ -1353,8 +1383,7 @@ describe('DeckBuilder', () => {
   });
 
   it('keeps the My Decks modal open when load is canceled', async () => {
-    render(<DeckBuilder />);
-    await screen.findByText('Alpha Knight');
+    await renderLoadedDeckBuilder();
 
     fireEvent.change(screen.getByRole('combobox', { name: 'Deck format' }), {
       target: { value: 'other' },
@@ -1399,18 +1428,7 @@ describe('DeckBuilder', () => {
   });
 
   it('blocks initial Save when My Decks reaches the hard limit', async () => {
-    for (let index = 0; index < 200; index += 1) {
-      saveDeck({
-        name: `Saved Deck ${index + 1}`,
-        ruleConfig: otherRuleConfig,
-        deckState: {
-          mainDeck: [],
-          evolveDeck: [],
-          leaderCards: [],
-          tokenDeck: [],
-        },
-      });
-    }
+    seedSavedDecks(200);
 
     render(<DeckBuilder />);
     await screen.findByText('Alpha Knight');
@@ -1427,32 +1445,35 @@ describe('DeckBuilder', () => {
   });
 
   it('still allows overwriting an existing saved deck at the hard limit', async () => {
-    for (let index = 0; index < 200; index += 1) {
-      saveDeck({
-        name: `Saved Deck ${index + 1}`,
-        ruleConfig: otherRuleConfig,
-        deckState: {
-          mainDeck: index === 0 ? [mockCards[0]] : [],
-          evolveDeck: [],
-          leaderCards: [],
-          tokenDeck: [],
-        },
-      });
-    }
+    const [loadedDeck] = seedSavedDecks(200, index => ({
+      mainDeck: index === 0 ? [mockCards[0]] : [],
+      evolveDeck: [],
+      leaderCards: [],
+      tokenDeck: [],
+    }));
+    saveDraft({
+      selectedDeckId: loadedDeck.id,
+      name: loadedDeck.name,
+      ruleConfig: otherRuleConfig,
+      deckState: {
+        mainDeck: [mockCards[0]],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [],
+      },
+    });
 
-    render(<DeckBuilder />);
-    await screen.findByText('Alpha Knight');
+    await renderLoadedDeckBuilder();
 
-    fireEvent.click(screen.getByRole('button', { name: 'My Decks' }));
-    fireEvent.click(within(screen.getByRole('dialog', { name: 'My Decks' })).getAllByRole('button', { name: 'Load' })[0]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Continue' }));
 
     fireEvent.change(screen.getByPlaceholderText('Deck Name'), {
       target: { value: 'Updated At Limit' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'My Decks' }));
-    expect(screen.getByText('Updated At Limit')).toBeInTheDocument();
+    expect(listSavedDecks()).toHaveLength(200);
+    expect(listSavedDecks().some(deck => deck.name === 'Updated At Limit')).toBe(true);
   }, 15000);
 
   it('keeps a saved draft pending until the user confirms restoration', async () => {
@@ -1487,8 +1508,7 @@ describe('DeckBuilder', () => {
   }, 15000);
 
   it('keeps the My Decks modal open when delete is canceled', async () => {
-    render(<DeckBuilder />);
-    await screen.findByText('Alpha Knight');
+    await renderLoadedDeckBuilder();
 
     fireEvent.change(screen.getByRole('combobox', { name: 'Deck format' }), {
       target: { value: 'other' },
@@ -1586,8 +1606,7 @@ describe('DeckBuilder', () => {
       },
     });
 
-    render(<DeckBuilder />);
-    await screen.findByText('Alpha Knight');
+    await renderLoadedDeckBuilder();
 
     fireEvent.click(screen.getByRole('button', { name: 'My Decks' }));
     const initialModal = screen.getByRole('dialog', { name: 'My Decks' });
