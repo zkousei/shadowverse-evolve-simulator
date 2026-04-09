@@ -5,6 +5,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SyncState } from '../types/game';
 import type { SyncMessage } from '../types/sync';
+import type { DeckBuilderCardData } from '../models/deckBuilderCard';
 import { loadCardCatalog } from '../utils/cardCatalog';
 import { useGameBoardLogic } from './useGameBoardLogic';
 
@@ -562,7 +563,7 @@ const installMockFileReader = (result: string) => {
   return readAsText;
 };
 
-const installMockCatalogFetch = (cards: Array<Record<string, unknown>>) => {
+const installMockCatalogFetch = (cards: DeckBuilderCardData[]) => {
   mockLoadCardCatalog.mockResolvedValue(cards as Awaited<ReturnType<typeof loadCardCatalog>>);
   return mockLoadCardCatalog;
 };
@@ -574,7 +575,7 @@ const flushCatalogEffects = async () => {
   });
 };
 
-const createCatalogCard = (overrides: Record<string, unknown>) => ({
+const createCatalogCard = (overrides: Partial<DeckBuilderCardData>): DeckBuilderCardData => ({
   id: 'CARD-001',
   name: 'Catalog Card',
   image: '/catalog-card.png',
