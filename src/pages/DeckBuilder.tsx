@@ -72,7 +72,6 @@ import {
   buildUpdatedSavedDeckSearchUiState,
 } from '../utils/deckBuilderMyDecksState';
 import {
-  type DeckBuilderModalUiStatePatch,
   buildDismissedDeckLogImportUiState,
   buildDismissedResetBuilderDialogUiState,
   buildDismissedResetDeckDialogUiState,
@@ -155,16 +154,12 @@ import {
 import { loadCardCatalog } from '../utils/cardCatalog';
 import { fetchDeckLogImport } from '../utils/decklogImport';
 import { useDeckBuilderPreviewUi } from '../hooks/useDeckBuilderPreviewUi';
+import { useDeckBuilderModalUi } from '../hooks/useDeckBuilderModalUi';
 
 const PAGE_SIZE = 50;
 const COST_FILTER_VALUES = ['All', '0', '1', '2', '3', '4', '5', '6', '7+'] as const;
 const DECK_SECTION_FILTER_VALUES: readonly DeckBuilderDeckSectionFilter[] = ['All', 'main', 'evolve', 'leader', 'token'];
 const CARD_TYPE_FILTER_VALUES: readonly DeckBuilderCardTypeFilter[] = ['All', 'follower', 'spell', 'amulet'];
-
-type SaveFeedback = {
-  kind: 'success' | 'warning';
-  message: string;
-};
 
 const DeckBuilder: React.FC = () => {
   const { t } = useTranslation();
@@ -186,7 +181,6 @@ const DeckBuilder: React.FC = () => {
   const [deckRuleConfig, setDeckRuleConfig] = useState(createDefaultDeckRuleConfig());
   const [deckState, setDeckState] = useState<DeckState>(createEmptyDeckState());
   const [deckSortMode, setDeckSortMode] = useState<DeckSortMode>('added');
-  const [showResetDeckDialog, setShowResetDeckDialog] = useState(false);
   const [savedDecks, setSavedDecks] = useState<SavedDeckRecordV1[]>(() => listSavedDecks());
   const [selectedSavedDeckId, setSelectedSavedDeckId] = useState<string | null>(null);
   const [savedBaselineSnapshot, setSavedBaselineSnapshot] = useState<DeckBuilderSnapshot | null>(null);
@@ -199,13 +193,8 @@ const DeckBuilder: React.FC = () => {
   const [showDeleteAllSavedDecksDialog, setShowDeleteAllSavedDecksDialog] = useState(false);
   const [showDeleteSelectedSavedDecksDialog, setShowDeleteSelectedSavedDecksDialog] = useState(false);
   const [pendingLoadDeckId, setPendingLoadDeckId] = useState<string | null>(null);
-  const [showResetBuilderDialog, setShowResetBuilderDialog] = useState(false);
-  const [saveFeedback, setSaveFeedback] = useState<SaveFeedback | null>(null);
   const [isSavedDeckSelectMode, setIsSavedDeckSelectMode] = useState(false);
   const [selectedSavedDeckIds, setSelectedSavedDeckIds] = useState<string[]>([]);
-  const [isDeckLogImportOpen, setIsDeckLogImportOpen] = useState(false);
-  const [deckLogInput, setDeckLogInput] = useState('');
-  const [isImportingDeckLog, setIsImportingDeckLog] = useState(false);
   const {
     previewCard,
     hoveredDeckCard,
@@ -216,6 +205,17 @@ const DeckBuilder: React.FC = () => {
     handleDeckCardMouseMove,
     handleDeckCardMouseLeave,
   } = useDeckBuilderPreviewUi();
+  const {
+    showResetDeckDialog,
+    showResetBuilderDialog,
+    saveFeedback,
+    setSaveFeedback,
+    isDeckLogImportOpen,
+    deckLogInput,
+    setDeckLogInput,
+    isImportingDeckLog,
+    applyDeckBuilderModalUiState,
+  } = useDeckBuilderModalUi();
 
   useEffect(() => {
     loadCardCatalog()
@@ -334,16 +334,6 @@ const DeckBuilder: React.FC = () => {
     return () => window.clearTimeout(timeoutId);
   }, [cards.length, deckName, deckRuleConfig, deckState, hasBuilderState, hasInitializedDraft, pendingDraftRestore, selectedSavedDeckId]);
 
-  useEffect(() => {
-    if (!saveFeedback) return;
-
-    const timeoutId = window.setTimeout(() => {
-      setSaveFeedback(null);
-    }, 2400);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [saveFeedback]);
-
   const refreshSavedDecks = () => {
     setSavedDecks(listSavedDecks());
   };
@@ -408,24 +398,6 @@ const DeckBuilder: React.FC = () => {
 
   const clearSavedDeckSelection = () => {
     applyDeckBuilderMyDecksUiState(buildClearedSavedDeckSelectionUiState());
-  };
-
-  const applyDeckBuilderModalUiState = (state: DeckBuilderModalUiStatePatch) => {
-    if (state.showResetDeckDialog !== undefined) {
-      setShowResetDeckDialog(state.showResetDeckDialog);
-    }
-    if (state.showResetBuilderDialog !== undefined) {
-      setShowResetBuilderDialog(state.showResetBuilderDialog);
-    }
-    if (state.isDeckLogImportOpen !== undefined) {
-      setIsDeckLogImportOpen(state.isDeckLogImportOpen);
-    }
-    if (state.deckLogInput !== undefined) {
-      setDeckLogInput(state.deckLogInput);
-    }
-    if (state.isImportingDeckLog !== undefined) {
-      setIsImportingDeckLog(state.isImportingDeckLog);
-    }
   };
 
   const buildCurrentLibraryFilterState = (): DeckBuilderLibraryFilterState => ({
