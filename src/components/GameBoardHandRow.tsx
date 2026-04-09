@@ -1,5 +1,4 @@
 import React from 'react';
-import GameBoardBoardRow from './GameBoardBoardRow';
 
 type GameBoardHandRowProps = {
   columns: string;
@@ -18,13 +17,21 @@ const GameBoardHandRow: React.FC<GameBoardHandRowProps> = ({
   minHeight,
   children,
 }) => (
-  <GameBoardBoardRow columns={columns} width={width}>
+  <div
+    style={{
+      display: 'grid',
+      gridTemplateColumns: columns,
+      gap: '0.75rem',
+      width: `${width}px`,
+      alignItems: 'start',
+    }}
+  >
     <div />
     <div
       style={{
         width: `${centerWidth}px`,
-        position: 'relative',
         minHeight,
+        position: 'relative',
         ...(justifyCenter
           ? {
               display: 'flex',
@@ -36,7 +43,7 @@ const GameBoardHandRow: React.FC<GameBoardHandRowProps> = ({
       {children}
     </div>
     <div />
-  </GameBoardBoardRow>
+  </div>
 );
 
 export default GameBoardHandRow;

@@ -6,17 +6,16 @@ import type { CardInspectAnchor, CardInstance } from '../components/Card';
 import CardSearchModal from '../components/CardSearchModal';
 import GameBoardAttackModeBanner from '../components/GameBoardAttackModeBanner';
 import GameBoardBoardRow from '../components/GameBoardBoardRow';
+import GameBoardBottomHandSection from '../components/GameBoardBottomHandSection';
 import GameBoardCardInspectorSection from '../components/GameBoardCardInspectorSection';
 import GameBoardCountDialog from '../components/GameBoardCountDialog';
 import GameBoardDialogsHost from '../components/GameBoardDialogsHost';
 import GameBoardEndTurnSection from '../components/GameBoardEndTurnSection';
 import GameBoardGlobalOverlays from '../components/GameBoardGlobalOverlays';
 import GameBoardHeader from '../components/GameBoardHeader';
-import GameBoardHandRow from '../components/GameBoardHandRow';
 import GameBoardLeaderZoneSection from '../components/GameBoardLeaderZoneSection';
 import GameBoardMainDeckSection from '../components/GameBoardMainDeckSection';
 import GameBoardMulliganDialog from '../components/GameBoardMulliganDialog';
-import GameBoardMulliganButton from '../components/GameBoardMulliganButton';
 import GameBoardPlayerControlsPanel from '../components/GameBoardPlayerControlsPanel';
 import GameBoardPreparationPanel from '../components/GameBoardPreparationPanel';
 import GameBoardRecentEventsPanel from '../components/GameBoardRecentEventsPanel';
@@ -25,24 +24,27 @@ import GameBoardReconnectAlert from '../components/GameBoardReconnectAlert';
 import GameBoardResetDialog from '../components/GameBoardResetDialog';
 import GameBoardSearchableStackSection from '../components/GameBoardSearchableStackSection';
 import GameBoardSavedSessionPrompt from '../components/GameBoardSavedSessionPrompt';
+import GameBoardTopHandSection from '../components/GameBoardTopHandSection';
 import GameBoardTopNDialog from '../components/GameBoardTopNDialog';
 import GameBoardTokenSpawnDialog from '../components/GameBoardTokenSpawnDialog';
 import GameBoardUndoTurnDialog from '../components/GameBoardUndoTurnDialog';
-import GameBoardZoneActionsSection from '../components/GameBoardZoneActionsSection';
+import {
+  buildMainDeckZoneActions,
+  buildRandomDiscardHandZoneActions,
+  buildRevealHandZoneActions,
+} from '../components/gameBoardZoneActionViewModel';
 import TopDeckModal from '../components/TopDeckModal';
 import { useGameBoardLogic } from '../hooks/useGameBoardLogic';
-import { canImportDeck, canUndoLastTurn, isHandCardMovementLocked } from '../utils/gameRules';
-import { getPlayerLabel, getZoneOwner } from '../utils/soloMode';
+import { buildGameBoardViewModel } from '../hooks/gameBoardViewModel';
+import { useGameBoardDialogsUi } from '../hooks/useGameBoardDialogsUi';
+import { useGameBoardSavedDeckPicker } from '../hooks/useGameBoardSavedDeckPicker';
+import { getZoneOwner } from '../utils/soloMode';
 import type { PlayerRole } from '../types/game';
 import type { AttackTarget } from '../types/sync';
 import { buildCardDetailPresentation } from '../utils/cardDetails';
-import type { DeckBuilderCardData } from '../models/deckBuilderCard';
 import {
-  filterSavedDeckOptionsBySearch,
   formatSavedSessionTimestamp,
-  getConnectionBadgeTone,
   getInspectorPopoverStyle,
-  getInteractionBlockedTitle,
 } from '../utils/gameBoardPresentation';
 import {
   shouldDismissAttackModeOnPointerDown,
@@ -50,12 +52,6 @@ import {
   shouldDismissModalOnBackdropClick,
   shouldDismissOnEscapeKey,
 } from '../utils/gameBoardDismissals';
-import { buildLegalSavedDeckOptions, type LegalSavedDeckOption } from '../utils/gameBoardSavedDecks';
-import {
-  buildTokenSpawnSelections,
-  getTotalTokenSpawnCount,
-  updateTokenSpawnCounts,
-} from '../utils/gameBoardTokens';
 import {
   activeBoardSectionStyle,
   boardColumns,
@@ -76,8 +72,6 @@ import {
   shouldClearInspectorSelection,
   shouldDisableQuickActionsForAttackTarget as shouldDisableQuickActionsForAttackTargetCard,
 } from '../utils/gameBoardCombat';
-import { listSavedDecks } from '../utils/deckStorage';
-import { loadCardCatalog } from '../utils/cardCatalog';
 
 const GameBoard: React.FC = () => {
   const { t } = useTranslation();
@@ -100,65 +94,103 @@ const GameBoard: React.FC = () => {
     isDebug
   } = useGameBoardLogic();
 
-  const [isTopNInputOpen, setIsTopNInputOpen] = React.useState(false);
-  const [topNValue, setTopNValue] = React.useState(3);
-  const [randomDiscardValue, setRandomDiscardValue] = React.useState(1);
-  const [randomDiscardTargetRole, setRandomDiscardTargetRole] = React.useState<PlayerRole | null>(null);
-  const [randomDiscardActorRole, setRandomDiscardActorRole] = React.useState<PlayerRole | null>(null);
-  const [tokenSpawnTargetRole, setTokenSpawnTargetRole] = React.useState<PlayerRole | null>(null);
-  const [tokenSpawnCounts, setTokenSpawnCounts] = React.useState<Record<string, number>>({});
-  const [tokenSpawnDestination, setTokenSpawnDestination] = React.useState<'ex' | 'field'>('ex');
-  const [showUndoConfirm, setShowUndoConfirm] = React.useState(false);
   const [mulliganTargetRole, setMulliganTargetRole] = React.useState<PlayerRole>('host');
   const [activeZoneActions, setActiveZoneActions] = React.useState<string | null>(null);
-  const [allCards, setAllCards] = React.useState<DeckBuilderCardData[]>([]);
-  const [savedDeckOptions, setSavedDeckOptions] = React.useState<LegalSavedDeckOption[]>([]);
-  const [savedDeckSearch, setSavedDeckSearch] = React.useState('');
-  const [savedDeckImportTargetRole, setSavedDeckImportTargetRole] = React.useState<PlayerRole | null>(null);
   const [selectedInspectorCardId, setSelectedInspectorCardId] = React.useState<string | null>(null);
   const [selectedInspectorAnchor, setSelectedInspectorAnchor] = React.useState<CardInspectAnchor | null>(null);
   const [attackSourceCardId, setAttackSourceCardId] = React.useState<string | null>(null);
   const [isRoomCopied, setIsRoomCopied] = React.useState(false);
   const inspectorRef = React.useRef<HTMLDivElement | null>(null);
-  const canOpenSavedDeckPicker = allCards.length > 0;
-  // Solo mode renders both players for a single viewer. The top board is the
-  // "other side" of the same local match, not a protected remote opponent.
-  const viewerRole = isSpectator ? 'spectator' : isSoloMode ? 'all' : role;
-  const isPreparingHandMoveLocked = isHandCardMovementLocked(gameState);
-  const topRole = (isSoloMode ? 'guest' : role === 'host' ? 'guest' : 'host') as PlayerRole;
-  const bottomRole = (isSoloMode ? 'host' : role) as PlayerRole;
-  const canImportTopDeck = canInteract && canImportDeck(gameState, topRole);
-  const canImportBottomDeck = canInteract && canImportDeck(gameState, bottomRole);
-  const savedDeckPickerUnavailableTitle = !canOpenSavedDeckPicker
-    ? t('gameBoard.status.loadingCatalog')
-    : t('gameBoard.status.availableBeforeStart');
-  const topLabel = getPlayerLabel(
+  const {
+    allCardsLength,
+    savedDeckSearch,
+    setSavedDeckSearch,
+    savedDeckImportTargetRole,
+    filteredSavedDeckOptions,
+    savedDeckPickerTargetLabel,
+    openSavedDeckPicker,
+    closeSavedDeckPicker,
+    handleSavedDeckImport,
+  } = useGameBoardSavedDeckPicker({
+    gameState,
+    importDeckData,
+    isSoloMode,
+    role,
+    t,
+  });
+  const {
+    isTopNInputOpen,
+    setIsTopNInputOpen,
+    topNValue,
+    setTopNValue,
+    randomDiscardValue,
+    setRandomDiscardValue,
+    randomDiscardTargetRole,
+    randomDiscardActorRole,
+    tokenSpawnTargetRole,
+    tokenSpawnCounts,
+    tokenSpawnDestination,
+    setTokenSpawnDestination,
+    showUndoConfirm,
+    setShowUndoConfirm,
+    tokenSpawnOptions,
+    totalTokenSpawnCount,
+    openTopDeckModal,
+    openRandomDiscardDialog,
+    closeRandomDiscardDialog,
+    openTokenSpawnModal,
+    closeTokenSpawnModal,
+    handleTokenSpawn,
+    handleTokenSpawnCountChange,
+    handleQuickTokenSpawn,
+    resetDialogsForConnectionChange,
+  } = useGameBoardDialogsUi({
+    canInteract,
+    gameStatus: gameState.gameStatus,
+    getCards,
+    setTopDeckTargetRole,
+    getTokenOptions,
+    spawnTokens,
+  });
+  const {
+    canOpenSavedDeckPicker,
+    viewerRole,
+    isPreparingHandMoveLocked,
     topRole,
-    isSoloMode || isSpectator,
-    t('common.labels.self'),
-    t('common.labels.opponent'),
-    role,
-    t('common.labels.player1'),
-    t('common.labels.player2')
-  );
-  const bottomLabel = getPlayerLabel(
     bottomRole,
-    isSoloMode || isSpectator,
-    t('common.labels.self'),
-    t('common.labels.opponent'),
+    canImportTopDeck,
+    canImportBottomDeck,
+    savedDeckPickerUnavailableTitle,
+    topLabel,
+    bottomLabel,
+    searchTargetRole,
+    currentTurnLabel,
+    canShowUndoTurn,
+    undoMoveActor,
+    shouldHideTopHand,
+    isBottomTurnActive,
+    shouldHighlightTopBoard,
+    canResetGame,
+    isGuestConnectionBlocked,
+    connectionBadgeTone,
+    interactionBlockedTitle,
+    isOwnEndStopActive,
+    canShowEndStopToggle,
+    endTurnBlockedByEndStop,
+    endTurnDisabledTitle,
+  } = buildGameBoardViewModel({
+    allCardsLength,
     role,
-    t('common.labels.player1'),
-    t('common.labels.player2')
-  );
-  const searchTargetRole = searchZone ? getZoneOwner(searchZone.id) ?? role : role;
-  const currentTurnLabel = gameState.turnPlayer === bottomRole ? bottomLabel : topLabel;
-  const canShowUndoTurn = canUndoLastTurn(
+    isSoloMode,
+    isHost,
+    isSpectator,
+    canInteract,
+    connectionState,
     gameState,
     canUndoTurn,
-    role,
-    isSoloMode
-  );
-  const undoMoveActor = gameState.lastUndoableCardMoveActor ?? bottomRole;
+    searchZoneId: searchZone?.id ?? null,
+    t,
+  });
   const canShowUndoMoveForRole = (playerRole: PlayerRole) => gameState.gameStatus === 'playing' &&
     !isSpectator &&
     hasUndoableMove &&
@@ -182,36 +214,11 @@ const GameBoard: React.FC = () => {
       {t('gameBoard.turn.undoMove')}
     </button>
   ) : null;
-  // P2P can optionally hide the opponent hand, but solo always shows both
-  // hands to the same player.
-  const shouldHideTopHand = !isSoloMode && !isSpectator && !gameState.revealHandsMode;
-  const isBottomTurnActive = gameState.gameStatus === 'playing' && gameState.turnPlayer === bottomRole;
-  const isTopTurnActive = gameState.gameStatus === 'playing' && gameState.turnPlayer === topRole;
-  const shouldHighlightTopBoard = (isSoloMode || isSpectator) && isTopTurnActive;
-  const canResetGame = isSoloMode || isHost;
-  const isGuestConnectionBlocked = !isSoloMode && !isSpectator && !isHost && !canInteract;
-  const connectionBadgeTone = getConnectionBadgeTone(connectionState, t);
-  const interactionBlockedTitle = getInteractionBlockedTitle(isGuestConnectionBlocked, connectionState, t);
-  const isOwnEndStopActive = !isSoloMode && !isSpectator && gameState.endStop[role];
-  const isOpponentEndStopActive = !isSoloMode && !isSpectator && gameState.endStop[topRole];
-  const canShowEndStopToggle = !isSoloMode && !isSpectator && gameState.gameStatus === 'playing' && gameState.turnPlayer !== role;
-  const endTurnBlockedByEndStop = !isSoloMode && !isSpectator && gameState.gameStatus === 'playing' && gameState.turnPlayer === role && isOpponentEndStopActive;
-  const endTurnDisabledTitle = endTurnBlockedByEndStop
-    ? t('gameBoard.board.endStopBlocked', { label: topLabel })
-    : interactionBlockedTitle ?? t('gameBoard.board.endTurnDisabled');
   const savedSessionTimestamp = React.useMemo(() => {
     if (!savedSessionCandidate) return null;
 
     return formatSavedSessionTimestamp(savedSessionCandidate.savedAt);
   }, [savedSessionCandidate]);
-  const tokenSpawnOptions = React.useMemo(
-    () => (tokenSpawnTargetRole ? getTokenOptions(tokenSpawnTargetRole) : []),
-    [getTokenOptions, tokenSpawnTargetRole]
-  );
-  const totalTokenSpawnCount = React.useMemo(
-    () => getTotalTokenSpawnCount(tokenSpawnOptions, tokenSpawnCounts),
-    [tokenSpawnCounts, tokenSpawnOptions]
-  );
   const attackSourceCard = attackSourceCardId
     ? gameState.cards.find(card => card.id === attackSourceCardId) ?? null
     : null;
@@ -244,14 +251,12 @@ const GameBoard: React.FC = () => {
   React.useEffect(() => {
     if (isSoloMode || connectionState === 'connected') return;
 
-    setIsTopNInputOpen(false);
-    setTokenSpawnTargetRole(null);
-    setShowUndoConfirm(false);
+    resetDialogsForConnectionChange();
     setActiveZoneActions(null);
     setSelectedInspectorCardId(null);
     setSelectedInspectorAnchor(null);
     setAttackSourceCardId(null);
-  }, [connectionState, isSoloMode]);
+  }, [connectionState, isSoloMode, resetDialogsForConnectionChange]);
 
   const attackLine = React.useMemo(() => {
     if (!attackVisual || typeof document === 'undefined') return null;
@@ -279,48 +284,6 @@ const GameBoard: React.FC = () => {
 
     return { sourcePoint, targetPoint };
   }, [attackVisual]);
-  React.useEffect(() => {
-    loadCardCatalog()
-      .then(data => {
-        setAllCards(data);
-      })
-      .catch(err => console.error('Could not load card details', err));
-  }, []);
-
-  const refreshSavedDeckOptions = React.useCallback(() => {
-    if (allCards.length === 0) {
-      setSavedDeckOptions([]);
-      return;
-    }
-
-    setSavedDeckOptions(buildLegalSavedDeckOptions(listSavedDecks(), allCards, t));
-  }, [allCards, t]);
-
-  const openSavedDeckPicker = React.useCallback((targetRole: PlayerRole) => {
-    if (allCards.length === 0) return;
-    if (!canImportDeck(gameState, targetRole)) return;
-    refreshSavedDeckOptions();
-    setSavedDeckSearch('');
-    setSavedDeckImportTargetRole(targetRole);
-  }, [allCards.length, gameState, refreshSavedDeckOptions]);
-
-  const closeSavedDeckPicker = React.useCallback(() => {
-    setSavedDeckImportTargetRole(null);
-    setSavedDeckSearch('');
-  }, []);
-
-  const handleSavedDeckImport = React.useCallback((option: LegalSavedDeckOption) => {
-    if (!savedDeckImportTargetRole) return;
-    if (!canImportDeck(gameState, savedDeckImportTargetRole)) return;
-
-    importDeckData(option.deckData, savedDeckImportTargetRole);
-    closeSavedDeckPicker();
-  }, [closeSavedDeckPicker, gameState, importDeckData, savedDeckImportTargetRole]);
-
-  const filteredSavedDeckOptions = React.useMemo(
-    () => filterSavedDeckOptionsBySearch(savedDeckOptions, savedDeckSearch),
-    [savedDeckOptions, savedDeckSearch]
-  );
 
   const getAttackTargetFromCard = React.useCallback((card: CardInstance): AttackTarget | null => {
     return resolveAttackTargetFromCard(attackSourceCard, card, cardStatLookup);
@@ -446,64 +409,11 @@ const GameBoard: React.FC = () => {
     });
   }, [selectedInspectorAnchor]);
 
-  const openTopDeckModal = (targetRole: PlayerRole) => {
-    if (!canInteract) return;
-    setTopDeckTargetRole(targetRole);
-    setIsTopNInputOpen(true);
-  };
-
-  const openRandomDiscardDialog = (targetRole: PlayerRole, actorRole: PlayerRole) => {
-    if (!canInteract) return;
-    if (gameState.gameStatus !== 'playing') return;
-    if (targetRole === actorRole) return;
-    if (getCards(`hand-${targetRole}`).length === 0) return;
-    setRandomDiscardValue(1);
-    setRandomDiscardTargetRole(targetRole);
-    setRandomDiscardActorRole(actorRole);
-  };
-
   const openMulliganModal = (targetRole: PlayerRole) => {
     if (!canInteract) return;
     setMulliganTargetRole(targetRole);
     startMulligan();
   };
-
-  const openTokenSpawnModal = (targetRole: PlayerRole) => {
-    if (!canInteract) return;
-    setTokenSpawnTargetRole(targetRole);
-    setTokenSpawnCounts({});
-    setTokenSpawnDestination('ex');
-  };
-
-  const handleTokenSpawn = () => {
-    if (!tokenSpawnTargetRole) return;
-    spawnTokens(
-      tokenSpawnTargetRole,
-      buildTokenSpawnSelections(tokenSpawnOptions, tokenSpawnCounts),
-      tokenSpawnDestination
-    );
-    setTokenSpawnCounts({});
-    setTokenSpawnTargetRole(null);
-  };
-
-  const handleTokenSpawnCountChange = React.useCallback((cardId: string, delta: number) => {
-    setTokenSpawnCounts(current => updateTokenSpawnCounts(current, cardId, delta));
-  }, []);
-
-  const handleQuickTokenSpawn = React.useCallback((cardId: string) => {
-    if (!tokenSpawnTargetRole) return;
-
-    const tokenOption = tokenSpawnOptions.find(token => token.cardId === cardId);
-    if (!tokenOption) return;
-
-    spawnTokens(
-      tokenSpawnTargetRole,
-      [{ tokenOption, count: 1 }],
-      tokenSpawnDestination
-    );
-    setTokenSpawnCounts({});
-    setTokenSpawnTargetRole(null);
-  }, [spawnTokens, tokenSpawnDestination, tokenSpawnOptions, tokenSpawnTargetRole]);
 
   const handleStartAttack = React.useCallback((cardId: string) => {
     if (!canInteract) return;
@@ -519,24 +429,57 @@ const GameBoard: React.FC = () => {
     if (!canView) return;
     setSearchZone({ id, title });
   }, [canView, setSearchZone]);
+  const topHandRandomDiscardZoneActions = buildRandomDiscardHandZoneActions(
+    topRole,
+    () => openRandomDiscardDialog(topRole, bottomRole),
+    t
+  );
+  const topMainDeckZoneActions = buildMainDeckZoneActions({
+    playerRole: topRole,
+    onSearch: () => openSearchZone(`mainDeck-${topRole}`, t('gameBoard.zones.mainDeck', { label: topLabel })),
+    onShuffle: !isSpectator ? () => handleShuffleDeck(topRole) : undefined,
+    onLookTop: !isSpectator ? () => openTopDeckModal(topRole) : undefined,
+    t,
+  });
+  const topReadOnlyMainDeckZoneActions = buildMainDeckZoneActions({
+    playerRole: topRole,
+    onSearch: () => openSearchZone(`mainDeck-${topRole}`, t('gameBoard.zones.mainDeck', { label: topLabel })),
+    t,
+  });
+  const bottomHandRandomDiscardZoneActions = buildRandomDiscardHandZoneActions(
+    bottomRole,
+    () => openRandomDiscardDialog(bottomRole, topRole),
+    t
+  );
+  const bottomHandRevealZoneActions = buildRevealHandZoneActions(bottomRole, revealHand, t);
+  const bottomMainDeckZoneActions = buildMainDeckZoneActions({
+    playerRole: bottomRole,
+    onSearch: () => openSearchZone(`mainDeck-${bottomRole}`, t('gameBoard.zones.mainDeck', { label: bottomLabel })),
+    onShuffle: !isSpectator ? () => handleShuffleDeck(bottomRole) : undefined,
+    onLookTop: !isSpectator ? () => openTopDeckModal(bottomRole) : undefined,
+    t,
+  });
+  const bottomMulliganButtonStyle = isSoloMode
+    ? soloMulliganButtonStyle
+    : {
+        position: 'absolute' as const,
+        top: '-10px',
+        right: '10px',
+        padding: '0.5rem 1rem',
+        background: '#eab308',
+        color: 'black',
+        fontWeight: 'bold',
+        borderRadius: '4px',
+        cursor: 'pointer',
+        fontSize: '0.875rem',
+        zIndex: 10,
+        boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+        border: '2px solid black',
+      };
 
   const getAttackHighlightTone = React.useCallback((card: CardInstance): 'attack-source' | 'attack-target' | undefined => {
     return resolveAttackHighlightTone(attackSourceCard, card, cardStatLookup);
   }, [attackSourceCard, cardStatLookup]);
-
-  const savedDeckPickerTargetLabel = React.useMemo(() => {
-    if (!savedDeckImportTargetRole) return null;
-
-    return getPlayerLabel(
-      savedDeckImportTargetRole,
-      isSoloMode,
-      t('common.labels.self'),
-      t('common.labels.opponent'),
-      role,
-      t('common.labels.player1'),
-      t('common.labels.player2')
-    );
-  }, [savedDeckImportTargetRole, isSoloMode, role, t]);
 
   return (
     <DndContext onDragEnd={(event) => {
@@ -659,56 +602,39 @@ const GameBoard: React.FC = () => {
                 />
 
                 <div style={{ width: `${boardContentWidth}px`, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.65rem', alignItems: 'flex-start' }}>
-                  <GameBoardHandRow
+                  <GameBoardTopHandSection
                     columns={boardColumns}
                     width={boardContentWidth}
                     centerWidth={centerZoneWidth}
                     minHeight="150px"
-                  >
-                      <Zone
-                        id={`hand-${topRole}`}
-                        label={t('gameBoard.zones.hand', { label: topLabel })}
-                        cards={getCards(`hand-${topRole}`)}
-                        cardDetailLookup={cardDetailLookup}
-                        hideCards={shouldHideTopHand}
-                        layout="horizontal"
-                        onInspectCard={handleInspectCard}
-                        isProtected={true}
-                        lockCards={isPreparingHandMoveLocked}
-                        viewerRole={viewerRole}
-                        onModifyCounter={handleModifyCounter}
-                        onModifyGenericCounter={handleModifyGenericCounter}
-                        onSendToBottom={handleSendToBottom}
-                        onBanish={handleBanish}
-                        onCemetery={handleSendToCemetery}
-                        onPlayToField={(cardId) => handlePlayToField(cardId, topRole)}
-                        containerStyle={{ minHeight: '150px' }}
-                      />
-                      {gameState.gameStatus === 'playing' && canInteract && getCards(`hand-${topRole}`).length > 0 && (
-                        <div style={{ position: 'absolute', right: '10px', bottom: '-32px', width: '180px', zIndex: 30 }}>
-                          <GameBoardZoneActionsSection
-                            menuId={`hand-random-discard-${topRole}`}
-                            activeMenuId={activeZoneActions}
-                            actionsLabel={t('gameBoard.board.actions')}
-                            actions={[
-                              {
-                                label: t('gameBoard.zones.randomDiscardHand'),
-                                onClick: () => openRandomDiscardDialog(topRole, bottomRole),
-                                tone: 'accent',
-                              },
-                            ]}
-                            onActiveMenuChange={setActiveZoneActions}
-                          />
-                        </div>
-                      )}
-                      {gameState.gameStatus === 'preparing' && gameState[topRole].initialHandDrawn && !gameState[topRole].mulliganUsed && (
-                        <GameBoardMulliganButton
-                          label={t('gameBoard.preparation.mulliganButton', { label: topLabel })}
-                          onClick={() => openMulliganModal(topRole)}
-                        style={soloMulliganButtonStyle}
-                      />
-                      )}
-                  </GameBoardHandRow>
+                    zoneProps={{
+                      id: `hand-${topRole}`,
+                      label: t('gameBoard.zones.hand', { label: topLabel }),
+                      cards: getCards(`hand-${topRole}`),
+                      cardDetailLookup,
+                      hideCards: shouldHideTopHand,
+                      layout: 'horizontal',
+                      onInspectCard: handleInspectCard,
+                      isProtected: true,
+                      lockCards: isPreparingHandMoveLocked,
+                      viewerRole,
+                      onModifyCounter: handleModifyCounter,
+                      onModifyGenericCounter: handleModifyGenericCounter,
+                      onSendToBottom: handleSendToBottom,
+                      onBanish: handleBanish,
+                      onCemetery: handleSendToCemetery,
+                      onPlayToField: (cardId) => handlePlayToField(cardId, topRole),
+                      containerStyle: { minHeight: '150px' },
+                    }}
+                    activeMenuId={activeZoneActions}
+                    onActiveMenuChange={setActiveZoneActions}
+                    showActionMenu={gameState.gameStatus === 'playing' && canInteract && getCards(`hand-${topRole}`).length > 0}
+                    actionMenu={topHandRandomDiscardZoneActions}
+                    showMulliganButton={gameState.gameStatus === 'preparing' && gameState[topRole].initialHandDrawn && !gameState[topRole].mulliganUsed}
+                    mulliganLabel={t('gameBoard.preparation.mulliganButton', { label: topLabel })}
+                    onOpenMulligan={() => openMulliganModal(topRole)}
+                    mulliganButtonStyle={soloMulliganButtonStyle}
+                  />
 
                   <GameBoardBoardRow columns={boardColumns} width={boardContentWidth}>
                     <GameBoardSearchableStackSection
@@ -770,16 +696,10 @@ const GameBoard: React.FC = () => {
                   >
                       <GameBoardMainDeckSection
                         zoneProps={{ id: `mainDeck-${topRole}`, label: t('gameBoard.zones.mainDeck', { label: topLabel }), cards: getCards(`mainDeck-${topRole}`), cardDetailLookup, layout: 'stack', isProtected: true, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: '150px' }, isDebug }}
-                        menuId={`mainDeck-${topRole}`}
+                        menuId={topMainDeckZoneActions.menuId}
                         activeMenuId={activeZoneActions}
-                        actionsLabel={t('gameBoard.board.actions')}
-                        actions={[
-                          { label: t('gameBoard.zones.search'), onClick: () => openSearchZone(`mainDeck-${topRole}`, t('gameBoard.zones.mainDeck', { label: topLabel })) },
-                          ...(!isSpectator ? [
-                            { label: t('gameBoard.zones.shuffle'), onClick: () => handleShuffleDeck(topRole) },
-                            { label: t('gameBoard.zones.lookTop'), onClick: () => openTopDeckModal(topRole), tone: 'accent' as const },
-                          ] : []),
-                        ]}
+                        actionsLabel={topMainDeckZoneActions.actionsLabel}
+                        actions={topMainDeckZoneActions.actions}
                         direction="up"
                         onActiveMenuChange={setActiveZoneActions}
                       />
@@ -826,43 +746,29 @@ const GameBoard: React.FC = () => {
                 </div>
 
                 <div style={{ width: `${boardContentWidth}px`, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.65rem', alignItems: 'flex-start' }}>
-                  <GameBoardHandRow
+                  <GameBoardTopHandSection
                     columns={boardColumns}
                     width={boardContentWidth}
                     centerWidth={centerZoneWidth}
                     justifyCenter={true}
-                  >
-                      <Zone
-                        id={`hand-${topRole}`}
-                        label={t('gameBoard.zones.hand', { label: topLabel })}
-                        cards={getCards(`hand-${topRole}`)}
-                        cardDetailLookup={cardDetailLookup}
-                        hideCards={shouldHideTopHand}
-                        layout="horizontal"
-                        onInspectCard={handleInspectCard}
-                        isProtected={true}
-                        lockCards={isPreparingHandMoveLocked}
-                        viewerRole={viewerRole}
-                        containerStyle={{ minHeight: '150px' }}
-                      />
-                      {gameState.gameStatus === 'playing' && canInteract && getCards(`hand-${topRole}`).length > 0 && (
-                        <div style={{ position: 'absolute', right: '10px', bottom: '-32px', width: '180px', zIndex: 30 }}>
-                          <GameBoardZoneActionsSection
-                            menuId={`hand-random-discard-${topRole}`}
-                            activeMenuId={activeZoneActions}
-                            actionsLabel={t('gameBoard.board.actions')}
-                            actions={[
-                              {
-                                label: t('gameBoard.zones.randomDiscardHand'),
-                                onClick: () => openRandomDiscardDialog(topRole, bottomRole),
-                                tone: 'accent',
-                              },
-                            ]}
-                            onActiveMenuChange={setActiveZoneActions}
-                          />
-                        </div>
-                      )}
-                  </GameBoardHandRow>
+                    zoneProps={{
+                      id: `hand-${topRole}`,
+                      label: t('gameBoard.zones.hand', { label: topLabel }),
+                      cards: getCards(`hand-${topRole}`),
+                      cardDetailLookup,
+                      hideCards: shouldHideTopHand,
+                      layout: 'horizontal',
+                      onInspectCard: handleInspectCard,
+                      isProtected: true,
+                      lockCards: isPreparingHandMoveLocked,
+                      viewerRole,
+                      containerStyle: { minHeight: '150px' },
+                    }}
+                    activeMenuId={activeZoneActions}
+                    onActiveMenuChange={setActiveZoneActions}
+                    showActionMenu={gameState.gameStatus === 'playing' && canInteract && getCards(`hand-${topRole}`).length > 0}
+                    actionMenu={topHandRandomDiscardZoneActions}
+                  />
 
                   <GameBoardBoardRow columns={boardColumns} width={boardContentWidth}>
                     <GameBoardSearchableStackSection
@@ -913,12 +819,10 @@ const GameBoard: React.FC = () => {
                   >
                       <GameBoardMainDeckSection
                         zoneProps={{ id: `mainDeck-${topRole}`, label: t('gameBoard.zones.mainDeck', { label: topLabel }), cards: getCards(`mainDeck-${topRole}`), cardDetailLookup, layout: 'stack', isProtected: true, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: '150px' }, isDebug }}
-                        menuId={`mainDeck-${topRole}`}
+                        menuId={topReadOnlyMainDeckZoneActions.menuId}
                         activeMenuId={activeZoneActions}
-                        actionsLabel={t('gameBoard.board.actions')}
-                        actions={isSpectator ? [
-                          { label: t('gameBoard.zones.search'), onClick: () => openSearchZone(`mainDeck-${topRole}`, t('gameBoard.zones.mainDeck', { label: topLabel })) },
-                        ] : undefined}
+                        actionsLabel={topReadOnlyMainDeckZoneActions.actionsLabel}
+                        actions={isSpectator ? topReadOnlyMainDeckZoneActions.actions : undefined}
                         onActiveMenuChange={setActiveZoneActions}
                       />
                       <Zone
@@ -992,16 +896,10 @@ const GameBoard: React.FC = () => {
                   <Zone id={`field-${bottomRole}`} label={t('gameBoard.zones.field', { label: bottomLabel })} cards={getCards(`field-${bottomRole}`)} cardStatLookup={cardStatLookup} cardDetailLookup={cardDetailLookup} getHighlightTone={getAttackHighlightTone} onInspectCard={handleInspectCard} onAttack={gameState.turnPlayer === bottomRole ? handleStartAttack : undefined} onTap={toggleTap} onModifyCounter={handleModifyCounter} onModifyGenericCounter={handleModifyGenericCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} disableQuickActionsForCard={shouldDisableQuickActionsForAttackTarget} viewerRole={viewerRole} containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: '160px', width: `${centerZoneWidth}px`, flex: 'none' }} isDebug={isDebug} />
                   <GameBoardMainDeckSection
                     zoneProps={{ id: `mainDeck-${bottomRole}`, label: t('gameBoard.zones.mainDeck', { label: bottomLabel }), cards: getCards(`mainDeck-${bottomRole}`), cardDetailLookup, layout: 'stack', isProtected: true, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: '150px' }, isDebug }}
-                    menuId={`mainDeck-${bottomRole}`}
+                    menuId={bottomMainDeckZoneActions.menuId}
                     activeMenuId={activeZoneActions}
-                    actionsLabel={t('gameBoard.board.actions')}
-                    actions={[
-                      { label: t('gameBoard.zones.search'), onClick: () => openSearchZone(`mainDeck-${bottomRole}`, t('gameBoard.zones.mainDeck', { label: bottomLabel })) },
-                      ...(!isSpectator ? [
-                        { label: t('gameBoard.zones.shuffle'), onClick: () => handleShuffleDeck(bottomRole) },
-                        { label: t('gameBoard.zones.lookTop'), onClick: () => openTopDeckModal(bottomRole), tone: 'accent' as const },
-                      ] : []),
-                    ]}
+                    actionsLabel={bottomMainDeckZoneActions.actionsLabel}
+                    actions={bottomMainDeckZoneActions.actions}
                     onActiveMenuChange={setActiveZoneActions}
                   />
                   </GameBoardBoardRow>
@@ -1024,58 +922,36 @@ const GameBoard: React.FC = () => {
                   />
 	                </GameBoardBoardRow>
 
-	                <div style={{ width: `${boardContentWidth}px`, minHeight: '160px', position: 'relative' }}>
-                    <Zone id={`hand-${bottomRole}`} label={t('gameBoard.zones.hand', { label: bottomLabel })} cards={getCards(`hand-${bottomRole}`)} cardDetailLookup={cardDetailLookup} onInspectCard={handleInspectCard} onModifyCounter={handleModifyCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} isProtected={true} lockCards={isPreparingHandMoveLocked} viewerRole={viewerRole} containerStyle={{ minHeight: '160px' }} isDebug={isDebug} />
-                    {isSoloMode && gameState.gameStatus === 'playing' && canInteract && getCards(`hand-${bottomRole}`).length > 0 && (
-                      <div style={{ position: 'absolute', right: '10px', bottom: '-32px', width: '180px', zIndex: 30 }}>
-                        <GameBoardZoneActionsSection
-                          menuId={`hand-random-discard-${bottomRole}`}
-                          activeMenuId={activeZoneActions}
-                          actionsLabel={t('gameBoard.board.actions')}
-                          actions={[
-                            {
-                              label: t('gameBoard.zones.randomDiscardHand'),
-                              onClick: () => openRandomDiscardDialog(bottomRole, topRole),
-                              tone: 'accent',
-                            },
-                          ]}
-                          onActiveMenuChange={setActiveZoneActions}
-                        />
-                      </div>
-                    )}
-                    {!isSoloMode && gameState.gameStatus === 'playing' && canInteract && getCards(`hand-${bottomRole}`).length > 0 && (
-                      <div style={{ position: 'absolute', right: '10px', bottom: '-32px', width: '180px', zIndex: 30 }}>
-                        <GameBoardZoneActionsSection
-                          menuId={`hand-reveal-${bottomRole}`}
-                          activeMenuId={activeZoneActions}
-                          actionsLabel={t('gameBoard.board.actions')}
-                          actions={[
-                            {
-                              label: t('gameBoard.zones.revealHand'),
-                              onClick: revealHand,
-                              tone: 'accent',
-                            },
-                          ]}
-                          onActiveMenuChange={setActiveZoneActions}
-                        />
-                      </div>
-                    )}
-
-                    {gameState.gameStatus === 'preparing' && canInteract && gameState[bottomRole].initialHandDrawn && !gameState[bottomRole].mulliganUsed && (
-                      <GameBoardMulliganButton
-                        label={t('game.mulligan_desc', { label: isSoloMode ? bottomLabel : t('game.mulligan_action') })}
-                        onClick={() => openMulliganModal(bottomRole)}
-                        style={isSoloMode ? soloMulliganButtonStyle : {
-                          position: 'absolute', top: '-10px', right: '10px',
-                          padding: '0.5rem 1rem', background: '#eab308', color: 'black',
-                          fontWeight: 'bold', borderRadius: '4px',
-                          cursor: 'pointer', fontSize: '0.875rem', zIndex: 10,
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                          border: '2px solid black'
-                        }}
-                      />
-                    )}
-                </div>
+	                <GameBoardBottomHandSection
+                    width={boardContentWidth}
+                    zoneProps={{
+                      id: `hand-${bottomRole}`,
+                      label: t('gameBoard.zones.hand', { label: bottomLabel }),
+                      cards: getCards(`hand-${bottomRole}`),
+                      cardDetailLookup,
+                      onInspectCard: handleInspectCard,
+                      onModifyCounter: handleModifyCounter,
+                      onSendToBottom: handleSendToBottom,
+                      onBanish: handleBanish,
+                      onCemetery: handleSendToCemetery,
+                      onPlayToField: handlePlayToField,
+                      isProtected: true,
+                      lockCards: isPreparingHandMoveLocked,
+                      viewerRole,
+                      containerStyle: { minHeight: '160px' },
+                      isDebug,
+                    }}
+                    activeMenuId={activeZoneActions}
+                    onActiveMenuChange={setActiveZoneActions}
+                    showRandomDiscardMenu={isSoloMode && gameState.gameStatus === 'playing' && canInteract && getCards(`hand-${bottomRole}`).length > 0}
+                    randomDiscardZoneActions={bottomHandRandomDiscardZoneActions}
+                    showRevealHandMenu={!isSoloMode && gameState.gameStatus === 'playing' && canInteract && getCards(`hand-${bottomRole}`).length > 0}
+                    revealHandZoneActions={bottomHandRevealZoneActions}
+                    showMulliganButton={gameState.gameStatus === 'preparing' && canInteract && gameState[bottomRole].initialHandDrawn && !gameState[bottomRole].mulliganUsed}
+                    mulliganLabel={t('game.mulligan_desc', { label: isSoloMode ? bottomLabel : t('game.mulligan_action') })}
+                    onOpenMulligan={() => openMulliganModal(bottomRole)}
+                    mulliganButtonStyle={bottomMulliganButtonStyle}
+                  />
               </div>
 
               {isSpectator ? (
@@ -1249,14 +1125,12 @@ const GameBoard: React.FC = () => {
           confirmLabel={t('gameBoard.modals.randomDiscard.confirm')}
           onValueChange={setRandomDiscardValue}
           onCancel={() => {
-            setRandomDiscardTargetRole(null);
-            setRandomDiscardActorRole(null);
+            closeRandomDiscardDialog();
           }}
           onConfirm={(selectedValue) => {
             setRandomDiscardValue(selectedValue);
             discardRandomHandCards(randomDiscardTargetRole, selectedValue, randomDiscardActorRole);
-            setRandomDiscardTargetRole(null);
-            setRandomDiscardActorRole(null);
+            closeRandomDiscardDialog();
           }}
         />
       )}
@@ -1271,7 +1145,7 @@ const GameBoard: React.FC = () => {
           onDestinationChange={setTokenSpawnDestination}
           onCountChange={handleTokenSpawnCountChange}
           onQuickSpawnToken={handleQuickTokenSpawn}
-          onCancel={() => setTokenSpawnTargetRole(null)}
+          onCancel={closeTokenSpawnModal}
           onConfirm={handleTokenSpawn}
         />
       )}
