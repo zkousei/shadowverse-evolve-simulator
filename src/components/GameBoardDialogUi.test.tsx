@@ -367,6 +367,36 @@ describe('GameBoard extracted UI components - dialogs', () => {
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps the token spawn dialog actions reachable when many token options exist', () => {
+    render(
+      <GameBoardTokenSpawnDialog
+        tokenSpawnOptions={Array.from({ length: 12 }, (_, index) => ({
+          cardId: `TOKEN-${index + 1}`,
+          name: `Token ${index + 1}`,
+          image: `/token-${index + 1}.png`,
+          baseCardType: 'follower',
+        }))}
+        tokenSpawnCounts={{}}
+        tokenSpawnDestination="ex"
+        totalTokenSpawnCount={0}
+        cardDetailLookup={{}}
+        onDestinationChange={vi.fn()}
+        onCountChange={vi.fn()}
+        onCancel={vi.fn()}
+        onConfirm={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('token-spawn-dialog')).toHaveStyle({
+      maxHeight: 'min(88vh, 960px)',
+      overflow: 'hidden',
+    });
+    expect(screen.getByTestId('token-spawn-options')).toHaveStyle({
+      overflowY: 'auto',
+    });
+    expect(screen.getByRole('button', { name: 'Generate' })).toBeVisible();
+  });
+
   it('renders evolve auto attach dialog and wires cancel, confirm, and backdrop', () => {
     const onBackdropClick = vi.fn();
     const onCancel = vi.fn();

@@ -30,12 +30,35 @@ const GameBoardTokenSpawnDialog: React.FC<GameBoardTokenSpawnDialogProps> = ({
   const { t } = useTranslation();
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 4500 }}>
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0,0,0,0.85)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 4500,
+        padding: '1rem',
+        overflowY: 'auto',
+      }}
+    >
       <div
         role="dialog"
         aria-modal="true"
         aria-label={t('gameBoard.modals.tokenSpawn.title')}
-        style={{ background: 'var(--bg-surface)', padding: '2rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', width: 'min(980px, 94vw)' }}
+        data-testid="token-spawn-dialog"
+        style={{
+          background: 'var(--bg-surface)',
+          padding: '2rem',
+          borderRadius: 'var(--radius-lg)',
+          border: '1px solid var(--border-light)',
+          width: 'min(980px, 94vw)',
+          maxHeight: 'min(88vh, 960px)',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+        }}
       >
         <h3 style={{ marginBottom: '1rem', color: 'white', textAlign: 'center' }}>{t('gameBoard.modals.tokenSpawn.title')}</h3>
         <p style={{ margin: '0 0 1rem', color: 'var(--text-muted)', textAlign: 'center' }}>
@@ -69,7 +92,19 @@ const GameBoardTokenSpawnDialog: React.FC<GameBoardTokenSpawnDialogProps> = ({
             );
           })}
         </div>
-        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+        <div
+          data-testid="token-spawn-options"
+          style={{
+            display: 'flex',
+            gap: '1rem',
+            justifyContent: 'center',
+            flexWrap: 'wrap',
+            marginBottom: '1.5rem',
+            overflowY: 'auto',
+            minHeight: 0,
+            paddingRight: '0.25rem',
+          }}
+        >
           {tokenSpawnOptions.map((token) => {
             const count = tokenSpawnCounts[token.cardId] ?? 0;
             return (
@@ -145,7 +180,18 @@ const GameBoardTokenSpawnDialog: React.FC<GameBoardTokenSpawnDialogProps> = ({
             );
           })}
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: '1rem',
+            flexWrap: 'wrap',
+            marginTop: 'auto',
+            paddingTop: '0.75rem',
+            borderTop: '1px solid rgba(255,255,255,0.08)',
+          }}
+        >
           <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
             {t('gameBoard.modals.tokenSpawn.totalSelected', { count: totalTokenSpawnCount })}
           </span>
