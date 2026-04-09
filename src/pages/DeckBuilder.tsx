@@ -85,11 +85,9 @@ import {
   getSavedDeckById,
   HARD_SAVED_DECK_LIMIT,
   listSavedDecks,
-  loadDraft,
   restoreSavedDeckToSnapshot,
   saveDeck,
   saveDraft,
-  type DeckBuilderSnapshot,
   type SavedDeckRecordV1,
 } from '../utils/deckStorage';
 import {
@@ -98,11 +96,7 @@ import {
 } from '../utils/deckFile';
 import { addCardToDeckState, removeCardFromDeckState } from '../utils/deckBuilderMutations';
 import {
-  type DeckBuilderSessionState,
-  type DeckBuilderTrackingStatePatch,
-  type PendingDraftRestoreState,
   buildClearedSavedDeckTrackingState,
-  buildContinuedDraftRestoreSessionState,
   buildDeckBuilderSaveState,
   buildDeckLogImportFeedback,
   buildDeckLogImportedDeckState,
@@ -111,8 +105,6 @@ import {
   buildImportedDeckSessionState,
   buildJsonImportedDeckState,
   buildLoadedSavedDeckSessionState,
-  buildPendingDraftRestoreState,
-  buildResetDeckBuilderSessionState,
   buildSavedDeckPersistedSessionState,
   buildSavedDeckLoadState,
   getDraftPersistenceAction,
@@ -138,6 +130,7 @@ import { useDeckBuilderPreviewUi } from '../hooks/useDeckBuilderPreviewUi';
 import { useDeckBuilderModalUi } from '../hooks/useDeckBuilderModalUi';
 import { useDeckBuilderSavedDeckUi } from '../hooks/useDeckBuilderSavedDeckUi';
 import { useDeckBuilderLibraryFilters } from '../hooks/useDeckBuilderLibraryFilters';
+import { useDeckBuilderSessionTracking } from '../hooks/useDeckBuilderSessionTracking';
 
 const PAGE_SIZE = 50;
 const COST_FILTER_VALUES = ['All', '0', '1', '2', '3', '4', '5', '6', '7+'] as const;
@@ -152,12 +145,24 @@ const DeckBuilder: React.FC = () => {
   const [deckState, setDeckState] = useState<DeckState>(createEmptyDeckState());
   const [deckSortMode, setDeckSortMode] = useState<DeckSortMode>('added');
   const [savedDecks, setSavedDecks] = useState<SavedDeckRecordV1[]>(() => listSavedDecks());
-  const [selectedSavedDeckId, setSelectedSavedDeckId] = useState<string | null>(null);
-  const [savedBaselineSnapshot, setSavedBaselineSnapshot] = useState<DeckBuilderSnapshot | null>(null);
-  const [draftRestored, setDraftRestored] = useState(false);
-  const [hasInitializedDraft, setHasInitializedDraft] = useState(false);
-  const [pendingDraftRestore, setPendingDraftRestore] = useState<PendingDraftRestoreState | null>(null);
   const subtypeTags = getAvailableSubtypeTags(cards);
+  const {
+    selectedSavedDeckId,
+    savedBaselineSnapshot,
+    draftRestored,
+    hasInitializedDraft,
+    pendingDraftRestore,
+    applyDeckBuilderTrackingState,
+    applyDeckBuilderSessionState,
+    resetBuilderState,
+    handleStartFresh,
+    handleContinueDraftRestore,
+  } = useDeckBuilderSessionTracking({
+    cards,
+    setDeckName,
+    setDeckRuleConfig,
+    setDeckState,
+  });
   const {
     search,
     costFilter,
@@ -228,20 +233,6 @@ const DeckBuilder: React.FC = () => {
       .then(data => setCards(data))
       .catch(err => console.error("Could not load cards", err));
   }, []);
-
-  useEffect(() => {
-    if (cards.length === 0 || hasInitializedDraft) return;
-
-    const draft = loadDraft();
-    if (!draft) {
-      setHasInitializedDraft(true);
-      return;
-    }
-
-    const savedDeck = draft.selectedDeckId ? getSavedDeckById(draft.selectedDeckId) : null;
-    setPendingDraftRestore(buildPendingDraftRestoreState(draft, cards, savedDeck));
-    setHasInitializedDraft(true);
-  }, [cards, hasInitializedDraft]);
 
   // Extract unique expansions (prefix before hyphen)
   const expansions = getAvailableExpansions(cards);
@@ -326,50 +317,10 @@ const DeckBuilder: React.FC = () => {
     setSavedDecks(listSavedDecks());
   };
 
-  const applyDeckBuilderTrackingState = (state: DeckBuilderTrackingStatePatch) => {
-    if (state.selectedSavedDeckId !== undefined) {
-      setSelectedSavedDeckId(state.selectedSavedDeckId);
-    }
-    if (state.savedBaselineSnapshot !== undefined) {
-      setSavedBaselineSnapshot(state.savedBaselineSnapshot);
-    }
-    if (state.draftRestored !== undefined) {
-      setDraftRestored(state.draftRestored);
-    }
-    if (state.pendingDraftRestore !== undefined) {
-      setPendingDraftRestore(state.pendingDraftRestore);
-    }
-  };
-
-  const applyDeckBuilderSessionState = (state: DeckBuilderSessionState) => {
-    if (state.deckName !== undefined) {
-      setDeckName(state.deckName);
-    }
-
-    setDeckRuleConfig(state.ruleConfig);
-    setDeckState(state.deckState);
-    applyDeckBuilderTrackingState(state);
-  };
-
   const updateDeckRuleConfig = (
     updater: (current: DeckRuleConfig) => DeckRuleConfig
   ) => {
     setDeckRuleConfig(current => updater(current));
-  };
-
-  const resetBuilderState = () => {
-    applyDeckBuilderSessionState(buildResetDeckBuilderSessionState());
-  };
-
-  const handleStartFresh = () => {
-    clearDraft();
-    resetBuilderState();
-  };
-
-  const handleContinueDraftRestore = () => {
-    if (!pendingDraftRestore) return;
-
-    applyDeckBuilderSessionState(buildContinuedDraftRestoreSessionState(pendingDraftRestore));
   };
 
   const previewDetail = previewCard ? cardDetailLookup[previewCard.id] ?? null : null;
