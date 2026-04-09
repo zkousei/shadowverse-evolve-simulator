@@ -315,6 +315,7 @@ describe('GameBoard extracted UI components - dialogs', () => {
   it('renders token spawn dialog and wires destination, count, cancel, and confirm', () => {
     const onDestinationChange = vi.fn();
     const onCountChange = vi.fn();
+    const onQuickSpawnToken = vi.fn();
     const onCancel = vi.fn();
     const onConfirm = vi.fn();
 
@@ -348,12 +349,14 @@ describe('GameBoard extracted UI components - dialogs', () => {
         }}
         onDestinationChange={onDestinationChange}
         onCountChange={onCountChange}
+        onQuickSpawnToken={onQuickSpawnToken}
         onCancel={onCancel}
         onConfirm={onConfirm}
       />
     );
 
     expect(screen.getByRole('dialog', { name: 'Generate Tokens' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Knight Token' }));
     fireEvent.click(screen.getByRole('button', { name: 'Field' }));
     fireEvent.click(screen.getByRole('button', { name: 'Increase Knight Token count' }));
     fireEvent.click(screen.getByRole('button', { name: 'Decrease Knight Token count' }));
@@ -361,6 +364,7 @@ describe('GameBoard extracted UI components - dialogs', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Generate' }));
 
     expect(onDestinationChange).toHaveBeenCalledWith('field');
+    expect(onQuickSpawnToken).toHaveBeenCalledWith('TOKEN-001');
     expect(onCountChange).toHaveBeenCalledWith('TOKEN-001', 1);
     expect(onCountChange).toHaveBeenCalledWith('TOKEN-001', -1);
     expect(onCancel).toHaveBeenCalledTimes(1);

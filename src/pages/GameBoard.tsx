@@ -487,6 +487,21 @@ const GameBoard: React.FC = () => {
     setTokenSpawnCounts(current => updateTokenSpawnCounts(current, cardId, delta));
   }, []);
 
+  const handleQuickTokenSpawn = React.useCallback((cardId: string) => {
+    if (!tokenSpawnTargetRole) return;
+
+    const tokenOption = tokenSpawnOptions.find(token => token.cardId === cardId);
+    if (!tokenOption) return;
+
+    spawnTokens(
+      tokenSpawnTargetRole,
+      [{ tokenOption, count: 1 }],
+      tokenSpawnDestination
+    );
+    setTokenSpawnCounts({});
+    setTokenSpawnTargetRole(null);
+  }, [spawnTokens, tokenSpawnDestination, tokenSpawnOptions, tokenSpawnTargetRole]);
+
   const handleStartAttack = React.useCallback((cardId: string) => {
     if (!canInteract) return;
     const card = gameState.cards.find(entry => entry.id === cardId);
@@ -1249,6 +1264,7 @@ const GameBoard: React.FC = () => {
           cardDetailLookup={cardDetailLookup}
           onDestinationChange={setTokenSpawnDestination}
           onCountChange={handleTokenSpawnCountChange}
+          onQuickSpawnToken={handleQuickTokenSpawn}
           onCancel={() => setTokenSpawnTargetRole(null)}
           onConfirm={handleTokenSpawn}
         />

@@ -12,6 +12,7 @@ type GameBoardTokenSpawnDialogProps = {
   cardDetailLookup: CardDetailLookup;
   onDestinationChange: (destination: 'ex' | 'field') => void;
   onCountChange: (cardId: string, delta: number) => void;
+  onQuickSpawnToken?: (cardId: string) => void;
   onCancel: () => void;
   onConfirm: () => void;
 };
@@ -24,6 +25,7 @@ const GameBoardTokenSpawnDialog: React.FC<GameBoardTokenSpawnDialogProps> = ({
   cardDetailLookup,
   onDestinationChange,
   onCountChange,
+  onQuickSpawnToken,
   onCancel,
   onConfirm,
 }) => {
@@ -123,15 +125,40 @@ const GameBoardTokenSpawnDialog: React.FC<GameBoardTokenSpawnDialogProps> = ({
                   alignItems: 'center',
                 }}
               >
-                <CardArtwork
-                  image={token.image}
-                  alt={token.name}
-                  detail={cardDetailLookup[token.cardId]}
-                  baseCardType={token.baseCardType}
-                  isTokenCard={true}
-                  style={{ width: '100px', height: '140px', borderRadius: '6px' }}
-                  draggable={false}
-                />
+                {onQuickSpawnToken ? (
+                  <button
+                    type="button"
+                    onClick={() => onQuickSpawnToken(token.cardId)}
+                    aria-label={token.name}
+                    style={{
+                      padding: 0,
+                      border: 'none',
+                      background: 'transparent',
+                      cursor: 'pointer',
+                      borderRadius: '6px',
+                    }}
+                  >
+                    <CardArtwork
+                      image={token.image}
+                      alt={token.name}
+                      detail={cardDetailLookup[token.cardId]}
+                      baseCardType={token.baseCardType}
+                      isTokenCard={true}
+                      style={{ width: '100px', height: '140px', borderRadius: '6px' }}
+                      draggable={false}
+                    />
+                  </button>
+                ) : (
+                  <CardArtwork
+                    image={token.image}
+                    alt={token.name}
+                    detail={cardDetailLookup[token.cardId]}
+                    baseCardType={token.baseCardType}
+                    isTokenCard={true}
+                    style={{ width: '100px', height: '140px', borderRadius: '6px' }}
+                    draggable={false}
+                  />
+                )}
                 <span style={{ fontSize: '0.78rem', lineHeight: 1.35, textAlign: 'center' }}>{token.name}</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.2rem' }}>
                   <button
