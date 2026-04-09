@@ -51,9 +51,6 @@ import {
   buildUpdatedDeckBuilderLibraryFilterStateWithPageReset,
 } from '../utils/deckBuilderFilters';
 import {
-  type DeckBuilderMyDecksUiStatePatch,
-  buildClearedSavedDeckSelectionUiState,
-  buildClosedMyDecksUiState,
   buildCompletedDeleteAllSavedDecksUiState,
   buildCompletedDeleteSelectedSavedDecksUiState,
   buildCompletedSavedDeckLoadUiState,
@@ -61,15 +58,11 @@ import {
   buildDismissedDeleteSelectedSavedDecksUiState,
   buildDismissedPendingSavedDeckDeleteUiState,
   buildDismissedPendingSavedDeckLoadUiState,
-  buildEnteredSavedDeckSelectionUiState,
   buildOpenedDeleteAllSavedDecksUiState,
   buildOpenedDeleteSelectedSavedDecksUiState,
   buildOpenedMyDecksUiState,
   buildOpenedPendingSavedDeckDeleteUiState,
   buildOpenedPendingSavedDeckLoadUiState,
-  buildToggledSavedDeckSelectionUiState,
-  buildToggledShownSavedDeckSelectionUiState,
-  buildUpdatedSavedDeckSearchUiState,
 } from '../utils/deckBuilderMyDecksState';
 import {
   buildDismissedDeckLogImportUiState,
@@ -134,12 +127,8 @@ import {
   shouldDetachSavedDeckTracking,
 } from '../utils/deckBuilderPersistence';
 import {
-  areAllShownSavedDecksSelected,
-  buildFilteredSavedDecks,
   canAddSubtypeTag,
   getFilteredSubtypeOptions,
-  getSavedDeckSelectionUiState,
-  getShownSavedDeckIds,
 } from '../utils/deckBuilderSelections';
 import {
   DECK_HOVER_PREVIEW_MAX_HEIGHT,
@@ -155,6 +144,7 @@ import { loadCardCatalog } from '../utils/cardCatalog';
 import { fetchDeckLogImport } from '../utils/decklogImport';
 import { useDeckBuilderPreviewUi } from '../hooks/useDeckBuilderPreviewUi';
 import { useDeckBuilderModalUi } from '../hooks/useDeckBuilderModalUi';
+import { useDeckBuilderSavedDeckUi } from '../hooks/useDeckBuilderSavedDeckUi';
 
 const PAGE_SIZE = 50;
 const COST_FILTER_VALUES = ['All', '0', '1', '2', '3', '4', '5', '6', '7+'] as const;
@@ -184,17 +174,9 @@ const DeckBuilder: React.FC = () => {
   const [savedDecks, setSavedDecks] = useState<SavedDeckRecordV1[]>(() => listSavedDecks());
   const [selectedSavedDeckId, setSelectedSavedDeckId] = useState<string | null>(null);
   const [savedBaselineSnapshot, setSavedBaselineSnapshot] = useState<DeckBuilderSnapshot | null>(null);
-  const [isMyDecksOpen, setIsMyDecksOpen] = useState(false);
-  const [savedDeckSearch, setSavedDeckSearch] = useState('');
   const [draftRestored, setDraftRestored] = useState(false);
   const [hasInitializedDraft, setHasInitializedDraft] = useState(false);
   const [pendingDraftRestore, setPendingDraftRestore] = useState<PendingDraftRestoreState | null>(null);
-  const [pendingDeleteDeckId, setPendingDeleteDeckId] = useState<string | null>(null);
-  const [showDeleteAllSavedDecksDialog, setShowDeleteAllSavedDecksDialog] = useState(false);
-  const [showDeleteSelectedSavedDecksDialog, setShowDeleteSelectedSavedDecksDialog] = useState(false);
-  const [pendingLoadDeckId, setPendingLoadDeckId] = useState<string | null>(null);
-  const [isSavedDeckSelectMode, setIsSavedDeckSelectMode] = useState(false);
-  const [selectedSavedDeckIds, setSelectedSavedDeckIds] = useState<string[]>([]);
   const {
     previewCard,
     hoveredDeckCard,
@@ -216,6 +198,27 @@ const DeckBuilder: React.FC = () => {
     isImportingDeckLog,
     applyDeckBuilderModalUiState,
   } = useDeckBuilderModalUi();
+  const {
+    isMyDecksOpen,
+    savedDeckSearch,
+    pendingDeleteDeckId,
+    showDeleteAllSavedDecksDialog,
+    showDeleteSelectedSavedDecksDialog,
+    pendingLoadDeckId,
+    isSavedDeckSelectMode,
+    selectedSavedDeckIds,
+    filteredSavedDecks,
+    savedDeckSelectionUiState,
+    applyDeckBuilderMyDecksUiState,
+    toggleSavedDeckSelection,
+    handleToggleShownSavedDeckSelection,
+    handleCloseMyDecks,
+    handleToggleSavedDeckSelectionMode,
+    handleSavedDeckSearchChange,
+  } = useDeckBuilderSavedDeckUi({
+    savedDecks,
+    cards,
+  });
 
   useEffect(() => {
     loadCardCatalog()
@@ -296,23 +299,6 @@ const DeckBuilder: React.FC = () => {
     savedDeckCount,
     t
   );
-  const filteredSavedDecks = React.useMemo(
-    () => buildFilteredSavedDecks(savedDecks, cards, savedDeckSearch),
-    [cards, savedDeckSearch, savedDecks]
-  );
-  const shownSavedDeckIds = React.useMemo(() => getShownSavedDeckIds(filteredSavedDecks), [filteredSavedDecks]);
-  const areAllShownSavedDecksSelectedValue = areAllShownSavedDecksSelected(
-    shownSavedDeckIds,
-    selectedSavedDeckIds
-  );
-  const savedDeckSelectionUiState = getSavedDeckSelectionUiState({
-    filteredSavedDeckCount: filteredSavedDecks.length,
-    savedDeckCount,
-    isSavedDeckSelectMode,
-    selectedSavedDeckCount: selectedSavedDeckIds.length,
-    areAllShownSavedDecksSelected: areAllShownSavedDecksSelectedValue,
-  });
-
   useEffect(() => {
     const draftPersistenceAction = getDraftPersistenceAction(
       cards.length,
@@ -367,37 +353,6 @@ const DeckBuilder: React.FC = () => {
     updater: (current: DeckRuleConfig) => DeckRuleConfig
   ) => {
     setDeckRuleConfig(current => updater(current));
-  };
-
-  const applyDeckBuilderMyDecksUiState = (state: DeckBuilderMyDecksUiStatePatch) => {
-    if (state.isMyDecksOpen !== undefined) {
-      setIsMyDecksOpen(state.isMyDecksOpen);
-    }
-    if (state.pendingLoadDeckId !== undefined) {
-      setPendingLoadDeckId(state.pendingLoadDeckId);
-    }
-    if (state.pendingDeleteDeckId !== undefined) {
-      setPendingDeleteDeckId(state.pendingDeleteDeckId);
-    }
-    if (state.showDeleteAllSavedDecksDialog !== undefined) {
-      setShowDeleteAllSavedDecksDialog(state.showDeleteAllSavedDecksDialog);
-    }
-    if (state.showDeleteSelectedSavedDecksDialog !== undefined) {
-      setShowDeleteSelectedSavedDecksDialog(state.showDeleteSelectedSavedDecksDialog);
-    }
-    if (state.isSavedDeckSelectMode !== undefined) {
-      setIsSavedDeckSelectMode(state.isSavedDeckSelectMode);
-    }
-    if (state.selectedSavedDeckIds !== undefined) {
-      setSelectedSavedDeckIds(state.selectedSavedDeckIds);
-    }
-    if (state.savedDeckSearch !== undefined) {
-      setSavedDeckSearch(state.savedDeckSearch);
-    }
-  };
-
-  const clearSavedDeckSelection = () => {
-    applyDeckBuilderMyDecksUiState(buildClearedSavedDeckSelectionUiState());
   };
 
   const buildCurrentLibraryFilterState = (): DeckBuilderLibraryFilterState => ({
@@ -663,35 +618,6 @@ const DeckBuilder: React.FC = () => {
     }
     refreshSavedDecks();
     applyDeckBuilderMyDecksUiState(buildCompletedDeleteSelectedSavedDecksUiState());
-  };
-
-  const toggleSavedDeckSelection = (deckId: string) => {
-    setSelectedSavedDeckIds(current => (
-      buildToggledSavedDeckSelectionUiState(current, deckId).selectedSavedDeckIds ?? current
-    ));
-  };
-
-  const handleToggleShownSavedDeckSelection = () => {
-    setSelectedSavedDeckIds(current => (
-      buildToggledShownSavedDeckSelectionUiState(current, shownSavedDeckIds).selectedSavedDeckIds ?? current
-    ));
-  };
-
-  const handleCloseMyDecks = () => {
-    applyDeckBuilderMyDecksUiState(buildClosedMyDecksUiState());
-  };
-
-  const handleToggleSavedDeckSelectionMode = () => {
-    if (isSavedDeckSelectMode) {
-      clearSavedDeckSelection();
-      return;
-    }
-
-    applyDeckBuilderMyDecksUiState(buildEnteredSavedDeckSelectionUiState());
-  };
-
-  const handleSavedDeckSearchChange = (value: string) => {
-    applyDeckBuilderMyDecksUiState(buildUpdatedSavedDeckSearchUiState(value));
   };
 
   const handleDeckFormatChange = (nextFormat: DeckFormat) => {
