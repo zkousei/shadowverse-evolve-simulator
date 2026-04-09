@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ClassFilter } from '../models/class';
 import DeckBuilderDeckPane from '../components/DeckBuilderDeckPane';
 import DeckBuilderDeckLogImportDialog from '../components/DeckBuilderDeckLogImportDialog';
 import DeckBuilderDeleteSavedDecksDialog from '../components/DeckBuilderDeleteSavedDecksDialog';
@@ -43,12 +42,6 @@ import {
 import {
   type DeckBuilderCardTypeFilter,
   type DeckBuilderDeckSectionFilter,
-  type DeckBuilderLibraryFilterState,
-  buildDefaultDeckBuilderLibraryFilterState,
-  buildSubtypeAddedDeckBuilderLibraryFilterState,
-  buildSubtypeRemovedDeckBuilderLibraryFilterState,
-  buildUpdatedDeckBuilderLibraryFilterState,
-  buildUpdatedDeckBuilderLibraryFilterStateWithPageReset,
 } from '../utils/deckBuilderFilters';
 import {
   buildCompletedDeleteAllSavedDecksUiState,
@@ -128,7 +121,6 @@ import {
 } from '../utils/deckBuilderPersistence';
 import {
   canAddSubtypeTag,
-  getFilteredSubtypeOptions,
 } from '../utils/deckBuilderSelections';
 import {
   DECK_HOVER_PREVIEW_MAX_HEIGHT,
@@ -145,6 +137,7 @@ import { fetchDeckLogImport } from '../utils/decklogImport';
 import { useDeckBuilderPreviewUi } from '../hooks/useDeckBuilderPreviewUi';
 import { useDeckBuilderModalUi } from '../hooks/useDeckBuilderModalUi';
 import { useDeckBuilderSavedDeckUi } from '../hooks/useDeckBuilderSavedDeckUi';
+import { useDeckBuilderLibraryFilters } from '../hooks/useDeckBuilderLibraryFilters';
 
 const PAGE_SIZE = 50;
 const COST_FILTER_VALUES = ['All', '0', '1', '2', '3', '4', '5', '6', '7+'] as const;
@@ -154,19 +147,6 @@ const CARD_TYPE_FILTER_VALUES: readonly DeckBuilderCardTypeFilter[] = ['All', 'f
 const DeckBuilder: React.FC = () => {
   const { t } = useTranslation();
   const [cards, setCards] = useState<DeckBuilderCardData[]>([]);
-  const [search, setSearch] = useState('');
-  const [costFilter, setCostFilter] = useState('All');
-  const [expansionFilter, setExpansionFilter] = useState('All');
-  const [classFilter, setClassFilter] = useState<ClassFilter>('All');
-  const [cardTypeFilter, setCardTypeFilter] = useState<DeckBuilderCardTypeFilter>('All');
-  const [rarityFilter, setRarityFilter] = useState('All');
-  const [productNameFilter, setProductNameFilter] = useState('All');
-  const [subtypeSearch, setSubtypeSearch] = useState('');
-  const [selectedSubtypeTags, setSelectedSubtypeTags] = useState<string[]>([]);
-  const [deckSectionFilter, setDeckSectionFilter] = useState<DeckBuilderDeckSectionFilter>('All');
-  const [hideSameNameVariants, setHideSameNameVariants] = useState(false);
-  const [page, setPage] = useState(0);
-
   const [deckName, setDeckName] = useState('');
   const [deckRuleConfig, setDeckRuleConfig] = useState(createDefaultDeckRuleConfig());
   const [deckState, setDeckState] = useState<DeckState>(createEmptyDeckState());
@@ -177,6 +157,29 @@ const DeckBuilder: React.FC = () => {
   const [draftRestored, setDraftRestored] = useState(false);
   const [hasInitializedDraft, setHasInitializedDraft] = useState(false);
   const [pendingDraftRestore, setPendingDraftRestore] = useState<PendingDraftRestoreState | null>(null);
+  const subtypeTags = getAvailableSubtypeTags(cards);
+  const {
+    search,
+    costFilter,
+    expansionFilter,
+    classFilter,
+    cardTypeFilter,
+    rarityFilter,
+    productNameFilter,
+    subtypeSearch,
+    selectedSubtypeTags,
+    deckSectionFilter,
+    hideSameNameVariants,
+    page,
+    filteredSubtypeOptions,
+    resetLibraryFilters,
+    updateLibraryFilters,
+    updateLibraryFiltersWithPageReset,
+    addSubtypeTag,
+    removeSubtypeTag,
+  } = useDeckBuilderLibraryFilters({
+    subtypeTags,
+  });
   const {
     previewCard,
     hoveredDeckCard,
@@ -244,7 +247,6 @@ const DeckBuilder: React.FC = () => {
   const expansions = getAvailableExpansions(cards);
   const rarities = getAvailableRarities(cards);
   const productNames = getAvailableProductNames(cards);
-  const subtypeTags = getAvailableSubtypeTags(cards);
   const titles = getAvailableTitles(cards);
   const cardDetailLookup = React.useMemo(() => buildCardDetailLookup(cards), [cards]);
   const isRuleReady = isRuleConfigured(deckRuleConfig);
@@ -355,36 +357,6 @@ const DeckBuilder: React.FC = () => {
     setDeckRuleConfig(current => updater(current));
   };
 
-  const buildCurrentLibraryFilterState = (): DeckBuilderLibraryFilterState => ({
-    search,
-    costFilter,
-    expansionFilter,
-    classFilter,
-    cardTypeFilter,
-    rarityFilter,
-    productNameFilter,
-    subtypeSearch,
-    selectedSubtypeTags,
-    deckSectionFilter,
-    hideSameNameVariants,
-    page,
-  });
-
-  const applyDeckBuilderLibraryFilterState = (state: DeckBuilderLibraryFilterState) => {
-    setSearch(state.search);
-    setCostFilter(state.costFilter);
-    setExpansionFilter(state.expansionFilter);
-    setClassFilter(state.classFilter);
-    setCardTypeFilter(state.cardTypeFilter);
-    setRarityFilter(state.rarityFilter);
-    setProductNameFilter(state.productNameFilter);
-    setSubtypeSearch(state.subtypeSearch);
-    setSelectedSubtypeTags(state.selectedSubtypeTags);
-    setDeckSectionFilter(state.deckSectionFilter);
-    setHideSameNameVariants(state.hideSameNameVariants);
-    setPage(state.page);
-  };
-
   const resetBuilderState = () => {
     applyDeckBuilderSessionState(buildResetDeckBuilderSessionState());
   };
@@ -400,46 +372,6 @@ const DeckBuilder: React.FC = () => {
     applyDeckBuilderSessionState(buildContinuedDraftRestoreSessionState(pendingDraftRestore));
   };
 
-  const resetLibraryFilters = () => {
-    applyDeckBuilderLibraryFilterState(buildDefaultDeckBuilderLibraryFilterState());
-  };
-
-  const updateLibraryFilters = (
-    patch: Partial<DeckBuilderLibraryFilterState>
-  ) => {
-    applyDeckBuilderLibraryFilterState(
-      buildUpdatedDeckBuilderLibraryFilterState(buildCurrentLibraryFilterState(), patch)
-    );
-  };
-
-  const updateLibraryFiltersWithPageReset = (
-    patch: Omit<Partial<DeckBuilderLibraryFilterState>, 'page'>
-  ) => {
-    applyDeckBuilderLibraryFilterState(
-      buildUpdatedDeckBuilderLibraryFilterStateWithPageReset(
-        buildCurrentLibraryFilterState(),
-        patch
-      )
-    );
-  };
-
-  const addSubtypeTag = (tag: string) => {
-    applyDeckBuilderLibraryFilterState(
-      buildSubtypeAddedDeckBuilderLibraryFilterState(
-        buildCurrentLibraryFilterState(),
-        subtypeTags,
-        tag
-      )
-    );
-  };
-
-  const removeSubtypeTag = (tag: string) => {
-    applyDeckBuilderLibraryFilterState(
-      buildSubtypeRemovedDeckBuilderLibraryFilterState(buildCurrentLibraryFilterState(), tag)
-    );
-  };
-
-  const filteredSubtypeOptions = getFilteredSubtypeOptions(subtypeTags, subtypeSearch);
   const previewDetail = previewCard ? cardDetailLookup[previewCard.id] ?? null : null;
   const hoveredDetail = hoveredDeckCard ? cardDetailLookup[hoveredDeckCard.id] ?? null : null;
   const hoveredPreviewPosition = hoveredDeckCard
