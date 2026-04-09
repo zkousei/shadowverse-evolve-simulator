@@ -2,7 +2,7 @@ import React from 'react';
 import { DndContext } from '@dnd-kit/core';
 import { useTranslation } from 'react-i18next';
 import Zone from '../components/Zone';
-import type { CardInspectAnchor, CardInstance } from '../components/Card';
+import type { CardInstance } from '../components/Card';
 import CardSearchModal from '../components/CardSearchModal';
 import GameBoardAttackModeBanner from '../components/GameBoardAttackModeBanner';
 import GameBoardBoardRow from '../components/GameBoardBoardRow';
@@ -34,23 +34,19 @@ import {
   buildRevealHandZoneActions,
 } from '../components/gameBoardZoneActionViewModel';
 import TopDeckModal from '../components/TopDeckModal';
+import { useGameBoardAttackUi } from '../hooks/useGameBoardAttackUi';
 import { useGameBoardLogic } from '../hooks/useGameBoardLogic';
 import { buildGameBoardViewModel } from '../hooks/gameBoardViewModel';
 import { useGameBoardDialogsUi } from '../hooks/useGameBoardDialogsUi';
+import { useGameBoardInspectorUi } from '../hooks/useGameBoardInspectorUi';
 import { useGameBoardSavedDeckPicker } from '../hooks/useGameBoardSavedDeckPicker';
-import { getZoneOwner } from '../utils/soloMode';
 import type { PlayerRole } from '../types/game';
 import type { AttackTarget } from '../types/sync';
-import { buildCardDetailPresentation } from '../utils/cardDetails';
 import {
   formatSavedSessionTimestamp,
-  getInspectorPopoverStyle,
 } from '../utils/gameBoardPresentation';
 import {
-  shouldDismissAttackModeOnPointerDown,
-  shouldDismissInspectorOnPointerDown,
   shouldDismissModalOnBackdropClick,
-  shouldDismissOnEscapeKey,
 } from '../utils/gameBoardDismissals';
 import {
   activeBoardSectionStyle,
@@ -64,13 +60,7 @@ import {
   topPanelWidth,
 } from './gameBoardLayout';
 import {
-  canInspectCard,
-  canStartAttack,
-  getAttackHighlightTone as resolveAttackHighlightTone,
   getAttackTargetFromCard as resolveAttackTargetFromCard,
-  shouldClearAttackSource,
-  shouldClearInspectorSelection,
-  shouldDisableQuickActionsForAttackTarget as shouldDisableQuickActionsForAttackTargetCard,
 } from '../utils/gameBoardCombat';
 
 const GameBoard: React.FC = () => {
@@ -96,11 +86,7 @@ const GameBoard: React.FC = () => {
 
   const [mulliganTargetRole, setMulliganTargetRole] = React.useState<PlayerRole>('host');
   const [activeZoneActions, setActiveZoneActions] = React.useState<string | null>(null);
-  const [selectedInspectorCardId, setSelectedInspectorCardId] = React.useState<string | null>(null);
-  const [selectedInspectorAnchor, setSelectedInspectorAnchor] = React.useState<CardInspectAnchor | null>(null);
-  const [attackSourceCardId, setAttackSourceCardId] = React.useState<string | null>(null);
   const [isRoomCopied, setIsRoomCopied] = React.useState(false);
-  const inspectorRef = React.useRef<HTMLDivElement | null>(null);
   const {
     allCardsLength,
     savedDeckSearch,
@@ -219,11 +205,6 @@ const GameBoard: React.FC = () => {
 
     return formatSavedSessionTimestamp(savedSessionCandidate.savedAt);
   }, [savedSessionCandidate]);
-  const attackSourceCard = attackSourceCardId
-    ? gameState.cards.find(card => card.id === attackSourceCardId) ?? null
-    : null;
-  const attackSourceController = attackSourceCard ? getZoneOwner(attackSourceCard.zone) : null;
-
   const handleCopyRoomId = React.useCallback(async () => {
     if (!room) return;
 
@@ -247,16 +228,6 @@ const GameBoard: React.FC = () => {
       setIsRoomCopied(false);
     }
   }, [room]);
-
-  React.useEffect(() => {
-    if (isSoloMode || connectionState === 'connected') return;
-
-    resetDialogsForConnectionChange();
-    setActiveZoneActions(null);
-    setSelectedInspectorCardId(null);
-    setSelectedInspectorAnchor(null);
-    setAttackSourceCardId(null);
-  }, [connectionState, isSoloMode, resetDialogsForConnectionChange]);
 
   const attackLine = React.useMemo(() => {
     if (!attackVisual || typeof document === 'undefined') return null;
@@ -285,145 +256,58 @@ const GameBoard: React.FC = () => {
     return { sourcePoint, targetPoint };
   }, [attackVisual]);
 
+  const {
+    attackSourceCard,
+    attackSourceController,
+    handleStartAttack: startAttackMode,
+    handleAttackTargetSelect,
+    getAttackHighlightTone,
+    shouldDisableQuickActionsForAttackTarget,
+    clearAttackSource,
+  } = useGameBoardAttackUi({
+    canInteract,
+    cards: gameState.cards,
+    cardStatLookup,
+    gameStatus: gameState.gameStatus,
+    turnPlayer: gameState.turnPlayer,
+    handleDeclareAttack,
+    onAttackModeStarted: undefined,
+  });
   const getAttackTargetFromCard = React.useCallback((card: CardInstance): AttackTarget | null => {
     return resolveAttackTargetFromCard(attackSourceCard, card, cardStatLookup);
   }, [attackSourceCard, cardStatLookup]);
-
-  const shouldDisableQuickActionsForAttackTarget = React.useCallback((card: CardInstance): boolean => {
-    return shouldDisableQuickActionsForAttackTargetCard(attackSourceCard, card);
-  }, [attackSourceCard]);
-
-  const handleAttackTargetSelect = React.useCallback((target: AttackTarget) => {
-    if (!attackSourceCard) return;
-    handleDeclareAttack(attackSourceCard.id, target, attackSourceController ?? attackSourceCard.owner);
-    setAttackSourceCardId(null);
-  }, [attackSourceCard, attackSourceController, handleDeclareAttack]);
-
-  const handleInspectCard = React.useCallback((card: CardInstance, anchor: CardInspectAnchor) => {
-    const attackTarget = getAttackTargetFromCard(card);
-    if (attackTarget) {
-      handleAttackTargetSelect(attackTarget);
-      return;
-    }
-
-    if (!canInspectCard(card)) return;
-
-    if (selectedInspectorCardId === card.id) {
-      setSelectedInspectorCardId(null);
-      setSelectedInspectorAnchor(null);
-      return;
-    }
-
-    setSelectedInspectorCardId(card.id);
-    setSelectedInspectorAnchor(anchor);
-  }, [getAttackTargetFromCard, handleAttackTargetSelect, selectedInspectorCardId]);
-
+  const {
+    inspectorRef,
+    selectedInspectorCard,
+    selectedInspectorDetail,
+    inspectorPresentation,
+    inspectorPopoverStyle,
+    handleInspectCard,
+    closeInspector,
+  } = useGameBoardInspectorUi({
+    cards: gameState.cards,
+    cardDetailLookup,
+    getAttackTargetFromCard,
+    handleAttackTargetSelect,
+  });
+  const handleStartAttack = React.useCallback((cardId: string) => {
+    closeInspector();
+    startAttackMode(cardId);
+  }, [closeInspector, startAttackMode]);
   React.useEffect(() => {
-    if (!selectedInspectorCardId) return;
+    if (isSoloMode || connectionState === 'connected') return;
 
-    const selectedCard = gameState.cards.find(card => card.id === selectedInspectorCardId);
-    if (shouldClearInspectorSelection(selectedCard)) {
-      setSelectedInspectorCardId(null);
-      setSelectedInspectorAnchor(null);
-    }
-  }, [gameState.cards, selectedInspectorCardId]);
-
-  React.useEffect(() => {
-    if (!selectedInspectorCardId) return;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (!shouldDismissOnEscapeKey(event.key)) return;
-
-      setSelectedInspectorCardId(null);
-      setSelectedInspectorAnchor(null);
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedInspectorCardId]);
-
-  React.useEffect(() => {
-    if (!attackSourceCardId) return;
-
-    const sourceCard = gameState.cards.find(card => card.id === attackSourceCardId);
-    if (shouldClearAttackSource(sourceCard, gameState.gameStatus, gameState.turnPlayer)) {
-      setAttackSourceCardId(null);
-    }
-  }, [attackSourceCardId, gameState.cards, gameState.gameStatus, gameState.turnPlayer]);
-
-  React.useEffect(() => {
-    if (!attackSourceCardId) return;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (!shouldDismissOnEscapeKey(event.key)) return;
-
-      setAttackSourceCardId(null);
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [attackSourceCardId]);
-
-  React.useEffect(() => {
-    if (!attackSourceCardId) return;
-
-    const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (!shouldDismissAttackModeOnPointerDown(target)) return;
-
-      setAttackSourceCardId(null);
-    };
-
-    document.addEventListener('pointerdown', handlePointerDown, true);
-    return () => document.removeEventListener('pointerdown', handlePointerDown, true);
-  }, [attackSourceCardId]);
-
-  React.useEffect(() => {
-    if (!selectedInspectorCardId) return;
-
-    const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (!shouldDismissInspectorOnPointerDown(target, inspectorRef.current)) return;
-
-      setSelectedInspectorCardId(null);
-      setSelectedInspectorAnchor(null);
-    };
-
-    document.addEventListener('pointerdown', handlePointerDown, true);
-    return () => document.removeEventListener('pointerdown', handlePointerDown, true);
-  }, [selectedInspectorCardId]);
-
-  const selectedInspectorCard = selectedInspectorCardId
-    ? gameState.cards.find(card => card.id === selectedInspectorCardId) ?? null
-    : null;
-  const selectedInspectorDetail = selectedInspectorCard
-    ? cardDetailLookup[selectedInspectorCard.cardId]
-    : null;
-  const inspectorPresentation = buildCardDetailPresentation(selectedInspectorDetail);
-  const inspectorPopoverStyle = React.useMemo<React.CSSProperties | null>(() => {
-    if (!selectedInspectorAnchor) return null;
-
-    return getInspectorPopoverStyle(selectedInspectorAnchor, {
-      width: window.innerWidth,
-      height: window.innerHeight,
-    });
-  }, [selectedInspectorAnchor]);
+    resetDialogsForConnectionChange();
+    setActiveZoneActions(null);
+    closeInspector();
+    clearAttackSource();
+  }, [clearAttackSource, closeInspector, connectionState, isSoloMode, resetDialogsForConnectionChange]);
 
   const openMulliganModal = (targetRole: PlayerRole) => {
     if (!canInteract) return;
     setMulliganTargetRole(targetRole);
     startMulligan();
   };
-
-  const handleStartAttack = React.useCallback((cardId: string) => {
-    if (!canInteract) return;
-    const card = gameState.cards.find(entry => entry.id === cardId);
-    if (!canStartAttack(card, cardStatLookup, gameState.gameStatus, gameState.turnPlayer)) return;
-
-    setSelectedInspectorCardId(null);
-    setSelectedInspectorAnchor(null);
-    setAttackSourceCardId(current => current === cardId ? null : cardId);
-  }, [canInteract, cardStatLookup, gameState.cards, gameState.gameStatus, gameState.turnPlayer]);
 
   const openSearchZone = React.useCallback((id: string, title: string) => {
     if (!canView) return;
@@ -477,10 +361,6 @@ const GameBoard: React.FC = () => {
         border: '2px solid black',
       };
 
-  const getAttackHighlightTone = React.useCallback((card: CardInstance): 'attack-source' | 'attack-target' | undefined => {
-    return resolveAttackHighlightTone(attackSourceCard, card, cardStatLookup);
-  }, [attackSourceCard, cardStatLookup]);
-
   return (
     <DndContext onDragEnd={(event) => {
       if (!canInteract) return;
@@ -531,7 +411,7 @@ const GameBoard: React.FC = () => {
         {attackSourceCard && (
           <GameBoardAttackModeBanner
             attackerName={attackSourceCard.name}
-            onCancel={() => setAttackSourceCardId(null)}
+            onCancel={clearAttackSource}
           />
         )}
 
