@@ -360,6 +360,180 @@ const GameBoard: React.FC = () => {
         boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
         border: '2px solid black',
       };
+  const topControlsPanelProps = {
+    label: topLabel,
+    panelWidth: topPanelWidth,
+    importDeckLabel: t('gameBoard.zones.importDeck', { label: topLabel }),
+    loadSavedDeckLabel: t('gameBoard.zones.loadFromMyDecks', { label: topLabel }),
+    canImportDeck: canImportTopDeck,
+    canOpenSavedDeckPicker,
+    savedDeckPickerUnavailableTitle,
+    onDeckUpload: (event: React.ChangeEvent<HTMLInputElement>) => handleDeckUpload(event, topRole),
+    onOpenSavedDeckPicker: () => openSavedDeckPicker(topRole),
+    canUsePlayingActions: gameState.gameStatus === 'playing' && canInteract,
+    playingActionsDisabledTitle: interactionBlockedTitle ?? t('gameBoard.board.availableDuringGameOnly'),
+    onDraw: () => drawCard(topRole),
+    onMill: () => millCard(topRole),
+    onMoveTopCardToEx: () => moveTopCardToEx(topRole),
+    drawButtonBackground: '#6366f1',
+    canOpenTokenSpawn: canInteract,
+    onOpenTokenSpawn: () => openTokenSpawnModal(topRole),
+    spawnButtonBackground: '#7c3aed',
+    undoMoveButton: renderUndoMoveButton(topRole),
+    trackerTestId: `player-tracker-${topRole}`,
+    playerState: gameState[topRole],
+    onAdjustStat: (stat: 'hp' | 'pp' | 'maxPp' | 'ep' | 'sep' | 'combo', delta: number) => handleStatChange(topRole, stat, delta),
+    readOnlyTracker: isSpectator,
+  };
+  const topSoloHandSectionProps = {
+    columns: boardColumns,
+    width: boardContentWidth,
+    centerWidth: centerZoneWidth,
+    minHeight: '150px',
+    zoneProps: {
+      id: `hand-${topRole}`,
+      label: t('gameBoard.zones.hand', { label: topLabel }),
+      cards: getCards(`hand-${topRole}`),
+      cardDetailLookup,
+      hideCards: shouldHideTopHand,
+      layout: 'horizontal' as const,
+      onInspectCard: handleInspectCard,
+      isProtected: true,
+      lockCards: isPreparingHandMoveLocked,
+      viewerRole,
+      onModifyCounter: handleModifyCounter,
+      onModifyGenericCounter: handleModifyGenericCounter,
+      onSendToBottom: handleSendToBottom,
+      onBanish: handleBanish,
+      onCemetery: handleSendToCemetery,
+      onPlayToField: (cardId: string) => handlePlayToField(cardId, topRole),
+      containerStyle: { minHeight: '150px' },
+    },
+    activeMenuId: activeZoneActions,
+    onActiveMenuChange: setActiveZoneActions,
+    showActionMenu: gameState.gameStatus === 'playing' && canInteract && getCards(`hand-${topRole}`).length > 0,
+    actionMenu: topHandRandomDiscardZoneActions,
+    showMulliganButton: gameState.gameStatus === 'preparing' && gameState[topRole].initialHandDrawn && !gameState[topRole].mulliganUsed,
+    mulliganLabel: t('gameBoard.preparation.mulliganButton', { label: topLabel }),
+    onOpenMulligan: () => openMulliganModal(topRole),
+    mulliganButtonStyle: soloMulliganButtonStyle,
+  };
+  const topReadOnlyHandSectionProps = {
+    columns: boardColumns,
+    width: boardContentWidth,
+    centerWidth: centerZoneWidth,
+    justifyCenter: true,
+    zoneProps: {
+      id: `hand-${topRole}`,
+      label: t('gameBoard.zones.hand', { label: topLabel }),
+      cards: getCards(`hand-${topRole}`),
+      cardDetailLookup,
+      hideCards: shouldHideTopHand,
+      layout: 'horizontal' as const,
+      onInspectCard: handleInspectCard,
+      isProtected: true,
+      lockCards: isPreparingHandMoveLocked,
+      viewerRole,
+      containerStyle: { minHeight: '150px' },
+    },
+    activeMenuId: activeZoneActions,
+    onActiveMenuChange: setActiveZoneActions,
+    showActionMenu: gameState.gameStatus === 'playing' && canInteract && getCards(`hand-${topRole}`).length > 0,
+    actionMenu: topHandRandomDiscardZoneActions,
+  };
+  const bottomHandSectionProps = {
+    width: boardContentWidth,
+    zoneProps: {
+      id: `hand-${bottomRole}`,
+      label: t('gameBoard.zones.hand', { label: bottomLabel }),
+      cards: getCards(`hand-${bottomRole}`),
+      cardDetailLookup,
+      onInspectCard: handleInspectCard,
+      onModifyCounter: handleModifyCounter,
+      onSendToBottom: handleSendToBottom,
+      onBanish: handleBanish,
+      onCemetery: handleSendToCemetery,
+      onPlayToField: handlePlayToField,
+      isProtected: true,
+      lockCards: isPreparingHandMoveLocked,
+      viewerRole,
+      containerStyle: { minHeight: '160px' },
+      isDebug,
+    },
+    activeMenuId: activeZoneActions,
+    onActiveMenuChange: setActiveZoneActions,
+    showRandomDiscardMenu: isSoloMode && gameState.gameStatus === 'playing' && canInteract && getCards(`hand-${bottomRole}`).length > 0,
+    randomDiscardZoneActions: bottomHandRandomDiscardZoneActions,
+    showRevealHandMenu: !isSoloMode && gameState.gameStatus === 'playing' && canInteract && getCards(`hand-${bottomRole}`).length > 0,
+    revealHandZoneActions: bottomHandRevealZoneActions,
+    showMulliganButton: gameState.gameStatus === 'preparing' && canInteract && gameState[bottomRole].initialHandDrawn && !gameState[bottomRole].mulliganUsed,
+    mulliganLabel: t('game.mulligan_desc', { label: isSoloMode ? bottomLabel : t('game.mulligan_action') }),
+    onOpenMulligan: () => openMulliganModal(bottomRole),
+    mulliganButtonStyle: bottomMulliganButtonStyle,
+  };
+  const bottomControlsPanelProps = {
+    label: bottomLabel,
+    panelWidth: sidePanelWidth,
+    importDeckLabel: isSoloMode
+      ? t('gameBoard.zones.importDeck', { label: bottomLabel })
+      : t('gameBoard.zones.importDeckJson'),
+    loadSavedDeckLabel: isSoloMode
+      ? t('gameBoard.zones.loadFromMyDecks', { label: bottomLabel })
+      : t('gameBoard.zones.loadFromMyDecksGeneric'),
+    canImportDeck: canImportBottomDeck,
+    canOpenSavedDeckPicker,
+    savedDeckPickerUnavailableTitle,
+    onDeckUpload: (event: React.ChangeEvent<HTMLInputElement>) => handleDeckUpload(event, bottomRole),
+    onOpenSavedDeckPicker: () => openSavedDeckPicker(bottomRole),
+    canUsePlayingActions: gameState.gameStatus === 'playing' && canInteract,
+    playingActionsDisabledTitle: interactionBlockedTitle ?? t('gameBoard.board.availableDuringGameOnly'),
+    onDraw: () => drawCard(bottomRole),
+    onMill: () => millCard(bottomRole),
+    onMoveTopCardToEx: () => moveTopCardToEx(bottomRole),
+    drawButtonBackground: 'var(--accent-primary)',
+    canOpenTokenSpawn: canInteract,
+    onOpenTokenSpawn: () => openTokenSpawnModal(bottomRole),
+    spawnButtonBackground: 'var(--accent-secondary)',
+    undoMoveButton: renderUndoMoveButton(bottomRole),
+    trackerTestId: `player-tracker-${bottomRole}`,
+    playerState: gameState[bottomRole],
+    onAdjustStat: (stat: 'hp' | 'pp' | 'maxPp' | 'ep' | 'sep' | 'combo', delta: number) => handleStatChange(bottomRole, stat, delta),
+    containerStyle: { marginLeft: '1.25rem' },
+  };
+  const savedDeckPickerDialogProps = savedDeckImportTargetRole && savedDeckPickerTargetLabel
+    ? {
+        targetLabel: savedDeckPickerTargetLabel,
+        savedDeckSearch,
+        filteredSavedDeckOptions,
+        onBackdropClick: (event: React.MouseEvent<HTMLElement>) => {
+          if (!shouldDismissModalOnBackdropClick(event.target, event.currentTarget)) return;
+          closeSavedDeckPicker();
+        },
+        onClose: closeSavedDeckPicker,
+        onSearchChange: setSavedDeckSearch,
+        onLoadDeck: handleSavedDeckImport,
+      }
+    : null;
+  const evolveAutoAttachDialogProps = evolveAutoAttachSelection
+    ? {
+        selection: evolveAutoAttachSelection,
+        cardDetailLookup,
+        onBackdropClick: (event: React.MouseEvent<HTMLElement>) => {
+          if (!shouldDismissModalOnBackdropClick(event.target, event.currentTarget)) return;
+          cancelEvolveAutoAttachSelection();
+        },
+        onCancel: cancelEvolveAutoAttachSelection,
+        onConfirm: confirmEvolveAutoAttachSelection,
+      }
+    : null;
+  const cardInspectorSectionProps = {
+    ref: inspectorRef,
+    selectedInspectorCard,
+    selectedInspectorDetail,
+    inspectorPresentation,
+    inspectorPopoverStyle,
+    onClose: closeInspector,
+  };
 
   return (
     <DndContext onDragEnd={(event) => {
@@ -444,24 +618,7 @@ const GameBoard: React.FC = () => {
             {isSoloMode ? (
               <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: '1rem', alignItems: 'flex-start', width: '100%', maxWidth: '1568px', justifyContent: 'center' }}>
                 <GameBoardPlayerControlsPanel
-                  label={topLabel}
-                  panelWidth={topPanelWidth}
-                  importDeckLabel={t('gameBoard.zones.importDeck', { label: topLabel })}
-                  loadSavedDeckLabel={t('gameBoard.zones.loadFromMyDecks', { label: topLabel })}
-                  canImportDeck={canImportTopDeck}
-                  canOpenSavedDeckPicker={canOpenSavedDeckPicker}
-                  savedDeckPickerUnavailableTitle={savedDeckPickerUnavailableTitle}
-                  onDeckUpload={(event) => handleDeckUpload(event, topRole)}
-                  onOpenSavedDeckPicker={() => openSavedDeckPicker(topRole)}
-                  canUsePlayingActions={gameState.gameStatus === 'playing' && canInteract}
-                  playingActionsDisabledTitle={interactionBlockedTitle ?? t('gameBoard.board.availableDuringGameOnly')}
-                  onDraw={() => drawCard(topRole)}
-                  onMill={() => millCard(topRole)}
-                  onMoveTopCardToEx={() => moveTopCardToEx(topRole)}
-                  drawButtonBackground="#6366f1"
-                  canOpenTokenSpawn={canInteract}
-                  onOpenTokenSpawn={() => openTokenSpawnModal(topRole)}
-                  spawnButtonBackground="#7c3aed"
+                  {...topControlsPanelProps}
                   middleControls={
                     <GameBoardEndTurnSection
                       playerRole={topRole}
@@ -475,46 +632,11 @@ const GameBoard: React.FC = () => {
                     />
                   }
                   undoMoveButton={renderUndoMoveButton(topRole)}
-                  trackerTestId={`player-tracker-${topRole}`}
-                  playerState={gameState[topRole]}
-                  onAdjustStat={(stat, delta) => handleStatChange(topRole, stat, delta)}
                   readOnlyTracker={isSpectator}
                 />
 
                 <div style={{ width: `${boardContentWidth}px`, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.65rem', alignItems: 'flex-start' }}>
-                  <GameBoardTopHandSection
-                    columns={boardColumns}
-                    width={boardContentWidth}
-                    centerWidth={centerZoneWidth}
-                    minHeight="150px"
-                    zoneProps={{
-                      id: `hand-${topRole}`,
-                      label: t('gameBoard.zones.hand', { label: topLabel }),
-                      cards: getCards(`hand-${topRole}`),
-                      cardDetailLookup,
-                      hideCards: shouldHideTopHand,
-                      layout: 'horizontal',
-                      onInspectCard: handleInspectCard,
-                      isProtected: true,
-                      lockCards: isPreparingHandMoveLocked,
-                      viewerRole,
-                      onModifyCounter: handleModifyCounter,
-                      onModifyGenericCounter: handleModifyGenericCounter,
-                      onSendToBottom: handleSendToBottom,
-                      onBanish: handleBanish,
-                      onCemetery: handleSendToCemetery,
-                      onPlayToField: (cardId) => handlePlayToField(cardId, topRole),
-                      containerStyle: { minHeight: '150px' },
-                    }}
-                    activeMenuId={activeZoneActions}
-                    onActiveMenuChange={setActiveZoneActions}
-                    showActionMenu={gameState.gameStatus === 'playing' && canInteract && getCards(`hand-${topRole}`).length > 0}
-                    actionMenu={topHandRandomDiscardZoneActions}
-                    showMulliganButton={gameState.gameStatus === 'preparing' && gameState[topRole].initialHandDrawn && !gameState[topRole].mulliganUsed}
-                    mulliganLabel={t('gameBoard.preparation.mulliganButton', { label: topLabel })}
-                    onOpenMulligan={() => openMulliganModal(topRole)}
-                    mulliganButtonStyle={soloMulliganButtonStyle}
-                  />
+                  <GameBoardTopHandSection {...topSoloHandSectionProps} />
 
                   <GameBoardBoardRow columns={boardColumns} width={boardContentWidth}>
                     <GameBoardSearchableStackSection
@@ -626,29 +748,7 @@ const GameBoard: React.FC = () => {
                 </div>
 
                 <div style={{ width: `${boardContentWidth}px`, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.65rem', alignItems: 'flex-start' }}>
-                  <GameBoardTopHandSection
-                    columns={boardColumns}
-                    width={boardContentWidth}
-                    centerWidth={centerZoneWidth}
-                    justifyCenter={true}
-                    zoneProps={{
-                      id: `hand-${topRole}`,
-                      label: t('gameBoard.zones.hand', { label: topLabel }),
-                      cards: getCards(`hand-${topRole}`),
-                      cardDetailLookup,
-                      hideCards: shouldHideTopHand,
-                      layout: 'horizontal',
-                      onInspectCard: handleInspectCard,
-                      isProtected: true,
-                      lockCards: isPreparingHandMoveLocked,
-                      viewerRole,
-                      containerStyle: { minHeight: '150px' },
-                    }}
-                    activeMenuId={activeZoneActions}
-                    onActiveMenuChange={setActiveZoneActions}
-                    showActionMenu={gameState.gameStatus === 'playing' && canInteract && getCards(`hand-${topRole}`).length > 0}
-                    actionMenu={topHandRandomDiscardZoneActions}
-                  />
+                  <GameBoardTopHandSection {...topReadOnlyHandSectionProps} />
 
                   <GameBoardBoardRow columns={boardColumns} width={boardContentWidth}>
                     <GameBoardSearchableStackSection
@@ -802,36 +902,7 @@ const GameBoard: React.FC = () => {
                   />
 	                </GameBoardBoardRow>
 
-	                <GameBoardBottomHandSection
-                    width={boardContentWidth}
-                    zoneProps={{
-                      id: `hand-${bottomRole}`,
-                      label: t('gameBoard.zones.hand', { label: bottomLabel }),
-                      cards: getCards(`hand-${bottomRole}`),
-                      cardDetailLookup,
-                      onInspectCard: handleInspectCard,
-                      onModifyCounter: handleModifyCounter,
-                      onSendToBottom: handleSendToBottom,
-                      onBanish: handleBanish,
-                      onCemetery: handleSendToCemetery,
-                      onPlayToField: handlePlayToField,
-                      isProtected: true,
-                      lockCards: isPreparingHandMoveLocked,
-                      viewerRole,
-                      containerStyle: { minHeight: '160px' },
-                      isDebug,
-                    }}
-                    activeMenuId={activeZoneActions}
-                    onActiveMenuChange={setActiveZoneActions}
-                    showRandomDiscardMenu={isSoloMode && gameState.gameStatus === 'playing' && canInteract && getCards(`hand-${bottomRole}`).length > 0}
-                    randomDiscardZoneActions={bottomHandRandomDiscardZoneActions}
-                    showRevealHandMenu={!isSoloMode && gameState.gameStatus === 'playing' && canInteract && getCards(`hand-${bottomRole}`).length > 0}
-                    revealHandZoneActions={bottomHandRevealZoneActions}
-                    showMulliganButton={gameState.gameStatus === 'preparing' && canInteract && gameState[bottomRole].initialHandDrawn && !gameState[bottomRole].mulliganUsed}
-                    mulliganLabel={t('game.mulligan_desc', { label: isSoloMode ? bottomLabel : t('game.mulligan_action') })}
-                    onOpenMulligan={() => openMulliganModal(bottomRole)}
-                    mulliganButtonStyle={bottomMulliganButtonStyle}
-                  />
+	                <GameBoardBottomHandSection {...bottomHandSectionProps} />
               </div>
 
               {isSpectator ? (
@@ -843,28 +914,7 @@ const GameBoard: React.FC = () => {
                 </div>
               ) : (
                 <GameBoardPlayerControlsPanel
-                  label={bottomLabel}
-                  panelWidth={sidePanelWidth}
-                  importDeckLabel={isSoloMode
-                    ? t('gameBoard.zones.importDeck', { label: bottomLabel })
-                    : t('gameBoard.zones.importDeckJson')}
-                  loadSavedDeckLabel={isSoloMode
-                    ? t('gameBoard.zones.loadFromMyDecks', { label: bottomLabel })
-                    : t('gameBoard.zones.loadFromMyDecksGeneric')}
-                  canImportDeck={canImportBottomDeck}
-                  canOpenSavedDeckPicker={canOpenSavedDeckPicker}
-                  savedDeckPickerUnavailableTitle={savedDeckPickerUnavailableTitle}
-                  onDeckUpload={(event) => handleDeckUpload(event, bottomRole)}
-                  onOpenSavedDeckPicker={() => openSavedDeckPicker(bottomRole)}
-                  canUsePlayingActions={gameState.gameStatus === 'playing' && canInteract}
-                  playingActionsDisabledTitle={interactionBlockedTitle ?? t('gameBoard.board.availableDuringGameOnly')}
-                  onDraw={() => drawCard(bottomRole)}
-                  onMill={() => millCard(bottomRole)}
-                  onMoveTopCardToEx={() => moveTopCardToEx(bottomRole)}
-                  drawButtonBackground="var(--accent-primary)"
-                  canOpenTokenSpawn={canInteract}
-                  onOpenTokenSpawn={() => openTokenSpawnModal(bottomRole)}
-                  spawnButtonBackground="var(--accent-secondary)"
+                  {...bottomControlsPanelProps}
                   middleControls={
                     <>
                       {canShowEndStopToggle && (
@@ -937,11 +987,6 @@ const GameBoard: React.FC = () => {
                       {t('gameBoard.controls.resetGame')}
                     </button>
                   ) : null}
-                  undoMoveButton={renderUndoMoveButton(bottomRole)}
-                  trackerTestId={`player-tracker-${bottomRole}`}
-                  playerState={gameState[bottomRole]}
-                  onAdjustStat={(stat, delta) => handleStatChange(bottomRole, stat, delta)}
-                  containerStyle={{ marginLeft: '1.25rem' }}
                 />
               )}
             </div>
@@ -1073,48 +1118,10 @@ const GameBoard: React.FC = () => {
       )}
 
       <GameBoardDialogsHost
-        savedDeckPicker={
-          savedDeckImportTargetRole && savedDeckPickerTargetLabel
-            ? {
-                targetLabel: savedDeckPickerTargetLabel,
-                savedDeckSearch,
-                filteredSavedDeckOptions,
-                onBackdropClick: (event) => {
-                  if (!shouldDismissModalOnBackdropClick(event.target, event.currentTarget)) return;
-                  closeSavedDeckPicker();
-                },
-                onClose: closeSavedDeckPicker,
-                onSearchChange: setSavedDeckSearch,
-                onLoadDeck: handleSavedDeckImport,
-              }
-            : null
-        }
-        evolveAutoAttach={
-          evolveAutoAttachSelection
-            ? {
-                selection: evolveAutoAttachSelection,
-                cardDetailLookup,
-                onBackdropClick: (event) => {
-                  if (!shouldDismissModalOnBackdropClick(event.target, event.currentTarget)) return;
-                  cancelEvolveAutoAttachSelection();
-                },
-                onCancel: cancelEvolveAutoAttachSelection,
-                onConfirm: confirmEvolveAutoAttachSelection,
-              }
-            : null
-        }
+        savedDeckPicker={savedDeckPickerDialogProps}
+        evolveAutoAttach={evolveAutoAttachDialogProps}
       />
-      <GameBoardCardInspectorSection
-        ref={inspectorRef}
-        selectedInspectorCard={selectedInspectorCard}
-        selectedInspectorDetail={selectedInspectorDetail}
-        inspectorPresentation={inspectorPresentation}
-        inspectorPopoverStyle={inspectorPopoverStyle}
-        onClose={() => {
-          setSelectedInspectorCardId(null);
-          setSelectedInspectorAnchor(null);
-        }}
-      />
+      <GameBoardCardInspectorSection {...cardInspectorSectionProps} />
     </DndContext>
   );
 };
