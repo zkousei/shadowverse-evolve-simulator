@@ -83,15 +83,6 @@ import {
   buildStartedDeckLogImportUiState,
 } from '../utils/deckBuilderModalState';
 import {
-  type DeckBuilderPreviewUiStatePatch,
-  buildClosedPreviewUiState,
-  buildDeckHoverPointerPosition,
-  buildEndedDeckHoverUiState,
-  buildMovedDeckHoverUiState,
-  buildOpenedPreviewUiState,
-  buildStartedDeckHoverUiState,
-} from '../utils/deckBuilderPreviewState';
-import {
   buildConstructedClassUpdatedRuleConfig,
   buildConstructedTitleUpdatedRuleConfig,
   buildCrossoverClassUpdatedRuleConfig,
@@ -163,6 +154,7 @@ import {
 } from '../utils/deckBuilderDisplay';
 import { loadCardCatalog } from '../utils/cardCatalog';
 import { fetchDeckLogImport } from '../utils/decklogImport';
+import { useDeckBuilderPreviewUi } from '../hooks/useDeckBuilderPreviewUi';
 
 const PAGE_SIZE = 50;
 const COST_FILTER_VALUES = ['All', '0', '1', '2', '3', '4', '5', '6', '7+'] as const;
@@ -195,9 +187,6 @@ const DeckBuilder: React.FC = () => {
   const [deckState, setDeckState] = useState<DeckState>(createEmptyDeckState());
   const [deckSortMode, setDeckSortMode] = useState<DeckSortMode>('added');
   const [showResetDeckDialog, setShowResetDeckDialog] = useState(false);
-  const [previewCard, setPreviewCard] = useState<DeckBuilderCardData | null>(null);
-  const [hoveredDeckCard, setHoveredDeckCard] = useState<DeckBuilderCardData | null>(null);
-  const [hoverPos, setHoverPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [savedDecks, setSavedDecks] = useState<SavedDeckRecordV1[]>(() => listSavedDecks());
   const [selectedSavedDeckId, setSelectedSavedDeckId] = useState<string | null>(null);
   const [savedBaselineSnapshot, setSavedBaselineSnapshot] = useState<DeckBuilderSnapshot | null>(null);
@@ -217,37 +206,22 @@ const DeckBuilder: React.FC = () => {
   const [isDeckLogImportOpen, setIsDeckLogImportOpen] = useState(false);
   const [deckLogInput, setDeckLogInput] = useState('');
   const [isImportingDeckLog, setIsImportingDeckLog] = useState(false);
-
-  const applyDeckBuilderPreviewUiState = (state: DeckBuilderPreviewUiStatePatch) => {
-    if (state.previewCard !== undefined) {
-      setPreviewCard(state.previewCard);
-    }
-    if (state.hoveredDeckCard !== undefined) {
-      setHoveredDeckCard(state.hoveredDeckCard);
-    }
-    if (state.hoverPos !== undefined) {
-      setHoverPos(state.hoverPos);
-    }
-  };
+  const {
+    previewCard,
+    hoveredDeckCard,
+    hoverPos,
+    handleOpenPreview,
+    handleClosePreview,
+    handleDeckCardMouseEnter,
+    handleDeckCardMouseMove,
+    handleDeckCardMouseLeave,
+  } = useDeckBuilderPreviewUi();
 
   useEffect(() => {
     loadCardCatalog()
       .then(data => setCards(data))
       .catch(err => console.error("Could not load cards", err));
   }, []);
-
-  useEffect(() => {
-    if (!previewCard) return;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        applyDeckBuilderPreviewUiState(buildClosedPreviewUiState());
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [previewCard]);
 
   useEffect(() => {
     if (cards.length === 0 || hasInitializedDraft) return;
@@ -547,40 +521,6 @@ const DeckBuilder: React.FC = () => {
       height: window.innerHeight,
     })
     : null;
-
-  const handleOpenPreview = (card: DeckBuilderCardData) => {
-    applyDeckBuilderPreviewUiState(buildOpenedPreviewUiState(card));
-  };
-
-  const handleClosePreview = () => {
-    applyDeckBuilderPreviewUiState(buildClosedPreviewUiState());
-  };
-
-  const handleDeckCardMouseEnter = (
-    card: DeckBuilderCardData,
-    event: React.MouseEvent<HTMLDivElement>
-  ) => {
-    applyDeckBuilderPreviewUiState(
-      buildStartedDeckHoverUiState(
-        card,
-        buildDeckHoverPointerPosition(event.clientX, event.clientY)
-      )
-    );
-  };
-
-  const handleDeckCardMouseMove = (
-    event: React.MouseEvent<HTMLDivElement>
-  ) => {
-    applyDeckBuilderPreviewUiState(
-      buildMovedDeckHoverUiState(
-        buildDeckHoverPointerPosition(event.clientX, event.clientY)
-      )
-    );
-  };
-
-  const handleDeckCardMouseLeave = () => {
-    applyDeckBuilderPreviewUiState(buildEndedDeckHoverUiState());
-  };
 
   const addToDeck = (card: DeckBuilderCardData, targetSection: DeckTargetSection) => {
     if (!canAddCardToDeckState(card, targetSection, deckState, deckRuleConfig)) return;
