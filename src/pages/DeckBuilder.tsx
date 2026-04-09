@@ -547,6 +547,217 @@ const DeckBuilder: React.FC = () => {
     );
   };
 
+  const libraryPaneProps = {
+    isLoading: cards.length === 0,
+    paginatedCards,
+    cardDetailLookup,
+    search,
+    hideSameNameVariants,
+    deckSectionFilter,
+    classFilter,
+    cardTypeFilter,
+    costFilter,
+    expansionFilter,
+    rarityFilter,
+    productNameFilter,
+    subtypeSearch,
+    selectedSubtypeTags,
+    filteredSubtypeOptions,
+    costFilterValues: COST_FILTER_VALUES,
+    deckSectionFilterValues: DECK_SECTION_FILTER_VALUES,
+    cardTypeFilterValues: CARD_TYPE_FILTER_VALUES,
+    expansions,
+    rarities,
+    productNames,
+    canAddSubtype: canAddSubtypeTag(subtypeTags, selectedSubtypeTags, subtypeSearch),
+    page,
+    totalPages,
+    canGoPrev: page > 0,
+    canGoNext: page < totalPages - 1,
+    getAllowedSections,
+    canAddToSection: (card: DeckBuilderCardData, section: DeckTargetSection) => (
+      canAddCardToDeckState(card, section, deckState, deckRuleConfig)
+    ),
+    onSearchChange: (value: string) => updateLibraryFiltersWithPageReset({ search: value }),
+    onHideSameNameVariantsChange: (checked: boolean) => (
+      updateLibraryFiltersWithPageReset({ hideSameNameVariants: checked })
+    ),
+    onReset: resetLibraryFilters,
+    onDeckSectionFilterChange: (value: DeckBuilderDeckSectionFilter) => (
+      updateLibraryFiltersWithPageReset({ deckSectionFilter: value })
+    ),
+    onClassFilterChange: (value: string) => updateLibraryFiltersWithPageReset({ classFilter: value }),
+    onCardTypeFilterChange: (value: DeckBuilderCardTypeFilter) => (
+      updateLibraryFiltersWithPageReset({ cardTypeFilter: value })
+    ),
+    onCostFilterChange: (value: string) => updateLibraryFiltersWithPageReset({ costFilter: value }),
+    onExpansionFilterChange: (value: string) => updateLibraryFiltersWithPageReset({ expansionFilter: value }),
+    onRarityFilterChange: (value: string) => updateLibraryFiltersWithPageReset({ rarityFilter: value }),
+    onProductNameFilterChange: (value: string) => (
+      updateLibraryFiltersWithPageReset({ productNameFilter: value })
+    ),
+    onSubtypeSearchChange: (value: string) => updateLibraryFilters({ subtypeSearch: value }),
+    onAddSubtype: () => addSubtypeTag(subtypeSearch),
+    onRemoveSubtype: removeSubtypeTag,
+    onPrev: () => updateLibraryFilters({ page: Math.max(0, page - 1) }),
+    onNext: () => updateLibraryFilters({ page: Math.min(totalPages - 1, page + 1) }),
+    onOpenPreview: handleOpenPreview,
+    onAddToSection: addToDeck,
+  };
+
+  const deckPaneProps = {
+    deckName,
+    canSaveCurrentDeck,
+    canExportDeck,
+    selectedSavedDeckId,
+    saveStateMessage,
+    draftRestored,
+    hasReachedSoftLimit,
+    hasReachedHardLimit,
+    savedDeckCount,
+    hardSavedDeckLimit: HARD_SAVED_DECK_LIMIT,
+    deckRuleConfig,
+    titles,
+    crossoverClassOptionsA,
+    crossoverClassOptionsB,
+    isRuleReady,
+    deckIssueMessages,
+    deckSortMode,
+    leaderCount: leaderCards.length,
+    leaderLimit,
+    groupedLeaderCards,
+    mainDeckCount: mainDeck.length,
+    groupedMainDeck,
+    evolveDeckCount: evolveDeck.length,
+    groupedEvolveDeck,
+    tokenDeckCount: tokenDeck.length,
+    groupedTokenDeck,
+    onDeckNameChange: setDeckName,
+    onSave: () => handleSaveDeck(false),
+    onMakeUnsavedCopy: handleMakeUnsavedCopy,
+    onOpenMyDecks: () => applyDeckBuilderMyDecksUiState(buildOpenedMyDecksUiState()),
+    onImportDeck: handleImportDeck,
+    onOpenDeckLogImport: () => applyDeckBuilderModalUiState(buildOpenedDeckLogImportUiState()),
+    onExportDeck: exportDeck,
+    onDeckFormatChange: handleDeckFormatChange,
+    onDeckIdentityTypeChange: handleDeckIdentityTypeChange,
+    onConstructedClassChange: handleConstructedClassChange,
+    onConstructedTitleChange: handleConstructedTitleChange,
+    onCrossoverClassChange: handleCrossoverClassChange,
+    onDeckSortModeChange: setDeckSortMode,
+    onOpenResetDeckDialog: () => applyDeckBuilderModalUiState(buildOpenedResetDeckDialogUiState()),
+    onOpenResetBuilderDialog: () => applyDeckBuilderModalUiState(buildOpenedResetBuilderDialogUiState()),
+    canAddMainCard: (card: DeckBuilderCardData) => canAddCardToDeckState(card, 'main', deckState, deckRuleConfig),
+    canAddEvolveCard: (card: DeckBuilderCardData) => canAddCardToDeckState(card, 'evolve', deckState, deckRuleConfig),
+    canAddTokenCard: (card: DeckBuilderCardData) => canAddCardToDeckState(card, 'token', deckState, deckRuleConfig),
+    onRemoveLeader: (cardId: string) => removeFromDeck('leader', cardId),
+    onRemoveMain: (cardId: string) => removeFromDeck('main', cardId),
+    onAddMain: (card: DeckBuilderCardData) => addToDeck(card, 'main'),
+    onRemoveEvolve: (cardId: string) => removeFromDeck('evolve', cardId),
+    onAddEvolve: (card: DeckBuilderCardData) => addToDeck(card, 'evolve'),
+    onRemoveToken: (cardId: string) => removeFromDeck('token', cardId),
+    onAddToken: (card: DeckBuilderCardData) => addToDeck(card, 'token'),
+    onDeckCardMouseEnter: handleDeckCardMouseEnter,
+    onDeckCardMouseMove: handleDeckCardMouseMove,
+    onDeckCardMouseLeave: handleDeckCardMouseLeave,
+  };
+
+  const myDecksModalProps = {
+    canCreateNewSavedDeck,
+    hardSavedDeckLimit: HARD_SAVED_DECK_LIMIT,
+    isSavedDeckSelectMode,
+    savedDeckSelectionUiState,
+    savedDeckSearch,
+    filteredSavedDecks,
+    selectedSavedDeckIds,
+    selectedSavedDeckId,
+    onClose: handleCloseMyDecks,
+    onSaveAsNew: () => handleSaveDeck(true),
+    onToggleSelectionMode: handleToggleSavedDeckSelectionMode,
+    onDeleteAll: () => applyDeckBuilderMyDecksUiState(buildOpenedDeleteAllSavedDecksUiState()),
+    onSearchChange: handleSavedDeckSearchChange,
+    onToggleShownSelection: handleToggleShownSavedDeckSelection,
+    onDeleteSelected: () => applyDeckBuilderMyDecksUiState(buildOpenedDeleteSelectedSavedDecksUiState()),
+    onToggleSelection: toggleSavedDeckSelection,
+    onLoad: (deckId: string) => {
+      if (isDirty) {
+        applyDeckBuilderMyDecksUiState(buildOpenedPendingSavedDeckLoadUiState(deckId));
+        return;
+      }
+
+      handleLoadSavedDeck(deckId);
+    },
+    onDuplicate: handleDuplicateSavedDeck,
+    onExport: handleExportSavedDeck,
+    onDelete: (deckId: string) => applyDeckBuilderMyDecksUiState(buildOpenedPendingSavedDeckDeleteUiState(deckId)),
+  };
+
+  const pendingLoadDialogProps = pendingLoadDeck ? {
+    kind: 'load' as const,
+    deckName: pendingLoadDeck.name,
+    onCancel: () => applyDeckBuilderMyDecksUiState(buildDismissedPendingSavedDeckLoadUiState()),
+    onConfirm: () => handleLoadSavedDeck(pendingLoadDeck.id),
+  } : null;
+
+  const pendingDeleteDialogProps = pendingDeleteDeck ? {
+    kind: 'delete' as const,
+    deckName: pendingDeleteDeck.name,
+    onCancel: () => applyDeckBuilderMyDecksUiState(buildDismissedPendingSavedDeckDeleteUiState()),
+    onConfirm: () => handleDeleteSavedDeck(pendingDeleteDeck.id),
+  } : null;
+
+  const deckLogImportDialogProps = {
+    deckLogInput,
+    isImportingDeckLog,
+    onDeckLogInputChange: setDeckLogInput,
+    onCancel: () => {
+      if (isImportingDeckLog) return;
+      applyDeckBuilderModalUiState(buildDismissedDeckLogImportUiState());
+    },
+    onImport: handleImportDeckLog,
+  };
+
+  const deleteSelectedDialogProps = {
+    kind: 'selected' as const,
+    count: selectedSavedDeckIds.length,
+    onCancel: () => applyDeckBuilderMyDecksUiState(buildDismissedDeleteSelectedSavedDecksUiState()),
+    onConfirm: handleDeleteSelectedSavedDecks,
+  };
+
+  const deleteAllDialogProps = {
+    kind: 'all' as const,
+    count: savedDecks.length,
+    onCancel: () => applyDeckBuilderMyDecksUiState(buildDismissedDeleteAllSavedDecksUiState()),
+    onConfirm: handleDeleteAllSavedDecks,
+  };
+
+  const previewModalProps = previewCard ? {
+    previewCard,
+    previewDetail,
+    onClose: handleClosePreview,
+  } : null;
+
+  const resetDeckDialogProps = {
+    kind: 'deck' as const,
+    onCancel: () => applyDeckBuilderModalUiState(buildDismissedResetDeckDialogUiState()),
+    onConfirm: resetDeckContents,
+  };
+
+  const resetBuilderDialogProps = {
+    kind: 'builder' as const,
+    onCancel: () => applyDeckBuilderModalUiState(buildDismissedResetBuilderDialogUiState()),
+    onConfirm: resetBuilder,
+  };
+
+  const hoverPreviewProps = hoveredDeckCard ? {
+    hoveredDeckCard,
+    hoveredDetail,
+    left: hoveredPreviewPosition?.left ?? DECK_HOVER_PREVIEW_VIEWPORT_PADDING,
+    top: hoveredPreviewPosition?.top ?? DECK_HOVER_PREVIEW_VIEWPORT_PADDING,
+    width: DECK_HOVER_PREVIEW_WIDTH,
+    maxHeight: DECK_HOVER_PREVIEW_MAX_HEIGHT,
+  } : null;
+
   return (
     <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
       {saveFeedback && (
@@ -556,226 +767,41 @@ const DeckBuilder: React.FC = () => {
         />
       )}
 
-      <DeckBuilderLibraryPane
-        isLoading={cards.length === 0}
-        paginatedCards={paginatedCards}
-        cardDetailLookup={cardDetailLookup}
-        search={search}
-        hideSameNameVariants={hideSameNameVariants}
-        deckSectionFilter={deckSectionFilter}
-        classFilter={classFilter}
-        cardTypeFilter={cardTypeFilter}
-        costFilter={costFilter}
-        expansionFilter={expansionFilter}
-        rarityFilter={rarityFilter}
-        productNameFilter={productNameFilter}
-        subtypeSearch={subtypeSearch}
-        selectedSubtypeTags={selectedSubtypeTags}
-        filteredSubtypeOptions={filteredSubtypeOptions}
-        costFilterValues={COST_FILTER_VALUES}
-        deckSectionFilterValues={DECK_SECTION_FILTER_VALUES}
-        cardTypeFilterValues={CARD_TYPE_FILTER_VALUES}
-        expansions={expansions}
-        rarities={rarities}
-        productNames={productNames}
-        canAddSubtype={canAddSubtypeTag(subtypeTags, selectedSubtypeTags, subtypeSearch)}
-        page={page}
-        totalPages={totalPages}
-        canGoPrev={page > 0}
-        canGoNext={page < totalPages - 1}
-        getAllowedSections={getAllowedSections}
-        canAddToSection={(card, section) => canAddCardToDeckState(card, section, deckState, deckRuleConfig)}
-        onSearchChange={(value) => updateLibraryFiltersWithPageReset({ search: value })}
-        onHideSameNameVariantsChange={(checked) => updateLibraryFiltersWithPageReset({ hideSameNameVariants: checked })}
-        onReset={resetLibraryFilters}
-        onDeckSectionFilterChange={(value) => updateLibraryFiltersWithPageReset({ deckSectionFilter: value })}
-        onClassFilterChange={(value) => updateLibraryFiltersWithPageReset({ classFilter: value })}
-        onCardTypeFilterChange={(value) => updateLibraryFiltersWithPageReset({ cardTypeFilter: value })}
-        onCostFilterChange={(value) => updateLibraryFiltersWithPageReset({ costFilter: value })}
-        onExpansionFilterChange={(value) => updateLibraryFiltersWithPageReset({ expansionFilter: value })}
-        onRarityFilterChange={(value) => updateLibraryFiltersWithPageReset({ rarityFilter: value })}
-        onProductNameFilterChange={(value) => updateLibraryFiltersWithPageReset({ productNameFilter: value })}
-        onSubtypeSearchChange={(value) => updateLibraryFilters({ subtypeSearch: value })}
-        onAddSubtype={() => addSubtypeTag(subtypeSearch)}
-        onRemoveSubtype={removeSubtypeTag}
-        onPrev={() => updateLibraryFilters({ page: Math.max(0, page - 1) })}
-        onNext={() => updateLibraryFilters({ page: Math.min(totalPages - 1, page + 1) })}
-        onOpenPreview={handleOpenPreview}
-        onAddToSection={addToDeck}
-      />
+      <DeckBuilderLibraryPane {...libraryPaneProps} />
 
-      <DeckBuilderDeckPane
-        deckName={deckName}
-        canSaveCurrentDeck={canSaveCurrentDeck}
-        canExportDeck={canExportDeck}
-        selectedSavedDeckId={selectedSavedDeckId}
-        saveStateMessage={saveStateMessage}
-        draftRestored={draftRestored}
-        hasReachedSoftLimit={hasReachedSoftLimit}
-        hasReachedHardLimit={hasReachedHardLimit}
-        savedDeckCount={savedDeckCount}
-        hardSavedDeckLimit={HARD_SAVED_DECK_LIMIT}
-        deckRuleConfig={deckRuleConfig}
-        titles={titles}
-        crossoverClassOptionsA={crossoverClassOptionsA}
-        crossoverClassOptionsB={crossoverClassOptionsB}
-        isRuleReady={isRuleReady}
-        deckIssueMessages={deckIssueMessages}
-        deckSortMode={deckSortMode}
-        leaderCount={leaderCards.length}
-        leaderLimit={leaderLimit}
-        groupedLeaderCards={groupedLeaderCards}
-        mainDeckCount={mainDeck.length}
-        groupedMainDeck={groupedMainDeck}
-        evolveDeckCount={evolveDeck.length}
-        groupedEvolveDeck={groupedEvolveDeck}
-        tokenDeckCount={tokenDeck.length}
-        groupedTokenDeck={groupedTokenDeck}
-        onDeckNameChange={setDeckName}
-        onSave={() => handleSaveDeck(false)}
-        onMakeUnsavedCopy={handleMakeUnsavedCopy}
-        onOpenMyDecks={() => applyDeckBuilderMyDecksUiState(buildOpenedMyDecksUiState())}
-        onImportDeck={handleImportDeck}
-        onOpenDeckLogImport={() => applyDeckBuilderModalUiState(buildOpenedDeckLogImportUiState())}
-        onExportDeck={exportDeck}
-        onDeckFormatChange={handleDeckFormatChange}
-        onDeckIdentityTypeChange={handleDeckIdentityTypeChange}
-        onConstructedClassChange={handleConstructedClassChange}
-        onConstructedTitleChange={handleConstructedTitleChange}
-        onCrossoverClassChange={handleCrossoverClassChange}
-        onDeckSortModeChange={setDeckSortMode}
-        onOpenResetDeckDialog={() => applyDeckBuilderModalUiState(buildOpenedResetDeckDialogUiState())}
-        onOpenResetBuilderDialog={() => applyDeckBuilderModalUiState(buildOpenedResetBuilderDialogUiState())}
-        canAddMainCard={(card) => canAddCardToDeckState(card, 'main', deckState, deckRuleConfig)}
-        canAddEvolveCard={(card) => canAddCardToDeckState(card, 'evolve', deckState, deckRuleConfig)}
-        canAddTokenCard={(card) => canAddCardToDeckState(card, 'token', deckState, deckRuleConfig)}
-        onRemoveLeader={(cardId) => removeFromDeck('leader', cardId)}
-        onRemoveMain={(cardId) => removeFromDeck('main', cardId)}
-        onAddMain={(card) => addToDeck(card, 'main')}
-        onRemoveEvolve={(cardId) => removeFromDeck('evolve', cardId)}
-        onAddEvolve={(card) => addToDeck(card, 'evolve')}
-        onRemoveToken={(cardId) => removeFromDeck('token', cardId)}
-        onAddToken={(card) => addToDeck(card, 'token')}
-        onDeckCardMouseEnter={handleDeckCardMouseEnter}
-        onDeckCardMouseMove={handleDeckCardMouseMove}
-        onDeckCardMouseLeave={handleDeckCardMouseLeave}
-      />
+      <DeckBuilderDeckPane {...deckPaneProps} />
 
       {isMyDecksOpen && (
-        <DeckBuilderMyDecksModal
-          canCreateNewSavedDeck={canCreateNewSavedDeck}
-          hardSavedDeckLimit={HARD_SAVED_DECK_LIMIT}
-          isSavedDeckSelectMode={isSavedDeckSelectMode}
-          savedDeckSelectionUiState={savedDeckSelectionUiState}
-          savedDeckSearch={savedDeckSearch}
-          filteredSavedDecks={filteredSavedDecks}
-          selectedSavedDeckIds={selectedSavedDeckIds}
-          selectedSavedDeckId={selectedSavedDeckId}
-          onClose={handleCloseMyDecks}
-          onSaveAsNew={() => handleSaveDeck(true)}
-          onToggleSelectionMode={handleToggleSavedDeckSelectionMode}
-          onDeleteAll={() => applyDeckBuilderMyDecksUiState(buildOpenedDeleteAllSavedDecksUiState())}
-          onSearchChange={handleSavedDeckSearchChange}
-          onToggleShownSelection={handleToggleShownSavedDeckSelection}
-          onDeleteSelected={() => applyDeckBuilderMyDecksUiState(buildOpenedDeleteSelectedSavedDecksUiState())}
-          onToggleSelection={toggleSavedDeckSelection}
-          onLoad={(deckId) => {
-            if (isDirty) {
-              applyDeckBuilderMyDecksUiState(buildOpenedPendingSavedDeckLoadUiState(deckId));
-              return;
-            }
-
-            handleLoadSavedDeck(deckId);
-          }}
-          onDuplicate={handleDuplicateSavedDeck}
-          onExport={handleExportSavedDeck}
-          onDelete={(deckId) => applyDeckBuilderMyDecksUiState(buildOpenedPendingSavedDeckDeleteUiState(deckId))}
-        />
+        <DeckBuilderMyDecksModal {...myDecksModalProps} />
       )}
 
-      {pendingLoadDeck && (
-        <DeckBuilderSavedDeckConfirmDialog
-          kind="load"
-          deckName={pendingLoadDeck.name}
-          onCancel={() => applyDeckBuilderMyDecksUiState(buildDismissedPendingSavedDeckLoadUiState())}
-          onConfirm={() => handleLoadSavedDeck(pendingLoadDeck.id)}
-        />
-      )}
+      {pendingLoadDialogProps && <DeckBuilderSavedDeckConfirmDialog {...pendingLoadDialogProps} />}
 
-      {pendingDeleteDeck && (
-        <DeckBuilderSavedDeckConfirmDialog
-          kind="delete"
-          deckName={pendingDeleteDeck.name}
-          onCancel={() => applyDeckBuilderMyDecksUiState(buildDismissedPendingSavedDeckDeleteUiState())}
-          onConfirm={() => handleDeleteSavedDeck(pendingDeleteDeck.id)}
-        />
-      )}
+      {pendingDeleteDialogProps && <DeckBuilderSavedDeckConfirmDialog {...pendingDeleteDialogProps} />}
 
       {isDeckLogImportOpen && (
-        <DeckBuilderDeckLogImportDialog
-          deckLogInput={deckLogInput}
-          isImportingDeckLog={isImportingDeckLog}
-          onDeckLogInputChange={setDeckLogInput}
-          onCancel={() => {
-            if (isImportingDeckLog) return;
-            applyDeckBuilderModalUiState(buildDismissedDeckLogImportUiState());
-          }}
-          onImport={handleImportDeckLog}
-        />
+        <DeckBuilderDeckLogImportDialog {...deckLogImportDialogProps} />
       )}
 
       {showDeleteSelectedSavedDecksDialog && (
-        <DeckBuilderDeleteSavedDecksDialog
-          kind="selected"
-          count={selectedSavedDeckIds.length}
-          onCancel={() => applyDeckBuilderMyDecksUiState(buildDismissedDeleteSelectedSavedDecksUiState())}
-          onConfirm={handleDeleteSelectedSavedDecks}
-        />
+        <DeckBuilderDeleteSavedDecksDialog {...deleteSelectedDialogProps} />
       )}
 
       {showDeleteAllSavedDecksDialog && (
-        <DeckBuilderDeleteSavedDecksDialog
-          kind="all"
-          count={savedDecks.length}
-          onCancel={() => applyDeckBuilderMyDecksUiState(buildDismissedDeleteAllSavedDecksUiState())}
-          onConfirm={handleDeleteAllSavedDecks}
-        />
+        <DeckBuilderDeleteSavedDecksDialog {...deleteAllDialogProps} />
       )}
 
-      {previewCard && (
-        <DeckBuilderPreviewModal
-          previewCard={previewCard}
-          previewDetail={previewDetail}
-          onClose={handleClosePreview}
-        />
-      )}
+      {previewModalProps && <DeckBuilderPreviewModal {...previewModalProps} />}
 
       {showResetDeckDialog && (
-        <DeckBuilderResetDialog
-          kind="deck"
-          onCancel={() => applyDeckBuilderModalUiState(buildDismissedResetDeckDialogUiState())}
-          onConfirm={resetDeckContents}
-        />
+        <DeckBuilderResetDialog {...resetDeckDialogProps} />
       )}
 
       {showResetBuilderDialog && (
-        <DeckBuilderResetDialog
-          kind="builder"
-          onCancel={() => applyDeckBuilderModalUiState(buildDismissedResetBuilderDialogUiState())}
-          onConfirm={resetBuilder}
-        />
+        <DeckBuilderResetDialog {...resetBuilderDialogProps} />
       )}
 
-      {hoveredDeckCard && (
-        <DeckBuilderHoverPreview
-          hoveredDeckCard={hoveredDeckCard}
-          hoveredDetail={hoveredDetail}
-          left={hoveredPreviewPosition?.left ?? DECK_HOVER_PREVIEW_VIEWPORT_PADDING}
-          top={hoveredPreviewPosition?.top ?? DECK_HOVER_PREVIEW_VIEWPORT_PADDING}
-          width={DECK_HOVER_PREVIEW_WIDTH}
-          maxHeight={DECK_HOVER_PREVIEW_MAX_HEIGHT}
-        />
-      )}
+      {hoverPreviewProps && <DeckBuilderHoverPreview {...hoverPreviewProps} />}
 
 
       {pendingDraftRestore && (
