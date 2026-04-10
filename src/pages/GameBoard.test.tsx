@@ -1085,6 +1085,135 @@ describe('GameBoard', () => {
     expect(discardRandomHandCards).toHaveBeenCalledWith('guest', 2, 'host');
   });
 
+  it('reopens random discard with the default value after canceling', async () => {
+    const discardRandomHandCards = vi.fn();
+    const guestHandCard = makeCard({
+      id: 'hand-guest-1',
+      zone: 'hand-guest',
+      owner: 'guest',
+    });
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      discardRandomHandCards,
+      gameState: createGameState([guestHandCard], {
+        gameStatus: 'playing',
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    const opponentHandPanel = screen.getByTestId('zone-hand-guest').parentElement;
+    expect(opponentHandPanel).not.toBeNull();
+
+    fireEvent.click(within(opponentHandPanel as HTMLElement).getByRole('button', { name: 'Actions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Random Discard' }));
+
+    const firstDialog = await screen.findByRole('dialog');
+    fireEvent.click(within(firstDialog).getByRole('button', { name: 'Other' }));
+    fireEvent.change(within(firstDialog).getByRole('spinbutton', { name: 'Custom discard count' }), {
+      target: { value: '7' },
+    });
+    fireEvent.click(within(firstDialog).getByRole('button', { name: 'Cancel' }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
+    fireEvent.click(within(opponentHandPanel as HTMLElement).getByRole('button', { name: 'Actions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Random Discard' }));
+
+    const secondDialog = await screen.findByRole('dialog');
+    fireEvent.click(within(secondDialog).getByRole('button', { name: 'Discard' }));
+
+    expect(discardRandomHandCards).toHaveBeenCalledWith('guest', 1, 'host');
+  });
+
+  it('keeps the random discard dialog open when the p2p connection leaves the connected state', async () => {
+    const guestHandCard = makeCard({
+      id: 'hand-guest-1',
+      zone: 'hand-guest',
+      owner: 'guest',
+    });
+
+    let currentLogic = buildMockGameBoardLogic({
+      gameState: createGameState([guestHandCard], {
+        gameStatus: 'playing',
+      }),
+    });
+    mockUseGameBoardLogic.mockImplementation(() => currentLogic);
+
+    const { rerender } = render(<GameBoard />);
+
+    const opponentHandPanel = screen.getByTestId('zone-hand-guest').parentElement;
+    expect(opponentHandPanel).not.toBeNull();
+
+    fireEvent.click(within(opponentHandPanel as HTMLElement).getByRole('button', { name: 'Actions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Random Discard' }));
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+
+    currentLogic = buildMockGameBoardLogic({
+      connectionState: 'reconnecting',
+      gameState: createGameState([guestHandCard], {
+        gameStatus: 'playing',
+      }),
+    });
+    rerender(<GameBoard />);
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('keeps the random discard dialog open in solo mode even if the connection state changes', async () => {
+    const guestHandCard = makeCard({
+      id: 'hand-guest-1',
+      zone: 'hand-guest',
+      owner: 'guest',
+    });
+
+    let currentLogic = buildMockGameBoardLogic({
+      mode: 'solo',
+      isSoloMode: true,
+      gameState: createGameState([guestHandCard], {
+        gameStatus: 'playing',
+      }),
+    });
+    mockUseGameBoardLogic.mockImplementation(() => currentLogic);
+
+    const { rerender } = render(<GameBoard />);
+
+    const opponentHandPanel = screen.getByTestId('zone-hand-guest').parentElement;
+    expect(opponentHandPanel).not.toBeNull();
+
+    fireEvent.click(within(opponentHandPanel as HTMLElement).getByRole('button', { name: 'Actions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Random Discard' }));
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+
+    currentLogic = buildMockGameBoardLogic({
+      mode: 'solo',
+      isSoloMode: true,
+      connectionState: 'reconnecting',
+      gameState: createGameState([guestHandCard], {
+        gameStatus: 'playing',
+      }),
+    });
+    rerender(<GameBoard />);
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('does not show the opponent hand random discard action when the hand is empty', () => {
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      gameState: createGameState([], {
+        gameStatus: 'playing',
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    const opponentHandPanel = screen.getByTestId('zone-hand-guest').parentElement;
+    expect(opponentHandPanel).not.toBeNull();
+    expect(within(opponentHandPanel as HTMLElement).queryByRole('button', { name: 'Actions' })).not.toBeInTheDocument();
+  });
+
   it('reveals the local hand from the p2p hand actions menu only when cards exist', () => {
     const revealHand = vi.fn();
     const hostHandCard = makeCard({
@@ -1589,6 +1718,37 @@ describe('GameBoard', () => {
     expect(screen.getByRole('button', { name: 'Exchange (Mulligan)' })).toBeDisabled();
   });
 
+  it('closes the mulligan modal on cancel without executing the exchange early', () => {
+    const setIsMulliganModalOpen = vi.fn();
+    const executeMulligan = vi.fn();
+    const handCard = makeCard({
+      id: 'hand-host-1',
+      zone: 'hand-host',
+      owner: 'host',
+    });
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      gameState: createGameState([handCard], {
+        gameStatus: 'preparing',
+        host: {
+          ...initialState.host,
+          initialHandDrawn: true,
+        },
+      }),
+      isMulliganModalOpen: true,
+      setIsMulliganModalOpen,
+      executeMulligan,
+      mulliganOrder: [],
+    }));
+
+    render(<GameBoard />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(setIsMulliganModalOpen).toHaveBeenCalledWith(false);
+    expect(executeMulligan).not.toHaveBeenCalled();
+  });
+
   it('opens mulligan from the preparation button', () => {
     const startMulligan = vi.fn();
 
@@ -1635,6 +1795,103 @@ describe('GameBoard', () => {
     await waitFor(() => {
       expect(screen.queryByRole('dialog', { name: 'Undo Last End Turn' })).not.toBeInTheDocument();
     });
+  });
+
+  it('reopens the undo turn dialog after canceling without firing undo early', async () => {
+    const handleUndoTurn = vi.fn();
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      handleUndoTurn,
+      lastGameState: initialState,
+      canUndoTurn: true,
+      gameState: createGameState([], {
+        gameStatus: 'playing',
+        turnPlayer: 'guest',
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    fireEvent.click(screen.getByRole('button', { name: '↺ UNDO LAST END TURN' }));
+    const firstDialog = await screen.findByRole('dialog', { name: 'Undo Last End Turn' });
+    fireEvent.click(within(firstDialog).getByRole('button', { name: 'Cancel' }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Undo Last End Turn' })).not.toBeInTheDocument();
+    });
+    expect(handleUndoTurn).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: '↺ UNDO LAST END TURN' }));
+    const secondDialog = await screen.findByRole('dialog', { name: 'Undo Last End Turn' });
+    fireEvent.click(within(secondDialog).getByRole('button', { name: 'Yes, Undo' }));
+
+    expect(handleUndoTurn).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes the undo turn dialog when the p2p connection leaves the connected state', async () => {
+    let currentLogic = buildMockGameBoardLogic({
+      lastGameState: initialState,
+      canUndoTurn: true,
+      gameState: createGameState([], {
+        gameStatus: 'playing',
+        turnPlayer: 'guest',
+      }),
+    });
+    mockUseGameBoardLogic.mockImplementation(() => currentLogic);
+
+    const { rerender } = render(<GameBoard />);
+
+    fireEvent.click(screen.getByRole('button', { name: '↺ UNDO LAST END TURN' }));
+    expect(await screen.findByRole('dialog', { name: 'Undo Last End Turn' })).toBeInTheDocument();
+
+    currentLogic = buildMockGameBoardLogic({
+      connectionState: 'reconnecting',
+      lastGameState: initialState,
+      canUndoTurn: true,
+      gameState: createGameState([], {
+        gameStatus: 'playing',
+        turnPlayer: 'guest',
+      }),
+    });
+    rerender(<GameBoard />);
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Undo Last End Turn' })).not.toBeInTheDocument();
+    });
+  });
+
+  it('keeps the undo turn dialog open in solo mode even if the connection state changes', async () => {
+    let currentLogic = buildMockGameBoardLogic({
+      mode: 'solo',
+      isSoloMode: true,
+      lastGameState: initialState,
+      canUndoTurn: true,
+      gameState: createGameState([], {
+        gameStatus: 'playing',
+        turnPlayer: 'guest',
+      }),
+    });
+    mockUseGameBoardLogic.mockImplementation(() => currentLogic);
+
+    const { rerender } = render(<GameBoard />);
+
+    fireEvent.click(screen.getByRole('button', { name: '↺ UNDO LAST END TURN' }));
+    expect(await screen.findByRole('dialog', { name: 'Undo Last End Turn' })).toBeInTheDocument();
+
+    currentLogic = buildMockGameBoardLogic({
+      mode: 'solo',
+      isSoloMode: true,
+      connectionState: 'reconnecting',
+      lastGameState: initialState,
+      canUndoTurn: true,
+      gameState: createGameState([], {
+        gameStatus: 'playing',
+        turnPlayer: 'guest',
+      }),
+    });
+    rerender(<GameBoard />);
+
+    expect(screen.getByRole('dialog', { name: 'Undo Last End Turn' })).toBeInTheDocument();
   });
 
   it('shows move undo during Player 2 turn in solo mode', () => {
@@ -1785,6 +2042,33 @@ describe('GameBoard', () => {
     });
   });
 
+  it('closes the saved deck picker from the close button', async () => {
+    mockLoadCardCatalog.mockResolvedValue(catalogCards);
+    seedSavedDecks([{
+      id: 'saved-alpha',
+      name: 'Alpha Deck',
+      deckState: {
+        mainDeck: [catalogCards[0]],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [],
+      },
+    }]);
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic());
+
+    render(<GameBoard />);
+
+    fireEvent.click(await waitForSavedDeckPickerButton());
+
+    const picker = await screen.findByRole('dialog', { name: 'Load from My Decks' });
+    fireEvent.click(within(picker).getByRole('button', { name: 'Close' }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Load from My Decks' })).not.toBeInTheDocument();
+    });
+  });
+
   it('resets the saved deck picker search when reopening the dialog', async () => {
     mockLoadCardCatalog.mockResolvedValue(catalogCards);
     seedSavedDecks([
@@ -1912,6 +2196,156 @@ describe('GameBoard', () => {
     });
   });
 
+  it('closes the card inspector when the same card is inspected again', async () => {
+    const fieldCard = makeCard();
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      gameState: createGameState([fieldCard], { gameStatus: 'playing' }),
+      cardDetailLookup: {
+        'TEST-001': {
+          id: 'TEST-001',
+          name: 'Alpha Knight',
+          image: '/alpha.png',
+          className: 'Royal',
+          title: 'Hero Tale',
+          type: 'Follower',
+          subtype: 'Soldier',
+          cardKindNormalized: 'follower',
+          cost: '2',
+          atk: 2,
+          hp: 2,
+          abilityText: '[Fanfare] Test ability.',
+        },
+      },
+    }));
+
+    render(<GameBoard />);
+
+    const inspectButton = screen.getByRole('button', { name: 'Inspect Alpha Knight' });
+    fireEvent.click(inspectButton);
+    expect(await screen.findByTestId('card-inspector')).toBeInTheDocument();
+
+    fireEvent.click(inspectButton);
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('card-inspector')).not.toBeInTheDocument();
+    });
+  });
+
+  it('closes the card inspector when the p2p connection leaves the connected state', async () => {
+    const fieldCard = makeCard();
+
+    let currentLogic = buildMockGameBoardLogic({
+      gameState: createGameState([fieldCard], { gameStatus: 'playing' }),
+      cardDetailLookup: {
+        'TEST-001': {
+          id: 'TEST-001',
+          name: 'Alpha Knight',
+          image: '/alpha.png',
+          className: 'Royal',
+          title: 'Hero Tale',
+          type: 'Follower',
+          subtype: 'Soldier',
+          cardKindNormalized: 'follower',
+          cost: '2',
+          atk: 2,
+          hp: 2,
+          abilityText: '[Fanfare] Test ability.',
+        },
+      },
+    });
+    mockUseGameBoardLogic.mockImplementation(() => currentLogic);
+
+    const { rerender } = render(<GameBoard />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect Alpha Knight' }));
+    expect(await screen.findByTestId('card-inspector')).toBeInTheDocument();
+
+    currentLogic = buildMockGameBoardLogic({
+      connectionState: 'reconnecting',
+      gameState: createGameState([fieldCard], { gameStatus: 'playing' }),
+      cardDetailLookup: {
+        'TEST-001': {
+          id: 'TEST-001',
+          name: 'Alpha Knight',
+          image: '/alpha.png',
+          className: 'Royal',
+          title: 'Hero Tale',
+          type: 'Follower',
+          subtype: 'Soldier',
+          cardKindNormalized: 'follower',
+          cost: '2',
+          atk: 2,
+          hp: 2,
+          abilityText: '[Fanfare] Test ability.',
+        },
+      },
+    });
+    rerender(<GameBoard />);
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('card-inspector')).not.toBeInTheDocument();
+    });
+  });
+
+  it('keeps the card inspector open in solo mode even if the connection state changes', async () => {
+    const fieldCard = makeCard();
+
+    let currentLogic = buildMockGameBoardLogic({
+      mode: 'solo',
+      isSoloMode: true,
+      gameState: createGameState([fieldCard], { gameStatus: 'playing' }),
+      cardDetailLookup: {
+        'TEST-001': {
+          id: 'TEST-001',
+          name: 'Alpha Knight',
+          image: '/alpha.png',
+          className: 'Royal',
+          title: 'Hero Tale',
+          type: 'Follower',
+          subtype: 'Soldier',
+          cardKindNormalized: 'follower',
+          cost: '2',
+          atk: 2,
+          hp: 2,
+          abilityText: '[Fanfare] Test ability.',
+        },
+      },
+    });
+    mockUseGameBoardLogic.mockImplementation(() => currentLogic);
+
+    const { rerender } = render(<GameBoard />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect Alpha Knight' }));
+    expect(await screen.findByTestId('card-inspector')).toBeInTheDocument();
+
+    currentLogic = buildMockGameBoardLogic({
+      mode: 'solo',
+      isSoloMode: true,
+      connectionState: 'reconnecting',
+      gameState: createGameState([fieldCard], { gameStatus: 'playing' }),
+      cardDetailLookup: {
+        'TEST-001': {
+          id: 'TEST-001',
+          name: 'Alpha Knight',
+          image: '/alpha.png',
+          className: 'Royal',
+          title: 'Hero Tale',
+          type: 'Follower',
+          subtype: 'Soldier',
+          cardKindNormalized: 'follower',
+          cost: '2',
+          atk: 2,
+          hp: 2,
+          abilityText: '[Fanfare] Test ability.',
+        },
+      },
+    });
+    rerender(<GameBoard />);
+
+    expect(screen.getByTestId('card-inspector')).toBeInTheDocument();
+  });
+
   it('enters attack mode for a valid attacker and lets the user cancel it', async () => {
     const attacker = makeCard();
 
@@ -1938,6 +2372,203 @@ describe('GameBoard', () => {
     });
   });
 
+  it('closes the card inspector when attack mode starts for the same card', async () => {
+    const attacker = makeCard();
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      gameState: createGameState([attacker], {
+        gameStatus: 'playing',
+        turnPlayer: 'host',
+      }),
+      cardDetailLookup: {
+        'TEST-001': {
+          id: 'TEST-001',
+          name: 'Alpha Knight',
+          image: '/alpha.png',
+          className: 'Royal',
+          title: 'Hero Tale',
+          type: 'Follower',
+          subtype: 'Soldier',
+          cardKindNormalized: 'follower',
+          cost: '2',
+          atk: 2,
+          hp: 2,
+          abilityText: '[Fanfare] Test ability.',
+        },
+      },
+    }));
+
+    render(<GameBoard />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect Alpha Knight' }));
+    expect(await screen.findByTestId('card-inspector')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Attack Alpha Knight' }));
+
+    expect(await screen.findByText('ATTACK MODE')).toBeInTheDocument();
+    expect(screen.queryByTestId('card-inspector')).not.toBeInTheDocument();
+  });
+
+  it('closes attack mode when the same attacker is selected again', async () => {
+    const attacker = makeCard();
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      gameState: createGameState([attacker], {
+        gameStatus: 'playing',
+        turnPlayer: 'host',
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    const attackButton = screen.getByRole('button', { name: 'Attack Alpha Knight' });
+    fireEvent.click(attackButton);
+    expect(await screen.findByText('ATTACK MODE')).toBeInTheDocument();
+
+    fireEvent.click(attackButton);
+
+    await waitFor(() => {
+      expect(screen.queryByText('ATTACK MODE')).not.toBeInTheDocument();
+    });
+  });
+
+  it('switches attack mode to the newly selected attacker', async () => {
+    const firstAttacker = makeCard({
+      id: 'card-1',
+      name: 'Alpha Knight',
+    });
+    const secondAttacker = makeCard({
+      id: 'card-2',
+      cardId: 'BP02-007',
+      name: 'Beta Mage',
+      image: '/beta.png',
+    });
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      gameState: createGameState([firstAttacker, secondAttacker], {
+        gameStatus: 'playing',
+        turnPlayer: 'host',
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Attack Alpha Knight' }));
+    expect(await screen.findByText((_, node) => (
+      node?.textContent === 'Select an enemy follower or leader for Alpha Knight.'
+    ))).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Attack Beta Mage' }));
+
+    expect(await screen.findByText((_, node) => (
+      node?.textContent === 'Select an enemy follower or leader for Beta Mage.'
+    ))).toBeInTheDocument();
+  });
+
+  it('closes attack mode from an outside pointer down', async () => {
+    const attacker = makeCard();
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      gameState: createGameState([attacker], {
+        gameStatus: 'playing',
+        turnPlayer: 'host',
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Attack Alpha Knight' }));
+    expect(await screen.findByText('ATTACK MODE')).toBeInTheDocument();
+
+    const outsideTarget = document.createElement('div');
+    document.body.appendChild(outsideTarget);
+    fireEvent.pointerDown(outsideTarget);
+
+    await waitFor(() => {
+      expect(screen.queryByText('ATTACK MODE')).not.toBeInTheDocument();
+    });
+    outsideTarget.remove();
+  });
+
+  it('uses inspect on an enemy card to confirm the current attack target instead of opening the inspector', async () => {
+    const handleDeclareAttack = vi.fn();
+    const attacker = makeCard({
+      id: 'attacker-card',
+      owner: 'host',
+      zone: 'field-host',
+      name: 'Alpha Knight',
+    });
+    const defender = makeCard({
+      id: 'defender-card',
+      owner: 'guest',
+      zone: 'field-guest',
+      name: 'Beta Mage',
+      cardId: 'BP02-007',
+      image: '/beta.png',
+    });
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      handleDeclareAttack,
+      gameState: createGameState([attacker, defender], {
+        gameStatus: 'playing',
+        turnPlayer: 'host',
+      }),
+      cardStatLookup: {
+        'BP02-007': { atk: 2, hp: 2 },
+      },
+      cardDetailLookup: {
+        'TEST-001': {
+          id: 'TEST-001',
+          name: 'Alpha Knight',
+          image: '/alpha.png',
+          className: 'Royal',
+          title: 'Hero Tale',
+          type: 'Follower',
+          subtype: 'Soldier',
+          cardKindNormalized: 'follower',
+          cost: '2',
+          atk: 2,
+          hp: 2,
+          abilityText: '[Fanfare] Test ability.',
+        },
+        'BP02-007': {
+          id: 'BP02-007',
+          name: 'Beta Mage',
+          image: '/beta.png',
+          className: 'Witch',
+          title: 'Mage Tale',
+          type: 'Spell',
+          subtype: 'Mage',
+          cardKindNormalized: 'spell',
+          cost: '7',
+          atk: 0,
+          hp: 0,
+          abilityText: '',
+        },
+      },
+    }));
+
+    render(<GameBoard />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Attack Alpha Knight' }));
+    expect(await screen.findByText('ATTACK MODE')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect Beta Mage' }));
+
+    expect(handleDeclareAttack).toHaveBeenCalledWith(
+      'attacker-card',
+      {
+        type: 'card',
+        cardId: 'defender-card',
+      },
+      'host'
+    );
+    await waitFor(() => {
+      expect(screen.queryByText('ATTACK MODE')).not.toBeInTheDocument();
+    });
+    expect(screen.queryByTestId('card-inspector')).not.toBeInTheDocument();
+  });
+
   it('closes attack mode with the Escape key', async () => {
     const attacker = makeCard();
 
@@ -1958,5 +2589,67 @@ describe('GameBoard', () => {
     await waitFor(() => {
       expect(screen.queryByText('ATTACK MODE')).not.toBeInTheDocument();
     });
+  });
+
+  it('closes attack mode when the p2p connection leaves the connected state', async () => {
+    const attacker = makeCard();
+
+    let currentLogic = buildMockGameBoardLogic({
+      gameState: createGameState([attacker], {
+        gameStatus: 'playing',
+        turnPlayer: 'host',
+      }),
+    });
+    mockUseGameBoardLogic.mockImplementation(() => currentLogic);
+
+    const { rerender } = render(<GameBoard />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Attack Alpha Knight' }));
+    expect(await screen.findByText('ATTACK MODE')).toBeInTheDocument();
+
+    currentLogic = buildMockGameBoardLogic({
+      connectionState: 'reconnecting',
+      gameState: createGameState([attacker], {
+        gameStatus: 'playing',
+        turnPlayer: 'host',
+      }),
+    });
+    rerender(<GameBoard />);
+
+    await waitFor(() => {
+      expect(screen.queryByText('ATTACK MODE')).not.toBeInTheDocument();
+    });
+  });
+
+  it('keeps attack mode open in solo mode even if the connection state changes', async () => {
+    const attacker = makeCard();
+
+    let currentLogic = buildMockGameBoardLogic({
+      mode: 'solo',
+      isSoloMode: true,
+      gameState: createGameState([attacker], {
+        gameStatus: 'playing',
+        turnPlayer: 'host',
+      }),
+    });
+    mockUseGameBoardLogic.mockImplementation(() => currentLogic);
+
+    const { rerender } = render(<GameBoard />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Attack Alpha Knight' }));
+    expect(await screen.findByText('ATTACK MODE')).toBeInTheDocument();
+
+    currentLogic = buildMockGameBoardLogic({
+      mode: 'solo',
+      isSoloMode: true,
+      connectionState: 'reconnecting',
+      gameState: createGameState([attacker], {
+        gameStatus: 'playing',
+        turnPlayer: 'host',
+      }),
+    });
+    rerender(<GameBoard />);
+
+    expect(screen.getByText('ATTACK MODE')).toBeInTheDocument();
   });
 });

@@ -2218,6 +2218,32 @@ describe('gameSyncReducer', () => {
     expect(undone.revision).toBe(spawned.revision + 1);
   });
 
+  it('keeps SET_INITIAL_TURN_ORDER as a no-op for non-host requesters', () => {
+    const baseState = createState({
+      revision: 5,
+      turnPlayer: 'host',
+      turnCount: 3,
+      phase: 'Main',
+      host: { ...initialState.host, ep: 1 },
+      guest: { ...initialState.guest, ep: 2 },
+      endStop: { host: true, guest: true },
+    });
+
+    const nextState = applyGameSyncEvent(
+      baseState,
+      {
+        id: 'evt-23b',
+        type: 'SET_INITIAL_TURN_ORDER',
+        actor: 'host',
+        starter: 'guest',
+        manual: false,
+      },
+      'guest',
+    );
+
+    expect(nextState).toBe(baseState);
+  });
+
   it('treats batch token generation as one undoable card move', () => {
     const baseState = createState({
       cards: [],

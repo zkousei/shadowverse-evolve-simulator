@@ -882,6 +882,57 @@ describe('useGameBoardLogic P2P reconnect', () => {
     expect(screen.getByTestId('can-interact')).toHaveTextContent('false');
   });
 
+  it('reconnects after a spectator-side connection error', () => {
+    renderHarness('/game?spectator=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const conn = peer.connections[0];
+    act(() => {
+      conn.open = true;
+      conn.emit('open');
+      conn.emit('error');
+    });
+
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('reconnecting');
+    expect(screen.getByTestId('status')).toHaveTextContent('Connection error. Reconnecting...');
+    expect(screen.getByTestId('can-view')).toHaveTextContent('false');
+    expect(screen.getByTestId('can-interact')).toHaveTextContent('false');
+  });
+
+  it('reconnects after a spectator-side peer disconnect', () => {
+    renderHarness('/game?spectator=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+      peer.emit('disconnected');
+    });
+
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('reconnecting');
+    expect(screen.getByTestId('status')).toHaveTextContent('Peer connection lost. Reconnecting...');
+    expect(screen.getByTestId('can-view')).toHaveTextContent('false');
+    expect(screen.getByTestId('can-interact')).toHaveTextContent('false');
+  });
+
+  it('reconnects after a spectator-side peer error', () => {
+    renderHarness('/game?spectator=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+      peer.emit('error');
+    });
+
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('reconnecting');
+    expect(screen.getByTestId('status')).toHaveTextContent('Unable to reach host. Reconnecting...');
+    expect(screen.getByTestId('can-view')).toHaveTextContent('false');
+    expect(screen.getByTestId('can-interact')).toHaveTextContent('false');
+  });
+
   it('ignores stale snapshots from the previous spectator connection after reconnecting', () => {
     renderHarness('/game?spectator=true&room=ROOM123');
 
@@ -1182,6 +1233,45 @@ describe('useGameBoardLogic P2P reconnect', () => {
     expect(screen.getByTestId('can-interact')).toHaveTextContent('false');
   });
 
+  it('ignores stale errors from the previous spectator connection after reconnecting', () => {
+    renderHarness('/game?spectator=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const firstConn = peer.connections[0];
+    act(() => {
+      firstConn.open = true;
+      firstConn.emit('open');
+    });
+
+    act(() => {
+      firstConn.emit('close');
+      vi.advanceTimersByTime(1000);
+    });
+
+    const secondConn = peer.connections[1];
+    act(() => {
+      secondConn.open = true;
+      secondConn.emit('open');
+    });
+
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
+    expect(screen.getByTestId('can-view')).toHaveTextContent('true');
+    expect(screen.getByTestId('can-interact')).toHaveTextContent('false');
+
+    act(() => {
+      firstConn.emit('error');
+    });
+
+    expect(peer.connect).toHaveBeenCalledTimes(2);
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
+    expect(screen.getByTestId('can-view')).toHaveTextContent('true');
+    expect(screen.getByTestId('can-interact')).toHaveTextContent('false');
+  });
+
   it('keeps the guest connection active when a spectator connects and mirrors host snapshots to both', () => {
     renderHarness('/game?host=true&room=ROOM123');
 
@@ -1428,6 +1518,50 @@ describe('useGameBoardLogic P2P reconnect', () => {
     }));
   });
 
+  it('ignores stale errors from a replaced spectator connection on the host side', () => {
+    renderHarness('/game?host=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const guestConn = mockPeerJs.createConnection('guest');
+    const firstSpectatorConn = mockPeerJs.createConnection('spectator-1', { connectionRole: 'spectator' });
+    const secondSpectatorConn = mockPeerJs.createConnection('spectator-2', { connectionRole: 'spectator' });
+    act(() => {
+      peer.emit('connection', guestConn);
+      guestConn.open = true;
+      guestConn.emit('open');
+      peer.emit('connection', firstSpectatorConn);
+      firstSpectatorConn.open = true;
+      firstSpectatorConn.emit('open');
+      peer.emit('connection', secondSpectatorConn);
+      secondSpectatorConn.open = true;
+      secondSpectatorConn.emit('open');
+    });
+
+    guestConn.send.mockClear();
+    firstSpectatorConn.send.mockClear();
+    secondSpectatorConn.send.mockClear();
+
+    act(() => {
+      firstSpectatorConn.emit('error');
+      fireEvent.click(screen.getByRole('button', { name: 'Spawn Token to EX' }));
+    });
+
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
+    expect(guestConn.send).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'STATE_SNAPSHOT',
+      source: 'host',
+    }));
+    expect(firstSpectatorConn.send).not.toHaveBeenCalled();
+    expect(secondSpectatorConn.send).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'STATE_SNAPSHOT',
+      source: 'host',
+    }));
+  });
+
   it('ignores spectator events on the host side and does not treat spectator close as guest disconnect', () => {
     renderHarness('/game?host=true&room=ROOM123');
 
@@ -1650,6 +1784,59 @@ describe('useGameBoardLogic P2P reconnect', () => {
     expect(peer.connect).toHaveBeenCalledTimes(1);
   });
 
+  it('accepts a same-revision host snapshot on the guest after recovering from WAITING_FOR_HOST_SESSION', () => {
+    renderHarness('/game?host=false&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const conn = peer.connections[0];
+    act(() => {
+      conn.open = true;
+      conn.emit('open');
+      conn.emit('data', {
+        type: 'WAITING_FOR_HOST_SESSION',
+        source: 'host',
+      });
+      conn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: {
+          host: { hp: 18, pp: 0, maxPp: 0, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          cards: [],
+          turnPlayer: 'host',
+          turnCount: 2,
+          phase: 'Main',
+          gameStatus: 'playing',
+          tokenOptions: { host: [], guest: [] },
+          revision: 2,
+        },
+      });
+      conn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: {
+          host: { hp: 11, pp: 0, maxPp: 0, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          cards: [],
+          turnPlayer: 'host',
+          turnCount: 2,
+          phase: 'End',
+          gameStatus: 'playing',
+          tokenOptions: { host: [], guest: [] },
+          revision: 2,
+        },
+      });
+    });
+
+    expect(screen.getByTestId('host-hp')).toHaveTextContent('11');
+    expect(screen.getByTestId('status')).toHaveTextContent('Connected to host! Game ready.');
+    expect(screen.getByTestId('can-interact')).toHaveTextContent('true');
+  });
+
   it('waits without reconnecting when the host reports a pending saved session to a spectator', () => {
     renderHarness('/game?spectator=true&room=ROOM123');
 
@@ -1722,6 +1909,60 @@ describe('useGameBoardLogic P2P reconnect', () => {
     expect(screen.getByTestId('can-view')).toHaveTextContent('true');
     expect(screen.getByTestId('can-interact')).toHaveTextContent('false');
     expect(peer.connect).toHaveBeenCalledTimes(1);
+  });
+
+  it('accepts a same-revision host snapshot on the spectator after recovering from WAITING_FOR_HOST_SESSION', () => {
+    renderHarness('/game?spectator=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const conn = peer.connections[0];
+    act(() => {
+      conn.open = true;
+      conn.emit('open');
+      conn.emit('data', {
+        type: 'WAITING_FOR_HOST_SESSION',
+        source: 'host',
+      });
+      conn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: {
+          host: { hp: 18, pp: 0, maxPp: 0, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          cards: [],
+          turnPlayer: 'host',
+          turnCount: 2,
+          phase: 'Main',
+          gameStatus: 'playing',
+          tokenOptions: { host: [], guest: [] },
+          revision: 2,
+        },
+      });
+      conn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: {
+          host: { hp: 11, pp: 0, maxPp: 0, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          cards: [],
+          turnPlayer: 'host',
+          turnCount: 2,
+          phase: 'End',
+          gameStatus: 'playing',
+          tokenOptions: { host: [], guest: [] },
+          revision: 2,
+        },
+      });
+    });
+
+    expect(screen.getByTestId('host-hp')).toHaveTextContent('11');
+    expect(screen.getByTestId('status')).toHaveTextContent('Connected to host! Game ready.');
+    expect(screen.getByTestId('can-view')).toHaveTextContent('true');
+    expect(screen.getByTestId('can-interact')).toHaveTextContent('false');
   });
 
   it('applies guest events on the host side', () => {
@@ -1903,6 +2144,44 @@ describe('useGameBoardLogic P2P reconnect', () => {
     expect(peer.connect).toHaveBeenCalledTimes(2);
     expect(secondConn.send).toHaveBeenCalledTimes(secondConnSendCount + 1);
     expect(screen.getByTestId('status')).toHaveTextContent('Waiting for host session restore... retrying sync.');
+  });
+
+  it('ignores stale errors from the previous guest connection after reconnecting', () => {
+    renderHarness('/game?host=false&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const firstConn = peer.connections[0];
+    act(() => {
+      firstConn.open = true;
+      firstConn.emit('open');
+    });
+
+    act(() => {
+      firstConn.emit('close');
+      vi.advanceTimersByTime(1000);
+    });
+
+    const secondConn = peer.connections[1];
+    act(() => {
+      secondConn.open = true;
+      secondConn.emit('open');
+    });
+
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
+    expect(screen.getByTestId('status')).toHaveTextContent('Connected to host. Syncing latest game state...');
+
+    act(() => {
+      firstConn.emit('error');
+    });
+
+    expect(peer.connect).toHaveBeenCalledTimes(2);
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
+    expect(screen.getByTestId('status')).toHaveTextContent('Connected to host. Syncing latest game state...');
+    expect(screen.getByTestId('can-interact')).toHaveTextContent('true');
   });
 
   it('ignores stale snapshots from the previous guest connection after reconnecting', () => {
@@ -2578,6 +2857,96 @@ describe('useGameBoardLogic P2P reconnect', () => {
     });
 
     expect(secondConn.send).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'STATE_SNAPSHOT',
+      source: 'host',
+    }));
+  });
+
+  it('ignores stale closes from a replaced guest connection on the host side', () => {
+    renderHarness('/game?host=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const firstGuestConn = mockPeerJs.createConnection('guest-1');
+    const spectatorConn = mockPeerJs.createConnection('spectator', { connectionRole: 'spectator' });
+    const secondGuestConn = mockPeerJs.createConnection('guest-2');
+    act(() => {
+      peer.emit('connection', firstGuestConn);
+      firstGuestConn.open = true;
+      firstGuestConn.emit('open');
+      peer.emit('connection', spectatorConn);
+      spectatorConn.open = true;
+      spectatorConn.emit('open');
+      peer.emit('connection', secondGuestConn);
+      secondGuestConn.open = true;
+      secondGuestConn.emit('open');
+    });
+
+    firstGuestConn.send.mockClear();
+    secondGuestConn.send.mockClear();
+    spectatorConn.send.mockClear();
+
+    act(() => {
+      firstGuestConn.emit('close');
+      fireEvent.click(screen.getByRole('button', { name: 'Spawn Token to EX' }));
+    });
+
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
+    expect(screen.getByTestId('status')).toHaveTextContent('Guest connected! Game ready.');
+    expect(firstGuestConn.send).not.toHaveBeenCalled();
+    expect(secondGuestConn.send).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'STATE_SNAPSHOT',
+      source: 'host',
+    }));
+    expect(spectatorConn.send).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'STATE_SNAPSHOT',
+      source: 'host',
+    }));
+  });
+
+  it('ignores stale errors from a replaced guest connection on the host side', () => {
+    renderHarness('/game?host=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const firstGuestConn = mockPeerJs.createConnection('guest-1');
+    const spectatorConn = mockPeerJs.createConnection('spectator', { connectionRole: 'spectator' });
+    const secondGuestConn = mockPeerJs.createConnection('guest-2');
+    act(() => {
+      peer.emit('connection', firstGuestConn);
+      firstGuestConn.open = true;
+      firstGuestConn.emit('open');
+      peer.emit('connection', spectatorConn);
+      spectatorConn.open = true;
+      spectatorConn.emit('open');
+      peer.emit('connection', secondGuestConn);
+      secondGuestConn.open = true;
+      secondGuestConn.emit('open');
+    });
+
+    firstGuestConn.send.mockClear();
+    secondGuestConn.send.mockClear();
+    spectatorConn.send.mockClear();
+
+    act(() => {
+      firstGuestConn.emit('error');
+      fireEvent.click(screen.getByRole('button', { name: 'Spawn Token to EX' }));
+    });
+
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
+    expect(screen.getByTestId('status')).toHaveTextContent('Guest connected! Game ready.');
+    expect(firstGuestConn.send).not.toHaveBeenCalled();
+    expect(secondGuestConn.send).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'STATE_SNAPSHOT',
+      source: 'host',
+    }));
+    expect(spectatorConn.send).toHaveBeenCalledWith(expect.objectContaining({
       type: 'STATE_SNAPSHOT',
       source: 'host',
     }));
