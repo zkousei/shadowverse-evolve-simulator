@@ -41,6 +41,7 @@ import {
   type PendingGameBoardEvolveAutoAttachSelection,
 } from '../utils/gameBoardEvolveAutoAttachSelection';
 import { useGameBoardCatalogResources } from './useGameBoardCatalogResources';
+import { useGameBoardConnectionLifecycleState } from './useGameBoardConnectionLifecycleState';
 import { useGameBoardIncomingMessages } from './useGameBoardIncomingMessages';
 import { useGameBoardSnapshotMessaging } from './useGameBoardSnapshotMessaging';
 import { useGameBoardSharedUiEffects } from './useGameBoardSharedUiEffects';
@@ -777,18 +778,21 @@ export const useGameBoardLogic = () => {
     setStatusKey,
   });
 
-  const clearActiveConnectionLifecycleState = useCallback(() => {
-    connRef.current = null;
-    activeConnectionTokenRef.current = null;
-    clearPendingSnapshotMessage();
-    clearSnapshotRequestTimer();
-    awaitingInitialSnapshotRef.current = false;
-  }, [clearPendingSnapshotMessage, clearSnapshotRequestTimer]);
-
-  const clearSpectatorConnectionLifecycleState = useCallback(() => {
-    spectatorConnRef.current = null;
-    activeSpectatorConnectionTokenRef.current = null;
-  }, []);
+  const {
+    clearActiveConnectionLifecycleState,
+    clearSpectatorConnectionLifecycleState,
+    prepareActiveConnection,
+    prepareSpectatorConnection,
+  } = useGameBoardConnectionLifecycleState({
+    activeConnectionTokenRef,
+    activeSpectatorConnectionTokenRef,
+    awaitingInitialSnapshotRef,
+    clearPendingSnapshotMessage,
+    clearReconnectTimer,
+    clearSnapshotRequestTimer,
+    connRef,
+    spectatorConnRef,
+  });
 
   const handleConnectionTermination = useCallback((kind: 'close' | 'error') => {
     clearActiveConnectionLifecycleState();
@@ -826,37 +830,6 @@ export const useGameBoardLogic = () => {
       requestSnapshotWithRetry(conn, token);
     }
   }, [isActiveConnectionToken, isHost, requestSnapshotWithRetry]);
-
-  const prepareActiveConnection = useCallback((conn: DataConnection, token: string) => {
-    activeConnectionTokenRef.current = token;
-    clearReconnectTimer();
-    clearSnapshotRequestTimer();
-
-    if (connRef.current && connRef.current !== conn) {
-      try {
-        connRef.current.close();
-      } catch {
-        // Ignore close races on replaced connections.
-      }
-    }
-
-    clearPendingSnapshotMessage();
-    connRef.current = conn;
-  }, [clearPendingSnapshotMessage, clearReconnectTimer, clearSnapshotRequestTimer]);
-
-  const prepareSpectatorConnection = useCallback((conn: DataConnection, token: string) => {
-    activeSpectatorConnectionTokenRef.current = token;
-
-    if (spectatorConnRef.current && spectatorConnRef.current !== conn) {
-      try {
-        spectatorConnRef.current.close();
-      } catch {
-        // Ignore close races on replaced spectator connections.
-      }
-    }
-
-    spectatorConnRef.current = conn;
-  }, []);
 
   const handleConnectionLifecycleEvent = useCallback((token: string, kind: 'close' | 'error') => {
     if (!isActiveConnectionToken(token)) return;
