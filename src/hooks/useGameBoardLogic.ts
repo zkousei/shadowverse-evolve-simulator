@@ -5,7 +5,6 @@ import Peer from 'peerjs';
 import type { DataConnection } from 'peerjs';
 import { type DragEndEvent } from '@dnd-kit/core';
 import { type CardInstance } from '../components/Card';
-import type { DeckBuilderCardData } from '../models/deckBuilderCard';
 import { type PlayerRole, type SyncState, type TokenOption, initialState } from '../types/game';
 import { type AttackTarget, type GameSyncEvent, type PublicCardView, type SharedUiEffect, type SyncMessage } from '../types/sync';
 import { uuid } from '../utils/helpers';
@@ -15,15 +14,11 @@ import { applyGameSyncEvent } from '../utils/gameSyncReducer';
 import { flipSharedCoin, rollSharedDie } from '../utils/sharedRandom';
 import { formatSharedUiMessage, getSharedActorLabel } from '../utils/sharedUiMessage';
 import { createEventDeduper } from '../utils/eventDeduper';
-import { type CardStatLookup } from '../utils/cardStats';
-import { type CardDetailLookup } from '../utils/cardDetails';
 import { buildTopDeckRevealEffect } from '../utils/topDeckReveal';
 import { buildTopDeckSummaryEffect } from '../utils/topDeckSummary';
 import { buildHandRevealEffect, buildSingleCardRevealEffect } from '../utils/cardReveal';
 import { buildAttackDeclaredEffect, formatAttackEffect } from '../utils/attackUi';
 import { buildCardPlayedEffect, formatCardPlayedEffect } from '../utils/cardPlayUi';
-import { loadCardCatalog } from '../utils/cardCatalog';
-import { buildGameBoardCatalogResources } from '../utils/gameBoardCatalog';
 import { buildImportedDeckPayload, buildSpawnTokenInstance, buildSpawnTokens, type ImportableDeckData } from '../utils/gameBoardDeckActions';
 import { buildClosedMulliganState, buildStartedMulliganState, toggleMulliganOrderSelection } from '../utils/gameBoardMulligan';
 import {
@@ -65,8 +60,7 @@ import {
   prependAttackHistoryEntry,
   prependEventHistoryEntry,
 } from '../utils/gameBoardTransientUi';
-import { type EvolveAutoAttachResolver } from '../utils/evolveAutoAttach';
-import { type FieldLinkAutoAttachResolver } from '../utils/fieldLinkAutoAttach';
+import { useGameBoardCatalogResources } from './useGameBoardCatalogResources';
 
 type DispatchableGameSyncEvent =
   | { type: 'FLIP_SHARED_COIN'; actor?: PlayerRole }
@@ -166,9 +160,6 @@ export const useGameBoardLogic = () => {
   const [hasUndoableMove, setHasUndoableMove] = useState(false);
   const [isRollingDice, setIsRollingDice] = useState(false);
   const [diceValue, setDiceValue] = useState<number | null>(null);
-  const [cardStatLookup, setCardStatLookup] = useState<CardStatLookup>({});
-  const [cardDetailLookup, setCardDetailLookup] = useState<CardDetailLookup>({});
-
   const [mulliganOrder, setMulliganOrder] = useState<string[]>([]);
   const [isMulliganModalOpen, setIsMulliganModalOpen] = useState(false);
   const [topDeckCards, setTopDeckCardsState] = useState<CardInstance[]>([]);
@@ -186,12 +177,16 @@ export const useGameBoardLogic = () => {
   const spectatorConnRef = useRef<DataConnection | null>(null);
   const setupConnectionRef = useRef<(conn: DataConnection) => void>(() => undefined);
   const gameStateRef = useRef<SyncState>(initialState);
-  const cardDetailLookupRef = useRef<CardDetailLookup>({});
-  const cardCatalogByIdRef = useRef<Record<string, DeckBuilderCardData>>({});
-  const evolveAutoAttachResolverRef = useRef<EvolveAutoAttachResolver | null>(null);
-  const fieldLinkAutoAttachResolverRef = useRef<FieldLinkAutoAttachResolver | null>(null);
-  const fieldLinkCardIdsRef = useRef<Set<string>>(new Set());
-  const tokenEquipmentCardIdsRef = useRef<Set<string>>(new Set());
+  const {
+    cardStatLookup,
+    cardDetailLookup,
+    cardDetailLookupRef,
+    cardCatalogByIdRef,
+    evolveAutoAttachResolverRef,
+    fieldLinkAutoAttachResolverRef,
+    fieldLinkCardIdsRef,
+    tokenEquipmentCardIdsRef,
+  } = useGameBoardCatalogResources();
   const savedSessionCandidateRef = useRef<SavedHostSession | null>(null);
   const topDeckCardsRef = useRef<CardInstance[]>([]);
   const topDeckTargetRoleRef = useRef<PlayerRole>(role);
@@ -1631,39 +1626,6 @@ export const useGameBoardLogic = () => {
     applyLocalState(buildDebugGameBoardState());
     setStatusKey('gameBoard.status.debugAutoStarted');
   }, [applyLocalState, isDebug]);
-
-  useEffect(() => {
-    let isActive = true;
-    loadCardCatalog()
-      .then((data: DeckBuilderCardData[]) => {
-        if (!isActive) return;
-        const resources = buildGameBoardCatalogResources(data);
-        cardCatalogByIdRef.current = resources.catalogById;
-        console.log(
-          '[DEBUG] Card lookups built:',
-          Object.keys(resources.statLookup).length,
-          'stats,',
-          Object.keys(resources.detailLookup).length,
-          'details'
-        );
-        setCardStatLookup(resources.statLookup);
-        setCardDetailLookup(resources.detailLookup);
-        cardDetailLookupRef.current = resources.detailLookup;
-        evolveAutoAttachResolverRef.current = resources.evolveAutoAttachResolver;
-        fieldLinkAutoAttachResolverRef.current = resources.fieldLinkAutoAttachResolver;
-        fieldLinkCardIdsRef.current = resources.fieldLinkCardIds;
-        tokenEquipmentCardIdsRef.current = resources.tokenEquipmentCardIds;
-      })
-      .catch(err => console.error('Could not load card stats', err));
-    return () => {
-      isActive = false;
-      cardCatalogByIdRef.current = {};
-      evolveAutoAttachResolverRef.current = null;
-      fieldLinkAutoAttachResolverRef.current = null;
-      fieldLinkCardIdsRef.current = new Set();
-      tokenEquipmentCardIdsRef.current = new Set();
-    };
-  }, []);
 
   useEffect(() => {
     if (gameState.gameStatus !== 'preparing') return;
