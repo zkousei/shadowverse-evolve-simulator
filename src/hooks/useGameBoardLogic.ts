@@ -6,7 +6,7 @@ import type { DataConnection } from 'peerjs';
 import { type DragEndEvent } from '@dnd-kit/core';
 import { type CardInstance } from '../components/Card';
 import { type PlayerRole, type SyncState, type TokenOption, initialState } from '../types/game';
-import { type AttackTarget, type GameSyncEvent, type SharedUiEffect, type SyncMessage } from '../types/sync';
+import { type AttackTarget, type GameSyncEvent, type SharedUiEffect } from '../types/sync';
 import { uuid } from '../utils/helpers';
 import * as CardLogic from '../utils/cardLogic';
 import { canImportDeck } from '../utils/gameRules';
@@ -23,18 +23,13 @@ import { buildClosedMulliganState, buildStartedMulliganState, toggleMulliganOrde
 import {
   buildSnapshotRequestMessage,
   buildSnapshotSyncMessage,
-  buildWaitingForHostSessionMessage,
 } from '../utils/gameBoardNetworkMessages';
 import { getConnectionOpenDecision } from '../utils/gameBoardConnectionOpen';
 import { getConnectionTerminationDecision } from '../utils/gameBoardConnectionTermination';
-import { getIncomingEventDecision } from '../utils/gameBoardIncomingEvent';
-import { getIncomingSnapshotHandling } from '../utils/gameBoardIncomingSnapshot';
 import { getPeerOpenDecision } from '../utils/gameBoardPeerOpen';
 import { getPeerIncomingConnectionDecision } from '../utils/gameBoardPeerIncomingConnection';
 import { getPeerTerminationDecision } from '../utils/gameBoardPeerTermination';
 import { getSnapshotApplicationDecision } from '../utils/gameBoardSnapshotApplication';
-import { getSnapshotRequestDecision } from '../utils/gameBoardSnapshotRequest';
-import { getWaitingForHostSessionDecision } from '../utils/gameBoardWaitingForHostSession';
 import { getSnapshotRetryTimeoutDecision } from '../utils/gameBoardSnapshotRetry';
 import { buildDebugGameBoardState } from '../utils/gameBoardDebugState';
 import { getCanUndoMove, getCanUndoTurn } from '../utils/gameBoardUndoAvailability';
@@ -46,6 +41,7 @@ import {
   type PendingGameBoardEvolveAutoAttachSelection,
 } from '../utils/gameBoardEvolveAutoAttachSelection';
 import { useGameBoardCatalogResources } from './useGameBoardCatalogResources';
+import { useGameBoardIncomingMessages } from './useGameBoardIncomingMessages';
 import { useGameBoardSnapshotMessaging } from './useGameBoardSnapshotMessaging';
 import { useGameBoardSharedUiEffects } from './useGameBoardSharedUiEffects';
 import { useGameBoardSessionPersistence } from './useGameBoardSessionPersistence';
@@ -96,7 +92,6 @@ const SNAPSHOT_REQUEST_TIMEOUT_MS = 2000;
 const MAX_SNAPSHOT_REQUEST_RETRIES = 2;
 const RECONNECT_DELAY_MS = 1000;
 
-type SnapshotMessage = Extract<SyncMessage, { type: 'STATE_SNAPSHOT' }>;
 type GameBoardStatusKey = `gameBoard.status.${string}`;
 type ConnectionRole = 'guest' | 'spectator';
 
@@ -762,105 +757,25 @@ export const useGameBoardLogic = () => {
     }, SNAPSHOT_REQUEST_TIMEOUT_MS);
   }, [handleSnapshotRequestTimeout, isActiveConnectionToken, isHost, isSoloMode, isSpectator, role]);
 
-  const handleIncomingWaitingForHostSession = useCallback(() => {
-    clearSnapshotRequestTimer();
-    const waitingDecision = getWaitingForHostSessionDecision({ isHost });
-
-    if (waitingDecision.type === 'set-status') {
-      setStatusKey(waitingDecision.statusKey);
-    }
-  }, [clearSnapshotRequestTimer, isHost]);
-
-  const handleIncomingEvent = useCallback((message: Extract<SyncMessage, { type: 'EVENT' }>) => {
-    const incomingEventDecision = getIncomingEventDecision({ isHost });
-
-    if (incomingEventDecision.type === 'apply') {
-      applyAuthoritativeEvent(message.event, incomingEventDecision.source);
-    }
-  }, [applyAuthoritativeEvent, isHost]);
-
-  const handleIncomingSnapshotRequest = useCallback((_message: Extract<SyncMessage, { type: 'REQUEST_SNAPSHOT' }>, conn: DataConnection) => {
-    const snapshotRequestDecision = getSnapshotRequestDecision({
-      isHost,
-      hasSavedSessionCandidate: Boolean(savedSessionCandidateRef.current),
-    });
-
-    if (snapshotRequestDecision.type === 'wait-for-host-session') {
-      // While the host is deciding whether to resume a saved session,
-      // guests should wait instead of reconnect-looping.
-      setStatusKey(snapshotRequestDecision.statusKey);
-      conn.send(buildWaitingForHostSessionMessage());
-      return;
-    }
-
-    if (snapshotRequestDecision.type === 'send-snapshot') {
-      conn.send(buildSnapshotSyncMessage(gameStateRef.current, 'host', cardDetailLookupRef.current));
-    }
-  }, [isHost]);
-
-  const handleIncomingSnapshot = useCallback((message: SnapshotMessage) => {
-    const snapshotHandling = getIncomingSnapshotHandling({
-      isHost,
-      message,
-      isAwaitingInitialSnapshot: awaitingInitialSnapshotRef.current,
-      currentGameStatus: gameStateRef.current.gameStatus,
-    });
-
-    clearSnapshotRequestTimer();
-    const didApplySnapshot = maybeApplySnapshot(snapshotHandling.state, snapshotHandling.source);
-    playIncomingSharedUiEffects(message);
-
-    if (snapshotHandling.postProcessing.type === 'guest-ready') {
-      // Do NOT close local modals on every host snapshot. Opponent board actions
-      // should sync in while the guest keeps Search / Look Top work in progress.
-      if (snapshotHandling.postProcessing.shouldResetTransientUi) {
-        resetTransientUiState(!snapshotHandling.postProcessing.preserveUndoState);
-      } else if (didApplySnapshot) {
-        reconcileOpenTopDeckCards(gameStateRef.current);
-      }
-      setStatusKey(snapshotHandling.postProcessing.statusKey);
-    }
-  }, [clearSnapshotRequestTimer, isHost, maybeApplySnapshot, playIncomingSharedUiEffects, reconcileOpenTopDeckCards, resetTransientUiState]);
-
-  const handleIncomingConnectionData = useCallback((
-    conn: DataConnection,
-    token: string,
-    rawData: unknown
-  ) => {
-    if (!isActiveConnectionToken(token)) return;
-    const data = rawData as SyncMessage;
-
-    if (data.type === 'EVENT') {
-      handleIncomingEvent(data);
-      return;
-    }
-
-    if (data.type === 'REQUEST_SNAPSHOT') {
-      handleIncomingSnapshotRequest(data, conn);
-      return;
-    }
-
-    if (data.type === 'SHARED_UI_EFFECT') {
-      playIncomingSharedUiEffects(data);
-      return;
-    }
-
-    if (data.type === 'WAITING_FOR_HOST_SESSION') {
-      handleIncomingWaitingForHostSession();
-      return;
-    }
-
-    if (data.type === 'STATE_SNAPSHOT') {
-      handleIncomingSnapshot(data);
-    }
-  }, [
-    handleIncomingEvent,
-    handleIncomingSnapshot,
-    handleIncomingSnapshotRequest,
-    handleIncomingWaitingForHostSession,
+  const {
+    handleIncomingConnectionData,
+    handleIncomingSpectatorConnectionData,
+  } = useGameBoardIncomingMessages({
+    applyAuthoritativeEvent,
+    awaitingInitialSnapshotRef,
+    cardDetailLookupRef,
+    clearSnapshotRequestTimer,
+    gameStateRef,
     isActiveConnectionToken,
+    isActiveSpectatorConnectionToken,
+    isHost,
+    maybeApplySnapshot,
     playIncomingSharedUiEffects,
-  ]);
+    reconcileOpenTopDeckCards,
+    resetTransientUiState,
+    savedSessionCandidateRef,
+    setStatusKey,
+  });
 
   const clearActiveConnectionLifecycleState = useCallback(() => {
     connRef.current = null;
@@ -969,19 +884,6 @@ export const useGameBoardLogic = () => {
     if (!isActiveSpectatorConnectionToken(token)) return;
     clearSpectatorConnectionLifecycleState();
   }, [clearSpectatorConnectionLifecycleState, isActiveSpectatorConnectionToken]);
-
-  const handleIncomingSpectatorConnectionData = useCallback((
-    conn: DataConnection,
-    token: string,
-    rawData: unknown
-  ) => {
-    if (!isActiveSpectatorConnectionToken(token)) return;
-    const data = rawData as SyncMessage;
-
-    if (data.type === 'REQUEST_SNAPSHOT') {
-      handleIncomingSnapshotRequest(data, conn);
-    }
-  }, [handleIncomingSnapshotRequest, isActiveSpectatorConnectionToken]);
 
   const setupSpectatorConnection = useCallback((conn: DataConnection) => {
     const token = uuid();
