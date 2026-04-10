@@ -1025,6 +1025,7 @@ const GameBoard: React.FC = () => {
           ).slice()
         ) : []}
         onExtractCard={(cardId, destination, revealToOpponent) => handleExtractCard(cardId, destination, searchTargetRole, revealToOpponent)}
+        onSendToBottom={handleSendToBottom}
         onToggleFlip={(cardId) => handleFlipCard(cardId, searchTargetRole)}
         viewerRole={searchTargetRole}
         targetRole={searchTargetRole}
