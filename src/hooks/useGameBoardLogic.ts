@@ -36,7 +36,6 @@ import { getSnapshotApplicationDecision } from '../utils/gameBoardSnapshotApplic
 import { getSnapshotRequestDecision } from '../utils/gameBoardSnapshotRequest';
 import { getWaitingForHostSessionDecision } from '../utils/gameBoardWaitingForHostSession';
 import { getSnapshotRetryTimeoutDecision } from '../utils/gameBoardSnapshotRetry';
-import { mergeQueuedSnapshotMessage, shouldDeferSnapshotMessageSend } from '../utils/gameBoardSnapshotQueue';
 import { buildDebugGameBoardState } from '../utils/gameBoardDebugState';
 import { getCanUndoMove, getCanUndoTurn } from '../utils/gameBoardUndoAvailability';
 import { getTurnMessageDecision } from '../utils/gameBoardTurnMessage';
@@ -47,6 +46,7 @@ import {
   type PendingGameBoardEvolveAutoAttachSelection,
 } from '../utils/gameBoardEvolveAutoAttachSelection';
 import { useGameBoardCatalogResources } from './useGameBoardCatalogResources';
+import { useGameBoardSnapshotMessaging } from './useGameBoardSnapshotMessaging';
 import { useGameBoardSharedUiEffects } from './useGameBoardSharedUiEffects';
 import { useGameBoardSessionPersistence } from './useGameBoardSessionPersistence';
 
@@ -94,7 +94,6 @@ type ConnectionState = 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'd
 const APP_VERSION = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '0.0.0';
 const SNAPSHOT_REQUEST_TIMEOUT_MS = 2000;
 const MAX_SNAPSHOT_REQUEST_RETRIES = 2;
-const SNAPSHOT_FLUSH_INTERVAL_MS = 50;
 const RECONNECT_DELAY_MS = 1000;
 
 type SnapshotMessage = Extract<SyncMessage, { type: 'STATE_SNAPSHOT' }>;
@@ -166,8 +165,6 @@ export const useGameBoardLogic = () => {
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const snapshotRequestTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const snapshotRetryCountRef = useRef(0);
-  const snapshotFlushTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingSnapshotMessageRef = useRef<SnapshotMessage | null>(null);
   // Stores the game state immediately before the last card-move action so it
   // can be restored via the undo button.  Only one level of undo is supported.
   const processedEventDeduperRef = useRef(createEventDeduper());
@@ -184,13 +181,6 @@ export const useGameBoardLogic = () => {
     };
     setGameState(guardedState);
     gameStateRef.current = guardedState;
-  }, []);
-
-  const clearSnapshotFlushTimer = useCallback(() => {
-    if (snapshotFlushTimeoutRef.current) {
-      clearTimeout(snapshotFlushTimeoutRef.current);
-      snapshotFlushTimeoutRef.current = null;
-    }
   }, []);
 
   const setTopDeckCards = useCallback((cards: CardInstance[]) => {
@@ -217,86 +207,10 @@ export const useGameBoardLogic = () => {
     setTopDeckCards(isSameTopDeckSelection ? incomingTopCards : []);
   }, [setTopDeckCards]);
 
-  const clearPendingSnapshotMessage = useCallback(() => {
-    pendingSnapshotMessageRef.current = null;
-    clearSnapshotFlushTimer();
-  }, [clearSnapshotFlushTimer]);
-
-  const sendImmediate = useCallback((message: SyncMessage) => {
-    if (!connRef.current?.open) return;
-    connRef.current.send(message);
-  }, []);
-
-  const sendSpectatorImmediate = useCallback((message: SyncMessage) => {
-    if (!spectatorConnRef.current?.open) return;
-    spectatorConnRef.current.send(message);
-  }, []);
-
-  const scheduleSnapshotFlush = useCallback((flush: () => void) => {
-    snapshotFlushTimeoutRef.current = setTimeout(() => {
-      snapshotFlushTimeoutRef.current = null;
-      flush();
-    }, SNAPSHOT_FLUSH_INTERVAL_MS);
-  }, []);
-
-  const flushPendingSnapshotMessage = useCallback(() => {
-    clearSnapshotFlushTimer();
-
-    const conn = connRef.current;
-    if (!conn?.open) {
-      pendingSnapshotMessageRef.current = null;
-      return;
-    }
-
-    const pendingSnapshot = pendingSnapshotMessageRef.current;
-    if (!pendingSnapshot) return;
-
-    if (shouldDeferSnapshotMessageSend(conn)) {
-      scheduleSnapshotFlush(flushPendingSnapshotMessage);
-      return;
-    }
-
-    pendingSnapshotMessageRef.current = null;
-    sendImmediate(pendingSnapshot);
-
-    if (pendingSnapshotMessageRef.current) {
-      scheduleSnapshotFlush(flushPendingSnapshotMessage);
-    }
-  }, [clearSnapshotFlushTimer, scheduleSnapshotFlush, sendImmediate]);
-
-  const queueOrSendSnapshotMessage = useCallback((message: SnapshotMessage) => {
-    const conn = connRef.current;
-    if (!conn?.open) return;
-
-    const existingSnapshot = pendingSnapshotMessageRef.current;
-    if (existingSnapshot) {
-      pendingSnapshotMessageRef.current = mergeQueuedSnapshotMessage(existingSnapshot, message);
-
-      if (!snapshotFlushTimeoutRef.current) {
-        scheduleSnapshotFlush(flushPendingSnapshotMessage);
-      }
-      return;
-    }
-
-    if (shouldDeferSnapshotMessageSend(conn)) {
-      pendingSnapshotMessageRef.current = message;
-      scheduleSnapshotFlush(flushPendingSnapshotMessage);
-      return;
-    }
-
-    sendImmediate(message);
-  }, [flushPendingSnapshotMessage, scheduleSnapshotFlush, sendImmediate]);
-
-  const sendMessage = useCallback((message: SyncMessage) => {
-    if (message.type === 'STATE_SNAPSHOT') {
-      queueOrSendSnapshotMessage(message);
-      sendSpectatorImmediate(message);
-      return;
-    }
-
-    sendImmediate(message);
-    sendSpectatorImmediate(message);
-  }, [queueOrSendSnapshotMessage, sendImmediate, sendSpectatorImmediate]);
+  const { sendMessage, clearPendingSnapshotMessage } = useGameBoardSnapshotMessaging({
+    connRef,
+    spectatorConnRef,
+  });
 
   const clearReconnectTimer = useCallback(() => {
     if (reconnectTimeoutRef.current) {
