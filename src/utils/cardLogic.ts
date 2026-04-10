@@ -293,9 +293,16 @@ export const moveCardToEnd = (
   const descendantIds = collectDescendantIds(workingCards, cardId);
   const movedStackIds = new Set<string>([cardId, ...descendantIds]);
   const linkedChildIds = collectLinkedChildIds(workingCards, movedStackIds);
+  const shouldRemoveTokenChildren = options.zone
+    ? PRIVATE_ZONE_PREFIXES.has(getZonePrefix(options.zone))
+    : false;
   const otherCards = workingCards.filter(c => c.id !== cardId && !descendantIds.has(c.id) && !linkedChildIds.has(c.id));
-  const attachments = workingCards.filter(c => descendantIds.has(c.id));
-  const linkedCards = workingCards.filter(c => linkedChildIds.has(c.id));
+  const attachments = workingCards.filter(c => (
+    descendantIds.has(c.id) && (!shouldRemoveTokenChildren || !isTokenCard(c))
+  ));
+  const linkedCards = workingCards.filter(c => (
+    linkedChildIds.has(c.id) && (!shouldRemoveTokenChildren || !isTokenCard(c))
+  ));
 
   const movedAttachments = attachments.map(a => {
     const attachmentZone = options.zone
@@ -375,9 +382,16 @@ export const moveCardToFront = (
   const descendantIds = collectDescendantIds(workingCards, cardId);
   const movedStackIds = new Set<string>([cardId, ...descendantIds]);
   const linkedChildIds = collectLinkedChildIds(workingCards, movedStackIds);
+  const shouldRemoveTokenChildren = options.zone
+    ? PRIVATE_ZONE_PREFIXES.has(getZonePrefix(options.zone))
+    : false;
   const otherCards = workingCards.filter(c => c.id !== cardId && !descendantIds.has(c.id) && !linkedChildIds.has(c.id));
-  const attachments = workingCards.filter(c => descendantIds.has(c.id));
-  const linkedCards = workingCards.filter(c => linkedChildIds.has(c.id));
+  const attachments = workingCards.filter(c => (
+    descendantIds.has(c.id) && (!shouldRemoveTokenChildren || !isTokenCard(c))
+  ));
+  const linkedCards = workingCards.filter(c => (
+    linkedChildIds.has(c.id) && (!shouldRemoveTokenChildren || !isTokenCard(c))
+  ));
 
   const movedAttachments = attachments.map(a => {
     const attachmentZone = options.zone
