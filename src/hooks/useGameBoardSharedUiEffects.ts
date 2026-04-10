@@ -1,4 +1,5 @@
 import React from 'react';
+import type { TFunction } from 'i18next';
 import type { PlayerRole } from '../types/game';
 import type { SharedUiEffect, SyncMessage, PublicCardView } from '../types/sync';
 import { formatSharedUiMessage, getSharedActorLabel } from '../utils/sharedUiMessage';
@@ -12,8 +13,6 @@ import {
   type GameBoardRevealedCardsOverlay,
 } from '../utils/gameBoardTransientUi';
 
-type TranslateFn = (key: string, options?: Record<string, unknown>) => string;
-
 type UseGameBoardSharedUiEffectsArgs = {
   gameStateRef: React.RefObject<{
     cards: Array<{ id: string; cardId: string; name: string }>;
@@ -22,7 +21,7 @@ type UseGameBoardSharedUiEffectsArgs = {
   isSoloMode: boolean;
   isSpectator: boolean;
   role: PlayerRole;
-  tRef: React.RefObject<TranslateFn>;
+  tRef: React.RefObject<TFunction>;
 };
 
 type SnapshotMessage = Extract<SyncMessage, { type: 'STATE_SNAPSHOT' }>;

@@ -251,7 +251,7 @@ export const useGameBoardLogic = () => {
       candidateCards,
       placement: 'stack' as const,
     };
-  }, []);
+  }, [evolveAutoAttachResolverRef, fieldLinkAutoAttachResolverRef]);
 
   const queueEvolveAutoAttachSelection = useCallback((
     sourceCardId: string,
@@ -265,11 +265,11 @@ export const useGameBoardLogic = () => {
 
   const sendSnapshot = useCallback((state: SyncState, source: PlayerRole, effects?: SharedUiEffect[]) => {
     sendMessage(buildSnapshotSyncMessage(state, source, cardDetailLookupRef.current, effects));
-  }, [sendMessage]);
+  }, [cardDetailLookupRef, sendMessage]);
 
   const sendSnapshotToCurrentConnection = useCallback((state: SyncState, source: PlayerRole) => {
     sendMessage(buildSnapshotSyncMessage(state, source, cardDetailLookupRef.current));
-  }, [sendMessage]);
+  }, [cardDetailLookupRef, sendMessage]);
 
   const {
     savedSessionCandidate,

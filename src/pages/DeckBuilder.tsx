@@ -19,6 +19,7 @@ import {
   getAvailableTitles,
   type DeckBuilderCardData,
 } from '../models/deckBuilderCard';
+import type { ClassFilter } from '../models/class';
 import {
   createDefaultDeckRuleConfig,
   type DeckRuleConfig,
@@ -586,7 +587,7 @@ const DeckBuilder: React.FC = () => {
     onDeckSectionFilterChange: (value: DeckBuilderDeckSectionFilter) => (
       updateLibraryFiltersWithPageReset({ deckSectionFilter: value })
     ),
-    onClassFilterChange: (value: string) => updateLibraryFiltersWithPageReset({ classFilter: value }),
+    onClassFilterChange: (value: ClassFilter) => updateLibraryFiltersWithPageReset({ classFilter: value }),
     onCardTypeFilterChange: (value: DeckBuilderCardTypeFilter) => (
       updateLibraryFiltersWithPageReset({ cardTypeFilter: value })
     ),

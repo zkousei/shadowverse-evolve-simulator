@@ -1,4 +1,5 @@
 import React from 'react';
+import type { ImportableDeckData } from '../utils/gameBoardDeckActions';
 import { canImportDeck } from '../utils/gameRules';
 import { buildLegalSavedDeckOptions, type LegalSavedDeckOption } from '../utils/gameBoardSavedDecks';
 import { listSavedDecks } from '../utils/deckStorage';
@@ -10,7 +11,7 @@ type TranslationFn = (key: string, options?: Record<string, unknown>) => string;
 
 type UseGameBoardSavedDeckPickerArgs = {
   gameState: SyncState;
-  importDeckData: (deckData: unknown, targetRole: PlayerRole) => void;
+  importDeckData: (deckData: ImportableDeckData, targetRole?: PlayerRole) => void;
   isSoloMode: boolean;
   role: PlayerRole;
   t: TranslationFn;
