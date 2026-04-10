@@ -391,6 +391,57 @@ describe('CardLogic utils', () => {
     });
   });
 
+  describe('resolveDrop', () => {
+    it('routes private-zone drops to the moving card owner', () => {
+      const moving = createMockCard('moving', 'field-host', 'host');
+      const guestHandCard = createMockCard('guest-hand', 'hand-guest', 'guest');
+
+      const resolution = CardLogic.resolveDrop([moving, guestHandCard], 'moving', 'guest-hand');
+
+      expect(resolution).toMatchObject({
+        targetZone: 'hand-host',
+        isReturningToDeck: false,
+        shouldPlaceAtFront: false,
+        shouldDeleteToken: false,
+        moveOptions: {
+          zone: 'hand-host',
+          attachedTo: undefined,
+          isFlipped: false,
+          isTapped: false,
+          counters: { atk: 0, hp: 0 },
+          genericCounter: 0,
+          preserveAttachment: false,
+        },
+      });
+    });
+
+    it('routes pure evolve cards dropped onto opposing private zones back to the owner evolve deck', () => {
+      const moving = {
+        ...createMockCard('moving-evolve', 'field-host', 'host'),
+        isEvolveCard: true,
+      };
+      const guestCemeteryCard = createMockCard('guest-cemetery', 'cemetery-guest', 'guest');
+
+      const resolution = CardLogic.resolveDrop([moving, guestCemeteryCard], 'moving-evolve', 'guest-cemetery');
+
+      expect(resolution).toMatchObject({
+        targetZone: 'evolveDeck-host',
+        isReturningToDeck: true,
+        shouldPlaceAtFront: true,
+        shouldDeleteToken: false,
+        moveOptions: {
+          zone: 'evolveDeck-host',
+          attachedTo: undefined,
+          isFlipped: false,
+          isTapped: false,
+          counters: { atk: 0, hp: 0 },
+          genericCounter: 0,
+          preserveAttachment: false,
+        },
+      });
+    });
+  });
+
   describe('tap sync with linked cards', () => {
     it('toggles tap on linked cards together with the stack root', () => {
       const parent = createMockCard('parent', 'field-host');
@@ -639,6 +690,45 @@ describe('CardLogic utils', () => {
       expect(result.find(c => c.id === 'evo')?.attachedTo).toBeUndefined();
     });
 
+    it('routes cards dropped onto an opposing cemetery back to the owner cemetery', () => {
+      const hostFieldCard = createMockCard('host-field', 'field-host', 'host');
+      const guestCemeteryCard = createMockCard('guest-cemetery', 'cemetery-guest', 'guest');
+
+      const result = CardLogic.applyDrop([hostFieldCard, guestCemeteryCard], 'host-field', 'guest-cemetery');
+
+      expect(result.find(c => c.id === 'host-field')).toMatchObject({
+        zone: 'cemetery-host',
+        counters: { atk: 0, hp: 0 },
+        genericCounter: 0,
+      });
+    });
+
+    it('routes cards dropped onto an opposing hand back to the owner hand', () => {
+      const hostFieldCard = createMockCard('host-field', 'field-host', 'host');
+      const guestHandCard = createMockCard('guest-hand', 'hand-guest', 'guest');
+
+      const result = CardLogic.applyDrop([hostFieldCard, guestHandCard], 'host-field', 'guest-hand');
+
+      expect(result.find(c => c.id === 'host-field')).toMatchObject({
+        zone: 'hand-host',
+        counters: { atk: 0, hp: 0 },
+        genericCounter: 0,
+      });
+    });
+
+    it('routes cards dropped onto an opposing banish back to the owner banish', () => {
+      const hostFieldCard = createMockCard('host-field', 'field-host', 'host');
+      const guestBanishCard = createMockCard('guest-banish', 'banish-guest', 'guest');
+
+      const result = CardLogic.applyDrop([hostFieldCard, guestBanishCard], 'host-field', 'guest-banish');
+
+      expect(result.find(c => c.id === 'host-field')).toMatchObject({
+        zone: 'banish-host',
+        counters: { atk: 0, hp: 0 },
+        genericCounter: 0,
+      });
+    });
+
     it('clears linkedTo when a linked card is dragged back onto the field zone', () => {
       const linked = {
         ...createMockCard('linked', 'field-host'),
@@ -653,6 +743,107 @@ describe('CardLogic utils', () => {
         zone: 'field-host',
         linkedTo: undefined,
       });
+    });
+
+    it('routes linked cards dropped onto an opposing hand back to the owner hand and clears the link', () => {
+      const linked = {
+        ...createMockCard('linked', 'field-host', 'host'),
+        linkedTo: 'parent',
+      };
+      const parent = createMockCard('parent', 'field-host', 'host');
+      const guestHandCard = createMockCard('guest-hand', 'hand-guest', 'guest');
+
+      const result = CardLogic.applyDrop([linked, parent, guestHandCard], 'linked', 'guest-hand');
+
+      expect(result.find(c => c.id === 'linked')).toMatchObject({
+        zone: 'hand-host',
+        linkedTo: undefined,
+        counters: { atk: 0, hp: 0 },
+        genericCounter: 0,
+      });
+    });
+
+    it('routes linked cards dropped onto an opposing banish back to the owner banish and clears the link', () => {
+      const linked = {
+        ...createMockCard('linked', 'field-host', 'host'),
+        linkedTo: 'parent',
+      };
+      const parent = createMockCard('parent', 'field-host', 'host');
+      const guestBanishCard = createMockCard('guest-banish', 'banish-guest', 'guest');
+
+      const result = CardLogic.applyDrop([linked, parent, guestBanishCard], 'linked', 'guest-banish');
+
+      expect(result.find(c => c.id === 'linked')).toMatchObject({
+        zone: 'banish-host',
+        linkedTo: undefined,
+        counters: { atk: 0, hp: 0 },
+        genericCounter: 0,
+      });
+    });
+
+    it('routes linked cards dropped onto an opposing main deck back to the owner deck top and clears the link', () => {
+      const linked = {
+        ...createMockCard('linked', 'field-host', 'host'),
+        linkedTo: 'parent',
+      };
+      const parent = createMockCard('parent', 'field-host', 'host');
+      const hostExistingDeckCard = createMockCard('host-deck', 'mainDeck-host', 'host');
+      const guestDeckCard = createMockCard('guest-deck', 'mainDeck-guest', 'guest');
+
+      const result = CardLogic.applyDrop(
+        [hostExistingDeckCard, linked, parent, guestDeckCard],
+        'linked',
+        'guest-deck'
+      );
+
+      expect(result[0]).toMatchObject({
+        id: 'linked',
+        zone: 'mainDeck-host',
+        isFlipped: true,
+        linkedTo: undefined,
+        counters: { atk: 0, hp: 0 },
+        genericCounter: 0,
+      });
+      expect(result[1].id).toBe('host-deck');
+    });
+
+    it('keeps linked evolve cards in place when dropped onto an opposing main deck', () => {
+      const linked = {
+        ...createMockCard('linked-evo', 'field-host', 'host'),
+        linkedTo: 'parent',
+        isEvolveCard: true,
+      };
+      const parent = createMockCard('parent', 'field-host', 'host');
+      const hostExistingEvolveDeckCard = createMockCard('host-evo-deck', 'evolveDeck-host', 'host');
+      const guestDeckCard = createMockCard('guest-deck', 'mainDeck-guest', 'guest');
+
+      const cards = [hostExistingEvolveDeckCard, linked, parent, guestDeckCard];
+      const result = CardLogic.applyDrop(
+        cards,
+        'linked-evo',
+        'guest-deck'
+      );
+
+      expect(result).toBe(cards);
+    });
+
+    it('keeps linked non-evolve cards in place when dropped onto an opposing evolve deck', () => {
+      const linked = {
+        ...createMockCard('linked', 'field-host', 'host'),
+        linkedTo: 'parent',
+      };
+      const parent = createMockCard('parent', 'field-host', 'host');
+      const hostExistingDeckCard = createMockCard('host-deck', 'mainDeck-host', 'host');
+      const guestEvolveDeckCard = createMockCard('guest-evo-deck', 'evolveDeck-guest', 'guest');
+
+      const cards = [hostExistingDeckCard, linked, parent, guestEvolveDeckCard];
+      const result = CardLogic.applyDrop(
+        cards,
+        'linked',
+        'guest-evo-deck'
+      );
+
+      expect(result).toBe(cards);
     });
 
     it('should prevent moving leader cards or dropping onto leader zones', () => {

@@ -882,6 +882,306 @@ describe('useGameBoardLogic P2P reconnect', () => {
     expect(screen.getByTestId('can-interact')).toHaveTextContent('false');
   });
 
+  it('ignores stale snapshots from the previous spectator connection after reconnecting', () => {
+    renderHarness('/game?spectator=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const firstConn = peer.connections[0];
+    act(() => {
+      firstConn.open = true;
+      firstConn.emit('open');
+      firstConn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: {
+          host: { hp: 13, pp: 0, maxPp: 0, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          cards: [],
+          turnPlayer: 'host',
+          turnCount: 2,
+          phase: 'Main',
+          gameStatus: 'playing',
+          tokenOptions: { host: [], guest: [] },
+          revision: 4,
+        },
+      });
+    });
+
+    expect(screen.getByTestId('host-hp')).toHaveTextContent('13');
+
+    act(() => {
+      firstConn.emit('close');
+      vi.advanceTimersByTime(1000);
+    });
+
+    const secondConn = peer.connections[1];
+    act(() => {
+      secondConn.open = true;
+      secondConn.emit('open');
+      secondConn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: {
+          host: { hp: 17, pp: 0, maxPp: 0, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          cards: [],
+          turnPlayer: 'host',
+          turnCount: 3,
+          phase: 'Main',
+          gameStatus: 'playing',
+          tokenOptions: { host: [], guest: [] },
+          revision: 5,
+        },
+      });
+    });
+
+    expect(screen.getByTestId('host-hp')).toHaveTextContent('17');
+
+    act(() => {
+      firstConn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: {
+          host: { hp: 1, pp: 0, maxPp: 0, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          cards: [],
+          turnPlayer: 'host',
+          turnCount: 4,
+          phase: 'End',
+          gameStatus: 'playing',
+          tokenOptions: { host: [], guest: [] },
+          revision: 6,
+        },
+      });
+    });
+
+    expect(screen.getByTestId('host-hp')).toHaveTextContent('17');
+    expect(screen.getByTestId('can-view')).toHaveTextContent('true');
+    expect(screen.getByTestId('can-interact')).toHaveTextContent('false');
+  });
+
+  it('ignores WAITING_FOR_HOST_SESSION from the previous spectator connection after reconnecting', () => {
+    renderHarness('/game?spectator=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const firstConn = peer.connections[0];
+    act(() => {
+      firstConn.open = true;
+      firstConn.emit('open');
+      firstConn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: {
+          host: { hp: 13, pp: 0, maxPp: 0, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          cards: [],
+          turnPlayer: 'host',
+          turnCount: 2,
+          phase: 'Main',
+          gameStatus: 'playing',
+          tokenOptions: { host: [], guest: [] },
+          revision: 4,
+        },
+      });
+    });
+
+    act(() => {
+      firstConn.emit('close');
+      vi.advanceTimersByTime(1000);
+    });
+
+    const secondConn = peer.connections[1];
+    act(() => {
+      secondConn.open = true;
+      secondConn.emit('open');
+      secondConn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: {
+          host: { hp: 17, pp: 0, maxPp: 0, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          cards: [],
+          turnPlayer: 'host',
+          turnCount: 3,
+          phase: 'Main',
+          gameStatus: 'playing',
+          tokenOptions: { host: [], guest: [] },
+          revision: 5,
+        },
+      });
+    });
+
+    act(() => {
+      firstConn.emit('data', {
+        type: 'WAITING_FOR_HOST_SESSION',
+        source: 'host',
+      });
+    });
+
+    expect(screen.getByTestId('host-hp')).toHaveTextContent('17');
+    expect(screen.getByTestId('status')).toHaveTextContent('Connected to host! Game ready.');
+    expect(screen.getByTestId('can-view')).toHaveTextContent('true');
+    expect(screen.getByTestId('can-interact')).toHaveTextContent('false');
+  });
+
+  it('accepts the first snapshot from a new spectator connection even when the revision goes backwards', () => {
+    renderHarness('/game?spectator=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const firstConn = peer.connections[0];
+    act(() => {
+      firstConn.open = true;
+      firstConn.emit('open');
+      firstConn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: {
+          host: { hp: 13, pp: 4, maxPp: 5, ep: 2, sep: 1, combo: 1, initialHandDrawn: true, mulliganUsed: true, isReady: true },
+          guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: true, mulliganUsed: false, isReady: false },
+          cards: [],
+          turnPlayer: 'host',
+          turnCount: 3,
+          phase: 'Main',
+          gameStatus: 'playing',
+          tokenOptions: { host: [], guest: [] },
+          revision: 7,
+        },
+      });
+    });
+
+    expect(screen.getByTestId('host-hp')).toHaveTextContent('13');
+
+    act(() => {
+      firstConn.emit('close');
+      vi.advanceTimersByTime(1000);
+    });
+
+    const secondConn = peer.connections[1];
+    act(() => {
+      secondConn.open = true;
+      secondConn.emit('open');
+      secondConn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: {
+          host: { hp: 20, pp: 0, maxPp: 0, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          cards: [],
+          turnPlayer: 'host',
+          turnCount: 1,
+          phase: 'Start',
+          gameStatus: 'preparing',
+          tokenOptions: { host: [], guest: [] },
+          revision: 0,
+        },
+      });
+    });
+
+    expect(screen.getByTestId('host-hp')).toHaveTextContent('20');
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
+    expect(screen.getByTestId('can-view')).toHaveTextContent('true');
+    expect(screen.getByTestId('can-interact')).toHaveTextContent('false');
+  });
+
+  it('accepts a same-revision host snapshot on the spectator after initial sync', () => {
+    renderHarness('/game?spectator=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const conn = peer.connections[0];
+    act(() => {
+      conn.open = true;
+      conn.emit('open');
+      conn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: {
+          host: { hp: 20, pp: 0, maxPp: 0, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          cards: [],
+          turnPlayer: 'host',
+          turnCount: 1,
+          phase: 'Start',
+          gameStatus: 'playing',
+          tokenOptions: { host: [], guest: [] },
+          revision: 3,
+        },
+      });
+      conn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: {
+          host: { hp: 14, pp: 0, maxPp: 0, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          cards: [],
+          turnPlayer: 'host',
+          turnCount: 1,
+          phase: 'Main',
+          gameStatus: 'playing',
+          tokenOptions: { host: [], guest: [] },
+          revision: 3,
+        },
+      });
+    });
+
+    expect(screen.getByTestId('host-hp')).toHaveTextContent('14');
+    expect(screen.getByTestId('can-view')).toHaveTextContent('true');
+    expect(screen.getByTestId('can-interact')).toHaveTextContent('false');
+  });
+
+  it('ignores a stale snapshot retry timer after the spectator reconnects on a new connection', () => {
+    renderHarness('/game?spectator=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const firstConn = peer.connections[0];
+    act(() => {
+      firstConn.open = true;
+      firstConn.emit('open');
+    });
+
+    act(() => {
+      firstConn.emit('close');
+      vi.advanceTimersByTime(1000);
+    });
+
+    const secondConn = peer.connections[1];
+    act(() => {
+      secondConn.open = true;
+      secondConn.emit('open');
+    });
+
+    const secondConnSendCount = secondConn.send.mock.calls.length;
+
+    act(() => {
+      vi.advanceTimersByTime(2000);
+    });
+
+    expect(peer.connect).toHaveBeenCalledTimes(2);
+    expect(secondConn.send).toHaveBeenCalledTimes(secondConnSendCount + 1);
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
+    expect(screen.getByTestId('can-view')).toHaveTextContent('true');
+    expect(screen.getByTestId('can-interact')).toHaveTextContent('false');
+  });
+
   it('keeps the guest connection active when a spectator connects and mirrors host snapshots to both', () => {
     renderHarness('/game?host=true&room=ROOM123');
 
@@ -1024,6 +1324,99 @@ describe('useGameBoardLogic P2P reconnect', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Spawn Token to EX' }));
     });
 
+    expect(guestConn.send).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'STATE_SNAPSHOT',
+      source: 'host',
+    }));
+    expect(firstSpectatorConn.send).not.toHaveBeenCalled();
+    expect(secondSpectatorConn.send).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'STATE_SNAPSHOT',
+      source: 'host',
+    }));
+  });
+
+  it('ignores snapshot requests from a replaced spectator connection on the host side', () => {
+    renderHarness('/game?host=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const guestConn = mockPeerJs.createConnection('guest');
+    const firstSpectatorConn = mockPeerJs.createConnection('spectator-1', { connectionRole: 'spectator' });
+    const secondSpectatorConn = mockPeerJs.createConnection('spectator-2', { connectionRole: 'spectator' });
+    act(() => {
+      peer.emit('connection', guestConn);
+      guestConn.open = true;
+      guestConn.emit('open');
+      peer.emit('connection', firstSpectatorConn);
+      firstSpectatorConn.open = true;
+      peer.emit('connection', secondSpectatorConn);
+      secondSpectatorConn.open = true;
+    });
+
+    firstSpectatorConn.send.mockClear();
+    secondSpectatorConn.send.mockClear();
+
+    act(() => {
+      firstSpectatorConn.emit('data', {
+        type: 'REQUEST_SNAPSHOT',
+        lastKnownRevision: 0,
+        source: 'guest',
+      });
+    });
+
+    expect(firstSpectatorConn.send).not.toHaveBeenCalled();
+    expect(secondSpectatorConn.send).not.toHaveBeenCalled();
+
+    act(() => {
+      secondSpectatorConn.emit('data', {
+        type: 'REQUEST_SNAPSHOT',
+        lastKnownRevision: 0,
+        source: 'guest',
+      });
+    });
+
+    expect(secondSpectatorConn.send).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'STATE_SNAPSHOT',
+      source: 'host',
+    }));
+  });
+
+  it('ignores stale closes from a replaced spectator connection on the host side', () => {
+    renderHarness('/game?host=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const guestConn = mockPeerJs.createConnection('guest');
+    const firstSpectatorConn = mockPeerJs.createConnection('spectator-1', { connectionRole: 'spectator' });
+    const secondSpectatorConn = mockPeerJs.createConnection('spectator-2', { connectionRole: 'spectator' });
+    act(() => {
+      peer.emit('connection', guestConn);
+      guestConn.open = true;
+      guestConn.emit('open');
+      peer.emit('connection', firstSpectatorConn);
+      firstSpectatorConn.open = true;
+      firstSpectatorConn.emit('open');
+      peer.emit('connection', secondSpectatorConn);
+      secondSpectatorConn.open = true;
+      secondSpectatorConn.emit('open');
+    });
+
+    guestConn.send.mockClear();
+    firstSpectatorConn.send.mockClear();
+    secondSpectatorConn.send.mockClear();
+
+    act(() => {
+      firstSpectatorConn.emit('close');
+      fireEvent.click(screen.getByRole('button', { name: 'Spawn Token to EX' }));
+    });
+
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
     expect(guestConn.send).toHaveBeenCalledWith(expect.objectContaining({
       type: 'STATE_SNAPSHOT',
       source: 'host',
@@ -1211,6 +1604,126 @@ describe('useGameBoardLogic P2P reconnect', () => {
     expect(peer.connect).toHaveBeenCalledTimes(1);
   });
 
+  it('recovers from WAITING_FOR_HOST_SESSION when the host later sends a snapshot to the guest', () => {
+    renderHarness('/game?host=false&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const conn = peer.connections[0];
+    act(() => {
+      conn.open = true;
+      conn.emit('open');
+      conn.emit('data', {
+        type: 'WAITING_FOR_HOST_SESSION',
+        source: 'host',
+      });
+      vi.advanceTimersByTime(4000);
+    });
+
+    expect(peer.connect).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('status')).toHaveTextContent('Host is choosing whether to resume the saved session. Waiting...');
+
+    act(() => {
+      conn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: {
+          host: { hp: 18, pp: 0, maxPp: 0, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          cards: [],
+          turnPlayer: 'host',
+          turnCount: 2,
+          phase: 'Main',
+          gameStatus: 'playing',
+          tokenOptions: { host: [], guest: [] },
+          revision: 2,
+        },
+      });
+      vi.advanceTimersByTime(4000);
+    });
+
+    expect(screen.getByTestId('host-hp')).toHaveTextContent('18');
+    expect(screen.getByTestId('status')).toHaveTextContent('Connected to host! Game ready.');
+    expect(peer.connect).toHaveBeenCalledTimes(1);
+  });
+
+  it('waits without reconnecting when the host reports a pending saved session to a spectator', () => {
+    renderHarness('/game?spectator=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const conn = peer.connections[0];
+    act(() => {
+      conn.open = true;
+      conn.emit('open');
+      conn.emit('data', {
+        type: 'WAITING_FOR_HOST_SESSION',
+        source: 'host',
+      });
+      vi.advanceTimersByTime(7000);
+    });
+
+    expect(screen.getByTestId('status')).toHaveTextContent('Host is choosing whether to resume the saved session. Waiting...');
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
+    expect(screen.getByTestId('can-view')).toHaveTextContent('true');
+    expect(screen.getByTestId('can-interact')).toHaveTextContent('false');
+    expect(peer.connect).toHaveBeenCalledTimes(1);
+  });
+
+  it('recovers from WAITING_FOR_HOST_SESSION when the host later sends a snapshot to a spectator', () => {
+    renderHarness('/game?spectator=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const conn = peer.connections[0];
+    act(() => {
+      conn.open = true;
+      conn.emit('open');
+      conn.emit('data', {
+        type: 'WAITING_FOR_HOST_SESSION',
+        source: 'host',
+      });
+      vi.advanceTimersByTime(4000);
+    });
+
+    expect(peer.connect).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('status')).toHaveTextContent('Host is choosing whether to resume the saved session. Waiting...');
+
+    act(() => {
+      conn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: {
+          host: { hp: 18, pp: 0, maxPp: 0, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          cards: [],
+          turnPlayer: 'host',
+          turnCount: 2,
+          phase: 'Main',
+          gameStatus: 'playing',
+          tokenOptions: { host: [], guest: [] },
+          revision: 2,
+        },
+      });
+      vi.advanceTimersByTime(4000);
+    });
+
+    expect(screen.getByTestId('host-hp')).toHaveTextContent('18');
+    expect(screen.getByTestId('status')).toHaveTextContent('Connected to host! Game ready.');
+    expect(screen.getByTestId('can-view')).toHaveTextContent('true');
+    expect(screen.getByTestId('can-interact')).toHaveTextContent('false');
+    expect(peer.connect).toHaveBeenCalledTimes(1);
+  });
+
   it('applies guest events on the host side', () => {
     renderHarness('/game?host=true&room=ROOM123');
 
@@ -1390,6 +1903,154 @@ describe('useGameBoardLogic P2P reconnect', () => {
     expect(peer.connect).toHaveBeenCalledTimes(2);
     expect(secondConn.send).toHaveBeenCalledTimes(secondConnSendCount + 1);
     expect(screen.getByTestId('status')).toHaveTextContent('Waiting for host session restore... retrying sync.');
+  });
+
+  it('ignores stale snapshots from the previous guest connection after reconnecting', () => {
+    renderHarness('/game?host=false&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const firstConn = peer.connections[0];
+    act(() => {
+      firstConn.open = true;
+      firstConn.emit('open');
+      firstConn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: {
+          host: { hp: 13, pp: 0, maxPp: 0, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          cards: [],
+          turnPlayer: 'host',
+          turnCount: 2,
+          phase: 'Main',
+          gameStatus: 'playing',
+          tokenOptions: { host: [], guest: [] },
+          revision: 4,
+        },
+      });
+    });
+
+    expect(screen.getByTestId('host-hp')).toHaveTextContent('13');
+
+    act(() => {
+      firstConn.emit('close');
+      vi.advanceTimersByTime(1000);
+    });
+
+    const secondConn = peer.connections[1];
+    act(() => {
+      secondConn.open = true;
+      secondConn.emit('open');
+      secondConn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: {
+          host: { hp: 17, pp: 0, maxPp: 0, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          cards: [],
+          turnPlayer: 'host',
+          turnCount: 3,
+          phase: 'Main',
+          gameStatus: 'playing',
+          tokenOptions: { host: [], guest: [] },
+          revision: 5,
+        },
+      });
+    });
+
+    expect(screen.getByTestId('host-hp')).toHaveTextContent('17');
+
+    act(() => {
+      firstConn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: {
+          host: { hp: 1, pp: 0, maxPp: 0, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          cards: [],
+          turnPlayer: 'host',
+          turnCount: 4,
+          phase: 'End',
+          gameStatus: 'playing',
+          tokenOptions: { host: [], guest: [] },
+          revision: 6,
+        },
+      });
+    });
+
+    expect(screen.getByTestId('host-hp')).toHaveTextContent('17');
+    expect(screen.getByTestId('status')).toHaveTextContent('Connected to host! Game ready.');
+  });
+
+  it('ignores WAITING_FOR_HOST_SESSION from the previous guest connection after reconnecting', () => {
+    renderHarness('/game?host=false&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const firstConn = peer.connections[0];
+    act(() => {
+      firstConn.open = true;
+      firstConn.emit('open');
+      firstConn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: {
+          host: { hp: 13, pp: 0, maxPp: 0, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          cards: [],
+          turnPlayer: 'host',
+          turnCount: 2,
+          phase: 'Main',
+          gameStatus: 'playing',
+          tokenOptions: { host: [], guest: [] },
+          revision: 4,
+        },
+      });
+    });
+
+    act(() => {
+      firstConn.emit('close');
+      vi.advanceTimersByTime(1000);
+    });
+
+    const secondConn = peer.connections[1];
+    act(() => {
+      secondConn.open = true;
+      secondConn.emit('open');
+      secondConn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: {
+          host: { hp: 17, pp: 0, maxPp: 0, ep: 0, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
+          cards: [],
+          turnPlayer: 'host',
+          turnCount: 3,
+          phase: 'Main',
+          gameStatus: 'playing',
+          tokenOptions: { host: [], guest: [] },
+          revision: 5,
+        },
+      });
+    });
+
+    act(() => {
+      firstConn.emit('data', {
+        type: 'WAITING_FOR_HOST_SESSION',
+        source: 'host',
+      });
+    });
+
+    expect(screen.getByTestId('host-hp')).toHaveTextContent('17');
+    expect(screen.getByTestId('status')).toHaveTextContent('Connected to host! Game ready.');
+    expect(screen.getByTestId('can-interact')).toHaveTextContent('true');
   });
 
   it('accepts the first snapshot from a new host connection even when the revision goes backwards', () => {
@@ -1819,6 +2480,109 @@ describe('useGameBoardLogic P2P reconnect', () => {
     expect(screen.getByTestId('status')).toHaveTextContent('Guest connected! Game ready.');
   });
 
+  it('ignores events from a replaced guest connection on the host side', () => {
+    renderHarness('/game?host=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const firstConn = mockPeerJs.createConnection('guest');
+    act(() => {
+      peer.emit('connection', firstConn);
+      firstConn.open = true;
+      firstConn.emit('open');
+    });
+
+    const secondConn = mockPeerJs.createConnection('guest');
+    act(() => {
+      peer.emit('connection', secondConn);
+      secondConn.open = true;
+      secondConn.emit('open');
+    });
+
+    act(() => {
+      firstConn.emit('data', {
+        type: 'EVENT',
+        event: {
+          type: 'MODIFY_PLAYER_STAT',
+          actor: 'guest',
+          playerKey: 'host',
+          stat: 'hp',
+          delta: -3,
+        },
+      });
+    });
+
+    expect(screen.getByTestId('host-hp')).toHaveTextContent('20');
+
+    act(() => {
+      secondConn.emit('data', {
+        type: 'EVENT',
+        event: {
+          type: 'MODIFY_PLAYER_STAT',
+          actor: 'guest',
+          playerKey: 'host',
+          stat: 'hp',
+          delta: -2,
+        },
+      });
+    });
+
+    expect(screen.getByTestId('host-hp')).toHaveTextContent('18');
+  });
+
+  it('ignores snapshot requests from a replaced guest connection on the host side', () => {
+    renderHarness('/game?host=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const firstConn = mockPeerJs.createConnection('guest');
+    act(() => {
+      peer.emit('connection', firstConn);
+      firstConn.open = true;
+      firstConn.emit('open');
+    });
+
+    const secondConn = mockPeerJs.createConnection('guest');
+    act(() => {
+      peer.emit('connection', secondConn);
+      secondConn.open = true;
+      secondConn.emit('open');
+    });
+
+    firstConn.send.mockClear();
+    secondConn.send.mockClear();
+
+    act(() => {
+      firstConn.emit('data', {
+        type: 'REQUEST_SNAPSHOT',
+        lastKnownRevision: 0,
+        source: 'guest',
+      });
+    });
+
+    expect(firstConn.send).not.toHaveBeenCalled();
+    expect(secondConn.send).not.toHaveBeenCalled();
+
+    act(() => {
+      secondConn.emit('data', {
+        type: 'REQUEST_SNAPSHOT',
+        lastKnownRevision: 0,
+        source: 'guest',
+      });
+    });
+
+    expect(secondConn.send).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'STATE_SNAPSHOT',
+      source: 'host',
+    }));
+  });
+
   it('waits for the guest after a host-side connection error', () => {
     renderHarness('/game?host=true&room=ROOM123');
 
@@ -2112,6 +2876,51 @@ describe('useGameBoardLogic P2P reconnect', () => {
     expect(screen.getByTestId('status')).toHaveTextContent('Guest connected. Choose whether to resume the saved session.');
   });
 
+  it('sends the restored snapshot to a waiting spectator once the host resumes the saved session', () => {
+    seedHostSavedSession({
+      host: { hp: 9 },
+      gameStatus: 'playing',
+      revision: 7,
+    });
+
+    renderHarness('/game?host=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const spectatorConn = mockPeerJs.createConnection('spectator', { connectionRole: 'spectator' });
+    act(() => {
+      peer.emit('connection', spectatorConn);
+      spectatorConn.open = true;
+      spectatorConn.emit('data', {
+        type: 'REQUEST_SNAPSHOT',
+        lastKnownRevision: 0,
+        source: 'guest',
+      });
+    });
+
+    expect(spectatorConn.send).toHaveBeenCalledWith({
+      type: 'WAITING_FOR_HOST_SESSION',
+      source: 'host',
+    });
+
+    spectatorConn.send.mockClear();
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Resume Saved Session' }));
+    });
+
+    expect(spectatorConn.send).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'STATE_SNAPSHOT',
+      source: 'host',
+      state: expect.objectContaining({
+        host: expect.objectContaining({ hp: 9 }),
+      }),
+    }));
+  });
+
   it('sends restored host sessions to both guest and spectator connections', () => {
     seedHostSavedSession({
       host: { hp: 9 },
@@ -2142,6 +2951,41 @@ describe('useGameBoardLogic P2P reconnect', () => {
         host: expect.objectContaining({ hp: 9 }),
       }),
     }));
+  });
+
+  it('keeps guest and spectator synced after resuming a saved session and making a new host-side change', () => {
+    seedHostSavedSession({
+      host: { hp: 9 },
+      gameStatus: 'playing',
+      revision: 7,
+    });
+
+    const { guestConn, spectatorConn } = connectHostWithGuestAndSpectator();
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Resume Saved Session' }));
+    });
+
+    guestConn.send.mockClear();
+    spectatorConn.send.mockClear();
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Spawn Token to EX' }));
+    });
+
+    const guestSnapshots = guestConn.send.mock.calls
+      .map(([message]) => message as SyncMessage)
+      .filter((message): message is Extract<SyncMessage, { type: 'STATE_SNAPSHOT' }> => message.type === 'STATE_SNAPSHOT');
+    const spectatorSnapshots = spectatorConn.send.mock.calls
+      .map(([message]) => message as SyncMessage)
+      .filter((message): message is Extract<SyncMessage, { type: 'STATE_SNAPSHOT' }> => message.type === 'STATE_SNAPSHOT');
+
+    expect(guestSnapshots).toHaveLength(1);
+    expect(spectatorSnapshots).toHaveLength(1);
+    expect(guestSnapshots[0].state.host.hp).toBe(9);
+    expect(spectatorSnapshots[0].state.host.hp).toBe(9);
+    expect(guestSnapshots[0].state.cards.filter((card) => card.zone === 'ex-host')).toHaveLength(1);
+    expect(spectatorSnapshots[0].state.cards.filter((card) => card.zone === 'ex-host')).toHaveLength(1);
   });
 
   it('sends fresh-state discards to both guest and spectator connections', () => {

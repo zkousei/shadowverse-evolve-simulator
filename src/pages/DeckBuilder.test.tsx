@@ -751,6 +751,39 @@ describe('DeckBuilder', () => {
     expect(loadDraft()).toBeNull();
   });
 
+  it('does not show the restore prompt again after Start Fresh clears the pending draft', async () => {
+    saveDraft({
+      selectedDeckId: null,
+      name: 'Discard Once',
+      ruleConfig: otherRuleConfig,
+      deckState: {
+        mainDeck: [mockCards[0]],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [],
+      },
+    });
+
+    const firstRender = render(<DeckBuilder />);
+    await screen.findByText('Alpha Knight');
+
+    const resumeDialog = await screen.findByRole('dialog', { name: 'Resume previous session' });
+    fireEvent.click(within(resumeDialog).getByRole('button', { name: 'Start Fresh' }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Resume previous session' })).not.toBeInTheDocument();
+    });
+    expect(loadDraft()).toBeNull();
+
+    firstRender.unmount();
+
+    render(<DeckBuilder />);
+    await screen.findByText('Alpha Knight');
+
+    expect(screen.queryByRole('dialog', { name: 'Resume previous session' })).not.toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Deck Name')).toHaveValue('');
+  });
+
   it('restores a loaded saved deck on the next visit after confirmation', async () => {
     const savedDeck = saveDeck({
       name: 'Loaded Session Deck',
@@ -1186,6 +1219,32 @@ describe('DeckBuilder', () => {
     expect(within(mainDeckSection).queryByText('Beta Mage')).not.toBeInTheDocument();
   });
 
+  it('clears save feedback automatically after the timeout elapses', async () => {
+    vi.useFakeTimers();
+    await renderLoadedDeckBuilder();
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Deck format' }), {
+      target: { value: 'other' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('Deck Name'), {
+      target: { value: 'Timed Save Deck' },
+    });
+    fireEvent.click(within(screen.getByAltText('Alpha Knight').closest('.glass-panel') as HTMLElement).getByTitle('Add to Main Deck'));
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(screen.getByText('"Timed Save Deck" was saved.')).toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(2399);
+    });
+    expect(screen.getByText('"Timed Save Deck" was saved.')).toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(screen.queryByText('"Timed Save Deck" was saved.')).not.toBeInTheDocument();
+  });
+
   it('exports saved decks without embedding related card metadata', async () => {
     const createObjectURL = vi.fn().mockReturnValue('blob:saved-deck');
     const revokeObjectURL = vi.fn();
@@ -1360,6 +1419,51 @@ describe('DeckBuilder', () => {
     expect(within(tokenDeckSection).getByText('Knight Token')).toBeInTheDocument();
   });
 
+  it('closes the DeckLog import modal after a successful import and reopens with an empty input', async () => {
+    mockLoadCardCatalog.mockResolvedValue(mockCards);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          id: 4092682,
+          title: 'DeckLog Elf',
+          game_title_id: 6,
+          deck_param1: 'N',
+          deck_param2: 'ロイヤル',
+          list: [
+            { card_number: 'BP01-001', num: 1, card_kind: '・フォロワー・', name: 'Alpha Knight', img: 'BP01/bp01_001.png', custom_param: { class_name: 'ロイヤル' } },
+          ],
+          sub_list: [],
+          p_list: [
+            { card_number: 'LDR01-001', num: 1, card_kind: '・リーダー・', name: 'Leader Luna', img: 'LDR01/ldr01_001.png', custom_param: { class_name: 'ロイヤル' } },
+          ],
+        }),
+      } as unknown as Response)
+    );
+
+    await renderLoadedDeckBuilder();
+
+    fireEvent.click(screen.getByRole('button', { name: /Import from DeckLog/i }));
+    const deckLogDialog = screen.getByRole('dialog', { name: 'Import from DeckLog dialog' });
+    const deckLogInput = within(deckLogDialog).getByPlaceholderText('e.g. a DeckLog code or a public DeckLog URL');
+
+    fireEvent.change(deckLogInput, {
+      target: { value: 'https://decklog.bushiroad.com/view/7H9K2' },
+    });
+    fireEvent.click(within(deckLogDialog).getByRole('button', { name: 'Import' }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Import from DeckLog dialog' })).not.toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Import from DeckLog/i }));
+    const reopenedDialog = screen.getByRole('dialog', { name: 'Import from DeckLog dialog' });
+    expect(
+      within(reopenedDialog).getByPlaceholderText('e.g. a DeckLog code or a public DeckLog URL')
+    ).toHaveValue('');
+  });
+
   it('closes the DeckLog import modal on cancel and clears the pending input', async () => {
     render(<DeckBuilder />);
     await screen.findByText('Alpha Knight');
@@ -1380,6 +1484,39 @@ describe('DeckBuilder', () => {
     expect(
       within(reopenedDialog).getByPlaceholderText('e.g. a DeckLog code or a public DeckLog URL')
     ).toHaveValue('');
+  });
+
+  it('keeps the DeckLog import modal open and preserves the input when import fails', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        json: vi.fn().mockResolvedValue({}),
+      } as unknown as Response)
+    );
+
+    render(<DeckBuilder />);
+    await screen.findByText('Alpha Knight');
+
+    fireEvent.click(screen.getByRole('button', { name: /Import from DeckLog/i }));
+    const deckLogDialog = screen.getByRole('dialog', { name: 'Import from DeckLog dialog' });
+    const deckLogInput = within(deckLogDialog).getByPlaceholderText('e.g. a DeckLog code or a public DeckLog URL');
+
+    fireEvent.change(deckLogInput, {
+      target: { value: 'https://decklog.bushiroad.com/view/NOTFOUND' },
+    });
+    fireEvent.click(within(deckLogDialog).getByRole('button', { name: 'Import' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('dialog', { name: 'Import from DeckLog dialog' })).toBeInTheDocument();
+    });
+
+    const dialogAfterFailure = screen.getByRole('dialog', { name: 'Import from DeckLog dialog' });
+    expect(
+      within(dialogAfterFailure).getByPlaceholderText('e.g. a DeckLog code or a public DeckLog URL')
+    ).toHaveValue('https://decklog.bushiroad.com/view/NOTFOUND');
+    expect(within(dialogAfterFailure).getByRole('button', { name: 'Import' })).toBeEnabled();
   });
 
   it('keeps the My Decks modal open when load is canceled', async () => {
@@ -1584,6 +1721,93 @@ describe('DeckBuilder', () => {
     expect(screen.getByText('No saved decks yet. Build a deck and press Save to keep it in this browser.')).toBeInTheDocument();
   });
 
+  it('keeps the My Decks modal open and preserves saved decks when delete all is canceled', async () => {
+    saveDeck({
+      name: 'Bulk Cancel A',
+      ruleConfig: otherRuleConfig,
+      deckState: {
+        mainDeck: [mockCards[0]],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [],
+      },
+    });
+    saveDeck({
+      name: 'Bulk Cancel B',
+      ruleConfig: otherRuleConfig,
+      deckState: {
+        mainDeck: [mockCards[2]],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [],
+      },
+    });
+
+    await renderLoadedDeckBuilder();
+
+    fireEvent.click(screen.getByRole('button', { name: 'My Decks' }));
+    const decksModal = screen.getByRole('dialog', { name: 'My Decks' });
+    fireEvent.click(within(decksModal).getByRole('button', { name: 'Delete All' }));
+
+    const deleteAllDialog = screen.getByRole('dialog', { name: 'Delete all saved decks confirmation' });
+    fireEvent.click(within(deleteAllDialog).getByRole('button', { name: 'Cancel' }));
+
+    const modalAfterCancel = screen.getByRole('dialog', { name: 'My Decks' });
+    expect(within(modalAfterCancel).getByText('Bulk Cancel A')).toBeInTheDocument();
+    expect(within(modalAfterCancel).getByText('Bulk Cancel B')).toBeInTheDocument();
+    expect(listSavedDecks().map(deck => deck.name)).toEqual(
+      expect.arrayContaining(['Bulk Cancel A', 'Bulk Cancel B'])
+    );
+    expect(listSavedDecks()).toHaveLength(2);
+  });
+
+  it('keeps the current builder contents when delete all is canceled', async () => {
+    saveDeck({
+      name: 'Bulk Cancel Loaded A',
+      ruleConfig: otherRuleConfig,
+      deckState: {
+        mainDeck: [mockCards[0]],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [],
+      },
+    });
+    saveDeck({
+      name: 'Bulk Cancel Loaded B',
+      ruleConfig: otherRuleConfig,
+      deckState: {
+        mainDeck: [mockCards[2]],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [],
+      },
+    });
+
+    await renderLoadedDeckBuilder();
+
+    fireEvent.click(screen.getByRole('button', { name: 'My Decks' }));
+    const initialModal = screen.getByRole('dialog', { name: 'My Decks' });
+    const loadedRow = within(initialModal).getByText('Bulk Cancel Loaded B').closest('div[style*="justify-content: space-between"]') as HTMLElement;
+    fireEvent.click(within(loadedRow).getByRole('button', { name: 'Load' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Saved')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'My Decks' }));
+    const decksModal = screen.getByRole('dialog', { name: 'My Decks' });
+    fireEvent.click(within(decksModal).getByRole('button', { name: 'Delete All' }));
+
+    const deleteAllDialog = screen.getByRole('dialog', { name: 'Delete all saved decks confirmation' });
+    fireEvent.click(within(deleteAllDialog).getByRole('button', { name: 'Cancel' }));
+
+    const mainDeckSection = screen.getByRole('heading', { name: /^Main Deck/ }).nextElementSibling as HTMLElement;
+    expect(within(mainDeckSection).getByText('Beta Mage')).toBeInTheDocument();
+    expect(screen.getByText('Saved')).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'My Decks' })).toBeInTheDocument();
+    expect(listSavedDecks()).toHaveLength(2);
+  });
+
   it('deletes selected saved decks without clearing the current builder contents', async () => {
     saveDeck({
       name: 'Selectable A',
@@ -1635,5 +1859,194 @@ describe('DeckBuilder', () => {
 
     const mainDeckSection = screen.getByRole('heading', { name: /^Main Deck/ }).nextElementSibling as HTMLElement;
     expect(within(mainDeckSection).getByText('Alpha Knight')).toBeInTheDocument();
+  });
+
+  it('returns My Decks to normal mode after deleting selected decks', async () => {
+    saveDeck({
+      name: 'Selectable Reset A',
+      ruleConfig: otherRuleConfig,
+      deckState: {
+        mainDeck: [mockCards[0]],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [],
+      },
+    });
+    saveDeck({
+      name: 'Selectable Reset B',
+      ruleConfig: otherRuleConfig,
+      deckState: {
+        mainDeck: [mockCards[2]],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [],
+      },
+    });
+
+    await renderLoadedDeckBuilder();
+
+    fireEvent.click(screen.getByRole('button', { name: 'My Decks' }));
+    const initialModal = screen.getByRole('dialog', { name: 'My Decks' });
+    const selectableARow = within(initialModal).getByText('Selectable Reset A').closest('div[style*="justify-content: space-between"]') as HTMLElement;
+    fireEvent.click(within(selectableARow).getByRole('button', { name: 'Load' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Saved')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'My Decks' }));
+    const decksModal = screen.getByRole('dialog', { name: 'My Decks' });
+    fireEvent.click(within(decksModal).getByRole('button', { name: 'Select' }));
+    fireEvent.click(within(decksModal).getByRole('checkbox', { name: 'Select Selectable Reset A' }));
+    fireEvent.click(within(decksModal).getByRole('button', { name: 'Delete Selected' }));
+
+    const deleteSelectedDialog = screen.getByRole('dialog', { name: 'Delete selected saved decks confirmation' });
+    fireEvent.click(within(deleteSelectedDialog).getByRole('button', { name: 'Delete Selected' }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Delete selected saved decks confirmation' })).not.toBeInTheDocument();
+    });
+
+    const modalAfterDelete = screen.getByRole('dialog', { name: 'My Decks' });
+    expect(within(modalAfterDelete).getByRole('button', { name: 'Select' })).toBeInTheDocument();
+    expect(within(modalAfterDelete).queryByRole('button', { name: 'Cancel Selection' })).not.toBeInTheDocument();
+    expect(within(modalAfterDelete).queryByRole('button', { name: 'Delete Selected' })).not.toBeInTheDocument();
+    expect(within(modalAfterDelete).queryByRole('checkbox', { name: 'Select Selectable Reset B' })).not.toBeInTheDocument();
+  });
+
+  it('keeps selection mode and selected decks when delete selected is canceled', async () => {
+    saveDeck({
+      name: 'Selectable Cancel A',
+      ruleConfig: otherRuleConfig,
+      deckState: {
+        mainDeck: [mockCards[0]],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [],
+      },
+    });
+    saveDeck({
+      name: 'Selectable Cancel B',
+      ruleConfig: otherRuleConfig,
+      deckState: {
+        mainDeck: [mockCards[2]],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [],
+      },
+    });
+
+    await renderLoadedDeckBuilder();
+
+    fireEvent.click(screen.getByRole('button', { name: 'My Decks' }));
+    const decksModal = screen.getByRole('dialog', { name: 'My Decks' });
+    fireEvent.click(within(decksModal).getByRole('button', { name: 'Select' }));
+
+    const selectableCheckbox = within(decksModal).getByRole('checkbox', { name: 'Select Selectable Cancel A' });
+    fireEvent.click(selectableCheckbox);
+    fireEvent.click(within(decksModal).getByRole('button', { name: 'Delete Selected' }));
+
+    const deleteSelectedDialog = screen.getByRole('dialog', { name: 'Delete selected saved decks confirmation' });
+    fireEvent.click(within(deleteSelectedDialog).getByRole('button', { name: 'Cancel' }));
+
+    const modalAfterCancel = screen.getByRole('dialog', { name: 'My Decks' });
+    expect(within(modalAfterCancel).getByRole('button', { name: 'Cancel Selection' })).toBeInTheDocument();
+    expect(within(modalAfterCancel).getByRole('button', { name: 'Delete Selected' })).toBeInTheDocument();
+    expect(within(modalAfterCancel).getByRole('checkbox', { name: 'Select Selectable Cancel A' })).toBeChecked();
+    expect(listSavedDecks().map(deck => deck.name)).toEqual(
+      expect.arrayContaining(['Selectable Cancel A', 'Selectable Cancel B'])
+    );
+    expect(listSavedDecks()).toHaveLength(2);
+  });
+
+  it('keeps the current builder contents when delete selected is canceled', async () => {
+    saveDeck({
+      name: 'Selectable Loaded A',
+      ruleConfig: otherRuleConfig,
+      deckState: {
+        mainDeck: [mockCards[0]],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [],
+      },
+    });
+    saveDeck({
+      name: 'Selectable Loaded B',
+      ruleConfig: otherRuleConfig,
+      deckState: {
+        mainDeck: [mockCards[2]],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [],
+      },
+    });
+
+    await renderLoadedDeckBuilder();
+
+    fireEvent.click(screen.getByRole('button', { name: 'My Decks' }));
+    const initialModal = screen.getByRole('dialog', { name: 'My Decks' });
+    const loadedRow = within(initialModal).getByText('Selectable Loaded B').closest('div[style*="justify-content: space-between"]') as HTMLElement;
+    fireEvent.click(within(loadedRow).getByRole('button', { name: 'Load' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Saved')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'My Decks' }));
+    const decksModal = screen.getByRole('dialog', { name: 'My Decks' });
+    fireEvent.click(within(decksModal).getByRole('button', { name: 'Select' }));
+    fireEvent.click(within(decksModal).getByRole('checkbox', { name: 'Select Selectable Loaded A' }));
+    fireEvent.click(within(decksModal).getByRole('button', { name: 'Delete Selected' }));
+
+    const deleteSelectedDialog = screen.getByRole('dialog', { name: 'Delete selected saved decks confirmation' });
+    fireEvent.click(within(deleteSelectedDialog).getByRole('button', { name: 'Cancel' }));
+
+    const mainDeckSection = screen.getByRole('heading', { name: /^Main Deck/ }).nextElementSibling as HTMLElement;
+    expect(within(mainDeckSection).getByText('Beta Mage')).toBeInTheDocument();
+    expect(screen.getByText('Saved')).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'My Decks' })).toBeInTheDocument();
+    expect(listSavedDecks()).toHaveLength(2);
+  });
+
+  it('reopens My Decks in normal mode after closing it during selection mode', async () => {
+    saveDeck({
+      name: 'Selectable Close A',
+      ruleConfig: otherRuleConfig,
+      deckState: {
+        mainDeck: [mockCards[0]],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [],
+      },
+    });
+    saveDeck({
+      name: 'Selectable Close B',
+      ruleConfig: otherRuleConfig,
+      deckState: {
+        mainDeck: [mockCards[2]],
+        evolveDeck: [],
+        leaderCards: [],
+        tokenDeck: [],
+      },
+    });
+
+    await renderLoadedDeckBuilder();
+
+    fireEvent.click(screen.getByRole('button', { name: 'My Decks' }));
+    const decksModal = screen.getByRole('dialog', { name: 'My Decks' });
+    fireEvent.click(within(decksModal).getByRole('button', { name: 'Select' }));
+    expect(within(decksModal).getByRole('button', { name: 'Cancel Selection' })).toBeInTheDocument();
+    expect(within(decksModal).getByRole('checkbox', { name: 'Select Selectable Close A' })).toBeInTheDocument();
+
+    fireEvent.click(within(decksModal).getByRole('button', { name: 'Close' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'My Decks' })).not.toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'My Decks' }));
+    const reopenedModal = screen.getByRole('dialog', { name: 'My Decks' });
+    expect(within(reopenedModal).getByRole('button', { name: 'Select' })).toBeInTheDocument();
+    expect(within(reopenedModal).queryByRole('button', { name: 'Cancel Selection' })).not.toBeInTheDocument();
+    expect(within(reopenedModal).queryByRole('checkbox', { name: 'Select Selectable Close A' })).not.toBeInTheDocument();
   });
 });

@@ -773,6 +773,73 @@ describe('GameBoard', () => {
     });
   });
 
+  it('reopens the token spawn dialog with the default destination after canceling', async () => {
+    const spawnTokens = vi.fn();
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      gameState: createGameState([], {
+        gameStatus: 'playing',
+      }),
+      spawnTokens,
+      getTokenOptions: vi.fn((): TokenOption[] => ([
+        {
+          cardId: 'TOKEN-001',
+          name: 'Knight Token',
+          image: '/token.png',
+          baseCardType: 'follower',
+        },
+      ])),
+      cardDetailLookup: {
+        'TOKEN-001': {
+          id: 'TOKEN-001',
+          name: 'Knight Token',
+          image: '/token.png',
+          className: 'Royal',
+          title: 'Hero Tale',
+          type: 'Follower',
+          subtype: 'Token',
+          cost: '1',
+          atk: 1,
+          hp: 1,
+          abilityText: '',
+        },
+      },
+    }));
+
+    render(<GameBoard />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Spawn My Token' }));
+
+    const firstDialog = await screen.findByRole('dialog', { name: 'Generate Tokens' });
+    fireEvent.click(within(firstDialog).getByRole('button', { name: 'Field' }));
+    fireEvent.click(within(firstDialog).getByRole('button', { name: 'Increase Knight Token count' }));
+    fireEvent.click(within(firstDialog).getByRole('button', { name: 'Cancel' }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Generate Tokens' })).not.toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Spawn My Token' }));
+
+    const secondDialog = await screen.findByRole('dialog', { name: 'Generate Tokens' });
+    fireEvent.click(within(secondDialog).getByRole('button', { name: 'Increase Knight Token count' }));
+    fireEvent.click(within(secondDialog).getByRole('button', { name: 'Generate' }));
+
+    expect(spawnTokens).toHaveBeenCalledWith(
+      'host',
+      [{
+        tokenOption: {
+          cardId: 'TOKEN-001',
+          name: 'Knight Token',
+          image: '/token.png',
+          baseCardType: 'follower',
+        },
+        count: 1,
+      }],
+      'ex'
+    );
+  });
+
   it('shows the evolve auto attach dialog and wires cancel and confirm actions', async () => {
     const confirmEvolveAutoAttachSelection = vi.fn();
     const cancelEvolveAutoAttachSelection = vi.fn();
@@ -1443,6 +1510,41 @@ describe('GameBoard', () => {
     rerender(<GameBoard />);
 
     expect(screen.getByRole('dialog', { name: 'How many cards to look at?' })).toBeInTheDocument();
+  });
+
+  it('reopens the top-n dialog with the previous custom value after canceling', async () => {
+    const handleLookAtTop = vi.fn();
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      handleLookAtTop,
+      gameState: createGameState([], {
+        gameStatus: 'playing',
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Actions' })[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Look Top (N)' }));
+
+    const firstDialog = await screen.findByRole('dialog', { name: 'How many cards to look at?' });
+    fireEvent.click(within(firstDialog).getByRole('button', { name: 'Other' }));
+    fireEvent.change(within(firstDialog).getByRole('spinbutton', { name: 'Custom card count' }), {
+      target: { value: '7' },
+    });
+    fireEvent.click(within(firstDialog).getByRole('button', { name: 'Cancel' }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'How many cards to look at?' })).not.toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Actions' })[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Look Top (N)' }));
+
+    const secondDialog = await screen.findByRole('dialog', { name: 'How many cards to look at?' });
+    fireEvent.click(within(secondDialog).getByRole('button', { name: 'Look' }));
+
+    expect(handleLookAtTop).toHaveBeenCalledWith(7, 'host');
   });
 
   it('shows the reconnecting alert when guest actions are locked', () => {

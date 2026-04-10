@@ -314,6 +314,38 @@ describe('gameSyncReducer', () => {
     expect(allowed.revision).toBe(3);
   });
 
+  it('keeps SET_PHASE as a no-op when the requester does not match or the game is not playing', () => {
+    const wrongRequesterState = createState({
+      gameStatus: 'playing',
+      turnPlayer: 'host',
+      revision: 4,
+      phase: 'Start',
+    });
+
+    const wrongRequester = applyGameSyncEvent(wrongRequesterState, {
+      id: 'evt-phase-wrong-requester',
+      type: 'SET_PHASE',
+      actor: 'host',
+      phase: 'Main',
+    }, 'guest');
+    expect(wrongRequester).toBe(wrongRequesterState);
+
+    const outsidePlayingState = createState({
+      gameStatus: 'preparing',
+      turnPlayer: 'host',
+      revision: 5,
+      phase: 'Start',
+    });
+
+    const outsidePlaying = applyGameSyncEvent(outsidePlayingState, {
+      id: 'evt-phase-outside-playing',
+      type: 'SET_PHASE',
+      actor: 'host',
+      phase: 'Main',
+    }, 'host');
+    expect(outsidePlaying).toBe(outsidePlayingState);
+  });
+
   it('sets reveal hands mode and increments revision (host only)', () => {
     const state = createState({ revealHandsMode: false, revision: 10 });
 
@@ -360,6 +392,44 @@ describe('gameSyncReducer', () => {
     expect(allowed.revision).toBe(11);
   });
 
+  it('keeps SET_END_STOP as a no-op outside playing or when the value is unchanged', () => {
+    const preparingState = createState({
+      gameStatus: 'preparing',
+      turnPlayer: 'host',
+      revision: 12,
+      endStop: {
+        host: false,
+        guest: false,
+      },
+    });
+
+    const outsidePlaying = applyGameSyncEvent(preparingState, {
+      id: 'evt-end-stop-outside-playing',
+      type: 'SET_END_STOP',
+      actor: 'guest',
+      enabled: true,
+    }, 'guest');
+    expect(outsidePlaying).toBe(preparingState);
+
+    const unchangedState = createState({
+      gameStatus: 'playing',
+      turnPlayer: 'host',
+      revision: 13,
+      endStop: {
+        host: false,
+        guest: true,
+      },
+    });
+
+    const unchanged = applyGameSyncEvent(unchangedState, {
+      id: 'evt-end-stop-unchanged',
+      type: 'SET_END_STOP',
+      actor: 'guest',
+      enabled: true,
+    }, 'guest');
+    expect(unchanged).toBe(unchangedState);
+  });
+
   it('blocks end turn when the next player has end stop enabled', () => {
     const state = createState({
       gameStatus: 'playing',
@@ -377,6 +447,34 @@ describe('gameSyncReducer', () => {
     });
 
     expect(result).toBe(state);
+  });
+
+  it('keeps END_TURN as a no-op when the requester does not match or the game is not playing', () => {
+    const wrongRequesterState = createState({
+      gameStatus: 'playing',
+      turnPlayer: 'host',
+      revision: 14,
+    });
+
+    const wrongRequester = applyGameSyncEvent(wrongRequesterState, {
+      id: 'evt-end-turn-wrong-requester',
+      type: 'END_TURN',
+      actor: 'host',
+    }, 'guest');
+    expect(wrongRequester).toBe(wrongRequesterState);
+
+    const outsidePlayingState = createState({
+      gameStatus: 'preparing',
+      turnPlayer: 'host',
+      revision: 15,
+    });
+
+    const outsidePlaying = applyGameSyncEvent(outsidePlayingState, {
+      id: 'evt-end-turn-outside-playing',
+      type: 'END_TURN',
+      actor: 'host',
+    }, 'host');
+    expect(outsidePlaying).toBe(outsidePlayingState);
   });
 
   it('ends turn, advances resources, and draws for the next player', () => {
@@ -1694,6 +1792,54 @@ describe('gameSyncReducer', () => {
     expect(shuffled.cards.filter(c => c.zone === 'mainDeck-host')).toHaveLength(5);
   });
 
+  it('clears the authoritative card-move checkpoint when shuffling the deck', () => {
+    const checkpoint = createState({
+      revision: 12,
+      cards: [
+        {
+          id: 'checkpoint-card',
+          cardId: 'BP01-777',
+          name: 'Checkpoint Card',
+          image: '',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    const state = createState({
+      revision: 13,
+      gameStatus: 'playing',
+      cards: [
+        {
+          id: 'deck-host-a',
+          cardId: 'BP01-778',
+          name: 'Deck Host A',
+          image: '',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+      lastUndoableCardMoveState: checkpoint,
+      lastUndoableCardMoveActor: 'host',
+    });
+
+    const shuffled = applyGameSyncEvent(state, {
+      id: 'evt-shuffle-clears-undo',
+      type: 'SHUFFLE_DECK',
+      actor: 'host',
+    });
+
+    expect(shuffled.lastUndoableCardMoveState).toBeNull();
+    expect(shuffled.lastUndoableCardMoveActor).toBeNull();
+  });
+
   it('ignores duplicate initial hand draw events for the same player', () => {
     const baseState = createState({
       revision: 0,
@@ -1723,6 +1869,37 @@ describe('gameSyncReducer', () => {
     expect(duplicateDraw).toBe(firstDraw);
     expect(duplicateDraw.cards.filter(card => card.zone === 'hand-host')).toHaveLength(4);
     expect(duplicateDraw.cards.filter(card => card.zone === 'mainDeck-host')).toHaveLength(4);
+  });
+
+  it('ignores duplicate initial hand draw events for the guest player as well', () => {
+    const baseState = createState({
+      revision: 0,
+      cards: [
+        { id: 'd1', cardId: 'BP01-018', name: 'Deck 1', image: '', zone: 'mainDeck-guest', owner: 'guest', isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 } },
+        { id: 'd2', cardId: 'BP01-019', name: 'Deck 2', image: '', zone: 'mainDeck-guest', owner: 'guest', isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 } },
+        { id: 'd3', cardId: 'BP01-020', name: 'Deck 3', image: '', zone: 'mainDeck-guest', owner: 'guest', isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 } },
+        { id: 'd4', cardId: 'BP01-021', name: 'Deck 4', image: '', zone: 'mainDeck-guest', owner: 'guest', isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 } },
+        { id: 'd5', cardId: 'BP01-022', name: 'Deck 5', image: '', zone: 'mainDeck-guest', owner: 'guest', isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 } },
+        { id: 'd6', cardId: 'BP01-023', name: 'Deck 6', image: '', zone: 'mainDeck-guest', owner: 'guest', isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 } },
+        { id: 'd7', cardId: 'BP01-024', name: 'Deck 7', image: '', zone: 'mainDeck-guest', owner: 'guest', isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 } },
+        { id: 'd8', cardId: 'BP01-025', name: 'Deck 8', image: '', zone: 'mainDeck-guest', owner: 'guest', isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 } },
+      ],
+    });
+
+    const firstDraw = applyGameSyncEvent(baseState, {
+      id: 'evt-initial-hand-first-guest',
+      type: 'DRAW_INITIAL_HAND',
+      actor: 'guest',
+    });
+    const duplicateDraw = applyGameSyncEvent(firstDraw, {
+      id: 'evt-initial-hand-duplicate-guest',
+      type: 'DRAW_INITIAL_HAND',
+      actor: 'guest',
+    });
+
+    expect(duplicateDraw).toBe(firstDraw);
+    expect(duplicateDraw.cards.filter(card => card.zone === 'hand-guest')).toHaveLength(4);
+    expect(duplicateDraw.cards.filter(card => card.zone === 'mainDeck-guest')).toHaveLength(4);
   });
 
   it('blocks deck import after the target player has started preparing', () => {
@@ -2119,6 +2296,55 @@ describe('gameSyncReducer', () => {
     expect(undone.turnPlayer).toBe('guest');
     expect(undone.revision).toBe(12);
     expect(undone).not.toBe(afterTurnEnd);
+  });
+
+  it('clears end-stop and card-move checkpoints when undoing the last turn', () => {
+    const beforeTurnEnd = createState({
+      turnPlayer: 'guest',
+      revision: 10,
+      endStop: {
+        host: true,
+        guest: true,
+      },
+    });
+    const checkpoint = createState({
+      revision: 9,
+      cards: [
+        {
+          id: 'checkpoint-card',
+          cardId: 'BP01-779',
+          name: 'Checkpoint Card',
+          image: '',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+    const afterTurnEnd = createState({
+      turnPlayer: 'host',
+      revision: 11,
+      lastGameState: beforeTurnEnd,
+      lastUndoableCardMoveState: checkpoint,
+      lastUndoableCardMoveActor: 'host',
+      endStop: {
+        host: true,
+        guest: true,
+      },
+    });
+
+    const undone = applyGameSyncEvent(afterTurnEnd, {
+      id: 'evt-undo-last-turn-clears-checkpoints',
+      type: 'UNDO_LAST_TURN',
+      actor: 'guest',
+    }, 'guest');
+
+    expect(undone.endStop).toEqual({ host: false, guest: false });
+    expect(undone.lastGameState).toBeNull();
+    expect(undone.lastUndoableCardMoveState).toBeNull();
+    expect(undone.lastUndoableCardMoveActor).toBeNull();
   });
 
   it('stores an authoritative card-move checkpoint and uses it for UNDO_CARD_MOVE', () => {
