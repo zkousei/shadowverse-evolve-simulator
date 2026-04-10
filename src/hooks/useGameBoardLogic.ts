@@ -6,19 +6,18 @@ import type { DataConnection } from 'peerjs';
 import { type DragEndEvent } from '@dnd-kit/core';
 import { type CardInstance } from '../components/Card';
 import { type PlayerRole, type SyncState, type TokenOption, initialState } from '../types/game';
-import { type AttackTarget, type GameSyncEvent, type PublicCardView, type SharedUiEffect, type SyncMessage } from '../types/sync';
+import { type AttackTarget, type GameSyncEvent, type SharedUiEffect, type SyncMessage } from '../types/sync';
 import { uuid } from '../utils/helpers';
 import * as CardLogic from '../utils/cardLogic';
 import { canImportDeck } from '../utils/gameRules';
 import { applyGameSyncEvent } from '../utils/gameSyncReducer';
 import { flipSharedCoin, rollSharedDie } from '../utils/sharedRandom';
-import { formatSharedUiMessage, getSharedActorLabel } from '../utils/sharedUiMessage';
 import { createEventDeduper } from '../utils/eventDeduper';
 import { buildTopDeckRevealEffect } from '../utils/topDeckReveal';
 import { buildTopDeckSummaryEffect } from '../utils/topDeckSummary';
 import { buildHandRevealEffect, buildSingleCardRevealEffect } from '../utils/cardReveal';
-import { buildAttackDeclaredEffect, formatAttackEffect } from '../utils/attackUi';
-import { buildCardPlayedEffect, formatCardPlayedEffect } from '../utils/cardPlayUi';
+import { buildAttackDeclaredEffect } from '../utils/attackUi';
+import { buildCardPlayedEffect } from '../utils/cardPlayUi';
 import { buildImportedDeckPayload, buildSpawnTokenInstance, buildSpawnTokens, type ImportableDeckData } from '../utils/gameBoardDeckActions';
 import { buildClosedMulliganState, buildStartedMulliganState, toggleMulliganOrderSelection } from '../utils/gameBoardMulligan';
 import {
@@ -30,7 +29,6 @@ import { getConnectionOpenDecision } from '../utils/gameBoardConnectionOpen';
 import { getConnectionTerminationDecision } from '../utils/gameBoardConnectionTermination';
 import { getIncomingEventDecision } from '../utils/gameBoardIncomingEvent';
 import { getIncomingSnapshotHandling } from '../utils/gameBoardIncomingSnapshot';
-import { getIncomingSharedUiEffects } from '../utils/gameBoardIncomingSharedUiEffects';
 import { getPeerOpenDecision } from '../utils/gameBoardPeerOpen';
 import { getPeerIncomingConnectionDecision } from '../utils/gameBoardPeerIncomingConnection';
 import { getPeerTerminationDecision } from '../utils/gameBoardPeerTermination';
@@ -48,12 +46,8 @@ import {
   buildGameBoardEvolveAutoAttachSelection,
   type PendingGameBoardEvolveAutoAttachSelection,
 } from '../utils/gameBoardEvolveAutoAttachSelection';
-import {
-  mergeLookTopSummaryIntoOverlay,
-  prependAttackHistoryEntry,
-  prependEventHistoryEntry,
-} from '../utils/gameBoardTransientUi';
 import { useGameBoardCatalogResources } from './useGameBoardCatalogResources';
+import { useGameBoardSharedUiEffects } from './useGameBoardSharedUiEffects';
 import { useGameBoardSessionPersistence } from './useGameBoardSessionPersistence';
 
 type DispatchableGameSyncEvent =
@@ -136,22 +130,7 @@ export const useGameBoardLogic = () => {
   const [searchZone, setSearchZone] = useState<{ id: string, title: string } | null>(null);
 
   const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const [coinMessage, setCoinMessage] = useState<string | null>(null);
-  const [turnMessage, setTurnMessage] = useState<string | null>(null);
-  const [cardPlayMessage, setCardPlayMessage] = useState<string | null>(null);
-  const [attackMessage, setAttackMessage] = useState<string | null>(null);
-  const [attackHistory, setAttackHistory] = useState<string[]>([]);
-  const [eventHistory, setEventHistory] = useState<string[]>([]);
-  const [attackVisual, setAttackVisual] = useState<Extract<SharedUiEffect, { type: 'ATTACK_DECLARED' }> | null>(null);
-  const [revealedCardsOverlay, setRevealedCardsOverlay] = useState<{
-    type: 'look-top' | 'search' | 'hand';
-    title: string;
-    cards: PublicCardView[];
-    summaryLines?: string[]
-  } | null>(null);
   const [hasUndoableMove, setHasUndoableMove] = useState(false);
-  const [isRollingDice, setIsRollingDice] = useState(false);
-  const [diceValue, setDiceValue] = useState<number | null>(null);
   const [mulliganOrder, setMulliganOrder] = useState<string[]>([]);
   const [isMulliganModalOpen, setIsMulliganModalOpen] = useState(false);
   const [topDeckCards, setTopDeckCardsState] = useState<CardInstance[]>([]);
@@ -187,22 +166,8 @@ export const useGameBoardLogic = () => {
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const snapshotRequestTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const snapshotRetryCountRef = useRef(0);
-  const coinMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const diceRollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const diceFinalizeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const diceMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const revealedCardsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const attackMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const cardPlayMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const turnMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const snapshotFlushTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingSnapshotMessageRef = useRef<SnapshotMessage | null>(null);
-  const pendingLookTopSummaryLinesRef = useRef<string[] | null>(null);
-  // Tracks whether the Look Top reveal overlay is currently open.
-  // Used inside playSharedUiEffect WITHOUT being a React dep so that
-  // setRevealedCardsOverlay does NOT cascade into setupConnection -> PeerJS
-  // useEffect -> peer.destroy() (which caused the transient reconnection bug).
-  const revealTopIsActiveRef = useRef(false);
   // Stores the game state immediately before the last card-move action so it
   // can be restored via the undo button.  Only one level of undo is supported.
   const processedEventDeduperRef = useRef(createEventDeduper());
@@ -425,365 +390,29 @@ export const useGameBoardLogic = () => {
   const sendSharedUiEffect = useCallback((effect: SharedUiEffect) => {
     sendMessage({ type: 'SHARED_UI_EFFECT', effect });
   }, [sendMessage]);
-
-  const clearCoinMessageTimer = useCallback(() => {
-    if (coinMessageTimeoutRef.current) {
-      clearTimeout(coinMessageTimeoutRef.current);
-      coinMessageTimeoutRef.current = null;
-    }
-  }, []);
-
-  const showTimedCoinMessage = useCallback((message: string, durationMs: number) => {
-    clearCoinMessageTimer();
-    setCoinMessage(message);
-    coinMessageTimeoutRef.current = setTimeout(() => {
-      setCoinMessage(null);
-      coinMessageTimeoutRef.current = null;
-    }, durationMs);
-  }, [clearCoinMessageTimer]);
-
-  const clearDiceTimers = useCallback(() => {
-    if (diceRollIntervalRef.current) {
-      clearInterval(diceRollIntervalRef.current);
-      diceRollIntervalRef.current = null;
-    }
-    if (diceFinalizeTimeoutRef.current) {
-      clearTimeout(diceFinalizeTimeoutRef.current);
-      diceFinalizeTimeoutRef.current = null;
-    }
-    if (diceMessageTimeoutRef.current) {
-      clearTimeout(diceMessageTimeoutRef.current);
-      diceMessageTimeoutRef.current = null;
-    }
-  }, []);
-
-  const clearRevealedCardsTimer = useCallback(() => {
-    if (revealedCardsTimeoutRef.current) {
-      clearTimeout(revealedCardsTimeoutRef.current);
-      revealedCardsTimeoutRef.current = null;
-    }
-    pendingLookTopSummaryLinesRef.current = null;
-  }, []);
-
-  const clearAttackMessageTimer = useCallback(() => {
-    if (attackMessageTimeoutRef.current) {
-      clearTimeout(attackMessageTimeoutRef.current);
-      attackMessageTimeoutRef.current = null;
-    }
-  }, []);
-
-  const clearAttackUiState = useCallback(() => {
-    clearAttackMessageTimer();
-    setAttackMessage(null);
-    setAttackVisual(null);
-    setAttackHistory([]);
-    setEventHistory([]);
-  }, [clearAttackMessageTimer]);
-
-  const clearCardPlayMessageTimer = useCallback(() => {
-    if (cardPlayMessageTimeoutRef.current) {
-      clearTimeout(cardPlayMessageTimeoutRef.current);
-      cardPlayMessageTimeoutRef.current = null;
-    }
-  }, []);
-
-  const clearTurnMessageTimer = useCallback(() => {
-    if (turnMessageTimeoutRef.current) {
-      clearTimeout(turnMessageTimeoutRef.current);
-      turnMessageTimeoutRef.current = null;
-    }
-  }, []);
-
-  const showTimedCardPlayMessage = useCallback((message: string, durationMs: number) => {
-    clearCardPlayMessageTimer();
-    setCardPlayMessage(message);
-    cardPlayMessageTimeoutRef.current = setTimeout(() => {
-      setCardPlayMessage(null);
-      cardPlayMessageTimeoutRef.current = null;
-    }, durationMs);
-  }, [clearCardPlayMessageTimer]);
-
-  const showTimedTurnMessage = useCallback((message: string, durationMs: number) => {
-    clearTurnMessageTimer();
-    setTurnMessage(message);
-    turnMessageTimeoutRef.current = setTimeout(() => {
-      setTurnMessage(null);
-      turnMessageTimeoutRef.current = null;
-    }, durationMs);
-  }, [clearTurnMessageTimer]);
-
-  const pushEventHistory = useCallback((entry: string) => {
-    setEventHistory((previous) => prependEventHistoryEntry(previous, entry));
-  }, []);
-
-  useEffect(() => {
-    if (
-      !revealedCardsOverlay ||
-      revealedCardsOverlay.type !== 'look-top' ||
-      !pendingLookTopSummaryLinesRef.current
-    ) {
-      return;
-    }
-
-    const summaryLines = pendingLookTopSummaryLinesRef.current;
-    pendingLookTopSummaryLinesRef.current = null;
-    setRevealedCardsOverlay((previous) => {
-      return mergeLookTopSummaryIntoOverlay(previous, summaryLines);
-    });
-  }, [revealedCardsOverlay]);
-
-  const playSharedUiEffect = useCallback((effect: SharedUiEffect) => {
-    const translate = tRef.current;
-    const usesPlayerLabels = isSoloMode || isSpectator;
-
-    if (effect.type === 'COIN_FLIP_RESULT') {
-      showTimedCoinMessage(formatSharedUiMessage(effect, role, usesPlayerLabels, translate), 3000);
-      return;
-    }
-
-    if (effect.type === 'STARTER_DECIDED') {
-      showTimedCoinMessage(formatSharedUiMessage(effect, role, usesPlayerLabels, translate), 4000);
-      return;
-    }
-
-    if (effect.type === 'REVEAL_TOP_DECK_CARDS') {
-      clearRevealedCardsTimer();
-      const pendingSummary = pendingLookTopSummaryLinesRef.current ?? [];
-      pendingLookTopSummaryLinesRef.current = null;
-      revealTopIsActiveRef.current = true;
-      const actorLabel = getSharedActorLabel(effect.actor, role, usesPlayerLabels, translate);
-      setRevealedCardsOverlay({
-        type: 'look-top',
-        title: translate('gameBoard.modals.shared.messages.revealLookTop', { actor: actorLabel }),
-        cards: effect.cards,
-        summaryLines: pendingSummary,
-      });
-      revealedCardsTimeoutRef.current = setTimeout(() => {
-        revealTopIsActiveRef.current = false;
-        setRevealedCardsOverlay(null);
-        revealedCardsTimeoutRef.current = null;
-      }, 5000);
-      return;
-    }
-
-    if (effect.type === 'REVEAL_HAND_CARDS') {
-      clearRevealedCardsTimer();
-      const actorLabel = getSharedActorLabel(effect.actor, role, usesPlayerLabels, translate);
-      const message = translate('gameBoard.modals.shared.messages.revealHand', { actor: actorLabel });
-      const cardNames = effect.cards.map((card) => card.name).join(', ');
-
-      pushEventHistory(cardNames ? `${message}: ${cardNames}` : message);
-      setRevealedCardsOverlay({
-        type: 'hand',
-        title: message,
-        cards: effect.cards,
-      });
-      revealedCardsTimeoutRef.current = setTimeout(() => {
-        setRevealedCardsOverlay(null);
-        revealedCardsTimeoutRef.current = null;
-      }, 5000);
-      return;
-    }
-
-    if (effect.type === 'REVEAL_SEARCHED_CARD_TO_HAND') {
-      clearRevealedCardsTimer();
-      const actorLabel = getSharedActorLabel(effect.actor, role, usesPlayerLabels, translate);
-      const message = translate('gameBoard.modals.shared.messages.revealSearch', { actor: actorLabel });
-      const cards = effect.cardIds
-        .map((id) => gameStateRef.current.cards.find((card) => card.id === id))
-        .filter((card): card is NonNullable<typeof card> => Boolean(card))
-        .map((card) => ({
-          cardId: card.cardId,
-          name: card.name,
-          image: '',
-        }));
-
-      // Revealed search results are public information, so both the overlay and
-      // the recent-event log can safely include the revealed card names.
-      pushEventHistory(`${message}: ${cards.map((card) => card.name).join(', ')}`);
-      setRevealedCardsOverlay({
-        type: 'search',
-        title: message,
-        cards,
-      });
-      revealedCardsTimeoutRef.current = setTimeout(() => {
-        setRevealedCardsOverlay(null);
-        revealedCardsTimeoutRef.current = null;
-      }, 5000);
-      return;
-    }
-
-    if (effect.type === 'ATTACK_DECLARED') {
-      const formattedAttack = formatAttackEffect(effect, role, usesPlayerLabels, translate);
-      clearAttackMessageTimer();
-      setAttackMessage(formattedAttack.announcement);
-      setAttackVisual(effect);
-      setAttackHistory((previous) => prependAttackHistoryEntry(previous, formattedAttack.history));
-      // Attacks remain in the recent-event log because they are high-signal game
-      // actions; ordinary Play actions intentionally do not.
-      pushEventHistory(formattedAttack.history);
-      attackMessageTimeoutRef.current = setTimeout(() => {
-        setAttackMessage(null);
-        setAttackVisual(null);
-        attackMessageTimeoutRef.current = null;
-      }, 2200);
-      return;
-    }
-
-    if (effect.type === 'CARD_PLAYED') {
-      // Play/Play to Field uses the transient dialog only. Keeping it out of the
-      // recent-event log avoids overwhelming the log with routine actions.
-      const message = formatCardPlayedEffect(effect, role, usesPlayerLabels, translate);
-      showTimedCardPlayMessage(message, 2600);
-      return;
-    }
-
-    if (effect.type === 'RESET_GAME_COMPLETED') {
-      const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
-      showTimedCardPlayMessage(message, 2600);
-      return;
-    }
-
-    if (effect.type === 'SHUFFLE_DECK_COMPLETED') {
-      const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
-      showTimedCardPlayMessage(message, 2600);
-      pushEventHistory(message);
-      return;
-    }
-
-    if (effect.type === 'DRAW_CARD_COMPLETED') {
-      const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
-      showTimedCardPlayMessage(message, 2600);
-      return;
-    }
-
-    if (effect.type === 'MILL_CARD_COMPLETED') {
-      const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
-      showTimedCardPlayMessage(message, 2600);
-      return;
-    }
-
-    if (effect.type === 'TOP_CARD_TO_EX_COMPLETED') {
-      const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
-      showTimedCardPlayMessage(message, 2600);
-      return;
-    }
-
-    if (effect.type === 'RANDOM_HAND_DISCARD_COMPLETED') {
-      const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
-      showTimedCardPlayMessage(message, 2600);
-      pushEventHistory(message);
-      return;
-    }
-
-    if (effect.type === 'SEARCHED_CARD_TO_HAND') {
-      const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
-      showTimedCardPlayMessage(message, 2600);
-      pushEventHistory(message);
-      return;
-    }
-
-    if (effect.type === 'SEARCHED_CARD_PLACED') {
-      const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
-      showTimedCardPlayMessage(message, 2600);
-      return;
-    }
-
-    if (effect.type === 'CEMETERY_CARD_TO_HAND') {
-      const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
-      showTimedCardPlayMessage(message, 2600);
-      pushEventHistory(message);
-      return;
-    }
-
-    if (effect.type === 'CEMETERY_CARD_PLACED') {
-      const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
-      showTimedCardPlayMessage(message, 2600);
-      return;
-    }
-
-    if (effect.type === 'EVOLVE_CARD_PLACED') {
-      const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
-      showTimedCardPlayMessage(message, 2600);
-      return;
-    }
-
-    if (effect.type === 'EVOLVE_USAGE_TOGGLED') {
-      const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
-      showTimedCardPlayMessage(message, 2600);
-      if (gameStateRef.current.gameStatus === 'playing') {
-        pushEventHistory(message);
-      }
-      return;
-    }
-
-    if (effect.type === 'BANISHED_CARD_TO_HAND') {
-      const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
-      showTimedCardPlayMessage(message, 2600);
-      pushEventHistory(message);
-      return;
-    }
-
-    if (effect.type === 'BANISHED_CARD_PLACED') {
-      const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
-      showTimedCardPlayMessage(message, 2600);
-      return;
-    }
-
-    if (effect.type === 'LOOK_TOP_RESOLVED') {
-      const summaryLines = formatSharedUiMessage(effect, role, usesPlayerLabels, translate).split('\n').filter(Boolean);
-      pushEventHistory(summaryLines.join('\n'));
-      if (revealTopIsActiveRef.current) {
-        // When Look Top also reveals cards publicly, keep the summary inside the
-        // same overlay so the user sees one combined resolution instead of two
-        // competing notifications.
-        setRevealedCardsOverlay((previous) => {
-          return mergeLookTopSummaryIntoOverlay(previous, summaryLines);
-        });
-      } else if (effect.revealedHandCards.length > 0) {
-        // Reveal dialog is expected (revealedHand cards exist) but hasn't opened yet
-        // (summary arrived before the REVEAL_TOP_DECK_CARDS message due to network ordering).
-        // Buffer the summary so REVEAL_TOP_DECK_CARDS can pick it up when it arrives.
-        pendingLookTopSummaryLinesRef.current = summaryLines;
-      } else {
-        // No card images to reveal — just show a timed text message.
-        const message = summaryLines.join('\n');
-        showTimedCardPlayMessage(message, 3200);
-      }
-      return;
-    }
-
-    clearDiceTimers();
-    clearCoinMessageTimer();
-    setIsRollingDice(true);
-    setCoinMessage(null);
-
-    let rolls = 0;
-    const maxRolls = 15;
-    diceRollIntervalRef.current = setInterval(() => {
-      setDiceValue(Math.floor(Math.random() * 6) + 1);
-      rolls += 1;
-      if (rolls >= maxRolls && diceRollIntervalRef.current) {
-        clearInterval(diceRollIntervalRef.current);
-        diceRollIntervalRef.current = null;
-      }
-    }, 60);
-
-    diceFinalizeTimeoutRef.current = setTimeout(() => {
-      if (diceRollIntervalRef.current) {
-        clearInterval(diceRollIntervalRef.current);
-        diceRollIntervalRef.current = null;
-      }
-      setDiceValue(effect.value);
-      showTimedCoinMessage(formatSharedUiMessage(effect, role, usesPlayerLabels, translate), 3000);
-      diceMessageTimeoutRef.current = setTimeout(() => {
-        setIsRollingDice(false);
-        setDiceValue(null);
-        diceMessageTimeoutRef.current = null;
-      }, 800);
-      diceFinalizeTimeoutRef.current = null;
-    }, 900);
-  }, [clearAttackMessageTimer, clearCoinMessageTimer, clearDiceTimers, clearRevealedCardsTimer, isSoloMode, isSpectator, pushEventHistory, role, showTimedCardPlayMessage, showTimedCoinMessage]);
+  const {
+    coinMessage,
+    turnMessage,
+    cardPlayMessage,
+    attackMessage,
+    attackHistory,
+    eventHistory,
+    attackVisual,
+    revealedCardsOverlay,
+    isRollingDice,
+    diceValue,
+    playSharedUiEffect,
+    playIncomingSharedUiEffects,
+    clearAttackUiState,
+    clearTurnMessage,
+    showTimedTurnMessage,
+  } = useGameBoardSharedUiEffects({
+    gameStateRef,
+    isSoloMode,
+    isSpectator,
+    role,
+    tRef,
+  });
 
   const maybeApplySnapshot = useCallback((incomingState: SyncState, source: PlayerRole) => {
     const snapshotDecision = getSnapshotApplicationDecision({
@@ -1219,14 +848,6 @@ export const useGameBoardLogic = () => {
     }, SNAPSHOT_REQUEST_TIMEOUT_MS);
   }, [handleSnapshotRequestTimeout, isActiveConnectionToken, isHost, isSoloMode, isSpectator, role]);
 
-  const playIncomingSharedUiEffects = useCallback((
-    message: Extract<SyncMessage, { type: 'SHARED_UI_EFFECT' }> | SnapshotMessage
-  ) => {
-    for (const effect of getIncomingSharedUiEffects(message)) {
-      playSharedUiEffect(effect);
-    }
-  }, [playSharedUiEffect]);
-
   const handleIncomingWaitingForHostSession = useCallback(() => {
     clearSnapshotRequestTimer();
     const waitingDecision = getWaitingForHostSessionDecision({ isHost });
@@ -1602,14 +1223,8 @@ export const useGameBoardLogic = () => {
     return () => {
       clearReconnectTimer();
       clearSnapshotRequestTimer();
-      clearAttackUiState();
-      clearCardPlayMessageTimer();
-      clearTurnMessageTimer();
-      clearCoinMessageTimer();
-      clearDiceTimers();
-      clearRevealedCardsTimer();
     };
-  }, [clearAttackUiState, clearCardPlayMessageTimer, clearCoinMessageTimer, clearDiceTimers, clearReconnectTimer, clearRevealedCardsTimer, clearSnapshotRequestTimer, clearTurnMessageTimer]);
+  }, [clearReconnectTimer, clearSnapshotRequestTimer]);
 
   useEffect(() => {
     const turnMessageDecision = getTurnMessageDecision({
@@ -1621,8 +1236,7 @@ export const useGameBoardLogic = () => {
     });
 
     if (turnMessageDecision.type === 'clear') {
-      clearTurnMessageTimer();
-      setTurnMessage(null);
+      clearTurnMessage();
       return;
     }
 
@@ -1634,7 +1248,7 @@ export const useGameBoardLogic = () => {
       t(turnMessageDecision.key, turnMessageDecision.options),
       turnMessageDecision.durationMs
     );
-  }, [clearTurnMessageTimer, gameState.gameStatus, gameState.turnCount, gameState.turnPlayer, isSoloMode, isSpectator, role, showTimedTurnMessage, t]);
+  }, [clearTurnMessage, gameState.gameStatus, gameState.turnCount, gameState.turnPlayer, isSoloMode, isSpectator, role, showTimedTurnMessage, t]);
 
   const handleStatChange = (playerKey: 'host' | 'guest', stat: 'hp' | 'pp' | 'maxPp' | 'ep' | 'sep' | 'combo', delta: number) => {
     dispatchGameEvent({ type: 'MODIFY_PLAYER_STAT', playerKey, stat, delta });
