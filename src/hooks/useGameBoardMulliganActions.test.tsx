@@ -1,80 +1,83 @@
-import { renderHook, act } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { renderHook } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useGameBoardMulliganActions } from './useGameBoardMulliganActions';
+import * as gameBoardMulligan from '../utils/gameBoardMulligan';
 
-describe('useGameBoardMulliganActions', () => {
-    it('starts mulligan by clearing any local selection and opening the modal', () => {
-        const setMulliganOrder = vi.fn();
-        const setIsMulliganModalOpen = vi.fn();
-        const dispatchGameEvent = vi.fn();
+vi.mock('../utils/gameBoardMulligan', () => ({
+    buildStartedMulliganState: vi.fn(),
+    buildClosedMulliganState: vi.fn(),
+    toggleMulliganOrderSelection: vi.fn(),
+}));
 
-        const { result } = renderHook(() =>
-            useGameBoardMulliganActions({
-                canInteract: true,
-                mulliganOrder: [],
-                setMulliganOrder,
-                setIsMulliganModalOpen,
-                dispatchGameEvent,
-            })
-        );
+describe('useGameBoardMulliganActions (Pure Hook)', () => {
+    const defaultArgs = {
+        canInteract: true,
+        mulliganOrder: [] as string[],
+        setMulliganOrder: vi.fn(),
+        setIsMulliganModalOpen: vi.fn(),
+        dispatchGameEvent: vi.fn(),
+    };
 
-        act(() => {
-            result.current.startMulligan();
-        });
-
-        expect(setMulliganOrder).toHaveBeenCalledWith([]);
-        expect(setIsMulliganModalOpen).toHaveBeenCalledWith(true);
+    beforeEach(() => {
+        vi.clearAllMocks();
     });
 
-    it('selects mulligan order by calling toggle utility', () => {
-        const setMulliganOrder = vi.fn((setter) => {
-            // Execute the setter to simulate the state update
-            setter(['hand1']);
-        });
-        const setIsMulliganModalOpen = vi.fn();
-        const dispatchGameEvent = vi.fn();
-
-        const { result } = renderHook(() =>
-            useGameBoardMulliganActions({
-                canInteract: true,
-                mulliganOrder: [],
-                setMulliganOrder,
-                setIsMulliganModalOpen,
-                dispatchGameEvent,
-            })
-        );
-
-        act(() => {
-            result.current.handleMulliganOrderSelect('hand2');
+    it('startMulligan opens modal and sets initial order', () => {
+        vi.mocked(gameBoardMulligan.buildStartedMulliganState).mockReturnValue({
+            mulliganOrder: [],
+            isMulliganModalOpen: true,
         });
 
-        expect(setMulliganOrder).toHaveBeenCalled();
+        const { result } = renderHook(() => useGameBoardMulliganActions(defaultArgs));
+        result.current.startMulligan();
+
+        expect(defaultArgs.setMulliganOrder).toHaveBeenCalledWith([]);
+        expect(defaultArgs.setIsMulliganModalOpen).toHaveBeenCalledWith(true);
     });
 
-    it('executes mulligan, dispatches event and closes modal', () => {
-        const setMulliganOrder = vi.fn();
-        const setIsMulliganModalOpen = vi.fn();
-        const dispatchGameEvent = vi.fn();
+    it('startMulligan aborts if cannot interact', () => {
+        const { result } = renderHook(() => useGameBoardMulliganActions({ ...defaultArgs, canInteract: false }));
+        result.current.startMulligan();
 
-        const { result } = renderHook(() =>
-            useGameBoardMulliganActions({
-                canInteract: true,
-                mulliganOrder: ['hand1', 'hand2'],
-                setMulliganOrder,
-                setIsMulliganModalOpen,
-                dispatchGameEvent,
-            })
-        );
+        expect(defaultArgs.setIsMulliganModalOpen).not.toHaveBeenCalled();
+    });
 
-        act(() => {
-            result.current.executeMulligan('host');
+    it('handleMulliganOrderSelect toggles selection', () => {
+        vi.mocked(gameBoardMulligan.toggleMulliganOrderSelection).mockReturnValue(['card-1']);
+
+        const { result } = renderHook(() => useGameBoardMulliganActions(defaultArgs));
+        result.current.handleMulliganOrderSelect('card-1');
+
+        expect(defaultArgs.setMulliganOrder).toHaveBeenCalled();
+        const stateUpdater = vi.mocked(defaultArgs.setMulliganOrder).mock.calls[0][0] as (prev: string[]) => string[];
+        const nextState = stateUpdater([]);
+
+        expect(nextState).toEqual(['card-1']);
+    });
+
+    it('handleMulliganOrderSelect aborts if cannot interact', () => {
+        const { result } = renderHook(() => useGameBoardMulliganActions({ ...defaultArgs, canInteract: false }));
+        result.current.handleMulliganOrderSelect('card-1');
+
+        expect(defaultArgs.setMulliganOrder).not.toHaveBeenCalled();
+    });
+
+    it('executeMulligan dispatches EXECUTE_MULLIGAN and closes modal', () => {
+        vi.mocked(gameBoardMulligan.buildClosedMulliganState).mockReturnValue({
+            isMulliganModalOpen: false,
         });
 
-        expect(dispatchGameEvent).toHaveBeenCalledWith({
+        const { result } = renderHook(() => useGameBoardMulliganActions({
+            ...defaultArgs,
+            mulliganOrder: ['card-1', 'card-2']
+        }));
+        result.current.executeMulligan('guest');
+
+        expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledWith({
             type: 'EXECUTE_MULLIGAN',
-            actor: 'host',
-            selectedIds: ['hand1', 'hand2'],
+            actor: 'guest',
+            selectedIds: ['card-1', 'card-2']
         });
-        expect(setIsMulliganModalOpen).toHaveBeenCalledWith(false);
+        expect(defaultArgs.setIsMulliganModalOpen).toHaveBeenCalledWith(false);
     });
 });

@@ -1,79 +1,116 @@
-import { act, fireEvent, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-    mockPeerJs,
-    renderHarness,
-    installMockFileReader,
-} from './__tests__/gameBoardTestUtils';
+import { renderHook } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { useGameBoardSetupActions } from './useGameBoardSetupActions';
+import { buildSyncState } from './__tests__/gameBoardTestUtils';
 
-describe('useGameBoardSetupActions (via integration harness)', () => {
+// Mock dependencies
+vi.mock('../utils/gameRules', () => ({
+    canImportDeck: vi.fn(),
+}));
+import { canImportDeck } from '../utils/gameRules';
+
+describe('useGameBoardSetupActions (Pure Hook)', () => {
+    const defaultArgs = {
+        canInteract: true,
+        gameState: buildSyncState(),
+        role: 'host' as const,
+        uuid: () => 'mock-uuid',
+        dispatchGameEvent: vi.fn(),
+        setShowResetConfirm: vi.fn(),
+        t: (k: string) => k,
+    };
+
     beforeEach(() => {
-        vi.useFakeTimers();
-        mockPeerJs.reset();
-        window.sessionStorage.clear();
+        vi.clearAllMocks();
+        vi.mocked(canImportDeck).mockReturnValue(true);
     });
 
-    afterEach(() => {
-        act(() => {
-            vi.runOnlyPendingTimers();
-        });
-        vi.useRealTimers();
-        vi.restoreAllMocks();
-        vi.unstubAllGlobals();
+    it('confirmResetGame dispatches RESET_GAME and closes confirm dialog', () => {
+        const { result } = renderHook(() => useGameBoardSetupActions(defaultArgs));
+        result.current.confirmResetGame();
+
+        expect(defaultArgs.setShowResetConfirm).toHaveBeenCalledWith(false);
+        expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledWith({ type: 'RESET_GAME' });
     });
 
-    it('imports a deck through the upload handler using FileReader', () => {
-        const readAsText = installMockFileReader(JSON.stringify({
-            mainDeck: [{
-                id: 'BP01-101',
-                name: 'Main Deck Card',
-                image: '/main-deck-card.png',
-                deck_section: 'main',
-                card_kind_normalized: 'follower',
-                related_cards: [{ id: 'BP01-T01', name: 'Token A' }],
-            }],
-            evolveDeck: [{
-                id: 'BP02-101',
-                name: 'Evolve Card',
-                image: '/evolve-card.png',
-                deck_section: 'evolve',
-                card_kind_normalized: 'follower',
-                related_cards: [{ id: 'BP02-T01', name: 'Token B' }],
-            }],
-            leaderCards: [{
-                id: 'BP00-101',
-                name: 'Leader Card',
-                image: '/leader-card.png',
-                deck_section: 'leader',
-                card_kind_normalized: 'leader',
-                related_cards: [{ id: 'BP00-T01', name: 'Token C' }],
-            }],
+    it('importDeckData dispatches IMPORT_DECK with generated payload', () => {
+        const { result } = renderHook(() => useGameBoardSetupActions(defaultArgs));
+
+        const mockDeckData = {
+            mainDeck: [{ id: 'mock-1', name: 'Card 1', image: '', deck_section: 'main' as const, card_kind_normalized: 'follower' as const }],
+            evolveDeck: [],
+            leaderCards: [],
+        };
+
+        result.current.importDeckData(mockDeckData);
+
+        expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledWith(expect.objectContaining({
+            type: 'IMPORT_DECK',
+            actor: 'host',
+            cards: expect.arrayContaining([
+                expect.objectContaining({ name: 'Card 1', zone: 'mainDeck-host' })
+            ]),
         }));
-
-        renderHarness('/game?mode=solo');
-
-        const input = screen.getByTestId('deck-upload-input');
-        const file = new File(['{}'], 'deck.json', { type: 'application/json' });
-        fireEvent.change(input, { target: { files: [file] } });
-
-        expect(readAsText).toHaveBeenCalledTimes(1);
-        expect(screen.getByTestId('host-main-deck-count')).toHaveTextContent('1');
-        expect(screen.getByTestId('host-evolve-count')).toHaveTextContent('1');
     });
 
-    it('shows an alert when uploaded deck data cannot be parsed', () => {
-        const readAsText = installMockFileReader('{invalid-json');
+    it('handleDeckUpload aborts if cannot interact', () => {
+        const { result } = renderHook(() => useGameBoardSetupActions({ ...defaultArgs, canInteract: false }));
+        const mockEvent = { target: { value: 'file', files: [new File([], 'test.json')] } } as unknown as React.ChangeEvent<HTMLInputElement>;
+
+        result.current.handleDeckUpload(mockEvent);
+
+        expect(mockEvent.target.value).toBe('');
+        expect(defaultArgs.dispatchGameEvent).not.toHaveBeenCalled();
+    });
+
+    it('handleDeckUpload aborts if canImportDeck returns false', () => {
+        vi.mocked(canImportDeck).mockReturnValue(false);
+        const { result } = renderHook(() => useGameBoardSetupActions(defaultArgs));
+        const mockEvent = { target: { value: 'file', files: [new File([], 'test.json')] } } as unknown as React.ChangeEvent<HTMLInputElement>;
+
+        result.current.handleDeckUpload(mockEvent);
+
+        expect(mockEvent.target.value).toBe('');
+        expect(defaultArgs.dispatchGameEvent).not.toHaveBeenCalled();
+    });
+
+    it('handleDeckUpload reads valid JSON and dispatches IMPORT_DECK', () => {
+        const { result } = renderHook(() => useGameBoardSetupActions(defaultArgs));
+        const validJson = JSON.stringify({ mainDeck: [{ id: 'C1', name: 'Card', image: '/c.png', deck_section: 'main' }] });
+
+        let onloadCallback: ((e: ProgressEvent<FileReader>) => void) | null = null;
+        const readAsTextSpy = vi.fn();
+        vi.stubGlobal('FileReader', class {
+            readAsText = readAsTextSpy;
+            set onload(cb: (e: ProgressEvent<FileReader>) => void) { onloadCallback = cb; }
+        });
+
+        const mockEvent = { target: { value: 'file', files: [new File([validJson], 'deck.json')] } } as unknown as React.ChangeEvent<HTMLInputElement>;
+        result.current.handleDeckUpload(mockEvent);
+
+        expect(readAsTextSpy).toHaveBeenCalledTimes(1);
+        onloadCallback!({ target: { result: validJson } } as unknown as ProgressEvent<FileReader>);
+
+        expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledWith(expect.objectContaining({ type: 'IMPORT_DECK' }));
+    });
+
+    it('handleDeckUpload shows alert when JSON parse fails', () => {
         const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => undefined);
+        const { result } = renderHook(() => useGameBoardSetupActions(defaultArgs));
 
-        renderHarness('/game?mode=solo');
+        let onloadCallback: ((e: ProgressEvent<FileReader>) => void) | null = null;
+        vi.stubGlobal('FileReader', class {
+            readAsText = vi.fn();
+            set onload(cb: (e: ProgressEvent<FileReader>) => void) { onloadCallback = cb; }
+        });
 
-        const input = screen.getByTestId('deck-upload-input');
-        const file = new File(['{}'], 'broken.json', { type: 'application/json' });
-        fireEvent.change(input, { target: { files: [file] } });
+        const mockEvent = { target: { value: 'file', files: [new File(['bad'], 'broken.json')] } } as unknown as React.ChangeEvent<HTMLInputElement>;
+        result.current.handleDeckUpload(mockEvent);
 
-        expect(readAsText).toHaveBeenCalledTimes(1);
+        onloadCallback!({ target: { result: '{invalid-json' } } as unknown as ProgressEvent<FileReader>);
+
         expect(alertSpy).toHaveBeenCalledWith('deckBuilder.alerts.importFailed');
-        expect(screen.getByTestId('host-main-deck-count')).toHaveTextContent('0');
-        expect(screen.getByTestId('host-evolve-count')).toHaveTextContent('0');
+        expect(defaultArgs.dispatchGameEvent).not.toHaveBeenCalled();
+        alertSpy.mockRestore();
     });
 });

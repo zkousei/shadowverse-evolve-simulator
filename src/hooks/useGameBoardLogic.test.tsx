@@ -3548,4 +3548,86 @@ describe('useGameBoardLogic action handlers', () => {
     expect(conn.send).not.toHaveBeenCalled();
   });
 
+  it('re-resolves auto-attach candidates while the selection is open and cancels invalid confirmations', async () => {
+    installMockCatalogFetch([
+      createCatalogCard({ id: 'BASE-001', name: 'Base Follower' }),
+      createCatalogCard({ id: 'BASE-SP', name: 'Base Follower' }),
+      createCatalogCard({
+        id: 'EVO-001',
+        name: 'Base Follower',
+        deck_section: 'evolve',
+        card_kind_normalized: 'evolve_follower',
+        related_cards: [{ id: 'BASE-001', name: 'Base Follower' }],
+      }),
+      createCatalogCard({
+        id: 'EVO-SP',
+        name: 'Base Follower',
+        deck_section: 'evolve',
+        card_kind_normalized: 'evolve_follower',
+        related_cards: [{ id: 'BASE-SP', name: 'Base Follower' }],
+      }),
+    ]);
+
+    renderResumedHostHarness({
+      cards: [
+        {
+          id: 'evolve-search-card',
+          cardId: 'EVO-001',
+          name: 'Base Follower',
+          image: '/base-follower-evo.png',
+          zone: 'evolveDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+          isEvolveCard: true,
+        },
+        {
+          id: 'attach-base-1',
+          cardId: 'BASE-001',
+          name: 'Base Follower',
+          image: '/base-follower.png',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'attach-base-2',
+          cardId: 'BASE-SP',
+          name: 'Base Follower',
+          image: '/base-follower-sp.png',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+      gameStatus: 'playing',
+      turnCount: 2,
+      phase: 'Main',
+      revision: 8,
+    });
+
+    await act(async () => { });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Extract Evolve to Field' }));
+
+    expect(screen.getByTestId('auto-attach-selection-count')).toHaveTextContent('2');
+    expect(screen.getByTestId('auto-attach-selection-targets')).toHaveTextContent('attach-base-1,attach-base-2');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Attach Base 1 Under Base 2' }));
+
+    expect(screen.getByTestId('auto-attach-selection-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('auto-attach-selection-targets')).toHaveTextContent('attach-base-2');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm Auto Attach Base 1' }));
+
+    expect(screen.getByTestId('auto-attach-selection-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('host-evolve-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('evolve-search-attached-to')).toHaveTextContent('none');
+  });
+
 });

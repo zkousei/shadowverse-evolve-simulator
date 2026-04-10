@@ -25,6 +25,12 @@ drag/drop feel, P2P browser behavior, and visual layout.
   - `src/utils/gameSyncReducer.test.ts`
 - P2P, reconnect, snapshot, saved-session, and shared UI effect contracts:
   - `src/hooks/useGameBoardLogic.test.tsx`
+- Action hook dispatch and internal branching logic:
+  - `src/hooks/useGameBoardFieldActions.test.tsx` — drag-end, link, evolve auto-attach, counters, spawn tokens
+  - `src/hooks/useGameBoardCardActions.test.tsx` — draw, mill, discard, look-at-top, undo card move
+  - `src/hooks/useGameBoardSystemActions.test.tsx` — stat change, phase, turn, coin flip, dice roll
+  - `src/hooks/useGameBoardMulliganActions.test.tsx` — mulligan start, select, execute
+  - `src/hooks/useGameBoardSetupActions.test.tsx` — deck import, deck upload, reset
 - Page-level user flows and dialog behavior:
   - `src/pages/GameBoard.test.tsx`
   - `src/pages/DeckBuilder.test.tsx`
@@ -36,9 +42,12 @@ Choose the lowest-level test that can fully express the behavior.
 When implementing a change, decide the layer first:
 
 1. If the behavior is a pure rule, test it in `cardLogic` or `gameSyncReducer`.
-2. If the behavior is a synchronization or orchestration contract, test it in
-   `useGameBoardLogic`.
-3. If the behavior is a user flow, modal flow, or page wiring concern, test it
+2. If the behavior is a dispatch or action-hook concern (what event payload to
+   send, internal branching like auto-attach or solo-mode actor resolution),
+   test it in the relevant action hook test file.
+3. If the behavior is a synchronization or orchestration contract (P2P,
+   reconnect, snapshot), test it in `useGameBoardLogic`.
+4. If the behavior is a user flow, modal flow, or page wiring concern, test it
    at the page level.
 
 Do not start by editing page code if the behavior can be specified at a lower,

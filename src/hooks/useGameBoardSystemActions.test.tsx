@@ -1,104 +1,97 @@
-import { act, fireEvent, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  mockPeerJs,
-  renderHarness,
-  renderResumedHostHarness,
-} from './__tests__/gameBoardTestUtils';
+import { renderHook } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { useGameBoardSystemActions } from './useGameBoardSystemActions';
 
-describe('useGameBoardSystemActions', () => {
+describe('useGameBoardSystemActions (Pure Hook)', () => {
+  const defaultArgs = {
+    canInteract: true,
+    canUndoTurn: true,
+    isRollingDice: false,
+    showTimedTurnMessage: vi.fn(),
+    t: (k: string) => k,
+    dispatchGameEvent: vi.fn(),
+  };
+
   beforeEach(() => {
-    vi.useFakeTimers();
-    mockPeerJs.reset();
-    window.sessionStorage.clear();
+    vi.clearAllMocks();
   });
 
-  afterEach(() => {
-    act(() => {
-      vi.runOnlyPendingTimers();
+  it('handleStatChange dispatches MODIFY_PLAYER_STAT', () => {
+    const { result } = renderHook(() => useGameBoardSystemActions(defaultArgs));
+    result.current.handleStatChange('host', 'hp', -2);
+
+    expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledWith({
+      type: 'MODIFY_PLAYER_STAT',
+      playerKey: 'host',
+      stat: 'hp',
+      delta: -2,
     });
-    vi.useRealTimers();
-    vi.restoreAllMocks();
-    vi.unstubAllGlobals();
   });
 
-  it('uses the Player 2 actor for solo Player 2 quick card moves', () => {
-    renderHarness('/game?mode=solo');
+  it('setPhase dispatches SET_PHASE', () => {
+    const { result } = renderHook(() => useGameBoardSystemActions(defaultArgs));
+    result.current.setPhase('Main');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Spawn Guest Token Batch to EX' }));
-
-    expect(screen.getByTestId('guest-ex-count')).toHaveTextContent('2');
-    expect(screen.getByTestId('guest-cemetery-count')).toHaveTextContent('0');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Send First Guest EX Card to Cemetery' }));
-
-    expect(screen.getByTestId('guest-ex-count')).toHaveTextContent('1');
-    expect(screen.getByTestId('guest-cemetery-count')).toHaveTextContent('0');
-    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('true');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Undo Move' }));
-
-    expect(screen.getByTestId('guest-ex-count')).toHaveTextContent('2');
-    expect(screen.getByTestId('guest-cemetery-count')).toHaveTextContent('0');
-  });
-
-  it('shuffles the host deck and shows the shared notification without creating an undoable move', () => {
-    renderResumedHostHarness({
-      cards: [
-        {
-          id: 'deck-card-1',
-          cardId: 'BP01-001',
-          name: 'Aurelia',
-          image: '/aurelia.png',
-          zone: 'mainDeck-host',
-          owner: 'host',
-          isTapped: false,
-          isFlipped: true,
-          counters: { atk: 0, hp: 0 },
-        },
-        {
-          id: 'deck-card-2',
-          cardId: 'BP01-002',
-          name: 'Bellringer Angel',
-          image: '/bellringer-angel.png',
-          zone: 'mainDeck-host',
-          owner: 'host',
-          isTapped: false,
-          isFlipped: true,
-          counters: { atk: 0, hp: 0 },
-        },
-      ],
-      gameStatus: 'playing',
-      turnCount: 2,
+    expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledWith({
+      type: 'SET_PHASE',
       phase: 'Main',
-      revision: 7,
     });
-
-    expect(screen.getByTestId('host-main-deck-count')).toHaveTextContent('2');
-    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('false');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Shuffle Host Deck' }));
-
-    expect(screen.getByTestId('host-main-deck-count')).toHaveTextContent('2');
-    expect(screen.getByTestId('card-play-message')).toHaveTextContent('You shuffled the deck');
-    expect(screen.getByTestId('event-history')).toHaveTextContent('You shuffled the deck');
-    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('false');
   });
 
-  it('toggles reveal hands mode on and off for the host state', () => {
-    renderResumedHostHarness({
-      gameStatus: 'playing',
-      turnCount: 2,
-      phase: 'Main',
-      revision: 7,
+  it('endTurn dispatches END_TURN', () => {
+    const { result } = renderHook(() => useGameBoardSystemActions(defaultArgs));
+    result.current.endTurn('guest');
+
+    expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledWith({
+      type: 'END_TURN',
+      actor: 'guest',
     });
+  });
 
-    expect(screen.getByTestId('reveal-hands-mode')).toHaveTextContent('false');
+  it('handleUndoTurn dispatches UNDO_LAST_TURN if canUndoTurn is true', () => {
+    const { result } = renderHook(() => useGameBoardSystemActions(defaultArgs));
+    result.current.handleUndoTurn();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Enable Reveal Hands' }));
-    expect(screen.getByTestId('reveal-hands-mode')).toHaveTextContent('true');
+    expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledWith({ type: 'UNDO_LAST_TURN' });
+  });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Disable Reveal Hands' }));
-    expect(screen.getByTestId('reveal-hands-mode')).toHaveTextContent('false');
+  it('handleUndoTurn aborts if canUndoTurn is false', () => {
+    const { result } = renderHook(() => useGameBoardSystemActions({ ...defaultArgs, canUndoTurn: false }));
+    result.current.handleUndoTurn();
+
+    expect(defaultArgs.dispatchGameEvent).not.toHaveBeenCalled();
+  });
+
+  it('handleSetInitialTurnOrder dispatches SET_INITIAL_TURN_ORDER with forced starter', () => {
+    const { result } = renderHook(() => useGameBoardSystemActions(defaultArgs));
+    result.current.handleSetInitialTurnOrder('guest');
+
+    expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledWith({
+      type: 'SET_INITIAL_TURN_ORDER',
+      starter: 'guest',
+      manual: true,
+    });
+  });
+
+  it('handlePureCoinFlip dispatches FLIP_SHARED_COIN', () => {
+    const { result } = renderHook(() => useGameBoardSystemActions(defaultArgs));
+    result.current.handlePureCoinFlip();
+
+    expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledWith({ type: 'FLIP_SHARED_COIN' });
+  });
+
+  it('handleRollDice dispatches ROLL_SHARED_DIE if not currently rolling', () => {
+    const { result } = renderHook(() => useGameBoardSystemActions(defaultArgs));
+    result.current.handleRollDice();
+
+    expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledWith({ type: 'ROLL_SHARED_DIE' });
+  });
+
+  it('handleStartGame dispatches START_GAME and shows timed message', () => {
+    const { result } = renderHook(() => useGameBoardSystemActions(defaultArgs));
+    result.current.handleStartGame();
+
+    expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledWith({ type: 'START_GAME' });
+    expect(defaultArgs.showTimedTurnMessage).toHaveBeenCalledWith('gameBoard.alerts.gameStart', 2500);
   });
 });
