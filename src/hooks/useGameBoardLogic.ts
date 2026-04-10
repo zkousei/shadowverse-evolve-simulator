@@ -19,7 +19,6 @@ import { buildHandRevealEffect, buildSingleCardRevealEffect } from '../utils/car
 import { buildAttackDeclaredEffect } from '../utils/attackUi';
 import { buildCardPlayedEffect } from '../utils/cardPlayUi';
 import { buildImportedDeckPayload, buildSpawnTokenInstance, buildSpawnTokens, type ImportableDeckData } from '../utils/gameBoardDeckActions';
-import { buildClosedMulliganState, buildStartedMulliganState, toggleMulliganOrderSelection } from '../utils/gameBoardMulligan';
 import {
   buildSnapshotRequestMessage,
   buildSnapshotSyncMessage,
@@ -46,8 +45,9 @@ import { useGameBoardIncomingMessages } from './useGameBoardIncomingMessages';
 import { useGameBoardSnapshotMessaging } from './useGameBoardSnapshotMessaging';
 import { useGameBoardSharedUiEffects } from './useGameBoardSharedUiEffects';
 import { useGameBoardSessionPersistence } from './useGameBoardSessionPersistence';
+import { useGameBoardMulliganActions } from './useGameBoardMulliganActions';
 
-type DispatchableGameSyncEvent =
+export type DispatchableGameSyncEvent =
   | { type: 'FLIP_SHARED_COIN'; actor?: PlayerRole }
   | { type: 'ROLL_SHARED_DIE'; actor?: PlayerRole }
   | { type: 'TOGGLE_READY'; actor?: PlayerRole }
@@ -1033,22 +1033,17 @@ export const useGameBoardLogic = () => {
     dispatchGameEvent({ type: 'DRAW_INITIAL_HAND', actor: targetRole });
   };
 
-  const startMulligan = () => {
-    if (!canInteract) return;
-    const nextState = buildStartedMulliganState();
-    setMulliganOrder(nextState.mulliganOrder);
-    setIsMulliganModalOpen(nextState.isMulliganModalOpen);
-  };
-
-  const handleMulliganOrderSelect = (cardId: string) => {
-    if (!canInteract) return;
-    setMulliganOrder((prev) => toggleMulliganOrderSelection(prev, cardId));
-  };
-
-  const executeMulligan = (targetRole?: PlayerRole) => {
-    dispatchGameEvent({ type: 'EXECUTE_MULLIGAN', actor: targetRole, selectedIds: mulliganOrder });
-    setIsMulliganModalOpen(buildClosedMulliganState().isMulliganModalOpen);
-  };
+  const {
+    startMulligan,
+    handleMulliganOrderSelect,
+    executeMulligan,
+  } = useGameBoardMulliganActions({
+    canInteract,
+    mulliganOrder,
+    setMulliganOrder,
+    setIsMulliganModalOpen,
+    dispatchGameEvent,
+  });
 
   const drawCard = (targetRole?: PlayerRole) => {
     dispatchGameEvent({ type: 'DRAW_CARD', actor: targetRole });

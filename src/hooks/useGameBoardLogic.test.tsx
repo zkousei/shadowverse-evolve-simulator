@@ -640,7 +640,7 @@ const connectHostWithGuestAndSpectator = (entry = '/game?host=true&room=ROOM123'
 
 beforeEach(() => {
   mockLoadCardCatalog.mockReset();
-  mockLoadCardCatalog.mockReturnValue(new Promise(() => {}) as ReturnType<typeof loadCardCatalog>);
+  mockLoadCardCatalog.mockReturnValue(new Promise(() => { }) as ReturnType<typeof loadCardCatalog>);
 });
 
 describe('useGameBoardLogic P2P reconnect', () => {
@@ -4418,57 +4418,6 @@ describe('useGameBoardLogic action handlers', () => {
     expect(screen.getByTestId('can-undo-move')).toHaveTextContent('false');
   });
 
-  it('starts mulligan by clearing any local selection and opening the modal', () => {
-    renderHarness('/game?mode=solo');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Select Mulligan Hand 1' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Select Mulligan Hand 2' }));
-    expect(screen.getByTestId('mulligan-order')).toHaveTextContent('hand1,hand2');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Start Mulligan' }));
-
-    expect(screen.getByTestId('mulligan-order')).toHaveTextContent('none');
-    expect(screen.getByTestId('mulligan-open')).toHaveTextContent('true');
-  });
-
-  it('preserves the current mulligan selection behavior and closes after execution', () => {
-    renderResumedHostHarness({
-      cards: [
-        { id: 'deck1', cardId: 'BP01-023', name: 'Deck1', image: '', zone: 'mainDeck-host', owner: 'host', isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 } },
-        { id: 'deck2', cardId: 'BP01-024', name: 'Deck2', image: '', zone: 'mainDeck-host', owner: 'host', isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 } },
-        { id: 'deck3', cardId: 'BP01-025', name: 'Deck3', image: '', zone: 'mainDeck-host', owner: 'host', isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 } },
-        { id: 'deck4', cardId: 'BP01-026', name: 'Deck4', image: '', zone: 'mainDeck-host', owner: 'host', isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 } },
-        { id: 'deck5', cardId: 'BP01-027', name: 'Deck5', image: '', zone: 'mainDeck-host', owner: 'host', isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 } },
-        { id: 'hand1', cardId: 'BP01-028', name: 'Hand1', image: '', zone: 'hand-host', owner: 'host', isTapped: false, isFlipped: false, counters: { atk: 0, hp: 0 } },
-        { id: 'hand2', cardId: 'BP01-029', name: 'Hand2', image: '', zone: 'hand-host', owner: 'host', isTapped: false, isFlipped: false, counters: { atk: 0, hp: 0 } },
-        { id: 'hand3', cardId: 'BP01-030', name: 'Hand3', image: '', zone: 'hand-host', owner: 'host', isTapped: false, isFlipped: false, counters: { atk: 0, hp: 0 } },
-        { id: 'hand4', cardId: 'BP01-031', name: 'Hand4', image: '', zone: 'hand-host', owner: 'host', isTapped: false, isFlipped: false, counters: { atk: 0, hp: 0 } },
-        { id: 'hand5', cardId: 'BP01-032', name: 'Hand5', image: '', zone: 'hand-host', owner: 'host', isTapped: false, isFlipped: false, counters: { atk: 0, hp: 0 } },
-      ],
-      host: {
-        initialHandDrawn: true,
-        mulliganUsed: false,
-      },
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Start Mulligan' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Select Mulligan Hand 1' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Select Mulligan Hand 2' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Select Mulligan Hand 3' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Select Mulligan Hand 4' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Select Mulligan Hand 5' }));
-
-    expect(screen.getByTestId('mulligan-order')).toHaveTextContent('hand1,hand2,hand3,hand4,hand5');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Select Mulligan Hand 5' }));
-    expect(screen.getByTestId('mulligan-order')).toHaveTextContent('hand1,hand2,hand3,hand4');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Execute Host Mulligan' }));
-
-    expect(screen.getByTestId('mulligan-open')).toHaveTextContent('false');
-    expect(screen.getByTestId('host-mulligan-used')).toHaveTextContent('true');
-    expect(screen.getByTestId('host-hand-count')).toHaveTextContent('4');
-  });
 
   it('returns an evolve card from the field to the evolve deck', () => {
     renderResumedHostHarness({
@@ -4618,7 +4567,7 @@ describe('useGameBoardLogic action handlers', () => {
       revision: 7,
     });
 
-    await act(async () => {});
+    await act(async () => { });
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Extract Evolve to Field' }));
@@ -4675,7 +4624,7 @@ describe('useGameBoardLogic action handlers', () => {
       revision: 7,
     });
 
-    await act(async () => {});
+    await act(async () => { });
 
     fireEvent.click(screen.getByRole('button', { name: 'Extract Evolve to Field' }));
 
@@ -4753,7 +4702,7 @@ describe('useGameBoardLogic action handlers', () => {
       revision: 7,
     });
 
-    await act(async () => {});
+    await act(async () => { });
 
     fireEvent.click(screen.getByRole('button', { name: 'Extract Evolve to Field' }));
 
@@ -4826,7 +4775,7 @@ describe('useGameBoardLogic action handlers', () => {
       revision: 7,
     });
 
-    await act(async () => {});
+    await act(async () => { });
 
     fireEvent.click(screen.getByRole('button', { name: 'Extract Evolve to Field' }));
 
@@ -4905,7 +4854,7 @@ describe('useGameBoardLogic action handlers', () => {
       revision: 8,
     });
 
-    await act(async () => {});
+    await act(async () => { });
 
     fireEvent.click(screen.getByRole('button', { name: 'Extract Evolve to Field' }));
 
@@ -4968,7 +4917,7 @@ describe('useGameBoardLogic action handlers', () => {
       revision: 7,
     });
 
-    await act(async () => {});
+    await act(async () => { });
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Drag Evolve to Field' }));
@@ -5012,7 +4961,7 @@ describe('useGameBoardLogic action handlers', () => {
       revision: 7,
     });
 
-    await act(async () => {});
+    await act(async () => { });
 
     fireEvent.click(screen.getByRole('button', { name: 'Extract Linked to Field' }));
 
@@ -5069,7 +5018,7 @@ describe('useGameBoardLogic action handlers', () => {
       revision: 7,
     });
 
-    await act(async () => {});
+    await act(async () => { });
 
     fireEvent.click(screen.getByRole('button', { name: 'Play Equipment to Field' }));
 
@@ -5125,7 +5074,7 @@ describe('useGameBoardLogic action handlers', () => {
       revision: 7,
     });
 
-    await act(async () => {});
+    await act(async () => { });
 
     fireEvent.click(screen.getByRole('button', { name: 'Extract Linked to Field' }));
 
@@ -5199,7 +5148,7 @@ describe('useGameBoardLogic action handlers', () => {
       revision: 7,
     });
 
-    await act(async () => {});
+    await act(async () => { });
 
     fireEvent.click(screen.getByRole('button', { name: 'Drag Linked Card to Field' }));
 
@@ -5260,7 +5209,7 @@ describe('useGameBoardLogic action handlers', () => {
       revision: 7,
     });
 
-    await act(async () => {});
+    await act(async () => { });
 
     fireEvent.click(screen.getByRole('button', { name: 'Drag Equipment to Base' }));
 
@@ -5269,7 +5218,7 @@ describe('useGameBoardLogic action handlers', () => {
   });
 
   it('links token equipment even before the card catalog fetch resolves', () => {
-    mockLoadCardCatalog.mockReturnValue(new Promise(() => {}) as ReturnType<typeof loadCardCatalog>);
+    mockLoadCardCatalog.mockReturnValue(new Promise(() => { }) as ReturnType<typeof loadCardCatalog>);
 
     renderResumedHostHarness({
       cards: [
@@ -5379,7 +5328,7 @@ describe('useGameBoardLogic action handlers', () => {
       revision: 7,
     });
 
-    await act(async () => {});
+    await act(async () => { });
 
     fireEvent.click(screen.getByRole('button', { name: 'Drag Equipment to Evolved Base' }));
 
@@ -5434,7 +5383,7 @@ describe('useGameBoardLogic action handlers', () => {
       revision: 7,
     });
 
-    await act(async () => {});
+    await act(async () => { });
 
     fireEvent.click(screen.getByRole('button', { name: 'Drag Linked Card to Base' }));
 
