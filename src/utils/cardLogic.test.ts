@@ -966,6 +966,25 @@ describe('CardLogic utils', () => {
       });
     });
 
+    it('should remove attached tokens when sending an evolve root to cemetery', () => {
+      const existingDeckCard = { ...createMockCard('existing-evo', 'evolveDeck-host'), isEvolveCard: true, isFlipped: false };
+      const evolveRoot = { ...createMockCard('evo-root', 'field-host'), isEvolveCard: true };
+      const token = {
+        ...createMockCard('token-child', 'field-host'),
+        cardId: 'token',
+        attachedTo: 'evo-root',
+      };
+
+      const result = CardLogic.sendCardToCemetery([existingDeckCard, evolveRoot, token], 'evo-root');
+
+      expect(result.find(c => c.id === 'token-child')).toBeUndefined();
+      expect(result.find(c => c.id === 'evo-root')).toMatchObject({
+        zone: 'evolveDeck-host',
+        attachedTo: undefined,
+      });
+      expect(result.filter(c => c.zone === 'mainDeck-host')).toHaveLength(0);
+    });
+
     it('should place newly sent cemetery cards on top of the cemetery stack', () => {
       const oldCemetery = createMockCard('old-cemetery', 'cemetery-host');
       const card = createMockCard('new-cemetery', 'field-host');
@@ -984,6 +1003,25 @@ describe('CardLogic utils', () => {
 
       expect(result[0].id).toBe('returning');
       expect(result[1].id).toBe('used');
+    });
+
+    it('should remove attached tokens when sending a base card to the bottom of the deck', () => {
+      const existingDeckCard = createMockCard('existing-main', 'mainDeck-host');
+      const base = createMockCard('base', 'field-host');
+      const token = {
+        ...createMockCard('token-child', 'field-host'),
+        cardId: 'token',
+        attachedTo: 'base',
+      };
+
+      const result = CardLogic.sendCardToBottom([existingDeckCard, base, token], 'base');
+
+      expect(result.find(c => c.id === 'token-child')).toBeUndefined();
+      expect(result.find(c => c.id === 'base')).toMatchObject({
+        zone: 'mainDeck-host',
+        attachedTo: undefined,
+      });
+      expect(result.filter(c => c.zone === 'mainDeck-host').map(c => c.id)).toEqual(['existing-main', 'base']);
     });
 
     it('should move cards to field for the acting role', () => {
