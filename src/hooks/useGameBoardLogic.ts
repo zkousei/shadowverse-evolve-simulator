@@ -27,7 +27,6 @@ import {
 import { getConnectionOpenDecision } from '../utils/gameBoardConnectionOpen';
 import { getConnectionTerminationDecision } from '../utils/gameBoardConnectionTermination';
 import { getPeerOpenDecision } from '../utils/gameBoardPeerOpen';
-import { getPeerIncomingConnectionDecision } from '../utils/gameBoardPeerIncomingConnection';
 import { getPeerTerminationDecision } from '../utils/gameBoardPeerTermination';
 import { getSnapshotApplicationDecision } from '../utils/gameBoardSnapshotApplication';
 import { getSnapshotRetryTimeoutDecision } from '../utils/gameBoardSnapshotRetry';
@@ -41,6 +40,7 @@ import {
   type PendingGameBoardEvolveAutoAttachSelection,
 } from '../utils/gameBoardEvolveAutoAttachSelection';
 import { useGameBoardCatalogResources } from './useGameBoardCatalogResources';
+import { useGameBoardConnectionSetup } from './useGameBoardConnectionSetup';
 import { useGameBoardConnectionLifecycleState } from './useGameBoardConnectionLifecycleState';
 import { useGameBoardIncomingMessages } from './useGameBoardIncomingMessages';
 import { useGameBoardSnapshotMessaging } from './useGameBoardSnapshotMessaging';
@@ -94,14 +94,6 @@ const MAX_SNAPSHOT_REQUEST_RETRIES = 2;
 const RECONNECT_DELAY_MS = 1000;
 
 type GameBoardStatusKey = `gameBoard.status.${string}`;
-type ConnectionRole = 'guest' | 'spectator';
-
-type DataConnectionWithMetadata = DataConnection & {
-  metadata?: {
-    connectionRole?: ConnectionRole;
-  };
-};
-
 export const useGameBoardLogic = () => {
   const [searchParams] = useSearchParams();
   const room = searchParams.get('room') || '';
@@ -836,45 +828,18 @@ export const useGameBoardLogic = () => {
     handleConnectionTermination(kind);
   }, [handleConnectionTermination, isActiveConnectionToken]);
 
-  const setupConnection = useCallback((conn: DataConnection) => {
-    const token = uuid();
-    prepareActiveConnection(conn, token);
-    conn.on('open', () => {
-      handleConnectionOpen(conn, token);
-    });
-    conn.on('data', (rawData: unknown) => {
-      handleIncomingConnectionData(conn, token, rawData);
-    });
-    conn.on('close', () => {
-      handleConnectionLifecycleEvent(token, 'close');
-    });
-    conn.on('error', () => {
-      handleConnectionLifecycleEvent(token, 'error');
-    });
-  }, [handleConnectionLifecycleEvent, handleConnectionOpen, handleIncomingConnectionData, prepareActiveConnection]);
-
-  const handleSpectatorConnectionLifecycleEvent = useCallback((token: string) => {
-    if (!isActiveSpectatorConnectionToken(token)) return;
-    clearSpectatorConnectionLifecycleState();
-  }, [clearSpectatorConnectionLifecycleState, isActiveSpectatorConnectionToken]);
-
-  const setupSpectatorConnection = useCallback((conn: DataConnection) => {
-    const token = uuid();
-    prepareSpectatorConnection(conn, token);
-    conn.on('data', (rawData: unknown) => {
-      handleIncomingSpectatorConnectionData(conn, token, rawData);
-    });
-    conn.on('close', () => {
-      handleSpectatorConnectionLifecycleEvent(token);
-    });
-    conn.on('error', () => {
-      handleSpectatorConnectionLifecycleEvent(token);
-    });
-  }, [
+  const { setupConnection, handlePeerIncomingConnection } = useGameBoardConnectionSetup({
+    clearSpectatorConnectionLifecycleState,
+    handleConnectionLifecycleEvent,
+    handleConnectionOpen,
+    handleIncomingConnectionData,
     handleIncomingSpectatorConnectionData,
-    handleSpectatorConnectionLifecycleEvent,
+    isActiveSpectatorConnectionToken,
+    isHost,
+    prepareActiveConnection,
     prepareSpectatorConnection,
-  ]);
+    uuidFactory: uuid,
+  });
 
   useEffect(() => {
     setupConnectionRef.current = setupConnection;
@@ -893,23 +858,6 @@ export const useGameBoardLogic = () => {
       connectToHost();
     }
   }, [connectToHost, isHost]);
-
-  const handlePeerIncomingConnection = useCallback((conn: DataConnection) => {
-    const incomingConnectionDecision = getPeerIncomingConnectionDecision({ isHost });
-
-    if (incomingConnectionDecision.type === 'setup-connection') {
-      const connectionRole = (conn as DataConnectionWithMetadata).metadata?.connectionRole === 'spectator'
-        ? 'spectator'
-        : 'guest';
-
-      if (connectionRole === 'spectator') {
-        setupSpectatorConnection(conn);
-        return;
-      }
-
-      setupConnection(conn);
-    }
-  }, [isHost, setupConnection, setupSpectatorConnection]);
 
   const handlePeerTermination = useCallback((kind: 'disconnected' | 'error') => {
     const terminationDecision = getPeerTerminationDecision({
