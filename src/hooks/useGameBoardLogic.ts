@@ -22,13 +22,6 @@ import { buildCardPlayedEffect, formatCardPlayedEffect } from '../utils/cardPlay
 import { buildImportedDeckPayload, buildSpawnTokenInstance, buildSpawnTokens, type ImportableDeckData } from '../utils/gameBoardDeckActions';
 import { buildClosedMulliganState, buildStartedMulliganState, toggleMulliganOrderSelection } from '../utils/gameBoardMulligan';
 import {
-  getHostSessionStorageKey,
-  getSavedHostSessionPersistenceDecision,
-  hasMeaningfulGameSessionState,
-  parseSavedHostSession,
-  type SavedHostSession,
-} from '../utils/gameBoardSavedSession';
-import {
   buildSnapshotRequestMessage,
   buildSnapshotSyncMessage,
   buildWaitingForHostSessionMessage,
@@ -61,6 +54,7 @@ import {
   prependEventHistoryEntry,
 } from '../utils/gameBoardTransientUi';
 import { useGameBoardCatalogResources } from './useGameBoardCatalogResources';
+import { useGameBoardSessionPersistence } from './useGameBoardSessionPersistence';
 
 type DispatchableGameSyncEvent =
   | { type: 'FLIP_SHARED_COIN'; actor?: PlayerRole }
@@ -139,8 +133,6 @@ export const useGameBoardLogic = () => {
   const canInteract = getCanInteractWithGameBoard({ isSoloMode, isHost, isSpectator, connectionState });
   const canView = getCanViewGameBoard({ isSoloMode, isHost, connectionState });
   const [gameState, setGameState] = useState<SyncState>(initialState);
-  const [savedSessionCandidate, setSavedSessionCandidate] = useState<SavedHostSession | null>(null);
-  const [hasCheckedSavedSession, setHasCheckedSavedSession] = useState(false);
   const [searchZone, setSearchZone] = useState<{ id: string, title: string } | null>(null);
 
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -187,7 +179,6 @@ export const useGameBoardLogic = () => {
     fieldLinkCardIdsRef,
     tokenEquipmentCardIdsRef,
   } = useGameBoardCatalogResources();
-  const savedSessionCandidateRef = useRef<SavedHostSession | null>(null);
   const topDeckCardsRef = useRef<CardInstance[]>([]);
   const topDeckTargetRoleRef = useRef<PlayerRole>(role);
   const awaitingInitialSnapshotRef = useRef(false);
@@ -412,6 +403,24 @@ export const useGameBoardLogic = () => {
   const sendSnapshotToCurrentConnection = useCallback((state: SyncState, source: PlayerRole) => {
     sendMessage(buildSnapshotSyncMessage(state, source, cardDetailLookupRef.current));
   }, [sendMessage]);
+
+  const {
+    savedSessionCandidate,
+    savedSessionCandidateRef,
+    resumeSavedSession,
+    discardSavedSession,
+  } = useGameBoardSessionPersistence({
+    appVersion: APP_VERSION,
+    applyLocalState,
+    gameState,
+    gameStateRef,
+    isHost,
+    isSoloMode,
+    resetTransientUiState,
+    room,
+    sendSnapshotToCurrentConnection,
+    setStatusKey,
+  });
 
   const sendSharedUiEffect = useCallback((effect: SharedUiEffect) => {
     sendMessage({ type: 'SHARED_UI_EFFECT', effect });
@@ -1460,86 +1469,6 @@ export const useGameBoardLogic = () => {
   useEffect(() => {
     setupConnectionRef.current = setupConnection;
   }, [setupConnection]);
-
-  useEffect(() => {
-    savedSessionCandidateRef.current = savedSessionCandidate;
-  }, [savedSessionCandidate]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      setHasCheckedSavedSession(true);
-      setSavedSessionCandidate(null);
-      return;
-    }
-
-    if (isSoloMode || !isHost || !room) {
-      setSavedSessionCandidate(null);
-      setHasCheckedSavedSession(true);
-      return;
-    }
-
-    const storageKey = getHostSessionStorageKey(room);
-    const parsed = parseSavedHostSession(window.sessionStorage.getItem(storageKey), room, APP_VERSION);
-
-    if (!parsed || !hasMeaningfulGameSessionState(parsed.state)) {
-      window.sessionStorage.removeItem(storageKey);
-      setSavedSessionCandidate(null);
-      setHasCheckedSavedSession(true);
-      return;
-    }
-
-    setSavedSessionCandidate(parsed);
-    setHasCheckedSavedSession(true);
-  }, [isHost, isSoloMode, room]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const decision = getSavedHostSessionPersistenceDecision({
-      hasCheckedSavedSession,
-      isSoloMode,
-      isHost,
-      room,
-      savedSessionCandidate,
-      state: gameState,
-      appVersion: APP_VERSION,
-      savedAt: new Date().toISOString(),
-    });
-
-    if (decision.type === 'skip') {
-      return;
-    }
-
-    if (decision.type === 'remove') {
-      window.sessionStorage.removeItem(decision.storageKey);
-      return;
-    }
-
-    window.sessionStorage.setItem(decision.storageKey, JSON.stringify(decision.payload));
-  }, [gameState, hasCheckedSavedSession, isHost, isSoloMode, room, savedSessionCandidate]);
-
-  const resumeSavedSession = useCallback(() => {
-    if (!savedSessionCandidate) return;
-
-    // Resuming replaces the live board immediately, so clear transient UI first
-    // and then push the restored authoritative state to the guest.
-    applyLocalState(savedSessionCandidate.state);
-    resetTransientUiState();
-    setSavedSessionCandidate(null);
-    setStatusKey('gameBoard.status.sessionRestored');
-    sendSnapshotToCurrentConnection(savedSessionCandidate.state, 'host');
-  }, [applyLocalState, resetTransientUiState, savedSessionCandidate, sendSnapshotToCurrentConnection]);
-
-  const discardSavedSession = useCallback(() => {
-    if (typeof window !== 'undefined' && room) {
-      window.sessionStorage.removeItem(getHostSessionStorageKey(room));
-    }
-
-    // Discard keeps the current fresh board but drops the resumable candidate,
-    // so the next visit starts from a clean room state.
-    setSavedSessionCandidate(null);
-    setStatusKey('gameBoard.status.startingFresh');
-    sendSnapshotToCurrentConnection(gameStateRef.current, 'host');
-  }, [room, sendSnapshotToCurrentConnection]);
 
   const handlePeerOpen = useCallback(() => {
     const openDecision = getPeerOpenDecision({ isHost });
