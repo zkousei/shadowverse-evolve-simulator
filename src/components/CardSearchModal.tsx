@@ -13,6 +13,7 @@ interface CardSearchModalProps {
   cards: CardInstance[];
   cardDetailLookup?: CardDetailLookup;
   onExtractCard: (cardId: string, destination?: string, revealToOpponent?: boolean) => void;
+  onSendToBottom?: (cardId: string) => void;
   onToggleFlip?: (cardId: string) => void;
   viewerRole?: PlayerRole;
   targetRole?: PlayerRole;
@@ -30,6 +31,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
   cards,
   cardDetailLookup = {},
   onExtractCard,
+  onSendToBottom,
   onToggleFlip,
   viewerRole,
   targetRole,
@@ -318,6 +320,21 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
                         }}
                       >
                         {t('gameBoard.modals.search.addToEx')}
+                      </button>
+                    )}
+                    {onSendToBottom && isPublicRecoveryZone && (
+                      <button
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onSendToBottom(c.id);
+                        }}
+                        style={{
+                          width: '100%', background: '#475569', color: 'white', border: 'none',
+                          padding: '3px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {t('gameBoard.card.quickActionDescriptions.sendToBottom')}
                       </button>
                     )}
 

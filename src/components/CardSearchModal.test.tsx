@@ -178,6 +178,58 @@ describe('CardSearchModal', () => {
     expect(onExtractCard).toHaveBeenNthCalledWith(4, 'card-1', 'ex-host');
   });
 
+  it('shows send-to-bottom for cemetery and banish searches only, and fires the callback', () => {
+    const onSendToBottom = vi.fn();
+    const { rerender } = render(
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Cemetery"
+        zoneId="cemetery-host"
+        cards={[createCard({ zone: 'cemetery-host' })]}
+        onExtractCard={vi.fn()}
+        onSendToBottom={onSendToBottom}
+        viewerRole="host"
+        allowHandExtraction={true}
+      />
+    );
+
+    fireEvent.click(screen.getByText('Send to bottom of deck'));
+    expect(onSendToBottom).toHaveBeenCalledWith('card-1');
+
+    rerender(
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Banish"
+        zoneId="banish-host"
+        cards={[createCard({ zone: 'banish-host' })]}
+        onExtractCard={vi.fn()}
+        onSendToBottom={onSendToBottom}
+        viewerRole="host"
+        allowHandExtraction={true}
+      />
+    );
+
+    expect(screen.getByText('Send to bottom of deck')).toBeInTheDocument();
+
+    rerender(
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Main Deck"
+        zoneId="mainDeck-host"
+        cards={[createCard({ zone: 'mainDeck-host' })]}
+        onExtractCard={vi.fn()}
+        onSendToBottom={onSendToBottom}
+        viewerRole="host"
+        allowHandExtraction={true}
+      />
+    );
+
+    expect(screen.queryByText('Send to bottom of deck')).not.toBeInTheDocument();
+  });
+
   it('fires evolve-deck usage toggle and shows the unused label when face-up', () => {
     const onToggleFlip = vi.fn();
     render(
