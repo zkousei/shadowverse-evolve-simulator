@@ -113,7 +113,7 @@ Unless the user explicitly asks for a narrower scope, aim to finish changes with
 
 - `npm run lint`
 - `npx tsc --noEmit -p tsconfig.app.json` (Ensure strict type check on app code)
-- `npx vitest run` (or `npm test`)
+- `npx vitest run` (or `npm test -- --run`)
 - `npm run build`
 - `npm run test:e2e` (when relevant UI/flow coverage exists or the change adds/updates an E2E-owned contract)
 
