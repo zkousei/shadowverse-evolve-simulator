@@ -31,6 +31,11 @@ drag/drop feel, P2P browser behavior, and visual layout.
   - `src/hooks/useGameBoardSystemActions.test.tsx` — stat change, phase, turn, coin flip, dice roll
   - `src/hooks/useGameBoardMulliganActions.test.tsx` — mulligan start, select, execute
   - `src/hooks/useGameBoardSetupActions.test.tsx` — deck import, deck upload, reset
+- ViewModel and presentation logic:
+  - `src/hooks/gameBoardViewModel.test.ts` — board layout, roles, import, hand visibility, end stop
+  - `src/hooks/gameBoardDialogViewModel.test.ts` — saved deck picker, token spawn
+  - `src/components/gameBoardMenuActions.test.ts` — menu action builders
+  - `src/components/gameBoardZoneActionViewModel.test.ts` — zone action config builders
 - Page-level user flows and dialog behavior:
   - `src/pages/GameBoard.test.tsx`
   - `src/pages/DeckBuilder.test.tsx`
