@@ -1,0 +1,13 @@
+{
+  "mainDeck": [
+    { "id": "TEST-001", "name": "Test Card 1", "image": "https://example.com/test1.jpg" },
+    { "id": "TEST-002", "name": "Test Card 2", "image": "https://example.com/test2.jpg" },
+    { "id": "TEST-003", "name": "Test Card 3", "image": "https://example.com/test3.jpg" },
+    { "id": "TEST-004", "name": "Test Card 4", "image": "https://example.com/test4.jpg" },
+    { "id": "TEST-005", "name": "Test Card 5", "image": "https://example.com/test5.jpg" }
+  ],
+  "evolveDeck": [
+    { "id": "TEST-006", "name": "Test Evolve 1", "image": "https://example.com/test_e1.jpg" }
+  ],
+  "leaderCard": { "id": "TEST-L01", "name": "Test Leader", "image": "https://example.com/test_leader.jpg" }
+}

@@ -36,9 +36,11 @@ drag/drop feel, P2P browser behavior, and visual layout.
   - `src/hooks/gameBoardDialogViewModel.test.ts` — saved deck picker, token spawn
   - `src/components/gameBoardMenuActions.test.ts` — menu action builders
   - `src/components/gameBoardZoneActionViewModel.test.ts` — zone action config builders
-- Page-level user flows and dialog behavior:
+- Page-level user flows and dialog behavior (DOM integration):
   - `src/pages/GameBoard.test.tsx`
   - `src/pages/DeckBuilder.test.tsx`
+- End-to-End browser usage, drag/drop, and full UI flows:
+  - `e2e/*.spec.ts`
 
 Choose the lowest-level test that can fully express the behavior.
 
@@ -52,8 +54,8 @@ When implementing a change, decide the layer first:
    test it in the relevant action hook test file.
 3. If the behavior is a synchronization or orchestration contract (P2P,
    reconnect, snapshot), test it in `useGameBoardLogic`.
-4. If the behavior is a user flow, modal flow, or page wiring concern, test it
-   at the page level.
+4. If the behavior is a DOM/View wiring concern, test it at the page integration level.
+5. If the behavior involves multi-page flows, real DOM coordinate drag-and-drop, or exact layout changes, test it at the E2E level via Playwright.
 
 Do not start by editing page code if the behavior can be specified at a lower,
 more stable layer.
@@ -64,12 +66,14 @@ Manual verification should be the exception, not the default.
 
 Keep manual checks limited to:
 
-- Drag/drop hit behavior and feel
-- Real browser P2P timing differences
-- Visual layout, overlay, and z-index issues
+- Extremely nuanced UI animations and exact visual "feel"
+- Safari/Mobile specific quirks (as we currently focus E2E locally on Chromium)
+- Real network P2P timing anomalies (WebRTC across devices)
+
+(Note: With Playwright now available in `e2e/`, drag/drop flows and modal visibility should be automated where ROI is reasonable).
 
 If a manual check reveals an important regression risk, add an automated test
-for the underlying rule or contract as soon as practical.
+for the underlying rule, contract, or E2E flow as soon as practical.
 
 ## Safe Change Rules
 
@@ -84,8 +88,9 @@ for the underlying rule or contract as soon as practical.
 Unless the user explicitly asks for a narrower scope, aim to finish changes with:
 
 - `npm run lint`
-- `npm test -- --run`
-- `npm run build`
+- `npx tsc --noEmit`
+- `npx vitest run` (or `npm test`)
+- `npm run test:e2e` (when UI/flow actions are changed)
 
 If only a targeted test run is appropriate, explain why and choose the smallest
 relevant test scope that still protects the change.
