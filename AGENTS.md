@@ -5,7 +5,8 @@ This file defines the default development rules for Codex in this repository.
 ## Primary Goal
 
 Make feature development safe enough that most changes can be validated with
-`lint`, `test`, and `build`, with only minimal manual verification left for
+`lint`, `test`, and `build`, with targeted E2E coverage where it materially
+improves confidence, and with only minimal manual verification left for
 drag/drop feel, P2P browser behavior, and visual layout.
 
 ## Default Development Style
@@ -23,7 +24,12 @@ drag/drop feel, P2P browser behavior, and visual layout.
   - `src/utils/cardLogic.test.ts`
 - Reducer event handling, guards, no-op behavior, undo/turn rules:
   - `src/utils/gameSyncReducer.test.ts`
-- P2P, reconnect, snapshot, saved-session, and shared UI effect contracts:
+- Lower-level P2P, reconnect, snapshot, saved-session, and shared UI effect rules:
+  - `src/utils/gameBoard*.test.ts`
+  - Prefer the narrowest existing utility/contract test first when behavior is
+    already factored there (snapshot queue, waiting state, peer open/close,
+    incoming event handling, connection termination, etc.).
+- Cross-helper orchestration and end-to-end hook contracts:
   - `src/hooks/useGameBoardLogic.test.tsx`
 - Action hook dispatch and internal branching logic:
   - `src/hooks/useGameBoardFieldActions.test.tsx` — drag-end, link, evolve auto-attach, counters, spawn tokens
@@ -42,6 +48,12 @@ drag/drop feel, P2P browser behavior, and visual layout.
   - `src/hooks/useDeckBuilderSessionTracking.test.ts` — draft persistence, dirty state
   - `src/hooks/useDeckBuilderPreviewUi.test.ts` — card preview, hover positioning
   - `src/hooks/useDeckBuilderModalUi.test.ts` — dialog timing, import/reset modals
+- Component-level UI wiring and DOM behavior:
+  - `src/components/GameBoard*.test.tsx`
+  - `src/components/DeckBuilder*.test.tsx`
+  - `src/components/Zone.test.tsx`
+  - Prefer this layer before page tests when the behavior is confined to a
+    single component tree or dialog host.
 - Page-level user flows and dialog behavior (DOM integration):
   - `src/pages/GameBoard.test.tsx`
   - `src/pages/DeckBuilder.test.tsx`
@@ -59,9 +71,15 @@ When implementing a change, decide the layer first:
    send, internal branching like auto-attach or solo-mode actor resolution),
    test it in the relevant action hook test file.
 3. If the behavior is a synchronization or orchestration contract (P2P,
-   reconnect, snapshot), test it in `useGameBoardLogic`.
-4. If the behavior is a DOM/View wiring concern, test it at the page integration level.
-5. If the behavior involves multi-page flows, real DOM coordinate drag-and-drop, or exact layout changes, test it at the E2E level via Playwright.
+   reconnect, snapshot), first ask whether a narrower `src/utils/gameBoard*.test.ts`
+   can own it; use `useGameBoardLogic` when the behavior spans helpers or is
+   truly hook-level orchestration.
+4. If the behavior is a DOM/View wiring concern inside one component tree,
+   test it at the component UI level.
+5. If the behavior spans page composition or page-local UI state interactions,
+   test it at the page integration level.
+6. If the behavior involves multi-page flows, real DOM coordinate drag-and-drop,
+   or exact layout/browser interactions, test it at the E2E level via Playwright.
 
 Do not start by editing page code if the behavior can be specified at a lower,
 more stable layer.
@@ -96,7 +114,8 @@ Unless the user explicitly asks for a narrower scope, aim to finish changes with
 - `npm run lint`
 - `npx tsc --noEmit -p tsconfig.app.json` (Ensure strict type check on app code)
 - `npx vitest run` (or `npm test`)
-- `npm run test:e2e` (when UI/flow actions are changed)
+- `npm run build`
+- `npm run test:e2e` (when relevant UI/flow coverage exists or the change adds/updates an E2E-owned contract)
 
 If only a targeted test run is appropriate, explain why and choose the smallest
 relevant test scope that still protects the change.
@@ -106,4 +125,3 @@ relevant test scope that still protects the change.
 - Be explicit about which behavior is being fixed or specified.
 - Mention which test file owns the new contract.
 - Call out any remaining manual-check-only risk.
-

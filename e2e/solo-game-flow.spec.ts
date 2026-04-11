@@ -1,103 +1,81 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import path from 'path';
 
+const dummyDeckPath = path.resolve(process.cwd(), 'e2e/fixtures/dummy-deck.json');
+
+const boardSection = (page: Page, side: 'top' | 'bottom') =>
+  page.getByTestId(`board-section-${side}`);
+
+const deckInput = (page: Page, side: 'top' | 'bottom') =>
+  boardSection(page, side).locator('input[type="file"]');
+
+const zoneCards = (page: Page, zoneId: string) =>
+  page.getByTestId(`zone-${zoneId}`).locator('[data-card-id]');
+
+const leaderZoneCards = (page: Page, role: 'host' | 'guest') =>
+  page.getByTestId(`leader-zone-leader-${role}`).locator('[data-card-id]');
+
 test.describe('Solo Game Flow', () => {
-    test('home page displays correctly', async ({ page }) => {
-        await page.goto('/');
-        await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    });
+  test('home page displays correctly', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  });
 
-    test('navigates to solo mode via direct URL', async ({ page }) => {
-        await page.goto('/game?mode=solo');
-        await expect(page).toHaveURL(/mode=solo/);
-        await page.waitForLoadState('networkidle');
-    });
+  test('navigates to solo mode via direct URL', async ({ page }) => {
+    await page.goto('/game?mode=solo');
+    await expect(page).toHaveURL(/mode=solo/);
+    await expect(page.getByTestId('board-section-bottom')).toBeVisible();
+  });
 
-    test('full solo game setup and drag-and-drop flow', async ({ page }) => {
-        await page.goto('/game?mode=solo');
-        // Listen to console and dialogs
-        page.on('console', msg => console.log(`[Browser Console] ${msg.type()}: ${msg.text()}`));
-        page.on('dialog', dialog => {
-            console.log(`[Browser Dialog] ${dialog.message()}`);
-            dialog.accept();
-        });
+  test('imports valid solo decks, starts a game, and moves a hand card onto the field', async ({ page }) => {
+    await page.goto('/game?mode=solo');
+    const preparationControls = page.getByTestId('preparation-controls');
 
-        // 1. Upload Deck for 1P (Bottom Panel)
-        const dummyDeckPath = path.resolve(process.cwd(), 'e2e/fixtures/dummy-deck.json');
-        
-        // Find the bottom panel file input (1P) and top panel file input (2P)
-        const inputs = page.locator('input[type="file"]');
-        await expect(inputs).toHaveCount(2);
-        
-        // Upload to both 1P and 2P to ensure both have decks
-        await inputs.last().setInputFiles(dummyDeckPath); 
-        await page.waitForTimeout(500); // Give React time to process the file
-        await inputs.first().setInputFiles(dummyDeckPath);
-        await page.waitForTimeout(500); // Give React time to process the file
+    await deckInput(page, 'bottom').setInputFiles(dummyDeckPath);
+    await deckInput(page, 'top').setInputFiles(dummyDeckPath);
 
-        // 2. Preparation Phase interactions (Draw Hand & Ready)
-        // Draw hands (1P -> bottomRole - FIRST in DOM)
-        const drawHandBtn1 = page.locator('button', { hasText: /初期手札を引く|Draw Hand/ }).first();
-        await expect(drawHandBtn1).toBeVisible({ timeout: 10000 });
-        await drawHandBtn1.click();
+    await expect(leaderZoneCards(page, 'host')).toHaveCount(1);
+    await expect(leaderZoneCards(page, 'guest')).toHaveCount(1);
 
-        // 1P Ready
-        const readyBtn1p = page.locator('button', { hasText: /1P 準備完了|Ready/ }).first();
-        await expect(readyBtn1p).toBeVisible();
-        await readyBtn1p.click();
+    await preparationControls.getByRole('button', { name: /^(?:1P 先行|Player 1 1st)$/ }).click();
 
-        // 2P Draw Hand (SECOND in DOM)
-        const drawHandBtn2 = page.locator('button', { hasText: /初期手札を引く|Draw Hand/ }).last();
-        await expect(drawHandBtn2).toBeVisible();
-        await drawHandBtn2.click();
+    await preparationControls.getByRole('button', { name: /^(?:🃏 )?(?:初期手札を引く \(4枚\)|Draw Hand \(4\))$/ }).click();
+    await expect(zoneCards(page, 'hand-host')).toHaveCount(4);
 
-        // 2P Ready
-        const readyBtn2p = page.locator('button', { hasText: /2P 準備完了|Ready/ }).last();
-        await expect(readyBtn2p).toBeVisible();
-        await readyBtn2p.click();
+    await preparationControls.getByRole('button', { name: /^(?:✅ )?(?:1P 準備完了|Player 1 Ready)$/ }).click();
 
-        // 3. Start Game
-        const startGameBtn = page.locator('button', { hasText: /ゲーム開始|Start Game/ });
-        await expect(startGameBtn).toBeEnabled();
-        await startGameBtn.click();
+    await preparationControls.getByRole('button', { name: /^(?:🃏 )?(?:2P 初期手札を引く \(4枚\)|Draw P2 Hand \(4\))$/ }).click();
+    await expect(zoneCards(page, 'hand-guest')).toHaveCount(4);
 
-        // Wait for preparing phase to transition to playing phase
-        // The preparation controls should disappear
-        await expect(page.getByTestId('preparation-controls')).not.toBeVisible();
+    await preparationControls.getByRole('button', { name: /^(?:✅ )?(?:2P 準備完了|Player 2 Ready)$/ }).click();
 
-        // 4. Verify turn state
-        // Look for the "1P ターン" or similar indicator (class or text)
-        await expect(page.locator('text=1P').first()).toBeVisible();
+    await preparationControls.getByRole('button', { name: /^(?:▶ )?(?:ゲーム開始|START GAME)$/ }).click();
 
-        // 5. Card Draw from Deck (Test UI Buttons)
-        // Click the Draw button in 1P's control panel
-        const drawBtn1p = page.locator('[data-testid="board-section-bottom"] button', { hasText: /カードを引く|Draw/ });
-        await drawBtn1p.click();
-        await page.waitForTimeout(500); // Give it a moment to animate/sync
+    await expect(page.getByTestId('preparation-controls')).toBeHidden();
+    await expect(boardSection(page, 'bottom')).toHaveAttribute('data-turn-active', 'true');
+    await expect(boardSection(page, 'top')).toHaveAttribute('data-turn-active', 'false');
 
-        // 6. UI Parameter manipulation (Leader stats)
-        // Click the + button on 1P's tracker (HP usually comes first)
-        const tracker1p = page.getByTestId('player-tracker-host'); // Bottom is host in solo
-        const plusButton = tracker1p.locator('button', { hasText: '+' }).first();
-        await plusButton.click();
+    const hostHandCards = zoneCards(page, 'hand-host');
+    const hostFieldCards = zoneCards(page, 'field-host');
 
-        // 7. Drag and Drop Card from Hand to Field
-        // Get the first card from 1P's hand
-        const handZone = page.getByTestId('zone-hand-host'); // Bottom role is usually 'host' in solo mode
-        const firstCardInHand = handZone.locator('[data-card-id], [data-testid="mock-card"]').first();
-        
-        // Ensure card is visible before dragging
-        await expect(firstCardInHand).toBeVisible();
-        
-        const fieldZone = page.getByTestId('zone-field-host');
-        await expect(fieldZone).toBeVisible();
+    await expect(hostFieldCards).toHaveCount(0);
 
-        // Perform drag and drop into the field zone
-        await firstCardInHand.dragTo(fieldZone);
-        await page.waitForTimeout(500); // Wait for drop animation/sync
+    await boardSection(page, 'bottom')
+      .getByRole('button', { name: /カードを引く|Draw/ })
+      .click();
+    await expect(hostHandCards).toHaveCount(5);
 
-        // Verify the card was moved (the field zone should now contain a card)
-        const cardsInField = fieldZone.locator('[data-card-id], [data-testid="mock-card"]');
-        await expect(cardsInField).toHaveCount(1);
-    });
+    await page.getByTestId('player-tracker-host-hp-increase').click();
+    await expect(page.getByTestId('player-tracker-host')).toContainText('HP: 21');
+
+    const firstCardInHand = hostHandCards.first();
+    const fieldZone = page.getByTestId('zone-field-host');
+
+    await firstCardInHand.scrollIntoViewIfNeeded();
+    await fieldZone.scrollIntoViewIfNeeded();
+    await firstCardInHand.dragTo(fieldZone);
+
+    await expect(hostFieldCards).toHaveCount(1);
+    await expect(hostHandCards).toHaveCount(4);
+  });
 });

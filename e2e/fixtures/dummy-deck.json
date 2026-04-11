@@ -1,13 +1,79 @@
 {
+  "deckName": "E2E Dummy Deck",
   "mainDeck": [
-    { "id": "TEST-001", "name": "Test Card 1", "image": "https://example.com/test1.jpg" },
-    { "id": "TEST-002", "name": "Test Card 2", "image": "https://example.com/test2.jpg" },
-    { "id": "TEST-003", "name": "Test Card 3", "image": "https://example.com/test3.jpg" },
-    { "id": "TEST-004", "name": "Test Card 4", "image": "https://example.com/test4.jpg" },
-    { "id": "TEST-005", "name": "Test Card 5", "image": "https://example.com/test5.jpg" }
+    {
+      "id": "E2E-M01",
+      "name": "E2E Follower 1",
+      "image": "/card_back.png",
+      "deck_section": "main",
+      "card_kind_normalized": "follower",
+      "type": "Follower"
+    },
+    {
+      "id": "E2E-M02",
+      "name": "E2E Follower 2",
+      "image": "/card_back.png",
+      "deck_section": "main",
+      "card_kind_normalized": "follower",
+      "type": "Follower"
+    },
+    {
+      "id": "E2E-M03",
+      "name": "E2E Follower 3",
+      "image": "/card_back.png",
+      "deck_section": "main",
+      "card_kind_normalized": "follower",
+      "type": "Follower"
+    },
+    {
+      "id": "E2E-M04",
+      "name": "E2E Follower 4",
+      "image": "/card_back.png",
+      "deck_section": "main",
+      "card_kind_normalized": "follower",
+      "type": "Follower"
+    },
+    {
+      "id": "E2E-M05",
+      "name": "E2E Follower 5",
+      "image": "/card_back.png",
+      "deck_section": "main",
+      "card_kind_normalized": "follower",
+      "type": "Follower"
+    },
+    {
+      "id": "E2E-M06",
+      "name": "E2E Spell 1",
+      "image": "/card_back.png",
+      "deck_section": "main",
+      "card_kind_normalized": "spell",
+      "type": "Spell"
+    }
   ],
   "evolveDeck": [
-    { "id": "TEST-006", "name": "Test Evolve 1", "image": "https://example.com/test_e1.jpg" }
+    {
+      "id": "E2E-E01",
+      "name": "E2E Evolve 1",
+      "image": "/card_back.png",
+      "deck_section": "evolve",
+      "card_kind_normalized": "follower",
+      "type": "Follower"
+    },
+    {
+      "id": "E2E-E02",
+      "name": "E2E Evolve 2",
+      "image": "/card_back.png",
+      "deck_section": "evolve",
+      "card_kind_normalized": "follower",
+      "type": "Follower"
+    }
   ],
-  "leaderCard": { "id": "TEST-L01", "name": "Test Leader", "image": "https://example.com/test_leader.jpg" }
+  "leaderCard": {
+    "id": "E2E-L01",
+    "name": "E2E Leader",
+    "image": "/card_back.png",
+    "deck_section": "leader",
+    "card_kind_normalized": "leader",
+    "type": "Leader"
+  }
 }
