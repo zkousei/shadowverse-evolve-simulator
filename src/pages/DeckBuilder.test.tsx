@@ -1566,7 +1566,7 @@ describe('DeckBuilder', () => {
   });
 
   it('keeps the DeckLog import modal open when cancel is pressed during an in-flight import', async () => {
-    let resolveFetch: ((value: Response) => void) | null = null;
+    let resolveFetch!: (value: Response | PromiseLike<Response>) => void;
     vi.stubGlobal(
       'fetch',
       vi.fn().mockImplementation(() => new Promise<Response>((resolve) => {
@@ -1595,7 +1595,7 @@ describe('DeckBuilder', () => {
         .getByPlaceholderText('e.g. a DeckLog code or a public DeckLog URL')
     ).toHaveValue('https://decklog.bushiroad.com/view/PENDING');
 
-    resolveFetch?.({
+    resolveFetch({
       ok: false,
       status: 404,
       json: vi.fn().mockResolvedValue({}),

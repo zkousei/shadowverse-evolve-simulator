@@ -36,6 +36,12 @@ drag/drop feel, P2P browser behavior, and visual layout.
   - `src/hooks/gameBoardDialogViewModel.test.ts` — saved deck picker, token spawn
   - `src/components/gameBoardMenuActions.test.ts` — menu action builders
   - `src/components/gameBoardZoneActionViewModel.test.ts` — zone action config builders
+- Deck Builder logic (State & Hooks):
+  - `src/hooks/useDeckBuilderLibraryFilters.test.ts` — search, cost, class filters
+  - `src/hooks/useDeckBuilderSavedDeckUi.test.ts` — saved deck search, bulk selection
+  - `src/hooks/useDeckBuilderSessionTracking.test.ts` — draft persistence, dirty state
+  - `src/hooks/useDeckBuilderPreviewUi.test.ts` — card preview, hover positioning
+  - `src/hooks/useDeckBuilderModalUi.test.ts` — dialog timing, import/reset modals
 - Page-level user flows and dialog behavior (DOM integration):
   - `src/pages/GameBoard.test.tsx`
   - `src/pages/DeckBuilder.test.tsx`
@@ -88,7 +94,7 @@ for the underlying rule, contract, or E2E flow as soon as practical.
 Unless the user explicitly asks for a narrower scope, aim to finish changes with:
 
 - `npm run lint`
-- `npx tsc --noEmit`
+- `npx tsc --noEmit -p tsconfig.app.json` (Ensure strict type check on app code)
 - `npx vitest run` (or `npm test`)
 - `npm run test:e2e` (when UI/flow actions are changed)
 
