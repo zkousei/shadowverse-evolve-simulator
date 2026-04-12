@@ -26,3 +26,7 @@ coverage
 
 # Virtual Environment
 .venv/
+
+# Playwright
+test-results/
+playwright-report/

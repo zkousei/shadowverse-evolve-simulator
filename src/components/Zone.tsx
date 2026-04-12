@@ -94,6 +94,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
   return (
     <div
       ref={setNodeRef}
+      data-testid={`zone-${id}`}
       style={{
         flex: 1,
         minHeight: '160px',

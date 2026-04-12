@@ -5,7 +5,8 @@ This file defines the default development rules for Codex in this repository.
 ## Primary Goal
 
 Make feature development safe enough that most changes can be validated with
-`lint`, `test`, and `build`, with only minimal manual verification left for
+`lint`, `test`, and `build`, with targeted E2E coverage where it materially
+improves confidence, and with only minimal manual verification left for
 drag/drop feel, P2P browser behavior, and visual layout.
 
 ## Default Development Style
@@ -16,6 +17,25 @@ drag/drop feel, P2P browser behavior, and visual layout.
 - Do not change production code without adding or updating the relevant test,
   unless the user explicitly asks for investigation only.
 - Favor small, behavior-preserving changes.
+- Follow the `red -> green -> refactor` loop when practical:
+  - `red`: add or update a test that fails for the intended reason.
+  - `green`: make the smallest production change that makes the test pass.
+  - `refactor`: clean up names, structure, or duplication while keeping tests green.
+
+## TDD Exceptions
+
+TDD is the default, but the following cases may justify starting without a new
+failing test:
+
+- Investigation-only work explicitly requested by the user
+- Test harness or fixture repair where the production behavior is not changing
+- Browser/platform quirks that can only be reproduced after confirming the
+  issue manually first
+- Very small non-behavioral edits such as comments, copy-only text changes, or
+  dead-code deletion with already-sufficient coverage
+
+If work starts under one of these exceptions, add or update the most relevant
+automated test as soon as the behavior becomes clear.
 
 ## Where Tests Should Go
 
@@ -23,11 +43,41 @@ drag/drop feel, P2P browser behavior, and visual layout.
   - `src/utils/cardLogic.test.ts`
 - Reducer event handling, guards, no-op behavior, undo/turn rules:
   - `src/utils/gameSyncReducer.test.ts`
-- P2P, reconnect, snapshot, saved-session, and shared UI effect contracts:
+- Lower-level P2P, reconnect, snapshot, saved-session, and shared UI effect rules:
+  - `src/utils/gameBoard*.test.ts`
+  - Prefer the narrowest existing utility/contract test first when behavior is
+    already factored there (snapshot queue, waiting state, peer open/close,
+    incoming event handling, connection termination, etc.).
+- Cross-helper orchestration and end-to-end hook contracts:
   - `src/hooks/useGameBoardLogic.test.tsx`
-- Page-level user flows and dialog behavior:
+- Action hook dispatch and internal branching logic:
+  - `src/hooks/useGameBoardFieldActions.test.tsx` — drag-end, link, evolve auto-attach, counters, spawn tokens
+  - `src/hooks/useGameBoardCardActions.test.tsx` — draw, mill, discard, look-at-top, undo card move
+  - `src/hooks/useGameBoardSystemActions.test.tsx` — stat change, phase, turn, coin flip, dice roll
+  - `src/hooks/useGameBoardMulliganActions.test.tsx` — mulligan start, select, execute
+  - `src/hooks/useGameBoardSetupActions.test.tsx` — deck import, deck upload, reset
+- ViewModel and presentation logic:
+  - `src/hooks/gameBoardViewModel.test.ts` — board layout, roles, import, hand visibility, end stop
+  - `src/hooks/gameBoardDialogViewModel.test.ts` — saved deck picker, token spawn
+  - `src/components/gameBoardMenuActions.test.ts` — menu action builders
+  - `src/components/gameBoardZoneActionViewModel.test.ts` — zone action config builders
+- Deck Builder logic (State & Hooks):
+  - `src/hooks/useDeckBuilderLibraryFilters.test.ts` — search, cost, class filters
+  - `src/hooks/useDeckBuilderSavedDeckUi.test.ts` — saved deck search, bulk selection
+  - `src/hooks/useDeckBuilderSessionTracking.test.ts` — draft persistence, dirty state
+  - `src/hooks/useDeckBuilderPreviewUi.test.ts` — card preview, hover positioning
+  - `src/hooks/useDeckBuilderModalUi.test.ts` — dialog timing, import/reset modals
+- Component-level UI wiring and DOM behavior:
+  - `src/components/GameBoard*.test.tsx`
+  - `src/components/DeckBuilder*.test.tsx`
+  - `src/components/Zone.test.tsx`
+  - Prefer this layer before page tests when the behavior is confined to a
+    single component tree or dialog host.
+- Page-level user flows and dialog behavior (DOM integration):
   - `src/pages/GameBoard.test.tsx`
   - `src/pages/DeckBuilder.test.tsx`
+- End-to-End browser usage, drag/drop, and full UI flows:
+  - `e2e/*.spec.ts`
 
 Choose the lowest-level test that can fully express the behavior.
 
@@ -36,13 +86,36 @@ Choose the lowest-level test that can fully express the behavior.
 When implementing a change, decide the layer first:
 
 1. If the behavior is a pure rule, test it in `cardLogic` or `gameSyncReducer`.
-2. If the behavior is a synchronization or orchestration contract, test it in
-   `useGameBoardLogic`.
-3. If the behavior is a user flow, modal flow, or page wiring concern, test it
-   at the page level.
+2. If the behavior is a dispatch or action-hook concern (what event payload to
+   send, internal branching like auto-attach or solo-mode actor resolution),
+   test it in the relevant action hook test file.
+3. If the behavior is a synchronization or orchestration contract (P2P,
+   reconnect, snapshot), first ask whether a narrower `src/utils/gameBoard*.test.ts`
+   can own it; use `useGameBoardLogic` when the behavior spans helpers or is
+   truly hook-level orchestration.
+4. If the behavior is a DOM/View wiring concern inside one component tree,
+   test it at the component UI level.
+5. If the behavior spans page composition or page-local UI state interactions,
+   test it at the page integration level.
+6. If the behavior involves multi-page flows, real DOM coordinate drag-and-drop,
+   or exact layout/browser interactions, test it at the E2E level via Playwright.
 
 Do not start by editing page code if the behavior can be specified at a lower,
 more stable layer.
+
+## TDD Execution Loop
+
+For normal feature or bug-fix work, follow this order:
+
+1. State the behavior to lock down in one short sentence.
+2. Choose the narrowest test layer that can fully express that behavior.
+3. Add the failing test first and confirm it fails for the expected reason.
+4. Make the smallest production change that turns the test green.
+5. Run the smallest relevant verification scope while iterating.
+6. Once the change is stable, run the broader completion checks.
+
+Prefer targeted runs during the inner loop, then finish with the broader
+repository checks listed below.
 
 ## Manual Verification Policy
 
@@ -50,12 +123,14 @@ Manual verification should be the exception, not the default.
 
 Keep manual checks limited to:
 
-- Drag/drop hit behavior and feel
-- Real browser P2P timing differences
-- Visual layout, overlay, and z-index issues
+- Extremely nuanced UI animations and exact visual "feel"
+- Safari/Mobile specific quirks (as we currently focus E2E locally on Chromium)
+- Real network P2P timing anomalies (WebRTC across devices)
+
+(Note: With Playwright now available in `e2e/`, drag/drop flows and modal visibility should be automated where ROI is reasonable).
 
 If a manual check reveals an important regression risk, add an automated test
-for the underlying rule or contract as soon as practical.
+for the underlying rule, contract, or E2E flow as soon as practical.
 
 ## Safe Change Rules
 
@@ -70,15 +145,25 @@ for the underlying rule or contract as soon as practical.
 Unless the user explicitly asks for a narrower scope, aim to finish changes with:
 
 - `npm run lint`
-- `npm test -- --run`
+- `npx tsc --noEmit -p tsconfig.app.json` (Ensure strict type check on app code)
+- `npx vitest run` (or `npm test -- --run`)
 - `npm run build`
+- `npm run test:e2e` (when relevant UI/flow coverage exists or the change adds/updates an E2E-owned contract)
 
 If only a targeted test run is appropriate, explain why and choose the smallest
 relevant test scope that still protects the change.
+
+## Test Ownership Rule
+
+Every production behavior change should have a clear owning test file.
+
+- In updates and final reports, mention which test file now owns the contract.
+- If a behavior spans multiple layers, prefer giving one layer primary ownership
+  and use higher layers only for integration confidence.
+- If the right owner is unclear, prefer the lower and more stable layer.
 
 ## Communication Expectations
 
 - Be explicit about which behavior is being fixed or specified.
 - Mention which test file owns the new contract.
 - Call out any remaining manual-check-only risk.
-

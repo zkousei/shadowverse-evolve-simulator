@@ -3,23 +3,22 @@ import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Peer from 'peerjs';
 import type { DataConnection } from 'peerjs';
-import { type DragEndEvent } from '@dnd-kit/core';
+
 import { type CardInstance } from '../components/Card';
 import { type PlayerRole, type SyncState, type TokenOption, initialState } from '../types/game';
 import { type AttackTarget, type GameSyncEvent, type SharedUiEffect } from '../types/sync';
 import { uuid } from '../utils/helpers';
 import * as CardLogic from '../utils/cardLogic';
-import { canImportDeck } from '../utils/gameRules';
+
 import { applyGameSyncEvent } from '../utils/gameSyncReducer';
 import { flipSharedCoin, rollSharedDie } from '../utils/sharedRandom';
 import { createEventDeduper } from '../utils/eventDeduper';
 import { buildTopDeckRevealEffect } from '../utils/topDeckReveal';
 import { buildTopDeckSummaryEffect } from '../utils/topDeckSummary';
-import { buildHandRevealEffect, buildSingleCardRevealEffect } from '../utils/cardReveal';
+import { buildSingleCardRevealEffect } from '../utils/cardReveal';
 import { buildAttackDeclaredEffect } from '../utils/attackUi';
 import { buildCardPlayedEffect } from '../utils/cardPlayUi';
-import { buildImportedDeckPayload, buildSpawnTokenInstance, buildSpawnTokens, type ImportableDeckData } from '../utils/gameBoardDeckActions';
-import { buildClosedMulliganState, buildStartedMulliganState, toggleMulliganOrderSelection } from '../utils/gameBoardMulligan';
+
 import {
   buildSnapshotRequestMessage,
   buildSnapshotSyncMessage,
@@ -33,12 +32,13 @@ import { getSnapshotRetryTimeoutDecision } from '../utils/gameBoardSnapshotRetry
 import { buildDebugGameBoardState } from '../utils/gameBoardDebugState';
 import { getCanUndoMove, getCanUndoTurn } from '../utils/gameBoardUndoAvailability';
 import { getTurnMessageDecision } from '../utils/gameBoardTurnMessage';
-import { findUnitRootCard, isEquipmentLinkTargetCard, isTokenEquipmentCard } from '../utils/gameBoardManualLink';
-import { canLookAtTopDeck, getCanInteractWithGameBoard, getCanViewGameBoard } from '../utils/gameBoardInteraction';
+
+import { getCanInteractWithGameBoard, getCanViewGameBoard } from '../utils/gameBoardInteraction';
 import {
   buildGameBoardEvolveAutoAttachSelection,
   type PendingGameBoardEvolveAutoAttachSelection,
 } from '../utils/gameBoardEvolveAutoAttachSelection';
+
 import { useGameBoardCatalogResources } from './useGameBoardCatalogResources';
 import { useGameBoardConnectionSetup } from './useGameBoardConnectionSetup';
 import { useGameBoardConnectionLifecycleState } from './useGameBoardConnectionLifecycleState';
@@ -46,8 +46,13 @@ import { useGameBoardIncomingMessages } from './useGameBoardIncomingMessages';
 import { useGameBoardSnapshotMessaging } from './useGameBoardSnapshotMessaging';
 import { useGameBoardSharedUiEffects } from './useGameBoardSharedUiEffects';
 import { useGameBoardSessionPersistence } from './useGameBoardSessionPersistence';
+import { useGameBoardSetupActions } from './useGameBoardSetupActions';
+import { useGameBoardFieldActions } from './useGameBoardFieldActions';
+import { useGameBoardCardActions } from './useGameBoardCardActions';
+import { useGameBoardSystemActions } from './useGameBoardSystemActions';
+import { useGameBoardMulliganActions } from './useGameBoardMulliganActions';
 
-type DispatchableGameSyncEvent =
+export type DispatchableGameSyncEvent =
   | { type: 'FLIP_SHARED_COIN'; actor?: PlayerRole }
   | { type: 'ROLL_SHARED_DIE'; actor?: PlayerRole }
   | { type: 'TOGGLE_READY'; actor?: PlayerRole }
@@ -987,359 +992,115 @@ export const useGameBoardLogic = () => {
     );
   }, [clearTurnMessage, gameState.gameStatus, gameState.turnCount, gameState.turnPlayer, isSoloMode, isSpectator, role, showTimedTurnMessage, t]);
 
-  const handleStatChange = (playerKey: 'host' | 'guest', stat: 'hp' | 'pp' | 'maxPp' | 'ep' | 'sep' | 'combo', delta: number) => {
-    dispatchGameEvent({ type: 'MODIFY_PLAYER_STAT', playerKey, stat, delta });
-  };
+  const {
+    handleStatChange,
+    setPhase,
+    endTurn,
+    handleUndoTurn,
+    handleSetInitialTurnOrder,
+    handlePureCoinFlip,
+    handleRollDice,
+    handleStartGame,
+    handleToggleReady,
+    handleDrawInitialHand,
+  } = useGameBoardSystemActions({
+    canInteract,
+    canUndoTurn,
+    isRollingDice,
+    showTimedTurnMessage,
+    t,
+    dispatchGameEvent,
+  });
 
-  const setPhase = (newPhase: 'Start' | 'Main' | 'End') => {
-    dispatchGameEvent({ type: 'SET_PHASE', phase: newPhase });
-  };
+  const {
+    startMulligan,
+    handleMulliganOrderSelect,
+    executeMulligan,
+  } = useGameBoardMulliganActions({
+    canInteract,
+    mulliganOrder,
+    setMulliganOrder,
+    setIsMulliganModalOpen,
+    dispatchGameEvent,
+  });
 
-  const endTurn = (actor?: PlayerRole) => {
-    dispatchGameEvent({ type: 'END_TURN', actor });
-  };
+  const {
+    drawCard,
+    millCard,
+    moveTopCardToEx,
+    discardRandomHandCards,
+    revealHand,
+    handleLookAtTop,
+    handleResolveTopDeck,
+    handleUndoCardMove,
+  } = useGameBoardCardActions({
+    canInteract,
+    gameStatus: gameState.gameStatus,
+    gameStateCards: gameState.cards,
+    lastUndoableCardMoveState: gameState.lastUndoableCardMoveState,
+    lastUndoableCardMoveActor: gameState.lastUndoableCardMoveActor,
+    networkHasUndoableCardMove: gameState.networkHasUndoableCardMove,
+    isSoloMode,
+    isHost,
+    role,
+    playSharedUiEffect,
+    sendSharedUiEffect,
+    dispatchGameEvent,
+    setTopDeckTargetRole,
+    setTopDeckCards,
+  });
 
-  const handleUndoTurn = () => {
-    if (!canUndoTurn) return;
-    dispatchGameEvent({ type: 'UNDO_LAST_TURN' });
-  };
 
-  const handleSetInitialTurnOrder = (forcedStarter?: 'host' | 'guest') => {
-    const isHostFirst = forcedStarter ? (forcedStarter === 'host') : (Math.random() > 0.5);
-    const starter = isHostFirst ? 'host' : 'guest';
-    dispatchGameEvent({ type: 'SET_INITIAL_TURN_ORDER', starter, manual: Boolean(forcedStarter) });
-  };
 
-  const handlePureCoinFlip = () => {
-    dispatchGameEvent({ type: 'FLIP_SHARED_COIN' });
-  };
+  const {
+    handleExtractCard,
+    spawnToken,
+    spawnTokens,
+    handleModifyCounter,
+    handleModifyGenericCounter,
+    handleDragEnd,
+    toggleTap,
+    handleFlipCard,
+    handleSendToBottom,
+    handleBanish,
+    handlePlayToField,
+    handleDeclareAttack,
+    handleSetRevealHandsMode,
+    handleSetEndStop,
+    handleSendToCemetery,
+    handleReturnEvolve,
+    handleShuffleDeck,
+  } = useGameBoardFieldActions({
+    gameStateRef,
+    isSoloMode,
+    role,
+    uuid,
+    defaultTokenOption,
+    cardCatalogByIdRef,
+    tokenEquipmentCardIdsRef,
+    fieldLinkCardIdsRef,
+    setSearchZone,
+    resolveEvolveAutoAttachSelection,
+    executeEvolveAutoAttach,
+    queueEvolveAutoAttachSelection,
+    dispatchGameEvent,
+  });
 
-  const handleRollDice = () => {
-    if (isRollingDice) return;
-    dispatchGameEvent({ type: 'ROLL_SHARED_DIE' });
-  };
+  const {
+    confirmResetGame,
+    importDeckData,
+    handleDeckUpload,
+  } = useGameBoardSetupActions({
+    canInteract,
+    gameState,
+    role,
+    uuid,
+    dispatchGameEvent,
+    setShowResetConfirm,
+    t,
+  });
 
-  const handleStartGame = () => {
-    if (!canInteract) return;
-    dispatchGameEvent({ type: 'START_GAME' });
-    showTimedTurnMessage(t('gameBoard.alerts.gameStart'), 2500);
-  };
 
-  const handleToggleReady = (targetRole?: PlayerRole) => {
-    dispatchGameEvent({ type: 'TOGGLE_READY', actor: targetRole });
-  };
-
-  const handleDrawInitialHand = (targetRole?: PlayerRole) => {
-    dispatchGameEvent({ type: 'DRAW_INITIAL_HAND', actor: targetRole });
-  };
-
-  const startMulligan = () => {
-    if (!canInteract) return;
-    const nextState = buildStartedMulliganState();
-    setMulliganOrder(nextState.mulliganOrder);
-    setIsMulliganModalOpen(nextState.isMulliganModalOpen);
-  };
-
-  const handleMulliganOrderSelect = (cardId: string) => {
-    if (!canInteract) return;
-    setMulliganOrder((prev) => toggleMulliganOrderSelection(prev, cardId));
-  };
-
-  const executeMulligan = (targetRole?: PlayerRole) => {
-    dispatchGameEvent({ type: 'EXECUTE_MULLIGAN', actor: targetRole, selectedIds: mulliganOrder });
-    setIsMulliganModalOpen(buildClosedMulliganState().isMulliganModalOpen);
-  };
-
-  const drawCard = (targetRole?: PlayerRole) => {
-    dispatchGameEvent({ type: 'DRAW_CARD', actor: targetRole });
-  };
-
-  const millCard = (targetRole?: PlayerRole) => {
-    dispatchGameEvent({ type: 'MILL_CARD', actor: targetRole });
-  };
-
-  const moveTopCardToEx = (targetRole?: PlayerRole) => {
-    dispatchGameEvent({ type: 'MOVE_TOP_CARD_TO_EX', actor: targetRole });
-  };
-
-  const discardRandomHandCards = (targetRole: PlayerRole, count: number, actor: PlayerRole = role) => {
-    if (!Number.isFinite(count)) return;
-    const normalizedCount = Math.floor(count);
-    if (normalizedCount <= 0) return;
-    dispatchGameEvent({
-      type: 'DISCARD_RANDOM_HAND_CARDS',
-      actor,
-      target: targetRole,
-      count: normalizedCount,
-    });
-  };
-
-  const revealHand = () => {
-    if (isSoloMode || !canInteract || gameStateRef.current.gameStatus !== 'playing') return;
-    const effect = buildHandRevealEffect(gameStateRef.current.cards, role);
-    if (!effect) return;
-
-    playSharedUiEffect(effect);
-    sendSharedUiEffect(effect);
-  };
-
-  const handleLookAtTop = (n: number, targetRole: PlayerRole = role) => {
-    if (!canLookAtTopDeck({ canInteract, gameStatus: gameState.gameStatus })) return;
-    const myDeck = gameState.cards.filter(c => c.zone === `mainDeck-${targetRole}`);
-    setTopDeckTargetRole(targetRole);
-    setTopDeckCards(myDeck.slice(0, n));
-  };
-
-  const handleResolveTopDeck = (results: CardLogic.TopDeckResult[], targetRole?: PlayerRole) => {
-    dispatchGameEvent({ type: 'RESOLVE_TOP_DECK', actor: targetRole, results });
-    setTopDeckCards([]);
-  };
-
-  const handleUndoCardMove = () => {
-    const canUndo = isSoloMode || isHost
-      ? !!gameState.lastUndoableCardMoveState
-      : !!(gameState.networkHasUndoableCardMove ?? gameState.lastUndoableCardMoveState);
-    if (!canUndo) return;
-    const undoActor = isSoloMode
-      ? gameState.lastUndoableCardMoveActor ?? role
-      : role;
-    dispatchGameEvent({ type: 'UNDO_CARD_MOVE', actor: undoActor });
-  };
-
-  const handleExtractCard = (
-    cardId: string,
-    customDestination?: string,
-    targetRole?: PlayerRole,
-    revealToOpponent = false
-  ) => {
-    const actor = targetRole ?? role;
-
-    if (customDestination?.startsWith(`field-${actor}`)) {
-      const sourceCard = gameStateRef.current.cards.find(card => card.id === cardId);
-      if (sourceCard?.zone === `evolveDeck-${actor}`) {
-        const resolvedSelection = resolveEvolveAutoAttachSelection(cardId);
-        if (resolvedSelection?.candidateCards.length === 1) {
-          executeEvolveAutoAttach(
-            cardId,
-            actor,
-            resolvedSelection.candidateCards[0].id,
-            resolvedSelection.placement
-          );
-          setSearchZone(null);
-          return;
-        }
-
-        if (resolvedSelection && resolvedSelection.candidateCards.length > 1) {
-          queueEvolveAutoAttachSelection(cardId, actor);
-          setSearchZone(null);
-          return;
-        }
-      }
-    }
-
-    dispatchGameEvent({ type: 'EXTRACT_CARD', actor, cardId, destination: customDestination, revealToOpponent });
-    setSearchZone(null);
-  };
-
-  const confirmResetGame = () => {
-    setShowResetConfirm(false);
-    dispatchGameEvent({ type: 'RESET_GAME' });
-  };
-
-  const importDeckData = (data: ImportableDeckData, targetRole: PlayerRole = role) => {
-    const payload = buildImportedDeckPayload(data, targetRole, uuid);
-
-    dispatchGameEvent({
-      type: 'IMPORT_DECK',
-      actor: targetRole,
-      cards: payload.cards,
-      tokenOptions: payload.tokenOptions,
-    });
-  };
-
-  const handleDeckUpload = (event: React.ChangeEvent<HTMLInputElement>, targetRole: PlayerRole = role) => {
-    if (!canInteract) {
-      event.target.value = '';
-      return;
-    }
-    if (!canImportDeck(gameState, targetRole)) {
-      event.target.value = '';
-      return;
-    }
-    const file = event.target.files?.[0];
-    if (!file) return;
-    event.target.value = '';
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = JSON.parse(e.target?.result as string) as ImportableDeckData;
-        importDeckData(data, targetRole);
-      } catch { alert(t('deckBuilder.alerts.importFailed')); }
-    };
-    reader.readAsText(file);
-  };
-
-  const spawnToken = (
-    targetRole: PlayerRole = role,
-    tokenOption?: TokenOption,
-    destination: 'ex' | 'field' = 'ex'
-  ) => {
-    const selectedToken = tokenOption ?? defaultTokenOption.current;
-    const newCard = buildSpawnTokenInstance(targetRole, selectedToken, destination, uuid);
-    dispatchGameEvent({ type: 'SPAWN_TOKEN', actor: targetRole, token: newCard });
-  };
-
-  const spawnTokens = (
-    targetRole: PlayerRole = role,
-    tokenSelections: Array<{ tokenOption: TokenOption; count: number }>,
-    destination: 'ex' | 'field' = 'ex'
-  ) => {
-    const tokens = buildSpawnTokens(targetRole, tokenSelections, destination, uuid);
-
-    if (tokens.length === 0) return;
-    if (tokens.length === 1) {
-      dispatchGameEvent({ type: 'SPAWN_TOKEN', actor: targetRole, token: tokens[0] });
-      return;
-    }
-
-    dispatchGameEvent({ type: 'SPAWN_TOKENS_BATCH', actor: targetRole, tokens });
-  };
-
-  const handleModifyCounter = (cardId: string, stat: 'atk' | 'hp', delta: number, actor?: PlayerRole) => {
-    dispatchGameEvent({ type: 'MODIFY_COUNTER', actor, cardId, stat, delta });
-  };
-
-  const handleModifyGenericCounter = (cardId: string, delta: number, actor?: PlayerRole) => {
-    dispatchGameEvent({ type: 'MODIFY_GENERIC_COUNTER', actor, cardId, delta });
-  };
-
-  const getSoloCardMoveActor = (cardId: string): PlayerRole | undefined => {
-    if (!isSoloMode) return undefined;
-    return gameStateRef.current.cards.find(card => card.id === cardId)?.owner;
-  };
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over) return;
-    const cardId = active.id as string;
-    const overId = over.id as string;
-
-    const sourceCard = gameStateRef.current.cards.find(card => card.id === cardId);
-    const overCard = gameStateRef.current.cards.find(card => card.id === overId);
-    const overRootCard = overCard ? findUnitRootCard(gameStateRef.current.cards, overCard) : undefined;
-    const overCatalogCard = overRootCard ? cardCatalogByIdRef.current[overRootCard.cardId] : undefined;
-
-    const isEquipmentManualLink =
-      Boolean(
-        sourceCard &&
-        overRootCard &&
-        cardId !== overId &&
-        isTokenEquipmentCard(sourceCard, tokenEquipmentCardIdsRef.current) &&
-        (sourceCard.zone === `field-${sourceCard.owner}` || sourceCard.zone === `ex-${sourceCard.owner}`) &&
-        overRootCard.zone === `field-${sourceCard.owner}` &&
-        overRootCard.owner === sourceCard.owner &&
-        isEquipmentLinkTargetCard(overRootCard, overCatalogCard)
-      );
-
-    if (
-      sourceCard &&
-      overCard &&
-      cardId !== overId &&
-      (
-        (
-          fieldLinkCardIdsRef.current.has(sourceCard.cardId) &&
-          overCard.zone === `field-${sourceCard.owner}` &&
-          overCard.owner === sourceCard.owner
-        ) ||
-        isEquipmentManualLink
-      )
-    ) {
-      dispatchGameEvent({
-        type: 'LINK_CARD_TO_FIELD',
-        actor: sourceCard.owner,
-        cardId,
-        parentCardId: overRootCard?.id ?? overId,
-      });
-      return;
-    }
-
-    if (
-      sourceCard &&
-      sourceCard.zone === `evolveDeck-${sourceCard.owner}` &&
-      overId === `field-${sourceCard.owner}`
-    ) {
-      const resolvedSelection = resolveEvolveAutoAttachSelection(cardId);
-      if (resolvedSelection?.candidateCards.length === 1) {
-        executeEvolveAutoAttach(
-          cardId,
-          sourceCard.owner,
-          resolvedSelection.candidateCards[0].id,
-          resolvedSelection.placement
-        );
-        return;
-      }
-
-      if (resolvedSelection && resolvedSelection.candidateCards.length > 1) {
-        queueEvolveAutoAttachSelection(cardId, sourceCard.owner);
-        return;
-      }
-    }
-
-    dispatchGameEvent({
-      type: 'MOVE_CARD',
-      actor: isSoloMode ? sourceCard?.owner : undefined,
-      cardId,
-      overId,
-    });
-  };
-
-  const toggleTap = (cardId: string) => {
-    dispatchGameEvent({ type: 'TOGGLE_TAP', cardId });
-  };
-
-  const handleFlipCard = (cardId: string, targetRole?: PlayerRole) => {
-    dispatchGameEvent({ type: 'TOGGLE_FLIP', actor: targetRole, cardId });
-  };
-
-  const handleSendToBottom = (cardId: string) => {
-    dispatchGameEvent({ type: 'SEND_TO_BOTTOM', actor: getSoloCardMoveActor(cardId), cardId });
-  };
-
-  const handleBanish = (cardId: string) => {
-    dispatchGameEvent({ type: 'BANISH_CARD', actor: getSoloCardMoveActor(cardId), cardId });
-  };
-
-  const handlePlayToField = (cardId: string, targetRole?: PlayerRole) => {
-    dispatchGameEvent({ type: 'PLAY_TO_FIELD', actor: targetRole ?? getSoloCardMoveActor(cardId), cardId });
-  };
-
-  const handleDeclareAttack = (
-    attackerCardId: string,
-    target: AttackTarget,
-    targetRole?: PlayerRole
-  ) => {
-    dispatchGameEvent({ type: 'ATTACK_DECLARATION', actor: targetRole, attackerCardId, target });
-  };
-
-  const handleSetRevealHandsMode = (enabled: boolean) => {
-    dispatchGameEvent({ type: 'SET_REVEAL_HANDS_MODE', enabled });
-  };
-
-  const handleSetEndStop = (enabled: boolean) => {
-    dispatchGameEvent({ type: 'SET_END_STOP', enabled });
-  };
-
-  const handleSendToCemetery = (cardId: string) => {
-    dispatchGameEvent({ type: 'SEND_TO_CEMETERY', actor: getSoloCardMoveActor(cardId), cardId });
-  };
-
-  const handleReturnEvolve = (cardId: string) => {
-    dispatchGameEvent({ type: 'RETURN_EVOLVE', actor: getSoloCardMoveActor(cardId), cardId });
-  };
-
-  const handleShuffleDeck = (targetRole?: PlayerRole) => {
-    dispatchGameEvent({ type: 'SHUFFLE_DECK', actor: targetRole });
-  };
 
   const getCards = (zone: string) => gameState.cards.filter(c => c.zone === zone);
   const getTokenOptions = (targetRole: PlayerRole) => [
