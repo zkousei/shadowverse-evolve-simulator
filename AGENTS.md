@@ -17,6 +17,25 @@ drag/drop feel, P2P browser behavior, and visual layout.
 - Do not change production code without adding or updating the relevant test,
   unless the user explicitly asks for investigation only.
 - Favor small, behavior-preserving changes.
+- Follow the `red -> green -> refactor` loop when practical:
+  - `red`: add or update a test that fails for the intended reason.
+  - `green`: make the smallest production change that makes the test pass.
+  - `refactor`: clean up names, structure, or duplication while keeping tests green.
+
+## TDD Exceptions
+
+TDD is the default, but the following cases may justify starting without a new
+failing test:
+
+- Investigation-only work explicitly requested by the user
+- Test harness or fixture repair where the production behavior is not changing
+- Browser/platform quirks that can only be reproduced after confirming the
+  issue manually first
+- Very small non-behavioral edits such as comments, copy-only text changes, or
+  dead-code deletion with already-sufficient coverage
+
+If work starts under one of these exceptions, add or update the most relevant
+automated test as soon as the behavior becomes clear.
 
 ## Where Tests Should Go
 
@@ -84,6 +103,20 @@ When implementing a change, decide the layer first:
 Do not start by editing page code if the behavior can be specified at a lower,
 more stable layer.
 
+## TDD Execution Loop
+
+For normal feature or bug-fix work, follow this order:
+
+1. State the behavior to lock down in one short sentence.
+2. Choose the narrowest test layer that can fully express that behavior.
+3. Add the failing test first and confirm it fails for the expected reason.
+4. Make the smallest production change that turns the test green.
+5. Run the smallest relevant verification scope while iterating.
+6. Once the change is stable, run the broader completion checks.
+
+Prefer targeted runs during the inner loop, then finish with the broader
+repository checks listed below.
+
 ## Manual Verification Policy
 
 Manual verification should be the exception, not the default.
@@ -119,6 +152,15 @@ Unless the user explicitly asks for a narrower scope, aim to finish changes with
 
 If only a targeted test run is appropriate, explain why and choose the smallest
 relevant test scope that still protects the change.
+
+## Test Ownership Rule
+
+Every production behavior change should have a clear owning test file.
+
+- In updates and final reports, mention which test file now owns the contract.
+- If a behavior spans multiple layers, prefer giving one layer primary ownership
+  and use higher layers only for integration confidence.
+- If the right owner is unclear, prefer the lower and more stable layer.
 
 ## Communication Expectations
 
