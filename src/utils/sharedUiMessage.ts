@@ -15,6 +15,33 @@ export const getSharedActorLabel = (
   return actor === viewerRole ? t('gameBoard.modals.shared.actor.you') : t('gameBoard.modals.shared.actor.opponent');
 };
 
+const formatNamedCardSummary = (
+  cardNames: string[] | undefined,
+  totalCount: number | undefined,
+  t: TFunction
+): string | null => {
+  if (!cardNames || cardNames.length === 0) return null;
+  const names = cardNames.join(', ');
+  const remainingCount = Math.max(0, (totalCount ?? cardNames.length) - cardNames.length);
+
+  if (remainingCount === 0) return names;
+
+  return t('gameBoard.modals.shared.messages.namedCardListWithMore', {
+    cards: names,
+    count: remainingCount,
+  });
+};
+
+const appendNamedCardSummary = (
+  baseMessage: string,
+  cardNames: string[] | undefined,
+  totalCount: number | undefined,
+  t: TFunction
+): string => {
+  const namedSummary = formatNamedCardSummary(cardNames, totalCount, t);
+  return namedSummary ? `${baseMessage}: ${namedSummary}` : baseMessage;
+};
+
 export const formatSharedUiMessage = (
   effect: SharedUiEffect,
   viewerRole: PlayerRole,
@@ -98,11 +125,25 @@ export const formatSharedUiMessage = (
 
   if (effect.type === 'SEARCHED_CARD_TO_HAND') {
     const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    if ((effect.count ?? 1) > 1) {
+      return t('gameBoard.modals.shared.messages.searchToHandMultiple', {
+        actor: actorLabel,
+        count: effect.count,
+      });
+    }
     return t('gameBoard.modals.shared.messages.searchToHand', { actor: actorLabel });
   }
 
   if (effect.type === 'SEARCHED_CARD_PLACED') {
     const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    if ((effect.count ?? 1) > 1) {
+      if (effect.destination === 'field') {
+        return effect.isFaceDown
+          ? t('gameBoard.modals.shared.messages.searchSetFieldMultiple', { actor: actorLabel, count: effect.count })
+          : t('gameBoard.modals.shared.messages.searchPlayedFieldMultiple', { actor: actorLabel, count: effect.count });
+      }
+      return t('gameBoard.modals.shared.messages.searchToExMultiple', { actor: actorLabel, count: effect.count });
+    }
     if (effect.destination === 'field') {
       return effect.cardName
         ? t('gameBoard.modals.shared.messages.searchPlayedField', { actor: actorLabel, cardName: effect.cardName })
@@ -114,16 +155,43 @@ export const formatSharedUiMessage = (
     }
   }
 
+  if (effect.type === 'MAIN_DECK_CARD_TO_CEMETERY') {
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    if ((effect.count ?? 1) > 1) {
+      const baseMessage = t('gameBoard.modals.shared.messages.mainDeckToCemeteryMultiple', { actor: actorLabel, count: effect.count });
+      return appendNamedCardSummary(baseMessage, effect.cardNames, effect.count, t);
+    }
+    return t('gameBoard.modals.shared.messages.mainDeckToCemetery', { actor: actorLabel, cardName: effect.cardName });
+  }
+
   if (effect.type === 'CEMETERY_CARD_TO_HAND') {
     const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    if ((effect.count ?? 1) > 1) {
+      const baseMessage = t('gameBoard.modals.shared.messages.cemeteryToHandMultiple', { actor: actorLabel, count: effect.count });
+      return appendNamedCardSummary(baseMessage, effect.cardNames, effect.count, t);
+    }
     return t('gameBoard.modals.shared.messages.cemeteryToHand', { actor: actorLabel, cardName: effect.cardName });
   }
 
   if (effect.type === 'CEMETERY_CARD_PLACED') {
     const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    if ((effect.count ?? 1) > 1) {
+      return effect.destination === 'field'
+        ? t('gameBoard.modals.shared.messages.cemeteryPlayedFieldMultiple', { actor: actorLabel, count: effect.count })
+        : t('gameBoard.modals.shared.messages.cemeteryToExMultiple', { actor: actorLabel, count: effect.count });
+    }
     return effect.destination === 'field'
       ? t('gameBoard.modals.shared.messages.cemeteryPlayedField', { actor: actorLabel, cardName: effect.cardName })
       : t('gameBoard.modals.shared.messages.cemeteryToEx', { actor: actorLabel, cardName: effect.cardName });
+  }
+
+  if (effect.type === 'CEMETERY_CARD_TO_BANISH') {
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    if ((effect.count ?? 1) > 1) {
+      const baseMessage = t('gameBoard.modals.shared.messages.cemeteryToBanishMultiple', { actor: actorLabel, count: effect.count });
+      return appendNamedCardSummary(baseMessage, effect.cardNames, effect.count, t);
+    }
+    return t('gameBoard.modals.shared.messages.cemeteryToBanish', { actor: actorLabel, cardName: effect.cardName });
   }
 
   if (effect.type === 'EVOLVE_CARD_PLACED') {
@@ -140,11 +208,38 @@ export const formatSharedUiMessage = (
 
   if (effect.type === 'BANISHED_CARD_TO_HAND') {
     const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    if ((effect.count ?? 1) > 1) {
+      const baseMessage = t('gameBoard.modals.shared.messages.banishToHandMultiple', { actor: actorLabel, count: effect.count });
+      return appendNamedCardSummary(baseMessage, effect.cardNames, effect.count, t);
+    }
     return t('gameBoard.modals.shared.messages.banishToHand', { actor: actorLabel, cardName: effect.cardName });
+  }
+
+  if (effect.type === 'CEMETERY_CARD_TO_BOTTOM') {
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    if ((effect.count ?? 1) > 1) {
+      const baseMessage = t('gameBoard.modals.shared.messages.cemeteryToBottomMultiple', { actor: actorLabel, count: effect.count });
+      return appendNamedCardSummary(baseMessage, effect.cardNames, effect.count, t);
+    }
+    return t('gameBoard.modals.shared.messages.cemeteryToBottom', { actor: actorLabel, cardName: effect.cardName });
+  }
+
+  if (effect.type === 'BANISHED_CARD_TO_BOTTOM') {
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    if ((effect.count ?? 1) > 1) {
+      const baseMessage = t('gameBoard.modals.shared.messages.banishToBottomMultiple', { actor: actorLabel, count: effect.count });
+      return appendNamedCardSummary(baseMessage, effect.cardNames, effect.count, t);
+    }
+    return t('gameBoard.modals.shared.messages.banishToBottom', { actor: actorLabel, cardName: effect.cardName });
   }
 
   if (effect.type === 'BANISHED_CARD_PLACED') {
     const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    if ((effect.count ?? 1) > 1) {
+      return effect.destination === 'field'
+        ? t('gameBoard.modals.shared.messages.banishPlayedFieldMultiple', { actor: actorLabel, count: effect.count })
+        : t('gameBoard.modals.shared.messages.banishToExMultiple', { actor: actorLabel, count: effect.count });
+    }
     return effect.destination === 'field'
       ? t('gameBoard.modals.shared.messages.banishPlayedField', { actor: actorLabel, cardName: effect.cardName })
       : t('gameBoard.modals.shared.messages.banishToEx', { actor: actorLabel, cardName: effect.cardName });

@@ -230,6 +230,33 @@ describe('CardSearchModal', () => {
     expect(screen.queryByText('Send to bottom of deck')).not.toBeInTheDocument();
   });
 
+  it('enables bulk send-to-bottom when only the batch callback is provided', () => {
+    const onSendCardsToBottom = vi.fn();
+    render(
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Cemetery"
+        zoneId="cemetery-host"
+        cards={[
+          createCard({ id: 'card-1', zone: 'cemetery-host' }),
+          createCard({ id: 'card-2', cardId: 'BP01-002', name: 'Card 2', zone: 'cemetery-host' }),
+        ]}
+        onExtractCard={vi.fn()}
+        onSendCardsToBottom={onSendCardsToBottom}
+        viewerRole="host"
+        allowHandExtraction={true}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Select Multiple' }));
+    fireEvent.click(screen.getByAltText('Test Card'));
+    fireEvent.click(screen.getByAltText('Card 2'));
+    fireEvent.click(screen.getByRole('button', { name: 'Send to bottom of deck' }));
+
+    expect(onSendCardsToBottom).toHaveBeenCalledWith(['card-1', 'card-2']);
+  });
+
   it('fires evolve-deck usage toggle and shows the unused label when face-up', () => {
     const onToggleFlip = vi.fn();
     render(
@@ -428,4 +455,163 @@ describe('CardSearchModal', () => {
     expect(screen.queryByTestId('search-card-detail-popover')).not.toBeInTheDocument();
   });
 
+  it('supports bulk selecting cards and extracting them to hand from supported zones', () => {
+    const onExtractCards = vi.fn();
+
+    render(
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Main Deck"
+        zoneId="mainDeck-host"
+        cards={[
+          createCard({ id: 'card-1', name: 'First Card', zone: 'mainDeck-host' }),
+          createCard({ id: 'card-2', cardId: 'BP01-002', name: 'Second Card', zone: 'mainDeck-host' }),
+        ]}
+        onExtractCard={vi.fn()}
+        onExtractCards={onExtractCards}
+        viewerRole="host"
+        allowHandExtraction={true}
+      />
+    );
+
+    fireEvent.click(screen.getByText('Select Multiple'));
+    fireEvent.click(screen.getByAltText('First Card'));
+    fireEvent.click(screen.getByAltText('Second Card'));
+
+    expect(screen.getAllByText('2 selected')).toHaveLength(2);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add to Hand' }));
+
+    expect(onExtractCards).toHaveBeenCalledWith(['card-1', 'card-2'], 'hand-host', false);
+  });
+
+  it('supports bulk sending selected cemetery cards to the bottom of the deck', () => {
+    const onSendCardsToBottom = vi.fn();
+
+    render(
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Cemetery"
+        zoneId="cemetery-host"
+        cards={[
+          createCard({ id: 'card-1', name: 'First Card', zone: 'cemetery-host' }),
+          createCard({ id: 'card-2', cardId: 'BP01-002', name: 'Second Card', zone: 'cemetery-host' }),
+        ]}
+        onExtractCard={vi.fn()}
+        onSendToBottom={vi.fn()}
+        onSendCardsToBottom={onSendCardsToBottom}
+        viewerRole="host"
+        allowHandExtraction={true}
+      />
+    );
+
+    fireEvent.click(screen.getByText('Select Multiple'));
+    fireEvent.click(screen.getByAltText('First Card'));
+    fireEvent.click(screen.getByAltText('Second Card'));
+    fireEvent.click(screen.getByRole('button', { name: 'Send to bottom of deck' }));
+
+    expect(onSendCardsToBottom).toHaveBeenCalledWith(['card-1', 'card-2']);
+  });
+
+  it('sends a main-deck card to cemetery immediately', () => {
+    const onSendToCemetery = vi.fn();
+
+    render(
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Main Deck"
+        zoneId="mainDeck-host"
+        cards={[createCard({ zone: 'mainDeck-host' })]}
+        onExtractCard={vi.fn()}
+        onSendToCemetery={onSendToCemetery}
+        viewerRole="host"
+        allowHandExtraction={true}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send to cemetery' }));
+
+    expect(onSendToCemetery).toHaveBeenCalledWith('card-1');
+  });
+
+  it('supports bulk sending selected main-deck cards to cemetery', () => {
+    const onSendCardsToCemetery = vi.fn();
+
+    render(
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Main Deck"
+        zoneId="mainDeck-host"
+        cards={[
+          createCard({ id: 'card-1', name: 'First Card', zone: 'mainDeck-host' }),
+          createCard({ id: 'card-2', cardId: 'BP01-002', name: 'Second Card', zone: 'mainDeck-host' }),
+        ]}
+        onExtractCard={vi.fn()}
+        onSendCardsToCemetery={onSendCardsToCemetery}
+        viewerRole="host"
+        allowHandExtraction={true}
+      />
+    );
+
+    fireEvent.click(screen.getByText('Select Multiple'));
+    fireEvent.click(screen.getByAltText('First Card'));
+    fireEvent.click(screen.getByAltText('Second Card'));
+    fireEvent.click(screen.getByRole('button', { name: 'Send to cemetery' }));
+
+    expect(onSendCardsToCemetery).toHaveBeenCalledWith(['card-1', 'card-2']);
+  });
+
+  it('banishes a cemetery card immediately', () => {
+    const onBanish = vi.fn();
+
+    render(
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Cemetery"
+        zoneId="cemetery-host"
+        cards={[createCard({ zone: 'cemetery-host' })]}
+        onExtractCard={vi.fn()}
+        onBanish={onBanish}
+        viewerRole="host"
+        allowHandExtraction={true}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Banish this card' }));
+
+    expect(onBanish).toHaveBeenCalledWith('card-1');
+  });
+
+  it('supports bulk banishing selected cemetery cards', () => {
+    const onBanishCards = vi.fn();
+
+    render(
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Cemetery"
+        zoneId="cemetery-host"
+        cards={[
+          createCard({ id: 'card-1', name: 'First Card', zone: 'cemetery-host' }),
+          createCard({ id: 'card-2', cardId: 'BP01-002', name: 'Second Card', zone: 'cemetery-host' }),
+        ]}
+        onExtractCard={vi.fn()}
+        onBanishCards={onBanishCards}
+        viewerRole="host"
+        allowHandExtraction={true}
+      />
+    );
+
+    fireEvent.click(screen.getByText('Select Multiple'));
+    fireEvent.click(screen.getByAltText('First Card'));
+    fireEvent.click(screen.getByAltText('Second Card'));
+    fireEvent.click(screen.getByRole('button', { name: 'Banish this card' }));
+
+    expect(onBanishCards).toHaveBeenCalledWith(['card-1', 'card-2']);
+  });
 });

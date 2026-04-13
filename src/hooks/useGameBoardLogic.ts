@@ -15,7 +15,7 @@ import { flipSharedCoin, rollSharedDie } from '../utils/sharedRandom';
 import { createEventDeduper } from '../utils/eventDeduper';
 import { buildTopDeckRevealEffect } from '../utils/topDeckReveal';
 import { buildTopDeckSummaryEffect } from '../utils/topDeckSummary';
-import { buildSingleCardRevealEffect } from '../utils/cardReveal';
+import { buildCardRevealEffect } from '../utils/cardReveal';
 import { buildAttackDeclaredEffect } from '../utils/attackUi';
 import { buildCardPlayedEffect } from '../utils/cardPlayUi';
 
@@ -70,12 +70,16 @@ export type DispatchableGameSyncEvent =
   | { type: 'TOGGLE_TAP'; actor?: PlayerRole; cardId: string }
   | { type: 'TOGGLE_FLIP'; actor?: PlayerRole; cardId: string }
   | { type: 'SEND_TO_BOTTOM'; actor?: PlayerRole; cardId: string }
+  | { type: 'SEND_TO_BOTTOM_BATCH'; actor?: PlayerRole; cardIds: string[] }
   | { type: 'BANISH_CARD'; actor?: PlayerRole; cardId: string }
+  | { type: 'BANISH_CARDS_BATCH'; actor?: PlayerRole; cardIds: string[] }
   | { type: 'SEND_TO_CEMETERY'; actor?: PlayerRole; cardId: string }
+  | { type: 'SEND_TO_CEMETERY_BATCH'; actor?: PlayerRole; cardIds: string[] }
   | { type: 'DISCARD_RANDOM_HAND_CARDS'; actor?: PlayerRole; target: PlayerRole; count: number }
   | { type: 'RETURN_EVOLVE'; actor?: PlayerRole; cardId: string }
   | { type: 'PLAY_TO_FIELD'; actor?: PlayerRole; cardId: string }
   | { type: 'EXTRACT_CARD'; actor?: PlayerRole; cardId: string; destination?: string; revealToOpponent?: boolean; attachToCardId?: string }
+  | { type: 'EXTRACT_CARDS_BATCH'; actor?: PlayerRole; cardIds: string[]; destination?: string; revealToOpponent?: boolean }
   | { type: 'SHUFFLE_DECK'; actor?: PlayerRole }
   | { type: 'MODIFY_PLAYER_STAT'; actor?: PlayerRole; playerKey: PlayerRole; stat: 'hp' | 'pp' | 'maxPp' | 'ep' | 'sep' | 'combo'; delta: number }
   | { type: 'DRAW_INITIAL_HAND'; actor?: PlayerRole }
@@ -382,6 +386,60 @@ export const useGameBoardLogic = () => {
       playSharedUiEffect(effect);
       pendingEffects.push(effect);
     };
+    const extractDestination =
+      event.type === 'EXTRACT_CARD' || event.type === 'EXTRACT_CARDS_BATCH'
+        ? event.destination
+        : undefined;
+    const extractRevealToOpponent =
+      event.type === 'EXTRACT_CARD' || event.type === 'EXTRACT_CARDS_BATCH'
+        ? Boolean(event.revealToOpponent)
+        : false;
+    const extractedCardIds =
+      event.type === 'EXTRACT_CARD'
+        ? [event.cardId]
+        : event.type === 'EXTRACT_CARDS_BATCH'
+          ? event.cardIds
+          : [];
+    const extractedCards = extractedCardIds
+      .map((cardId) => currentState.cards.find((card) => card.id === cardId))
+      .filter((card): card is CardInstance => Boolean(card));
+    const countCardsInZone = (zonePrefix: string) => extractedCards.filter((card) => card.zone === `${zonePrefix}-${event.actor}`);
+    const getPreviewCardNames = (cards: CardInstance[]) => cards.slice(0, 5).map((card) => card.name);
+    const mainDeckExtractedCards = countCardsInZone('mainDeck');
+    const cemeteryExtractedCards = countCardsInZone('cemetery');
+    const banishExtractedCards = countCardsInZone('banish');
+    const evolveExtractedCards = countCardsInZone('evolveDeck');
+    const bottomedCardIds =
+      event.type === 'SEND_TO_BOTTOM'
+        ? [event.cardId]
+        : event.type === 'SEND_TO_BOTTOM_BATCH'
+          ? event.cardIds
+          : [];
+    const bottomedCards = bottomedCardIds
+      .map((cardId) => currentState.cards.find((card) => card.id === cardId))
+      .filter((card): card is CardInstance => Boolean(card));
+    const cemeteryBottomedCards = bottomedCards.filter((card) => card.zone === `cemetery-${event.actor}`);
+    const banishBottomedCards = bottomedCards.filter((card) => card.zone === `banish-${event.actor}`);
+    const cemeteriedCardIds =
+      event.type === 'SEND_TO_CEMETERY'
+        ? [event.cardId]
+        : event.type === 'SEND_TO_CEMETERY_BATCH'
+          ? event.cardIds
+          : [];
+    const cemeteriedCards = cemeteriedCardIds
+      .map((cardId) => currentState.cards.find((card) => card.id === cardId))
+      .filter((card): card is CardInstance => Boolean(card));
+    const mainDeckToCemeteryCards = cemeteriedCards.filter((card) => card.zone === `mainDeck-${event.actor}`);
+    const banishedCardIds =
+      event.type === 'BANISH_CARD'
+        ? [event.cardId]
+        : event.type === 'BANISH_CARDS_BATCH'
+          ? event.cardIds
+          : [];
+    const banishedCards = banishedCardIds
+      .map((cardId) => currentState.cards.find((card) => card.id === cardId))
+      .filter((card): card is CardInstance => Boolean(card));
+    const cemeteryBanishedCards = banishedCards.filter((card) => card.zone === `cemetery-${event.actor}`);
 
     if (event.type === 'RESOLVE_TOP_DECK') {
       // Embed SharedUiEffects into the snapshot so everything is sent in one
@@ -392,92 +450,162 @@ export const useGameBoardLogic = () => {
       queueSnapshotEffect(summaryEffect);
     }
 
-    if (event.type === 'EXTRACT_CARD' && event.revealToOpponent && event.destination?.startsWith('hand-')) {
+    if (
+      (event.type === 'EXTRACT_CARD' || event.type === 'EXTRACT_CARDS_BATCH') &&
+      extractRevealToOpponent &&
+      extractDestination?.startsWith('hand-')
+    ) {
       // Keep public Search hand reveals in the same snapshot as the card move.
       // Sending the reveal as a second WebRTC message right after the snapshot can
       // overwhelm the data channel on slower links and disconnect guests.
-      const revealEffect = buildSingleCardRevealEffect(
+      const revealEffect = buildCardRevealEffect(
         currentState.cards,
         event.actor,
-        event.cardId,
+        extractedCardIds,
         'REVEAL_SEARCHED_CARD_TO_HAND'
       );
       queueSnapshotEffect(revealEffect);
     }
 
-    if (event.type === 'EXTRACT_CARD' && !event.revealToOpponent && event.destination?.startsWith('hand-')) {
-      const extractedCard = currentState.cards.find((card) => card.id === event.cardId);
-      if (extractedCard?.zone === `mainDeck-${event.actor}`) {
+    if (
+      (event.type === 'EXTRACT_CARD' || event.type === 'EXTRACT_CARDS_BATCH') &&
+      !extractRevealToOpponent &&
+      extractDestination?.startsWith('hand-')
+    ) {
+      if (mainDeckExtractedCards.length > 0) {
         const effect: SharedUiEffect = {
           type: 'SEARCHED_CARD_TO_HAND',
           actor: event.actor,
+          count: mainDeckExtractedCards.length > 1 ? mainDeckExtractedCards.length : undefined,
         };
         queueSnapshotEffect(effect);
       }
     }
 
-    if (event.type === 'EXTRACT_CARD' && event.destination?.startsWith('hand-')) {
-      const extractedCard = currentState.cards.find((card) => card.id === event.cardId);
-      if (extractedCard?.zone === `cemetery-${event.actor}`) {
+    if (
+      (event.type === 'EXTRACT_CARD' || event.type === 'EXTRACT_CARDS_BATCH') &&
+      extractDestination?.startsWith('hand-')
+    ) {
+      if (cemeteryExtractedCards.length > 0) {
         const effect: SharedUiEffect = {
           type: 'CEMETERY_CARD_TO_HAND',
           actor: event.actor,
-          cardName: extractedCard.name,
+          cardName: cemeteryExtractedCards.length === 1 ? cemeteryExtractedCards[0].name : undefined,
+          cardNames: cemeteryExtractedCards.length > 1 ? getPreviewCardNames(cemeteryExtractedCards) : undefined,
+          count: cemeteryExtractedCards.length > 1 ? cemeteryExtractedCards.length : undefined,
         };
         queueSnapshotEffect(effect);
       }
 
-      if (extractedCard?.zone === `banish-${event.actor}`) {
+      if (banishExtractedCards.length > 0) {
         const effect: SharedUiEffect = {
           type: 'BANISHED_CARD_TO_HAND',
           actor: event.actor,
-          cardName: extractedCard.name,
+          cardName: banishExtractedCards.length === 1 ? banishExtractedCards[0].name : undefined,
+          cardNames: banishExtractedCards.length > 1 ? getPreviewCardNames(banishExtractedCards) : undefined,
+          count: banishExtractedCards.length > 1 ? banishExtractedCards.length : undefined,
         };
         queueSnapshotEffect(effect);
       }
     }
 
-    if (event.type === 'EXTRACT_CARD' && (event.destination?.startsWith('field-') || event.destination?.startsWith('ex-'))) {
-      const extractedCard = currentState.cards.find((card) => card.id === event.cardId);
-      if (extractedCard?.zone === `mainDeck-${event.actor}`) {
-        const isFieldDestination = event.destination.startsWith('field-');
+    if (
+      (event.type === 'EXTRACT_CARD' || event.type === 'EXTRACT_CARDS_BATCH') &&
+      (extractDestination?.startsWith('field-') || extractDestination?.startsWith('ex-'))
+    ) {
+      if (mainDeckExtractedCards.length > 0) {
+        const isFieldDestination = extractDestination.startsWith('field-');
         // Keep the preparation-time field notification generic because starter amulet support
         // allows cards to be set face-down from the main deck before the game starts.
-        const shouldHideCardName = isFieldDestination && currentState.gameStatus === 'preparing';
+        const isFaceDownPlacement = isFieldDestination && currentState.gameStatus === 'preparing';
         const effect: SharedUiEffect = {
           type: 'SEARCHED_CARD_PLACED',
           actor: event.actor,
           destination: isFieldDestination ? 'field' : 'ex',
-          cardName: shouldHideCardName ? undefined : extractedCard.name,
+          cardName: !isFaceDownPlacement && mainDeckExtractedCards.length === 1 ? mainDeckExtractedCards[0].name : undefined,
+          count: mainDeckExtractedCards.length > 1 ? mainDeckExtractedCards.length : undefined,
+          isFaceDown: isFaceDownPlacement,
         };
         queueSnapshotEffect(effect);
       }
 
-      if (extractedCard?.zone === `cemetery-${event.actor}`) {
+      if (cemeteryExtractedCards.length > 0) {
         const effect: SharedUiEffect = {
           type: 'CEMETERY_CARD_PLACED',
           actor: event.actor,
-          destination: event.destination.startsWith('field-') ? 'field' : 'ex',
-          cardName: extractedCard.name,
+          destination: extractDestination.startsWith('field-') ? 'field' : 'ex',
+          cardName: cemeteryExtractedCards.length === 1 ? cemeteryExtractedCards[0].name : undefined,
+          count: cemeteryExtractedCards.length > 1 ? cemeteryExtractedCards.length : undefined,
         };
         queueSnapshotEffect(effect);
       }
 
-      if (extractedCard?.zone === `evolveDeck-${event.actor}` && event.destination.startsWith('field-')) {
+      if (evolveExtractedCards.length === 1 && extractDestination.startsWith('field-')) {
         const effect: SharedUiEffect = {
           type: 'EVOLVE_CARD_PLACED',
           actor: event.actor,
-          cardName: extractedCard.name,
+          cardName: evolveExtractedCards[0].name,
         };
         queueSnapshotEffect(effect);
       }
 
-      if (extractedCard?.zone === `banish-${event.actor}`) {
+      if (banishExtractedCards.length > 0) {
         const effect: SharedUiEffect = {
           type: 'BANISHED_CARD_PLACED',
           actor: event.actor,
-          destination: event.destination.startsWith('field-') ? 'field' : 'ex',
-          cardName: extractedCard.name,
+          destination: extractDestination.startsWith('field-') ? 'field' : 'ex',
+          cardName: banishExtractedCards.length === 1 ? banishExtractedCards[0].name : undefined,
+          count: banishExtractedCards.length > 1 ? banishExtractedCards.length : undefined,
+        };
+        queueSnapshotEffect(effect);
+      }
+    }
+
+    if (event.type === 'SEND_TO_BOTTOM' || event.type === 'SEND_TO_BOTTOM_BATCH') {
+      if (cemeteryBottomedCards.length > 0) {
+        const effect: SharedUiEffect = {
+          type: 'CEMETERY_CARD_TO_BOTTOM',
+          actor: event.actor,
+          cardName: cemeteryBottomedCards.length === 1 ? cemeteryBottomedCards[0].name : undefined,
+          cardNames: cemeteryBottomedCards.length > 1 ? getPreviewCardNames(cemeteryBottomedCards) : undefined,
+          count: cemeteryBottomedCards.length > 1 ? cemeteryBottomedCards.length : undefined,
+        };
+        queueSnapshotEffect(effect);
+      }
+
+      if (banishBottomedCards.length > 0) {
+        const effect: SharedUiEffect = {
+          type: 'BANISHED_CARD_TO_BOTTOM',
+          actor: event.actor,
+          cardName: banishBottomedCards.length === 1 ? banishBottomedCards[0].name : undefined,
+          cardNames: banishBottomedCards.length > 1 ? getPreviewCardNames(banishBottomedCards) : undefined,
+          count: banishBottomedCards.length > 1 ? banishBottomedCards.length : undefined,
+        };
+        queueSnapshotEffect(effect);
+      }
+    }
+
+    if (event.type === 'SEND_TO_CEMETERY' || event.type === 'SEND_TO_CEMETERY_BATCH') {
+      if (mainDeckToCemeteryCards.length > 0) {
+        const effect: SharedUiEffect = {
+          type: 'MAIN_DECK_CARD_TO_CEMETERY',
+          actor: event.actor,
+          cardName: mainDeckToCemeteryCards.length === 1 ? mainDeckToCemeteryCards[0].name : undefined,
+          cardNames: mainDeckToCemeteryCards.length > 1 ? getPreviewCardNames(mainDeckToCemeteryCards) : undefined,
+          count: mainDeckToCemeteryCards.length > 1 ? mainDeckToCemeteryCards.length : undefined,
+        };
+        queueSnapshotEffect(effect);
+      }
+    }
+
+    if (event.type === 'BANISH_CARD' || event.type === 'BANISH_CARDS_BATCH') {
+      if (cemeteryBanishedCards.length > 0) {
+        const effect: SharedUiEffect = {
+          type: 'CEMETERY_CARD_TO_BANISH',
+          actor: event.actor,
+          cardName: cemeteryBanishedCards.length === 1 ? cemeteryBanishedCards[0].name : undefined,
+          cardNames: cemeteryBanishedCards.length > 1 ? getPreviewCardNames(cemeteryBanishedCards) : undefined,
+          count: cemeteryBanishedCards.length > 1 ? cemeteryBanishedCards.length : undefined,
         };
         queueSnapshotEffect(effect);
       }
@@ -1054,6 +1182,7 @@ export const useGameBoardLogic = () => {
 
   const {
     handleExtractCard,
+    handleExtractCards,
     spawnToken,
     spawnTokens,
     handleModifyCounter,
@@ -1062,12 +1191,15 @@ export const useGameBoardLogic = () => {
     toggleTap,
     handleFlipCard,
     handleSendToBottom,
+    handleSendCardsToBottom,
     handleBanish,
+    handleBanishCards,
     handlePlayToField,
     handleDeclareAttack,
     handleSetRevealHandsMode,
     handleSetEndStop,
     handleSendToCemetery,
+    handleSendCardsToCemetery,
     handleReturnEvolve,
     handleShuffleDeck,
   } = useGameBoardFieldActions({
@@ -1116,9 +1248,9 @@ export const useGameBoardLogic = () => {
     handleStatChange, setPhase, endTurn, handleUndoTurn, handleSetInitialTurnOrder,
     handlePureCoinFlip, handleRollDice, handleStartGame, handleToggleReady,
     handleDrawInitialHand, startMulligan, handleMulliganOrderSelect, executeMulligan,
-    drawCard, handleExtractCard, confirmResetGame, handleDeckUpload, importDeckData, spawnToken, spawnTokens,
-    handleModifyCounter, handleModifyGenericCounter, handleDragEnd, toggleTap, handleFlipCard, handleSendToBottom,
-    handleBanish, handlePlayToField, handleSendToCemetery, handleReturnEvolve, handleShuffleDeck, handleDeclareAttack,
+    drawCard, handleExtractCard, handleExtractCards, confirmResetGame, handleDeckUpload, importDeckData, spawnToken, spawnTokens,
+    handleModifyCounter, handleModifyGenericCounter, handleDragEnd, toggleTap, handleFlipCard, handleSendToBottom, handleSendCardsToBottom,
+    handleBanish, handleBanishCards, handlePlayToField, handleSendToCemetery, handleSendCardsToCemetery, handleReturnEvolve, handleShuffleDeck, handleDeclareAttack,
     handleSetRevealHandsMode, handleSetEndStop,
     evolveAutoAttachSelection, confirmEvolveAutoAttachSelection, cancelEvolveAutoAttachSelection,
     getCards, getTokenOptions, lastGameState: gameState.lastGameState, millCard, moveTopCardToEx, discardRandomHandCards, revealHand,

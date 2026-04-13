@@ -81,6 +81,29 @@ export function useGameBoardFieldActions({
         setSearchZone(null);
     }, [dispatchGameEvent, executeEvolveAutoAttach, gameStateRef, queueEvolveAutoAttachSelection, resolveEvolveAutoAttachSelection, role, setSearchZone]);
 
+    const handleExtractCards = useCallback((
+        cardIds: string[],
+        customDestination?: string,
+        targetRole?: PlayerRole,
+        revealToOpponent = false
+    ) => {
+        if (cardIds.length === 0) return;
+        if (cardIds.length === 1) {
+            handleExtractCard(cardIds[0], customDestination, targetRole, revealToOpponent);
+            return;
+        }
+
+        const actor = targetRole ?? role;
+        dispatchGameEvent({
+            type: 'EXTRACT_CARDS_BATCH',
+            actor,
+            cardIds,
+            destination: customDestination,
+            revealToOpponent,
+        });
+        setSearchZone(null);
+    }, [dispatchGameEvent, handleExtractCard, role, setSearchZone]);
+
     const spawnToken = useCallback((
         targetRole: PlayerRole = role,
         tokenOption?: TokenOption,
@@ -200,11 +223,71 @@ export function useGameBoardFieldActions({
 
     const handleSendToBottom = useCallback((cardId: string) => {
         dispatchGameEvent({ type: 'SEND_TO_BOTTOM', actor: getSoloCardMoveActor(cardId), cardId });
-    }, [dispatchGameEvent, getSoloCardMoveActor]);
+        setSearchZone(null);
+    }, [dispatchGameEvent, getSoloCardMoveActor, setSearchZone]);
+
+    const handleSendCardsToBottom = useCallback((cardIds: string[]) => {
+        if (cardIds.length === 0) return;
+        if (cardIds.length === 1) {
+            handleSendToBottom(cardIds[0]);
+            return;
+        }
+
+        const batchActors = new Set(
+            cardIds
+                .map(cardId => getSoloCardMoveActor(cardId))
+                .filter((actor): actor is PlayerRole => actor !== undefined)
+        );
+
+        if (batchActors.size > 1) {
+            cardIds.forEach(cardId => {
+                dispatchGameEvent({ type: 'SEND_TO_BOTTOM', actor: getSoloCardMoveActor(cardId), cardId });
+            });
+            setSearchZone(null);
+            return;
+        }
+
+        dispatchGameEvent({
+            type: 'SEND_TO_BOTTOM_BATCH',
+            actor: batchActors.size === 1 ? Array.from(batchActors)[0] : undefined,
+            cardIds,
+        });
+        setSearchZone(null);
+    }, [dispatchGameEvent, getSoloCardMoveActor, handleSendToBottom, setSearchZone]);
 
     const handleBanish = useCallback((cardId: string) => {
         dispatchGameEvent({ type: 'BANISH_CARD', actor: getSoloCardMoveActor(cardId), cardId });
-    }, [dispatchGameEvent, getSoloCardMoveActor]);
+        setSearchZone(null);
+    }, [dispatchGameEvent, getSoloCardMoveActor, setSearchZone]);
+
+    const handleBanishCards = useCallback((cardIds: string[]) => {
+        if (cardIds.length === 0) return;
+        if (cardIds.length === 1) {
+            handleBanish(cardIds[0]);
+            return;
+        }
+
+        const batchActors = new Set(
+            cardIds
+                .map(cardId => getSoloCardMoveActor(cardId))
+                .filter((actor): actor is PlayerRole => actor !== undefined)
+        );
+
+        if (batchActors.size > 1) {
+            cardIds.forEach(cardId => {
+                dispatchGameEvent({ type: 'BANISH_CARD', actor: getSoloCardMoveActor(cardId), cardId });
+            });
+            setSearchZone(null);
+            return;
+        }
+
+        dispatchGameEvent({
+            type: 'BANISH_CARDS_BATCH',
+            actor: batchActors.size === 1 ? Array.from(batchActors)[0] : undefined,
+            cardIds,
+        });
+        setSearchZone(null);
+    }, [dispatchGameEvent, getSoloCardMoveActor, handleBanish, setSearchZone]);
 
     const handlePlayToField = useCallback((cardId: string, targetRole?: PlayerRole) => {
         dispatchGameEvent({ type: 'PLAY_TO_FIELD', actor: targetRole ?? getSoloCardMoveActor(cardId), cardId });
@@ -228,11 +311,42 @@ export function useGameBoardFieldActions({
 
     const handleSendToCemetery = useCallback((cardId: string) => {
         dispatchGameEvent({ type: 'SEND_TO_CEMETERY', actor: getSoloCardMoveActor(cardId), cardId });
-    }, [dispatchGameEvent, getSoloCardMoveActor]);
+        setSearchZone(null);
+    }, [dispatchGameEvent, getSoloCardMoveActor, setSearchZone]);
+
+    const handleSendCardsToCemetery = useCallback((cardIds: string[]) => {
+        if (cardIds.length === 0) return;
+        if (cardIds.length === 1) {
+            handleSendToCemetery(cardIds[0]);
+            return;
+        }
+
+        const batchActors = new Set(
+            cardIds
+                .map(cardId => getSoloCardMoveActor(cardId))
+                .filter((actor): actor is PlayerRole => actor !== undefined)
+        );
+
+        if (batchActors.size > 1) {
+            cardIds.forEach(cardId => {
+                dispatchGameEvent({ type: 'SEND_TO_CEMETERY', actor: getSoloCardMoveActor(cardId), cardId });
+            });
+            setSearchZone(null);
+            return;
+        }
+
+        dispatchGameEvent({
+            type: 'SEND_TO_CEMETERY_BATCH',
+            actor: batchActors.size === 1 ? Array.from(batchActors)[0] : undefined,
+            cardIds,
+        });
+        setSearchZone(null);
+    }, [dispatchGameEvent, getSoloCardMoveActor, handleSendToCemetery, setSearchZone]);
 
     const handleReturnEvolve = useCallback((cardId: string) => {
         dispatchGameEvent({ type: 'RETURN_EVOLVE', actor: getSoloCardMoveActor(cardId), cardId });
-    }, [dispatchGameEvent, getSoloCardMoveActor]);
+        setSearchZone(null);
+    }, [dispatchGameEvent, getSoloCardMoveActor, setSearchZone]);
 
     const handleShuffleDeck = useCallback((targetRole?: PlayerRole) => {
         dispatchGameEvent({ type: 'SHUFFLE_DECK', actor: targetRole });
@@ -240,6 +354,7 @@ export function useGameBoardFieldActions({
 
     return {
         handleExtractCard,
+        handleExtractCards,
         spawnToken,
         spawnTokens,
         handleModifyCounter,
@@ -248,12 +363,15 @@ export function useGameBoardFieldActions({
         toggleTap,
         handleFlipCard,
         handleSendToBottom,
+        handleSendCardsToBottom,
         handleBanish,
+        handleBanishCards,
         handlePlayToField,
         handleDeclareAttack,
         handleSetRevealHandsMode,
         handleSetEndStop,
         handleSendToCemetery,
+        handleSendCardsToCemetery,
         handleReturnEvolve,
         handleShuffleDeck,
     };

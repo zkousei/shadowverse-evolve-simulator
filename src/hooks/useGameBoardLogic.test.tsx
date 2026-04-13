@@ -2728,6 +2728,350 @@ describe('useGameBoardLogic P2P reconnect', () => {
     expect(spectatorSnapshots[0].state.cards.filter((card) => card.zone === 'ex-host')).toHaveLength(1);
   });
 
+  it('sends one snapshot with one batch search-to-hand summary effect', () => {
+    seedHostSavedSession({
+      gameStatus: 'playing',
+      revision: 7,
+      cards: [
+        {
+          id: 'search-batch-1',
+          cardId: 'BP01-201',
+          name: 'Search Card 1',
+          image: '',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'search-batch-2',
+          cardId: 'BP01-202',
+          name: 'Search Card 2',
+          image: '',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    const { guestConn, spectatorConn } = connectHostWithGuestAndSpectator();
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Resume Saved Session' }));
+    });
+    guestConn.send.mockClear();
+    spectatorConn.send.mockClear();
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Batch Extract Search to Hand' }));
+    });
+
+    const guestSnapshots = guestConn.send.mock.calls
+      .map(([message]) => message as SyncMessage)
+      .filter((message): message is Extract<SyncMessage, { type: 'STATE_SNAPSHOT' }> => message.type === 'STATE_SNAPSHOT');
+    const spectatorSnapshots = spectatorConn.send.mock.calls
+      .map(([message]) => message as SyncMessage)
+      .filter((message): message is Extract<SyncMessage, { type: 'STATE_SNAPSHOT' }> => message.type === 'STATE_SNAPSHOT');
+
+    expect(guestSnapshots).toHaveLength(1);
+    expect(spectatorSnapshots).toHaveLength(1);
+    expect(guestSnapshots[0].pendingEffects).toEqual([
+      { type: 'SEARCHED_CARD_TO_HAND', actor: 'host', count: 2 },
+    ]);
+    expect(spectatorSnapshots[0].pendingEffects).toEqual([
+      { type: 'SEARCHED_CARD_TO_HAND', actor: 'host', count: 2 },
+    ]);
+    expect(guestSnapshots[0].state.cards.filter((card) => card.zone === 'hand-host')).toHaveLength(2);
+  });
+
+  it('sends one snapshot with one batch search reveal effect', () => {
+    seedHostSavedSession({
+      gameStatus: 'playing',
+      revision: 7,
+      cards: [
+        {
+          id: 'search-batch-1',
+          cardId: 'BP01-201',
+          name: 'Search Card 1',
+          image: '',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'search-batch-2',
+          cardId: 'BP01-202',
+          name: 'Search Card 2',
+          image: '',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    const { guestConn, spectatorConn } = connectHostWithGuestAndSpectator();
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Resume Saved Session' }));
+    });
+    guestConn.send.mockClear();
+    spectatorConn.send.mockClear();
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Batch Reveal Search to Hand' }));
+    });
+
+    const guestSnapshots = guestConn.send.mock.calls
+      .map(([message]) => message as SyncMessage)
+      .filter((message): message is Extract<SyncMessage, { type: 'STATE_SNAPSHOT' }> => message.type === 'STATE_SNAPSHOT');
+    const spectatorSnapshots = spectatorConn.send.mock.calls
+      .map(([message]) => message as SyncMessage)
+      .filter((message): message is Extract<SyncMessage, { type: 'STATE_SNAPSHOT' }> => message.type === 'STATE_SNAPSHOT');
+
+    expect(guestSnapshots).toHaveLength(1);
+    expect(spectatorSnapshots).toHaveLength(1);
+    expect(guestSnapshots[0].pendingEffects).toEqual([
+      { type: 'REVEAL_SEARCHED_CARD_TO_HAND', actor: 'host', cardIds: ['search-batch-1', 'search-batch-2'] },
+    ]);
+    expect(spectatorSnapshots[0].pendingEffects).toEqual([
+      { type: 'REVEAL_SEARCHED_CARD_TO_HAND', actor: 'host', cardIds: ['search-batch-1', 'search-batch-2'] },
+    ]);
+    expect(guestSnapshots[0].state.cards.filter((card) => card.zone === 'hand-host')).toHaveLength(2);
+  });
+
+  it('sends named cemetery batch recovery effects in a snapshot', () => {
+    seedHostSavedSession({
+      gameStatus: 'playing',
+      revision: 7,
+      cards: [
+        {
+          id: 'cemetery-batch-1',
+          cardId: 'BP01-301',
+          name: 'Aurelia',
+          image: '',
+          zone: 'cemetery-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'cemetery-batch-2',
+          cardId: 'BP01-302',
+          name: 'Quickblader',
+          image: '',
+          zone: 'cemetery-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    const { guestConn } = connectHostWithGuestAndSpectator();
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Resume Saved Session' }));
+    });
+    guestConn.send.mockClear();
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Batch Extract Cemetery to Hand' }));
+    });
+
+    const guestSnapshots = guestConn.send.mock.calls
+      .map(([message]) => message as SyncMessage)
+      .filter((message): message is Extract<SyncMessage, { type: 'STATE_SNAPSHOT' }> => message.type === 'STATE_SNAPSHOT');
+
+    expect(guestSnapshots).toHaveLength(1);
+    expect(guestSnapshots[0].pendingEffects).toEqual([
+      {
+        type: 'CEMETERY_CARD_TO_HAND',
+        actor: 'host',
+        count: 2,
+        cardNames: ['Aurelia', 'Quickblader'],
+      },
+    ]);
+  });
+
+  it('sends named main-deck cemetery effects in a snapshot', () => {
+    seedHostSavedSession({
+      gameStatus: 'playing',
+      revision: 7,
+      cards: [
+        {
+          id: 'search-batch-1',
+          cardId: 'BP01-201',
+          name: 'Aurelia',
+          image: '',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'search-batch-2',
+          cardId: 'BP01-202',
+          name: 'Quickblader',
+          image: '',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    const { guestConn } = connectHostWithGuestAndSpectator();
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Resume Saved Session' }));
+    });
+    guestConn.send.mockClear();
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Batch Send Main Deck to Cemetery' }));
+    });
+
+    const guestSnapshots = guestConn.send.mock.calls
+      .map(([message]) => message as SyncMessage)
+      .filter((message): message is Extract<SyncMessage, { type: 'STATE_SNAPSHOT' }> => message.type === 'STATE_SNAPSHOT');
+
+    expect(guestSnapshots).toHaveLength(1);
+    expect(guestSnapshots[0].pendingEffects).toEqual([
+      {
+        type: 'MAIN_DECK_CARD_TO_CEMETERY',
+        actor: 'host',
+        count: 2,
+        cardNames: ['Aurelia', 'Quickblader'],
+      },
+    ]);
+  });
+
+  it('sends named cemetery batch bottom effects in a snapshot', () => {
+    seedHostSavedSession({
+      gameStatus: 'playing',
+      revision: 7,
+      cards: [
+        {
+          id: 'bottom-batch-1',
+          cardId: 'BP01-401',
+          name: 'Aurelia',
+          image: '',
+          zone: 'cemetery-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'bottom-batch-2',
+          cardId: 'BP01-402',
+          name: 'Quickblader',
+          image: '',
+          zone: 'cemetery-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    const { guestConn } = connectHostWithGuestAndSpectator();
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Resume Saved Session' }));
+    });
+    guestConn.send.mockClear();
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Batch Send Cards to Bottom' }));
+    });
+
+    const guestSnapshots = guestConn.send.mock.calls
+      .map(([message]) => message as SyncMessage)
+      .filter((message): message is Extract<SyncMessage, { type: 'STATE_SNAPSHOT' }> => message.type === 'STATE_SNAPSHOT');
+
+    expect(guestSnapshots).toHaveLength(1);
+    expect(guestSnapshots[0].pendingEffects).toEqual([
+      {
+        type: 'CEMETERY_CARD_TO_BOTTOM',
+        actor: 'host',
+        count: 2,
+        cardNames: ['Aurelia', 'Quickblader'],
+      },
+    ]);
+  });
+
+  it('sends named cemetery banish effects in a snapshot', () => {
+    seedHostSavedSession({
+      gameStatus: 'playing',
+      revision: 7,
+      cards: [
+        {
+          id: 'cemetery-batch-1',
+          cardId: 'BP01-501',
+          name: 'Aurelia',
+          image: '',
+          zone: 'cemetery-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'cemetery-batch-2',
+          cardId: 'BP01-502',
+          name: 'Quickblader',
+          image: '',
+          zone: 'cemetery-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    const { guestConn } = connectHostWithGuestAndSpectator();
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Resume Saved Session' }));
+    });
+    guestConn.send.mockClear();
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Batch Banish Cemetery Cards' }));
+    });
+
+    const guestSnapshots = guestConn.send.mock.calls
+      .map(([message]) => message as SyncMessage)
+      .filter((message): message is Extract<SyncMessage, { type: 'STATE_SNAPSHOT' }> => message.type === 'STATE_SNAPSHOT');
+
+    expect(guestSnapshots).toHaveLength(1);
+    expect(guestSnapshots[0].pendingEffects).toEqual([
+      {
+        type: 'CEMETERY_CARD_TO_BANISH',
+        actor: 'host',
+        count: 2,
+        cardNames: ['Aurelia', 'Quickblader'],
+      },
+    ]);
+  });
+
   it('sends fresh-state discards to both guest and spectator connections', () => {
     seedHostSavedSession({
       host: { hp: 9 },
@@ -2998,6 +3342,78 @@ describe('useGameBoardLogic shared UI notifications', () => {
 
     expect(screen.getByTestId('card-play-message')).toHaveTextContent('Opponent played Fire Chain');
     expect(screen.getByTestId('event-history')).not.toHaveTextContent('Opponent played Fire Chain');
+  });
+
+  it('shows named cemetery and bottom batch notifications in dialog and recent events', () => {
+    const { conn } = connectGuest();
+
+    act(() => {
+      conn.emit('data', {
+        type: 'SHARED_UI_EFFECT',
+        effect: {
+          type: 'CEMETERY_CARD_TO_HAND',
+          actor: 'host',
+          count: 3,
+          cardNames: ['Aurelia', 'Quickblader', 'Novice Trooper'],
+        },
+      });
+      vi.advanceTimersByTime(0);
+    });
+
+    expect(screen.getByTestId('card-play-message')).toHaveTextContent('Opponent added 3 cards from Cemetery to hand: Aurelia, Quickblader, Novice Trooper');
+    expect(screen.getByTestId('event-history')).toHaveTextContent('Opponent added 3 cards from Cemetery to hand: Aurelia, Quickblader, Novice Trooper');
+
+    act(() => {
+      conn.emit('data', {
+        type: 'SHARED_UI_EFFECT',
+        effect: {
+          type: 'CEMETERY_CARD_TO_BOTTOM',
+          actor: 'host',
+          count: 6,
+          cardNames: ['A', 'B', 'C', 'D', 'E'],
+        },
+      });
+      vi.advanceTimersByTime(0);
+    });
+
+    expect(screen.getByTestId('card-play-message')).toHaveTextContent('Opponent sent 6 cards from Cemetery to bottom of deck: A, B, C, D, E, and 1 more');
+    expect(screen.getByTestId('event-history')).toHaveTextContent('Opponent sent 6 cards from Cemetery to bottom of deck: A, B, C, D, E, and 1 more');
+  });
+
+  it('shows main-deck cemetery and cemetery banish notifications in dialog and recent events', () => {
+    const { conn } = connectGuest();
+
+    act(() => {
+      conn.emit('data', {
+        type: 'SHARED_UI_EFFECT',
+        effect: {
+          type: 'MAIN_DECK_CARD_TO_CEMETERY',
+          actor: 'host',
+          count: 3,
+          cardNames: ['Aurelia', 'Quickblader', 'Novice Trooper'],
+        },
+      });
+      vi.advanceTimersByTime(0);
+    });
+
+    expect(screen.getByTestId('card-play-message')).toHaveTextContent('Opponent sent 3 cards from Main Deck to Cemetery: Aurelia, Quickblader, Novice Trooper');
+    expect(screen.getByTestId('event-history')).toHaveTextContent('Opponent sent 3 cards from Main Deck to Cemetery: Aurelia, Quickblader, Novice Trooper');
+
+    act(() => {
+      conn.emit('data', {
+        type: 'SHARED_UI_EFFECT',
+        effect: {
+          type: 'CEMETERY_CARD_TO_BANISH',
+          actor: 'host',
+          count: 6,
+          cardNames: ['A', 'B', 'C', 'D', 'E'],
+        },
+      });
+      vi.advanceTimersByTime(0);
+    });
+
+    expect(screen.getByTestId('card-play-message')).toHaveTextContent('Opponent banished 6 cards from Cemetery: A, B, C, D, E, and 1 more');
+    expect(screen.getByTestId('event-history')).toHaveTextContent('Opponent banished 6 cards from Cemetery: A, B, C, D, E, and 1 more');
   });
 
   it('shows attack declarations in the attack dialog and recent events', () => {
