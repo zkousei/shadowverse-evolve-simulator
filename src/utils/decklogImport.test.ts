@@ -126,6 +126,88 @@ describe('convertDeckLogResponse', () => {
     expect(result.missingCardIds).toEqual([]);
   });
 
+  it('falls back to a local card with the same name and card type when the DeckLog id is missing', () => {
+    const fallbackCards: DeckBuilderCardData[] = [
+      {
+        id: 'BP19-001',
+        name: '剪定の咎人・マガチヨ',
+        image: '/magachiyo-main.png',
+        class: 'エルフ',
+        type: 'フォロワー',
+        card_kind_normalized: 'follower',
+        deck_section: 'main',
+      },
+      {
+        id: 'BP19-U01',
+        name: '剪定の咎人・マガチヨ',
+        image: '/magachiyo-evolve.png',
+        class: 'エルフ',
+        type: 'フォロワー・エボルヴ',
+        card_kind_normalized: 'evolve_follower',
+        deck_section: 'evolve',
+        is_evolve_card: true,
+      },
+      {
+        id: 'BP18-019',
+        name: '対空射撃',
+        image: '/taiku.png',
+        class: 'エルフ',
+        type: 'スペル',
+        card_kind_normalized: 'spell',
+        deck_section: 'main',
+      },
+    ];
+
+    const result = convertDeckLogResponse({
+      id: 1,
+      title: 'Fallback Deck',
+      game_title_id: 6,
+      list: [
+        { card_number: 'PR-528', name: '剪定の咎人・マガチヨ', num: 1, card_kind: '・フォロワー・', custom_param: { class_name: 'エルフ' } },
+        { card_number: 'PR-529', name: '対空射撃', num: 1, card_kind: '・スペル・', custom_param: { class_name: 'エルフ' } },
+      ],
+    }, fallbackCards);
+
+    expect(result.deckState.mainDeck.map(card => card.id)).toEqual(['BP19-001', 'BP18-019']);
+    expect(result.missingCardIds).toEqual([]);
+  });
+
+  it('resolves same-name fallbacks within the matching evolve card type only', () => {
+    const fallbackCards: DeckBuilderCardData[] = [
+      {
+        id: 'BP19-001',
+        name: '剪定の咎人・マガチヨ',
+        image: '/magachiyo-main.png',
+        class: 'エルフ',
+        type: 'フォロワー',
+        card_kind_normalized: 'follower',
+        deck_section: 'main',
+      },
+      {
+        id: 'BP19-U01',
+        name: '剪定の咎人・マガチヨ',
+        image: '/magachiyo-evolve.png',
+        class: 'エルフ',
+        type: 'フォロワー・エボルヴ',
+        card_kind_normalized: 'evolve_follower',
+        deck_section: 'evolve',
+        is_evolve_card: true,
+      },
+    ];
+
+    const result = convertDeckLogResponse({
+      id: 1,
+      title: 'Evolve Fallback Deck',
+      game_title_id: 6,
+      sub_list: [
+        { card_number: 'PR-999', name: '剪定の咎人・マガチヨ', num: 1, card_kind: '・フォロワー・エボルヴ・', custom_param: { class_name: 'エルフ' } },
+      ],
+    }, fallbackCards);
+
+    expect(result.deckState.evolveDeck.map(card => card.id)).toEqual(['BP19-U01']);
+    expect(result.missingCardIds).toEqual([]);
+  });
+
   it('collects missing card ids', () => {
     const result = convertDeckLogResponse({
       id: 1,
@@ -153,7 +235,7 @@ describe('convertDeckLogResponse', () => {
     expect(result.deckState.mainDeck[0]).toMatchObject({
       id: 'BP01-001',
       name: 'Alpha Knight',
-      image: '',
+      image: '/alpha.png',
       type: 'フォロワー',
     });
   });

@@ -1,5 +1,6 @@
 import { CONSTRUCTED_CLASS_VALUES, type CardClass } from '../models/class';
 import type { DeckBuilderCardData } from '../models/deckBuilderCard';
+import type { CardKindNormalized } from '../models/cardClassification';
 import type { DeckRuleConfig } from '../models/deckRule';
 import { createEmptyDeckState, type DeckState } from '../models/deckState';
 
@@ -56,6 +57,16 @@ export type DeckLogImportResult = {
   missingCardIds: string[];
 };
 
+type DeckLogResolvedCard = {
+  card: DeckBuilderCardData;
+  resolvedFromCatalog: boolean;
+};
+
+type DeckLogResolvedSection = {
+  cards: DeckBuilderCardData[];
+  missingCardIds: string[];
+};
+
 const isConstructedClass = (value: string): value is CardClass => (
   CONSTRUCTED_CLASS_VALUES.includes(value as CardClass)
 );
@@ -71,27 +82,93 @@ const normalizeCardType = (value?: string): string | undefined => {
   return parts.length > 0 ? parts.join('・') : undefined;
 };
 
+const DECKLOG_TYPE_TO_CARD_KIND: Record<string, CardKindNormalized> = {
+  'フォロワー': 'follower',
+  'フォロワー・エボルヴ': 'evolve_follower',
+  'スペル': 'spell',
+  'アミュレット': 'amulet',
+  'リーダー': 'leader',
+  'フォロワー・トークン': 'token_follower',
+  'スペル・トークン': 'token_spell',
+  'アミュレット・トークン': 'token_amulet',
+  'イクイップメント・トークン': 'token_equipment',
+  'フォロワー・アドバンス': 'advance_follower',
+  'スペル・アドバンス': 'advance_spell',
+  'アミュレット・アドバンス': 'advance_amulet',
+  'アミュレット・エボルヴ': 'evolve_amulet',
+  'スペル・エボルヴ': 'evolve_spell',
+};
+
+const getDeckLogCardKind = (entry: DeckLogCardEntry): CardKindNormalized | undefined => {
+  const normalizedType = normalizeCardType(entry.card_kind);
+  if (!normalizedType) return undefined;
+  return DECKLOG_TYPE_TO_CARD_KIND[normalizedType];
+};
+
+const buildDeckLogCard = (entry: DeckLogCardEntry): DeckBuilderCardData => {
+  const image = entry.img ? `${DECKLOG_CARD_IMAGE_BASE}${entry.img}` : '';
+
+  return {
+    id: entry.card_number,
+    name: entry.name,
+    image,
+    class: isConstructedClass(entry.custom_param?.class_name ?? '')
+      ? entry.custom_param?.class_name as CardClass
+      : undefined,
+    type: normalizeCardType(entry.card_kind),
+    rarity: entry.rare,
+    cost: entry.cost,
+  };
+};
+
+const pickDeckLogFallbackCard = (
+  entry: DeckLogCardEntry,
+  availableCards: DeckBuilderCardData[],
+): DeckBuilderCardData | null => {
+  const normalizedType = normalizeCardType(entry.card_kind);
+  if (!normalizedType) return null;
+
+  const normalizedKind = getDeckLogCardKind(entry);
+  const entryClass = isConstructedClass(entry.custom_param?.class_name ?? '')
+    ? entry.custom_param?.class_name as CardClass
+    : undefined;
+
+  const candidates = availableCards
+    .filter(card => card.name === entry.name)
+    .filter(card => card.type === normalizedType)
+    .filter(card => normalizedKind === undefined || card.card_kind_normalized === normalizedKind)
+    .filter(card => entryClass === undefined || card.class === entryClass)
+    .sort((left, right) => left.id.localeCompare(right.id, 'ja'));
+
+  return candidates[0] ?? null;
+};
+
 const expandDeckLogSection = (
   entries: DeckLogCardEntry[] | undefined,
-): DeckBuilderCardData[] => (
-  (entries ?? []).flatMap((entry) => {
-    const count = Math.max(0, entry.num ?? 0);
-    const image = entry.img ? `${DECKLOG_CARD_IMAGE_BASE}${entry.img}` : '';
-    const baseCard: DeckBuilderCardData = {
-      id: entry.card_number,
-      name: entry.name,
-      image,
-      class: isConstructedClass(entry.custom_param?.class_name ?? '')
-        ? entry.custom_param?.class_name as CardClass
-        : undefined,
-      type: normalizeCardType(entry.card_kind),
-      rarity: entry.rare,
-      cost: entry.cost,
-    };
+  availableCards: DeckBuilderCardData[],
+): DeckLogResolvedSection => {
+  const missingCardIds = new Set<string>();
 
-    return Array.from({ length: count }, () => ({ ...baseCard }));
-  })
-);
+  const cards = (entries ?? []).flatMap((entry) => {
+    const count = Math.max(0, entry.num ?? 0);
+    const exactMatch = availableCards.find(card => card.id === entry.card_number);
+    const fallbackMatch = exactMatch ?? pickDeckLogFallbackCard(entry, availableCards);
+    const resolvedCard: DeckLogResolvedCard = fallbackMatch
+      ? { card: fallbackMatch, resolvedFromCatalog: true }
+      : { card: buildDeckLogCard(entry), resolvedFromCatalog: false };
+
+    if (!resolvedCard.resolvedFromCatalog) {
+      missingCardIds.add(entry.card_number);
+    }
+
+    return Array.from({ length: count }, () => ({ ...resolvedCard.card }));
+  });
+
+  return {
+    cards,
+    missingCardIds: Array.from(missingCardIds),
+  };
+};
 
 export const extractDeckLogCode = (input: string): string | null => {
   const trimmed = input.trim();
@@ -162,24 +239,25 @@ export const convertDeckLogResponse = (
     throw new DeckLogImportError('unsupported-game', 'Only Shadowverse EVOLVE decks are supported.');
   }
 
+  const mainDeck = expandDeckLogSection(payload.list, availableCards);
+  const evolveDeck = expandDeckLogSection(payload.sub_list, availableCards);
+  const leaderCards = expandDeckLogSection(payload.p_list, availableCards);
+
   const deckState: DeckState = {
     ...createEmptyDeckState(),
-    mainDeck: expandDeckLogSection(payload.list),
-    evolveDeck: expandDeckLogSection(payload.sub_list),
-    leaderCards: expandDeckLogSection(payload.p_list),
+    mainDeck: mainDeck.cards,
+    evolveDeck: evolveDeck.cards,
+    leaderCards: leaderCards.cards,
     tokenDeck: [],
   };
 
-  const availableCardIds = new Set(availableCards.map(card => card.id));
   const missingCardIds = Array.from(
     new Set(
       [
-        ...deckState.mainDeck,
-        ...deckState.evolveDeck,
-        ...deckState.leaderCards,
+        ...mainDeck.missingCardIds,
+        ...evolveDeck.missingCardIds,
+        ...leaderCards.missingCardIds,
       ]
-        .map(card => card.id)
-        .filter(cardId => !availableCardIds.has(cardId))
     )
   );
 
