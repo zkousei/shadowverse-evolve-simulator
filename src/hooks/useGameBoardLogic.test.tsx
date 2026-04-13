@@ -3476,6 +3476,7 @@ describe('useGameBoardLogic P2P reconnect', () => {
     expect(screen.getByTestId('host-ex-count')).toHaveTextContent('1');
     expect(screen.getByTestId('can-undo-move')).toHaveTextContent('true');
     expect(screen.getByTestId('card-play-message')).toHaveTextContent('You moved Deck Card to EX Area');
+    expect(screen.getByTestId('event-history')).toHaveTextContent('You moved Deck Card to EX Area');
 
     act(() => {
       fireEvent.click(screen.getByRole('button', { name: 'Undo Move' }));
@@ -3550,7 +3551,7 @@ describe('useGameBoardLogic shared UI notifications', () => {
     expect(screen.getByTestId('revealed-overlay-title')).toHaveTextContent('You revealed cards from hand');
   });
 
-  it('logs searched card to hand but not card played announcements', () => {
+  it('logs searched card to hand and card played announcements', () => {
     const { conn } = connectGuest();
 
     act(() => {
@@ -3573,7 +3574,33 @@ describe('useGameBoardLogic shared UI notifications', () => {
     });
 
     expect(screen.getByTestId('card-play-message')).toHaveTextContent('Opponent played Fire Chain');
-    expect(screen.getByTestId('event-history')).not.toHaveTextContent('Opponent played Fire Chain');
+    expect(screen.getByTestId('event-history')).toHaveTextContent('Opponent played Fire Chain');
+  });
+
+  it('logs public top-deck movement notifications', () => {
+    const { conn } = connectGuest();
+
+    act(() => {
+      conn.emit('data', {
+        type: 'SHARED_UI_EFFECT',
+        effect: { type: 'MILL_CARD_COMPLETED', actor: 'host', cardName: 'Aurelia' },
+      });
+      vi.advanceTimersByTime(0);
+    });
+
+    expect(screen.getByTestId('card-play-message')).toHaveTextContent('Opponent milled Aurelia');
+    expect(screen.getByTestId('event-history')).toHaveTextContent('Opponent milled Aurelia');
+
+    act(() => {
+      conn.emit('data', {
+        type: 'SHARED_UI_EFFECT',
+        effect: { type: 'TOP_CARD_TO_EX_COMPLETED', actor: 'host', cardName: 'Drive Point' },
+      });
+      vi.advanceTimersByTime(0);
+    });
+
+    expect(screen.getByTestId('card-play-message')).toHaveTextContent('Opponent moved Drive Point to EX Area');
+    expect(screen.getByTestId('event-history')).toHaveTextContent('Opponent moved Drive Point to EX Area');
   });
 
   it('shows named cemetery and bottom batch notifications in dialog and recent events', () => {
@@ -3670,7 +3697,7 @@ describe('useGameBoardLogic shared UI notifications', () => {
     expect(screen.getByTestId('card-play-message')).toHaveTextContent('none');
   });
 
-  it('keeps attack logs while card-play notifications remain dialog-only', () => {
+  it('keeps attack logs alongside card-play logs', () => {
     const { conn } = connectGuest();
 
     act(() => {
@@ -3699,7 +3726,7 @@ describe('useGameBoardLogic shared UI notifications', () => {
 
     expect(screen.getByTestId('card-play-message')).toHaveTextContent('Opponent played Fire Chain');
     expect(screen.getByTestId('event-history')).toHaveTextContent('Knight -> You Leader');
-    expect(screen.getByTestId('event-history')).not.toHaveTextContent('Opponent played Fire Chain');
+    expect(screen.getByTestId('event-history')).toHaveTextContent('Opponent played Fire Chain');
   });
 
   it('merges look-top summary into the reveal overlay and logs only the summary entry', async () => {
@@ -3895,37 +3922,37 @@ describe('useGameBoardLogic shared UI notifications', () => {
 
   it.each([
     {
-      name: 'main deck search placement to field stays dialog-only and supports generic wording',
+      name: 'main deck search placement to field logs generic wording',
       effect: { type: 'SEARCHED_CARD_PLACED', actor: 'host', destination: 'field' as const },
       expected: 'Opponent set a card from Search to field',
     },
     {
-      name: 'main deck search placement to ex stays dialog-only',
+      name: 'main deck search placement to ex logs',
       effect: { type: 'SEARCHED_CARD_PLACED', actor: 'host', destination: 'ex' as const, cardName: 'Drive Point' },
       expected: 'Opponent added Drive Point from Search to EX Area',
     },
     {
-      name: 'cemetery placement to field stays dialog-only',
+      name: 'cemetery placement to field logs',
       effect: { type: 'CEMETERY_CARD_PLACED', actor: 'host', destination: 'field' as const, cardName: 'Aurelia' },
       expected: 'Opponent played to field Aurelia from Cemetery',
     },
     {
-      name: 'cemetery placement to ex stays dialog-only',
+      name: 'cemetery placement to ex logs',
       effect: { type: 'CEMETERY_CARD_PLACED', actor: 'host', destination: 'ex' as const, cardName: 'Aurelia' },
       expected: 'Opponent added Aurelia from Cemetery to EX Area',
     },
     {
-      name: 'banish placement to field stays dialog-only',
+      name: 'banish placement to field logs',
       effect: { type: 'BANISHED_CARD_PLACED', actor: 'host', destination: 'field' as const, cardName: 'Aurelia' },
       expected: 'Opponent played to field Aurelia from Banish',
     },
     {
-      name: 'banish placement to ex stays dialog-only',
+      name: 'banish placement to ex logs',
       effect: { type: 'BANISHED_CARD_PLACED', actor: 'host', destination: 'ex' as const, cardName: 'Aurelia' },
       expected: 'Opponent added Aurelia from Banish to EX Area',
     },
     {
-      name: 'evolve deck placement to field stays dialog-only',
+      name: 'evolve deck placement to field logs',
       effect: { type: 'EVOLVE_CARD_PLACED', actor: 'host', cardName: 'Dragon Warrior' },
       expected: 'Opponent played to field Dragon Warrior from Evolve Deck',
     },
@@ -3941,7 +3968,7 @@ describe('useGameBoardLogic shared UI notifications', () => {
     });
 
     expect(screen.getByTestId('card-play-message')).toHaveTextContent(expected);
-    expect(screen.getByTestId('event-history')).toHaveTextContent('none');
+    expect(screen.getByTestId('event-history')).toHaveTextContent(expected);
   });
 
   it('shows manual draw as a dialog only without adding a recent event entry', () => {
