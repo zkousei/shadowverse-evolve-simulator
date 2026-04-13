@@ -46,22 +46,28 @@ export function useGameBoardFieldActions({
         return gameStateRef.current.cards.find(card => card.id === cardId)?.owner;
     }, [gameStateRef, isSoloMode]);
 
+    const getSearchExtractionActor = useCallback((targetRole?: PlayerRole): PlayerRole => {
+        if (isSoloMode) return targetRole ?? role;
+        return role;
+    }, [isSoloMode, role]);
+
     const handleExtractCard = useCallback((
         cardId: string,
         customDestination?: string,
         targetRole?: PlayerRole,
         revealToOpponent = false
     ) => {
-        const actor = targetRole ?? role;
+        const actor = getSearchExtractionActor(targetRole);
+        const placementRole = targetRole ?? role;
 
-        if (customDestination?.startsWith(`field-${actor}`)) {
+        if (customDestination?.startsWith(`field-${placementRole}`)) {
             const sourceCard = gameStateRef.current.cards.find(card => card.id === cardId);
-            if (sourceCard?.zone === `evolveDeck-${actor}`) {
+            if (sourceCard?.zone === `evolveDeck-${placementRole}`) {
                 const resolvedSelection = resolveEvolveAutoAttachSelection(cardId);
                 if (resolvedSelection?.candidateCards.length === 1) {
                     executeEvolveAutoAttach(
                         cardId,
-                        actor,
+                        placementRole,
                         resolvedSelection.candidateCards[0].id,
                         resolvedSelection.placement
                     );
@@ -70,7 +76,7 @@ export function useGameBoardFieldActions({
                 }
 
                 if (resolvedSelection && resolvedSelection.candidateCards.length > 1) {
-                    queueEvolveAutoAttachSelection(cardId, actor);
+                    queueEvolveAutoAttachSelection(cardId, placementRole);
                     setSearchZone(null);
                     return;
                 }
@@ -79,7 +85,7 @@ export function useGameBoardFieldActions({
 
         dispatchGameEvent({ type: 'EXTRACT_CARD', actor, cardId, destination: customDestination, revealToOpponent });
         setSearchZone(null);
-    }, [dispatchGameEvent, executeEvolveAutoAttach, gameStateRef, queueEvolveAutoAttachSelection, resolveEvolveAutoAttachSelection, role, setSearchZone]);
+    }, [dispatchGameEvent, executeEvolveAutoAttach, gameStateRef, getSearchExtractionActor, queueEvolveAutoAttachSelection, resolveEvolveAutoAttachSelection, role, setSearchZone]);
 
     const handleExtractCards = useCallback((
         cardIds: string[],
@@ -93,7 +99,7 @@ export function useGameBoardFieldActions({
             return;
         }
 
-        const actor = targetRole ?? role;
+        const actor = getSearchExtractionActor(targetRole);
         dispatchGameEvent({
             type: 'EXTRACT_CARDS_BATCH',
             actor,
@@ -102,7 +108,7 @@ export function useGameBoardFieldActions({
             revealToOpponent,
         });
         setSearchZone(null);
-    }, [dispatchGameEvent, handleExtractCard, role, setSearchZone]);
+    }, [dispatchGameEvent, getSearchExtractionActor, handleExtractCard, setSearchZone]);
 
     const spawnToken = useCallback((
         targetRole: PlayerRole = role,

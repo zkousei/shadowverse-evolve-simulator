@@ -1519,6 +1519,7 @@ describe('gameSyncReducer', () => {
   it('applies cemetery batches as one authoritative card move', () => {
     const state = createState({
       revision: 10,
+      gameStatus: 'playing',
       cards: [
         {
           id: 'deck-card-1',
@@ -1771,6 +1772,53 @@ describe('gameSyncReducer', () => {
     });
 
     expect(dragged).toBe(state);
+  });
+
+  it('blocks sending main-deck cards to cemetery during preparation', () => {
+    const state = createState({
+      revision: 8,
+      gameStatus: 'preparing',
+      cards: [
+        {
+          id: 'main-deck-card-1',
+          cardId: 'BP01-903',
+          name: 'Main Deck Card 1',
+          image: '',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'main-deck-card-2',
+          cardId: 'BP01-904',
+          name: 'Main Deck Card 2',
+          image: '',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    const single = applyGameSyncEvent(state, {
+      id: 'evt-15d',
+      type: 'SEND_TO_CEMETERY',
+      actor: 'host',
+      cardId: 'main-deck-card-1',
+    });
+    expect(single).toBe(state);
+
+    const batch = applyGameSyncEvent(state, {
+      id: 'evt-15e',
+      type: 'SEND_TO_CEMETERY_BATCH',
+      actor: 'host',
+      cardIds: ['main-deck-card-1', 'main-deck-card-2'],
+    });
+    expect(batch).toBe(state);
   });
 
   it('links a special card to a field card without using the normal stack model', () => {

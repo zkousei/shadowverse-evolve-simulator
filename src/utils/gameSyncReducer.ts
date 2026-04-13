@@ -137,6 +137,15 @@ const isPreparingMainDeckDragBlocked = (
   return card?.zone.startsWith('mainDeck-') ?? false;
 };
 
+const isPreparingMainDeckCemeteryMoveBlocked = (
+  state: SyncState,
+  cardId: string
+): boolean => {
+  if (state.gameStatus !== 'preparing') return false;
+  const card = state.cards.find(c => c.id === cardId);
+  return card?.zone.startsWith('mainDeck-') ?? false;
+};
+
 const canToggleEvolveDeckUsage = (
   state: SyncState,
   actor: GameSyncEvent['actor'],
@@ -426,6 +435,7 @@ export const applyGameSyncEvent = (
 
     case 'SEND_TO_CEMETERY': {
       if (isPreparingHandMovementBlocked(state, event.cardId)) return state;
+      if (isPreparingMainDeckCemeteryMoveBlocked(state, event.cardId)) return state;
       const nextCards = CardLogic.sendCardToCemetery(state.cards, event.cardId);
       if (nextCards === state.cards) return state;
       return withCardMoveCheckpoint(state, event.actor, nextCards);
@@ -439,6 +449,7 @@ export const applyGameSyncEvent = (
         (cards, cardId) => {
           const workingState = withWorkingCards(state, cards);
           if (isPreparingHandMovementBlocked(workingState, cardId)) return cards;
+          if (isPreparingMainDeckCemeteryMoveBlocked(workingState, cardId)) return cards;
           return CardLogic.sendCardToCemetery(cards, cardId);
         }
       );

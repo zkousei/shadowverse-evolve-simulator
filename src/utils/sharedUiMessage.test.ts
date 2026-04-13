@@ -8,6 +8,10 @@ const t = ((key: string, options?: Record<string, unknown>) => {
     'gameBoard.modals.shared.actor.opponent': 'Opponent',
     'gameBoard.modals.shared.actor.player1': 'Player 1',
     'gameBoard.modals.shared.actor.player2': 'Player 2',
+    'gameBoard.modals.shared.owner.you': 'your',
+    'gameBoard.modals.shared.owner.opponent': "opponent's",
+    'gameBoard.modals.shared.owner.player1': "Player 1's",
+    'gameBoard.modals.shared.owner.player2': "Player 2's",
     'gameBoard.modals.shared.messages.lookTopResolved': '{{actor}} resolved Look Top {{count}}',
     'gameBoard.modals.shared.messages.lookTopDetail.revealedToHand': 'Revealed to Hand: {{cards}}',
     'gameBoard.modals.shared.messages.lookTopDetail.bottom': 'Bottom: {{count}}',
@@ -25,36 +29,65 @@ const t = ((key: string, options?: Record<string, unknown>) => {
     'gameBoard.modals.shared.messages.topCardToEx': '{{actor}} moved {{cardName}} to EX Area',
     'gameBoard.modals.shared.messages.searchToHand': '{{actor}} added a card from Search to hand',
     'gameBoard.modals.shared.messages.searchToHandMultiple': '{{actor}} added {{count}} cards from Search to hand',
+    'gameBoard.modals.shared.messages.searchToHandOwned': '{{actor}} added a card from {{sourceOwner}} Main Deck to {{destinationOwner}} hand',
+    'gameBoard.modals.shared.messages.searchToHandMultipleOwned': '{{actor}} added {{count}} cards from {{sourceOwner}} Main Deck to {{destinationOwner}} hand',
     'gameBoard.modals.shared.messages.searchPlayedField': '{{actor}} played to field {{cardName}} from Search',
     'gameBoard.modals.shared.messages.searchPlayedFieldMultiple': '{{actor}} played {{count}} cards from Search to field',
+    'gameBoard.modals.shared.messages.searchPlayedFieldOwned': '{{actor}} played {{cardName}} from {{sourceOwner}} Main Deck to {{destinationOwner}} field',
+    'gameBoard.modals.shared.messages.searchPlayedFieldMultipleOwned': '{{actor}} played {{count}} cards from {{sourceOwner}} Main Deck to {{destinationOwner}} field',
     'gameBoard.modals.shared.messages.searchSetField': '{{actor}} set a card from Search to field',
     'gameBoard.modals.shared.messages.searchSetFieldMultiple': '{{actor}} set {{count}} cards from Search to field',
+    'gameBoard.modals.shared.messages.searchSetFieldOwned': '{{actor}} set a card from {{sourceOwner}} Main Deck to {{destinationOwner}} field',
+    'gameBoard.modals.shared.messages.searchSetFieldMultipleOwned': '{{actor}} set {{count}} cards from {{sourceOwner}} Main Deck to {{destinationOwner}} field',
     'gameBoard.modals.shared.messages.searchToEx': '{{actor}} added {{cardName}} from Search to EX Area',
     'gameBoard.modals.shared.messages.searchToExGeneric': '{{actor}} added a card from Search to EX Area',
     'gameBoard.modals.shared.messages.searchToExMultiple': '{{actor}} added {{count}} cards from Search to EX Area',
+    'gameBoard.modals.shared.messages.searchToExOwned': '{{actor}} added {{cardName}} from {{sourceOwner}} Main Deck to {{destinationOwner}} EX Area',
+    'gameBoard.modals.shared.messages.searchToExGenericOwned': '{{actor}} added a card from {{sourceOwner}} Main Deck to {{destinationOwner}} EX Area',
+    'gameBoard.modals.shared.messages.searchToExMultipleOwned': '{{actor}} added {{count}} cards from {{sourceOwner}} Main Deck to {{destinationOwner}} EX Area',
     'gameBoard.modals.shared.messages.mainDeckToCemetery': '{{actor}} sent {{cardName}} from Main Deck to Cemetery',
     'gameBoard.modals.shared.messages.mainDeckToCemeteryMultiple': '{{actor}} sent {{count}} cards from Main Deck to Cemetery',
+    'gameBoard.modals.shared.messages.mainDeckToCemeteryOwned': '{{actor}} sent {{cardName}} from {{sourceOwner}} Main Deck to {{destinationOwner}} Cemetery',
+    'gameBoard.modals.shared.messages.mainDeckToCemeteryMultipleOwned': '{{actor}} sent {{count}} cards from {{sourceOwner}} Main Deck to {{destinationOwner}} Cemetery',
     'gameBoard.modals.shared.messages.cemeteryToHand': '{{actor}} added {{cardName}} from Cemetery to hand',
     'gameBoard.modals.shared.messages.cemeteryToHandMultiple': '{{actor}} added {{count}} cards from Cemetery to hand',
+    'gameBoard.modals.shared.messages.cemeteryToHandOwned': '{{actor}} added {{cardName}} from {{sourceOwner}} Cemetery to {{destinationOwner}} hand',
+    'gameBoard.modals.shared.messages.cemeteryToHandMultipleOwned': '{{actor}} added {{count}} cards from {{sourceOwner}} Cemetery to {{destinationOwner}} hand',
     'gameBoard.modals.shared.messages.cemeteryToBottom': '{{actor}} sent {{cardName}} from Cemetery to bottom of deck',
     'gameBoard.modals.shared.messages.cemeteryToBottomMultiple': '{{actor}} sent {{count}} cards from Cemetery to bottom of deck',
+    'gameBoard.modals.shared.messages.cemeteryToBottomOwned': '{{actor}} sent {{cardName}} from {{sourceOwner}} Cemetery to bottom of {{destinationOwner}} deck',
+    'gameBoard.modals.shared.messages.cemeteryToBottomMultipleOwned': '{{actor}} sent {{count}} cards from {{sourceOwner}} Cemetery to bottom of {{destinationOwner}} deck',
     'gameBoard.modals.shared.messages.cemeteryPlayedField': '{{actor}} played to field {{cardName}} from Cemetery',
     'gameBoard.modals.shared.messages.cemeteryPlayedFieldMultiple': '{{actor}} played {{count}} cards from Cemetery to field',
+    'gameBoard.modals.shared.messages.cemeteryPlayedFieldOwned': '{{actor}} played {{cardName}} from {{sourceOwner}} Cemetery to {{destinationOwner}} field',
+    'gameBoard.modals.shared.messages.cemeteryPlayedFieldMultipleOwned': '{{actor}} played {{count}} cards from {{sourceOwner}} Cemetery to {{destinationOwner}} field',
     'gameBoard.modals.shared.messages.cemeteryToEx': '{{actor}} added {{cardName}} from Cemetery to EX Area',
     'gameBoard.modals.shared.messages.cemeteryToExMultiple': '{{actor}} added {{count}} cards from Cemetery to EX Area',
+    'gameBoard.modals.shared.messages.cemeteryToExOwned': '{{actor}} added {{cardName}} from {{sourceOwner}} Cemetery to {{destinationOwner}} EX Area',
+    'gameBoard.modals.shared.messages.cemeteryToExMultipleOwned': '{{actor}} added {{count}} cards from {{sourceOwner}} Cemetery to {{destinationOwner}} EX Area',
     'gameBoard.modals.shared.messages.cemeteryToBanish': '{{actor}} banished {{cardName}} from Cemetery',
     'gameBoard.modals.shared.messages.cemeteryToBanishMultiple': '{{actor}} banished {{count}} cards from Cemetery',
+    'gameBoard.modals.shared.messages.cemeteryToBanishOwned': '{{actor}} banished {{cardName}} from {{sourceOwner}} Cemetery',
+    'gameBoard.modals.shared.messages.cemeteryToBanishMultipleOwned': '{{actor}} banished {{count}} cards from {{sourceOwner}} Cemetery',
     'gameBoard.modals.shared.messages.evolvePlayedField': '{{actor}} played to field {{cardName}} from Evolve Deck',
     'gameBoard.modals.shared.messages.evolveSetUsed': '{{actor}} set {{cardName}} to USED',
     'gameBoard.modals.shared.messages.evolveSetUnused': '{{actor}} set {{cardName}} to UNUSED',
     'gameBoard.modals.shared.messages.banishToHand': '{{actor}} added {{cardName}} from Banish to hand',
     'gameBoard.modals.shared.messages.banishToHandMultiple': '{{actor}} added {{count}} cards from Banish to hand',
+    'gameBoard.modals.shared.messages.banishToHandOwned': '{{actor}} added {{cardName}} from {{sourceOwner}} Banish to {{destinationOwner}} hand',
+    'gameBoard.modals.shared.messages.banishToHandMultipleOwned': '{{actor}} added {{count}} cards from {{sourceOwner}} Banish to {{destinationOwner}} hand',
     'gameBoard.modals.shared.messages.banishToBottom': '{{actor}} sent {{cardName}} from Banish to bottom of deck',
     'gameBoard.modals.shared.messages.banishToBottomMultiple': '{{actor}} sent {{count}} cards from Banish to bottom of deck',
+    'gameBoard.modals.shared.messages.banishToBottomOwned': '{{actor}} sent {{cardName}} from {{sourceOwner}} Banish to bottom of {{destinationOwner}} deck',
+    'gameBoard.modals.shared.messages.banishToBottomMultipleOwned': '{{actor}} sent {{count}} cards from {{sourceOwner}} Banish to bottom of {{destinationOwner}} deck',
     'gameBoard.modals.shared.messages.banishPlayedField': '{{actor}} played to field {{cardName}} from Banish',
     'gameBoard.modals.shared.messages.banishPlayedFieldMultiple': '{{actor}} played {{count}} cards from Banish to field',
+    'gameBoard.modals.shared.messages.banishPlayedFieldOwned': '{{actor}} played {{cardName}} from {{sourceOwner}} Banish to {{destinationOwner}} field',
+    'gameBoard.modals.shared.messages.banishPlayedFieldMultipleOwned': '{{actor}} played {{count}} cards from {{sourceOwner}} Banish to {{destinationOwner}} field',
     'gameBoard.modals.shared.messages.banishToEx': '{{actor}} added {{cardName}} from Banish to EX Area',
     'gameBoard.modals.shared.messages.banishToExMultiple': '{{actor}} added {{count}} cards from Banish to EX Area',
+    'gameBoard.modals.shared.messages.banishToExOwned': '{{actor}} added {{cardName}} from {{sourceOwner}} Banish to {{destinationOwner}} EX Area',
+    'gameBoard.modals.shared.messages.banishToExMultipleOwned': '{{actor}} added {{count}} cards from {{sourceOwner}} Banish to {{destinationOwner}} EX Area',
     'gameBoard.modals.shared.messages.namedCardListWithMore': '{{cards}}, and {{count}} more',
     'gameBoard.modals.shared.messages.revealLookTop': '{{actor}} revealed from Look Top',
     'gameBoard.modals.shared.messages.revealHand': '{{actor}} revealed cards from hand',
@@ -244,6 +277,50 @@ describe('sharedUiMessage', () => {
       false,
       t
     )).toBe('Opponent sent Aurelia from Banish to bottom of deck');
+  });
+
+  it('adds owner context only when the operator differs from the affected owner', () => {
+    expect(formatSharedUiMessage(
+      { type: 'CEMETERY_CARD_TO_HAND', actor: 'host', sourceOwner: 'host', destinationOwner: 'host', cardName: 'Aurelia' },
+      'host',
+      false,
+      t
+    )).toBe('You added Aurelia from Cemetery to hand');
+
+    expect(formatSharedUiMessage(
+      { type: 'CEMETERY_CARD_TO_HAND', actor: 'host', sourceOwner: 'guest', destinationOwner: 'guest', cardName: 'Aurelia' },
+      'host',
+      false,
+      t
+    )).toBe("You added Aurelia from opponent's Cemetery to opponent's hand");
+
+    expect(formatSharedUiMessage(
+      { type: 'CEMETERY_CARD_TO_HAND', actor: 'host', sourceOwner: 'guest', destinationOwner: 'guest', cardName: 'Aurelia' },
+      'guest',
+      false,
+      t
+    )).toBe('Opponent added Aurelia from your Cemetery to your hand');
+
+    expect(formatSharedUiMessage(
+      { type: 'MAIN_DECK_CARD_TO_CEMETERY', actor: 'host', sourceOwner: 'guest', destinationOwner: 'guest', count: 2, cardNames: ['Aurelia', 'Quickblader'] },
+      'host',
+      false,
+      t
+    )).toBe("You sent 2 cards from opponent's Main Deck to opponent's Cemetery: Aurelia, Quickblader");
+
+    expect(formatSharedUiMessage(
+      { type: 'SEARCHED_CARD_TO_HAND', actor: 'host', sourceOwner: 'guest', destinationOwner: 'guest', count: 2 },
+      'host',
+      false,
+      t
+    )).toBe("You added 2 cards from opponent's Main Deck to opponent's hand");
+
+    expect(formatSharedUiMessage(
+      { type: 'CEMETERY_CARD_TO_BOTTOM', actor: 'host', sourceOwner: 'guest', destinationOwner: 'guest', count: 2, cardNames: ['Aurelia', 'Quickblader'] },
+      'host',
+      false,
+      t
+    )).toBe("You sent 2 cards from opponent's Cemetery to bottom of opponent's deck: Aurelia, Quickblader");
   });
 
   it('formats reveal messages for look-top, hand, and search effects', () => {

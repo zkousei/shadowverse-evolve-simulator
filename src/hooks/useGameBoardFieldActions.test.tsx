@@ -414,6 +414,19 @@ describe('useGameBoardFieldActions (Pure Hook)', () => {
       expect(defaultArgs.setSearchZone).toHaveBeenCalledWith(null);
     });
 
+    it('uses the local actor for single extraction outside solo mode even when targeting the opponent zone', () => {
+      const { result } = renderHook(() => useGameBoardFieldActions(defaultArgs));
+      result.current.handleExtractCard('card-1', 'hand-guest', 'guest');
+
+      expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledWith({
+        type: 'EXTRACT_CARD',
+        actor: 'host',
+        cardId: 'card-1',
+        destination: 'hand-guest',
+        revealToOpponent: false,
+      });
+    });
+
     it('dispatches EXTRACT_CARD when dest is field but source is NOT evolveDeck', () => {
       const gameState = buildSyncState({
         cards: [makeCard({ id: 'card-1', zone: 'hand-host', owner: 'host' })],
@@ -544,6 +557,20 @@ describe('useGameBoardFieldActions (Pure Hook)', () => {
       expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledTimes(1);
       expect(defaultArgs.setSearchZone).toHaveBeenCalledTimes(1);
       expect(defaultArgs.setSearchZone).toHaveBeenCalledWith(null);
+    });
+
+    it('uses the local actor for extraction outside solo mode even when targeting the opponent zone', () => {
+      const { result } = renderHook(() => useGameBoardFieldActions(defaultArgs));
+
+      result.current.handleExtractCards(['card-1', 'card-2'], 'hand-guest', 'guest');
+
+      expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledWith({
+        type: 'EXTRACT_CARDS_BATCH',
+        actor: 'host',
+        cardIds: ['card-1', 'card-2'],
+        destination: 'hand-guest',
+        revealToOpponent: false,
+      });
     });
   });
 

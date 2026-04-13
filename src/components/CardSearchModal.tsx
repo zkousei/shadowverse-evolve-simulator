@@ -181,7 +181,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
   );
 
   const canSendCardToCemetery = (card: CardInstance) => (
-    Boolean((onSendCardsToCemetery || onSendToCemetery) && isMainDeckSearch && card.owner === viewerRole)
+    Boolean((onSendCardsToCemetery || onSendToCemetery) && isMainDeckSearch && !isPreparingMainDeckSearch && card.owner === viewerRole)
   );
 
   const canBanishCard = () => (

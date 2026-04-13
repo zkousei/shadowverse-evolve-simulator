@@ -403,12 +403,38 @@ export const useGameBoardLogic = () => {
     const extractedCards = extractedCardIds
       .map((cardId) => currentState.cards.find((card) => card.id === cardId))
       .filter((card): card is CardInstance => Boolean(card));
-    const countCardsInZone = (zonePrefix: string) => extractedCards.filter((card) => card.zone === `${zonePrefix}-${event.actor}`);
+    const cardsFromZonePrefix = (cards: CardInstance[], zonePrefix: string) => (
+      cards.filter((card) => card.zone.startsWith(`${zonePrefix}-`))
+    );
+    const getZoneOwner = (zone?: string): PlayerRole | undefined => {
+      if (zone?.endsWith('-host')) return 'host';
+      if (zone?.endsWith('-guest')) return 'guest';
+      return undefined;
+    };
+    const getUniformCardOwner = (cards: CardInstance[]): PlayerRole | undefined => {
+      if (cards.length === 0) return undefined;
+      const firstOwner = cards[0].owner;
+      return cards.every((card) => card.owner === firstOwner) ? firstOwner : undefined;
+    };
+    const buildOwnerContext = (
+      sourceOwner?: PlayerRole,
+      destinationOwner?: PlayerRole
+    ): { sourceOwner?: PlayerRole; destinationOwner?: PlayerRole } => {
+      const shouldIncludeOwnerContext =
+        (sourceOwner !== undefined && sourceOwner !== event.actor) ||
+        (destinationOwner !== undefined && destinationOwner !== event.actor);
+
+      return shouldIncludeOwnerContext
+        ? { sourceOwner, destinationOwner }
+        : {};
+    };
+    const countCardsInZone = (zonePrefix: string) => cardsFromZonePrefix(extractedCards, zonePrefix);
     const getPreviewCardNames = (cards: CardInstance[]) => cards.slice(0, 5).map((card) => card.name);
     const mainDeckExtractedCards = countCardsInZone('mainDeck');
     const cemeteryExtractedCards = countCardsInZone('cemetery');
     const banishExtractedCards = countCardsInZone('banish');
     const evolveExtractedCards = countCardsInZone('evolveDeck');
+    const extractDestinationOwner = getZoneOwner(extractDestination);
     const bottomedCardIds =
       event.type === 'SEND_TO_BOTTOM'
         ? [event.cardId]
@@ -418,8 +444,8 @@ export const useGameBoardLogic = () => {
     const bottomedCards = bottomedCardIds
       .map((cardId) => currentState.cards.find((card) => card.id === cardId))
       .filter((card): card is CardInstance => Boolean(card));
-    const cemeteryBottomedCards = bottomedCards.filter((card) => card.zone === `cemetery-${event.actor}`);
-    const banishBottomedCards = bottomedCards.filter((card) => card.zone === `banish-${event.actor}`);
+    const cemeteryBottomedCards = cardsFromZonePrefix(bottomedCards, 'cemetery');
+    const banishBottomedCards = cardsFromZonePrefix(bottomedCards, 'banish');
     const cemeteriedCardIds =
       event.type === 'SEND_TO_CEMETERY'
         ? [event.cardId]
@@ -429,7 +455,7 @@ export const useGameBoardLogic = () => {
     const cemeteriedCards = cemeteriedCardIds
       .map((cardId) => currentState.cards.find((card) => card.id === cardId))
       .filter((card): card is CardInstance => Boolean(card));
-    const mainDeckToCemeteryCards = cemeteriedCards.filter((card) => card.zone === `mainDeck-${event.actor}`);
+    const mainDeckToCemeteryCards = cardsFromZonePrefix(cemeteriedCards, 'mainDeck');
     const banishedCardIds =
       event.type === 'BANISH_CARD'
         ? [event.cardId]
@@ -439,7 +465,7 @@ export const useGameBoardLogic = () => {
     const banishedCards = banishedCardIds
       .map((cardId) => currentState.cards.find((card) => card.id === cardId))
       .filter((card): card is CardInstance => Boolean(card));
-    const cemeteryBanishedCards = banishedCards.filter((card) => card.zone === `cemetery-${event.actor}`);
+    const cemeteryBanishedCards = cardsFromZonePrefix(banishedCards, 'cemetery');
 
     if (event.type === 'RESOLVE_TOP_DECK') {
       // Embed SharedUiEffects into the snapshot so everything is sent in one
@@ -476,6 +502,7 @@ export const useGameBoardLogic = () => {
         const effect: SharedUiEffect = {
           type: 'SEARCHED_CARD_TO_HAND',
           actor: event.actor,
+          ...buildOwnerContext(getUniformCardOwner(mainDeckExtractedCards), extractDestinationOwner),
           count: mainDeckExtractedCards.length > 1 ? mainDeckExtractedCards.length : undefined,
         };
         queueSnapshotEffect(effect);
@@ -490,6 +517,7 @@ export const useGameBoardLogic = () => {
         const effect: SharedUiEffect = {
           type: 'CEMETERY_CARD_TO_HAND',
           actor: event.actor,
+          ...buildOwnerContext(getUniformCardOwner(cemeteryExtractedCards), extractDestinationOwner),
           cardName: cemeteryExtractedCards.length === 1 ? cemeteryExtractedCards[0].name : undefined,
           cardNames: cemeteryExtractedCards.length > 1 ? getPreviewCardNames(cemeteryExtractedCards) : undefined,
           count: cemeteryExtractedCards.length > 1 ? cemeteryExtractedCards.length : undefined,
@@ -501,6 +529,7 @@ export const useGameBoardLogic = () => {
         const effect: SharedUiEffect = {
           type: 'BANISHED_CARD_TO_HAND',
           actor: event.actor,
+          ...buildOwnerContext(getUniformCardOwner(banishExtractedCards), extractDestinationOwner),
           cardName: banishExtractedCards.length === 1 ? banishExtractedCards[0].name : undefined,
           cardNames: banishExtractedCards.length > 1 ? getPreviewCardNames(banishExtractedCards) : undefined,
           count: banishExtractedCards.length > 1 ? banishExtractedCards.length : undefined,
@@ -521,6 +550,7 @@ export const useGameBoardLogic = () => {
         const effect: SharedUiEffect = {
           type: 'SEARCHED_CARD_PLACED',
           actor: event.actor,
+          ...buildOwnerContext(getUniformCardOwner(mainDeckExtractedCards), extractDestinationOwner),
           destination: isFieldDestination ? 'field' : 'ex',
           cardName: !isFaceDownPlacement && mainDeckExtractedCards.length === 1 ? mainDeckExtractedCards[0].name : undefined,
           count: mainDeckExtractedCards.length > 1 ? mainDeckExtractedCards.length : undefined,
@@ -533,6 +563,7 @@ export const useGameBoardLogic = () => {
         const effect: SharedUiEffect = {
           type: 'CEMETERY_CARD_PLACED',
           actor: event.actor,
+          ...buildOwnerContext(getUniformCardOwner(cemeteryExtractedCards), extractDestinationOwner),
           destination: extractDestination.startsWith('field-') ? 'field' : 'ex',
           cardName: cemeteryExtractedCards.length === 1 ? cemeteryExtractedCards[0].name : undefined,
           count: cemeteryExtractedCards.length > 1 ? cemeteryExtractedCards.length : undefined,
@@ -553,6 +584,7 @@ export const useGameBoardLogic = () => {
         const effect: SharedUiEffect = {
           type: 'BANISHED_CARD_PLACED',
           actor: event.actor,
+          ...buildOwnerContext(getUniformCardOwner(banishExtractedCards), extractDestinationOwner),
           destination: extractDestination.startsWith('field-') ? 'field' : 'ex',
           cardName: banishExtractedCards.length === 1 ? banishExtractedCards[0].name : undefined,
           count: banishExtractedCards.length > 1 ? banishExtractedCards.length : undefined,
@@ -566,6 +598,7 @@ export const useGameBoardLogic = () => {
         const effect: SharedUiEffect = {
           type: 'CEMETERY_CARD_TO_BOTTOM',
           actor: event.actor,
+          ...buildOwnerContext(getUniformCardOwner(cemeteryBottomedCards), getUniformCardOwner(cemeteryBottomedCards)),
           cardName: cemeteryBottomedCards.length === 1 ? cemeteryBottomedCards[0].name : undefined,
           cardNames: cemeteryBottomedCards.length > 1 ? getPreviewCardNames(cemeteryBottomedCards) : undefined,
           count: cemeteryBottomedCards.length > 1 ? cemeteryBottomedCards.length : undefined,
@@ -577,6 +610,7 @@ export const useGameBoardLogic = () => {
         const effect: SharedUiEffect = {
           type: 'BANISHED_CARD_TO_BOTTOM',
           actor: event.actor,
+          ...buildOwnerContext(getUniformCardOwner(banishBottomedCards), getUniformCardOwner(banishBottomedCards)),
           cardName: banishBottomedCards.length === 1 ? banishBottomedCards[0].name : undefined,
           cardNames: banishBottomedCards.length > 1 ? getPreviewCardNames(banishBottomedCards) : undefined,
           count: banishBottomedCards.length > 1 ? banishBottomedCards.length : undefined,
@@ -590,6 +624,7 @@ export const useGameBoardLogic = () => {
         const effect: SharedUiEffect = {
           type: 'MAIN_DECK_CARD_TO_CEMETERY',
           actor: event.actor,
+          ...buildOwnerContext(getUniformCardOwner(mainDeckToCemeteryCards), getUniformCardOwner(mainDeckToCemeteryCards)),
           cardName: mainDeckToCemeteryCards.length === 1 ? mainDeckToCemeteryCards[0].name : undefined,
           cardNames: mainDeckToCemeteryCards.length > 1 ? getPreviewCardNames(mainDeckToCemeteryCards) : undefined,
           count: mainDeckToCemeteryCards.length > 1 ? mainDeckToCemeteryCards.length : undefined,
@@ -603,6 +638,7 @@ export const useGameBoardLogic = () => {
         const effect: SharedUiEffect = {
           type: 'CEMETERY_CARD_TO_BANISH',
           actor: event.actor,
+          ...buildOwnerContext(getUniformCardOwner(cemeteryBanishedCards), getUniformCardOwner(cemeteryBanishedCards)),
           cardName: cemeteryBanishedCards.length === 1 ? cemeteryBanishedCards[0].name : undefined,
           cardNames: cemeteryBanishedCards.length > 1 ? getPreviewCardNames(cemeteryBanishedCards) : undefined,
           count: cemeteryBanishedCards.length > 1 ? cemeteryBanishedCards.length : undefined,

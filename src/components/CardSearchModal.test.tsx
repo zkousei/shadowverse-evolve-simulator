@@ -141,6 +141,8 @@ describe('CardSearchModal', () => {
         zoneId="mainDeck-host"
         cards={[createCard({ isEvolveCard: false, zone: 'mainDeck-host' })]}
         onExtractCard={vi.fn()}
+        onSendToCemetery={vi.fn()}
+        onSendCardsToCemetery={vi.fn()}
         viewerRole="host"
         allowHandExtraction={false}
       />
@@ -150,6 +152,12 @@ describe('CardSearchModal', () => {
     expect(screen.queryByText('Add to Hand')).not.toBeInTheDocument();
     expect(screen.queryByText('Add to EX Area')).not.toBeInTheDocument();
     expect(screen.queryByText('Play to Field')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Send to cemetery' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Select Multiple'));
+    fireEvent.click(screen.getByAltText('Test Card'));
+
+    expect(screen.queryByRole('button', { name: 'Send to cemetery' })).not.toBeInTheDocument();
   });
 
   it('fires extraction callbacks for available main-deck actions', () => {

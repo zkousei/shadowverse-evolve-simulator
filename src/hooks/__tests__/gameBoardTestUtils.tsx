@@ -41,6 +41,10 @@ vi.mock('react-i18next', () => ({
         'gameBoard.modals.shared.actor.opponent': 'Opponent',
         'gameBoard.modals.shared.actor.player1': 'Player 1',
         'gameBoard.modals.shared.actor.player2': 'Player 2',
+        'gameBoard.modals.shared.owner.you': 'your',
+        'gameBoard.modals.shared.owner.opponent': "opponent's",
+        'gameBoard.modals.shared.owner.player1': "Player 1's",
+        'gameBoard.modals.shared.owner.player2': "Player 2's",
         'gameBoard.modals.shared.messages.lookTopResolved': '{{actor}} resolved Look Top {{count}}',
         'gameBoard.modals.shared.messages.lookTopDetail.revealedToHand': 'Revealed to Hand: {{cards}}',
         'gameBoard.modals.shared.messages.lookTopDetail.bottom': 'Bottom: {{count}}',
@@ -58,6 +62,7 @@ vi.mock('react-i18next', () => ({
         'gameBoard.modals.shared.messages.topCardToEx': '{{actor}} moved {{cardName}} to EX Area',
         'gameBoard.modals.shared.messages.searchToHand': '{{actor}} added a card from Search to hand',
         'gameBoard.modals.shared.messages.searchToHandMultiple': '{{actor}} added {{count}} cards from Search to hand',
+        'gameBoard.modals.shared.messages.searchToHandMultipleOwned': '{{actor}} added {{count}} cards from {{sourceOwner}} Main Deck to {{destinationOwner}} hand',
         'gameBoard.modals.shared.messages.searchPlayedField': '{{actor}} played to field {{cardName}} from Search',
         'gameBoard.modals.shared.messages.searchPlayedFieldMultiple': '{{actor}} played {{count}} cards from Search to field',
         'gameBoard.modals.shared.messages.searchSetField': '{{actor}} set a card from Search to field',
@@ -67,16 +72,20 @@ vi.mock('react-i18next', () => ({
         'gameBoard.modals.shared.messages.searchToExMultiple': '{{actor}} added {{count}} cards from Search to EX Area',
         'gameBoard.modals.shared.messages.mainDeckToCemetery': '{{actor}} sent {{cardName}} from Main Deck to Cemetery',
         'gameBoard.modals.shared.messages.mainDeckToCemeteryMultiple': '{{actor}} sent {{count}} cards from Main Deck to Cemetery',
+        'gameBoard.modals.shared.messages.mainDeckToCemeteryMultipleOwned': '{{actor}} sent {{count}} cards from {{sourceOwner}} Main Deck to {{destinationOwner}} Cemetery',
         'gameBoard.modals.shared.messages.cemeteryToHand': '{{actor}} added {{cardName}} from Cemetery to hand',
         'gameBoard.modals.shared.messages.cemeteryToHandMultiple': '{{actor}} added {{count}} cards from Cemetery to hand',
+        'gameBoard.modals.shared.messages.cemeteryToHandMultipleOwned': '{{actor}} added {{count}} cards from {{sourceOwner}} Cemetery to {{destinationOwner}} hand',
         'gameBoard.modals.shared.messages.cemeteryToBottom': '{{actor}} sent {{cardName}} from Cemetery to bottom of deck',
         'gameBoard.modals.shared.messages.cemeteryToBottomMultiple': '{{actor}} sent {{count}} cards from Cemetery to bottom of deck',
+        'gameBoard.modals.shared.messages.cemeteryToBottomMultipleOwned': '{{actor}} sent {{count}} cards from {{sourceOwner}} Cemetery to bottom of {{destinationOwner}} deck',
         'gameBoard.modals.shared.messages.cemeteryPlayedField': '{{actor}} played to field {{cardName}} from Cemetery',
         'gameBoard.modals.shared.messages.cemeteryPlayedFieldMultiple': '{{actor}} played {{count}} cards from Cemetery to field',
         'gameBoard.modals.shared.messages.cemeteryToEx': '{{actor}} added {{cardName}} from Cemetery to EX Area',
         'gameBoard.modals.shared.messages.cemeteryToExMultiple': '{{actor}} added {{count}} cards from Cemetery to EX Area',
         'gameBoard.modals.shared.messages.cemeteryToBanish': '{{actor}} banished {{cardName}} from Cemetery',
         'gameBoard.modals.shared.messages.cemeteryToBanishMultiple': '{{actor}} banished {{count}} cards from Cemetery',
+        'gameBoard.modals.shared.messages.cemeteryToBanishMultipleOwned': '{{actor}} banished {{count}} cards from {{sourceOwner}} Cemetery',
         'gameBoard.modals.shared.messages.evolvePlayedField': '{{actor}} played to field {{cardName}} from Evolve Deck',
         'gameBoard.modals.shared.messages.evolveSetUsed': '{{actor}} set {{cardName}} to USED',
         'gameBoard.modals.shared.messages.evolveSetUnused': '{{actor}} set {{cardName}} to UNUSED',
@@ -392,6 +401,7 @@ export function HookHarness() {
       <button onClick={() => handleExtractCard('link-search-card', 'field-host', 'host')}>Extract Linked to Field</button>
       <button onClick={() => handleExtractCards(['search-batch-1', 'search-batch-2'], 'hand-host', 'host')}>Batch Extract Search to Hand</button>
       <button onClick={() => handleExtractCards(['cemetery-batch-1', 'cemetery-batch-2'], 'hand-host', 'host')}>Batch Extract Cemetery to Hand</button>
+      <button onClick={() => handleExtractCards(['cemetery-batch-1', 'cemetery-batch-2'], 'hand-guest', 'guest')}>Batch Extract Opponent Cemetery to Hand</button>
       <button onClick={() => handleExtractCards(['search-batch-1', 'search-batch-2'], 'hand-host', 'host', true)}>Batch Reveal Search to Hand</button>
       <button onClick={() => handleSendCardsToCemetery(['search-batch-1', 'search-batch-2'])}>Batch Send Main Deck to Cemetery</button>
       <button onClick={() => handleSendCardsToBottom(['bottom-batch-1', 'bottom-batch-2'])}>Batch Send Cards to Bottom</button>
