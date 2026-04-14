@@ -288,12 +288,14 @@ export const useGameBoardSharedUiEffects = ({
     if (effect.type === 'MILL_CARD_COMPLETED') {
       const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
       showTimedCardPlayMessage(message, 2600);
+      pushEventHistory(message);
       return;
     }
 
     if (effect.type === 'TOP_CARD_TO_EX_COMPLETED') {
       const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
       showTimedCardPlayMessage(message, 2600);
+      pushEventHistory(message);
       return;
     }
 
@@ -311,9 +313,17 @@ export const useGameBoardSharedUiEffects = ({
       return;
     }
 
+    if (effect.type === 'MAIN_DECK_CARD_TO_CEMETERY') {
+      const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
+      showTimedCardPlayMessage(message, 2600);
+      pushEventHistory(message);
+      return;
+    }
+
     if (effect.type === 'SEARCHED_CARD_PLACED') {
       const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
       showTimedCardPlayMessage(message, 2600);
+      pushEventHistory(message);
       return;
     }
 
@@ -327,6 +337,21 @@ export const useGameBoardSharedUiEffects = ({
     if (effect.type === 'CEMETERY_CARD_PLACED') {
       const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
       showTimedCardPlayMessage(message, 2600);
+      pushEventHistory(message);
+      return;
+    }
+
+    if (effect.type === 'CEMETERY_CARD_TO_BANISH') {
+      const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
+      showTimedCardPlayMessage(message, 2600);
+      pushEventHistory(message);
+      return;
+    }
+
+    if (effect.type === 'CEMETERY_CARD_TO_BOTTOM') {
+      const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
+      showTimedCardPlayMessage(message, 2600);
+      pushEventHistory(message);
       return;
     }
 
@@ -355,6 +380,14 @@ export const useGameBoardSharedUiEffects = ({
     if (effect.type === 'BANISHED_CARD_PLACED') {
       const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
       showTimedCardPlayMessage(message, 2600);
+      pushEventHistory(message);
+      return;
+    }
+
+    if (effect.type === 'BANISHED_CARD_TO_BOTTOM') {
+      const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
+      showTimedCardPlayMessage(message, 2600);
+      pushEventHistory(message);
       return;
     }
 

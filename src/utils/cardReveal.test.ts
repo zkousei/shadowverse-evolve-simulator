@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CardInstance } from '../components/Card';
-import { buildHandRevealEffect, buildSingleCardRevealEffect } from './cardReveal';
+import { buildCardRevealEffect, buildHandRevealEffect, buildSingleCardRevealEffect } from './cardReveal';
 
 const createCard = (id: string): CardInstance => ({
   id,
@@ -34,6 +34,19 @@ describe('cardReveal', () => {
       type: 'REVEAL_SEARCHED_CARD_TO_HAND',
       actor: 'host',
       cardIds: ['c1'],
+    });
+  });
+
+  it('builds a reveal effect for multiple searched cards', () => {
+    expect(buildCardRevealEffect(
+      [createCard('c1'), createCard('c2')],
+      'host',
+      ['c1', 'c2'],
+      'REVEAL_SEARCHED_CARD_TO_HAND'
+    )).toEqual({
+      type: 'REVEAL_SEARCHED_CARD_TO_HAND',
+      actor: 'host',
+      cardIds: ['c1', 'c2'],
     });
   });
 

@@ -15,6 +15,66 @@ export const getSharedActorLabel = (
   return actor === viewerRole ? t('gameBoard.modals.shared.actor.you') : t('gameBoard.modals.shared.actor.opponent');
 };
 
+const getSharedOwnerLabel = (
+  owner: PlayerRole,
+  viewerRole: PlayerRole,
+  isSoloMode: boolean,
+  t: TFunction
+): string => {
+  if (isSoloMode) {
+    return owner === 'host' ? t('gameBoard.modals.shared.owner.player1') : t('gameBoard.modals.shared.owner.player2');
+  }
+
+  return owner === viewerRole ? t('gameBoard.modals.shared.owner.you') : t('gameBoard.modals.shared.owner.opponent');
+};
+
+const getOwnerContext = (
+  effect: { actor: PlayerRole; sourceOwner?: PlayerRole; destinationOwner?: PlayerRole },
+  viewerRole: PlayerRole,
+  isSoloMode: boolean,
+  t: TFunction
+): { shouldUseOwnerContext: boolean; sourceOwner: string; destinationOwner: string } => {
+  const shouldUseOwnerContext = Boolean(
+    (effect.sourceOwner && effect.sourceOwner !== effect.actor) ||
+    (effect.destinationOwner && effect.destinationOwner !== effect.actor)
+  );
+  const sourceOwner = effect.sourceOwner ?? effect.actor;
+  const destinationOwner = effect.destinationOwner ?? effect.sourceOwner ?? effect.actor;
+
+  return {
+    shouldUseOwnerContext,
+    sourceOwner: getSharedOwnerLabel(sourceOwner, viewerRole, isSoloMode, t),
+    destinationOwner: getSharedOwnerLabel(destinationOwner, viewerRole, isSoloMode, t),
+  };
+};
+
+const formatNamedCardSummary = (
+  cardNames: string[] | undefined,
+  totalCount: number | undefined,
+  t: TFunction
+): string | null => {
+  if (!cardNames || cardNames.length === 0) return null;
+  const names = cardNames.join(', ');
+  const remainingCount = Math.max(0, (totalCount ?? cardNames.length) - cardNames.length);
+
+  if (remainingCount === 0) return names;
+
+  return t('gameBoard.modals.shared.messages.namedCardListWithMore', {
+    cards: names,
+    count: remainingCount,
+  });
+};
+
+const appendNamedCardSummary = (
+  baseMessage: string,
+  cardNames: string[] | undefined,
+  totalCount: number | undefined,
+  t: TFunction
+): string => {
+  const namedSummary = formatNamedCardSummary(cardNames, totalCount, t);
+  return namedSummary ? `${baseMessage}: ${namedSummary}` : baseMessage;
+};
+
 export const formatSharedUiMessage = (
   effect: SharedUiEffect,
   viewerRole: PlayerRole,
@@ -98,32 +158,204 @@ export const formatSharedUiMessage = (
 
   if (effect.type === 'SEARCHED_CARD_TO_HAND') {
     const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
-    return t('gameBoard.modals.shared.messages.searchToHand', { actor: actorLabel });
+    const ownerContext = getOwnerContext(effect, viewerRole, isSoloMode, t);
+    if ((effect.count ?? 1) > 1) {
+      return t(ownerContext.shouldUseOwnerContext
+        ? 'gameBoard.modals.shared.messages.searchToHandMultipleOwned'
+        : 'gameBoard.modals.shared.messages.searchToHandMultiple', {
+        actor: actorLabel,
+        count: effect.count,
+        sourceOwner: ownerContext.sourceOwner,
+        destinationOwner: ownerContext.destinationOwner,
+      });
+    }
+    return t(ownerContext.shouldUseOwnerContext
+      ? 'gameBoard.modals.shared.messages.searchToHandOwned'
+      : 'gameBoard.modals.shared.messages.searchToHand', {
+      actor: actorLabel,
+      sourceOwner: ownerContext.sourceOwner,
+      destinationOwner: ownerContext.destinationOwner,
+    });
   }
 
   if (effect.type === 'SEARCHED_CARD_PLACED') {
     const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    const ownerContext = getOwnerContext(effect, viewerRole, isSoloMode, t);
+    if ((effect.count ?? 1) > 1) {
+      if (effect.destination === 'field') {
+        return effect.isFaceDown
+          ? t(ownerContext.shouldUseOwnerContext
+            ? 'gameBoard.modals.shared.messages.searchSetFieldMultipleOwned'
+            : 'gameBoard.modals.shared.messages.searchSetFieldMultiple', {
+            actor: actorLabel,
+            count: effect.count,
+            sourceOwner: ownerContext.sourceOwner,
+            destinationOwner: ownerContext.destinationOwner,
+          })
+          : t(ownerContext.shouldUseOwnerContext
+            ? 'gameBoard.modals.shared.messages.searchPlayedFieldMultipleOwned'
+            : 'gameBoard.modals.shared.messages.searchPlayedFieldMultiple', {
+            actor: actorLabel,
+            count: effect.count,
+            sourceOwner: ownerContext.sourceOwner,
+            destinationOwner: ownerContext.destinationOwner,
+          });
+      }
+      return t(ownerContext.shouldUseOwnerContext
+        ? 'gameBoard.modals.shared.messages.searchToExMultipleOwned'
+        : 'gameBoard.modals.shared.messages.searchToExMultiple', {
+        actor: actorLabel,
+        count: effect.count,
+        sourceOwner: ownerContext.sourceOwner,
+        destinationOwner: ownerContext.destinationOwner,
+      });
+    }
     if (effect.destination === 'field') {
       return effect.cardName
-        ? t('gameBoard.modals.shared.messages.searchPlayedField', { actor: actorLabel, cardName: effect.cardName })
-        : t('gameBoard.modals.shared.messages.searchSetField', { actor: actorLabel });
+        ? t(ownerContext.shouldUseOwnerContext
+          ? 'gameBoard.modals.shared.messages.searchPlayedFieldOwned'
+          : 'gameBoard.modals.shared.messages.searchPlayedField', {
+          actor: actorLabel,
+          cardName: effect.cardName,
+          sourceOwner: ownerContext.sourceOwner,
+          destinationOwner: ownerContext.destinationOwner,
+        })
+        : t(ownerContext.shouldUseOwnerContext
+          ? 'gameBoard.modals.shared.messages.searchSetFieldOwned'
+          : 'gameBoard.modals.shared.messages.searchSetField', {
+          actor: actorLabel,
+          sourceOwner: ownerContext.sourceOwner,
+          destinationOwner: ownerContext.destinationOwner,
+        });
     } else {
       return effect.cardName
-        ? t('gameBoard.modals.shared.messages.searchToEx', { actor: actorLabel, cardName: effect.cardName })
-        : t('gameBoard.modals.shared.messages.searchToExGeneric', { actor: actorLabel });
+        ? t(ownerContext.shouldUseOwnerContext
+          ? 'gameBoard.modals.shared.messages.searchToExOwned'
+          : 'gameBoard.modals.shared.messages.searchToEx', {
+          actor: actorLabel,
+          cardName: effect.cardName,
+          sourceOwner: ownerContext.sourceOwner,
+          destinationOwner: ownerContext.destinationOwner,
+        })
+        : t(ownerContext.shouldUseOwnerContext
+          ? 'gameBoard.modals.shared.messages.searchToExGenericOwned'
+          : 'gameBoard.modals.shared.messages.searchToExGeneric', {
+          actor: actorLabel,
+          sourceOwner: ownerContext.sourceOwner,
+          destinationOwner: ownerContext.destinationOwner,
+        });
     }
+  }
+
+  if (effect.type === 'MAIN_DECK_CARD_TO_CEMETERY') {
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    const ownerContext = getOwnerContext(effect, viewerRole, isSoloMode, t);
+    if ((effect.count ?? 1) > 1) {
+      const baseMessage = t(ownerContext.shouldUseOwnerContext
+        ? 'gameBoard.modals.shared.messages.mainDeckToCemeteryMultipleOwned'
+        : 'gameBoard.modals.shared.messages.mainDeckToCemeteryMultiple', {
+        actor: actorLabel,
+        count: effect.count,
+        sourceOwner: ownerContext.sourceOwner,
+        destinationOwner: ownerContext.destinationOwner,
+      });
+      return appendNamedCardSummary(baseMessage, effect.cardNames, effect.count, t);
+    }
+    return t(ownerContext.shouldUseOwnerContext
+      ? 'gameBoard.modals.shared.messages.mainDeckToCemeteryOwned'
+      : 'gameBoard.modals.shared.messages.mainDeckToCemetery', {
+      actor: actorLabel,
+      cardName: effect.cardName,
+      sourceOwner: ownerContext.sourceOwner,
+      destinationOwner: ownerContext.destinationOwner,
+    });
   }
 
   if (effect.type === 'CEMETERY_CARD_TO_HAND') {
     const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
-    return t('gameBoard.modals.shared.messages.cemeteryToHand', { actor: actorLabel, cardName: effect.cardName });
+    const ownerContext = getOwnerContext(effect, viewerRole, isSoloMode, t);
+    if ((effect.count ?? 1) > 1) {
+      const baseMessage = t(ownerContext.shouldUseOwnerContext
+        ? 'gameBoard.modals.shared.messages.cemeteryToHandMultipleOwned'
+        : 'gameBoard.modals.shared.messages.cemeteryToHandMultiple', {
+        actor: actorLabel,
+        count: effect.count,
+        sourceOwner: ownerContext.sourceOwner,
+        destinationOwner: ownerContext.destinationOwner,
+      });
+      return appendNamedCardSummary(baseMessage, effect.cardNames, effect.count, t);
+    }
+    return t(ownerContext.shouldUseOwnerContext
+      ? 'gameBoard.modals.shared.messages.cemeteryToHandOwned'
+      : 'gameBoard.modals.shared.messages.cemeteryToHand', {
+      actor: actorLabel,
+      cardName: effect.cardName,
+      sourceOwner: ownerContext.sourceOwner,
+      destinationOwner: ownerContext.destinationOwner,
+    });
   }
 
   if (effect.type === 'CEMETERY_CARD_PLACED') {
     const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    const ownerContext = getOwnerContext(effect, viewerRole, isSoloMode, t);
+    if ((effect.count ?? 1) > 1) {
+      return effect.destination === 'field'
+        ? t(ownerContext.shouldUseOwnerContext
+          ? 'gameBoard.modals.shared.messages.cemeteryPlayedFieldMultipleOwned'
+          : 'gameBoard.modals.shared.messages.cemeteryPlayedFieldMultiple', {
+          actor: actorLabel,
+          count: effect.count,
+          sourceOwner: ownerContext.sourceOwner,
+          destinationOwner: ownerContext.destinationOwner,
+        })
+        : t(ownerContext.shouldUseOwnerContext
+          ? 'gameBoard.modals.shared.messages.cemeteryToExMultipleOwned'
+          : 'gameBoard.modals.shared.messages.cemeteryToExMultiple', {
+          actor: actorLabel,
+          count: effect.count,
+          sourceOwner: ownerContext.sourceOwner,
+          destinationOwner: ownerContext.destinationOwner,
+        });
+    }
     return effect.destination === 'field'
-      ? t('gameBoard.modals.shared.messages.cemeteryPlayedField', { actor: actorLabel, cardName: effect.cardName })
-      : t('gameBoard.modals.shared.messages.cemeteryToEx', { actor: actorLabel, cardName: effect.cardName });
+      ? t(ownerContext.shouldUseOwnerContext
+        ? 'gameBoard.modals.shared.messages.cemeteryPlayedFieldOwned'
+        : 'gameBoard.modals.shared.messages.cemeteryPlayedField', {
+        actor: actorLabel,
+        cardName: effect.cardName,
+        sourceOwner: ownerContext.sourceOwner,
+        destinationOwner: ownerContext.destinationOwner,
+      })
+      : t(ownerContext.shouldUseOwnerContext
+        ? 'gameBoard.modals.shared.messages.cemeteryToExOwned'
+        : 'gameBoard.modals.shared.messages.cemeteryToEx', {
+        actor: actorLabel,
+        cardName: effect.cardName,
+        sourceOwner: ownerContext.sourceOwner,
+        destinationOwner: ownerContext.destinationOwner,
+      });
+  }
+
+  if (effect.type === 'CEMETERY_CARD_TO_BANISH') {
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    const ownerContext = getOwnerContext(effect, viewerRole, isSoloMode, t);
+    if ((effect.count ?? 1) > 1) {
+      const baseMessage = t(ownerContext.shouldUseOwnerContext
+        ? 'gameBoard.modals.shared.messages.cemeteryToBanishMultipleOwned'
+        : 'gameBoard.modals.shared.messages.cemeteryToBanishMultiple', {
+        actor: actorLabel,
+        count: effect.count,
+        sourceOwner: ownerContext.sourceOwner,
+      });
+      return appendNamedCardSummary(baseMessage, effect.cardNames, effect.count, t);
+    }
+    return t(ownerContext.shouldUseOwnerContext
+      ? 'gameBoard.modals.shared.messages.cemeteryToBanishOwned'
+      : 'gameBoard.modals.shared.messages.cemeteryToBanish', {
+      actor: actorLabel,
+      cardName: effect.cardName,
+      sourceOwner: ownerContext.sourceOwner,
+    });
   }
 
   if (effect.type === 'EVOLVE_CARD_PLACED') {
@@ -140,14 +372,115 @@ export const formatSharedUiMessage = (
 
   if (effect.type === 'BANISHED_CARD_TO_HAND') {
     const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
-    return t('gameBoard.modals.shared.messages.banishToHand', { actor: actorLabel, cardName: effect.cardName });
+    const ownerContext = getOwnerContext(effect, viewerRole, isSoloMode, t);
+    if ((effect.count ?? 1) > 1) {
+      const baseMessage = t(ownerContext.shouldUseOwnerContext
+        ? 'gameBoard.modals.shared.messages.banishToHandMultipleOwned'
+        : 'gameBoard.modals.shared.messages.banishToHandMultiple', {
+        actor: actorLabel,
+        count: effect.count,
+        sourceOwner: ownerContext.sourceOwner,
+        destinationOwner: ownerContext.destinationOwner,
+      });
+      return appendNamedCardSummary(baseMessage, effect.cardNames, effect.count, t);
+    }
+    return t(ownerContext.shouldUseOwnerContext
+      ? 'gameBoard.modals.shared.messages.banishToHandOwned'
+      : 'gameBoard.modals.shared.messages.banishToHand', {
+      actor: actorLabel,
+      cardName: effect.cardName,
+      sourceOwner: ownerContext.sourceOwner,
+      destinationOwner: ownerContext.destinationOwner,
+    });
+  }
+
+  if (effect.type === 'CEMETERY_CARD_TO_BOTTOM') {
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    const ownerContext = getOwnerContext(effect, viewerRole, isSoloMode, t);
+    if ((effect.count ?? 1) > 1) {
+      const baseMessage = t(ownerContext.shouldUseOwnerContext
+        ? 'gameBoard.modals.shared.messages.cemeteryToBottomMultipleOwned'
+        : 'gameBoard.modals.shared.messages.cemeteryToBottomMultiple', {
+        actor: actorLabel,
+        count: effect.count,
+        sourceOwner: ownerContext.sourceOwner,
+        destinationOwner: ownerContext.destinationOwner,
+      });
+      return appendNamedCardSummary(baseMessage, effect.cardNames, effect.count, t);
+    }
+    return t(ownerContext.shouldUseOwnerContext
+      ? 'gameBoard.modals.shared.messages.cemeteryToBottomOwned'
+      : 'gameBoard.modals.shared.messages.cemeteryToBottom', {
+      actor: actorLabel,
+      cardName: effect.cardName,
+      sourceOwner: ownerContext.sourceOwner,
+      destinationOwner: ownerContext.destinationOwner,
+    });
+  }
+
+  if (effect.type === 'BANISHED_CARD_TO_BOTTOM') {
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    const ownerContext = getOwnerContext(effect, viewerRole, isSoloMode, t);
+    if ((effect.count ?? 1) > 1) {
+      const baseMessage = t(ownerContext.shouldUseOwnerContext
+        ? 'gameBoard.modals.shared.messages.banishToBottomMultipleOwned'
+        : 'gameBoard.modals.shared.messages.banishToBottomMultiple', {
+        actor: actorLabel,
+        count: effect.count,
+        sourceOwner: ownerContext.sourceOwner,
+        destinationOwner: ownerContext.destinationOwner,
+      });
+      return appendNamedCardSummary(baseMessage, effect.cardNames, effect.count, t);
+    }
+    return t(ownerContext.shouldUseOwnerContext
+      ? 'gameBoard.modals.shared.messages.banishToBottomOwned'
+      : 'gameBoard.modals.shared.messages.banishToBottom', {
+      actor: actorLabel,
+      cardName: effect.cardName,
+      sourceOwner: ownerContext.sourceOwner,
+      destinationOwner: ownerContext.destinationOwner,
+    });
   }
 
   if (effect.type === 'BANISHED_CARD_PLACED') {
     const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    const ownerContext = getOwnerContext(effect, viewerRole, isSoloMode, t);
+    if ((effect.count ?? 1) > 1) {
+      return effect.destination === 'field'
+        ? t(ownerContext.shouldUseOwnerContext
+          ? 'gameBoard.modals.shared.messages.banishPlayedFieldMultipleOwned'
+          : 'gameBoard.modals.shared.messages.banishPlayedFieldMultiple', {
+          actor: actorLabel,
+          count: effect.count,
+          sourceOwner: ownerContext.sourceOwner,
+          destinationOwner: ownerContext.destinationOwner,
+        })
+        : t(ownerContext.shouldUseOwnerContext
+          ? 'gameBoard.modals.shared.messages.banishToExMultipleOwned'
+          : 'gameBoard.modals.shared.messages.banishToExMultiple', {
+          actor: actorLabel,
+          count: effect.count,
+          sourceOwner: ownerContext.sourceOwner,
+          destinationOwner: ownerContext.destinationOwner,
+        });
+    }
     return effect.destination === 'field'
-      ? t('gameBoard.modals.shared.messages.banishPlayedField', { actor: actorLabel, cardName: effect.cardName })
-      : t('gameBoard.modals.shared.messages.banishToEx', { actor: actorLabel, cardName: effect.cardName });
+      ? t(ownerContext.shouldUseOwnerContext
+        ? 'gameBoard.modals.shared.messages.banishPlayedFieldOwned'
+        : 'gameBoard.modals.shared.messages.banishPlayedField', {
+        actor: actorLabel,
+        cardName: effect.cardName,
+        sourceOwner: ownerContext.sourceOwner,
+        destinationOwner: ownerContext.destinationOwner,
+      })
+      : t(ownerContext.shouldUseOwnerContext
+        ? 'gameBoard.modals.shared.messages.banishToExOwned'
+        : 'gameBoard.modals.shared.messages.banishToEx', {
+        actor: actorLabel,
+        cardName: effect.cardName,
+        sourceOwner: ownerContext.sourceOwner,
+        destinationOwner: ownerContext.destinationOwner,
+      });
   }
 
   if (effect.type === 'REVEAL_TOP_DECK_CARDS') {

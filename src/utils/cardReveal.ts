@@ -13,9 +13,19 @@ export const buildSingleCardRevealEffect = (
   actor: PlayerRole,
   cardId: string,
   type: 'REVEAL_TOP_DECK_CARDS' | 'REVEAL_SEARCHED_CARD_TO_HAND'
+): SharedUiEffect | null => buildCardRevealEffect(cards, actor, [cardId], type);
+
+export const buildCardRevealEffect = (
+  cards: CardInstance[],
+  actor: PlayerRole,
+  cardIds: string[],
+  type: 'REVEAL_TOP_DECK_CARDS' | 'REVEAL_SEARCHED_CARD_TO_HAND'
 ): SharedUiEffect | null => {
-  const card = cards.find((currentCard) => currentCard.id === cardId);
-  if (!card) return null;
+  const matchedCards = cardIds
+    .map((cardId) => cards.find((currentCard) => currentCard.id === cardId))
+    .filter((card): card is CardInstance => Boolean(card));
+
+  if (matchedCards.length === 0) return null;
 
   if (type === 'REVEAL_SEARCHED_CARD_TO_HAND') {
     return {
@@ -24,14 +34,14 @@ export const buildSingleCardRevealEffect = (
       // Search reveals can resolve the public card from the authoritative
       // snapshot that already moved the card into hand, so only send the
       // instance id to keep the WebRTC payload as small as possible.
-      cardIds: [card.id],
+      cardIds: matchedCards.map((card) => card.id),
     };
   }
 
   return {
     type,
     actor,
-    cards: [toPublicCardView(card)],
+    cards: matchedCards.map((card) => toPublicCardView(card)),
   };
 };
 

@@ -92,6 +92,61 @@ describe('useGameBoardFieldActions (Pure Hook)', () => {
     });
   });
 
+  it('dispatches SEND_TO_CEMETERY_BATCH for same-owner selections and clears search zone once', () => {
+    const gameState = buildSyncState({
+      cards: [
+        makeCard({ id: 'card-1', zone: 'mainDeck-guest', owner: 'guest' }),
+        makeCard({ id: 'card-2', zone: 'mainDeck-guest', owner: 'guest' }),
+      ],
+    });
+    const { result } = renderHook(() => useGameBoardFieldActions({
+      ...defaultArgs,
+      isSoloMode: true,
+      gameStateRef: { current: gameState },
+    }));
+
+    result.current.handleSendCardsToCemetery(['card-1', 'card-2']);
+
+    expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledWith({
+      type: 'SEND_TO_CEMETERY_BATCH',
+      actor: 'guest',
+      cardIds: ['card-1', 'card-2'],
+    });
+    expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledTimes(1);
+    expect(defaultArgs.setSearchZone).toHaveBeenCalledTimes(1);
+    expect(defaultArgs.setSearchZone).toHaveBeenCalledWith(null);
+  });
+
+  it('falls back to single SEND_TO_CEMETERY events when a solo batch spans multiple owners', () => {
+    const gameState = buildSyncState({
+      cards: [
+        makeCard({ id: 'card-1', zone: 'mainDeck-host', owner: 'host' }),
+        makeCard({ id: 'card-2', zone: 'mainDeck-guest', owner: 'guest' }),
+      ],
+    });
+    const { result } = renderHook(() => useGameBoardFieldActions({
+      ...defaultArgs,
+      isSoloMode: true,
+      gameStateRef: { current: gameState },
+    }));
+
+    result.current.handleSendCardsToCemetery(['card-1', 'card-2']);
+
+    expect(defaultArgs.dispatchGameEvent).toHaveBeenNthCalledWith(1, {
+      type: 'SEND_TO_CEMETERY',
+      actor: 'host',
+      cardId: 'card-1',
+    });
+    expect(defaultArgs.dispatchGameEvent).toHaveBeenNthCalledWith(2, {
+      type: 'SEND_TO_CEMETERY',
+      actor: 'guest',
+      cardId: 'card-2',
+    });
+    expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledTimes(2);
+    expect(defaultArgs.setSearchZone).toHaveBeenCalledTimes(1);
+    expect(defaultArgs.setSearchZone).toHaveBeenCalledWith(null);
+  });
+
   // ─── 2. handleModifyCounter & handleModifyGenericCounter ─────────
   it('dispatches MODIFY_COUNTER', () => {
     const { result } = renderHook(() => useGameBoardFieldActions(defaultArgs));
@@ -228,6 +283,61 @@ describe('useGameBoardFieldActions (Pure Hook)', () => {
     });
   });
 
+  it('dispatches BANISH_CARDS_BATCH for same-owner selections and clears search zone once', () => {
+    const gameState = buildSyncState({
+      cards: [
+        makeCard({ id: 'card-1', zone: 'cemetery-guest', owner: 'guest' }),
+        makeCard({ id: 'card-2', zone: 'cemetery-guest', owner: 'guest' }),
+      ],
+    });
+    const { result } = renderHook(() => useGameBoardFieldActions({
+      ...defaultArgs,
+      isSoloMode: true,
+      gameStateRef: { current: gameState },
+    }));
+
+    result.current.handleBanishCards(['card-1', 'card-2']);
+
+    expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledWith({
+      type: 'BANISH_CARDS_BATCH',
+      actor: 'guest',
+      cardIds: ['card-1', 'card-2'],
+    });
+    expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledTimes(1);
+    expect(defaultArgs.setSearchZone).toHaveBeenCalledTimes(1);
+    expect(defaultArgs.setSearchZone).toHaveBeenCalledWith(null);
+  });
+
+  it('falls back to single BANISH_CARD events when a solo batch spans multiple owners', () => {
+    const gameState = buildSyncState({
+      cards: [
+        makeCard({ id: 'card-1', zone: 'cemetery-host', owner: 'host' }),
+        makeCard({ id: 'card-2', zone: 'cemetery-guest', owner: 'guest' }),
+      ],
+    });
+    const { result } = renderHook(() => useGameBoardFieldActions({
+      ...defaultArgs,
+      isSoloMode: true,
+      gameStateRef: { current: gameState },
+    }));
+
+    result.current.handleBanishCards(['card-1', 'card-2']);
+
+    expect(defaultArgs.dispatchGameEvent).toHaveBeenNthCalledWith(1, {
+      type: 'BANISH_CARD',
+      actor: 'host',
+      cardId: 'card-1',
+    });
+    expect(defaultArgs.dispatchGameEvent).toHaveBeenNthCalledWith(2, {
+      type: 'BANISH_CARD',
+      actor: 'guest',
+      cardId: 'card-2',
+    });
+    expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledTimes(2);
+    expect(defaultArgs.setSearchZone).toHaveBeenCalledTimes(1);
+    expect(defaultArgs.setSearchZone).toHaveBeenCalledWith(null);
+  });
+
   // ─── 10. handlePlayToField ───────────────────────────────────────
   it('dispatches PLAY_TO_FIELD', () => {
     const { result } = renderHook(() => useGameBoardFieldActions(defaultArgs));
@@ -302,6 +412,19 @@ describe('useGameBoardFieldActions (Pure Hook)', () => {
         revealToOpponent: true,
       });
       expect(defaultArgs.setSearchZone).toHaveBeenCalledWith(null);
+    });
+
+    it('uses the local actor for single extraction outside solo mode even when targeting the opponent zone', () => {
+      const { result } = renderHook(() => useGameBoardFieldActions(defaultArgs));
+      result.current.handleExtractCard('card-1', 'hand-guest', 'guest');
+
+      expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledWith({
+        type: 'EXTRACT_CARD',
+        actor: 'host',
+        cardId: 'card-1',
+        destination: 'hand-guest',
+        revealToOpponent: false,
+      });
     });
 
     it('dispatches EXTRACT_CARD when dest is field but source is NOT evolveDeck', () => {
@@ -418,6 +541,107 @@ describe('useGameBoardFieldActions (Pure Hook)', () => {
         expect.objectContaining({ type: 'EXTRACT_CARD', destination: 'ex-host' }),
       );
     });
+
+    it('dispatches EXTRACT_CARDS_BATCH and clears search zone once', () => {
+      const { result } = renderHook(() => useGameBoardFieldActions(defaultArgs));
+
+      result.current.handleExtractCards(['card-1', 'card-2'], 'hand-host', 'host');
+
+      expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledWith({
+        type: 'EXTRACT_CARDS_BATCH',
+        actor: 'host',
+        cardIds: ['card-1', 'card-2'],
+        destination: 'hand-host',
+        revealToOpponent: false,
+      });
+      expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledTimes(1);
+      expect(defaultArgs.setSearchZone).toHaveBeenCalledTimes(1);
+      expect(defaultArgs.setSearchZone).toHaveBeenCalledWith(null);
+    });
+
+    it('uses the local actor for extraction outside solo mode even when targeting the opponent zone', () => {
+      const { result } = renderHook(() => useGameBoardFieldActions(defaultArgs));
+
+      result.current.handleExtractCards(['card-1', 'card-2'], 'hand-guest', 'guest');
+
+      expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledWith({
+        type: 'EXTRACT_CARDS_BATCH',
+        actor: 'host',
+        cardIds: ['card-1', 'card-2'],
+        destination: 'hand-guest',
+        revealToOpponent: false,
+      });
+    });
+  });
+
+  it('dispatches SEND_TO_BOTTOM_BATCH for same-owner selections and clears search zone once', () => {
+    const gameState = buildSyncState({
+      cards: [
+        makeCard({ id: 'card-1', zone: 'cemetery-guest', owner: 'guest' }),
+        makeCard({ id: 'card-2', zone: 'cemetery-guest', owner: 'guest' }),
+      ],
+    });
+    const { result } = renderHook(() => useGameBoardFieldActions({
+      ...defaultArgs,
+      isSoloMode: true,
+      gameStateRef: { current: gameState },
+    }));
+
+    result.current.handleSendCardsToBottom(['card-1', 'card-2']);
+
+    expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledWith({
+      type: 'SEND_TO_BOTTOM_BATCH',
+      actor: 'guest',
+      cardIds: ['card-1', 'card-2'],
+    });
+    expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledTimes(1);
+    expect(defaultArgs.setSearchZone).toHaveBeenCalledTimes(1);
+    expect(defaultArgs.setSearchZone).toHaveBeenCalledWith(null);
+  });
+
+  it('falls back to single SEND_TO_BOTTOM events when a solo batch spans multiple owners', () => {
+    const gameState = buildSyncState({
+      cards: [
+        makeCard({ id: 'card-1', zone: 'cemetery-host', owner: 'host' }),
+        makeCard({ id: 'card-2', zone: 'cemetery-guest', owner: 'guest' }),
+      ],
+    });
+    const { result } = renderHook(() => useGameBoardFieldActions({
+      ...defaultArgs,
+      isSoloMode: true,
+      gameStateRef: { current: gameState },
+    }));
+
+    result.current.handleSendCardsToBottom(['card-1', 'card-2']);
+
+    expect(defaultArgs.dispatchGameEvent).toHaveBeenNthCalledWith(1, {
+      type: 'SEND_TO_BOTTOM',
+      actor: 'host',
+      cardId: 'card-1',
+    });
+    expect(defaultArgs.dispatchGameEvent).toHaveBeenNthCalledWith(2, {
+      type: 'SEND_TO_BOTTOM',
+      actor: 'guest',
+      cardId: 'card-2',
+    });
+    expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledTimes(2);
+    expect(defaultArgs.setSearchZone).toHaveBeenCalledTimes(1);
+    expect(defaultArgs.setSearchZone).toHaveBeenCalledWith(null);
+  });
+
+  it('dispatches SEND_TO_BOTTOM_BATCH outside solo mode', () => {
+    const { result } = renderHook(() => useGameBoardFieldActions(defaultArgs));
+
+    result.current.handleSendCardsToBottom(['card-1', 'card-2']);
+
+    expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledWith({
+      type: 'SEND_TO_BOTTOM_BATCH',
+      actor: undefined,
+      cardIds: ['card-1', 'card-2'],
+    });
+    expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledTimes(1);
+    expect(defaultArgs.setSearchZone).toHaveBeenCalledTimes(1);
+    expect(defaultArgs.setSearchZone).toHaveBeenCalledWith(null);
   });
 
   // ═══════════════════════════════════════════════════════════════════

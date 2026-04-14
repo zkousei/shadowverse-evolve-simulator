@@ -50,6 +50,68 @@ const withCardMoveCheckpoint = (
   lastUndoableCardMoveActor: actor,
 });
 
+const withWorkingCards = (
+  state: SyncState,
+  cards: SyncState['cards']
+): SyncState => (
+  cards === state.cards ? state : { ...state, cards }
+);
+
+const applySendToBottomCards = (
+  state: SyncState,
+  cards: SyncState['cards'],
+  cardId: string
+): SyncState['cards'] => {
+  const workingState = withWorkingCards(state, cards);
+  if (isPreparingHandMovementBlocked(workingState, cardId)) return cards;
+  return CardLogic.sendCardToBottom(cards, cardId);
+};
+
+const applyExtractCardMove = (
+  state: SyncState,
+  cards: SyncState['cards'],
+  event: Extract<GameSyncEvent, { type: 'EXTRACT_CARD' }>
+): SyncState['cards'] => {
+  const workingState = withWorkingCards(state, cards);
+
+  if (isPreparingEvolveDeckMoveBlocked(workingState, event.cardId)) return cards;
+  if (event.attachToCardId) {
+    return CardLogic.extractCardToFieldAttachment(cards, event.cardId, event.actor, event.attachToCardId);
+  }
+  if (isPreparingMainDeckFieldSet(workingState, event.actor, event.cardId, event.destination)) {
+    return CardLogic.moveCardToEnd(cards, event.cardId, {
+      zone: `field-${event.actor}`,
+      isFlipped: true,
+      isTapped: false,
+      attachedTo: undefined,
+      counters: { atk: 0, hp: 0 },
+      preserveAttachment: false,
+    });
+  }
+  return CardLogic.extractCard(cards, event.cardId, event.actor, event.destination);
+};
+
+const applyCardMoveBatch = (
+  state: SyncState,
+  actor: GameSyncEvent['actor'],
+  cardIds: string[],
+  applyMove: (cards: SyncState['cards'], cardId: string) => SyncState['cards']
+): SyncState => {
+  let nextCards = state.cards;
+  let didChange = false;
+
+  for (const cardId of cardIds) {
+    const updatedCards = applyMove(nextCards, cardId);
+    if (updatedCards !== nextCards) {
+      nextCards = updatedCards;
+      didChange = true;
+    }
+  }
+
+  if (!didChange) return state;
+  return withCardMoveCheckpoint(state, actor, nextCards);
+};
+
 const isHostRequester = (requester: EventRequester): boolean => requester === 'host';
 
 const isActorRequester = (
@@ -67,6 +129,15 @@ const isPreparingEvolveDeckMoveBlocked = (
 };
 
 const isPreparingMainDeckDragBlocked = (
+  state: SyncState,
+  cardId: string
+): boolean => {
+  if (state.gameStatus !== 'preparing') return false;
+  const card = state.cards.find(c => c.id === cardId);
+  return card?.zone.startsWith('mainDeck-') ?? false;
+};
+
+const isPreparingMainDeckCemeteryMoveBlocked = (
   state: SyncState,
   cardId: string
 ): boolean => {
@@ -330,11 +401,18 @@ export const applyGameSyncEvent = (
     }
 
     case 'SEND_TO_BOTTOM': {
-      if (isPreparingHandMovementBlocked(state, event.cardId)) return state;
-      const nextCards = CardLogic.sendCardToBottom(state.cards, event.cardId);
+      const nextCards = applySendToBottomCards(state, state.cards, event.cardId);
       if (nextCards === state.cards) return state;
       return withCardMoveCheckpoint(state, event.actor, nextCards);
     }
+
+    case 'SEND_TO_BOTTOM_BATCH':
+      return applyCardMoveBatch(
+        state,
+        event.actor,
+        event.cardIds,
+        (cards, cardId) => applySendToBottomCards(state, cards, cardId)
+      );
 
     case 'BANISH_CARD': {
       if (isPreparingHandMovementBlocked(state, event.cardId)) return state;
@@ -343,12 +421,38 @@ export const applyGameSyncEvent = (
       return withCardMoveCheckpoint(state, event.actor, nextCards);
     }
 
+    case 'BANISH_CARDS_BATCH':
+      return applyCardMoveBatch(
+        state,
+        event.actor,
+        event.cardIds,
+        (cards, cardId) => {
+          const workingState = withWorkingCards(state, cards);
+          if (isPreparingHandMovementBlocked(workingState, cardId)) return cards;
+          return CardLogic.banishCard(cards, cardId);
+        }
+      );
+
     case 'SEND_TO_CEMETERY': {
       if (isPreparingHandMovementBlocked(state, event.cardId)) return state;
+      if (isPreparingMainDeckCemeteryMoveBlocked(state, event.cardId)) return state;
       const nextCards = CardLogic.sendCardToCemetery(state.cards, event.cardId);
       if (nextCards === state.cards) return state;
       return withCardMoveCheckpoint(state, event.actor, nextCards);
     }
+
+    case 'SEND_TO_CEMETERY_BATCH':
+      return applyCardMoveBatch(
+        state,
+        event.actor,
+        event.cardIds,
+        (cards, cardId) => {
+          const workingState = withWorkingCards(state, cards);
+          if (isPreparingHandMovementBlocked(workingState, cardId)) return cards;
+          if (isPreparingMainDeckCemeteryMoveBlocked(workingState, cardId)) return cards;
+          return CardLogic.sendCardToCemetery(cards, cardId);
+        }
+      );
 
     case 'DISCARD_RANDOM_HAND_CARDS': {
       if (!isActorRequester(requester, event.actor)) return state;
@@ -373,28 +477,22 @@ export const applyGameSyncEvent = (
     }
 
     case 'EXTRACT_CARD': {
-      if (isPreparingEvolveDeckMoveBlocked(state, event.cardId)) return state;
-      if (event.attachToCardId) {
-        const nextCards = CardLogic.extractCardToFieldAttachment(state.cards, event.cardId, event.actor, event.attachToCardId);
-        if (nextCards === state.cards) return state;
-        return withCardMoveCheckpoint(state, event.actor, nextCards);
-      }
-      if (isPreparingMainDeckFieldSet(state, event.actor, event.cardId, event.destination)) {
-        const nextCards = CardLogic.moveCardToEnd(state.cards, event.cardId, {
-          zone: `field-${event.actor}`,
-          isFlipped: true,
-          isTapped: false,
-          attachedTo: undefined,
-          counters: { atk: 0, hp: 0 },
-          preserveAttachment: false,
-        });
-        if (nextCards === state.cards) return state;
-        return withCardMoveCheckpoint(state, event.actor, nextCards);
-      }
-      const nextCards = CardLogic.extractCard(state.cards, event.cardId, event.actor, event.destination);
+      const nextCards = applyExtractCardMove(state, state.cards, event);
       if (nextCards === state.cards) return state;
       return withCardMoveCheckpoint(state, event.actor, nextCards);
     }
+
+    case 'EXTRACT_CARDS_BATCH':
+      return applyCardMoveBatch(
+        state,
+        event.actor,
+        event.cardIds,
+        (cards, cardId) => applyExtractCardMove(state, cards, {
+          ...event,
+          type: 'EXTRACT_CARD',
+          cardId,
+        })
+      );
 
     case 'SHUFFLE_DECK': {
       if (!isActorRequester(requester, event.actor)) return state;

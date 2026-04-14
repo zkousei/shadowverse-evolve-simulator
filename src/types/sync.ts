@@ -34,12 +34,16 @@ export type GameSyncEvent =
   | { id: string; type: 'TOGGLE_TAP'; actor: PlayerRole; cardId: string }
   | { id: string; type: 'TOGGLE_FLIP'; actor: PlayerRole; cardId: string }
   | { id: string; type: 'SEND_TO_BOTTOM'; actor: PlayerRole; cardId: string }
+  | { id: string; type: 'SEND_TO_BOTTOM_BATCH'; actor: PlayerRole; cardIds: string[] }
   | { id: string; type: 'BANISH_CARD'; actor: PlayerRole; cardId: string }
+  | { id: string; type: 'BANISH_CARDS_BATCH'; actor: PlayerRole; cardIds: string[] }
   | { id: string; type: 'SEND_TO_CEMETERY'; actor: PlayerRole; cardId: string }
+  | { id: string; type: 'SEND_TO_CEMETERY_BATCH'; actor: PlayerRole; cardIds: string[] }
   | { id: string; type: 'DISCARD_RANDOM_HAND_CARDS'; actor: PlayerRole; target: PlayerRole; count: number }
   | { id: string; type: 'RETURN_EVOLVE'; actor: PlayerRole; cardId: string }
   | { id: string; type: 'PLAY_TO_FIELD'; actor: PlayerRole; cardId: string }
   | { id: string; type: 'EXTRACT_CARD'; actor: PlayerRole; cardId: string; destination?: string; revealToOpponent?: boolean; attachToCardId?: string }
+  | { id: string; type: 'EXTRACT_CARDS_BATCH'; actor: PlayerRole; cardIds: string[]; destination?: string; revealToOpponent?: boolean }
   | { id: string; type: 'SHUFFLE_DECK'; actor: PlayerRole }
   | { id: string; type: 'MODIFY_PLAYER_STAT'; actor: PlayerRole; playerKey: PlayerRole; stat: 'hp' | 'pp' | 'maxPp' | 'ep' | 'sep' | 'combo'; delta: number }
   | { id: string; type: 'DRAW_INITIAL_HAND'; actor: PlayerRole }
@@ -55,6 +59,11 @@ export type GameSyncEvent =
   | { id: string; type: 'SPAWN_TOKENS_BATCH'; actor: PlayerRole; tokens: CardInstance[] }
   | { id: string; type: 'ATTACK_DECLARATION'; actor: PlayerRole; attackerCardId: string; target: AttackTarget };
 
+type SharedUiOwnerContext = {
+  sourceOwner?: PlayerRole;
+  destinationOwner?: PlayerRole;
+};
+
 export type SharedUiEffect =
   | { type: 'COIN_FLIP_RESULT'; actor: PlayerRole; result: 'HEADS (表)' | 'TAILS (裏)' }
   | { type: 'DICE_ROLL_RESULT'; actor: PlayerRole; value: number }
@@ -65,14 +74,18 @@ export type SharedUiEffect =
   | { type: 'MILL_CARD_COMPLETED'; actor: PlayerRole; cardName: string }
   | { type: 'TOP_CARD_TO_EX_COMPLETED'; actor: PlayerRole; cardName: string }
   | { type: 'RANDOM_HAND_DISCARD_COMPLETED'; actor: PlayerRole; target: PlayerRole; count: number }
-  | { type: 'SEARCHED_CARD_TO_HAND'; actor: PlayerRole }
-  | { type: 'SEARCHED_CARD_PLACED'; actor: PlayerRole; destination: 'field' | 'ex'; cardName?: string }
-  | { type: 'CEMETERY_CARD_TO_HAND'; actor: PlayerRole; cardName: string }
-  | { type: 'CEMETERY_CARD_PLACED'; actor: PlayerRole; destination: 'field' | 'ex'; cardName: string }
+  | ({ type: 'SEARCHED_CARD_TO_HAND'; actor: PlayerRole; count?: number } & SharedUiOwnerContext)
+  | ({ type: 'SEARCHED_CARD_PLACED'; actor: PlayerRole; destination: 'field' | 'ex'; cardName?: string; count?: number; isFaceDown?: boolean } & SharedUiOwnerContext)
+  | ({ type: 'MAIN_DECK_CARD_TO_CEMETERY'; actor: PlayerRole; cardName?: string; cardNames?: string[]; count?: number } & SharedUiOwnerContext)
+  | ({ type: 'CEMETERY_CARD_TO_HAND'; actor: PlayerRole; cardName?: string; cardNames?: string[]; count?: number } & SharedUiOwnerContext)
+  | ({ type: 'CEMETERY_CARD_PLACED'; actor: PlayerRole; destination: 'field' | 'ex'; cardName?: string; count?: number } & SharedUiOwnerContext)
+  | ({ type: 'CEMETERY_CARD_TO_BANISH'; actor: PlayerRole; cardName?: string; cardNames?: string[]; count?: number } & SharedUiOwnerContext)
+  | ({ type: 'CEMETERY_CARD_TO_BOTTOM'; actor: PlayerRole; cardName?: string; cardNames?: string[]; count?: number } & SharedUiOwnerContext)
   | { type: 'EVOLVE_CARD_PLACED'; actor: PlayerRole; cardName: string }
   | { type: 'EVOLVE_USAGE_TOGGLED'; actor: PlayerRole; cardName: string; isUsed: boolean }
-  | { type: 'BANISHED_CARD_TO_HAND'; actor: PlayerRole; cardName: string }
-  | { type: 'BANISHED_CARD_PLACED'; actor: PlayerRole; destination: 'field' | 'ex'; cardName: string }
+  | ({ type: 'BANISHED_CARD_TO_HAND'; actor: PlayerRole; cardName?: string; cardNames?: string[]; count?: number } & SharedUiOwnerContext)
+  | ({ type: 'BANISHED_CARD_PLACED'; actor: PlayerRole; destination: 'field' | 'ex'; cardName?: string; count?: number } & SharedUiOwnerContext)
+  | ({ type: 'BANISHED_CARD_TO_BOTTOM'; actor: PlayerRole; cardName?: string; cardNames?: string[]; count?: number } & SharedUiOwnerContext)
   | {
       type: 'LOOK_TOP_RESOLVED';
       actor: PlayerRole;

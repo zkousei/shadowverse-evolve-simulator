@@ -73,9 +73,9 @@ const GameBoard: React.FC = () => {
     handleStatChange, setPhase, endTurn, handleUndoTurn, handleSetInitialTurnOrder,
     handlePureCoinFlip, handleRollDice, handleStartGame, handleToggleReady,
     handleDrawInitialHand, startMulligan, handleMulliganOrderSelect, executeMulligan,
-    drawCard, handleExtractCard, confirmResetGame, handleDeckUpload, importDeckData, spawnTokens,
-    handleModifyCounter, handleModifyGenericCounter, handleDragEnd, toggleTap, handleFlipCard, handleSendToBottom,
-    handleBanish, handlePlayToField, handleSendToCemetery, handleReturnEvolve, handleShuffleDeck, handleDeclareAttack,
+    drawCard, handleExtractCard, handleExtractCards, confirmResetGame, handleDeckUpload, importDeckData, spawnTokens,
+    handleModifyCounter, handleModifyGenericCounter, handleDragEnd, toggleTap, handleFlipCard, handleSendToBottom, handleSendCardsToBottom,
+    handleBanish, handleBanishCards, handlePlayToField, handleSendToCemetery, handleSendCardsToCemetery, handleReturnEvolve, handleShuffleDeck, handleDeclareAttack,
     handleSetRevealHandsMode, handleSetEndStop,
     evolveAutoAttachSelection, confirmEvolveAutoAttachSelection, cancelEvolveAutoAttachSelection,
     getCards, getTokenOptions, millCard, moveTopCardToEx, discardRandomHandCards, revealHand,
@@ -1025,7 +1025,13 @@ const GameBoard: React.FC = () => {
           ).slice()
         ) : []}
         onExtractCard={(cardId, destination, revealToOpponent) => handleExtractCard(cardId, destination, searchTargetRole, revealToOpponent)}
+        onExtractCards={(cardIds, destination, revealToOpponent) => handleExtractCards(cardIds, destination, searchTargetRole, revealToOpponent)}
         onSendToBottom={handleSendToBottom}
+        onSendCardsToBottom={handleSendCardsToBottom}
+        onSendToCemetery={handleSendToCemetery}
+        onSendCardsToCemetery={handleSendCardsToCemetery}
+        onBanish={handleBanish}
+        onBanishCards={handleBanishCards}
         onToggleFlip={(cardId) => handleFlipCard(cardId, searchTargetRole)}
         viewerRole={searchTargetRole}
         targetRole={searchTargetRole}

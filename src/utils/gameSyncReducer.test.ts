@@ -1429,6 +1429,180 @@ describe('gameSyncReducer', () => {
     expect(played.cards.find(c => c.id === 'hand-card')?.zone).toBe('field-host');
   });
 
+  it('applies extract batches as one authoritative card move', () => {
+    const state = createState({
+      revision: 4,
+      cards: [
+        {
+          id: 'deck-card-1',
+          cardId: 'BP01-018',
+          name: 'Deck Card 1',
+          image: '',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'deck-card-2',
+          cardId: 'BP01-019',
+          name: 'Deck Card 2',
+          image: '',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    const extracted = applyGameSyncEvent(state, {
+      id: 'evt-14-batch',
+      type: 'EXTRACT_CARDS_BATCH',
+      actor: 'host',
+      cardIds: ['deck-card-1', 'deck-card-2'],
+      destination: 'hand-host',
+    });
+
+    expect(extracted.revision).toBe(5);
+    expect(extracted.lastUndoableCardMoveActor).toBe('host');
+    expect(extracted.lastUndoableCardMoveState?.revision).toBe(4);
+    expect(extracted.cards.find(c => c.id === 'deck-card-1')?.zone).toBe('hand-host');
+    expect(extracted.cards.find(c => c.id === 'deck-card-2')?.zone).toBe('hand-host');
+  });
+
+  it('applies send-to-bottom batches as one authoritative card move', () => {
+    const state = createState({
+      revision: 8,
+      cards: [
+        {
+          id: 'field-card-1',
+          cardId: 'BP01-020',
+          name: 'Field Card 1',
+          image: '',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'field-card-2',
+          cardId: 'BP01-021',
+          name: 'Field Card 2',
+          image: '',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    const bottomed = applyGameSyncEvent(state, {
+      id: 'evt-12-batch',
+      type: 'SEND_TO_BOTTOM_BATCH',
+      actor: 'host',
+      cardIds: ['field-card-1', 'field-card-2'],
+    });
+
+    expect(bottomed.revision).toBe(9);
+    expect(bottomed.lastUndoableCardMoveActor).toBe('host');
+    expect(bottomed.lastUndoableCardMoveState?.revision).toBe(8);
+    expect(bottomed.cards.find(c => c.id === 'field-card-1')?.zone).toBe('mainDeck-host');
+    expect(bottomed.cards.find(c => c.id === 'field-card-2')?.zone).toBe('mainDeck-host');
+  });
+
+  it('applies cemetery batches as one authoritative card move', () => {
+    const state = createState({
+      revision: 10,
+      gameStatus: 'playing',
+      cards: [
+        {
+          id: 'deck-card-1',
+          cardId: 'BP01-030',
+          name: 'Deck Card 1',
+          image: '',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'deck-card-2',
+          cardId: 'BP01-031',
+          name: 'Deck Card 2',
+          image: '',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    const cemeteried = applyGameSyncEvent(state, {
+      id: 'evt-15-batch',
+      type: 'SEND_TO_CEMETERY_BATCH',
+      actor: 'host',
+      cardIds: ['deck-card-1', 'deck-card-2'],
+    });
+
+    expect(cemeteried.revision).toBe(11);
+    expect(cemeteried.lastUndoableCardMoveActor).toBe('host');
+    expect(cemeteried.lastUndoableCardMoveState?.revision).toBe(10);
+    expect(cemeteried.cards.find(c => c.id === 'deck-card-1')?.zone).toBe('cemetery-host');
+    expect(cemeteried.cards.find(c => c.id === 'deck-card-2')?.zone).toBe('cemetery-host');
+  });
+
+  it('applies banish batches as one authoritative card move', () => {
+    const state = createState({
+      revision: 11,
+      cards: [
+        {
+          id: 'cemetery-card-1',
+          cardId: 'BP01-032',
+          name: 'Cemetery Card 1',
+          image: '',
+          zone: 'cemetery-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'cemetery-card-2',
+          cardId: 'BP01-033',
+          name: 'Cemetery Card 2',
+          image: '',
+          zone: 'cemetery-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    const banished = applyGameSyncEvent(state, {
+      id: 'evt-16-batch',
+      type: 'BANISH_CARDS_BATCH',
+      actor: 'host',
+      cardIds: ['cemetery-card-1', 'cemetery-card-2'],
+    });
+
+    expect(banished.revision).toBe(12);
+    expect(banished.lastUndoableCardMoveActor).toBe('host');
+    expect(banished.lastUndoableCardMoveState?.revision).toBe(11);
+    expect(banished.cards.find(c => c.id === 'cemetery-card-1')?.zone).toBe('banish-host');
+    expect(banished.cards.find(c => c.id === 'cemetery-card-2')?.zone).toBe('banish-host');
+  });
+
   it('attaches an extracted evolve card to the specified field card when attachToCardId is provided', () => {
     const state = createState({
       revision: 2,
@@ -1598,6 +1772,53 @@ describe('gameSyncReducer', () => {
     });
 
     expect(dragged).toBe(state);
+  });
+
+  it('blocks sending main-deck cards to cemetery during preparation', () => {
+    const state = createState({
+      revision: 8,
+      gameStatus: 'preparing',
+      cards: [
+        {
+          id: 'main-deck-card-1',
+          cardId: 'BP01-903',
+          name: 'Main Deck Card 1',
+          image: '',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+        {
+          id: 'main-deck-card-2',
+          cardId: 'BP01-904',
+          name: 'Main Deck Card 2',
+          image: '',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    });
+
+    const single = applyGameSyncEvent(state, {
+      id: 'evt-15d',
+      type: 'SEND_TO_CEMETERY',
+      actor: 'host',
+      cardId: 'main-deck-card-1',
+    });
+    expect(single).toBe(state);
+
+    const batch = applyGameSyncEvent(state, {
+      id: 'evt-15e',
+      type: 'SEND_TO_CEMETERY_BATCH',
+      actor: 'host',
+      cardIds: ['main-deck-card-1', 'main-deck-card-2'],
+    });
+    expect(batch).toBe(state);
   });
 
   it('links a special card to a field card without using the normal stack model', () => {
