@@ -61,6 +61,51 @@ export const dragFirstZoneCard = async (page: Page, sourceZoneId: string, target
   await sourceCard.dragTo(targetZone);
 };
 
+export const dragLocatorFromVisibleCornerToLocator = async (
+  page: Page,
+  source: Locator,
+  target: Locator
+) => {
+  await source.scrollIntoViewIfNeeded();
+  await target.scrollIntoViewIfNeeded();
+
+  const sourceBox = await source.boundingBox();
+  const targetBox = await target.boundingBox();
+  if (!sourceBox || !targetBox) {
+    throw new Error('Cannot drag because the source or target locator has no bounding box.');
+  }
+
+  await page.mouse.move(sourceBox.x + 5, sourceBox.y + 5);
+  await page.mouse.down();
+  await page.mouse.move(
+    targetBox.x + targetBox.width / 2,
+    targetBox.y + targetBox.height / 2,
+    { steps: 12 }
+  );
+  await page.mouse.up();
+};
+
+export const spawnDefaultToken = async (
+  page: Page,
+  side: 'top' | 'bottom',
+  destination: 'ex' | 'field' = 'field'
+) => {
+  const playerLabel = side === 'bottom' ? 'Player 1' : 'Player 2';
+
+  await boardSection(page, side).getByRole('button', { name: `Spawn ${playerLabel} Token` }).click();
+
+  const dialog = page.getByRole('dialog', { name: 'Generate Tokens' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Generate' })).toBeDisabled();
+
+  await dialog.getByRole('button', { name: destination === 'field' ? 'Field' : 'EX Area' }).click();
+  await dialog.getByRole('button', { name: 'Increase Token count' }).click();
+  await expect(dialog).toContainText('1 selected');
+
+  await dialog.getByRole('button', { name: 'Generate' }).click();
+  await expect(dialog).toBeHidden();
+};
+
 export const openMainDeckActions = async (page: Page, role: 'host' | 'guest') => {
   const mainDeckSection = zone(page, `mainDeck-${role}`).locator('..');
 
