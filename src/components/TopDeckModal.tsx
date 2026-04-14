@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { CardInstance } from './Card';
 import { useTranslation } from 'react-i18next';
 import CardArtwork from './CardArtwork';
@@ -28,14 +28,44 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
   const [currentAction, setCurrentAction] = useState<TopDeckAction>('top');
   const [isHandOpen, setIsHandOpen] = useState(true);
   const [isBottomOrderRandomized, setIsBottomOrderRandomized] = useState(false);
+  const wasOpenRef = useRef(false);
+  const previousCardIdsKeyRef = useRef('');
 
   useEffect(() => {
-    if (isOpen) {
+    if (!isOpen) {
+      wasOpenRef.current = false;
+      previousCardIdsKeyRef.current = '';
+      return;
+    }
+
+    const cardIdsKey = cards.map((card) => card.id).join('\u0000');
+    const shouldResetState = !wasOpenRef.current || previousCardIdsKeyRef.current !== cardIdsKey;
+
+    if (shouldResetState) {
       setPendingCards([...cards]);
       setAssignedCards([]);
       setCurrentAction('field');
       setIsBottomOrderRandomized(false);
+    } else {
+      const latestCardById = new Map(cards.map((card) => [card.id, card]));
+
+      setPendingCards((previous) => previous
+        .map((card) => latestCardById.get(card.id))
+        .filter((card): card is CardInstance => Boolean(card))
+      );
+      setAssignedCards((previous) => previous
+        .map((assignment) => {
+          const latestCard = latestCardById.get(assignment.card.id);
+          return latestCard
+            ? { ...assignment, card: latestCard }
+            : null;
+        })
+        .filter((assignment): assignment is AssignedCard => assignment !== null)
+      );
     }
+
+    wasOpenRef.current = true;
+    previousCardIdsKeyRef.current = cardIdsKey;
   }, [isOpen, cards]);
 
   if (!isOpen) return null;

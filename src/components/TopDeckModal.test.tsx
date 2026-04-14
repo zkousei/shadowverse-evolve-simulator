@@ -99,6 +99,40 @@ describe('TopDeckModal', () => {
     expect(screen.getByAltText('Card c1')).toBeInTheDocument();
   });
 
+  it('keeps in-progress assignments when cards update with the same IDs while open', () => {
+    const onConfirm = vi.fn();
+    const { rerender } = render(
+      <TopDeckModal
+        isOpen={true}
+        cards={[createCard('c1'), createCard('c2')]}
+        onConfirm={onConfirm}
+        onCancel={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getAllByText('Bottom of Deck')[0]);
+    fireEvent.click(screen.getByAltText('Card c1'));
+
+    rerender(
+      <TopDeckModal
+        isOpen={true}
+        cards={[createCard('c1'), createCard('c2')]}
+        onConfirm={onConfirm}
+        onCancel={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('1 cards remaining to assign')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByAltText('Card c2'));
+    fireEvent.click(screen.getByText('Confirm'));
+
+    expect(onConfirm).toHaveBeenCalledWith([
+      { cardId: 'c1', action: 'bottom', order: 1 },
+      { cardId: 'c2', action: 'bottom', order: 2 },
+    ]);
+  });
+
   it('supports assigning cards to revealed hand', () => {
     const onConfirm = vi.fn();
     render(
