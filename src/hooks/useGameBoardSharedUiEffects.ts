@@ -263,7 +263,6 @@ export const useGameBoardSharedUiEffects = ({
     if (effect.type === 'CARD_PLAYED') {
       const message = formatCardPlayedEffect(effect, role, usesPlayerLabels, translate);
       showTimedCardPlayMessage(message, 2600);
-      pushEventHistory(message);
       return;
     }
 
@@ -359,7 +358,6 @@ export const useGameBoardSharedUiEffects = ({
     if (effect.type === 'EVOLVE_CARD_PLACED') {
       const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
       showTimedCardPlayMessage(message, 2600);
-      pushEventHistory(message);
       return;
     }
 
