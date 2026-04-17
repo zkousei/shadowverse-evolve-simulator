@@ -638,6 +638,13 @@
         "selectAll": "Select All",
         "clearSelection": "Clear",
         "bulkSelectedCount": "{{count}} selected",
+        "sortLabel": "Sort",
+        "sortAria": "Sort cards",
+        "sortOptions": {
+          "added": "Added Order",
+          "cost": "Cost",
+          "type": "Card Type"
+        },
         "addToHand": "Add to Hand",
         "revealAndAddToHand": "Reveal & Add to Hand",
         "addToEx": "Add to EX Area",
