@@ -584,6 +584,13 @@
         "selectAll": "すべて選択",
         "clearSelection": "解除",
         "bulkSelectedCount": "{{count}}枚選択中",
+        "sortLabel": "並び替え",
+        "sortAria": "カードを並び替え",
+        "sortOptions": {
+          "added": "追加順",
+          "cost": "コスト順",
+          "type": "カード種類順"
+        },
         "addToHand": "手札に加える",
         "revealAndAddToHand": "公開して手札に加える",
         "addToEx": "EXエリアに置く",

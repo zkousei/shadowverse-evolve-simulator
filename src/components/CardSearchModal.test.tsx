@@ -16,6 +16,11 @@ const createCard = (overrides: Partial<CardInstance> = {}): CardInstance => ({
   ...overrides,
 });
 
+const getRenderedCardOrder = (): string[] => {
+  const cardGrid = screen.getByTestId('search-card-grid');
+  return Array.from(cardGrid.querySelectorAll('img[alt]')).map((image) => image.getAttribute('alt') ?? '');
+};
+
 describe('CardSearchModal', () => {
   it('does not show hand or EX extraction buttons for evolve cards', () => {
     render(
@@ -130,6 +135,139 @@ describe('CardSearchModal', () => {
     );
 
     expect(screen.queryByTestId('search-card-type-counts')).not.toBeInTheDocument();
+  });
+
+  it('shows sort controls only for cemetery and banish searches', () => {
+    const { rerender } = render(
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Cemetery"
+        zoneId="cemetery-host"
+        cards={[createCard({ zone: 'cemetery-host' })]}
+        onExtractCard={vi.fn()}
+        viewerRole="host"
+      />
+    );
+
+    expect(screen.getByRole('combobox', { name: 'Sort cards' })).toBeInTheDocument();
+
+    rerender(
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Banish"
+        zoneId="banish-host"
+        cards={[createCard({ zone: 'banish-host' })]}
+        onExtractCard={vi.fn()}
+        viewerRole="host"
+      />
+    );
+
+    expect(screen.getByRole('combobox', { name: 'Sort cards' })).toBeInTheDocument();
+
+    rerender(
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Main Deck"
+        zoneId="mainDeck-host"
+        cards={[createCard({ zone: 'mainDeck-host' })]}
+        onExtractCard={vi.fn()}
+        viewerRole="host"
+      />
+    );
+
+    expect(screen.queryByRole('combobox', { name: 'Sort cards' })).not.toBeInTheDocument();
+  });
+
+  it('sorts cemetery cards by added order, cost, and card type for display only', () => {
+    const cards = [
+      createCard({ id: 'card-1', cardId: 'BP01-003', name: 'Amulet 3', zone: 'cemetery-host', baseCardType: 'amulet' }),
+      createCard({ id: 'card-2', cardId: 'BP01-001', name: 'Spell 1', zone: 'cemetery-host', baseCardType: 'spell' }),
+      createCard({ id: 'card-3', cardId: 'BP01-002', name: 'Follower 2', zone: 'cemetery-host', baseCardType: 'follower' }),
+    ];
+
+    render(
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Cemetery"
+        zoneId="cemetery-host"
+        cards={cards}
+        cardDetailLookup={{
+          'BP01-001': { id: 'BP01-001', name: 'Spell 1', image: '/spell.png', className: '', title: '', type: 'スペル', subtype: '', cost: '1', atk: null, hp: null, abilityText: '' },
+          'BP01-002': { id: 'BP01-002', name: 'Follower 2', image: '/follower.png', className: '', title: '', type: 'フォロワー', subtype: '', cost: '2', atk: 2, hp: 2, abilityText: '' },
+          'BP01-003': { id: 'BP01-003', name: 'Amulet 3', image: '/amulet.png', className: '', title: '', type: 'アミュレット', subtype: '', cost: '3', atk: null, hp: null, abilityText: '' },
+        }}
+        onExtractCard={vi.fn()}
+        viewerRole="host"
+      />
+    );
+
+    expect(getRenderedCardOrder()).toEqual(['Amulet 3', 'Spell 1', 'Follower 2']);
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Sort cards' }), { target: { value: 'cost' } });
+    expect(getRenderedCardOrder()).toEqual(['Spell 1', 'Follower 2', 'Amulet 3']);
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Sort cards' }), { target: { value: 'type' } });
+    expect(getRenderedCardOrder()).toEqual(['Follower 2', 'Spell 1', 'Amulet 3']);
+  });
+
+  it('groups same-name cards when sorting by cost', () => {
+    render(
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Cemetery"
+        zoneId="cemetery-host"
+        cards={[
+          createCard({ id: 'card-1', cardId: 'BP01-001', name: 'Alpha', zone: 'cemetery-host', baseCardType: 'spell' }),
+          createCard({ id: 'card-2', cardId: 'BP01-002', name: 'Beta', zone: 'cemetery-host', baseCardType: 'follower' }),
+          createCard({ id: 'card-3', cardId: 'BP01-003', name: 'Alpha', zone: 'cemetery-host', baseCardType: 'amulet' }),
+          createCard({ id: 'card-4', cardId: 'BP01-004', name: 'Beta', zone: 'cemetery-host', baseCardType: 'spell' }),
+        ]}
+        cardDetailLookup={{
+          'BP01-001': { id: 'BP01-001', name: 'Alpha', image: '/alpha1.png', className: '', title: '', type: 'スペル', subtype: '', cost: '2', atk: null, hp: null, abilityText: '' },
+          'BP01-002': { id: 'BP01-002', name: 'Beta', image: '/beta1.png', className: '', title: '', type: 'フォロワー', subtype: '', cost: '2', atk: 2, hp: 2, abilityText: '' },
+          'BP01-003': { id: 'BP01-003', name: 'Alpha', image: '/alpha2.png', className: '', title: '', type: 'アミュレット', subtype: '', cost: '2', atk: null, hp: null, abilityText: '' },
+          'BP01-004': { id: 'BP01-004', name: 'Beta', image: '/beta2.png', className: '', title: '', type: 'スペル', subtype: '', cost: '2', atk: null, hp: null, abilityText: '' },
+        }}
+        onExtractCard={vi.fn()}
+        viewerRole="host"
+      />
+    );
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Sort cards' }), { target: { value: 'cost' } });
+    expect(getRenderedCardOrder()).toEqual(['Alpha', 'Alpha', 'Beta', 'Beta']);
+  });
+
+  it('groups same-name cards when sorting by card type', () => {
+    render(
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Cemetery"
+        zoneId="cemetery-host"
+        cards={[
+          createCard({ id: 'card-1', cardId: 'BP01-001', name: 'Sword', zone: 'cemetery-host', baseCardType: 'follower' }),
+          createCard({ id: 'card-2', cardId: 'BP01-002', name: 'Arrow', zone: 'cemetery-host', baseCardType: 'follower' }),
+          createCard({ id: 'card-3', cardId: 'BP01-003', name: 'Sword', zone: 'cemetery-host', baseCardType: 'follower' }),
+          createCard({ id: 'card-4', cardId: 'BP01-004', name: 'Arrow', zone: 'cemetery-host', baseCardType: 'follower' }),
+        ]}
+        cardDetailLookup={{
+          'BP01-001': { id: 'BP01-001', name: 'Sword', image: '/sword1.png', className: '', title: '', type: 'フォロワー', subtype: '', cost: '4', atk: 4, hp: 4, abilityText: '' },
+          'BP01-002': { id: 'BP01-002', name: 'Arrow', image: '/arrow1.png', className: '', title: '', type: 'フォロワー', subtype: '', cost: '1', atk: 1, hp: 1, abilityText: '' },
+          'BP01-003': { id: 'BP01-003', name: 'Sword', image: '/sword2.png', className: '', title: '', type: 'フォロワー', subtype: '', cost: '2', atk: 2, hp: 2, abilityText: '' },
+          'BP01-004': { id: 'BP01-004', name: 'Arrow', image: '/arrow2.png', className: '', title: '', type: 'フォロワー', subtype: '', cost: '3', atk: 3, hp: 3, abilityText: '' },
+        }}
+        onExtractCard={vi.fn()}
+        viewerRole="host"
+      />
+    );
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Sort cards' }), { target: { value: 'type' } });
+    expect(getRenderedCardOrder()).toEqual(['Arrow', 'Arrow', 'Sword', 'Sword']);
   });
 
   it('only allows face-down field set when searching the main deck during preparation', () => {
@@ -521,6 +659,78 @@ describe('CardSearchModal', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send to bottom of deck' }));
 
     expect(onSendCardsToBottom).toHaveBeenCalledWith(['card-1', 'card-2']);
+  });
+
+  it('keeps bulk selection and batch actions working after changing sort mode', () => {
+    const onSendCardsToBottom = vi.fn();
+
+    render(
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Cemetery"
+        zoneId="cemetery-host"
+        cards={[
+          createCard({ id: 'card-1', cardId: 'BP01-003', name: 'Amulet 3', zone: 'cemetery-host', baseCardType: 'amulet' }),
+          createCard({ id: 'card-2', cardId: 'BP01-001', name: 'Spell 1', zone: 'cemetery-host', baseCardType: 'spell' }),
+          createCard({ id: 'card-3', cardId: 'BP01-002', name: 'Follower 2', zone: 'cemetery-host', baseCardType: 'follower' }),
+        ]}
+        cardDetailLookup={{
+          'BP01-001': { id: 'BP01-001', name: 'Spell 1', image: '/spell.png', className: '', title: '', type: 'スペル', subtype: '', cost: '1', atk: null, hp: null, abilityText: '' },
+          'BP01-002': { id: 'BP01-002', name: 'Follower 2', image: '/follower.png', className: '', title: '', type: 'フォロワー', subtype: '', cost: '2', atk: 2, hp: 2, abilityText: '' },
+          'BP01-003': { id: 'BP01-003', name: 'Amulet 3', image: '/amulet.png', className: '', title: '', type: 'アミュレット', subtype: '', cost: '3', atk: null, hp: null, abilityText: '' },
+        }}
+        onExtractCard={vi.fn()}
+        onSendCardsToBottom={onSendCardsToBottom}
+        viewerRole="host"
+      />
+    );
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Sort cards' }), { target: { value: 'cost' } });
+    fireEvent.click(screen.getByText('Select Multiple'));
+    fireEvent.click(screen.getByAltText('Spell 1'));
+    fireEvent.click(screen.getByAltText('Follower 2'));
+    fireEvent.click(screen.getByRole('button', { name: 'Send to bottom of deck' }));
+
+    expect(onSendCardsToBottom).toHaveBeenCalledWith(['card-2', 'card-3']);
+  });
+
+  it('keeps selected cards and batch actions working when sort mode changes during bulk selection', () => {
+    const onSendCardsToBottom = vi.fn();
+
+    render(
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Cemetery"
+        zoneId="cemetery-host"
+        cards={[
+          createCard({ id: 'card-1', cardId: 'BP01-003', name: 'Amulet 3', zone: 'cemetery-host', baseCardType: 'amulet' }),
+          createCard({ id: 'card-2', cardId: 'BP01-001', name: 'Spell 1', zone: 'cemetery-host', baseCardType: 'spell' }),
+          createCard({ id: 'card-3', cardId: 'BP01-002', name: 'Follower 2', zone: 'cemetery-host', baseCardType: 'follower' }),
+        ]}
+        cardDetailLookup={{
+          'BP01-001': { id: 'BP01-001', name: 'Spell 1', image: '/spell.png', className: '', title: '', type: 'スペル', subtype: '', cost: '1', atk: null, hp: null, abilityText: '' },
+          'BP01-002': { id: 'BP01-002', name: 'Follower 2', image: '/follower.png', className: '', title: '', type: 'フォロワー', subtype: '', cost: '2', atk: 2, hp: 2, abilityText: '' },
+          'BP01-003': { id: 'BP01-003', name: 'Amulet 3', image: '/amulet.png', className: '', title: '', type: 'アミュレット', subtype: '', cost: '3', atk: null, hp: null, abilityText: '' },
+        }}
+        onExtractCard={vi.fn()}
+        onSendCardsToBottom={onSendCardsToBottom}
+        viewerRole="host"
+      />
+    );
+
+    fireEvent.click(screen.getByText('Select Multiple'));
+    fireEvent.click(screen.getByAltText('Amulet 3'));
+    fireEvent.click(screen.getByAltText('Follower 2'));
+
+    expect(screen.getAllByText('2 selected')).toHaveLength(2);
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Sort cards' }), { target: { value: 'cost' } });
+    expect(screen.getAllByText('2 selected')).toHaveLength(2);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send to bottom of deck' }));
+    expect(onSendCardsToBottom).toHaveBeenCalledWith(['card-1', 'card-3']);
   });
 
   it('sends a main-deck card to cemetery immediately', () => {

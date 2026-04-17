@@ -29,6 +29,32 @@ interface CardSearchModalProps {
 }
 
 type SearchTypeCounts = Record<RuntimeBaseCardType, number>;
+type SearchSortMode = 'added' | 'cost' | 'type';
+type SearchTypeOrder = RuntimeBaseCardType | 'unknown';
+
+const parseSortCost = (cost?: string): number => {
+  if (!cost) return Number.MAX_SAFE_INTEGER;
+  const parsed = Number.parseInt(cost, 10);
+  return Number.isNaN(parsed) ? Number.MAX_SAFE_INTEGER : parsed;
+};
+
+const getSortTypeOrder = (baseCardType: RuntimeBaseCardType | null): SearchTypeOrder => {
+  if (baseCardType === 'follower' || baseCardType === 'spell' || baseCardType === 'amulet') {
+    return baseCardType;
+  }
+  return 'unknown';
+};
+
+const searchTypeRank: Record<SearchTypeOrder, number> = {
+  follower: 0,
+  spell: 1,
+  amulet: 2,
+  unknown: 3,
+};
+
+const compareCardName = (left: CardInstance, right: CardInstance): number => (
+  left.name.localeCompare(right.name, undefined, { sensitivity: 'base' })
+);
 
 const CardSearchModal: React.FC<CardSearchModalProps> = ({
   isOpen,
@@ -55,6 +81,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
   const [selectedCardId, setSelectedCardId] = React.useState<string | null>(null);
   const [isBulkSelecting, setIsBulkSelecting] = React.useState(false);
   const [bulkSelectedCardIds, setBulkSelectedCardIds] = React.useState<string[]>([]);
+  const [sortMode, setSortMode] = React.useState<SearchSortMode>('added');
   const [reserveDetailSpace, setReserveDetailSpace] = React.useState(false);
   const modalPanelRef = React.useRef<HTMLDivElement | null>(null);
   const detailPopoverRef = React.useRef<HTMLDivElement | null>(null);
@@ -65,6 +92,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
       setSelectedCardId(null);
       setIsBulkSelecting(false);
       setBulkSelectedCardIds([]);
+      setSortMode('added');
       return;
     }
 
@@ -115,8 +143,6 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
     return () => window.removeEventListener('resize', measureScrollRoom);
   }, [cards.length, isOpen, selectedCardId]);
 
-  if (!isOpen) return null;
-
   // Search behavior must key off the structural zone id, not the localized
   // modal title, otherwise i18n changes can alter which actions are allowed.
   const sourceZonePrefix = zoneId?.split('-')[0] ?? null;
@@ -125,7 +151,44 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
   const isEvolveDeck = sourceZonePrefix === 'evolveDeck';
   const shouldShowTypeCounts = sourceZonePrefix === 'cemetery' || sourceZonePrefix === 'mainDeck';
   const isPublicRecoveryZone = sourceZonePrefix === 'cemetery' || sourceZonePrefix === 'banish';
+  const canSortCards = sourceZonePrefix === 'cemetery' || sourceZonePrefix === 'banish';
   const supportsBulkSelection = !readOnly && (sourceZonePrefix === 'mainDeck' || sourceZonePrefix === 'cemetery' || sourceZonePrefix === 'banish');
+  const visibleCards = React.useMemo(() => {
+    if (!canSortCards || sortMode === 'added') return cards;
+
+    const indexedCards = cards.map((card, index) => ({ card, index }));
+    const getBaseType = (card: CardInstance) => {
+      const cardDetail = cardDetailLookup[card.cardId];
+      return card.baseCardType
+        ?? normalizeBaseCardType(card.cardKindNormalized)
+        ?? normalizeBaseCardType(cardDetail?.cardKindNormalized)
+        ?? normalizeBaseCardType(cardDetail?.type);
+    };
+
+    indexedCards.sort((left, right) => {
+      if (sortMode === 'cost') {
+        const leftCost = parseSortCost(cardDetailLookup[left.card.cardId]?.cost);
+        const rightCost = parseSortCost(cardDetailLookup[right.card.cardId]?.cost);
+        if (leftCost !== rightCost) return leftCost - rightCost;
+
+        const comparedName = compareCardName(left.card, right.card);
+        if (comparedName !== 0) return comparedName;
+      }
+
+      if (sortMode === 'type') {
+        const leftType = getSortTypeOrder(getBaseType(left.card));
+        const rightType = getSortTypeOrder(getBaseType(right.card));
+        if (leftType !== rightType) return searchTypeRank[leftType] - searchTypeRank[rightType];
+
+        const comparedName = compareCardName(left.card, right.card);
+        if (comparedName !== 0) return comparedName;
+      }
+
+      return left.index - right.index;
+    });
+
+    return indexedCards.map((entry) => entry.card);
+  }, [canSortCards, cardDetailLookup, cards, sortMode]);
   const searchTypeCounts = shouldShowTypeCounts
     ? cards.reduce<SearchTypeCounts>((counts, card) => {
       const cardDetail = cardDetailLookup[card.cardId];
@@ -205,6 +268,8 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
   const canBulkSendToBottom = selectedBulkCardCount > 0 && bulkSelectedCards.every(canSendCardToBottom);
   const canBulkSendToCemetery = selectedBulkCardCount > 0 && bulkSelectedCards.every(canSendCardToCemetery);
   const canBulkBanish = selectedBulkCardCount > 0 && bulkSelectedCards.every(canBanishCard);
+
+  if (!isOpen) return null;
 
   const handleBulkExtract = (destination?: string, revealToOpponent = false) => {
     if (bulkSelectedCardIds.length === 0) return;
@@ -321,7 +386,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
                       {selectedCountLabel}
                     </span>
                     <button
-                      onClick={() => setBulkSelectedCardIds(cards.map(card => card.id))}
+                      onClick={() => setBulkSelectedCardIds(visibleCards.map(card => card.id))}
                       style={{
                         background: 'rgba(255,255,255,0.05)',
                         border: '1px solid var(--border-color)',
@@ -375,6 +440,28 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
                 </button>
               </>
             )}
+            {canSortCards && (
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                <span>{t('gameBoard.modals.search.sortLabel')}</span>
+                <select
+                  aria-label={t('gameBoard.modals.search.sortAria')}
+                  value={sortMode}
+                  onChange={(event) => setSortMode(event.target.value as SearchSortMode)}
+                  style={{
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid var(--border-color)',
+                    color: 'white',
+                    padding: '0.45rem 0.5rem',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="added">{t('gameBoard.modals.search.sortOptions.added')}</option>
+                  <option value="cost">{t('gameBoard.modals.search.sortOptions.cost')}</option>
+                  <option value="type">{t('gameBoard.modals.search.sortOptions.type')}</option>
+                </select>
+              </label>
+            )}
             <button
               onClick={onClose}
               style={{
@@ -404,7 +491,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
             paddingBottom: selectedCard && reserveDetailSpace ? '11rem' : '1.5rem'
           }}
         >
-          {cards.map(c => {
+          {visibleCards.map(c => {
             const isUsed = isEvolveDeck && !c.isFlipped;
             const canAddToHand = canAddCardToHand(c);
             const canRevealToHand = canRevealCardToHand(c);
