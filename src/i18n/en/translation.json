@@ -597,6 +597,11 @@
         "description": "This will rewind the board state to just before you ended your turn. Do you want to proceed?",
         "confirm": "Yes, Undo"
       },
+      "searchShuffle": {
+        "title": "Shuffle {{label}} Main Deck?",
+        "description": "A card was moved from the main deck via Search. Shuffle the deck now?",
+        "confirm": "Yes, Shuffle"
+      },
       "tokenSpawn": {
         "title": "Generate Tokens",
         "description": "Choose how many of each token to create, then pick where they should appear.",

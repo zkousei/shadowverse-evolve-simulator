@@ -4,6 +4,7 @@ import GameBoardCountDialog from './GameBoardCountDialog';
 import GameBoardDialogsHost from './GameBoardDialogsHost';
 import GameBoardEvolveAutoAttachDialog from './GameBoardEvolveAutoAttachDialog';
 import GameBoardResetDialog from './GameBoardResetDialog';
+import GameBoardSearchShuffleConfirmDialog from './GameBoardSearchShuffleConfirmDialog';
 import GameBoardSavedDeckPickerDialog from './GameBoardSavedDeckPickerDialog';
 import GameBoardTokenSpawnDialog from './GameBoardTokenSpawnDialog';
 import GameBoardTopNDialog from './GameBoardTopNDialog';
@@ -107,11 +108,39 @@ describe('GameBoard extracted UI components - dialogs', () => {
           onCancel: vi.fn(),
           onConfirm: vi.fn(),
         }}
+        searchShuffleConfirm={{
+          targetLabel: 'Player 1',
+          onCancel: vi.fn(),
+          onConfirm: vi.fn(),
+        }}
       />
     );
 
     expect(screen.getByTestId('saved-deck-picker-backdrop')).toBeInTheDocument();
     expect(screen.getByTestId('evolve-auto-attach-backdrop')).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Shuffle Player 1 Main Deck?' })).toBeInTheDocument();
+  });
+
+  it('renders search shuffle confirm dialog and wires cancel/confirm actions', () => {
+    const onCancel = vi.fn();
+    const onConfirm = vi.fn();
+
+    render(
+      <GameBoardSearchShuffleConfirmDialog
+        targetLabel="Player 2"
+        onCancel={onCancel}
+        onConfirm={onConfirm}
+      />
+    );
+
+    expect(screen.getByRole('dialog', { name: 'Shuffle Player 2 Main Deck?' })).toBeInTheDocument();
+    expect(screen.getByText('A card was moved from the main deck via Search. Shuffle the deck now?')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, Shuffle' }));
+
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(onConfirm).toHaveBeenCalledTimes(1);
   });
 
   it('renders undo turn dialog and wires cancel/confirm actions', () => {

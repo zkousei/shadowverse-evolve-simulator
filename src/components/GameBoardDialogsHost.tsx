@@ -1,6 +1,7 @@
 import React from 'react';
 import type { CardInstance } from './Card';
 import GameBoardEvolveAutoAttachDialog from './GameBoardEvolveAutoAttachDialog';
+import GameBoardSearchShuffleConfirmDialog from './GameBoardSearchShuffleConfirmDialog';
 import GameBoardSavedDeckPickerDialog from './GameBoardSavedDeckPickerDialog';
 import type { CardDetailLookup } from '../utils/cardDetails';
 import type { LegalSavedDeckOption } from '../utils/gameBoardSavedDecks';
@@ -27,11 +28,17 @@ type GameBoardDialogsHostProps = {
     onCancel: () => void;
     onConfirm: (cardId: string) => void;
   } | null;
+  searchShuffleConfirm?: {
+    targetLabel: string;
+    onCancel: () => void;
+    onConfirm: () => void;
+  } | null;
 };
 
 const GameBoardDialogsHost: React.FC<GameBoardDialogsHostProps> = ({
   savedDeckPicker,
   evolveAutoAttach,
+  searchShuffleConfirm = null,
 }) => (
   <>
     {savedDeckPicker && (
@@ -53,6 +60,13 @@ const GameBoardDialogsHost: React.FC<GameBoardDialogsHostProps> = ({
         onBackdropClick={evolveAutoAttach.onBackdropClick}
         onCancel={evolveAutoAttach.onCancel}
         onConfirm={evolveAutoAttach.onConfirm}
+      />
+    )}
+    {searchShuffleConfirm && (
+      <GameBoardSearchShuffleConfirmDialog
+        targetLabel={searchShuffleConfirm.targetLabel}
+        onCancel={searchShuffleConfirm.onCancel}
+        onConfirm={searchShuffleConfirm.onConfirm}
       />
     )}
   </>
