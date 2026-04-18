@@ -26,6 +26,7 @@ interface CardSearchModalProps {
   zoneId?: string;
   allowHandExtraction?: boolean;
   readOnly?: boolean;
+  onRequestMainDeckShuffleConfirm?: (targetRole: PlayerRole) => void;
 }
 
 type SearchTypeCounts = Record<RuntimeBaseCardType, number>;
@@ -76,6 +77,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
   zoneId,
   allowHandExtraction = true,
   readOnly = false,
+  onRequestMainDeckShuffleConfirm,
 }) => {
   const { t } = useTranslation();
   const [selectedCardId, setSelectedCardId] = React.useState<string | null>(null);
@@ -271,14 +273,37 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
 
   if (!isOpen) return null;
 
+  const requestMainDeckShuffleConfirm = () => {
+    if (sourceZonePrefix !== 'mainDeck') return;
+    const shuffleTargetRole = targetRole ?? viewerRole;
+    if (!shuffleTargetRole) return;
+
+    onRequestMainDeckShuffleConfirm?.(shuffleTargetRole);
+  };
+
+  const handleExtractFromSearch = (cardId: string, destination?: string, revealToOpponent = false) => {
+    if (revealToOpponent) {
+      onExtractCard(cardId, destination, true);
+    } else {
+      onExtractCard(cardId, destination);
+    }
+    requestMainDeckShuffleConfirm();
+  };
+
   const handleBulkExtract = (destination?: string, revealToOpponent = false) => {
     if (bulkSelectedCardIds.length === 0) return;
     if (onExtractCards) {
       onExtractCards(bulkSelectedCardIds, destination, revealToOpponent);
-      return;
+    } else {
+      bulkSelectedCardIds.forEach(cardId => {
+        if (revealToOpponent) {
+          onExtractCard(cardId, destination, true);
+        } else {
+          onExtractCard(cardId, destination);
+        }
+      });
     }
-
-    bulkSelectedCardIds.forEach(cardId => onExtractCard(cardId, destination, revealToOpponent));
+    requestMainDeckShuffleConfirm();
   };
 
   const handleBulkSendToBottom = () => {
@@ -303,20 +328,20 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
   const handleSendCardToCemetery = (card: CardInstance) => {
     if (onSendToCemetery) {
       onSendToCemetery(card.id);
-      return;
+    } else {
+      onSendCardsToCemetery?.([card.id]);
     }
-
-    onSendCardsToCemetery?.([card.id]);
+    requestMainDeckShuffleConfirm();
   };
 
   const handleBulkSendToCemetery = () => {
     if (bulkSelectedCards.length === 0) return;
     if (onSendCardsToCemetery) {
       onSendCardsToCemetery(bulkSelectedCardIds);
-      return;
+    } else {
+      bulkSelectedCardIds.forEach(cardId => onSendToCemetery?.(cardId));
     }
-
-    bulkSelectedCardIds.forEach(cardId => onSendToCemetery?.(cardId));
+    requestMainDeckShuffleConfirm();
   };
 
   const handleBanishCard = (card: CardInstance) => {
@@ -583,7 +608,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
                       <button
                         onClick={(event) => {
                           event.stopPropagation();
-                          onExtractCard(c.id, `field-${actionRole}`);
+                          handleExtractFromSearch(c.id, `field-${actionRole}`);
                         }}
                         style={{
                           width: '100%', background: '#3b82f6', color: 'white', border: 'none',
@@ -598,7 +623,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
                       <button
                         onClick={(event) => {
                           event.stopPropagation();
-                          onExtractCard(c.id, `hand-${actionRole}`);
+                          handleExtractFromSearch(c.id, `hand-${actionRole}`);
                         }}
                         disabled={!allowHandExtraction}
                         style={{
@@ -614,7 +639,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
                       <button
                         onClick={(event) => {
                           event.stopPropagation();
-                          onExtractCard(c.id, `hand-${actionRole}`, true);
+                          handleExtractFromSearch(c.id, `hand-${actionRole}`, true);
                         }}
                         disabled={!allowHandExtraction}
                         style={{
@@ -630,7 +655,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
                       <button
                         onClick={(event) => {
                           event.stopPropagation();
-                          onExtractCard(c.id, `ex-${actionRole}`);
+                          handleExtractFromSearch(c.id, `ex-${actionRole}`);
                         }}
                         disabled={!allowHandExtraction}
                         style={{

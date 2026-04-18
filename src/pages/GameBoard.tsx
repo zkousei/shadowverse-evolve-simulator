@@ -86,6 +86,7 @@ const GameBoard: React.FC = () => {
 
   const [mulliganTargetRole, setMulliganTargetRole] = React.useState<PlayerRole>('host');
   const [activeZoneActions, setActiveZoneActions] = React.useState<string | null>(null);
+  const [searchShuffleTargetRole, setSearchShuffleTargetRole] = React.useState<PlayerRole | null>(null);
   const [isRoomCopied, setIsRoomCopied] = React.useState(false);
   const {
     allCardsLength,
@@ -298,6 +299,7 @@ const GameBoard: React.FC = () => {
     if (isSoloMode || connectionState === 'connected') return;
 
     resetDialogsForConnectionChange();
+    setSearchShuffleTargetRole(null);
     setActiveZoneActions(null);
     closeInspector();
     clearAttackSource();
@@ -313,6 +315,9 @@ const GameBoard: React.FC = () => {
     if (!canView) return;
     setSearchZone({ id, title });
   }, [canView, setSearchZone]);
+  const handleRequestMainDeckShuffleConfirm = React.useCallback((targetRole: PlayerRole) => {
+    setSearchShuffleTargetRole(targetRole);
+  }, []);
   const topHandRandomDiscardZoneActions = buildRandomDiscardHandZoneActions(
     topRole,
     () => openRandomDiscardDialog(topRole, bottomRole),
@@ -524,6 +529,16 @@ const GameBoard: React.FC = () => {
         },
         onCancel: cancelEvolveAutoAttachSelection,
         onConfirm: confirmEvolveAutoAttachSelection,
+      }
+    : null;
+  const searchShuffleConfirmDialogProps = searchShuffleTargetRole
+    ? {
+        targetLabel: searchShuffleTargetRole === topRole ? topLabel : bottomLabel,
+        onCancel: () => setSearchShuffleTargetRole(null),
+        onConfirm: () => {
+          handleShuffleDeck(searchShuffleTargetRole);
+          setSearchShuffleTargetRole(null);
+        },
       }
     : null;
   const cardInspectorSectionProps = {
@@ -1035,6 +1050,7 @@ const GameBoard: React.FC = () => {
         onToggleFlip={(cardId) => handleFlipCard(cardId, searchTargetRole)}
         viewerRole={searchTargetRole}
         targetRole={searchTargetRole}
+        onRequestMainDeckShuffleConfirm={handleRequestMainDeckShuffleConfirm}
       />
 
       <TopDeckModal
@@ -1127,6 +1143,7 @@ const GameBoard: React.FC = () => {
       <GameBoardDialogsHost
         savedDeckPicker={savedDeckPickerDialogProps}
         evolveAutoAttach={evolveAutoAttachDialogProps}
+        searchShuffleConfirm={searchShuffleConfirmDialogProps}
       />
       <GameBoardCardInspectorSection {...cardInspectorSectionProps} />
     </DndContext>

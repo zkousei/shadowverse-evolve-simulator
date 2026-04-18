@@ -75,17 +75,31 @@ vi.mock('../components/CardSearchModal', () => ({
     cards,
     readOnly,
     onClose,
+    zoneId,
+    targetRole,
+    onRequestMainDeckShuffleConfirm,
   }: {
     isOpen: boolean;
     title: string;
     cards: CardInstance[];
     readOnly?: boolean;
     onClose: () => void;
+    zoneId?: string;
+    targetRole?: 'host' | 'guest';
+    onRequestMainDeckShuffleConfirm?: (targetRole: 'host' | 'guest') => void;
   }) => (
     isOpen ? (
       <div role="dialog" aria-label={title}>
         <div data-testid="search-modal-read-only">{String(Boolean(readOnly))}</div>
         <div data-testid="search-modal-card-count">{cards.length}</div>
+        {zoneId?.startsWith('mainDeck-') && onRequestMainDeckShuffleConfirm && targetRole && (
+          <button
+            type="button"
+            onClick={() => onRequestMainDeckShuffleConfirm(targetRole)}
+          >
+            Request Search Shuffle
+          </button>
+        )}
         <button type="button" onClick={onClose}>Close Search</button>
       </div>
     ) : null
@@ -1336,6 +1350,60 @@ describe('GameBoard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Close Search' }));
 
     expect(setSearchZone).toHaveBeenCalledWith(null);
+  });
+
+  it('opens the search shuffle confirmation after a main-deck search action and shuffles on confirm', async () => {
+    const handleShuffleDeck = vi.fn();
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      handleShuffleDeck,
+      searchZone: {
+        id: 'mainDeck-guest',
+        title: 'Opponent Main Deck',
+      },
+      gameState: createGameState([], {
+        gameStatus: 'playing',
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Request Search Shuffle' }));
+
+    const dialog = await screen.findByRole('dialog', { name: /Shuffle .* Main Deck\?/ });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Yes, Shuffle' }));
+
+    expect(handleShuffleDeck).toHaveBeenCalledWith('guest');
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: /Shuffle .* Main Deck\?/ })).not.toBeInTheDocument();
+    });
+  });
+
+  it('closes the search shuffle confirmation without shuffling when canceled', async () => {
+    const handleShuffleDeck = vi.fn();
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      handleShuffleDeck,
+      searchZone: {
+        id: 'mainDeck-guest',
+        title: 'Opponent Main Deck',
+      },
+      gameState: createGameState([], {
+        gameStatus: 'playing',
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Request Search Shuffle' }));
+
+    const dialog = await screen.findByRole('dialog', { name: /Shuffle .* Main Deck\?/ });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+
+    expect(handleShuffleDeck).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: /Shuffle .* Main Deck\?/ })).not.toBeInTheDocument();
+    });
   });
 
   it('renders spectator searches as read-only with private zone contents visible', () => {

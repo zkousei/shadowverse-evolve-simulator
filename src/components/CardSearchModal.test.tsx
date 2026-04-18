@@ -324,6 +324,61 @@ describe('CardSearchModal', () => {
     expect(onExtractCard).toHaveBeenNthCalledWith(4, 'card-1', 'ex-host');
   });
 
+  it('requests a shuffle confirmation after main-deck card operations', () => {
+    const onExtractCard = vi.fn();
+    const onSendToCemetery = vi.fn();
+    const onRequestMainDeckShuffleConfirm = vi.fn();
+
+    render(
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Main Deck"
+        zoneId="mainDeck-host"
+        cards={[createCard({ isEvolveCard: false, zone: 'mainDeck-host' })]}
+        onExtractCard={onExtractCard}
+        onSendToCemetery={onSendToCemetery}
+        onRequestMainDeckShuffleConfirm={onRequestMainDeckShuffleConfirm}
+        targetRole="host"
+        viewerRole="host"
+        allowHandExtraction={true}
+      />
+    );
+
+    fireEvent.click(screen.getByText('Add to Hand'));
+    fireEvent.click(screen.getByRole('button', { name: 'Send to cemetery' }));
+
+    expect(onExtractCard).toHaveBeenCalledWith('card-1', 'hand-host');
+    expect(onSendToCemetery).toHaveBeenCalledWith('card-1');
+    expect(onRequestMainDeckShuffleConfirm).toHaveBeenNthCalledWith(1, 'host');
+    expect(onRequestMainDeckShuffleConfirm).toHaveBeenNthCalledWith(2, 'host');
+  });
+
+  it('does not request a shuffle confirmation for non-main-deck operations', () => {
+    const onRequestMainDeckShuffleConfirm = vi.fn();
+
+    render(
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Cemetery"
+        zoneId="cemetery-host"
+        cards={[createCard({ zone: 'cemetery-host' })]}
+        onExtractCard={vi.fn()}
+        onSendToBottom={vi.fn()}
+        onRequestMainDeckShuffleConfirm={onRequestMainDeckShuffleConfirm}
+        targetRole="host"
+        viewerRole="host"
+        allowHandExtraction={true}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add to Hand' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Send to bottom of deck' }));
+
+    expect(onRequestMainDeckShuffleConfirm).not.toHaveBeenCalled();
+  });
+
   it('shows send-to-bottom for cemetery and banish searches only, and fires the callback', () => {
     const onSendToBottom = vi.fn();
     const { rerender } = render(
