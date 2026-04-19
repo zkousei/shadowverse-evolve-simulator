@@ -22,14 +22,20 @@ describe('vercelAnalytics', () => {
     })).toBe(false);
   });
 
-  it('redacts game room query parameters from analytics URLs', () => {
+  it.each([
+    ['solo mode', 'https://example.com/game?mode=solo&room=ROOM123', 'https://example.com/game/solo'],
+    ['P2P host', 'https://example.com/game?host=true&room=ROOM123', 'https://example.com/game/p2p-host'],
+    ['P2P guest', 'https://example.com/game?host=false&room=ROOM123', 'https://example.com/game/p2p-guest'],
+    ['spectator', 'https://example.com/game?spectator=true&room=ROOM123', 'https://example.com/game/spectator'],
+    ['unknown game mode', 'https://example.com/game?room=ROOM123', 'https://example.com/game'],
+  ])('redacts game room query parameters while preserving the safe %s bucket', (_, inputUrl, expectedUrl) => {
     const event = redactVercelAnalyticsEvent({
-      url: 'https://example.com/game?host=true&room=ROOM123',
+      url: inputUrl,
       referrer: 'https://example.com/',
     });
 
     expect(event).toEqual({
-      url: 'https://example.com/game',
+      url: expectedUrl,
       referrer: 'https://example.com/',
     });
   });
