@@ -1,10 +1,15 @@
 import React from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Home from './pages/Home';
 import DeckBuilder from './pages/DeckBuilder';
 import GameBoard from './pages/GameBoard';
 import { generateRoomCode } from './utils/roomCode';
+import {
+  redactVercelAnalyticsEvent,
+  shouldEnableVercelAnalytics,
+} from './utils/vercelAnalytics';
 
 const navLinkStyle: React.CSSProperties = {
   color: 'var(--text-main)',
@@ -342,6 +347,10 @@ function App() {
           <Route path="/game" element={<GameBoard />} />
         </Routes>
       </main>
+
+      {shouldEnableVercelAnalytics(import.meta.env) && (
+        <Analytics beforeSend={redactVercelAnalyticsEvent} debug={false} />
+      )}
     </BrowserRouter>
   );
 }
