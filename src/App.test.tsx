@@ -190,7 +190,7 @@ describe('App', () => {
     expect(analyticsMock.props[0]?.beforeSend?.({
       url: 'https://example.com/game?host=true&room=ROOM123',
     })).toEqual({
-      url: 'https://example.com/game',
+      url: 'https://example.com/game/p2p-host',
     });
   });
 });
