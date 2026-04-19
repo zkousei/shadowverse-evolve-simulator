@@ -1,6 +1,23 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
+
+const analyticsMock = vi.hoisted(() => ({
+  props: [] as Array<{
+    beforeSend?: (event: { url: string }) => { url: string } | null;
+    debug?: boolean;
+  }>,
+}));
+
+vi.mock('@vercel/analytics/react', () => ({
+  Analytics: (props: {
+    beforeSend?: (event: { url: string }) => { url: string } | null;
+    debug?: boolean;
+  }) => {
+    analyticsMock.props.push(props);
+    return <div data-testid="vercel-analytics" />;
+  },
+}));
 
 vi.mock('./pages/Home', () => ({
   default: () => <div>Mock Home Page</div>,
@@ -39,6 +56,11 @@ vi.mock('./pages/GameBoard', () => ({
 }));
 
 describe('App', () => {
+  beforeEach(() => {
+    analyticsMock.props = [];
+    vi.unstubAllEnvs();
+  });
+
   it('renders the navigation shell and home route', () => {
     window.history.pushState({}, '', '/');
     render(<App />);
@@ -145,5 +167,30 @@ describe('App', () => {
     expect(screen.getByRole('listbox')).toBeInTheDocument();
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  });
+
+  it('does not render Vercel Analytics unless explicitly enabled for production', () => {
+    vi.stubEnv('PROD', true);
+    window.history.pushState({}, '', '/');
+    render(<App />);
+
+    expect(screen.queryByTestId('vercel-analytics')).not.toBeInTheDocument();
+    expect(analyticsMock.props).toHaveLength(0);
+  });
+
+  it('renders Vercel Analytics in enabled production builds with game URL redaction', () => {
+    vi.stubEnv('PROD', true);
+    vi.stubEnv('VITE_ENABLE_VERCEL_ANALYTICS', 'true');
+    window.history.pushState({}, '', '/');
+    render(<App />);
+
+    expect(screen.getByTestId('vercel-analytics')).toBeInTheDocument();
+    expect(analyticsMock.props).toHaveLength(1);
+    expect(analyticsMock.props[0]?.debug).toBe(false);
+    expect(analyticsMock.props[0]?.beforeSend?.({
+      url: 'https://example.com/game?host=true&room=ROOM123',
+    })).toEqual({
+      url: 'https://example.com/game',
+    });
   });
 });
