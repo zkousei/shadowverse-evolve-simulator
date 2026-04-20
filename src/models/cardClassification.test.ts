@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getBaseCardType } from './cardClassification';
+import { CARD_KIND_NORMALIZED_VALUES, getBaseCardType } from './cardClassification';
 
 describe('cardClassification helpers', () => {
   it('maps current normalized kinds to their base card type', () => {
@@ -8,6 +8,11 @@ describe('cardClassification helpers', () => {
     expect(getBaseCardType('advance_spell')).toBe('spell');
     expect(getBaseCardType('token_amulet')).toBe('amulet');
     expect(getBaseCardType('token_equipment')).toBe('amulet');
+  });
+
+  it('recognizes crest as a token-only kind without a base card type', () => {
+    expect(CARD_KIND_NORMALIZED_VALUES).toContain('token_crest');
+    expect(getBaseCardType('token_crest')).toBeNull();
   });
 
   it('handles future amulet variants without changing the deckbuilder filter', () => {

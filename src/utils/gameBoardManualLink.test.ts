@@ -41,6 +41,7 @@ describe('gameBoardManualLink', () => {
       const catalogIds = new Set(['CATALOG-EQUIPMENT']);
 
       expect(isTokenEquipmentCard(buildCard({ cardKindNormalized: 'token_equipment' }), new Set())).toBe(true);
+      expect(isTokenEquipmentCard(buildCard({ cardKindNormalized: 'token_crest' }), new Set())).toBe(false);
       expect(isTokenEquipmentCard(buildCard({ cardId: 'CATALOG-EQUIPMENT' }), catalogIds)).toBe(true);
       expect(isTokenEquipmentCard(buildCard({ cardId: 'OTHER' }), catalogIds)).toBe(false);
       expect(isTokenEquipmentCard(undefined, catalogIds)).toBe(false);

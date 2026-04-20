@@ -174,6 +174,18 @@ const tokenCard: DeckBuilderCardData = {
   is_deck_build_legal: true,
 };
 
+const crestTokenCard: DeckBuilderCardData = {
+  id: 'TK01-020',
+  name: 'Crest Token',
+  image: '/crest.png',
+  class: '-',
+  type: 'クレスト・トークン',
+  card_kind_normalized: 'token_crest',
+  is_token: true,
+  is_evolve_card: false,
+  is_deck_build_legal: true,
+};
+
 const royalLeaderCard: DeckBuilderCardData = {
   id: 'LDR01-001',
   name: 'Royal Leader',
@@ -336,6 +348,7 @@ describe('deckBuilderRules', () => {
     expect(getAllowedSections(advanceAmuletCard)).toEqual(['evolve']);
     expect(getAllowedSections(royalLeaderCard)).toEqual(['leader']);
     expect(getAllowedSections(tokenCard)).toEqual(['token']);
+    expect(getAllowedSections(crestTokenCard)).toEqual(['token']);
   });
 
   it('accepts cards only in their legal deck section', () => {
@@ -346,6 +359,8 @@ describe('deckBuilderRules', () => {
     expect(canAddCardToSection(evolveCard, 'main')).toBe(false);
     expect(canAddCardToSection(royalLeaderCard, 'leader')).toBe(true);
     expect(canAddCardToSection(tokenCard, 'main')).toBe(false);
+    expect(canAddCardToSection(crestTokenCard, 'token')).toBe(true);
+    expect(canAddCardToSection(crestTokenCard, 'main')).toBe(false);
   });
 
   it('prevents adding more than three effective copies per main or evolve deck', () => {

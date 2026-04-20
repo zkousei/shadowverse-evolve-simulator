@@ -13,6 +13,7 @@ CARD_KIND_BY_TYPE = {
     "スペル・トークン": "token_spell",
     "アミュレット・トークン": "token_amulet",
     "イクイップメント・トークン": "token_equipment",
+    "クレスト・トークン": "token_crest",
     "フォロワー・アドバンス": "advance_follower",
     "スペル・アドバンス": "advance_spell",
     "アミュレット・アドバンス": "advance_amulet",
@@ -35,6 +36,7 @@ DECK_SECTION_BY_CARD_KIND = {
     "token_spell": "token",
     "token_amulet": "token",
     "token_equipment": "token",
+    "token_crest": "token",
     "ep": "neither",
     "sep": "neither",
 }

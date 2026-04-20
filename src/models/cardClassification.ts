@@ -10,6 +10,7 @@ export const CARD_KIND_NORMALIZED_VALUES = [
   'token_spell',
   'token_amulet',
   'token_equipment',
+  'token_crest',
   'advance_follower',
   'advance_spell',
   'advance_amulet',

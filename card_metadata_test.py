@@ -92,6 +92,14 @@ class CardMetadataTest(unittest.TestCase):
             is_deck_build_legal=True,
         )
         self.assertDerived(
+            "クレスト・トークン",
+            card_kind_normalized="token_crest",
+            deck_section="token",
+            is_token=True,
+            is_evolve_card=False,
+            is_deck_build_legal=True,
+        )
+        self.assertDerived(
             "SEP",
             card_kind_normalized="sep",
             deck_section="neither",
