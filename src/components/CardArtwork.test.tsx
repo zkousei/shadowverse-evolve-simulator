@@ -99,7 +99,7 @@ describe('CardArtwork', () => {
         image="/test.png"
         alt="Token Equipment"
         isTokenCard={true}
-        baseCardType="amulet"
+        baseCardType={null}
         detail={{
           name: 'Token Equipment',
           cost: '1',

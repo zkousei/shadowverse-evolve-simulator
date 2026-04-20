@@ -77,6 +77,7 @@ describe('deckBuilderDisplay', () => {
       { card: makeCard({ id: 'amulet-1', card_kind_normalized: 'amulet' }), count: 1 },
       { card: makeCard({ id: 'unknown-1', card_kind_normalized: 'leader' }), count: 4 },
       { card: makeCard({ id: 'crest-1', card_kind_normalized: 'token_crest' }), count: 5 },
+      { card: makeCard({ id: 'equipment-1', card_kind_normalized: 'token_equipment' }), count: 5 },
     ])).toEqual({
       follower: 3,
       spell: 2,

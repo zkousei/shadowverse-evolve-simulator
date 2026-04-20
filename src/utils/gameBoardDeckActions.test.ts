@@ -30,6 +30,7 @@ describe('gameBoardDeckActions', () => {
         { id: 'token-1', name: 'Token A', image: '/token-a.png', deck_section: 'token', card_kind_normalized: 'token' },
         { id: 'token-1', name: 'Token A', image: '/token-a.png', deck_section: 'token', card_kind_normalized: 'token' },
         { id: 'crest-1', name: 'Crest Token', image: '/crest.png', deck_section: 'token', card_kind_normalized: 'token_crest' },
+        { id: 'equipment-1', name: 'Equipment Token', image: '/equipment.png', deck_section: 'token', card_kind_normalized: 'token_equipment' },
       ],
     }, 'host', createId);
 
@@ -56,6 +57,13 @@ describe('gameBoardDeckActions', () => {
         image: '/crest.png',
         baseCardType: null,
         cardKindNormalized: 'token_crest',
+      },
+      {
+        cardId: 'equipment-1',
+        name: 'Equipment Token',
+        image: '/equipment.png',
+        baseCardType: null,
+        cardKindNormalized: 'token_equipment',
       },
     ]);
   });

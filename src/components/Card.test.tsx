@@ -355,7 +355,7 @@ describe('Card', () => {
 
     rerender(
       <Card
-        card={createCard({ zone: 'ex-host', counters: { atk: 0, hp: 0 }, baseCardType: 'amulet', isTokenCard: true })}
+        card={createCard({ zone: 'ex-host', counters: { atk: 0, hp: 0 }, baseCardType: null, cardKindNormalized: 'token_equipment', isTokenCard: true })}
         onPlayToField={onPlayToField}
       />
     );

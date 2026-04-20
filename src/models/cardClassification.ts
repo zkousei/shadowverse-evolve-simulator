@@ -36,8 +36,7 @@ export const getBaseCardType = (cardKindNormalized?: string | null): BaseCardTyp
 
   if (
     cardKindNormalized === 'amulet' ||
-    cardKindNormalized.endsWith('_amulet') ||
-    cardKindNormalized === 'token_equipment'
+    cardKindNormalized.endsWith('_amulet')
   ) {
     return 'amulet';
   }

@@ -7,7 +7,10 @@ describe('cardClassification helpers', () => {
     expect(getBaseCardType('evolve_follower')).toBe('follower');
     expect(getBaseCardType('advance_spell')).toBe('spell');
     expect(getBaseCardType('token_amulet')).toBe('amulet');
-    expect(getBaseCardType('token_equipment')).toBe('amulet');
+  });
+
+  it('does not treat token equipment as an amulet base card type', () => {
+    expect(getBaseCardType('token_equipment')).toBeNull();
   });
 
   it('recognizes crest as a token-only kind without a base card type', () => {
