@@ -208,6 +208,42 @@ describe('convertDeckLogResponse', () => {
     expect(result.missingCardIds).toEqual([]);
   });
 
+  it('resolves crest token fallbacks without treating same-name non-crest cards as matches', () => {
+    const fallbackCards: DeckBuilderCardData[] = [
+      {
+        id: 'BP20-001',
+        name: 'Crest Sigil',
+        image: '/crest-amulet.png',
+        class: 'エルフ',
+        type: 'アミュレット',
+        card_kind_normalized: 'amulet',
+        deck_section: 'main',
+      },
+      {
+        id: 'TK20-001',
+        name: 'Crest Sigil',
+        image: '/crest-token.png',
+        class: '-',
+        type: 'クレスト・トークン',
+        card_kind_normalized: 'token_crest',
+        deck_section: 'token',
+        is_token: true,
+      },
+    ];
+
+    const result = convertDeckLogResponse({
+      id: 1,
+      title: 'Crest Fallback Deck',
+      game_title_id: 6,
+      list: [
+        { card_number: 'PR-777', name: 'Crest Sigil', num: 1, card_kind: '・クレスト・トークン・' },
+      ],
+    }, fallbackCards);
+
+    expect(result.deckState.mainDeck.map(card => card.id)).toEqual(['TK20-001']);
+    expect(result.missingCardIds).toEqual([]);
+  });
+
   it('collects missing card ids', () => {
     const result = convertDeckLogResponse({
       id: 1,

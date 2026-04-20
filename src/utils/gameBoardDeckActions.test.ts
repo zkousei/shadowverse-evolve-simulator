@@ -29,6 +29,7 @@ describe('gameBoardDeckActions', () => {
       tokenDeck: [
         { id: 'token-1', name: 'Token A', image: '/token-a.png', deck_section: 'token', card_kind_normalized: 'token' },
         { id: 'token-1', name: 'Token A', image: '/token-a.png', deck_section: 'token', card_kind_normalized: 'token' },
+        { id: 'crest-1', name: 'Crest Token', image: '/crest.png', deck_section: 'token', card_kind_normalized: 'token_crest' },
       ],
     }, 'host', createId);
 
@@ -48,6 +49,13 @@ describe('gameBoardDeckActions', () => {
         image: '/token-a.png',
         baseCardType: null,
         cardKindNormalized: 'token',
+      },
+      {
+        cardId: 'crest-1',
+        name: 'Crest Token',
+        image: '/crest.png',
+        baseCardType: null,
+        cardKindNormalized: 'token_crest',
       },
     ]);
   });
@@ -134,5 +142,24 @@ describe('gameBoardDeckActions', () => {
     expect(tokens).toHaveLength(3);
     expect(tokens.map((token) => token.id)).toEqual(['token-1', 'token-2', 'token-3']);
     expect(tokens.every((token) => token.zone === 'ex-guest')).toBe(true);
+  });
+
+  it('spawns crest tokens as token cards without a runtime base card type', () => {
+    const token = buildSpawnTokenInstance('host', {
+      cardId: 'crest-1',
+      name: 'Crest Token',
+      image: '/crest.png',
+      baseCardType: null,
+      cardKindNormalized: 'token_crest',
+    }, 'ex', () => 'crest-token-id');
+
+    expect(token).toMatchObject({
+      id: 'crest-token-id',
+      cardId: 'crest-1',
+      zone: 'ex-host',
+      isTokenCard: true,
+      baseCardType: null,
+      cardKindNormalized: 'token_crest',
+    });
   });
 });

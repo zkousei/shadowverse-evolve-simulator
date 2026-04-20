@@ -44,6 +44,15 @@ describe('buildGameBoardCatalogResources', () => {
         card_kind_normalized: 'token_equipment',
         type: 'Amulet',
       },
+      {
+        id: 'crest-token',
+        name: 'Crest Token',
+        title: 'Test Title',
+        image: '/crest.png',
+        deck_section: 'token',
+        card_kind_normalized: 'token_crest',
+        type: 'クレスト・トークン',
+      },
     ];
 
     const resources = buildGameBoardCatalogResources(cards);
@@ -55,5 +64,6 @@ describe('buildGameBoardCatalogResources', () => {
     expect(resources.fieldLinkAutoAttachResolver).not.toBeNull();
     expect(resources.fieldLinkCardIds.has('field-link')).toBe(true);
     expect(resources.tokenEquipmentCardIds.has('token-equipment')).toBe(true);
+    expect(resources.tokenEquipmentCardIds.has('crest-token')).toBe(false);
   });
 });

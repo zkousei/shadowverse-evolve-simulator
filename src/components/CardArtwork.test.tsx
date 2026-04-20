@@ -115,6 +115,27 @@ describe('CardArtwork', () => {
     expect(screen.getByText('EQUIPMENT')).toBeInTheDocument();
   });
 
+  it('shows crest tokens as TOKEN without equipment styling', () => {
+    render(
+      <CardArtwork
+        image="/test.png"
+        alt="Crest Token"
+        isTokenCard={true}
+        detail={{
+          name: 'Crest Token',
+          cost: '-',
+          atk: null,
+          hp: null,
+          type: 'クレスト・トークン',
+          cardKindNormalized: 'token_crest',
+        }}
+      />
+    );
+
+    expect(screen.getAllByText('TOKEN')).toHaveLength(2);
+    expect(screen.queryByText('EQUIPMENT')).not.toBeInTheDocument();
+  });
+
   it('renders the dummy card back when requested', () => {
     render(
       <CardArtwork

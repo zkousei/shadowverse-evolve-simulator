@@ -12,6 +12,7 @@ describe('cardType', () => {
     expect(normalizeBaseCardType()).toBeNull();
     expect(normalizeBaseCardType(null)).toBeNull();
     expect(normalizeBaseCardType('leader')).toBeNull();
+    expect(normalizeBaseCardType('token_crest')).toBeNull();
   });
 
   it('detects only non-evolve spell cards as main-deck spells', () => {

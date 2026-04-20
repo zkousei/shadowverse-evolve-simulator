@@ -89,6 +89,7 @@ describe('CardSearchModal', () => {
       createCard({ id: 'follower-2', zone: 'cemetery-host', baseCardType: 'follower' }),
       createCard({ id: 'spell-1', zone: 'cemetery-host', baseCardType: 'spell' }),
       createCard({ id: 'amulet-1', zone: 'cemetery-host', baseCardType: 'amulet' }),
+      createCard({ id: 'crest-1', zone: 'cemetery-host', cardKindNormalized: 'token_crest', isTokenCard: true }),
     ];
     const { rerender } = render(
       <CardSearchModal
@@ -103,7 +104,7 @@ describe('CardSearchModal', () => {
       />
     );
 
-    expect(screen.getByRole('heading', { name: 'Cemetery (4)' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Cemetery (5)' })).toBeInTheDocument();
     expect(screen.getByTestId('search-card-type-counts')).toHaveTextContent('Follower: 2 / Spell: 1 / Amulet: 1');
 
     rerender(
