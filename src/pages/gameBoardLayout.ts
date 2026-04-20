@@ -15,6 +15,14 @@ export type GameBoardLayout = {
 
 const TABLET_MIN_WIDTH = 900;
 const DESKTOP_MIN_WIDTH = 1280;
+const BOARD_SHELL_COLUMN_GAP = 16;
+const TABLET_VIEWPORT_HORIZONTAL_RESERVED = 80;
+const TABLET_MIN_SHELL_WIDTH = 860;
+const TABLET_MAX_SHELL_WIDTH = 1120;
+
+const clamp = (value: number, min: number, max: number): number => (
+  Math.min(Math.max(value, min), max)
+);
 
 const buildLayout = (
   profile: GameBoardLayoutProfile,
@@ -53,6 +61,33 @@ export const tabletGameBoardLayout = buildLayout('tablet', {
   centerZoneWidth: 640,
 });
 
+const resolveTabletLayout = (viewportWidth: number): GameBoardLayout => {
+  const boardShellWidth = clamp(
+    Math.round(viewportWidth - TABLET_VIEWPORT_HORIZONTAL_RESERVED),
+    TABLET_MIN_SHELL_WIDTH,
+    TABLET_MAX_SHELL_WIDTH
+  );
+
+  const topPanelWidth = clamp(Math.round(boardShellWidth * 0.14), 112, 148);
+  const sidePanelWidth = clamp(Math.round(boardShellWidth * 0.16), 128, 180);
+  const boardContentWidth = boardShellWidth - topPanelWidth - sidePanelWidth - (BOARD_SHELL_COLUMN_GAP * 2);
+
+  let sideZoneWidth = clamp(Math.round(boardContentWidth * 0.18), 100, 120);
+  let centerZoneWidth = boardContentWidth - (sideZoneWidth * 2);
+
+  if (centerZoneWidth < 360) {
+    sideZoneWidth = Math.max(90, Math.floor((boardContentWidth - 360) / 2));
+    centerZoneWidth = boardContentWidth - (sideZoneWidth * 2);
+  }
+
+  return buildLayout('tablet', {
+    sidePanelWidth,
+    topPanelWidth,
+    sideZoneWidth,
+    centerZoneWidth,
+  });
+};
+
 export const getLayoutProfileForViewportWidth = (viewportWidth: number): GameBoardLayoutProfile => {
   if (viewportWidth >= TABLET_MIN_WIDTH && viewportWidth < DESKTOP_MIN_WIDTH) {
     return 'tablet';
@@ -63,7 +98,7 @@ export const getLayoutProfileForViewportWidth = (viewportWidth: number): GameBoa
 
 export const resolveBoardLayout = (viewportWidth: number): GameBoardLayout => {
   const profile = getLayoutProfileForViewportWidth(viewportWidth);
-  return profile === 'tablet' ? tabletGameBoardLayout : desktopGameBoardLayout;
+  return profile === 'tablet' ? resolveTabletLayout(viewportWidth) : desktopGameBoardLayout;
 };
 
 // Keep legacy exports as desktop defaults to avoid changing the existing PC path.

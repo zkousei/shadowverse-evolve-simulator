@@ -449,6 +449,18 @@ describe('Card', () => {
     expect(controls).toHaveStyle({ opacity: '0', pointerEvents: 'none' });
   });
 
+  it('disables browser touch gestures on coarse input to keep dragging smooth', () => {
+    renderWithInputProfile(
+      'coarse',
+      <Card
+        card={createCard()}
+      />
+    );
+
+    const cardElement = screen.getByAltText('Test Card').closest('.game-card') as HTMLElement;
+    expect(cardElement).toHaveStyle({ touchAction: 'none' });
+  });
+
   it('does not show current stats for hand cards even if base stats are available', () => {
     render(
       <Card

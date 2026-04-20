@@ -2759,7 +2759,7 @@ describe('GameBoard', () => {
       const topSection = screen.getByTestId('board-section-top');
       const topGrid = topSection.firstElementChild as HTMLElement;
 
-      expect(topGrid).toHaveStyle({ gridTemplateColumns: '148px 880px 180px' });
+      expect(topGrid).toHaveStyle({ gridTemplateColumns: '132px 629px 151px' });
     } finally {
       Object.defineProperty(window, 'innerWidth', {
         configurable: true,

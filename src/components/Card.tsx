@@ -116,6 +116,7 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
     transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
     zIndex: transform ? 999 : 1,
     cursor: isInteractionLocked ? 'default' : 'grab',
+    touchAction: isCoarseInput ? 'none' : undefined,
     position: 'relative',
     width: '100px',
     height: '140px',

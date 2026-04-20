@@ -45,4 +45,15 @@ describe('gameBoardLayout', () => {
     expect(getLayoutProfileForViewportWidth(899)).toBe('desktop');
     expect(getLayoutProfileForViewportWidth(1280)).toBe('desktop');
   });
+
+  it('fits tablet board shell within the viewport budget', () => {
+    const viewportWidth = 1024;
+    const layout = resolveBoardLayout(viewportWidth);
+
+    expect(layout.profile).toBe('tablet');
+    expect(layout.boardShellColumns).toBe('132px 629px 151px');
+
+    const boardShellWidth = layout.topPanelWidth + layout.boardContentWidth + layout.sidePanelWidth + (16 * 2);
+    expect(boardShellWidth).toBeLessThanOrEqual(944);
+  });
 });
