@@ -91,6 +91,21 @@ const mockCards: DeckBuilderCardData[] = [
     deck_section: 'token',
     is_token: true,
   },
+  {
+    id: 'TK01-002',
+    name: 'Blade Equipment',
+    image: '/equipment.png',
+    cost: '1',
+    class: 'ロイヤル',
+    title: 'Hero Tale',
+    type: 'イクイップメント・トークン',
+    subtype: '兵士',
+    rarity: 'PR',
+    product_name: 'Token Pack',
+    card_kind_normalized: 'token_equipment',
+    deck_section: 'token',
+    is_token: true,
+  },
 ];
 
 describe('deckBuilderCatalog', () => {
@@ -160,6 +175,48 @@ describe('deckBuilderCatalog', () => {
     expect(amuletFilterView.filteredCards).toEqual([]);
   });
 
+  it('shows token equipment in the token section without matching the amulet filter', () => {
+    const tokenSectionView = buildDeckBuilderCatalogView(mockCards, {
+      ...createDefaultDeckRuleConfig(),
+      format: 'other',
+    }, {
+      search: 'equipment',
+      costFilter: 'All',
+      expansionFilter: 'All',
+      classFilter: 'All',
+      cardTypeFilter: 'All',
+      rarityFilter: 'All',
+      productNameFilter: 'All',
+      selectedSubtypeTags: [],
+      deckSectionFilter: 'token',
+      hideSameNameVariants: false,
+      page: 0,
+      pageSize: 50,
+    });
+
+    expect(tokenSectionView.filteredCards.map(card => card.id)).toEqual(['TK01-002']);
+
+    const amuletFilterView = buildDeckBuilderCatalogView(mockCards, {
+      ...createDefaultDeckRuleConfig(),
+      format: 'other',
+    }, {
+      search: 'equipment',
+      costFilter: 'All',
+      expansionFilter: 'All',
+      classFilter: 'All',
+      cardTypeFilter: 'amulet',
+      rarityFilter: 'All',
+      productNameFilter: 'All',
+      selectedSubtypeTags: [],
+      deckSectionFilter: 'token',
+      hideSameNameVariants: false,
+      page: 0,
+      pageSize: 50,
+    });
+
+    expect(amuletFilterView.filteredCards).toEqual([]);
+  });
+
   it('applies rule filtering, dedupe, and pagination for the card catalog', () => {
     const view = buildDeckBuilderCatalogView(mockCards, {
       ...createDefaultDeckRuleConfig(),
@@ -179,10 +236,10 @@ describe('deckBuilderCatalog', () => {
       pageSize: 2,
     });
 
-    expect(view.filteredCards.map(card => card.id)).toEqual(['BP01-001', 'BP01-002', 'LDR01-001', 'TK01-001', 'TK01-020']);
-    expect(view.displayCards.map(card => card.id)).toEqual(['BP01-001', 'LDR01-001', 'TK01-001', 'TK01-020']);
+    expect(view.filteredCards.map(card => card.id)).toEqual(['BP01-001', 'BP01-002', 'LDR01-001', 'TK01-001', 'TK01-020', 'TK01-002']);
+    expect(view.displayCards.map(card => card.id)).toEqual(['BP01-001', 'LDR01-001', 'TK01-001', 'TK01-020', 'TK01-002']);
     expect(view.paginatedCards.map(card => card.id)).toEqual(['BP01-001', 'LDR01-001']);
-    expect(view.totalPages).toBe(2);
+    expect(view.totalPages).toBe(3);
   });
 
   it('supports cost and expansion filters including the 7+ bucket', () => {

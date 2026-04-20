@@ -1273,7 +1273,8 @@ describe('CardLogic utils', () => {
       const card = {
         ...createMockCard('token-equip', 'ex-host'),
         cardId: 'token-equip',
-        baseCardType: 'amulet' as const,
+        baseCardType: null,
+        cardKindNormalized: 'token_equipment',
         isTokenCard: true,
       };
 
