@@ -6,6 +6,7 @@ import { isMainDeckSpellCard, type RuntimeBaseCardType } from '../utils/cardType
 import type { CardDetail } from '../utils/cardDetails';
 import CardArtwork from './CardArtwork';
 import { useGameBoardInputProfile } from '../contexts/gameBoardInputProfileContext';
+import { getCardSizeForInputProfile } from '../utils/gameBoardCardLayout';
 
 export interface CardInstance {
   id: string; // unique instance id
@@ -67,6 +68,7 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
   const inputProfile = useGameBoardInputProfile();
   const [isQuickActionsOpen, setIsQuickActionsOpen] = React.useState(false);
   const isCoarseInput = inputProfile === 'coarse';
+  const cardSize = getCardSizeForInputProfile(inputProfile);
   const isInteractionLocked = isLocked || card.isLeaderCard || card.zone.startsWith('leader-');
   const canShowQuickActionOverlay = !isHidden && !isInteractionLocked;
   const canToggleQuickActions = isCoarseInput && canShowQuickActionOverlay && !quickActionsDisabled;
@@ -118,8 +120,8 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
     cursor: isInteractionLocked ? 'default' : 'grab',
     touchAction: isCoarseInput ? 'none' : undefined,
     position: 'relative',
-    width: '100px',
-    height: '140px',
+    width: `${cardSize.width}px`,
+    height: `${cardSize.height}px`,
     transition: transform ? 'none' : 'transform 0.2s ease', // animate tapping
   };
 

@@ -461,6 +461,18 @@ describe('Card', () => {
     expect(cardElement).toHaveStyle({ touchAction: 'none' });
   });
 
+  it('uses compact card dimensions for coarse input', () => {
+    renderWithInputProfile(
+      'coarse',
+      <Card
+        card={createCard()}
+      />
+    );
+
+    const cardElement = screen.getByAltText('Test Card').closest('.game-card') as HTMLElement;
+    expect(cardElement).toHaveStyle({ width: '82px', height: '115px' });
+  });
+
   it('does not show current stats for hand cards even if base stats are available', () => {
     render(
       <Card

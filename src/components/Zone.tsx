@@ -4,6 +4,14 @@ import Card, { type CardInspectAnchor, type CardInstance } from './Card';
 import type { PlayerRole } from '../types/game';
 import type { CardStatLookup } from '../utils/cardStats';
 import type { CardDetailLookup } from '../utils/cardDetails';
+import { useGameBoardInputProfile } from '../contexts/gameBoardInputProfileContext';
+import {
+  getCardSizeForInputProfile,
+  getExZoneGapForInputProfile,
+  getFieldZoneGapForInputProfile,
+  getLinkedCardOffsetForInputProfile,
+  getStackAttachmentOffsetForInputProfile,
+} from '../utils/gameBoardCardLayout';
 
 interface Props {
   id: string;
@@ -33,12 +41,16 @@ interface Props {
 }
 
 const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLookup, onInspectCard, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, hideCards, layout = 'horizontal', isProtected, lockCards, disableQuickActionsForCard, getHighlightTone, viewerRole, containerStyle, isDebug }) => {
+  const inputProfile = useGameBoardInputProfile();
   const { isOver, setNodeRef } = useDroppable({ id });
-  const attachmentTopOffset = 20;
-  const attachmentLeftOffset = 15;
-  const linkedCardTopOffset = 20;
-  const linkedCardLeftOffset = 15;
-  const linkedCardPaddingBottom = 24;
+  const cardSize = getCardSizeForInputProfile(inputProfile);
+  const stackAttachmentOffset = getStackAttachmentOffsetForInputProfile(inputProfile);
+  const linkedCardOffset = getLinkedCardOffsetForInputProfile(inputProfile);
+  const attachmentTopOffset = stackAttachmentOffset.top;
+  const attachmentLeftOffset = stackAttachmentOffset.left;
+  const linkedCardTopOffset = linkedCardOffset.top;
+  const linkedCardLeftOffset = linkedCardOffset.left;
+  const linkedCardPaddingBottom = linkedCardOffset.paddingBottom;
 
   const isStack = layout === 'stack';
   const isFieldZone = id.startsWith('field-');
@@ -105,7 +117,13 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
         position: 'relative',
         display: 'flex',
         flexDirection: isStack ? 'column' : 'row',
-        gap: isStack ? '0.5rem' : isFieldZone ? '1.9rem' : isExZone ? '1rem' : '0.5rem',
+        gap: isStack
+          ? '0.5rem'
+          : isFieldZone
+            ? getFieldZoneGapForInputProfile(inputProfile)
+            : isExZone
+              ? getExZoneGapForInputProfile(inputProfile)
+              : '0.5rem',
         flexWrap: isStack ? 'nowrap' : 'wrap',
         alignItems: isStack ? 'center' : 'flex-start',
         transition: 'var(--transition-fast)',
@@ -178,7 +196,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
       {(() => {
         if (isStack && topLevelCards.length > 0) {
           return (
-            <div style={{ position: 'relative', width: '100px', height: '140px' }}>
+            <div style={{ position: 'relative', width: `${cardSize.width}px`, height: `${cardSize.height}px` }}>
               {topLevelCards.map((card, index) => {
                 // To make index 0 (Top card) appear at the absolute top of the stack:
                 // 1. Give it the highest zIndex

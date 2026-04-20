@@ -72,7 +72,7 @@ const resolveTabletLayout = (viewportWidth: number): GameBoardLayout => {
   const sidePanelWidth = clamp(Math.round(boardShellWidth * 0.16), 128, 180);
   const boardContentWidth = boardShellWidth - topPanelWidth - sidePanelWidth - (BOARD_SHELL_COLUMN_GAP * 2);
 
-  let sideZoneWidth = clamp(Math.round(boardContentWidth * 0.18), 100, 120);
+  let sideZoneWidth = clamp(Math.round(boardContentWidth * 0.125), 80, 104);
   let centerZoneWidth = boardContentWidth - (sideZoneWidth * 2);
 
   if (centerZoneWidth < 360) {

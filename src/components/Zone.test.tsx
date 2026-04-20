@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import Zone from './Zone';
 import type { CardInstance } from './Card';
+import GameBoardInputProfileProvider from '../contexts/GameBoardInputProfileProvider';
 
 const droppableState = { isOver: false };
 
@@ -67,6 +68,15 @@ const createCard = (id: string, overrides: Partial<CardInstance> = {}): CardInst
   counters: { atk: 0, hp: 0 },
   ...overrides,
 });
+
+const renderWithInputProfile = (
+  profile: 'fine' | 'coarse',
+  ui: React.ReactElement
+) => render(
+  <GameBoardInputProfileProvider value={profile}>
+    {ui}
+  </GameBoardInputProfileProvider>
+);
 
 describe('Zone', () => {
   beforeEach(() => {
@@ -269,5 +279,18 @@ describe('Zone', () => {
     expect(linkedCard).toHaveAttribute('data-has-banish', 'false');
     expect(linkedCard).toHaveAttribute('data-has-cemetery', 'false');
     expect(linkedCard).toHaveAttribute('data-has-return-evolve', 'true');
+  });
+
+  it('uses tighter field spacing for coarse input', () => {
+    const { container } = renderWithInputProfile(
+      'coarse',
+      <Zone
+        id="field-host"
+        label="Field"
+        cards={[createCard('host-card')]}
+      />
+    );
+
+    expect(container.firstChild).toHaveStyle({ gap: '0.5rem' });
   });
 });
