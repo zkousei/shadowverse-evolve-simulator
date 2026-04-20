@@ -28,6 +28,7 @@ import GameBoardTopHandSection from '../components/GameBoardTopHandSection';
 import GameBoardTopNDialog from '../components/GameBoardTopNDialog';
 import GameBoardTokenSpawnDialog from '../components/GameBoardTokenSpawnDialog';
 import GameBoardUndoTurnDialog from '../components/GameBoardUndoTurnDialog';
+import GameBoardInputProfileProvider from '../contexts/GameBoardInputProfileProvider';
 import {
   buildMainDeckZoneActions,
   buildRandomDiscardHandZoneActions,
@@ -45,25 +46,48 @@ import type { AttackTarget } from '../types/sync';
 import {
   formatSavedSessionTimestamp,
 } from '../utils/gameBoardPresentation';
+import { resolveInputProfile } from '../utils/gameBoardInputProfile';
 import {
   shouldDismissModalOnBackdropClick,
 } from '../utils/gameBoardDismissals';
 import {
   activeBoardSectionStyle,
-  boardColumns,
-  boardContentWidth,
-  boardShellColumns,
-  centerZoneWidth,
-  sidePanelWidth,
-  sideZoneWidth,
+  resolveBoardLayout,
   soloMulliganButtonStyle,
-  topPanelWidth,
 } from './gameBoardLayout';
 import {
   getAttackTargetFromCard as resolveAttackTargetFromCard,
 } from '../utils/gameBoardCombat';
 
 const GameBoard: React.FC = () => {
+  const [viewportWidth, setViewportWidth] = React.useState(() => (
+    typeof window === 'undefined' ? 1280 : window.innerWidth
+  ));
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const handleResize = () => {
+      setViewportWidth(window.innerWidth);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const {
+    profile: layoutProfile,
+    sidePanelWidth,
+    topPanelWidth,
+    sideZoneWidth,
+    centerZoneWidth,
+    boardContentWidth,
+    boardColumns,
+    boardShellColumns,
+  } = React.useMemo(() => resolveBoardLayout(viewportWidth), [viewportWidth]);
+  const inputProfile = React.useMemo(
+    () => resolveInputProfile(viewportWidth),
+    [viewportWidth]
+  );
   const { t } = useTranslation();
   const {
     room, isSoloMode, isHost, isSpectator, role, status, connectionState, canInteract, canView, attemptReconnect, gameState, savedSessionCandidate, resumeSavedSession, discardSavedSession, searchZone, setSearchZone,
@@ -555,7 +579,12 @@ const GameBoard: React.FC = () => {
       if (!canInteract) return;
       handleDragEnd(event);
     }}>
-      <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', height: '100%', gap: '1rem', overflow: 'hidden' }}>
+      <GameBoardInputProfileProvider value={inputProfile}>
+        <div
+          data-layout-profile={layoutProfile}
+          data-input-profile={inputProfile}
+          style={{ padding: '1rem', display: 'flex', flexDirection: 'column', height: '100%', gap: '1rem', overflow: 'hidden' }}
+        >
 
         <GameBoardHeader
           room={room}
@@ -1140,12 +1169,13 @@ const GameBoard: React.FC = () => {
         />
       )}
 
-      <GameBoardDialogsHost
-        savedDeckPicker={savedDeckPickerDialogProps}
-        evolveAutoAttach={evolveAutoAttachDialogProps}
-        searchShuffleConfirm={searchShuffleConfirmDialogProps}
-      />
-      <GameBoardCardInspectorSection {...cardInspectorSectionProps} />
+        <GameBoardDialogsHost
+          savedDeckPicker={savedDeckPickerDialogProps}
+          evolveAutoAttach={evolveAutoAttachDialogProps}
+          searchShuffleConfirm={searchShuffleConfirmDialogProps}
+        />
+        <GameBoardCardInspectorSection {...cardInspectorSectionProps} />
+      </GameBoardInputProfileProvider>
     </DndContext>
   );
 };

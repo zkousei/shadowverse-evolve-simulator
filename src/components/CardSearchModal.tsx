@@ -5,6 +5,7 @@ import { formatAbilityText, type CardDetailLookup } from '../utils/cardDetails';
 import { normalizeBaseCardType, type RuntimeBaseCardType } from '../utils/cardType';
 import CardArtwork from './CardArtwork';
 import { useTranslation } from 'react-i18next';
+import { useGameBoardInputProfile } from '../contexts/gameBoardInputProfileContext';
 
 interface CardSearchModalProps {
   isOpen: boolean;
@@ -80,6 +81,8 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
   onRequestMainDeckShuffleConfirm,
 }) => {
   const { t } = useTranslation();
+  const inputProfile = useGameBoardInputProfile();
+  const isCoarseInput = inputProfile === 'coarse';
   const [selectedCardId, setSelectedCardId] = React.useState<string | null>(null);
   const [isBulkSelecting, setIsBulkSelecting] = React.useState(false);
   const [bulkSelectedCardIds, setBulkSelectedCardIds] = React.useState<string[]>([]);
@@ -524,6 +527,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
             const canPlayToField = canPlayCardToField();
             const playToFieldLabel = isPreparingMainDeckSearch ? t('gameBoard.modals.search.setFaceDown') : t('gameBoard.modals.search.playToField');
             const isBulkSelected = bulkSelectedCardIds.includes(c.id);
+            const isTouchControlsOpen = isCoarseInput && selectedCardId === c.id;
 
             return (
               <div
@@ -597,11 +601,15 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
                 {!isBulkSelecting && !readOnly && (c.owner === viewerRole || isPublicRecoveryZone) && (
                   <div
                     className="modal-card-controls"
+                    data-testid={`search-card-controls-${c.id}`}
                     style={{
                       position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
                       background: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column',
                       justifyContent: 'center', alignItems: 'center', gap: '4px',
-                      borderRadius: '4px', padding: '6px'
+                      borderRadius: '4px', padding: '6px',
+                      transition: 'opacity 0.15s ease',
+                      opacity: isCoarseInput ? (isTouchControlsOpen ? 1 : 0) : undefined,
+                      pointerEvents: isCoarseInput ? (isTouchControlsOpen ? 'auto' : 'none') : undefined,
                     }}
                   >
                     {canPlayToField && actionRole && (

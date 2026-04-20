@@ -5,6 +5,7 @@ import type { BaseCardStats } from '../utils/cardStats';
 import { isMainDeckSpellCard, type RuntimeBaseCardType } from '../utils/cardType';
 import type { CardDetail } from '../utils/cardDetails';
 import CardArtwork from './CardArtwork';
+import { useGameBoardInputProfile } from '../contexts/gameBoardInputProfileContext';
 
 export interface CardInstance {
   id: string; // unique instance id
@@ -62,7 +63,13 @@ interface Props {
 const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideCurrentStats, highlightTone, onInspect, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, isHidden, isLocked, quickActionsDisabled, disableCombatAndCounterControls, debugIndex }) => {
   const { t } = useTranslation();
   const inspectPointerStartRef = React.useRef<{ x: number; y: number } | null>(null);
+  const cardElementRef = React.useRef<HTMLElement | null>(null);
+  const inputProfile = useGameBoardInputProfile();
+  const [isQuickActionsOpen, setIsQuickActionsOpen] = React.useState(false);
+  const isCoarseInput = inputProfile === 'coarse';
   const isInteractionLocked = isLocked || card.isLeaderCard || card.zone.startsWith('leader-');
+  const canShowQuickActionOverlay = !isHidden && !isInteractionLocked;
+  const canToggleQuickActions = isCoarseInput && canShowQuickActionOverlay && !quickActionsDisabled;
   const { attributes, listeners, setNodeRef: setDraggableRef, transform } = useDraggable({
     id: card.id,
     data: { card },
@@ -75,9 +82,34 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
   });
 
   const setRefs = (node: HTMLElement | null) => {
+    cardElementRef.current = node;
     setDraggableRef(node);
     setDroppableRef(node);
   };
+
+  React.useEffect(() => {
+    setIsQuickActionsOpen(false);
+  }, [card.id, card.zone]);
+
+  React.useEffect(() => {
+    if (!canToggleQuickActions) {
+      setIsQuickActionsOpen(false);
+    }
+  }, [canToggleQuickActions]);
+
+  React.useEffect(() => {
+    if (!canToggleQuickActions) return undefined;
+
+    const handleDocumentPointerDown = (event: PointerEvent) => {
+      const cardElement = cardElementRef.current;
+      if (!cardElement) return;
+      if (cardElement.contains(event.target as Node)) return;
+      setIsQuickActionsOpen(false);
+    };
+
+    document.addEventListener('pointerdown', handleDocumentPointerDown, true);
+    return () => document.removeEventListener('pointerdown', handleDocumentPointerDown, true);
+  }, [canToggleQuickActions]);
 
   const style: React.CSSProperties = {
     // Translate x/y for the drag
@@ -179,6 +211,10 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
         const deltaX = Math.abs(event.clientX - pointerStart.x);
         const deltaY = Math.abs(event.clientY - pointerStart.y);
         if (deltaX > 6 || deltaY > 6) return;
+
+        if (canToggleQuickActions) {
+          setIsQuickActionsOpen(prev => !prev);
+        }
 
         const rect = (event.currentTarget as HTMLDivElement).getBoundingClientRect();
         onInspect?.(card, {
@@ -308,15 +344,16 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
           )}
 
           {/* Quick Edit Overlay - Only show if not hidden AND not locked */}
-          {!isHidden && !isInteractionLocked && (
+          {canShowQuickActionOverlay && (
             <div className="card-controls"
               data-testid="card-controls"
+              data-quick-actions-open={String(isQuickActionsOpen)}
               style={{
                 position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
                 display: 'flex', flexDirection: 'column', gap: '2px', padding: '4px',
-                background: 'rgba(0,0,0,0.6)', opacity: 0, transition: 'opacity 0.2s ease',
+                background: 'rgba(0,0,0,0.6)', opacity: isCoarseInput ? (isQuickActionsOpen ? 1 : 0) : 0, transition: 'opacity 0.2s ease',
                 borderRadius: '4px',
-                pointerEvents: quickActionsDisabled ? 'none' : undefined
+                pointerEvents: quickActionsDisabled ? 'none' : isCoarseInput ? (isQuickActionsOpen ? 'auto' : 'none') : undefined
               }}>
               {onPlayToField && (card.zone.startsWith('hand') || card.zone.startsWith('ex-')) && (
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '4px', marginBottom: '2px' }}>

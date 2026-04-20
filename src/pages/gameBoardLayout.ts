@@ -1,12 +1,79 @@
 import type { CSSProperties } from 'react';
 
-export const sidePanelWidth = 220;
-export const topPanelWidth = 188;
-export const sideZoneWidth = 140;
-export const centerZoneWidth = 800;
-export const boardContentWidth = sideZoneWidth * 2 + centerZoneWidth;
-export const boardColumns = `${sideZoneWidth}px ${centerZoneWidth}px ${sideZoneWidth}px`;
-export const boardShellColumns = `${topPanelWidth}px ${boardContentWidth}px ${sidePanelWidth}px`;
+export type GameBoardLayoutProfile = 'desktop' | 'tablet';
+
+export type GameBoardLayout = {
+  profile: GameBoardLayoutProfile;
+  sidePanelWidth: number;
+  topPanelWidth: number;
+  sideZoneWidth: number;
+  centerZoneWidth: number;
+  boardContentWidth: number;
+  boardColumns: string;
+  boardShellColumns: string;
+};
+
+const TABLET_MIN_WIDTH = 900;
+const DESKTOP_MIN_WIDTH = 1280;
+
+const buildLayout = (
+  profile: GameBoardLayoutProfile,
+  {
+    sidePanelWidth,
+    topPanelWidth,
+    sideZoneWidth,
+    centerZoneWidth,
+  }: Pick<GameBoardLayout, 'sidePanelWidth' | 'topPanelWidth' | 'sideZoneWidth' | 'centerZoneWidth'>
+): GameBoardLayout => {
+  const boardContentWidth = sideZoneWidth * 2 + centerZoneWidth;
+
+  return {
+    profile,
+    sidePanelWidth,
+    topPanelWidth,
+    sideZoneWidth,
+    centerZoneWidth,
+    boardContentWidth,
+    boardColumns: `${sideZoneWidth}px ${centerZoneWidth}px ${sideZoneWidth}px`,
+    boardShellColumns: `${topPanelWidth}px ${boardContentWidth}px ${sidePanelWidth}px`,
+  };
+};
+
+export const desktopGameBoardLayout = buildLayout('desktop', {
+  sidePanelWidth: 220,
+  topPanelWidth: 188,
+  sideZoneWidth: 140,
+  centerZoneWidth: 800,
+});
+
+export const tabletGameBoardLayout = buildLayout('tablet', {
+  sidePanelWidth: 180,
+  topPanelWidth: 148,
+  sideZoneWidth: 120,
+  centerZoneWidth: 640,
+});
+
+export const getLayoutProfileForViewportWidth = (viewportWidth: number): GameBoardLayoutProfile => {
+  if (viewportWidth >= TABLET_MIN_WIDTH && viewportWidth < DESKTOP_MIN_WIDTH) {
+    return 'tablet';
+  }
+
+  return 'desktop';
+};
+
+export const resolveBoardLayout = (viewportWidth: number): GameBoardLayout => {
+  const profile = getLayoutProfileForViewportWidth(viewportWidth);
+  return profile === 'tablet' ? tabletGameBoardLayout : desktopGameBoardLayout;
+};
+
+// Keep legacy exports as desktop defaults to avoid changing the existing PC path.
+export const sidePanelWidth = desktopGameBoardLayout.sidePanelWidth;
+export const topPanelWidth = desktopGameBoardLayout.topPanelWidth;
+export const sideZoneWidth = desktopGameBoardLayout.sideZoneWidth;
+export const centerZoneWidth = desktopGameBoardLayout.centerZoneWidth;
+export const boardContentWidth = desktopGameBoardLayout.boardContentWidth;
+export const boardColumns = desktopGameBoardLayout.boardColumns;
+export const boardShellColumns = desktopGameBoardLayout.boardShellColumns;
 
 export const soloMulliganButtonStyle: CSSProperties = {
   position: 'absolute',

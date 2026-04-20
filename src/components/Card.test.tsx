@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import Card, { type CardInstance } from './Card';
+import GameBoardInputProfileProvider from '../contexts/GameBoardInputProfileProvider';
 
 const dndState = {
   transform: null as null | { x: number; y: number },
@@ -32,6 +33,15 @@ const createCard = (overrides: Partial<CardInstance> = {}): CardInstance => ({
   counters: { atk: 1, hp: 2 },
   ...overrides,
 });
+
+const renderWithInputProfile = (
+  profile: 'fine' | 'coarse',
+  ui: React.ReactElement
+) => render(
+  <GameBoardInputProfileProvider value={profile}>
+    {ui}
+  </GameBoardInputProfileProvider>
+);
 
 describe('Card', () => {
   it('rotates tapped cards and combines rotation with drag transform', () => {
@@ -396,6 +406,47 @@ describe('Card', () => {
     );
 
     expect(screen.getByTestId('card-controls')).toHaveStyle({ pointerEvents: 'none' });
+  });
+
+  it('keeps quick actions hidden by default for coarse input until card tap', () => {
+    const onSendToBottom = vi.fn();
+
+    renderWithInputProfile(
+      'coarse',
+      <Card
+        card={createCard()}
+        onSendToBottom={onSendToBottom}
+      />
+    );
+
+    const controls = screen.getByTestId('card-controls');
+    expect(controls).toHaveStyle({ opacity: '0', pointerEvents: 'none' });
+
+    const cardElement = screen.getByAltText('Test Card').closest('.game-card') as HTMLElement;
+    fireEvent.pointerDown(cardElement, { clientX: 10, clientY: 20, button: 0 });
+    fireEvent.pointerUp(cardElement, { clientX: 10, clientY: 20, button: 0 });
+
+    expect(controls).toHaveStyle({ opacity: '1', pointerEvents: 'auto' });
+
+    fireEvent.click(screen.getByText('Bot'));
+    expect(onSendToBottom).toHaveBeenCalledWith('card-1');
+  });
+
+  it('does not open quick actions for coarse input when drag threshold is exceeded', () => {
+    renderWithInputProfile(
+      'coarse',
+      <Card
+        card={createCard()}
+        onSendToBottom={vi.fn()}
+      />
+    );
+
+    const controls = screen.getByTestId('card-controls');
+    const cardElement = screen.getByAltText('Test Card').closest('.game-card') as HTMLElement;
+    fireEvent.pointerDown(cardElement, { clientX: 10, clientY: 20, button: 0 });
+    fireEvent.pointerUp(cardElement, { clientX: 24, clientY: 20, button: 0 });
+
+    expect(controls).toHaveStyle({ opacity: '0', pointerEvents: 'none' });
   });
 
   it('does not show current stats for hand cards even if base stats are available', () => {
