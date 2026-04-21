@@ -1553,9 +1553,13 @@ describe('GameBoard', () => {
     const guestMainDeckPanel = screen.getByTestId('zone-mainDeck-guest').parentElement;
     expect(guestMainDeckPanel).not.toBeNull();
     fireEvent.click(within(guestMainDeckPanel as HTMLElement).getByRole('button', { name: 'Actions' }));
-    expect(within(guestMainDeckPanel as HTMLElement).getByRole('button', { name: 'Search' })).toBeInTheDocument();
+    const spectatorDeckSearchAction = within(guestMainDeckPanel as HTMLElement).getByRole('button', { name: 'Search' });
+    expect(spectatorDeckSearchAction).toBeInTheDocument();
     expect(within(guestMainDeckPanel as HTMLElement).queryByRole('button', { name: 'Shuffle' })).not.toBeInTheDocument();
     expect(within(guestMainDeckPanel as HTMLElement).queryByRole('button', { name: 'Look Top' })).not.toBeInTheDocument();
+    expect(spectatorDeckSearchAction.parentElement).toHaveStyle({
+      bottom: 'calc(100% + 4px)',
+    });
   });
 
   it('highlights the Player 2 board during the Player 2 turn for spectators', () => {

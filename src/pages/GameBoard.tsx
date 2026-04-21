@@ -874,6 +874,7 @@ const GameBoard: React.FC = () => {
                         activeMenuId={activeZoneActions}
                         actionsLabel={topReadOnlyMainDeckZoneActions.actionsLabel}
                         actions={isSpectator ? topReadOnlyMainDeckZoneActions.actions : undefined}
+                        direction="up"
                         onActiveMenuChange={setActiveZoneActions}
                       />
                       <Zone

@@ -257,10 +257,10 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
     lineHeight: 1.2,
   };
   const counterAdjustButtonStyle: React.CSSProperties = {
-    padding: '4px 5px',
+    padding: '4px 4px',
     fontSize: '11px',
     borderRadius: '4px',
-    minWidth: '28px',
+    minWidth: '24px',
     minHeight: '24px',
     border: '1px solid rgba(255,255,255,0.55)',
     fontWeight: 'bold',

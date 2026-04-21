@@ -123,9 +123,9 @@ describe('Card', () => {
 
     const atkIncreaseButton = screen.getByText('+A');
     expect(atkIncreaseButton).toHaveStyle({
-      minWidth: '28px',
+      minWidth: '24px',
       minHeight: '24px',
-      padding: '4px 5px',
+      padding: '4px 4px',
     });
 
     fireEvent.pointerDown(atkIncreaseButton, { clientX: 10, clientY: 20, button: 0 });
