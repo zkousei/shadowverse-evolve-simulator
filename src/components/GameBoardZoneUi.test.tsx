@@ -13,6 +13,7 @@ import GameBoardTurnPanel from './GameBoardTurnPanel';
 import GameBoardZoneActionsMenu from './GameBoardZoneActionsMenu';
 import GameBoardZoneActionsSection from './GameBoardZoneActionsSection';
 import GameBoardZoneSearchButton from './GameBoardZoneSearchButton';
+import GameBoardInputProfileProvider from '../contexts/GameBoardInputProfileProvider';
 
 vi.mock('./CardArtwork', () => ({
   default: ({ alt }: { alt: string }) => <img alt={alt} />,
@@ -35,6 +36,15 @@ vi.mock('./Zone', () => ({
     </section>
   ),
 }));
+
+const renderWithInputProfile = (
+  profile: 'fine' | 'coarse',
+  ui: React.ReactElement
+) => render(
+  <GameBoardInputProfileProvider value={profile}>
+    {ui}
+  </GameBoardInputProfileProvider>
+);
 
 describe('GameBoard extracted UI components - zones and controls', () => {
   it('renders leader zone section and wires search action', () => {
@@ -424,5 +434,24 @@ describe('GameBoard extracted UI components - zones and controls', () => {
     fireEvent.change(screen.getByRole('combobox', { name: 'Phase' }), { target: { value: 'End' } });
 
     expect(onPhaseChange).toHaveBeenCalledWith('End');
+  });
+
+  it('uses compact spacing in turn panel for coarse input', () => {
+    renderWithInputProfile(
+      'coarse',
+      <GameBoardTurnPanel
+        isSoloMode={false}
+        isCurrentPlayerTurn={true}
+        currentTurnLabel="Self"
+        turnCount={3}
+        phase="Main"
+        isBottomTurnActive={true}
+        canChangePhase={true}
+        onPhaseChange={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('gameboard-turn-panel')).toHaveStyle({ gap: '0.5rem' });
+    expect(screen.getByRole('combobox', { name: 'Phase' })).toHaveStyle({ fontSize: '0.66rem' });
   });
 });

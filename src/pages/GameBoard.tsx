@@ -74,6 +74,10 @@ const GameBoard: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  const inputProfile = React.useMemo(
+    () => resolveInputProfile(viewportWidth),
+    [viewportWidth]
+  );
   const {
     profile: layoutProfile,
     sidePanelWidth,
@@ -83,10 +87,9 @@ const GameBoard: React.FC = () => {
     boardContentWidth,
     boardColumns,
     boardShellColumns,
-  } = React.useMemo(() => resolveBoardLayout(viewportWidth), [viewportWidth]);
-  const inputProfile = React.useMemo(
-    () => resolveInputProfile(viewportWidth),
-    [viewportWidth]
+  } = React.useMemo(
+    () => resolveBoardLayout(viewportWidth, inputProfile),
+    [viewportWidth, inputProfile]
   );
   const { t } = useTranslation();
   const {

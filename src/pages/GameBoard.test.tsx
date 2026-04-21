@@ -2745,12 +2745,53 @@ describe('GameBoard', () => {
     }
   });
 
-  it('uses tablet board shell columns when viewport width is 1024px', () => {
+  it('keeps desktop board shell columns when viewport width is 1024px on fine pointer', () => {
     const originalInnerWidth = window.innerWidth;
+    const originalMatchMedia = window.matchMedia;
     Object.defineProperty(window, 'innerWidth', {
       configurable: true,
       writable: true,
       value: 1024,
+    });
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      writable: true,
+      value: vi.fn(() => ({ matches: false })),
+    });
+
+    try {
+      render(<GameBoard />);
+
+      const topSection = screen.getByTestId('board-section-top');
+      const topGrid = topSection.firstElementChild as HTMLElement;
+
+      expect(topGrid).toHaveStyle({ gridTemplateColumns: '188px 1080px 220px' });
+    } finally {
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        writable: true,
+        value: originalInnerWidth,
+      });
+      Object.defineProperty(window, 'matchMedia', {
+        configurable: true,
+        writable: true,
+        value: originalMatchMedia,
+      });
+    }
+  });
+
+  it('uses tablet board shell columns when viewport width is 1024px on coarse pointer', () => {
+    const originalInnerWidth = window.innerWidth;
+    const originalMatchMedia = window.matchMedia;
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      writable: true,
+      value: 1024,
+    });
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      writable: true,
+      value: vi.fn(() => ({ matches: true })),
     });
 
     try {
@@ -2765,6 +2806,11 @@ describe('GameBoard', () => {
         configurable: true,
         writable: true,
         value: originalInnerWidth,
+      });
+      Object.defineProperty(window, 'matchMedia', {
+        configurable: true,
+        writable: true,
+        value: originalMatchMedia,
       });
     }
   });

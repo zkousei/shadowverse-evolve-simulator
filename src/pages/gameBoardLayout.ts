@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 
 export type GameBoardLayoutProfile = 'desktop' | 'tablet';
+export type GameBoardLayoutInputProfile = 'fine' | 'coarse';
 
 export type GameBoardLayout = {
   profile: GameBoardLayoutProfile;
@@ -88,16 +89,26 @@ const resolveTabletLayout = (viewportWidth: number): GameBoardLayout => {
   });
 };
 
-export const getLayoutProfileForViewportWidth = (viewportWidth: number): GameBoardLayoutProfile => {
-  if (viewportWidth >= TABLET_MIN_WIDTH && viewportWidth < DESKTOP_MIN_WIDTH) {
-    return 'tablet';
+export const isTabletViewportWidth = (viewportWidth: number): boolean => (
+  viewportWidth >= TABLET_MIN_WIDTH && viewportWidth < DESKTOP_MIN_WIDTH
+);
+
+export const getLayoutProfileForViewportWidth = (
+  viewportWidth: number,
+  inputProfile: GameBoardLayoutInputProfile = 'coarse'
+): GameBoardLayoutProfile => {
+  if (!isTabletViewportWidth(viewportWidth)) {
+    return 'desktop';
   }
 
-  return 'desktop';
+  return inputProfile === 'coarse' ? 'tablet' : 'desktop';
 };
 
-export const resolveBoardLayout = (viewportWidth: number): GameBoardLayout => {
-  const profile = getLayoutProfileForViewportWidth(viewportWidth);
+export const resolveBoardLayout = (
+  viewportWidth: number,
+  inputProfile: GameBoardLayoutInputProfile = 'coarse'
+): GameBoardLayout => {
+  const profile = getLayoutProfileForViewportWidth(viewportWidth, inputProfile);
   return profile === 'tablet' ? resolveTabletLayout(viewportWidth) : desktopGameBoardLayout;
 };
 

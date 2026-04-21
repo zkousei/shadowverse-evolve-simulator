@@ -23,10 +23,12 @@ describe('gameBoardLayout', () => {
   });
 
   it('uses desktop profile for widths >= 1280px', () => {
-    expect(getLayoutProfileForViewportWidth(1280)).toBe('desktop');
-    expect(getLayoutProfileForViewportWidth(1600)).toBe('desktop');
+    expect(getLayoutProfileForViewportWidth(1280, 'fine')).toBe('desktop');
+    expect(getLayoutProfileForViewportWidth(1280, 'coarse')).toBe('desktop');
+    expect(getLayoutProfileForViewportWidth(1600, 'fine')).toBe('desktop');
+    expect(getLayoutProfileForViewportWidth(1600, 'coarse')).toBe('desktop');
 
-    const layout = resolveBoardLayout(1280);
+    const layout = resolveBoardLayout(1280, 'fine');
     expect(layout.profile).toBe('desktop');
     expect(layout.sidePanelWidth).toBe(220);
     expect(layout.topPanelWidth).toBe(188);
@@ -37,23 +39,32 @@ describe('gameBoardLayout', () => {
     expect(layout.boardShellColumns).toBe('188px 1080px 220px');
   });
 
-  it('uses tablet profile only for widths between 900px and 1279px', () => {
-    expect(getLayoutProfileForViewportWidth(900)).toBe('tablet');
-    expect(getLayoutProfileForViewportWidth(1024)).toBe('tablet');
-    expect(getLayoutProfileForViewportWidth(1279)).toBe('tablet');
+  it('uses tablet profile in 900-1279px only when input profile is coarse', () => {
+    expect(getLayoutProfileForViewportWidth(900, 'coarse')).toBe('tablet');
+    expect(getLayoutProfileForViewportWidth(1024, 'coarse')).toBe('tablet');
+    expect(getLayoutProfileForViewportWidth(1279, 'coarse')).toBe('tablet');
 
-    expect(getLayoutProfileForViewportWidth(899)).toBe('desktop');
-    expect(getLayoutProfileForViewportWidth(1280)).toBe('desktop');
+    expect(getLayoutProfileForViewportWidth(900, 'fine')).toBe('desktop');
+    expect(getLayoutProfileForViewportWidth(1024, 'fine')).toBe('desktop');
+    expect(getLayoutProfileForViewportWidth(1279, 'fine')).toBe('desktop');
+    expect(getLayoutProfileForViewportWidth(899, 'coarse')).toBe('desktop');
+    expect(getLayoutProfileForViewportWidth(1280, 'coarse')).toBe('desktop');
   });
 
   it('fits tablet board shell within the viewport budget', () => {
     const viewportWidth = 1024;
-    const layout = resolveBoardLayout(viewportWidth);
+    const layout = resolveBoardLayout(viewportWidth, 'coarse');
 
     expect(layout.profile).toBe('tablet');
     expect(layout.boardShellColumns).toBe('132px 629px 151px');
 
     const boardShellWidth = layout.topPanelWidth + layout.boardContentWidth + layout.sidePanelWidth + (16 * 2);
     expect(boardShellWidth).toBeLessThanOrEqual(944);
+  });
+
+  it('keeps desktop board shell at 1024px when input profile is fine', () => {
+    const layout = resolveBoardLayout(1024, 'fine');
+    expect(layout.profile).toBe('desktop');
+    expect(layout.boardShellColumns).toBe('188px 1080px 220px');
   });
 });

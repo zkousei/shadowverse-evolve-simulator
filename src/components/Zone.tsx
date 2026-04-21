@@ -42,6 +42,7 @@ interface Props {
 
 const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLookup, onInspectCard, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, hideCards, layout = 'horizontal', isProtected, lockCards, disableQuickActionsForCard, getHighlightTone, viewerRole, containerStyle, isDebug }) => {
   const inputProfile = useGameBoardInputProfile();
+  const isCompactInput = inputProfile === 'coarse';
   const { isOver, setNodeRef } = useDroppable({ id });
   const cardSize = getCardSizeForInputProfile(inputProfile);
   const stackAttachmentOffset = getStackAttachmentOffsetForInputProfile(inputProfile);
@@ -133,14 +134,15 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
       <div
         style={{
           position: 'absolute',
-          top: -12,
-          left: 10,
+          top: isCompactInput ? -10 : -12,
+          left: isCompactInput ? 8 : 10,
           zIndex: 20,
-          display: 'inline-flex',
+          display: isCompactInput ? 'grid' : 'inline-flex',
+          gridTemplateColumns: isCompactInput ? 'minmax(0, 1fr) auto' : undefined,
           alignItems: 'center',
-          gap: '6px',
+          gap: isCompactInput ? '4px' : '6px',
           maxWidth: 'calc(100% - 20px)',
-          padding: '2px 8px',
+          padding: isCompactInput ? '2px 6px' : '2px 8px',
           background: 'rgba(17, 24, 39, 0.92)',
           border: '1px solid rgba(255,255,255,0.16)',
           borderRadius: '999px',
@@ -165,13 +167,19 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
           {label} ({topLevelCards.length})
         </span>
         <span
+          title={displayLabel}
           style={{
-            fontSize: '0.72rem',
+            maxWidth: isCompactInput ? '100%' : undefined,
+            minWidth: 0,
+            fontSize: isCompactInput ? '0.54rem' : '0.72rem',
             fontWeight: 'bold',
             color: 'white',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
+            whiteSpace: isCompactInput ? 'normal' : 'nowrap',
+            overflow: isCompactInput ? 'visible' : 'hidden',
+            textOverflow: isCompactInput ? 'clip' : 'ellipsis',
+            overflowWrap: isCompactInput ? 'normal' : undefined,
+            wordBreak: isCompactInput ? 'keep-all' : undefined,
+            lineHeight: isCompactInput ? 1.1 : undefined,
           }}
         >
           {displayLabel}
@@ -179,12 +187,12 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
         <span
           style={{
             flex: '0 0 auto',
-            minWidth: '22px',
-            padding: '0 6px',
+            minWidth: isCompactInput ? '20px' : '22px',
+            padding: isCompactInput ? '0 5px' : '0 6px',
             borderRadius: '999px',
             background: 'rgba(59, 130, 246, 0.24)',
             color: '#bfdbfe',
-            fontSize: '0.7rem',
+            fontSize: isCompactInput ? '0.52rem' : '0.7rem',
             fontWeight: 'bold',
             textAlign: 'center'
           }}

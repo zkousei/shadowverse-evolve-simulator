@@ -67,6 +67,26 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
   const { t } = useTranslation();
   const inputProfile = useGameBoardInputProfile();
   const isCompactControls = inputProfile === 'coarse';
+  const compactButtonBaseStyle: React.CSSProperties = isCompactControls
+    ? {
+        minHeight: '34px',
+        fontSize: '0.68rem',
+        lineHeight: 1.15,
+        whiteSpace: 'normal',
+        overflowWrap: 'anywhere',
+        wordBreak: 'break-word',
+      }
+    : {};
+  const compactPrimaryActionLabelStyle: React.CSSProperties = isCompactControls
+    ? {
+        minHeight: '34px',
+        fontSize: '0.72rem',
+        lineHeight: 1.15,
+        whiteSpace: 'normal',
+        overflowWrap: 'anywhere',
+        wordBreak: 'break-word',
+      }
+    : {};
 
   return (
     <div
@@ -99,10 +119,15 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
           style={{
             padding: '0.5rem',
             background: 'var(--bg-surface-elevated)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             textAlign: 'center',
+            gridColumn: isCompactControls ? '1 / -1' : undefined,
             cursor: canImportDeck ? 'pointer' : 'not-allowed',
-            fontSize: '0.875rem',
+            fontSize: isCompactControls ? '0.72rem' : '0.875rem',
             opacity: canImportDeck ? 1 : 0.5,
+            ...compactPrimaryActionLabelStyle,
           }}
         >
           {importDeckLabel}
@@ -131,12 +156,14 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
             color: '#f8fafc',
             fontWeight: 700,
             textAlign: 'center',
+            gridColumn: isCompactControls ? '1 / -1' : undefined,
             cursor: canImportDeck && canOpenSavedDeckPicker ? 'pointer' : 'not-allowed',
-            fontSize: '0.875rem',
+            fontSize: isCompactControls ? '0.72rem' : '0.875rem',
             boxShadow: canImportDeck && canOpenSavedDeckPicker
               ? '0 8px 18px rgba(5, 150, 105, 0.28)'
               : 'none',
             opacity: canImportDeck && canOpenSavedDeckPicker ? 1 : 0.5,
+            ...compactPrimaryActionLabelStyle,
           }}
         >
           {loadSavedDeckLabel}
@@ -153,6 +180,7 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
             fontWeight: 'bold',
             opacity: canUsePlayingActions ? 1 : 0.5,
             cursor: canUsePlayingActions ? 'pointer' : 'not-allowed',
+            ...compactButtonBaseStyle,
           }}
         >
           {t('gameBoard.zones.draw', { label })}
@@ -169,6 +197,7 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
             fontWeight: 'bold',
             opacity: canUsePlayingActions ? 1 : 0.5,
             cursor: canUsePlayingActions ? 'pointer' : 'not-allowed',
+            ...compactButtonBaseStyle,
           }}
         >
           {t('gameBoard.zones.mill', { label })}
@@ -185,6 +214,7 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
             fontWeight: 'bold',
             opacity: canUsePlayingActions ? 1 : 0.5,
             cursor: canUsePlayingActions ? 'pointer' : 'not-allowed',
+            ...compactButtonBaseStyle,
           }}
         >
           {t('gameBoard.zones.topToEx', { label })}
@@ -199,6 +229,7 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
             color: '#f8fafc',
             opacity: canOpenTokenSpawn ? 1 : 0.5,
             cursor: canOpenTokenSpawn ? 'pointer' : 'not-allowed',
+            ...compactButtonBaseStyle,
           }}
         >
           {t('gameBoard.zones.spawnToken', { label })}

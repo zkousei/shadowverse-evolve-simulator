@@ -11,6 +11,7 @@ import GameBoardRecentEventsPanel from './GameBoardRecentEventsPanel';
 import GameBoardReconnectAlert from './GameBoardReconnectAlert';
 import GameBoardRoomStatus from './GameBoardRoomStatus';
 import GameBoardSavedSessionPrompt from './GameBoardSavedSessionPrompt';
+import GameBoardInputProfileProvider from '../contexts/GameBoardInputProfileProvider';
 
 vi.mock('./CardArtwork', () => ({
   default: ({ alt }: { alt: string }) => <img alt={alt} />,
@@ -31,6 +32,15 @@ vi.mock('./Zone', () => ({
     </section>
   ),
 }));
+
+const renderWithInputProfile = (
+  profile: 'fine' | 'coarse',
+  ui: React.ReactElement
+) => render(
+  <GameBoardInputProfileProvider value={profile}>
+    {ui}
+  </GameBoardInputProfileProvider>
+);
 
 describe('GameBoard extracted UI components - status and preparation', () => {
   it('renders room status in multiplayer and wires copy action', () => {
@@ -91,6 +101,32 @@ describe('GameBoard extracted UI components - status and preparation', () => {
 
     expect(onReconnect).toHaveBeenCalledTimes(1);
     expect(screen.getByRole('button', { name: 'Copied' })).toBeInTheDocument();
+  });
+
+  it('allows status text wrapping for coarse room status instead of ellipsis', () => {
+    renderWithInputProfile(
+      'coarse',
+      <GameBoardRoomStatus
+        room="ROOM123"
+        isSoloMode={false}
+        isHost={false}
+        status="Connected with additional details shown in status area"
+        connectionState="connected"
+        connectionBadgeTone={{
+          label: 'Connected',
+          background: 'rgba(16, 185, 129, 0.16)',
+          border: 'rgba(16, 185, 129, 0.4)',
+          color: '#d1fae5',
+        }}
+        isRoomCopied={false}
+        onCopyRoomId={vi.fn()}
+        onReconnect={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('Connected with additional details shown in status area')).toHaveStyle({
+      whiteSpace: 'normal',
+    });
   });
 
   it('renders saved session prompt and wires discard/resume actions', () => {
@@ -319,6 +355,21 @@ describe('GameBoard extracted UI components - status and preparation', () => {
     expect(onTossCoin).toHaveBeenCalledTimes(1);
     expect(onRollDice).toHaveBeenCalledTimes(1);
     expect(onOpenUndo).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses compact button typography for coarse playing controls', () => {
+    renderWithInputProfile(
+      'coarse',
+      <GameBoardPlayingControls
+        canShowUndoTurn={true}
+        onTossCoin={vi.fn()}
+        onRollDice={vi.fn()}
+        onOpenUndo={vi.fn()}
+      />
+    );
+
+    expect(screen.getByRole('button', { name: '🪙 Toss Coin' })).toHaveStyle({ fontSize: '0.68rem' });
+    expect(screen.getByRole('button', { name: '🎲 Roll Dice' })).toHaveStyle({ fontSize: '0.68rem' });
   });
 
   it('renders recent events in order', () => {

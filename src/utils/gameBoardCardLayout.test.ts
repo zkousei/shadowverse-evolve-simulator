@@ -25,7 +25,7 @@ describe('gameBoardCardLayout', () => {
   });
 
   it('fits five field cards within tablet center zone width at 1024px', () => {
-    const tabletLayout = resolveBoardLayout(1024);
+    const tabletLayout = resolveBoardLayout(1024, 'coarse');
     expect(tabletLayout.profile).toBe('tablet');
 
     const requiredWidth = getRequiredFieldWidthForCardCount(5, 'coarse', 16);

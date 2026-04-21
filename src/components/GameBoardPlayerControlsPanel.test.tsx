@@ -110,4 +110,18 @@ describe('GameBoardPlayerControlsPanel', () => {
     expect(screen.getByRole('button', { name: 'Top to EX' })).toHaveStyle({ color: 'rgb(248, 250, 252)' });
     expect(screen.getByRole('button', { name: 'Spawn Token' })).toHaveStyle({ color: 'rgb(248, 250, 252)' });
   });
+
+  it('uses compact typography and touch target sizing for coarse input buttons', () => {
+    renderWithInputProfile(
+      'coarse',
+      <GameBoardPlayerControlsPanel
+        {...createBaseProps()}
+      />
+    );
+
+    expect(screen.getByRole('button', { name: 'Draw' })).toHaveStyle({ fontSize: '0.68rem', minHeight: '34px' });
+    expect(screen.getByRole('button', { name: 'Load from My Decks' })).toHaveStyle({ fontSize: '0.72rem', minHeight: '34px' });
+    expect(screen.getByRole('button', { name: 'Draw' })).toHaveStyle({ whiteSpace: 'normal' });
+    expect(screen.getByRole('button', { name: 'Load from My Decks' })).toHaveStyle({ gridColumn: '1 / -1' });
+  });
 });

@@ -293,4 +293,42 @@ describe('Zone', () => {
 
     expect(container.firstChild).toHaveStyle({ gap: '0.5rem' });
   });
+
+  it('uses compact zone label typography for coarse input', () => {
+    renderWithInputProfile(
+      'coarse',
+      <Zone
+        id="field-host"
+        label="Opponent Cemetery"
+        cards={[createCard('host-card')]}
+      />
+    );
+
+    const zoneLabel = screen.getByText('Cemetery');
+    expect(zoneLabel).toHaveStyle({ fontSize: '0.54rem' });
+    expect(zoneLabel).toHaveStyle({
+      whiteSpace: 'normal',
+      textOverflow: 'clip',
+      overflowWrap: 'normal',
+      wordBreak: 'keep-all',
+    });
+    expect(zoneLabel).toHaveAttribute('title', 'Cemetery');
+  });
+
+  it('keeps katakana zone labels from breaking mid-word in coarse input', () => {
+    renderWithInputProfile(
+      'coarse',
+      <Zone
+        id="evolve-host"
+        label="エボルヴ"
+        cards={[createCard('host-card')]}
+      />
+    );
+
+    const zoneLabel = screen.getByText('エボルヴ');
+    expect(zoneLabel).toHaveStyle({
+      overflowWrap: 'normal',
+      wordBreak: 'keep-all',
+    });
+  });
 });
