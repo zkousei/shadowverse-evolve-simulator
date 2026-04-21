@@ -49,6 +49,7 @@ const GameBoardBottomHandSection: React.FC<GameBoardBottomHandSectionProps> = ({
 }) => {
   const inputProfile = useGameBoardInputProfile();
   const isCompactInput = inputProfile === 'coarse';
+  const minHeight = zoneProps.containerStyle?.minHeight ?? '160px';
   const actionMenuWrapperStyle: React.CSSProperties = {
     position: 'absolute',
     right: isCompactInput ? '8px' : '10px',
@@ -58,7 +59,7 @@ const GameBoardBottomHandSection: React.FC<GameBoardBottomHandSectionProps> = ({
   };
 
   return (
-    <div style={{ width: `${width}px`, minHeight: '160px', position: 'relative' }}>
+    <div style={{ width: `${width}px`, minHeight, position: 'relative' }}>
       <Zone {...zoneProps} />
 
       {showRandomDiscardMenu && (

@@ -52,6 +52,7 @@ import {
 } from '../utils/gameBoardDismissals';
 import {
   activeBoardSectionStyle,
+  getBoardDensityForViewportWidth,
   resolveBoardLayout,
   soloMulliganButtonStyle,
 } from './gameBoardLayout';
@@ -79,19 +80,24 @@ const GameBoard: React.FC = () => {
     [viewportWidth]
   );
   const isCompactBoard = inputProfile === 'coarse';
-  const boardShellPadding = isCompactBoard ? '0.52rem' : '1rem';
-  const boardShellGap = isCompactBoard ? '0.48rem' : '1rem';
-  const playmatPadding = isCompactBoard ? '0.42rem' : '1rem';
-  const playmatGap = isCompactBoard ? '0.24rem' : '0.5rem';
-  const boardSectionPadding = isCompactBoard ? '0.28rem 0.32rem' : '0.55rem 0.6rem';
-  const boardSectionGap = isCompactBoard ? '0.22rem' : '0.5rem';
-  const boardShellColumnGap = isCompactBoard ? '0.5rem' : '1rem';
-  const boardColumnStackGap = isCompactBoard ? '0.34rem' : '0.65rem';
-  const boardSectionDividerMargin = isCompactBoard ? '0.4rem 0' : '1rem 0';
-  const stackZoneMinHeight = isCompactBoard ? '110px' : '150px';
-  const fieldZoneMinHeight = isCompactBoard ? '124px' : '160px';
-  const handZoneMinHeight = isCompactBoard ? '116px' : '150px';
-  const bottomHandZoneMinHeight = isCompactBoard ? '124px' : '160px';
+  const boardDensity = React.useMemo(
+    () => getBoardDensityForViewportWidth(viewportWidth, inputProfile),
+    [viewportWidth, inputProfile]
+  );
+  const isOverviewBoard = boardDensity === 'overview';
+  const boardShellPadding = isCompactBoard ? '0.52rem' : isOverviewBoard ? '0.6rem' : '1rem';
+  const boardShellGap = isCompactBoard ? '0.48rem' : isOverviewBoard ? '0.55rem' : '1rem';
+  const playmatPadding = isCompactBoard ? '0.42rem' : isOverviewBoard ? '0.55rem' : '1rem';
+  const playmatGap = isCompactBoard ? '0.24rem' : isOverviewBoard ? '0.3rem' : '0.5rem';
+  const boardSectionPadding = isCompactBoard ? '0.28rem 0.32rem' : isOverviewBoard ? '0.32rem 0.36rem' : '0.55rem 0.6rem';
+  const boardSectionGap = isCompactBoard ? '0.22rem' : isOverviewBoard ? '0.26rem' : '0.5rem';
+  const boardShellColumnGap = isCompactBoard ? '0.5rem' : isOverviewBoard ? '0.55rem' : '1rem';
+  const boardColumnStackGap = isCompactBoard ? '0.34rem' : isOverviewBoard ? '0.36rem' : '0.65rem';
+  const boardSectionDividerMargin = isCompactBoard ? '0.4rem 0' : isOverviewBoard ? '0.35rem 0' : '1rem 0';
+  const stackZoneMinHeight = isCompactBoard ? '110px' : isOverviewBoard ? '122px' : '150px';
+  const fieldZoneMinHeight = isCompactBoard ? '124px' : isOverviewBoard ? '136px' : '160px';
+  const handZoneMinHeight = isCompactBoard ? '116px' : isOverviewBoard ? '128px' : '150px';
+  const bottomHandZoneMinHeight = isCompactBoard ? '124px' : isOverviewBoard ? '136px' : '160px';
   const {
     profile: layoutProfile,
     sidePanelWidth,
@@ -596,10 +602,11 @@ const GameBoard: React.FC = () => {
       if (!canInteract) return;
       handleDragEnd(event);
     }}>
-      <GameBoardInputProfileProvider value={inputProfile}>
+      <GameBoardInputProfileProvider value={inputProfile} boardDensity={boardDensity}>
         <div
           data-layout-profile={layoutProfile}
           data-input-profile={inputProfile}
+          data-board-density={boardDensity}
           style={{ padding: boardShellPadding, display: 'flex', flexDirection: 'column', height: '100%', gap: boardShellGap, overflow: 'hidden' }}
         >
 

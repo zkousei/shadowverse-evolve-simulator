@@ -1,8 +1,19 @@
 import React from 'react';
 import type { GameBoardInputProfile } from '../utils/gameBoardInputProfile';
+import type { GameBoardBoardDensity } from '../utils/gameBoardBoardDensity';
 
-const GameBoardInputProfileContext = React.createContext<GameBoardInputProfile>('fine');
+export type GameBoardInputProfileContextValue = {
+  inputProfile: GameBoardInputProfile;
+  boardDensity: GameBoardBoardDensity;
+};
 
-export const useGameBoardInputProfile = () => React.useContext(GameBoardInputProfileContext);
+const GameBoardInputProfileContext = React.createContext<GameBoardInputProfileContextValue>({
+  inputProfile: 'fine',
+  boardDensity: 'standard',
+});
+
+export const useGameBoardInputProfile = () => React.useContext(GameBoardInputProfileContext).inputProfile;
+
+export const useGameBoardBoardDensity = () => React.useContext(GameBoardInputProfileContext).boardDensity;
 
 export default GameBoardInputProfileContext;

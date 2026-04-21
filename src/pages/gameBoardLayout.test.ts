@@ -4,6 +4,7 @@ import {
   boardContentWidth,
   boardShellColumns,
   centerZoneWidth,
+  getBoardDensityForViewportWidth,
   getLayoutProfileForViewportWidth,
   resolveBoardLayout,
   sidePanelWidth,
@@ -66,5 +67,12 @@ describe('gameBoardLayout', () => {
     const layout = resolveBoardLayout(1024, 'fine');
     expect(layout.profile).toBe('desktop');
     expect(layout.boardShellColumns).toBe('188px 1080px 220px');
+  });
+
+  it('uses overview density for PC desktop viewports while keeping tablet density standard', () => {
+    expect(getBoardDensityForViewportWidth(1280, 'fine')).toBe('overview');
+    expect(getBoardDensityForViewportWidth(1440, 'fine')).toBe('overview');
+    expect(getBoardDensityForViewportWidth(1024, 'fine')).toBe('standard');
+    expect(getBoardDensityForViewportWidth(1024, 'coarse')).toBe('standard');
   });
 });

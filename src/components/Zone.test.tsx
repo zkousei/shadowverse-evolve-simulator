@@ -71,9 +71,10 @@ const createCard = (id: string, overrides: Partial<CardInstance> = {}): CardInst
 
 const renderWithInputProfile = (
   profile: 'fine' | 'coarse',
-  ui: React.ReactElement
+  ui: React.ReactElement,
+  boardDensity: 'standard' | 'overview' = 'standard'
 ) => render(
-  <GameBoardInputProfileProvider value={profile}>
+  <GameBoardInputProfileProvider value={profile} boardDensity={boardDensity}>
     {ui}
   </GameBoardInputProfileProvider>
 );
@@ -292,6 +293,20 @@ describe('Zone', () => {
     );
 
     expect(container.firstChild).toHaveStyle({ gap: '0.36rem' });
+  });
+
+  it('keeps more breathing room between field cards in desktop overview mode', () => {
+    const { container } = renderWithInputProfile(
+      'fine',
+      <Zone
+        id="field-host"
+        label="Field"
+        cards={[createCard('host-card')]}
+      />,
+      'overview'
+    );
+
+    expect(container.firstChild).toHaveStyle({ gap: '1.05rem' });
   });
 
   it('uses compact zone label typography for coarse input', () => {

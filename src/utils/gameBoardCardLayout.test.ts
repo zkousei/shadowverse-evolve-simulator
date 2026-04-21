@@ -6,6 +6,7 @@ import {
   getExZoneGapForInputProfile,
   getFieldZoneGapForInputProfile,
   getRequiredFieldWidthForCardCount,
+  overviewDesktopCardSize,
 } from './gameBoardCardLayout';
 import { resolveBoardLayout } from '../pages/gameBoardLayout';
 
@@ -24,11 +25,26 @@ describe('gameBoardCardLayout', () => {
     expect(getExZoneGapForInputProfile('coarse')).toBe('0.36rem');
   });
 
+  it('uses overview desktop sizing without switching to coarse input behavior', () => {
+    expect(overviewDesktopCardSize).toEqual({ width: 88, height: 123 });
+    expect(getCardSizeForInputProfile('fine', 'overview')).toEqual(overviewDesktopCardSize);
+    expect(getFieldZoneGapForInputProfile('fine', 'overview')).toBe('1.05rem');
+    expect(getExZoneGapForInputProfile('fine', 'overview')).toBe('0.5rem');
+  });
+
   it('fits five field cards within tablet center zone width at 1024px', () => {
     const tabletLayout = resolveBoardLayout(1024, 'coarse');
     expect(tabletLayout.profile).toBe('tablet');
 
     const requiredWidth = getRequiredFieldWidthForCardCount(5, 'coarse', 16);
     expect(requiredWidth).toBeLessThanOrEqual(tabletLayout.centerZoneWidth);
+  });
+
+  it('keeps five overview desktop field cards within the desktop center zone width', () => {
+    const desktopLayout = resolveBoardLayout(1440, 'fine');
+    expect(desktopLayout.profile).toBe('desktop');
+
+    const requiredWidth = getRequiredFieldWidthForCardCount(5, 'fine', 16, 'overview');
+    expect(requiredWidth).toBeLessThanOrEqual(desktopLayout.centerZoneWidth);
   });
 });

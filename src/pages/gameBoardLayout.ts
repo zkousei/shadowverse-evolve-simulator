@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import type { GameBoardBoardDensity } from '../utils/gameBoardBoardDensity';
 
 export type GameBoardLayoutProfile = 'desktop' | 'tablet';
 export type GameBoardLayoutInputProfile = 'fine' | 'coarse';
@@ -111,6 +112,13 @@ export const resolveBoardLayout = (
   const profile = getLayoutProfileForViewportWidth(viewportWidth, inputProfile);
   return profile === 'tablet' ? resolveTabletLayout(viewportWidth) : desktopGameBoardLayout;
 };
+
+export const getBoardDensityForViewportWidth = (
+  viewportWidth: number,
+  inputProfile: GameBoardLayoutInputProfile = 'coarse'
+): GameBoardBoardDensity => (
+  viewportWidth >= DESKTOP_MIN_WIDTH && inputProfile === 'fine' ? 'overview' : 'standard'
+);
 
 // Keep legacy exports as desktop defaults to avoid changing the existing PC path.
 export const sidePanelWidth = desktopGameBoardLayout.sidePanelWidth;

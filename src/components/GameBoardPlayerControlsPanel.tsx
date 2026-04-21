@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import GameBoardPlayerTrackerSection from './GameBoardPlayerTrackerSection';
 import type { SyncState } from '../types/game';
-import { useGameBoardInputProfile } from '../contexts/gameBoardInputProfileContext';
+import { useGameBoardBoardDensity, useGameBoardInputProfile } from '../contexts/gameBoardInputProfileContext';
 
 type GameBoardPlayerControlsPanelProps = {
   label: string;
@@ -66,24 +66,27 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
 }) => {
   const { t } = useTranslation();
   const inputProfile = useGameBoardInputProfile();
+  const boardDensity = useGameBoardBoardDensity();
   const isCompactControls = inputProfile === 'coarse';
-  const compactPanelPadding = isCompactControls ? '0.55rem' : '1rem';
-  const compactSectionGap = isCompactControls ? '0.3rem' : '0.5rem';
-  const compactCellPadding = isCompactControls ? '0.36rem' : '0.5rem';
-  const compactButtonBaseStyle: React.CSSProperties = isCompactControls
+  const isOverviewControls = boardDensity === 'overview';
+  const isDenseControls = isCompactControls || isOverviewControls;
+  const compactPanelPadding = isCompactControls ? '0.55rem' : isOverviewControls ? '0.58rem' : '1rem';
+  const compactSectionGap = isDenseControls ? '0.3rem' : '0.5rem';
+  const compactCellPadding = isCompactControls ? '0.36rem' : isOverviewControls ? '0.34rem' : '0.5rem';
+  const compactButtonBaseStyle: React.CSSProperties = isDenseControls
     ? {
-        minHeight: '30px',
-        fontSize: '0.64rem',
+        minHeight: isCompactControls ? '30px' : '34px',
+        fontSize: isCompactControls ? '0.64rem' : '0.76rem',
         lineHeight: 1.1,
         whiteSpace: 'normal',
         overflowWrap: 'anywhere',
         wordBreak: 'break-word',
       }
     : {};
-  const compactPrimaryActionLabelStyle: React.CSSProperties = isCompactControls
+  const compactPrimaryActionLabelStyle: React.CSSProperties = isDenseControls
     ? {
-        minHeight: '30px',
-        fontSize: '0.66rem',
+        minHeight: isCompactControls ? '30px' : '34px',
+        fontSize: isCompactControls ? '0.66rem' : '0.78rem',
         lineHeight: 1.1,
         whiteSpace: 'normal',
         overflowWrap: 'anywhere',
@@ -99,23 +102,23 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
         boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'column',
-        gap: isCompactControls ? '0.32rem' : '0.5rem',
+        gap: isDenseControls ? '0.32rem' : '0.5rem',
         background: 'rgba(0,0,0,0.8)',
         padding: compactPanelPadding,
         borderRadius: 'var(--radius-md)',
         ...containerStyle,
       }}
     >
-      <div style={{ fontSize: isCompactControls ? '0.72rem' : '0.8rem', fontWeight: 'bold', color: 'white', marginBottom: isCompactControls ? '0.16rem' : '0.25rem' }}>
+      <div style={{ fontSize: isDenseControls ? '0.72rem' : '0.8rem', fontWeight: 'bold', color: 'white', marginBottom: isDenseControls ? '0.16rem' : '0.25rem' }}>
         {t('gameBoard.zones.controls', { label })}
       </div>
       <div
         data-testid="player-controls-primary-actions"
         style={{
-          display: isCompactControls ? 'grid' : 'flex',
-          flexDirection: isCompactControls ? undefined : 'column',
-          gridTemplateColumns: isCompactControls ? '1fr 1fr' : undefined,
-          gap: isCompactControls ? '0.28rem' : '0.5rem',
+          display: isDenseControls ? 'grid' : 'flex',
+          flexDirection: isDenseControls ? undefined : 'column',
+          gridTemplateColumns: isDenseControls ? '1fr 1fr' : undefined,
+          gap: isDenseControls ? '0.28rem' : '0.5rem',
         }}
       >
         <label
@@ -127,9 +130,9 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
             alignItems: 'center',
             justifyContent: 'center',
             textAlign: 'center',
-            gridColumn: isCompactControls ? '1 / -1' : undefined,
+            gridColumn: isDenseControls ? '1 / -1' : undefined,
             cursor: canImportDeck ? 'pointer' : 'not-allowed',
-            fontSize: isCompactControls ? '0.72rem' : '0.875rem',
+            fontSize: isDenseControls ? '0.72rem' : '0.875rem',
             opacity: canImportDeck ? 1 : 0.5,
             ...compactPrimaryActionLabelStyle,
           }}
@@ -160,9 +163,9 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
             color: '#f8fafc',
             fontWeight: 700,
             textAlign: 'center',
-            gridColumn: isCompactControls ? '1 / -1' : undefined,
+            gridColumn: isDenseControls ? '1 / -1' : undefined,
             cursor: canImportDeck && canOpenSavedDeckPicker ? 'pointer' : 'not-allowed',
-            fontSize: isCompactControls ? '0.72rem' : '0.875rem',
+            fontSize: isDenseControls ? '0.72rem' : '0.875rem',
             boxShadow: canImportDeck && canOpenSavedDeckPicker
               ? '0 8px 18px rgba(5, 150, 105, 0.28)'
               : 'none',
