@@ -532,6 +532,24 @@ describe('Card', () => {
     expect(actionSheet.parentElement).toBe(document.body);
   });
 
+  it('uses high-contrast text colors for coarse action-sheet buttons', () => {
+    renderWithInputProfile(
+      'coarse',
+      <Card
+        card={createCard({ isEvolveCard: true, isTapped: false })}
+        onReturnEvolve={vi.fn()}
+        onTap={vi.fn()}
+      />
+    );
+
+    const cardElement = screen.getByAltText('Test Card').closest('.game-card') as HTMLElement;
+    fireEvent.pointerDown(cardElement, { clientX: 10, clientY: 20, button: 0 });
+    fireEvent.pointerUp(cardElement, { clientX: 10, clientY: 20, button: 0 });
+
+    expect(screen.getByRole('button', { name: 'Return to evolve deck' })).toHaveStyle({ color: 'rgb(255, 255, 255)' });
+    expect(screen.getByRole('button', { name: 'REST' })).toHaveStyle({ color: 'rgb(255, 255, 255)' });
+  });
+
   it('disables browser touch gestures on coarse input to keep dragging smooth', () => {
     renderWithInputProfile(
       'coarse',

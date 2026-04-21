@@ -659,7 +659,7 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
                   }}
                   title={quickActionDescriptions.toEvolveDeck}
                   aria-label={quickActionDescriptions.toEvolveDeck}
-                  style={{ ...coarseSheetButtonStyle, background: 'var(--accent-primary)', color: 'black' }}
+                  style={{ ...coarseSheetButtonStyle, background: 'var(--accent-primary)', color: 'white' }}
                 >
                   {quickActionDescriptions.toEvolveDeck}
                 </button>
@@ -672,7 +672,7 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
                     onTap(card.id);
                     setIsQuickActionsOpen(false);
                   }}
-                  style={{ ...coarseSheetButtonStyle, background: card.isTapped ? '#fbbf24' : '#64748b', color: 'black' }}
+                  style={{ ...coarseSheetButtonStyle, background: card.isTapped ? '#fbbf24' : '#64748b', color: card.isTapped ? 'black' : 'white' }}
                 >
                   {card.isTapped ? t('gameBoard.card.stand') : t('gameBoard.card.rest')}
                 </button>
