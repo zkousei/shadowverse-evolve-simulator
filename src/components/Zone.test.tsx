@@ -291,7 +291,7 @@ describe('Zone', () => {
       />
     );
 
-    expect(container.firstChild).toHaveStyle({ gap: '0.5rem' });
+    expect(container.firstChild).toHaveStyle({ gap: '0.36rem' });
   });
 
   it('uses compact zone label typography for coarse input', () => {
@@ -305,7 +305,7 @@ describe('Zone', () => {
     );
 
     const zoneLabel = screen.getByText('Cemetery');
-    expect(zoneLabel).toHaveStyle({ fontSize: '0.54rem' });
+    expect(zoneLabel).toHaveStyle({ fontSize: '0.5rem' });
     expect(zoneLabel).toHaveStyle({
       whiteSpace: 'normal',
       textOverflow: 'clip',

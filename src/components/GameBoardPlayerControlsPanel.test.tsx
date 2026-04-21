@@ -13,6 +13,8 @@ vi.mock('react-i18next', () => ({
       if (key === 'gameBoard.zones.mill') return 'Mill';
       if (key === 'gameBoard.zones.topToEx') return 'Top to EX';
       if (key === 'gameBoard.zones.spawnToken') return 'Spawn Token';
+      if (key === 'gameBoard.board.stats.hp') return 'HP';
+      if (key === 'gameBoard.board.stats.playPoints') return 'PP';
       return key;
     },
   }),
@@ -119,8 +121,8 @@ describe('GameBoardPlayerControlsPanel', () => {
       />
     );
 
-    expect(screen.getByRole('button', { name: 'Draw' })).toHaveStyle({ fontSize: '0.68rem', minHeight: '34px' });
-    expect(screen.getByRole('button', { name: 'Load from My Decks' })).toHaveStyle({ fontSize: '0.72rem', minHeight: '34px' });
+    expect(screen.getByRole('button', { name: 'Draw' })).toHaveStyle({ fontSize: '0.64rem', minHeight: '30px' });
+    expect(screen.getByRole('button', { name: 'Load from My Decks' })).toHaveStyle({ fontSize: '0.66rem', minHeight: '30px' });
     expect(screen.getByRole('button', { name: 'Draw' })).toHaveStyle({ whiteSpace: 'normal' });
     expect(screen.getByRole('button', { name: 'Load from My Decks' })).toHaveStyle({ gridColumn: '1 / -1' });
   });
@@ -137,6 +139,20 @@ describe('GameBoardPlayerControlsPanel', () => {
     expect(screen.getByTestId('player-tracker')).toHaveAttribute('data-compact', 'true');
   });
 
+  it('uses collapsed tracker disclosure in coarse mode to save vertical space', () => {
+    renderWithInputProfile(
+      'coarse',
+      <GameBoardPlayerControlsPanel
+        {...createBaseProps()}
+        panelWidth={132}
+      />
+    );
+
+    expect(screen.getByTestId('player-controls-tracker-disclosure')).not.toHaveAttribute('open');
+    expect(screen.getByTestId('player-controls-tracker-summary')).toHaveTextContent('HP: 20');
+    expect(screen.getByTestId('player-controls-tracker-summary')).toHaveTextContent('PP: 0/0');
+  });
+
   it('keeps tracker in regular mode on desktop width panels', () => {
     render(
       <GameBoardPlayerControlsPanel
@@ -146,5 +162,6 @@ describe('GameBoardPlayerControlsPanel', () => {
     );
 
     expect(screen.getByTestId('player-tracker')).toHaveAttribute('data-compact', 'false');
+    expect(screen.queryByTestId('player-controls-tracker-disclosure')).not.toBeInTheDocument();
   });
 });

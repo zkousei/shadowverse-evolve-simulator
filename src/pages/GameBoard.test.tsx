@@ -2880,4 +2880,43 @@ describe('GameBoard', () => {
       });
     }
   });
+
+  it('uses compact tablet spacing to reduce scroll amount in coarse mode', () => {
+    const originalInnerWidth = window.innerWidth;
+    const originalMatchMedia = window.matchMedia;
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      writable: true,
+      value: 1024,
+    });
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      writable: true,
+      value: vi.fn(() => ({ matches: true })),
+    });
+
+    try {
+      const { container } = render(<GameBoard />);
+      const shell = container.firstElementChild as HTMLElement;
+      const playmat = screen.getByTestId('board-playmat');
+      const topSection = screen.getByTestId('board-section-top');
+      const topGrid = topSection.firstElementChild as HTMLElement;
+
+      expect(shell).toHaveStyle({ padding: '0.52rem', gap: '0.48rem' });
+      expect(playmat).toHaveStyle({ padding: '0.42rem', gap: '0.24rem' });
+      expect(topSection).toHaveStyle({ padding: '0.28rem 0.32rem' });
+      expect(topGrid).toHaveStyle({ columnGap: '0.5rem' });
+    } finally {
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        writable: true,
+        value: originalInnerWidth,
+      });
+      Object.defineProperty(window, 'matchMedia', {
+        configurable: true,
+        writable: true,
+        value: originalMatchMedia,
+      });
+    }
+  });
 });

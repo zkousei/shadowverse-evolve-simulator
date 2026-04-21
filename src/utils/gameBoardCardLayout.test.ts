@@ -18,10 +18,10 @@ describe('gameBoardCardLayout', () => {
   });
 
   it('uses a compact card size and tighter zone gaps for coarse input', () => {
-    expect(coarseCardSize).toEqual({ width: 82, height: 115 });
+    expect(coarseCardSize).toEqual({ width: 76, height: 106 });
     expect(getCardSizeForInputProfile('coarse')).toEqual(coarseCardSize);
-    expect(getFieldZoneGapForInputProfile('coarse')).toBe('0.5rem');
-    expect(getExZoneGapForInputProfile('coarse')).toBe('0.5rem');
+    expect(getFieldZoneGapForInputProfile('coarse')).toBe('0.36rem');
+    expect(getExZoneGapForInputProfile('coarse')).toBe('0.36rem');
   });
 
   it('fits five field cards within tablet center zone width at 1024px', () => {

@@ -114,7 +114,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
         border: `2px dashed ${isOver ? 'var(--vivid-green-cyan)' : 'var(--border-light)'}`,
         backgroundColor: isOver ? 'rgba(0, 208, 132, 0.1)' : 'rgba(26, 29, 36, 0.5)',
         borderRadius: 'var(--radius-md)',
-        padding: '0.5rem',
+        padding: isCompactInput ? '0.36rem' : '0.5rem',
         position: 'relative',
         display: 'flex',
         flexDirection: isStack ? 'column' : 'row',
@@ -134,15 +134,15 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
       <div
         style={{
           position: 'absolute',
-          top: isCompactInput ? -10 : -12,
+          top: isCompactInput ? -8 : -12,
           left: isCompactInput ? 8 : 10,
           zIndex: 20,
           display: isCompactInput ? 'grid' : 'inline-flex',
           gridTemplateColumns: isCompactInput ? 'minmax(0, 1fr) auto' : undefined,
           alignItems: 'center',
-          gap: isCompactInput ? '4px' : '6px',
+          gap: isCompactInput ? '3px' : '6px',
           maxWidth: 'calc(100% - 20px)',
-          padding: isCompactInput ? '2px 6px' : '2px 8px',
+          padding: isCompactInput ? '1px 5px' : '2px 8px',
           background: 'rgba(17, 24, 39, 0.92)',
           border: '1px solid rgba(255,255,255,0.16)',
           borderRadius: '999px',
@@ -171,7 +171,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
           style={{
             maxWidth: isCompactInput ? '100%' : undefined,
             minWidth: 0,
-            fontSize: isCompactInput ? '0.54rem' : '0.72rem',
+            fontSize: isCompactInput ? '0.5rem' : '0.72rem',
             fontWeight: 'bold',
             color: 'white',
             whiteSpace: isCompactInput ? 'normal' : 'nowrap',
@@ -187,12 +187,12 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
         <span
           style={{
             flex: '0 0 auto',
-            minWidth: isCompactInput ? '20px' : '22px',
-            padding: isCompactInput ? '0 5px' : '0 6px',
+            minWidth: isCompactInput ? '18px' : '22px',
+            padding: isCompactInput ? '0 4px' : '0 6px',
             borderRadius: '999px',
             background: 'rgba(59, 130, 246, 0.24)',
             color: '#bfdbfe',
-            fontSize: isCompactInput ? '0.52rem' : '0.7rem',
+            fontSize: isCompactInput ? '0.48rem' : '0.7rem',
             fontWeight: 'bold',
             textAlign: 'center'
           }}

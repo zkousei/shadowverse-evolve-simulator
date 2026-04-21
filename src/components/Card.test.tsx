@@ -460,7 +460,34 @@ describe('Card', () => {
     fireEvent.pointerDown(cardElement, { clientX: 10, clientY: 20, button: 0 });
     fireEvent.pointerUp(cardElement, { clientX: 10, clientY: 20, button: 0 });
 
-    expect(screen.getByRole('button', { name: 'Send to bottom of deck' })).toHaveStyle({ minHeight: '44px' });
+    expect(screen.getByRole('button', { name: 'Send to bottom of deck' })).toHaveStyle({ minHeight: '34px' });
+  });
+
+  it('keeps coarse action sheet scrollable within viewport height', () => {
+    renderWithInputProfile(
+      'coarse',
+      <Card
+        card={createCard({ isEvolveCard: true })}
+        onSendToBottom={vi.fn()}
+        onCemetery={vi.fn()}
+        onBanish={vi.fn()}
+        onReturnEvolve={vi.fn()}
+        onTap={vi.fn()}
+        onAttack={vi.fn()}
+        onModifyCounter={vi.fn()}
+        onModifyGenericCounter={vi.fn()}
+        onInspect={vi.fn()}
+      />
+    );
+
+    const cardElement = screen.getByAltText('Test Card').closest('.game-card') as HTMLElement;
+    fireEvent.pointerDown(cardElement, { clientX: 10, clientY: 20, button: 0 });
+    fireEvent.pointerUp(cardElement, { clientX: 10, clientY: 20, button: 0 });
+
+    expect(screen.getByTestId('card-coarse-action-sheet')).toHaveStyle({
+      position: 'fixed',
+      overflowY: 'auto',
+    });
   });
 
   it('does not open inspector when coarse action sheet is toggled', () => {
@@ -571,7 +598,7 @@ describe('Card', () => {
     );
 
     const cardElement = screen.getByAltText('Test Card').closest('.game-card') as HTMLElement;
-    expect(cardElement).toHaveStyle({ width: '82px', height: '115px' });
+    expect(cardElement).toHaveStyle({ width: '76px', height: '106px' });
   });
 
   it('does not show current stats for hand cards even if base stats are available', () => {

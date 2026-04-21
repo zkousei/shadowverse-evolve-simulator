@@ -35,15 +35,15 @@ const GameBoardPlayerTracker: React.FC<GameBoardPlayerTrackerProps> = ({
   const trackerContainerStyle: React.CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
-    gap: compact ? '0.28rem' : '0.4rem',
-    marginTop: compact ? '0.45rem' : '0.8rem',
-    padding: compact ? '0.45rem' : '0.6rem',
+    gap: compact ? '0.24rem' : '0.4rem',
+    marginTop: compact ? '0.25rem' : '0.8rem',
+    padding: compact ? '0.36rem' : '0.6rem',
     background: 'rgba(255,255,255,0.04)',
     borderRadius: 'var(--radius-md)',
     border: '1px solid var(--border-light)',
   };
   const trackerHeaderStyle: React.CSSProperties = {
-    fontSize: compact ? '0.66rem' : '0.8rem',
+    fontSize: compact ? '0.62rem' : '0.8rem',
     fontWeight: 'bold',
     color: 'white',
     lineHeight: 1.1,
@@ -55,24 +55,24 @@ const GameBoardPlayerTracker: React.FC<GameBoardPlayerTrackerProps> = ({
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    gap: compact ? '0.22rem' : '0.35rem',
+    gap: compact ? '0.16rem' : '0.35rem',
     flexWrap: 'nowrap',
   };
   const trackerStatLabelBaseStyle: React.CSSProperties = {
     fontWeight: 'bold',
-    fontSize: compact ? '0.66rem' : undefined,
+    fontSize: compact ? '0.62rem' : undefined,
     lineHeight: 1.1,
     whiteSpace: 'nowrap',
   };
   const trackerAdjustButtonBaseStyle: React.CSSProperties = {
-    minWidth: compact ? '22px' : '28px',
-    minHeight: compact ? '20px' : undefined,
-    padding: compact ? '1px 6px' : '2px 8px',
+    minWidth: compact ? '20px' : '28px',
+    minHeight: compact ? '18px' : undefined,
+    padding: compact ? '1px 5px' : '2px 8px',
     borderRadius: '4px',
     border: '1px solid',
     color: '#f8fafc',
     fontWeight: 'bold',
-    fontSize: compact ? '0.72rem' : undefined,
+    fontSize: compact ? '0.66rem' : undefined,
     cursor: 'pointer',
     boxShadow: '0 2px 6px rgba(0,0,0,0.22)',
   };
@@ -88,14 +88,14 @@ const GameBoardPlayerTracker: React.FC<GameBoardPlayerTrackerProps> = ({
   };
   const trackerButtonRowStyle: React.CSSProperties = {
     display: 'flex',
-    gap: compact ? '0.2rem' : '0.35rem',
+    gap: compact ? '0.16rem' : '0.35rem',
     flexShrink: 0,
   };
   const ppSectionStyle: React.CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
-    gap: compact ? '0.28rem' : '0.4rem',
-    padding: compact ? '0.45rem' : '0.6rem',
+    gap: compact ? '0.22rem' : '0.4rem',
+    padding: compact ? '0.36rem' : '0.6rem',
     background: 'rgba(59, 130, 246, 0.15)',
     borderRadius: 'var(--radius-md)',
     border: '1px solid rgba(59, 130, 246, 0.3)',

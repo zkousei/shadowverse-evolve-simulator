@@ -67,11 +67,14 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
   const { t } = useTranslation();
   const inputProfile = useGameBoardInputProfile();
   const isCompactControls = inputProfile === 'coarse';
+  const compactPanelPadding = isCompactControls ? '0.55rem' : '1rem';
+  const compactSectionGap = isCompactControls ? '0.3rem' : '0.5rem';
+  const compactCellPadding = isCompactControls ? '0.36rem' : '0.5rem';
   const compactButtonBaseStyle: React.CSSProperties = isCompactControls
     ? {
-        minHeight: '34px',
-        fontSize: '0.68rem',
-        lineHeight: 1.15,
+        minHeight: '30px',
+        fontSize: '0.64rem',
+        lineHeight: 1.1,
         whiteSpace: 'normal',
         overflowWrap: 'anywhere',
         wordBreak: 'break-word',
@@ -79,14 +82,15 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
     : {};
   const compactPrimaryActionLabelStyle: React.CSSProperties = isCompactControls
     ? {
-        minHeight: '34px',
-        fontSize: '0.72rem',
-        lineHeight: 1.15,
+        minHeight: '30px',
+        fontSize: '0.66rem',
+        lineHeight: 1.1,
         whiteSpace: 'normal',
         overflowWrap: 'anywhere',
         wordBreak: 'break-word',
       }
     : {};
+  const compactTrackerSummary = `${t('gameBoard.board.stats.hp')}: ${playerState.hp}  ${t('gameBoard.board.stats.playPoints')}: ${playerState.pp}/${playerState.maxPp}`;
 
   return (
     <div
@@ -95,14 +99,14 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
         boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'column',
-        gap: isCompactControls ? '0.4rem' : '0.5rem',
+        gap: isCompactControls ? '0.32rem' : '0.5rem',
         background: 'rgba(0,0,0,0.8)',
-        padding: isCompactControls ? '0.75rem' : '1rem',
+        padding: compactPanelPadding,
         borderRadius: 'var(--radius-md)',
         ...containerStyle,
       }}
     >
-      <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'white', marginBottom: '0.25rem' }}>
+      <div style={{ fontSize: isCompactControls ? '0.72rem' : '0.8rem', fontWeight: 'bold', color: 'white', marginBottom: isCompactControls ? '0.16rem' : '0.25rem' }}>
         {t('gameBoard.zones.controls', { label })}
       </div>
       <div
@@ -111,13 +115,13 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
           display: isCompactControls ? 'grid' : 'flex',
           flexDirection: isCompactControls ? undefined : 'column',
           gridTemplateColumns: isCompactControls ? '1fr 1fr' : undefined,
-          gap: isCompactControls ? '0.35rem' : '0.5rem',
+          gap: isCompactControls ? '0.28rem' : '0.5rem',
         }}
       >
         <label
           className="glass-panel"
           style={{
-            padding: '0.5rem',
+            padding: compactCellPadding,
             background: 'var(--bg-surface-elevated)',
             display: 'flex',
             alignItems: 'center',
@@ -146,7 +150,7 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
           disabled={!canImportDeck || !canOpenSavedDeckPicker}
           title={!canImportDeck || !canOpenSavedDeckPicker ? savedDeckPickerUnavailableTitle : undefined}
           style={{
-            padding: '0.5rem',
+            padding: compactCellPadding,
             background: canImportDeck && canOpenSavedDeckPicker
               ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.9), rgba(5, 150, 105, 0.9))'
               : 'rgba(34, 197, 94, 0.18)',
@@ -174,7 +178,7 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
           disabled={!canUsePlayingActions}
           title={!canUsePlayingActions ? playingActionsDisabledTitle : undefined}
           style={{
-            padding: '0.5rem',
+            padding: compactCellPadding,
             background: drawButtonBackground,
             color: '#f8fafc',
             fontWeight: 'bold',
@@ -191,7 +195,7 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
           disabled={!canUsePlayingActions}
           title={!canUsePlayingActions ? playingActionsDisabledTitle : undefined}
           style={{
-            padding: '0.5rem',
+            padding: compactCellPadding,
             background: '#475569',
             color: '#f8fafc',
             fontWeight: 'bold',
@@ -208,7 +212,7 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
           disabled={!canUsePlayingActions}
           title={!canUsePlayingActions ? playingActionsDisabledTitle : undefined}
           style={{
-            padding: '0.5rem',
+            padding: compactCellPadding,
             background: '#334155',
             color: '#f8fafc',
             fontWeight: 'bold',
@@ -224,7 +228,7 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
           className="glass-panel"
           disabled={!canOpenTokenSpawn}
           style={{
-            padding: '0.5rem',
+            padding: compactCellPadding,
             background: spawnButtonBackground,
             color: '#f8fafc',
             opacity: canOpenTokenSpawn ? 1 : 0.5,
@@ -235,17 +239,60 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
           {t('gameBoard.zones.spawnToken', { label })}
         </button>
       </div>
-      {middleControls}
-      {afterSpawnControls}
-      {undoMoveButton}
-      <GameBoardPlayerTrackerSection
-        testId={trackerTestId}
-        label={label}
-        playerState={playerState}
-        onAdjustStat={onAdjustStat}
-        compact={isCompactControls && panelWidth <= 160}
-        readOnly={readOnlyTracker}
-      />
+      {(middleControls || afterSpawnControls || undoMoveButton) && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: compactSectionGap }}>
+          {middleControls}
+          {afterSpawnControls}
+          {undoMoveButton}
+        </div>
+      )}
+      {isCompactControls ? (
+        <details
+          data-testid="player-controls-tracker-disclosure"
+          style={{
+            marginTop: '0.04rem',
+            padding: '0.2rem 0.26rem',
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: '8px',
+          }}
+        >
+          <summary
+            data-testid="player-controls-tracker-summary"
+            style={{
+              cursor: 'pointer',
+              color: '#bfdbfe',
+              fontSize: '0.58rem',
+              fontWeight: 700,
+              lineHeight: 1.2,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {compactTrackerSummary}
+          </summary>
+          <div style={{ marginTop: '0.2rem' }}>
+            <GameBoardPlayerTrackerSection
+              testId={trackerTestId}
+              label={label}
+              playerState={playerState}
+              onAdjustStat={onAdjustStat}
+              compact={panelWidth <= 180}
+              readOnly={readOnlyTracker}
+            />
+          </div>
+        </details>
+      ) : (
+        <GameBoardPlayerTrackerSection
+          testId={trackerTestId}
+          label={label}
+          playerState={playerState}
+          onAdjustStat={onAdjustStat}
+          compact={false}
+          readOnly={readOnlyTracker}
+        />
+      )}
     </div>
   );
 };

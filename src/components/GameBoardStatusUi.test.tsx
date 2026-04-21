@@ -387,6 +387,26 @@ describe('GameBoard extracted UI components - status and preparation', () => {
     expect(screen.getByText('Guest evolved Alpha Knight.')).toBeInTheDocument();
   });
 
+  it('shows a compact recent events panel and truncates history in coarse mode', () => {
+    renderWithInputProfile(
+      'coarse',
+      <GameBoardRecentEventsPanel
+        eventHistory={[
+          'Host drew a card.',
+          'Guest evolved Alpha Knight.',
+          'Host attacked the leader.',
+        ]}
+      />
+    );
+
+    const panel = screen.getByTestId('gameboard-recent-events');
+    expect(panel).toHaveStyle({ width: 'min(240px, 100%)', padding: '0.45rem 0.52rem' });
+    expect(screen.getByText('Host drew a card.')).toBeInTheDocument();
+    expect(screen.getByText('Guest evolved Alpha Knight.')).toBeInTheDocument();
+    expect(screen.queryByText('Host attacked the leader.')).not.toBeInTheDocument();
+    expect(screen.getByText('+1')).toBeInTheDocument();
+  });
+
   it('renders reconnect alert message', () => {
     render(<GameBoardReconnectAlert />);
 
