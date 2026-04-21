@@ -5,6 +5,7 @@ import GameBoardRoomStatus from './GameBoardRoomStatus';
 import GameBoardTurnPanel from './GameBoardTurnPanel';
 import type { PlayerRole, SyncState } from '../types/game';
 import type { ConnectionBadgeTone, GameBoardConnectionState } from '../utils/gameBoardPresentation';
+import { useGameBoardInputProfile } from '../contexts/gameBoardInputProfileContext';
 
 type GameBoardHeaderProps = {
   room: string;
@@ -60,18 +61,34 @@ const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
   onRollDice,
   onOpenUndo,
   onPhaseChange,
-}) => (
-  <div
-    style={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      background: 'var(--bg-surface)',
-      padding: '0.75rem 1rem',
-      borderRadius: 'var(--radius-md)',
-    }}
-  >
-    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+}) => {
+  const inputProfile = useGameBoardInputProfile();
+  const isCompactControls = inputProfile === 'coarse';
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: isCompactControls ? 'stretch' : 'center',
+        flexWrap: isCompactControls ? 'wrap' : 'nowrap',
+        columnGap: isCompactControls ? '0.5rem' : undefined,
+        rowGap: isCompactControls ? '0.4rem' : undefined,
+        background: 'var(--bg-surface)',
+        padding: isCompactControls ? '0.48rem 0.62rem' : '0.75rem 1rem',
+        borderRadius: 'var(--radius-md)',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          gap: isCompactControls ? '0.5rem' : '1rem',
+          alignItems: 'center',
+          flexWrap: isCompactControls ? 'wrap' : 'nowrap',
+          minWidth: 0,
+          flex: '1 1 auto',
+        }}
+      >
       <GameBoardRoomStatus
         room={room}
         isSoloMode={isSoloMode}
@@ -111,21 +128,24 @@ const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
           onOpenUndo={onOpenUndo}
         />
       ) : null}
-    </div>
+      </div>
 
-    {gameState.gameStatus === 'playing' && (
-      <GameBoardTurnPanel
-        isSoloMode={isSoloMode || isSpectator}
-        isCurrentPlayerTurn={gameState.turnPlayer === role}
-        currentTurnLabel={currentTurnLabel}
-        turnCount={gameState.turnCount}
-        phase={gameState.phase}
-        isBottomTurnActive={isBottomTurnActive}
-        canChangePhase={!isSpectator && (isSoloMode || gameState.turnPlayer === role)}
-        onPhaseChange={onPhaseChange}
-      />
-    )}
-  </div>
-);
+      {gameState.gameStatus === 'playing' && (
+        <div style={{ display: 'flex', flex: isCompactControls ? '1 1 100%' : undefined, justifyContent: isCompactControls ? 'flex-start' : 'flex-end', minWidth: 0 }}>
+          <GameBoardTurnPanel
+            isSoloMode={isSoloMode || isSpectator}
+            isCurrentPlayerTurn={gameState.turnPlayer === role}
+            currentTurnLabel={currentTurnLabel}
+            turnCount={gameState.turnCount}
+            phase={gameState.phase}
+            isBottomTurnActive={isBottomTurnActive}
+            canChangePhase={!isSpectator && (isSoloMode || gameState.turnPlayer === role)}
+            onPhaseChange={onPhaseChange}
+          />
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default GameBoardHeader;

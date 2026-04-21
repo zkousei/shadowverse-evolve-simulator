@@ -4,6 +4,14 @@ import Card, { type CardInspectAnchor, type CardInstance } from './Card';
 import type { PlayerRole } from '../types/game';
 import type { CardStatLookup } from '../utils/cardStats';
 import type { CardDetailLookup } from '../utils/cardDetails';
+import { useGameBoardInputProfile } from '../contexts/gameBoardInputProfileContext';
+import {
+  getCardSizeForInputProfile,
+  getExZoneGapForInputProfile,
+  getFieldZoneGapForInputProfile,
+  getLinkedCardOffsetForInputProfile,
+  getStackAttachmentOffsetForInputProfile,
+} from '../utils/gameBoardCardLayout';
 
 interface Props {
   id: string;
@@ -33,12 +41,17 @@ interface Props {
 }
 
 const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLookup, onInspectCard, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, hideCards, layout = 'horizontal', isProtected, lockCards, disableQuickActionsForCard, getHighlightTone, viewerRole, containerStyle, isDebug }) => {
+  const inputProfile = useGameBoardInputProfile();
+  const isCompactInput = inputProfile === 'coarse';
   const { isOver, setNodeRef } = useDroppable({ id });
-  const attachmentTopOffset = 20;
-  const attachmentLeftOffset = 15;
-  const linkedCardTopOffset = 20;
-  const linkedCardLeftOffset = 15;
-  const linkedCardPaddingBottom = 24;
+  const cardSize = getCardSizeForInputProfile(inputProfile);
+  const stackAttachmentOffset = getStackAttachmentOffsetForInputProfile(inputProfile);
+  const linkedCardOffset = getLinkedCardOffsetForInputProfile(inputProfile);
+  const attachmentTopOffset = stackAttachmentOffset.top;
+  const attachmentLeftOffset = stackAttachmentOffset.left;
+  const linkedCardTopOffset = linkedCardOffset.top;
+  const linkedCardLeftOffset = linkedCardOffset.left;
+  const linkedCardPaddingBottom = linkedCardOffset.paddingBottom;
 
   const isStack = layout === 'stack';
   const isFieldZone = id.startsWith('field-');
@@ -101,11 +114,17 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
         border: `2px dashed ${isOver ? 'var(--vivid-green-cyan)' : 'var(--border-light)'}`,
         backgroundColor: isOver ? 'rgba(0, 208, 132, 0.1)' : 'rgba(26, 29, 36, 0.5)',
         borderRadius: 'var(--radius-md)',
-        padding: '0.5rem',
+        padding: isCompactInput ? '0.36rem' : '0.5rem',
         position: 'relative',
         display: 'flex',
         flexDirection: isStack ? 'column' : 'row',
-        gap: isStack ? '0.5rem' : isFieldZone ? '1.9rem' : isExZone ? '1rem' : '0.5rem',
+        gap: isStack
+          ? '0.5rem'
+          : isFieldZone
+            ? getFieldZoneGapForInputProfile(inputProfile)
+            : isExZone
+              ? getExZoneGapForInputProfile(inputProfile)
+              : '0.5rem',
         flexWrap: isStack ? 'nowrap' : 'wrap',
         alignItems: isStack ? 'center' : 'flex-start',
         transition: 'var(--transition-fast)',
@@ -115,14 +134,15 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
       <div
         style={{
           position: 'absolute',
-          top: -12,
-          left: 10,
+          top: isCompactInput ? -8 : -12,
+          left: isCompactInput ? 8 : 10,
           zIndex: 20,
-          display: 'inline-flex',
+          display: isCompactInput ? 'grid' : 'inline-flex',
+          gridTemplateColumns: isCompactInput ? 'minmax(0, 1fr) auto' : undefined,
           alignItems: 'center',
-          gap: '6px',
+          gap: isCompactInput ? '3px' : '6px',
           maxWidth: 'calc(100% - 20px)',
-          padding: '2px 8px',
+          padding: isCompactInput ? '1px 5px' : '2px 8px',
           background: 'rgba(17, 24, 39, 0.92)',
           border: '1px solid rgba(255,255,255,0.16)',
           borderRadius: '999px',
@@ -147,13 +167,19 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
           {label} ({topLevelCards.length})
         </span>
         <span
+          title={displayLabel}
           style={{
-            fontSize: '0.72rem',
+            maxWidth: isCompactInput ? '100%' : undefined,
+            minWidth: 0,
+            fontSize: isCompactInput ? '0.5rem' : '0.72rem',
             fontWeight: 'bold',
             color: 'white',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
+            whiteSpace: isCompactInput ? 'normal' : 'nowrap',
+            overflow: isCompactInput ? 'visible' : 'hidden',
+            textOverflow: isCompactInput ? 'clip' : 'ellipsis',
+            overflowWrap: isCompactInput ? 'normal' : undefined,
+            wordBreak: isCompactInput ? 'keep-all' : undefined,
+            lineHeight: isCompactInput ? 1.1 : undefined,
           }}
         >
           {displayLabel}
@@ -161,12 +187,12 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
         <span
           style={{
             flex: '0 0 auto',
-            minWidth: '22px',
-            padding: '0 6px',
+            minWidth: isCompactInput ? '18px' : '22px',
+            padding: isCompactInput ? '0 4px' : '0 6px',
             borderRadius: '999px',
             background: 'rgba(59, 130, 246, 0.24)',
             color: '#bfdbfe',
-            fontSize: '0.7rem',
+            fontSize: isCompactInput ? '0.48rem' : '0.7rem',
             fontWeight: 'bold',
             textAlign: 'center'
           }}
@@ -178,7 +204,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
       {(() => {
         if (isStack && topLevelCards.length > 0) {
           return (
-            <div style={{ position: 'relative', width: '100px', height: '140px' }}>
+            <div style={{ position: 'relative', width: `${cardSize.width}px`, height: `${cardSize.height}px` }}>
               {topLevelCards.map((card, index) => {
                 // To make index 0 (Top card) appear at the absolute top of the stack:
                 // 1. Give it the highest zIndex

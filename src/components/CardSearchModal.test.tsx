@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import CardSearchModal from './CardSearchModal';
 import type { CardInstance } from './Card';
+import GameBoardInputProfileProvider from '../contexts/GameBoardInputProfileProvider';
 
 const createCard = (overrides: Partial<CardInstance> = {}): CardInstance => ({
   id: 'card-1',
@@ -20,6 +21,15 @@ const getRenderedCardOrder = (): string[] => {
   const cardGrid = screen.getByTestId('search-card-grid');
   return Array.from(cardGrid.querySelectorAll('img[alt]')).map((image) => image.getAttribute('alt') ?? '');
 };
+
+const renderWithInputProfile = (
+  profile: 'fine' | 'coarse',
+  ui: React.ReactElement
+) => render(
+  <GameBoardInputProfileProvider value={profile}>
+    {ui}
+  </GameBoardInputProfileProvider>
+);
 
 describe('CardSearchModal', () => {
   it('does not show hand or EX extraction buttons for evolve cards', () => {
@@ -497,6 +507,56 @@ describe('CardSearchModal', () => {
     expect(screen.queryByText('Play to Field')).not.toBeInTheDocument();
     expect(screen.queryByText('Add to Hand')).not.toBeInTheDocument();
     expect(screen.queryByText('Add to EX Area')).not.toBeInTheDocument();
+  });
+
+  it('keeps quick controls hidden for coarse input until a card is tapped', () => {
+    const onExtractCard = vi.fn();
+
+    renderWithInputProfile(
+      'coarse',
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Main Deck"
+        zoneId="mainDeck-host"
+        cards={[createCard({ isEvolveCard: false, zone: 'mainDeck-host' })]}
+        onExtractCard={onExtractCard}
+        viewerRole="host"
+        allowHandExtraction={true}
+      />
+    );
+
+    const controls = screen.getByTestId('search-card-controls-card-1');
+    expect(controls).toHaveStyle({ opacity: '0', pointerEvents: 'none' });
+
+    fireEvent.click(screen.getByAltText('Test Card'));
+    expect(controls).toHaveStyle({ opacity: '1', pointerEvents: 'auto' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add to Hand' }));
+    expect(onExtractCard).toHaveBeenCalledWith('card-1', 'hand-host');
+  });
+
+  it('closes coarse-input quick controls when tapping modal empty space', () => {
+    renderWithInputProfile(
+      'coarse',
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Main Deck"
+        zoneId="mainDeck-host"
+        cards={[createCard({ isEvolveCard: false, zone: 'mainDeck-host' })]}
+        onExtractCard={vi.fn()}
+        viewerRole="host"
+        allowHandExtraction={true}
+      />
+    );
+
+    const controls = screen.getByTestId('search-card-controls-card-1');
+    fireEvent.click(screen.getByAltText('Test Card'));
+    expect(controls).toHaveStyle({ opacity: '1', pointerEvents: 'auto' });
+
+    fireEvent.pointerDown(screen.getByTestId('search-card-modal-panel'));
+    expect(controls).toHaveStyle({ opacity: '0', pointerEvents: 'none' });
   });
 
   it('shows a compact detail popover when a card is clicked', () => {

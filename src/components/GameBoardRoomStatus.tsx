@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { useGameBoardInputProfile } from '../contexts/gameBoardInputProfileContext';
 
 type ConnectionBadgeTone = {
   background: string;
@@ -34,10 +35,24 @@ const GameBoardRoomStatus: React.FC<GameBoardRoomStatusProps> = ({
   onReconnect,
 }) => {
   const { t } = useTranslation();
+  const inputProfile = useGameBoardInputProfile();
+  const isCompactControls = inputProfile === 'coarse';
+  const pillFontSize = isCompactControls ? '0.62rem' : '0.72rem';
+  const statusFontSize = isCompactControls ? '0.66rem' : undefined;
+  const buttonPadding = isCompactControls ? '0.2rem 0.4rem' : '0.28rem 0.55rem';
 
   return (
-    <>
-      <span>
+    <div
+      data-testid="gameboard-room-status"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: isCompactControls ? '0.4rem' : '0.6rem',
+        flexWrap: isCompactControls ? 'wrap' : 'nowrap',
+        minWidth: 0,
+      }}
+    >
+      <span style={{ fontSize: isCompactControls ? '0.68rem' : undefined, lineHeight: 1.2 }}>
         {isSoloMode ? t('gameBoard.header.mode') : t('gameBoard.header.room')}:{' '}
         <strong>{isSoloMode ? t('gameBoard.header.soloPlayBeta') : room}</strong>
       </span>
@@ -46,13 +61,13 @@ const GameBoardRoomStatus: React.FC<GameBoardRoomStatusProps> = ({
           type="button"
           onClick={onCopyRoomId}
           style={{
-            padding: '0.28rem 0.55rem',
+            padding: buttonPadding,
             background: isRoomCopied ? 'rgba(16, 185, 129, 0.18)' : '#334155',
             color: isRoomCopied ? '#d1fae5' : 'white',
             border: `1px solid ${isRoomCopied ? 'rgba(16, 185, 129, 0.38)' : 'rgba(255,255,255,0.14)'}`,
             borderRadius: '999px',
             cursor: 'pointer',
-            fontSize: '0.72rem',
+            fontSize: pillFontSize,
             fontWeight: 'bold',
             transition: 'all 0.2s ease',
           }}
@@ -64,12 +79,13 @@ const GameBoardRoomStatus: React.FC<GameBoardRoomStatusProps> = ({
       {isSoloMode && (
         <span
           style={{
-            fontSize: '0.75rem',
+            fontSize: isCompactControls ? '0.68rem' : '0.75rem',
             fontWeight: 'bold',
             color: '#111827',
             background: '#f59e0b',
             padding: '0.2rem 0.45rem',
             borderRadius: '999px',
+            whiteSpace: 'nowrap',
           }}
         >
           {t('home.cards.soloPlay.badge')}
@@ -83,35 +99,48 @@ const GameBoardRoomStatus: React.FC<GameBoardRoomStatusProps> = ({
             border: `1px solid ${connectionBadgeTone.border}`,
             background: connectionBadgeTone.background,
             color: connectionBadgeTone.color,
-            fontSize: '0.72rem',
+            fontSize: pillFontSize,
             fontWeight: 'bold',
             letterSpacing: '0.02em',
+            whiteSpace: 'nowrap',
           }}
         >
           {connectionBadgeTone.label}
         </span>
       )}
-      <span style={{ color: isSoloMode ? 'var(--vivid-green-cyan)' : 'var(--text-muted)' }}>{status}</span>
+      <span
+        style={{
+          color: isSoloMode ? 'var(--vivid-green-cyan)' : 'var(--text-muted)',
+          fontSize: statusFontSize,
+          lineHeight: 1.2,
+          minWidth: 0,
+          whiteSpace: isCompactControls ? 'normal' : undefined,
+          overflowWrap: isCompactControls ? 'anywhere' : undefined,
+        }}
+      >
+        {status}
+      </span>
       {!isSoloMode && !isHost && connectionState !== 'connected' && (
         <button
           onClick={onReconnect}
           disabled={connectionState === 'connecting'}
           title={connectionState === 'connecting' ? t('gameBoard.header.reconnectMessageConnecting') : t('gameBoard.header.reconnectMessageRetry')}
           style={{
-            padding: '0.3rem 0.6rem',
+            padding: isCompactControls ? '0.25rem 0.5rem' : '0.3rem 0.6rem',
             background: '#334155',
             color: 'white',
             border: '1px solid rgba(255,255,255,0.14)',
             borderRadius: '4px',
             cursor: connectionState === 'connecting' ? 'not-allowed' : 'pointer',
-            fontSize: '0.75rem',
+            fontSize: isCompactControls ? '0.68rem' : '0.75rem',
             opacity: connectionState === 'connecting' ? 0.6 : 1,
+            whiteSpace: 'nowrap',
           }}
         >
           {connectionState === 'reconnecting' ? t('gameBoard.header.reconnectNow') : t('gameBoard.header.reconnect')}
         </button>
       )}
-    </>
+    </div>
   );
 };
 

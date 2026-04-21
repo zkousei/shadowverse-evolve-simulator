@@ -487,12 +487,14 @@
       "stand": "STAND",
       "attack": "Attack",
       "quickActions": {
+        "inspect": "Details",
         "sendToBottom": "Bot",
         "cemetery": "Cem",
         "banish": "Ban",
         "toEvolveDeck": "Evolve"
       },
       "quickActionDescriptions": {
+        "inspect": "View card details",
         "sendToBottom": "Send to bottom of deck",
         "cemetery": "Send to cemetery",
         "banish": "Banish this card",

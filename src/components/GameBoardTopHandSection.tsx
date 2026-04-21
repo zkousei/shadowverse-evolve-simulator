@@ -3,6 +3,7 @@ import Zone from './Zone';
 import GameBoardHandRow from './GameBoardHandRow';
 import GameBoardMulliganButton from './GameBoardMulliganButton';
 import GameBoardZoneActionsSection from './GameBoardZoneActionsSection';
+import { useGameBoardInputProfile } from '../contexts/gameBoardInputProfileContext';
 
 type ZoneAction = {
   label: string;
@@ -31,14 +32,6 @@ type GameBoardTopHandSectionProps = {
   mulliganButtonStyle?: React.CSSProperties;
 };
 
-const actionMenuWrapperStyle: React.CSSProperties = {
-  position: 'absolute',
-  right: '10px',
-  bottom: '-32px',
-  width: '180px',
-  zIndex: 30,
-};
-
 const GameBoardTopHandSection: React.FC<GameBoardTopHandSectionProps> = ({
   columns,
   width,
@@ -54,36 +47,49 @@ const GameBoardTopHandSection: React.FC<GameBoardTopHandSectionProps> = ({
   mulliganLabel,
   onOpenMulligan,
   mulliganButtonStyle,
-}) => (
-  <GameBoardHandRow
-    columns={columns}
-    width={width}
-    centerWidth={centerWidth}
-    justifyCenter={justifyCenter}
-    minHeight={minHeight}
-  >
-    <Zone {...zoneProps} />
+}) => {
+  const inputProfile = useGameBoardInputProfile();
+  const isCompactInput = inputProfile === 'coarse';
+  const actionMenuWrapperStyle: React.CSSProperties = {
+    position: 'absolute',
+    right: isCompactInput ? '8px' : '10px',
+    bottom: isCompactInput ? '8px' : '-32px',
+    width: isCompactInput ? '164px' : '180px',
+    zIndex: 30,
+  };
 
-    {showActionMenu && (
-      <div style={actionMenuWrapperStyle}>
-        <GameBoardZoneActionsSection
-          menuId={actionMenu.menuId}
-          activeMenuId={activeMenuId}
-          actionsLabel={actionMenu.actionsLabel}
-          actions={actionMenu.actions}
-          onActiveMenuChange={onActiveMenuChange}
+  return (
+    <GameBoardHandRow
+      columns={columns}
+      width={width}
+      centerWidth={centerWidth}
+      justifyCenter={justifyCenter}
+      minHeight={minHeight}
+    >
+      <Zone {...zoneProps} />
+
+      {showActionMenu && (
+        <div style={actionMenuWrapperStyle}>
+          <GameBoardZoneActionsSection
+            menuId={actionMenu.menuId}
+            activeMenuId={activeMenuId}
+            actionsLabel={actionMenu.actionsLabel}
+            actions={actionMenu.actions}
+            direction={isCompactInput ? 'up' : 'down'}
+            onActiveMenuChange={onActiveMenuChange}
+          />
+        </div>
+      )}
+
+      {showMulliganButton && mulliganLabel && onOpenMulligan && mulliganButtonStyle && (
+        <GameBoardMulliganButton
+          label={mulliganLabel}
+          onClick={onOpenMulligan}
+          style={mulliganButtonStyle}
         />
-      </div>
-    )}
-
-    {showMulliganButton && mulliganLabel && onOpenMulligan && mulliganButtonStyle && (
-      <GameBoardMulliganButton
-        label={mulliganLabel}
-        onClick={onOpenMulligan}
-        style={mulliganButtonStyle}
-      />
-    )}
-  </GameBoardHandRow>
-);
+      )}
+    </GameBoardHandRow>
+  );
+};
 
 export default GameBoardTopHandSection;

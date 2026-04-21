@@ -433,12 +433,14 @@
       "stand": "スタンド",
       "attack": "攻撃",
       "quickActions": {
+        "inspect": "詳細",
         "sendToBottom": "山下",
         "cemetery": "墓地",
         "banish": "消滅",
         "toEvolveDeck": "進化へ"
       },
       "quickActionDescriptions": {
+        "inspect": "カード詳細を表示",
         "sendToBottom": "山札の下に送る",
         "cemetery": "墓地に送る",
         "banish": "消滅させる",

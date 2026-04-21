@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import Card, { type CardInstance } from './Card';
+import GameBoardInputProfileProvider from '../contexts/GameBoardInputProfileProvider';
 
 const dndState = {
   transform: null as null | { x: number; y: number },
@@ -32,6 +33,15 @@ const createCard = (overrides: Partial<CardInstance> = {}): CardInstance => ({
   counters: { atk: 1, hp: 2 },
   ...overrides,
 });
+
+const renderWithInputProfile = (
+  profile: 'fine' | 'coarse',
+  ui: React.ReactElement
+) => render(
+  <GameBoardInputProfileProvider value={profile}>
+    {ui}
+  </GameBoardInputProfileProvider>
+);
 
 describe('Card', () => {
   it('rotates tapped cards and combines rotation with drag transform', () => {
@@ -396,6 +406,199 @@ describe('Card', () => {
     );
 
     expect(screen.getByTestId('card-controls')).toHaveStyle({ pointerEvents: 'none' });
+  });
+
+  it('keeps quick actions hidden by default for coarse input until card tap', () => {
+    const onSendToBottom = vi.fn();
+
+    renderWithInputProfile(
+      'coarse',
+      <Card
+        card={createCard()}
+        onSendToBottom={onSendToBottom}
+      />
+    );
+
+    expect(screen.queryByTestId('card-coarse-action-sheet')).not.toBeInTheDocument();
+
+    const cardElement = screen.getByAltText('Test Card').closest('.game-card') as HTMLElement;
+    fireEvent.pointerDown(cardElement, { clientX: 10, clientY: 20, button: 0 });
+    fireEvent.pointerUp(cardElement, { clientX: 10, clientY: 20, button: 0 });
+
+    expect(screen.getByTestId('card-coarse-action-sheet')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send to bottom of deck' }));
+    expect(onSendToBottom).toHaveBeenCalledWith('card-1');
+  });
+
+  it('does not open quick actions for coarse input when drag threshold is exceeded', () => {
+    renderWithInputProfile(
+      'coarse',
+      <Card
+        card={createCard()}
+        onSendToBottom={vi.fn()}
+      />
+    );
+
+    const cardElement = screen.getByAltText('Test Card').closest('.game-card') as HTMLElement;
+    fireEvent.pointerDown(cardElement, { clientX: 10, clientY: 20, button: 0 });
+    fireEvent.pointerUp(cardElement, { clientX: 24, clientY: 20, button: 0 });
+
+    expect(screen.queryByTestId('card-coarse-action-sheet')).not.toBeInTheDocument();
+  });
+
+  it('renders larger coarse action-sheet buttons for touch usability', () => {
+    renderWithInputProfile(
+      'coarse',
+      <Card
+        card={createCard()}
+        onSendToBottom={vi.fn()}
+      />
+    );
+
+    const cardElement = screen.getByAltText('Test Card').closest('.game-card') as HTMLElement;
+    fireEvent.pointerDown(cardElement, { clientX: 10, clientY: 20, button: 0 });
+    fireEvent.pointerUp(cardElement, { clientX: 10, clientY: 20, button: 0 });
+
+    expect(screen.getByRole('button', { name: 'Send to bottom of deck' })).toHaveStyle({ minHeight: '34px' });
+  });
+
+  it('keeps coarse action sheet scrollable within viewport height', () => {
+    renderWithInputProfile(
+      'coarse',
+      <Card
+        card={createCard({ isEvolveCard: true })}
+        onSendToBottom={vi.fn()}
+        onCemetery={vi.fn()}
+        onBanish={vi.fn()}
+        onReturnEvolve={vi.fn()}
+        onTap={vi.fn()}
+        onAttack={vi.fn()}
+        onModifyCounter={vi.fn()}
+        onModifyGenericCounter={vi.fn()}
+        onInspect={vi.fn()}
+      />
+    );
+
+    const cardElement = screen.getByAltText('Test Card').closest('.game-card') as HTMLElement;
+    fireEvent.pointerDown(cardElement, { clientX: 10, clientY: 20, button: 0 });
+    fireEvent.pointerUp(cardElement, { clientX: 10, clientY: 20, button: 0 });
+
+    expect(screen.getByTestId('card-coarse-action-sheet')).toHaveStyle({
+      position: 'fixed',
+      overflowY: 'auto',
+    });
+  });
+
+  it('does not open inspector when coarse action sheet is toggled', () => {
+    const onInspect = vi.fn();
+
+    renderWithInputProfile(
+      'coarse',
+      <Card
+        card={createCard()}
+        onSendToBottom={vi.fn()}
+        onInspect={onInspect}
+      />
+    );
+
+    const cardElement = screen.getByAltText('Test Card').closest('.game-card') as HTMLElement;
+    fireEvent.pointerDown(cardElement, { clientX: 10, clientY: 20, button: 0 });
+    fireEvent.pointerUp(cardElement, { clientX: 10, clientY: 20, button: 0 });
+
+    expect(screen.getByTestId('card-coarse-action-sheet')).toBeInTheDocument();
+    expect(onInspect).not.toHaveBeenCalled();
+  });
+
+  it('opens inspector from coarse action sheet details button', () => {
+    const onInspect = vi.fn();
+
+    renderWithInputProfile(
+      'coarse',
+      <Card
+        card={createCard()}
+        onSendToBottom={vi.fn()}
+        onInspect={onInspect}
+      />
+    );
+
+    const cardElement = screen.getByAltText('Test Card').closest('.game-card') as HTMLElement;
+    fireEvent.pointerDown(cardElement, { clientX: 10, clientY: 20, button: 0 });
+    fireEvent.pointerUp(cardElement, { clientX: 10, clientY: 20, button: 0 });
+
+    const detailsButton = screen.getByRole('button', { name: 'View card details' });
+    fireEvent.click(detailsButton);
+
+    expect(onInspect).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'card-1' }),
+      expect.objectContaining({
+        top: expect.any(Number),
+        left: expect.any(Number),
+        right: expect.any(Number),
+        bottom: expect.any(Number),
+      })
+    );
+    expect(screen.queryByTestId('card-coarse-action-sheet')).not.toBeInTheDocument();
+  });
+
+  it('renders coarse action sheet outside rotated card container', () => {
+    renderWithInputProfile(
+      'coarse',
+      <Card
+        card={createCard({ isTapped: true })}
+        onSendToBottom={vi.fn()}
+      />
+    );
+
+    const cardElement = screen.getByAltText('Test Card').closest('.game-card') as HTMLElement;
+    fireEvent.pointerDown(cardElement, { clientX: 10, clientY: 20, button: 0 });
+    fireEvent.pointerUp(cardElement, { clientX: 10, clientY: 20, button: 0 });
+
+    const actionSheet = screen.getByTestId('card-coarse-action-sheet');
+    expect(cardElement.contains(actionSheet)).toBe(false);
+    expect(actionSheet.parentElement).toBe(document.body);
+  });
+
+  it('uses high-contrast text colors for coarse action-sheet buttons', () => {
+    renderWithInputProfile(
+      'coarse',
+      <Card
+        card={createCard({ isEvolveCard: true, isTapped: false })}
+        onReturnEvolve={vi.fn()}
+        onTap={vi.fn()}
+      />
+    );
+
+    const cardElement = screen.getByAltText('Test Card').closest('.game-card') as HTMLElement;
+    fireEvent.pointerDown(cardElement, { clientX: 10, clientY: 20, button: 0 });
+    fireEvent.pointerUp(cardElement, { clientX: 10, clientY: 20, button: 0 });
+
+    expect(screen.getByRole('button', { name: 'Return to evolve deck' })).toHaveStyle({ color: 'rgb(255, 255, 255)' });
+    expect(screen.getByRole('button', { name: 'REST' })).toHaveStyle({ color: 'rgb(255, 255, 255)' });
+  });
+
+  it('disables browser touch gestures on coarse input to keep dragging smooth', () => {
+    renderWithInputProfile(
+      'coarse',
+      <Card
+        card={createCard()}
+      />
+    );
+
+    const cardElement = screen.getByAltText('Test Card').closest('.game-card') as HTMLElement;
+    expect(cardElement).toHaveStyle({ touchAction: 'none' });
+  });
+
+  it('uses compact card dimensions for coarse input', () => {
+    renderWithInputProfile(
+      'coarse',
+      <Card
+        card={createCard()}
+      />
+    );
+
+    const cardElement = screen.getByAltText('Test Card').closest('.game-card') as HTMLElement;
+    expect(cardElement).toHaveStyle({ width: '76px', height: '106px' });
   });
 
   it('does not show current stats for hand cards even if base stats are available', () => {

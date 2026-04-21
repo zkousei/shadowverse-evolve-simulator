@@ -28,6 +28,7 @@ import GameBoardTopHandSection from '../components/GameBoardTopHandSection';
 import GameBoardTopNDialog from '../components/GameBoardTopNDialog';
 import GameBoardTokenSpawnDialog from '../components/GameBoardTokenSpawnDialog';
 import GameBoardUndoTurnDialog from '../components/GameBoardUndoTurnDialog';
+import GameBoardInputProfileProvider from '../contexts/GameBoardInputProfileProvider';
 import {
   buildMainDeckZoneActions,
   buildRandomDiscardHandZoneActions,
@@ -45,25 +46,65 @@ import type { AttackTarget } from '../types/sync';
 import {
   formatSavedSessionTimestamp,
 } from '../utils/gameBoardPresentation';
+import { resolveInputProfile } from '../utils/gameBoardInputProfile';
 import {
   shouldDismissModalOnBackdropClick,
 } from '../utils/gameBoardDismissals';
 import {
   activeBoardSectionStyle,
-  boardColumns,
-  boardContentWidth,
-  boardShellColumns,
-  centerZoneWidth,
-  sidePanelWidth,
-  sideZoneWidth,
+  resolveBoardLayout,
   soloMulliganButtonStyle,
-  topPanelWidth,
 } from './gameBoardLayout';
 import {
   getAttackTargetFromCard as resolveAttackTargetFromCard,
 } from '../utils/gameBoardCombat';
 
 const GameBoard: React.FC = () => {
+  const [viewportWidth, setViewportWidth] = React.useState(() => (
+    typeof window === 'undefined' ? 1280 : window.innerWidth
+  ));
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const handleResize = () => {
+      setViewportWidth(window.innerWidth);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const inputProfile = React.useMemo(
+    () => resolveInputProfile(viewportWidth),
+    [viewportWidth]
+  );
+  const isCompactBoard = inputProfile === 'coarse';
+  const boardShellPadding = isCompactBoard ? '0.52rem' : '1rem';
+  const boardShellGap = isCompactBoard ? '0.48rem' : '1rem';
+  const playmatPadding = isCompactBoard ? '0.42rem' : '1rem';
+  const playmatGap = isCompactBoard ? '0.24rem' : '0.5rem';
+  const boardSectionPadding = isCompactBoard ? '0.28rem 0.32rem' : '0.55rem 0.6rem';
+  const boardSectionGap = isCompactBoard ? '0.22rem' : '0.5rem';
+  const boardShellColumnGap = isCompactBoard ? '0.5rem' : '1rem';
+  const boardColumnStackGap = isCompactBoard ? '0.34rem' : '0.65rem';
+  const boardSectionDividerMargin = isCompactBoard ? '0.4rem 0' : '1rem 0';
+  const stackZoneMinHeight = isCompactBoard ? '110px' : '150px';
+  const fieldZoneMinHeight = isCompactBoard ? '124px' : '160px';
+  const handZoneMinHeight = isCompactBoard ? '116px' : '150px';
+  const bottomHandZoneMinHeight = isCompactBoard ? '124px' : '160px';
+  const {
+    profile: layoutProfile,
+    sidePanelWidth,
+    topPanelWidth,
+    sideZoneWidth,
+    centerZoneWidth,
+    boardContentWidth,
+    boardColumns,
+    boardShellColumns,
+  } = React.useMemo(
+    () => resolveBoardLayout(viewportWidth, inputProfile),
+    [viewportWidth, inputProfile]
+  );
   const { t } = useTranslation();
   const {
     room, isSoloMode, isHost, isSpectator, role, status, connectionState, canInteract, canView, attemptReconnect, gameState, savedSessionCandidate, resumeSavedSession, discardSavedSession, searchZone, setSearchZone,
@@ -394,7 +435,7 @@ const GameBoard: React.FC = () => {
     columns: boardColumns,
     width: boardContentWidth,
     centerWidth: centerZoneWidth,
-    minHeight: '150px',
+    minHeight: handZoneMinHeight,
     zoneProps: {
       id: `hand-${topRole}`,
       label: t('gameBoard.zones.hand', { label: topLabel }),
@@ -412,7 +453,7 @@ const GameBoard: React.FC = () => {
       onBanish: handleBanish,
       onCemetery: handleSendToCemetery,
       onPlayToField: (cardId: string) => handlePlayToField(cardId, topRole),
-      containerStyle: { minHeight: '150px' },
+      containerStyle: { minHeight: handZoneMinHeight },
     },
     activeMenuId: activeZoneActions,
     onActiveMenuChange: setActiveZoneActions,
@@ -439,7 +480,7 @@ const GameBoard: React.FC = () => {
       isProtected: true,
       lockCards: isPreparingHandMoveLocked,
       viewerRole,
-      containerStyle: { minHeight: '150px' },
+      containerStyle: { minHeight: handZoneMinHeight },
     },
     activeMenuId: activeZoneActions,
     onActiveMenuChange: setActiveZoneActions,
@@ -462,7 +503,7 @@ const GameBoard: React.FC = () => {
       isProtected: true,
       lockCards: isPreparingHandMoveLocked,
       viewerRole,
-      containerStyle: { minHeight: '160px' },
+      containerStyle: { minHeight: bottomHandZoneMinHeight },
       isDebug,
     },
     activeMenuId: activeZoneActions,
@@ -555,7 +596,12 @@ const GameBoard: React.FC = () => {
       if (!canInteract) return;
       handleDragEnd(event);
     }}>
-      <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', height: '100%', gap: '1rem', overflow: 'hidden' }}>
+      <GameBoardInputProfileProvider value={inputProfile}>
+        <div
+          data-layout-profile={layoutProfile}
+          data-input-profile={inputProfile}
+          style={{ padding: boardShellPadding, display: 'flex', flexDirection: 'column', height: '100%', gap: boardShellGap, overflow: 'hidden' }}
+        >
 
         <GameBoardHeader
           room={room}
@@ -622,16 +668,19 @@ const GameBoard: React.FC = () => {
         )}
 
         {/* Board Playmat */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'url("https://shadowverse-evolve.com/wordpress/wp-content/themes/shadowverse-evolve-release_v0/assets/images/common/bg.jpg")', backgroundSize: 'cover', backgroundPosition: 'center', borderRadius: 'var(--radius-lg)', padding: '1rem', overflowY: 'auto', alignItems: 'center' }}>
+        <div
+          data-testid="board-playmat"
+          style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: playmatGap, background: 'url("https://shadowverse-evolve.com/wordpress/wp-content/themes/shadowverse-evolve-release_v0/assets/images/common/bg.jpg")', backgroundSize: 'cover', backgroundPosition: 'center', borderRadius: 'var(--radius-lg)', padding: playmatPadding, overflowY: 'auto', overflowX: 'auto', alignItems: 'center' }}
+        >
 
           {/* OPPONENT BOARD */}
           <div
             data-testid="board-section-top"
             data-turn-active={String(shouldHighlightTopBoard)}
-            style={{ ...activeBoardSectionStyle(shouldHighlightTopBoard), opacity: 0.9 }}
+            style={{ ...activeBoardSectionStyle(shouldHighlightTopBoard), padding: boardSectionPadding, gap: boardSectionGap, opacity: 0.9 }}
           >
             {isSoloMode ? (
-              <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: '1rem', alignItems: 'flex-start', width: '100%', maxWidth: '1568px', justifyContent: 'center' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: boardShellColumnGap, alignItems: 'flex-start', width: '100%', maxWidth: '1568px', justifyContent: 'center' }}>
                 <GameBoardPlayerControlsPanel
                   {...topControlsPanelProps}
                   middleControls={
@@ -650,12 +699,12 @@ const GameBoard: React.FC = () => {
                   readOnlyTracker={isSpectator}
                 />
 
-                <div style={{ width: `${boardContentWidth}px`, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.65rem', alignItems: 'flex-start' }}>
+                <div style={{ width: `${boardContentWidth}px`, minWidth: 0, display: 'flex', flexDirection: 'column', gap: boardColumnStackGap, alignItems: 'flex-start' }}>
                   <GameBoardTopHandSection {...topSoloHandSectionProps} />
 
                   <GameBoardBoardRow columns={boardColumns} width={boardContentWidth}>
                     <GameBoardSearchableStackSection
-                      zoneProps={{ id: `cemetery-${topRole}`, label: t('gameBoard.zones.cemetery', { label: topLabel }), cards: getCards(`cemetery-${topRole}`), cardDetailLookup, layout: 'stack', onInspectCard: handleInspectCard, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: '150px' }, isDebug }}
+                      zoneProps={{ id: `cemetery-${topRole}`, label: t('gameBoard.zones.cemetery', { label: topLabel }), cards: getCards(`cemetery-${topRole}`), cardDetailLookup, layout: 'stack', onInspectCard: handleInspectCard, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: stackZoneMinHeight }, isDebug }}
                       searchLabel={t('gameBoard.zones.search')}
                       onSearch={() => openSearchZone(`cemetery-${topRole}`, t('gameBoard.zones.cemetery', { label: topLabel }))}
                       searchTitle={interactionBlockedTitle}
@@ -677,10 +726,10 @@ const GameBoard: React.FC = () => {
                       onReturnEvolve={handleReturnEvolve}
                       onCemetery={handleSendToCemetery}
                       onPlayToField={(cardId) => handlePlayToField(cardId, topRole)}
-                      containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: '150px', flex: 'none', width: `${centerZoneWidth}px` }}
+                      containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: stackZoneMinHeight, flex: 'none', width: `${centerZoneWidth}px` }}
                       />
                     <GameBoardSearchableStackSection
-                      zoneProps={{ id: `banish-${topRole}`, label: t('gameBoard.zones.banish', { label: topLabel }), cards: getCards(`banish-${topRole}`), cardDetailLookup, layout: 'stack', onInspectCard: handleInspectCard, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: '150px' }, isDebug }}
+                      zoneProps={{ id: `banish-${topRole}`, label: t('gameBoard.zones.banish', { label: topLabel }), cards: getCards(`banish-${topRole}`), cardDetailLookup, layout: 'stack', onInspectCard: handleInspectCard, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: stackZoneMinHeight }, isDebug }}
                       searchLabel={t('gameBoard.zones.search')}
                       onSearch={() => openSearchZone(`banish-${topRole}`, t('gameBoard.zones.banish', { label: topLabel }))}
                       searchTitle={interactionBlockedTitle}
@@ -712,7 +761,7 @@ const GameBoard: React.FC = () => {
                     }
                   >
                       <GameBoardMainDeckSection
-                        zoneProps={{ id: `mainDeck-${topRole}`, label: t('gameBoard.zones.mainDeck', { label: topLabel }), cards: getCards(`mainDeck-${topRole}`), cardDetailLookup, layout: 'stack', isProtected: true, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: '150px' }, isDebug }}
+                        zoneProps={{ id: `mainDeck-${topRole}`, label: t('gameBoard.zones.mainDeck', { label: topLabel }), cards: getCards(`mainDeck-${topRole}`), cardDetailLookup, layout: 'stack', isProtected: true, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: stackZoneMinHeight }, isDebug }}
                         menuId={topMainDeckZoneActions.menuId}
                         activeMenuId={activeZoneActions}
                         actionsLabel={topMainDeckZoneActions.actionsLabel}
@@ -739,11 +788,11 @@ const GameBoard: React.FC = () => {
                         onPlayToField={(cardId) => handlePlayToField(cardId, topRole)}
                         disableQuickActionsForCard={shouldDisableQuickActionsForAttackTarget}
                         viewerRole={viewerRole}
-                        containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: '160px', width: `${centerZoneWidth}px`, flex: 'none' }}
+                        containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: fieldZoneMinHeight, width: `${centerZoneWidth}px`, flex: 'none' }}
                         isDebug={isDebug}
                       />
                       <GameBoardSearchableStackSection
-                        zoneProps={{ id: `evolveDeck-${topRole}`, label: t('gameBoard.zones.evolveDeck', { label: topLabel }), cards: getCards(`evolveDeck-${topRole}`), cardDetailLookup, layout: 'stack', onInspectCard: handleInspectCard, isProtected: true, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: '150px' }, isDebug }}
+                        zoneProps={{ id: `evolveDeck-${topRole}`, label: t('gameBoard.zones.evolveDeck', { label: topLabel }), cards: getCards(`evolveDeck-${topRole}`), cardDetailLookup, layout: 'stack', onInspectCard: handleInspectCard, isProtected: true, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: stackZoneMinHeight }, isDebug }}
                         searchLabel={t('gameBoard.zones.search')}
                         onSearch={() => openSearchZone(`evolveDeck-${topRole}`, t('gameBoard.zones.evolveDeck', { label: topLabel }))}
                         searchTitle={interactionBlockedTitle}
@@ -754,7 +803,7 @@ const GameBoard: React.FC = () => {
                 <div />
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: '1rem', alignItems: 'flex-start', width: '100%', maxWidth: '1568px', justifyContent: 'center' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: boardShellColumnGap, alignItems: 'flex-start', width: '100%', maxWidth: '1568px', justifyContent: 'center' }}>
                 <div style={{ width: `${topPanelWidth}px`, alignSelf: 'end' }}>
                   <GameBoardReadOnlyStatusSection
                     label={topLabel}
@@ -762,12 +811,12 @@ const GameBoard: React.FC = () => {
                   />
                 </div>
 
-                <div style={{ width: `${boardContentWidth}px`, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.65rem', alignItems: 'flex-start' }}>
+                <div style={{ width: `${boardContentWidth}px`, minWidth: 0, display: 'flex', flexDirection: 'column', gap: boardColumnStackGap, alignItems: 'flex-start' }}>
                   <GameBoardTopHandSection {...topReadOnlyHandSectionProps} />
 
                   <GameBoardBoardRow columns={boardColumns} width={boardContentWidth}>
                     <GameBoardSearchableStackSection
-                      zoneProps={{ id: `cemetery-${topRole}`, label: t('gameBoard.zones.cemetery', { label: topLabel }), cards: getCards(`cemetery-${topRole}`), cardDetailLookup, layout: 'stack', onInspectCard: handleInspectCard, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: '150px' }, isDebug }}
+                      zoneProps={{ id: `cemetery-${topRole}`, label: t('gameBoard.zones.cemetery', { label: topLabel }), cards: getCards(`cemetery-${topRole}`), cardDetailLookup, layout: 'stack', onInspectCard: handleInspectCard, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: stackZoneMinHeight }, isDebug }}
                       searchLabel={t('gameBoard.zones.search')}
                       onSearch={() => openSearchZone(`cemetery-${topRole}`, t('gameBoard.zones.cemetery', { label: topLabel }))}
                     />
@@ -780,10 +829,10 @@ const GameBoard: React.FC = () => {
                       onInspectCard={handleInspectCard}
                       isProtected={false}
                       viewerRole={viewerRole}
-                      containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: '150px', flex: 'none', width: `${centerZoneWidth}px` }}
+                      containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: stackZoneMinHeight, flex: 'none', width: `${centerZoneWidth}px` }}
                     />
                     <GameBoardSearchableStackSection
-                      zoneProps={{ id: `banish-${topRole}`, label: t('gameBoard.zones.banish', { label: topLabel }), cards: getCards(`banish-${topRole}`), cardDetailLookup, layout: 'stack', onInspectCard: handleInspectCard, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: '150px' }, isDebug }}
+                      zoneProps={{ id: `banish-${topRole}`, label: t('gameBoard.zones.banish', { label: topLabel }), cards: getCards(`banish-${topRole}`), cardDetailLookup, layout: 'stack', onInspectCard: handleInspectCard, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: stackZoneMinHeight }, isDebug }}
                       searchLabel={t('gameBoard.zones.search')}
                       onSearch={() => openSearchZone(`banish-${topRole}`, t('gameBoard.zones.banish', { label: topLabel }))}
                     />
@@ -813,7 +862,7 @@ const GameBoard: React.FC = () => {
                     }
                   >
                       <GameBoardMainDeckSection
-                        zoneProps={{ id: `mainDeck-${topRole}`, label: t('gameBoard.zones.mainDeck', { label: topLabel }), cards: getCards(`mainDeck-${topRole}`), cardDetailLookup, layout: 'stack', isProtected: true, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: '150px' }, isDebug }}
+                        zoneProps={{ id: `mainDeck-${topRole}`, label: t('gameBoard.zones.mainDeck', { label: topLabel }), cards: getCards(`mainDeck-${topRole}`), cardDetailLookup, layout: 'stack', isProtected: true, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: stackZoneMinHeight }, isDebug }}
                         menuId={topReadOnlyMainDeckZoneActions.menuId}
                         activeMenuId={activeZoneActions}
                         actionsLabel={topReadOnlyMainDeckZoneActions.actionsLabel}
@@ -833,11 +882,11 @@ const GameBoard: React.FC = () => {
                         onCemetery={handleSendToCemetery}
                         disableQuickActionsForCard={shouldDisableQuickActionsForAttackTarget}
                         viewerRole={viewerRole}
-                        containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: '160px', width: `${centerZoneWidth}px`, flex: 'none' }}
+                        containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: fieldZoneMinHeight, width: `${centerZoneWidth}px`, flex: 'none' }}
                         isDebug={isDebug}
                       />
                       <GameBoardSearchableStackSection
-                        zoneProps={{ id: `evolveDeck-${topRole}`, label: t('gameBoard.zones.evolveDeck', { label: topLabel }), cards: getCards(`evolveDeck-${topRole}`), cardDetailLookup, layout: 'stack', onInspectCard: handleInspectCard, isProtected: true, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: '150px' }, isDebug }}
+                        zoneProps={{ id: `evolveDeck-${topRole}`, label: t('gameBoard.zones.evolveDeck', { label: topLabel }), cards: getCards(`evolveDeck-${topRole}`), cardDetailLookup, layout: 'stack', onInspectCard: handleInspectCard, isProtected: true, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: stackZoneMinHeight }, isDebug }}
                         searchLabel={t('common.buttons.search')}
                         onSearch={() => openSearchZone(`evolveDeck-${topRole}`, t('gameBoard.zones.evolveDeck', { label: topLabel }))}
                       />
@@ -848,17 +897,17 @@ const GameBoard: React.FC = () => {
             )}
           </div>
 
-          <hr style={{ borderColor: 'rgba(255,255,255,0.1)', margin: '1rem 0' }} />
+          <hr style={{ borderColor: 'rgba(255,255,255,0.1)', margin: boardSectionDividerMargin }} />
 
           {/* MY BOARD */}
           <div
             data-testid="board-section-bottom"
             data-turn-active={String(isBottomTurnActive)}
-            style={activeBoardSectionStyle(isBottomTurnActive)}
+            style={{ ...activeBoardSectionStyle(isBottomTurnActive), padding: boardSectionPadding, gap: boardSectionGap }}
           >
-	            <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: '1rem', alignItems: 'flex-start', width: '100%', maxWidth: '1568px', justifyContent: 'center' }}>
+		            <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: boardShellColumnGap, alignItems: 'flex-start', width: '100%', maxWidth: '1568px', justifyContent: 'center' }}>
                 <div />
-	              <div style={{ width: `${boardContentWidth}px`, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.65rem', alignItems: 'flex-start' }}>
+		              <div style={{ width: `${boardContentWidth}px`, minWidth: 0, display: 'flex', flexDirection: 'column', gap: boardColumnStackGap, alignItems: 'flex-start' }}>
 	                <GameBoardBoardRow
                     columns={boardColumns}
                     width={boardContentWidth}
@@ -882,15 +931,15 @@ const GameBoard: React.FC = () => {
                     }
                   >
                   <GameBoardSearchableStackSection
-                    zoneProps={{ id: `evolveDeck-${bottomRole}`, label: t('gameBoard.zones.evolveDeck', { label: bottomLabel }), cards: getCards(`evolveDeck-${bottomRole}`), cardDetailLookup, layout: 'stack', onInspectCard: handleInspectCard, isProtected: true, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: '150px' }, isDebug }}
+                    zoneProps={{ id: `evolveDeck-${bottomRole}`, label: t('gameBoard.zones.evolveDeck', { label: bottomLabel }), cards: getCards(`evolveDeck-${bottomRole}`), cardDetailLookup, layout: 'stack', onInspectCard: handleInspectCard, isProtected: true, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: stackZoneMinHeight }, isDebug }}
                     searchLabel={t('common.buttons.search')}
                     onSearch={() => openSearchZone(`evolveDeck-${bottomRole}`, t('gameBoard.zones.evolveDeck', { label: bottomLabel }))}
                     searchTitle={interactionBlockedTitle}
                     isSearchInteractive={canView}
                   />
-                  <Zone id={`field-${bottomRole}`} label={t('gameBoard.zones.field', { label: bottomLabel })} cards={getCards(`field-${bottomRole}`)} cardStatLookup={cardStatLookup} cardDetailLookup={cardDetailLookup} getHighlightTone={getAttackHighlightTone} onInspectCard={handleInspectCard} onAttack={gameState.turnPlayer === bottomRole ? handleStartAttack : undefined} onTap={toggleTap} onModifyCounter={handleModifyCounter} onModifyGenericCounter={handleModifyGenericCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} disableQuickActionsForCard={shouldDisableQuickActionsForAttackTarget} viewerRole={viewerRole} containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: '160px', width: `${centerZoneWidth}px`, flex: 'none' }} isDebug={isDebug} />
+                  <Zone id={`field-${bottomRole}`} label={t('gameBoard.zones.field', { label: bottomLabel })} cards={getCards(`field-${bottomRole}`)} cardStatLookup={cardStatLookup} cardDetailLookup={cardDetailLookup} getHighlightTone={getAttackHighlightTone} onInspectCard={handleInspectCard} onAttack={gameState.turnPlayer === bottomRole ? handleStartAttack : undefined} onTap={toggleTap} onModifyCounter={handleModifyCounter} onModifyGenericCounter={handleModifyGenericCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} disableQuickActionsForCard={shouldDisableQuickActionsForAttackTarget} viewerRole={viewerRole} containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: fieldZoneMinHeight, width: `${centerZoneWidth}px`, flex: 'none' }} isDebug={isDebug} />
                   <GameBoardMainDeckSection
-                    zoneProps={{ id: `mainDeck-${bottomRole}`, label: t('gameBoard.zones.mainDeck', { label: bottomLabel }), cards: getCards(`mainDeck-${bottomRole}`), cardDetailLookup, layout: 'stack', isProtected: true, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: '150px' }, isDebug }}
+                    zoneProps={{ id: `mainDeck-${bottomRole}`, label: t('gameBoard.zones.mainDeck', { label: bottomLabel }), cards: getCards(`mainDeck-${bottomRole}`), cardDetailLookup, layout: 'stack', isProtected: true, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: stackZoneMinHeight }, isDebug }}
                     menuId={bottomMainDeckZoneActions.menuId}
                     activeMenuId={activeZoneActions}
                     actionsLabel={bottomMainDeckZoneActions.actionsLabel}
@@ -901,15 +950,15 @@ const GameBoard: React.FC = () => {
 
 	                <GameBoardBoardRow columns={boardColumns} width={boardContentWidth}>
                   <GameBoardSearchableStackSection
-                    zoneProps={{ id: `banish-${bottomRole}`, label: t('gameBoard.zones.banish', { label: bottomLabel }), cards: getCards(`banish-${bottomRole}`), cardDetailLookup, layout: 'stack', onInspectCard: handleInspectCard, onModifyCounter: handleModifyCounter, onSendToBottom: handleSendToBottom, onCemetery: handleSendToCemetery, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: '150px' }, isDebug }}
+                    zoneProps={{ id: `banish-${bottomRole}`, label: t('gameBoard.zones.banish', { label: bottomLabel }), cards: getCards(`banish-${bottomRole}`), cardDetailLookup, layout: 'stack', onInspectCard: handleInspectCard, onModifyCounter: handleModifyCounter, onSendToBottom: handleSendToBottom, onCemetery: handleSendToCemetery, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: stackZoneMinHeight }, isDebug }}
                     searchLabel={t('common.buttons.search')}
                     onSearch={() => openSearchZone(`banish-${bottomRole}`, t('gameBoard.zones.banish', { label: bottomLabel }))}
                     searchTitle={interactionBlockedTitle}
                     isSearchInteractive={canView}
                   />
-	                  <Zone id={`ex-${bottomRole}`} label={t('gameBoard.zones.exArea', { label: bottomLabel })} cards={getCards(`ex-${bottomRole}`)} cardStatLookup={cardStatLookup} cardDetailLookup={cardDetailLookup} onInspectCard={handleInspectCard} onModifyCounter={handleModifyCounter} onModifyGenericCounter={handleModifyGenericCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} viewerRole={viewerRole} containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: '150px', flex: 'none', width: `${centerZoneWidth}px` }} isDebug={isDebug} />
+		                  <Zone id={`ex-${bottomRole}`} label={t('gameBoard.zones.exArea', { label: bottomLabel })} cards={getCards(`ex-${bottomRole}`)} cardStatLookup={cardStatLookup} cardDetailLookup={cardDetailLookup} onInspectCard={handleInspectCard} onModifyCounter={handleModifyCounter} onModifyGenericCounter={handleModifyGenericCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} viewerRole={viewerRole} containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: stackZoneMinHeight, flex: 'none', width: `${centerZoneWidth}px` }} isDebug={isDebug} />
                   <GameBoardSearchableStackSection
-                    zoneProps={{ id: `cemetery-${bottomRole}`, label: t('gameBoard.zones.cemetery', { label: bottomLabel }), cards: getCards(`cemetery-${bottomRole}`), cardDetailLookup, layout: 'stack', onInspectCard: handleInspectCard, onModifyCounter: handleModifyCounter, onSendToBottom: handleSendToBottom, onBanish: handleBanish, onCemetery: handleSendToCemetery, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: '150px' }, isDebug }}
+                    zoneProps={{ id: `cemetery-${bottomRole}`, label: t('gameBoard.zones.cemetery', { label: bottomLabel }), cards: getCards(`cemetery-${bottomRole}`), cardDetailLookup, layout: 'stack', onInspectCard: handleInspectCard, onModifyCounter: handleModifyCounter, onSendToBottom: handleSendToBottom, onBanish: handleBanish, onCemetery: handleSendToCemetery, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: stackZoneMinHeight }, isDebug }}
                     searchLabel={t('common.buttons.search')}
                     onSearch={() => openSearchZone(`cemetery-${bottomRole}`, t('gameBoard.zones.cemetery', { label: bottomLabel }))}
                     searchTitle={interactionBlockedTitle}
@@ -1140,12 +1189,13 @@ const GameBoard: React.FC = () => {
         />
       )}
 
-      <GameBoardDialogsHost
-        savedDeckPicker={savedDeckPickerDialogProps}
-        evolveAutoAttach={evolveAutoAttachDialogProps}
-        searchShuffleConfirm={searchShuffleConfirmDialogProps}
-      />
-      <GameBoardCardInspectorSection {...cardInspectorSectionProps} />
+        <GameBoardDialogsHost
+          savedDeckPicker={savedDeckPickerDialogProps}
+          evolveAutoAttach={evolveAutoAttachDialogProps}
+          searchShuffleConfirm={searchShuffleConfirmDialogProps}
+        />
+        <GameBoardCardInspectorSection {...cardInspectorSectionProps} />
+      </GameBoardInputProfileProvider>
     </DndContext>
   );
 };

@@ -2,6 +2,7 @@ import React from 'react';
 import Zone from './Zone';
 import GameBoardMulliganButton from './GameBoardMulliganButton';
 import GameBoardZoneActionsSection from './GameBoardZoneActionsSection';
+import { useGameBoardInputProfile } from '../contexts/gameBoardInputProfileContext';
 
 type ZoneAction = {
   label: string;
@@ -32,14 +33,6 @@ type GameBoardBottomHandSectionProps = {
   mulliganButtonStyle: React.CSSProperties;
 };
 
-const actionMenuWrapperStyle: React.CSSProperties = {
-  position: 'absolute',
-  right: '10px',
-  bottom: '-32px',
-  width: '180px',
-  zIndex: 30,
-};
-
 const GameBoardBottomHandSection: React.FC<GameBoardBottomHandSectionProps> = ({
   width,
   zoneProps,
@@ -53,42 +46,56 @@ const GameBoardBottomHandSection: React.FC<GameBoardBottomHandSectionProps> = ({
   mulliganLabel,
   onOpenMulligan,
   mulliganButtonStyle,
-}) => (
-  <div style={{ width: `${width}px`, minHeight: '160px', position: 'relative' }}>
-    <Zone {...zoneProps} />
+}) => {
+  const inputProfile = useGameBoardInputProfile();
+  const isCompactInput = inputProfile === 'coarse';
+  const actionMenuWrapperStyle: React.CSSProperties = {
+    position: 'absolute',
+    right: isCompactInput ? '8px' : '10px',
+    bottom: isCompactInput ? '8px' : '-32px',
+    width: isCompactInput ? '164px' : '180px',
+    zIndex: 30,
+  };
 
-    {showRandomDiscardMenu && (
-      <div style={actionMenuWrapperStyle}>
-        <GameBoardZoneActionsSection
-          menuId={randomDiscardZoneActions.menuId}
-          activeMenuId={activeMenuId}
-          actionsLabel={randomDiscardZoneActions.actionsLabel}
-          actions={randomDiscardZoneActions.actions}
-          onActiveMenuChange={onActiveMenuChange}
+  return (
+    <div style={{ width: `${width}px`, minHeight: '160px', position: 'relative' }}>
+      <Zone {...zoneProps} />
+
+      {showRandomDiscardMenu && (
+        <div style={actionMenuWrapperStyle}>
+          <GameBoardZoneActionsSection
+            menuId={randomDiscardZoneActions.menuId}
+            activeMenuId={activeMenuId}
+            actionsLabel={randomDiscardZoneActions.actionsLabel}
+            actions={randomDiscardZoneActions.actions}
+            direction={isCompactInput ? 'up' : 'down'}
+            onActiveMenuChange={onActiveMenuChange}
+          />
+        </div>
+      )}
+
+      {showRevealHandMenu && (
+        <div style={actionMenuWrapperStyle}>
+          <GameBoardZoneActionsSection
+            menuId={revealHandZoneActions.menuId}
+            activeMenuId={activeMenuId}
+            actionsLabel={revealHandZoneActions.actionsLabel}
+            actions={revealHandZoneActions.actions}
+            direction={isCompactInput ? 'up' : 'down'}
+            onActiveMenuChange={onActiveMenuChange}
+          />
+        </div>
+      )}
+
+      {showMulliganButton && (
+        <GameBoardMulliganButton
+          label={mulliganLabel}
+          onClick={onOpenMulligan}
+          style={mulliganButtonStyle}
         />
-      </div>
-    )}
-
-    {showRevealHandMenu && (
-      <div style={actionMenuWrapperStyle}>
-        <GameBoardZoneActionsSection
-          menuId={revealHandZoneActions.menuId}
-          activeMenuId={activeMenuId}
-          actionsLabel={revealHandZoneActions.actionsLabel}
-          actions={revealHandZoneActions.actions}
-          onActiveMenuChange={onActiveMenuChange}
-        />
-      </div>
-    )}
-
-    {showMulliganButton && (
-      <GameBoardMulliganButton
-        label={mulliganLabel}
-        onClick={onOpenMulligan}
-        style={mulliganButtonStyle}
-      />
-    )}
-  </div>
-);
+      )}
+    </div>
+  );
+};
 
 export default GameBoardBottomHandSection;
