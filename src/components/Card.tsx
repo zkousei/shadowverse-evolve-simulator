@@ -1,6 +1,7 @@
 import React from 'react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { useTranslation } from 'react-i18next';
+import { createPortal } from 'react-dom';
 import type { BaseCardStats } from '../utils/cardStats';
 import { isMainDeckSpellCard, type RuntimeBaseCardType } from '../utils/cardType';
 import type { CardDetail } from '../utils/cardDetails';
@@ -65,6 +66,7 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
   const { t } = useTranslation();
   const inspectPointerStartRef = React.useRef<{ x: number; y: number } | null>(null);
   const cardElementRef = React.useRef<HTMLElement | null>(null);
+  const coarseActionSheetRef = React.useRef<HTMLDivElement | null>(null);
   const inputProfile = useGameBoardInputProfile();
   const [isQuickActionsOpen, setIsQuickActionsOpen] = React.useState(false);
   const isCoarseInput = inputProfile === 'coarse';
@@ -105,6 +107,7 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
     const handleDocumentPointerDown = (event: PointerEvent) => {
       const cardElement = cardElementRef.current;
       if (!cardElement) return;
+      if (coarseActionSheetRef.current?.contains(event.target as Node)) return;
       if (cardElement.contains(event.target as Node)) return;
       setIsQuickActionsOpen(false);
     };
@@ -139,12 +142,14 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
   const isNormalSpellPlay = isMainDeckSpellCard(card);
   const playActionLabel = isNormalSpellPlay ? t('gameBoard.card.play') : t('gameBoard.modals.search.playToField');
   const quickActionLabels = {
+    inspect: t('gameBoard.card.quickActions.inspect'),
     sendToBottom: t('gameBoard.card.quickActions.sendToBottom'),
     cemetery: t('gameBoard.card.quickActions.cemetery'),
     banish: t('gameBoard.card.quickActions.banish'),
     toEvolveDeck: t('gameBoard.card.quickActions.toEvolveDeck'),
   };
   const quickActionDescriptions = {
+    inspect: t('gameBoard.card.quickActionDescriptions.inspect'),
     sendToBottom: t('gameBoard.card.quickActionDescriptions.sendToBottom'),
     cemetery: t('gameBoard.card.quickActionDescriptions.cemetery'),
     banish: t('gameBoard.card.quickActionDescriptions.banish'),
@@ -167,6 +172,19 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
     border: '1px solid rgba(255,255,255,0.55)',
     fontWeight: 'bold',
     lineHeight: 1,
+  };
+  const coarseSheetButtonStyle: React.CSSProperties = {
+    minHeight: '44px',
+    width: '100%',
+    borderRadius: '8px',
+    fontSize: '0.86rem',
+    fontWeight: 700,
+    border: '1px solid rgba(255,255,255,0.25)',
+    padding: '0.5rem 0.75rem',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    lineHeight: 1.25,
   };
   const currentStats = !hideCurrentStats && isStatDisplayZone && !isHidden && !card.isFlipped && baseStats
     ? {
@@ -217,6 +235,7 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
 
         if (canToggleQuickActions) {
           setIsQuickActionsOpen(prev => !prev);
+          return;
         }
 
         const rect = (event.currentTarget as HTMLDivElement).getBoundingClientRect();
@@ -346,8 +365,8 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
             </div>
           )}
 
-          {/* Quick Edit Overlay - Only show if not hidden AND not locked */}
-          {canShowQuickActionOverlay && (
+          {/* Quick Edit Overlay - desktop/fine path */}
+          {canShowQuickActionOverlay && !isCoarseInput && (
             <div className="card-controls"
               data-testid="card-controls"
               data-quick-actions-open={String(isQuickActionsOpen)}
@@ -452,6 +471,227 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
                 </div>
               )}
             </div>
+          )}
+
+          {/* Coarse input uses an external action sheet with larger touch targets */}
+          {canShowQuickActionOverlay && isCoarseInput && isQuickActionsOpen && typeof document !== 'undefined' && createPortal(
+            <div
+              ref={coarseActionSheetRef}
+              data-testid="card-coarse-action-sheet"
+              style={{
+                position: 'fixed',
+                left: '50%',
+                bottom: '12px',
+                transform: 'translateX(-50%)',
+                width: 'min(92vw, 420px)',
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '0.45rem',
+                background: 'rgba(2, 6, 23, 0.97)',
+                border: '1px solid rgba(148, 163, 184, 0.35)',
+                borderRadius: '12px',
+                padding: '0.6rem',
+                boxShadow: '0 18px 30px rgba(0,0,0,0.45)',
+                zIndex: 1200,
+              }}
+            >
+              {onPlayToField && (card.zone.startsWith('hand') || card.zone.startsWith('ex-')) && (
+                <button
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onPlayToField(card.id);
+                    setIsQuickActionsOpen(false);
+                  }}
+                  style={{ ...coarseSheetButtonStyle, gridColumn: '1 / -1', background: '#2563eb', color: 'white' }}
+                >
+                  {playActionLabel}
+                </button>
+              )}
+
+              {onInspect && !card.isFlipped && (
+                <button
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const rect = cardElementRef.current?.getBoundingClientRect();
+                    if (!rect) return;
+                    onInspect(card, {
+                      top: rect.top,
+                      left: rect.left,
+                      right: rect.right,
+                      bottom: rect.bottom,
+                      width: rect.width,
+                      height: rect.height,
+                    });
+                    setIsQuickActionsOpen(false);
+                  }}
+                  title={quickActionDescriptions.inspect}
+                  aria-label={quickActionDescriptions.inspect}
+                  style={{ ...coarseSheetButtonStyle, gridColumn: '1 / -1', background: '#0f172a', color: 'white' }}
+                >
+                  {quickActionDescriptions.inspect}
+                </button>
+              )}
+
+              {onModifyCounter && isStatDisplayZone && !disableCombatAndCounterControls && (
+                <>
+                  <button
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onModifyCounter(card.id, 'atk', 1);
+                    }}
+                    style={{ ...coarseSheetButtonStyle, background: '#3b82f6', color: '#fff' }}
+                  >
+                    +ATK
+                  </button>
+                  <button
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onModifyCounter(card.id, 'atk', -1);
+                    }}
+                    style={{ ...coarseSheetButtonStyle, background: '#1e293b', color: '#fff' }}
+                  >
+                    -ATK
+                  </button>
+                  <button
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onModifyCounter(card.id, 'hp', 1);
+                    }}
+                    style={{ ...coarseSheetButtonStyle, background: '#ef4444', color: '#fff' }}
+                  >
+                    +HP
+                  </button>
+                  <button
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onModifyCounter(card.id, 'hp', -1);
+                    }}
+                    style={{ ...coarseSheetButtonStyle, background: '#1e293b', color: '#fff' }}
+                  >
+                    -HP
+                  </button>
+                </>
+              )}
+
+              {onModifyGenericCounter && isStatDisplayZone && !disableCombatAndCounterControls && (
+                <>
+                  <button
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onModifyGenericCounter(card.id, 1);
+                    }}
+                    style={{ ...coarseSheetButtonStyle, background: '#0f766e', color: '#fff' }}
+                  >
+                    +Counter
+                  </button>
+                  <button
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onModifyGenericCounter(card.id, -1);
+                    }}
+                    style={{ ...coarseSheetButtonStyle, background: '#7f1d1d', color: '#fff' }}
+                  >
+                    -Counter
+                  </button>
+                </>
+              )}
+
+              {onSendToBottom && (
+                <button
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSendToBottom(card.id);
+                    setIsQuickActionsOpen(false);
+                  }}
+                  title={quickActionDescriptions.sendToBottom}
+                  aria-label={quickActionDescriptions.sendToBottom}
+                  style={{ ...coarseSheetButtonStyle, background: 'var(--bg-surface-elevated)', color: 'white' }}
+                >
+                  {quickActionDescriptions.sendToBottom}
+                </button>
+              )}
+              {onCemetery && (
+                <button
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCemetery(card.id);
+                    setIsQuickActionsOpen(false);
+                  }}
+                  title={quickActionDescriptions.cemetery}
+                  aria-label={quickActionDescriptions.cemetery}
+                  style={{ ...coarseSheetButtonStyle, background: '#334155', color: 'white' }}
+                >
+                  {quickActionDescriptions.cemetery}
+                </button>
+              )}
+              {onBanish && (
+                <button
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onBanish(card.id);
+                    setIsQuickActionsOpen(false);
+                  }}
+                  title={quickActionDescriptions.banish}
+                  aria-label={quickActionDescriptions.banish}
+                  style={{ ...coarseSheetButtonStyle, background: '#7c3aed', color: 'white' }}
+                >
+                  {quickActionDescriptions.banish}
+                </button>
+              )}
+              {onReturnEvolve && card.isEvolveCard && (
+                <button
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onReturnEvolve(card.id);
+                    setIsQuickActionsOpen(false);
+                  }}
+                  title={quickActionDescriptions.toEvolveDeck}
+                  aria-label={quickActionDescriptions.toEvolveDeck}
+                  style={{ ...coarseSheetButtonStyle, background: 'var(--accent-primary)', color: 'black' }}
+                >
+                  {quickActionDescriptions.toEvolveDeck}
+                </button>
+              )}
+              {onTap && !disableCombatAndCounterControls && (
+                <button
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onTap(card.id);
+                    setIsQuickActionsOpen(false);
+                  }}
+                  style={{ ...coarseSheetButtonStyle, background: card.isTapped ? '#fbbf24' : '#64748b', color: 'black' }}
+                >
+                  {card.isTapped ? t('gameBoard.card.stand') : t('gameBoard.card.rest')}
+                </button>
+              )}
+              {onAttack && card.zone.startsWith('field-') && !card.isTapped && (card.baseCardType === 'follower' || !!baseStats) && (
+                <button
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAttack(card.id);
+                    setIsQuickActionsOpen(false);
+                  }}
+                  style={{ ...coarseSheetButtonStyle, background: '#f97316', color: 'white' }}
+                >
+                  {t('gameBoard.card.attack')}
+                </button>
+              )}
+            </div>,
+            document.body
           )}
         </>
       )}
