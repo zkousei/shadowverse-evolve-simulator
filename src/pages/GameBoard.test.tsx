@@ -1553,9 +1553,13 @@ describe('GameBoard', () => {
     const guestMainDeckPanel = screen.getByTestId('zone-mainDeck-guest').parentElement;
     expect(guestMainDeckPanel).not.toBeNull();
     fireEvent.click(within(guestMainDeckPanel as HTMLElement).getByRole('button', { name: 'Actions' }));
-    expect(within(guestMainDeckPanel as HTMLElement).getByRole('button', { name: 'Search' })).toBeInTheDocument();
+    const spectatorDeckSearchAction = within(guestMainDeckPanel as HTMLElement).getByRole('button', { name: 'Search' });
+    expect(spectatorDeckSearchAction).toBeInTheDocument();
     expect(within(guestMainDeckPanel as HTMLElement).queryByRole('button', { name: 'Shuffle' })).not.toBeInTheDocument();
     expect(within(guestMainDeckPanel as HTMLElement).queryByRole('button', { name: 'Look Top' })).not.toBeInTheDocument();
+    expect(spectatorDeckSearchAction.parentElement).toHaveStyle({
+      bottom: 'calc(100% + 4px)',
+    });
   });
 
   it('highlights the Player 2 board during the Player 2 turn for spectators', () => {
@@ -2834,6 +2838,69 @@ describe('GameBoard', () => {
       const shell = container.firstElementChild as HTMLElement;
       expect(shell).toHaveAttribute('data-layout-profile', 'desktop');
       expect(shell).toHaveAttribute('data-input-profile', 'fine');
+    } finally {
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        writable: true,
+        value: originalInnerWidth,
+      });
+      Object.defineProperty(window, 'matchMedia', {
+        configurable: true,
+        writable: true,
+        value: originalMatchMedia,
+      });
+    }
+  });
+
+  it('applies desktop overview density without folding PC board zones or tracker controls', () => {
+    const originalInnerWidth = window.innerWidth;
+    const originalMatchMedia = window.matchMedia;
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      writable: true,
+      value: 1440,
+    });
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      writable: true,
+      value: vi.fn(() => ({ matches: false })),
+    });
+
+    try {
+      const { container } = render(<GameBoard />);
+      const shell = container.firstElementChild as HTMLElement;
+      const playmat = screen.getByTestId('board-playmat');
+      const topSection = screen.getByTestId('board-section-top');
+      const topGrid = topSection.firstElementChild as HTMLElement;
+
+      expect(shell).toHaveAttribute('data-layout-profile', 'desktop');
+      expect(shell).toHaveAttribute('data-input-profile', 'fine');
+      expect(shell).toHaveAttribute('data-board-density', 'overview');
+      expect(shell).toHaveStyle({ padding: '0.6rem', gap: '0.55rem' });
+      expect(playmat).toHaveStyle({ padding: '0.55rem', gap: '0.3rem' });
+      expect(topSection).toHaveStyle({ padding: '0.32rem 0.36rem' });
+      expect(topGrid).toHaveStyle({ gridTemplateColumns: '188px 1080px 220px' });
+
+      [
+        'hand-guest',
+        'cemetery-guest',
+        'ex-guest',
+        'banish-guest',
+        'mainDeck-guest',
+        'field-guest',
+        'evolveDeck-guest',
+        'evolveDeck-host',
+        'field-host',
+        'mainDeck-host',
+        'banish-host',
+        'ex-host',
+        'cemetery-host',
+        'hand-host',
+      ].forEach(zoneId => {
+        expect(screen.getByTestId(`zone-${zoneId}`)).toBeInTheDocument();
+      });
+      expect(screen.queryByTestId('player-controls-tracker-disclosure')).not.toBeInTheDocument();
+      expect(screen.getByTestId('player-tracker-host')).toBeInTheDocument();
     } finally {
       Object.defineProperty(window, 'innerWidth', {
         configurable: true,

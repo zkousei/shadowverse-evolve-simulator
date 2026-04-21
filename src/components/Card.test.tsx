@@ -123,9 +123,9 @@ describe('Card', () => {
 
     const atkIncreaseButton = screen.getByText('+A');
     expect(atkIncreaseButton).toHaveStyle({
-      minWidth: '28px',
+      minWidth: '24px',
       minHeight: '24px',
-      padding: '4px 5px',
+      padding: '4px 4px',
     });
 
     fireEvent.pointerDown(atkIncreaseButton, { clientX: 10, clientY: 20, button: 0 });
@@ -710,6 +710,32 @@ describe('Card', () => {
       />
     );
     expect(screen.queryByText('Attack')).not.toBeInTheDocument();
+  });
+
+  it('uses compact segmented combat buttons when rest and attack are both shown', () => {
+    render(
+      <Card
+        card={createCard({ zone: 'field-host', isTapped: false })}
+        baseStats={{ atk: 3, hp: 4 }}
+        onTap={vi.fn()}
+        onAttack={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('REST')).toHaveStyle({
+      minHeight: '22px',
+      padding: '2px 5px',
+      fontSize: '10px',
+      lineHeight: '1',
+      borderRadius: '3px',
+    });
+    expect(screen.getByText('Attack')).toHaveStyle({
+      minHeight: '22px',
+      padding: '2px 5px',
+      fontSize: '10px',
+      lineHeight: '1',
+      borderRadius: '3px',
+    });
   });
 
 });

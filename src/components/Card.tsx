@@ -6,7 +6,7 @@ import type { BaseCardStats } from '../utils/cardStats';
 import { isMainDeckSpellCard, type RuntimeBaseCardType } from '../utils/cardType';
 import type { CardDetail } from '../utils/cardDetails';
 import CardArtwork from './CardArtwork';
-import { useGameBoardInputProfile } from '../contexts/gameBoardInputProfileContext';
+import { useGameBoardBoardDensity, useGameBoardInputProfile } from '../contexts/gameBoardInputProfileContext';
 import { getCardSizeForInputProfile } from '../utils/gameBoardCardLayout';
 
 export interface CardInstance {
@@ -68,10 +68,11 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
   const cardElementRef = React.useRef<HTMLElement | null>(null);
   const coarseActionSheetRef = React.useRef<HTMLDivElement | null>(null);
   const inputProfile = useGameBoardInputProfile();
+  const boardDensity = useGameBoardBoardDensity();
   const [isQuickActionsOpen, setIsQuickActionsOpen] = React.useState(false);
   const [coarseSheetPlacement, setCoarseSheetPlacement] = React.useState<{ top: number; left: number; width: number; maxHeight: number } | null>(null);
   const isCoarseInput = inputProfile === 'coarse';
-  const cardSize = getCardSizeForInputProfile(inputProfile);
+  const cardSize = getCardSizeForInputProfile(inputProfile, boardDensity);
   const isInteractionLocked = isLocked || card.isLeaderCard || card.zone.startsWith('leader-');
   const canShowQuickActionOverlay = !isHidden && !isInteractionLocked;
   const canToggleQuickActions = isCoarseInput && canShowQuickActionOverlay && !quickActionsDisabled;
@@ -256,14 +257,25 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
     lineHeight: 1.2,
   };
   const counterAdjustButtonStyle: React.CSSProperties = {
-    padding: '4px 5px',
+    padding: '4px 4px',
     fontSize: '11px',
     borderRadius: '4px',
-    minWidth: '28px',
+    minWidth: '24px',
     minHeight: '24px',
     border: '1px solid rgba(255,255,255,0.55)',
     fontWeight: 'bold',
     lineHeight: 1,
+  };
+  const combatActionButtonStyle: React.CSSProperties = {
+    padding: '2px 5px',
+    minHeight: '22px',
+    fontSize: '10px',
+    lineHeight: 1,
+    borderRadius: '3px',
+    flex: '1 1 0',
+    minWidth: 0,
+    fontWeight: 'bold',
+    whiteSpace: 'nowrap',
   };
   const coarseSheetButtonStyle: React.CSSProperties = {
     minHeight: '34px',
@@ -553,15 +565,29 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
                 </div>
               )}
               {onTap && !disableCombatAndCounterControls && (
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '4px', marginTop: '2px' }}>
-                  <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onTap(card.id); }} style={{ background: card.isTapped ? '#fbbf24' : '#64748b', color: 'black', border: '1px solid #fff', padding: '4px 4px', fontSize: '11px', borderRadius: '4px', width: '100%', fontWeight: 'bold' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '3px', marginTop: '2px' }}>
+                  <button
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => { e.stopPropagation(); onTap(card.id); }}
+                    style={{
+                      ...combatActionButtonStyle,
+                      background: card.isTapped ? '#fbbf24' : '#64748b',
+                      color: card.isTapped ? 'black' : 'white',
+                      border: '1px solid rgba(255,255,255,0.65)',
+                    }}
+                  >
                     {card.isTapped ? t('gameBoard.card.stand') : t('gameBoard.card.rest')}
                   </button>
                   {onAttack && card.zone.startsWith('field-') && !card.isTapped && (card.baseCardType === 'follower' || !!baseStats) && (
                     <button
                       onPointerDown={(e) => e.stopPropagation()}
                       onClick={(e) => { e.stopPropagation(); onAttack(card.id); }}
-                      style={{ background: '#f97316', color: 'white', border: '1px solid #fdba74', padding: '4px 4px', fontSize: '11px', borderRadius: '4px', width: '100%', fontWeight: 'bold' }}
+                      style={{
+                        ...combatActionButtonStyle,
+                        background: '#f97316',
+                        color: 'white',
+                        border: '1px solid #fdba74',
+                      }}
                     >
                       {t('gameBoard.card.attack')}
                     </button>

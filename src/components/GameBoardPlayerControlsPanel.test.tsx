@@ -28,9 +28,10 @@ vi.mock('./GameBoardPlayerTrackerSection', () => ({
 
 const renderWithInputProfile = (
   profile: 'fine' | 'coarse',
-  ui: React.ReactElement
+  ui: React.ReactElement,
+  boardDensity: 'standard' | 'overview' = 'standard'
 ) => render(
-  <GameBoardInputProfileProvider value={profile}>
+  <GameBoardInputProfileProvider value={profile} boardDensity={boardDensity}>
     {ui}
   </GameBoardInputProfileProvider>
 );
@@ -125,6 +126,25 @@ describe('GameBoardPlayerControlsPanel', () => {
     expect(screen.getByRole('button', { name: 'Load from My Decks' })).toHaveStyle({ fontSize: '0.66rem', minHeight: '30px' });
     expect(screen.getByRole('button', { name: 'Draw' })).toHaveStyle({ whiteSpace: 'normal' });
     expect(screen.getByRole('button', { name: 'Load from My Decks' })).toHaveStyle({ gridColumn: '1 / -1' });
+  });
+
+  it('keeps desktop overview controls denser without making buttons or tracker compact', () => {
+    renderWithInputProfile(
+      'fine',
+      <GameBoardPlayerControlsPanel
+        {...createBaseProps()}
+      />,
+      'overview'
+    );
+
+    expect(screen.getByTestId('player-controls-primary-actions')).toHaveStyle({
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+    });
+    expect(screen.getByRole('button', { name: 'Draw' })).toHaveStyle({ fontSize: '0.76rem', minHeight: '34px' });
+    expect(screen.getByRole('button', { name: 'Load from My Decks' })).toHaveStyle({ fontSize: '0.78rem', minHeight: '34px' });
+    expect(screen.getByTestId('player-tracker')).toHaveAttribute('data-compact', 'false');
+    expect(screen.queryByTestId('player-controls-tracker-disclosure')).not.toBeInTheDocument();
   });
 
   it('passes compact tracker mode on narrow coarse panels to avoid vertical wrapping', () => {
