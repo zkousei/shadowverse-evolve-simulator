@@ -96,4 +96,18 @@ describe('GameBoardPlayerControlsPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Draw' }));
     expect(props.onDraw).toHaveBeenCalledTimes(1);
   });
+
+  it('uses readable text colors for primary action buttons', () => {
+    renderWithInputProfile(
+      'coarse',
+      <GameBoardPlayerControlsPanel
+        {...createBaseProps()}
+      />
+    );
+
+    expect(screen.getByRole('button', { name: 'Draw' })).toHaveStyle({ color: 'rgb(248, 250, 252)' });
+    expect(screen.getByRole('button', { name: 'Mill' })).toHaveStyle({ color: 'rgb(248, 250, 252)' });
+    expect(screen.getByRole('button', { name: 'Top to EX' })).toHaveStyle({ color: 'rgb(248, 250, 252)' });
+    expect(screen.getByRole('button', { name: 'Spawn Token' })).toHaveStyle({ color: 'rgb(248, 250, 252)' });
+  });
 });

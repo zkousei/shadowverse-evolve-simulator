@@ -149,6 +149,7 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
           style={{
             padding: '0.5rem',
             background: drawButtonBackground,
+            color: '#f8fafc',
             fontWeight: 'bold',
             opacity: canUsePlayingActions ? 1 : 0.5,
             cursor: canUsePlayingActions ? 'pointer' : 'not-allowed',
@@ -164,6 +165,7 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
           style={{
             padding: '0.5rem',
             background: '#475569',
+            color: '#f8fafc',
             fontWeight: 'bold',
             opacity: canUsePlayingActions ? 1 : 0.5,
             cursor: canUsePlayingActions ? 'pointer' : 'not-allowed',
@@ -179,6 +181,7 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
           style={{
             padding: '0.5rem',
             background: '#334155',
+            color: '#f8fafc',
             fontWeight: 'bold',
             opacity: canUsePlayingActions ? 1 : 0.5,
             cursor: canUsePlayingActions ? 'pointer' : 'not-allowed',
@@ -193,6 +196,7 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
           style={{
             padding: '0.5rem',
             background: spawnButtonBackground,
+            color: '#f8fafc',
             opacity: canOpenTokenSpawn ? 1 : 0.5,
             cursor: canOpenTokenSpawn ? 'pointer' : 'not-allowed',
           }}
