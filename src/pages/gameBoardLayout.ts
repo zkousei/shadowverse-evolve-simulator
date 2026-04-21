@@ -115,9 +115,12 @@ export const resolveBoardLayout = (
 
 export const getBoardDensityForViewportWidth = (
   viewportWidth: number,
+  viewportHeight: number,
   inputProfile: GameBoardLayoutInputProfile = 'coarse'
 ): GameBoardBoardDensity => (
-  viewportWidth >= DESKTOP_MIN_WIDTH && inputProfile === 'fine' ? 'overview' : 'standard'
+  viewportWidth >= DESKTOP_MIN_WIDTH && viewportHeight <= 900 && inputProfile === 'fine'
+    ? 'overview'
+    : 'standard'
 );
 
 // Keep legacy exports as desktop defaults to avoid changing the existing PC path.

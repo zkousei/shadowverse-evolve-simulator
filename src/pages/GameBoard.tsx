@@ -46,13 +46,12 @@ import type { AttackTarget } from '../types/sync';
 import {
   formatSavedSessionTimestamp,
 } from '../utils/gameBoardPresentation';
-import { resolveInputProfile } from '../utils/gameBoardInputProfile';
+import { resolveBoardEnvironment } from '../utils/gameBoardEnvironment';
 import {
   shouldDismissModalOnBackdropClick,
 } from '../utils/gameBoardDismissals';
 import {
   activeBoardSectionStyle,
-  getBoardDensityForViewportWidth,
   resolveBoardLayout,
   soloMulliganButtonStyle,
 } from './gameBoardLayout';
@@ -64,26 +63,36 @@ const GameBoard: React.FC = () => {
   const [viewportWidth, setViewportWidth] = React.useState(() => (
     typeof window === 'undefined' ? 1280 : window.innerWidth
   ));
+  const [viewportHeight, setViewportHeight] = React.useState(() => (
+    typeof window === 'undefined' ? 900 : window.innerHeight
+  ));
   React.useEffect(() => {
     if (typeof window === 'undefined') return undefined;
 
     const handleResize = () => {
       setViewportWidth(window.innerWidth);
+      setViewportHeight(window.innerHeight);
     };
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const inputProfile = React.useMemo(
-    () => resolveInputProfile(viewportWidth),
-    [viewportWidth]
+  const {
+    inputProfile,
+    layoutProfile,
+    boardDensity,
+  } = React.useMemo(
+    () => resolveBoardEnvironment({
+      viewportWidth,
+      viewportHeight,
+      matchMediaFn: typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+        ? window.matchMedia.bind(window)
+        : undefined,
+    }),
+    [viewportWidth, viewportHeight]
   );
   const isCompactBoard = inputProfile === 'coarse';
-  const boardDensity = React.useMemo(
-    () => getBoardDensityForViewportWidth(viewportWidth, inputProfile),
-    [viewportWidth, inputProfile]
-  );
   const isOverviewBoard = boardDensity === 'overview';
   const boardShellPadding = isCompactBoard ? '0.52rem' : isOverviewBoard ? '0.6rem' : '1rem';
   const boardShellGap = isCompactBoard ? '0.48rem' : isOverviewBoard ? '0.55rem' : '1rem';
@@ -99,7 +108,6 @@ const GameBoard: React.FC = () => {
   const handZoneMinHeight = isCompactBoard ? '116px' : isOverviewBoard ? '128px' : '150px';
   const bottomHandZoneMinHeight = isCompactBoard ? '124px' : isOverviewBoard ? '136px' : '160px';
   const {
-    profile: layoutProfile,
     sidePanelWidth,
     topPanelWidth,
     sideZoneWidth,

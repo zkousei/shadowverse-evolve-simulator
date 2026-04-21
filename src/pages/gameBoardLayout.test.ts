@@ -69,10 +69,11 @@ describe('gameBoardLayout', () => {
     expect(layout.boardShellColumns).toBe('188px 1080px 220px');
   });
 
-  it('uses overview density for PC desktop viewports while keeping tablet density standard', () => {
-    expect(getBoardDensityForViewportWidth(1280, 'fine')).toBe('overview');
-    expect(getBoardDensityForViewportWidth(1440, 'fine')).toBe('overview');
-    expect(getBoardDensityForViewportWidth(1024, 'fine')).toBe('standard');
-    expect(getBoardDensityForViewportWidth(1024, 'coarse')).toBe('standard');
+  it('uses overview density only for shorter PC desktop viewports while keeping taller or tablet layouts standard', () => {
+    expect(getBoardDensityForViewportWidth(1280, 900, 'fine')).toBe('overview');
+    expect(getBoardDensityForViewportWidth(1440, 900, 'fine')).toBe('overview');
+    expect(getBoardDensityForViewportWidth(1440, 1024, 'fine')).toBe('standard');
+    expect(getBoardDensityForViewportWidth(1024, 900, 'fine')).toBe('standard');
+    expect(getBoardDensityForViewportWidth(1024, 900, 'coarse')).toBe('standard');
   });
 });

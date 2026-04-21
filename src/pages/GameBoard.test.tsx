@@ -2854,11 +2854,17 @@ describe('GameBoard', () => {
 
   it('applies desktop overview density without folding PC board zones or tracker controls', () => {
     const originalInnerWidth = window.innerWidth;
+    const originalInnerHeight = window.innerHeight;
     const originalMatchMedia = window.matchMedia;
     Object.defineProperty(window, 'innerWidth', {
       configurable: true,
       writable: true,
       value: 1440,
+    });
+    Object.defineProperty(window, 'innerHeight', {
+      configurable: true,
+      writable: true,
+      value: 900,
     });
     Object.defineProperty(window, 'matchMedia', {
       configurable: true,
@@ -2906,6 +2912,108 @@ describe('GameBoard', () => {
         configurable: true,
         writable: true,
         value: originalInnerWidth,
+      });
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        writable: true,
+        value: originalInnerHeight,
+      });
+      Object.defineProperty(window, 'matchMedia', {
+        configurable: true,
+        writable: true,
+        value: originalMatchMedia,
+      });
+    }
+  });
+
+  it('keeps tall desktop viewports on standard density while retaining the desktop layout', () => {
+    const originalInnerWidth = window.innerWidth;
+    const originalInnerHeight = window.innerHeight;
+    const originalMatchMedia = window.matchMedia;
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      writable: true,
+      value: 1440,
+    });
+    Object.defineProperty(window, 'innerHeight', {
+      configurable: true,
+      writable: true,
+      value: 1024,
+    });
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      writable: true,
+      value: vi.fn(() => ({ matches: false })),
+    });
+
+    try {
+      const { container } = render(<GameBoard />);
+      const shell = container.firstElementChild as HTMLElement;
+      const playmat = screen.getByTestId('board-playmat');
+
+      expect(shell).toHaveAttribute('data-layout-profile', 'desktop');
+      expect(shell).toHaveAttribute('data-input-profile', 'fine');
+      expect(shell).toHaveAttribute('data-board-density', 'standard');
+      expect(shell).toHaveStyle({ padding: '1rem', gap: '1rem' });
+      expect(playmat).toHaveStyle({ padding: '1rem', gap: '0.5rem' });
+    } finally {
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        writable: true,
+        value: originalInnerWidth,
+      });
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        writable: true,
+        value: originalInnerHeight,
+      });
+      Object.defineProperty(window, 'matchMedia', {
+        configurable: true,
+        writable: true,
+        value: originalMatchMedia,
+      });
+    }
+  });
+
+  it('treats wider touch-first viewports as coarse input while keeping the desktop layout', () => {
+    const originalInnerWidth = window.innerWidth;
+    const originalInnerHeight = window.innerHeight;
+    const originalMatchMedia = window.matchMedia;
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      writable: true,
+      value: 1366,
+    });
+    Object.defineProperty(window, 'innerHeight', {
+      configurable: true,
+      writable: true,
+      value: 1024,
+    });
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      writable: true,
+      value: vi.fn((query: string) => ({
+        matches: query === '(pointer: coarse)' || query === '(any-pointer: coarse)',
+      })),
+    });
+
+    try {
+      const { container } = render(<GameBoard />);
+      const shell = container.firstElementChild as HTMLElement;
+
+      expect(shell).toHaveAttribute('data-layout-profile', 'desktop');
+      expect(shell).toHaveAttribute('data-input-profile', 'coarse');
+      expect(shell).toHaveAttribute('data-board-density', 'standard');
+    } finally {
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        writable: true,
+        value: originalInnerWidth,
+      });
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        writable: true,
+        value: originalInnerHeight,
       });
       Object.defineProperty(window, 'matchMedia', {
         configurable: true,
