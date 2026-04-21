@@ -243,6 +243,7 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
         label={label}
         playerState={playerState}
         onAdjustStat={onAdjustStat}
+        compact={isCompactControls && panelWidth <= 160}
         readOnly={readOnlyTracker}
       />
     </div>

@@ -19,8 +19,8 @@ vi.mock('react-i18next', () => ({
 }));
 
 vi.mock('./GameBoardPlayerTrackerSection', () => ({
-  default: ({ testId }: { testId: string }) => (
-    <div data-testid={testId}>Tracker</div>
+  default: ({ testId, compact }: { testId: string; compact?: boolean }) => (
+    <div data-testid={testId} data-compact={String(Boolean(compact))}>Tracker</div>
   ),
 }));
 
@@ -123,5 +123,28 @@ describe('GameBoardPlayerControlsPanel', () => {
     expect(screen.getByRole('button', { name: 'Load from My Decks' })).toHaveStyle({ fontSize: '0.72rem', minHeight: '34px' });
     expect(screen.getByRole('button', { name: 'Draw' })).toHaveStyle({ whiteSpace: 'normal' });
     expect(screen.getByRole('button', { name: 'Load from My Decks' })).toHaveStyle({ gridColumn: '1 / -1' });
+  });
+
+  it('passes compact tracker mode on narrow coarse panels to avoid vertical wrapping', () => {
+    renderWithInputProfile(
+      'coarse',
+      <GameBoardPlayerControlsPanel
+        {...createBaseProps()}
+        panelWidth={132}
+      />
+    );
+
+    expect(screen.getByTestId('player-tracker')).toHaveAttribute('data-compact', 'true');
+  });
+
+  it('keeps tracker in regular mode on desktop width panels', () => {
+    render(
+      <GameBoardPlayerControlsPanel
+        {...createBaseProps()}
+        panelWidth={220}
+      />
+    );
+
+    expect(screen.getByTestId('player-tracker')).toHaveAttribute('data-compact', 'false');
   });
 });
