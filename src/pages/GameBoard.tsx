@@ -92,6 +92,7 @@ const GameBoard: React.FC = () => {
     [viewportWidth, viewportHeight]
   );
   const isCompactBoard = inputProfile === 'coarse';
+  const isTabletLayout = layoutProfile === 'tablet';
   const isOverviewBoard = boardDensity === 'overview';
   const boardShellPadding = isCompactBoard ? '0.52rem' : isOverviewBoard ? '0.48rem' : '1rem';
   const boardShellGap = isCompactBoard ? '0.48rem' : isOverviewBoard ? '0.44rem' : '1rem';
@@ -99,7 +100,12 @@ const GameBoard: React.FC = () => {
   const playmatGap = isCompactBoard ? '0.24rem' : isOverviewBoard ? '0.24rem' : '0.5rem';
   const boardSectionPadding = isCompactBoard ? '0.28rem 0.32rem' : isOverviewBoard ? '0.26rem 0.29rem' : '0.55rem 0.6rem';
   const boardSectionGap = isCompactBoard ? '0.22rem' : isOverviewBoard ? '0.21rem' : '0.5rem';
-  const boardShellColumnGap = isCompactBoard ? '0.5rem' : isOverviewBoard ? '0.44rem' : '1rem';
+  const boardShellColumnGap = isCompactBoard ? '0.5rem' : isOverviewBoard ? '0.56rem' : '1rem';
+  const bottomPanelMarginLeft = isCompactBoard
+    ? (isTabletLayout ? '1.35rem' : '1.1rem')
+    : isOverviewBoard
+      ? '1.5rem'
+      : '1.25rem';
   const boardColumnStackGap = isCompactBoard ? '0.34rem' : isOverviewBoard ? '0.29rem' : '0.65rem';
   const boardSectionDividerMargin = isCompactBoard ? '0.4rem 0' : isOverviewBoard ? '0.28rem 0' : '1rem 0';
   const stackZoneMinHeight = isCompactBoard ? '110px' : isOverviewBoard ? '98px' : '150px';
@@ -561,7 +567,7 @@ const GameBoard: React.FC = () => {
     playerState: gameState[bottomRole],
     onAdjustStat: (stat: 'hp' | 'pp' | 'maxPp' | 'ep' | 'sep' | 'combo', delta: number) => handleStatChange(bottomRole, stat, delta),
     forceExpandedTracker: false,
-    containerStyle: { marginLeft: '1.25rem' },
+    containerStyle: { marginLeft: bottomPanelMarginLeft },
   };
   const savedDeckPickerDialogProps = savedDeckImportTargetRole && savedDeckPickerTargetLabel
     ? {
@@ -992,7 +998,7 @@ const GameBoard: React.FC = () => {
               </div>
 
               {isSpectator ? (
-                <div style={{ width: `${sidePanelWidth}px`, boxSizing: 'border-box', marginLeft: '1.25rem' }}>
+                <div style={{ width: `${sidePanelWidth}px`, boxSizing: 'border-box', marginLeft: bottomPanelMarginLeft }}>
                   <GameBoardReadOnlyStatusSection
                     label={bottomLabel}
                     playerState={gameState[bottomRole]}

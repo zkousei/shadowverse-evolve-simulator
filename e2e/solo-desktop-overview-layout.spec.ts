@@ -56,6 +56,15 @@ test.describe('Solo Desktop Overview Layout', () => {
     expect(firstHandCardBox?.height).toBeGreaterThanOrEqual(97);
     expect(firstHandCardBox?.height).toBeLessThanOrEqual(100);
 
+    const hostMainDeckBox = await zone(page, 'mainDeck-host').boundingBox();
+    const hostTrackerBox = await page.getByTestId('player-tracker-host').boundingBox();
+    expect(hostMainDeckBox).not.toBeNull();
+    expect(hostTrackerBox).not.toBeNull();
+    if (hostMainDeckBox && hostTrackerBox) {
+      const controlsGap = hostTrackerBox.x - (hostMainDeckBox.x + hostMainDeckBox.width);
+      expect(controlsGap).toBeGreaterThanOrEqual(16);
+    }
+
     await dragFirstZoneCard(page, 'hand-host', 'field-host');
     await expect(zoneCards(page, 'field-host')).toHaveCount(1);
     await expect(zoneCards(page, 'hand-host')).toHaveCount(3);
