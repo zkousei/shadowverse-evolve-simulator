@@ -44,7 +44,7 @@ describe('GameBoardPlayerTracker', () => {
       gap: '0.24rem',
     });
     expect(screen.getByText('Player 2 Status')).toHaveStyle({
-      fontSize: '0.62rem',
+      fontSize: '0.66rem',
       whiteSpace: 'nowrap',
       textOverflow: 'ellipsis',
     });
@@ -52,6 +52,22 @@ describe('GameBoardPlayerTracker', () => {
       flexWrap: 'nowrap',
       gap: '0.16rem',
     });
+  });
+
+  it('uses slightly larger compact status text for tablet readability', () => {
+    render(
+      <GameBoardPlayerTracker
+        {...createBaseProps()}
+        compact={true}
+      />
+    );
+
+    expect(screen.getByText('HP: 20')).toHaveStyle({ fontSize: '0.66rem' });
+    expect(screen.getByText('EP: 2')).toHaveStyle({ fontSize: '0.66rem' });
+    expect(screen.getByText('PP')).toHaveStyle({ fontSize: '0.62rem' });
+    expect(screen.getByText('MAX')).toHaveStyle({ fontSize: '0.58rem' });
+    expect(screen.getByText('3')).toHaveStyle({ fontSize: '1.28rem' });
+    expect(screen.getByText('4')).toHaveStyle({ fontSize: '1rem' });
   });
 
   it('keeps tracker adjustment wiring in compact mode', () => {
@@ -69,5 +85,31 @@ describe('GameBoardPlayerTracker', () => {
 
     expect(props.onAdjustStat).toHaveBeenCalledWith('hp', 1);
     expect(props.onAdjustStat).toHaveBeenCalledWith('pp', -1);
+  });
+
+  it('uses larger compact adjustment buttons for tablet touch targets', () => {
+    render(
+      <GameBoardPlayerTracker
+        {...createBaseProps()}
+        compact={true}
+      />
+    );
+
+    expect(screen.getByTestId('player-tracker-host-hp-increase')).toHaveStyle({
+      minWidth: '24px',
+      minHeight: '22px',
+      fontSize: '0.72rem',
+    });
+    expect(screen.getByTestId('player-tracker-host-maxPp-increase')).toHaveStyle({
+      width: '24px',
+      height: '22px',
+      minWidth: '24px',
+      fontSize: '0.72rem',
+    });
+    expect(screen.getByTestId('player-tracker-host-pp-increase')).toHaveStyle({
+      width: '28px',
+      height: '28px',
+      fontSize: '0.94rem',
+    });
   });
 });

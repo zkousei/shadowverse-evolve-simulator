@@ -159,7 +159,7 @@ describe('GameBoardPlayerControlsPanel', () => {
     expect(screen.getByTestId('player-tracker')).toHaveAttribute('data-compact', 'true');
   });
 
-  it('uses collapsed tracker disclosure in coarse mode to save vertical space', () => {
+  it('renders the tracker directly in coarse mode without a collapsed disclosure', () => {
     renderWithInputProfile(
       'coarse',
       <GameBoardPlayerControlsPanel
@@ -168,9 +168,9 @@ describe('GameBoardPlayerControlsPanel', () => {
       />
     );
 
-    expect(screen.getByTestId('player-controls-tracker-disclosure')).not.toHaveAttribute('open');
-    expect(screen.getByTestId('player-controls-tracker-summary')).toHaveTextContent('HP: 20');
-    expect(screen.getByTestId('player-controls-tracker-summary')).toHaveTextContent('PP: 0/0');
+    expect(screen.queryByTestId('player-controls-tracker-disclosure')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('player-controls-tracker-summary')).not.toBeInTheDocument();
+    expect(screen.getByTestId('player-tracker')).toHaveAttribute('data-compact', 'true');
   });
 
   it('keeps tracker in regular mode on desktop width panels', () => {
