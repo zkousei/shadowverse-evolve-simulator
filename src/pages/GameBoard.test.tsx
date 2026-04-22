@@ -3077,6 +3077,9 @@ describe('GameBoard', () => {
       writable: true,
       value: vi.fn(() => ({ matches: true })),
     });
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      gameState: createGameState([], { gameStatus: 'playing' }),
+    }));
 
     try {
       const { container } = render(<GameBoard />);
@@ -3091,6 +3094,9 @@ describe('GameBoard', () => {
       expect(topGrid).toHaveStyle({ columnGap: '0.5rem' });
       const hostControlsPanel = screen.getByTestId('player-tracker-host').parentElement as HTMLElement;
       expect(hostControlsPanel).toHaveStyle({ marginLeft: '1.35rem' });
+      const turnPanelWrapper = screen.getByTestId('gameboard-turn-panel').parentElement as HTMLElement;
+      expect(turnPanelWrapper).toHaveStyle({ justifyContent: 'flex-end' });
+      expect(turnPanelWrapper.style.flex).toBe('');
     } finally {
       Object.defineProperty(window, 'innerWidth', {
         configurable: true,

@@ -636,6 +636,7 @@ const GameBoard: React.FC = () => {
         >
 
         <GameBoardHeader
+          isTabletLayout={isTabletLayout}
           room={room}
           isSoloMode={isSoloMode}
           isHost={isHost}

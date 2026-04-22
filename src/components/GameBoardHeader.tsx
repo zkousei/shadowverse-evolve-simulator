@@ -8,6 +8,7 @@ import type { ConnectionBadgeTone, GameBoardConnectionState } from '../utils/gam
 import { useGameBoardBoardDensity, useGameBoardInputProfile } from '../contexts/gameBoardInputProfileContext';
 
 type GameBoardHeaderProps = {
+  isTabletLayout: boolean;
   room: string;
   isSoloMode: boolean;
   isHost: boolean;
@@ -36,6 +37,7 @@ type GameBoardHeaderProps = {
 };
 
 const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
+  isTabletLayout,
   room,
   isSoloMode,
   isHost,
@@ -65,6 +67,7 @@ const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
   const inputProfile = useGameBoardInputProfile();
   const boardDensity = useGameBoardBoardDensity();
   const isCompactControls = inputProfile === 'coarse';
+  const keepInlineCompactHeader = isCompactControls && isTabletLayout;
   const isOverviewControls = inputProfile === 'fine' && boardDensity === 'overview';
 
   return (
@@ -72,8 +75,8 @@ const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
       style={{
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: isCompactControls ? 'stretch' : 'center',
-        flexWrap: isCompactControls ? 'wrap' : 'nowrap',
+        alignItems: keepInlineCompactHeader ? 'center' : isCompactControls ? 'stretch' : 'center',
+        flexWrap: keepInlineCompactHeader ? 'nowrap' : isCompactControls ? 'wrap' : 'nowrap',
         columnGap: isCompactControls ? '0.5rem' : isOverviewControls ? '0.8rem' : undefined,
         rowGap: isCompactControls ? '0.4rem' : isOverviewControls ? '0.32rem' : undefined,
         background: 'var(--bg-surface)',
@@ -86,7 +89,7 @@ const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
           display: 'flex',
           gap: isCompactControls ? '0.5rem' : isOverviewControls ? '0.8rem' : '1rem',
           alignItems: 'center',
-          flexWrap: isCompactControls ? 'wrap' : 'nowrap',
+          flexWrap: keepInlineCompactHeader ? 'nowrap' : isCompactControls ? 'wrap' : 'nowrap',
           minWidth: 0,
           flex: '1 1 auto',
         }}
@@ -133,7 +136,14 @@ const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
       </div>
 
       {gameState.gameStatus === 'playing' && (
-        <div style={{ display: 'flex', flex: isCompactControls ? '1 1 100%' : undefined, justifyContent: isCompactControls ? 'flex-start' : 'flex-end', minWidth: 0 }}>
+        <div
+          style={{
+            display: 'flex',
+            flex: keepInlineCompactHeader ? undefined : isCompactControls ? '1 1 100%' : undefined,
+            justifyContent: keepInlineCompactHeader ? 'flex-end' : isCompactControls ? 'flex-start' : 'flex-end',
+            minWidth: 0,
+          }}
+        >
           <GameBoardTurnPanel
             isSoloMode={isSoloMode || isSpectator}
             isCurrentPlayerTurn={gameState.turnPlayer === role}
