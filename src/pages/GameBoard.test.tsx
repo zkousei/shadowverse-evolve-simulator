@@ -2926,7 +2926,7 @@ describe('GameBoard', () => {
     }
   });
 
-  it('keeps tall desktop viewports on standard density while retaining the desktop layout', () => {
+  it('keeps tall desktop viewports on overview density while retaining the desktop layout', () => {
     const originalInnerWidth = window.innerWidth;
     const originalInnerHeight = window.innerHeight;
     const originalMatchMedia = window.matchMedia;
@@ -2953,9 +2953,9 @@ describe('GameBoard', () => {
 
       expect(shell).toHaveAttribute('data-layout-profile', 'desktop');
       expect(shell).toHaveAttribute('data-input-profile', 'fine');
-      expect(shell).toHaveAttribute('data-board-density', 'standard');
-      expect(shell).toHaveStyle({ padding: '1rem', gap: '1rem' });
-      expect(playmat).toHaveStyle({ padding: '1rem', gap: '0.5rem' });
+      expect(shell).toHaveAttribute('data-board-density', 'overview');
+      expect(shell).toHaveStyle({ padding: '0.6rem', gap: '0.55rem' });
+      expect(playmat).toHaveStyle({ padding: '0.55rem', gap: '0.3rem' });
     } finally {
       Object.defineProperty(window, 'innerWidth', {
         configurable: true,

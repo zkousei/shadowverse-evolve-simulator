@@ -115,10 +115,10 @@ export const resolveBoardLayout = (
 
 export const getBoardDensityForViewportWidth = (
   viewportWidth: number,
-  viewportHeight: number,
+  _viewportHeight: number,
   inputProfile: GameBoardLayoutInputProfile = 'coarse'
 ): GameBoardBoardDensity => (
-  viewportWidth >= DESKTOP_MIN_WIDTH && viewportHeight <= 900 && inputProfile === 'fine'
+  viewportWidth >= DESKTOP_MIN_WIDTH && inputProfile === 'fine'
     ? 'overview'
     : 'standard'
 );
