@@ -93,8 +93,6 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
         wordBreak: 'break-word',
       }
     : {};
-  const compactTrackerSummary = `${t('gameBoard.board.stats.hp')}: ${playerState.hp}  ${t('gameBoard.board.stats.playPoints')}: ${playerState.pp}/${playerState.maxPp}`;
-
   return (
     <div
       style={{
@@ -249,53 +247,14 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
           {undoMoveButton}
         </div>
       )}
-      {isCompactControls ? (
-        <details
-          data-testid="player-controls-tracker-disclosure"
-          style={{
-            marginTop: '0.04rem',
-            padding: '0.2rem 0.26rem',
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.12)',
-            borderRadius: '8px',
-          }}
-        >
-          <summary
-            data-testid="player-controls-tracker-summary"
-            style={{
-              cursor: 'pointer',
-              color: '#bfdbfe',
-              fontSize: '0.58rem',
-              fontWeight: 700,
-              lineHeight: 1.2,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}
-          >
-            {compactTrackerSummary}
-          </summary>
-          <div style={{ marginTop: '0.2rem' }}>
-            <GameBoardPlayerTrackerSection
-              testId={trackerTestId}
-              label={label}
-              playerState={playerState}
-              onAdjustStat={onAdjustStat}
-              compact={panelWidth <= 180}
-              readOnly={readOnlyTracker}
-            />
-          </div>
-        </details>
-      ) : (
-        <GameBoardPlayerTrackerSection
-          testId={trackerTestId}
-          label={label}
-          playerState={playerState}
-          onAdjustStat={onAdjustStat}
-          compact={false}
-          readOnly={readOnlyTracker}
-        />
-      )}
+      <GameBoardPlayerTrackerSection
+        testId={trackerTestId}
+        label={label}
+        playerState={playerState}
+        onAdjustStat={onAdjustStat}
+        compact={isCompactControls && panelWidth <= 180}
+        readOnly={readOnlyTracker}
+      />
     </div>
   );
 };
