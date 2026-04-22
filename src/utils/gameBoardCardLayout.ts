@@ -12,8 +12,8 @@ export const desktopCardSize: GameBoardCardSize = {
 };
 
 export const overviewDesktopCardSize: GameBoardCardSize = {
-  width: 88,
-  height: 123,
+  width: 70,
+  height: 98,
 };
 
 export const coarseCardSize: GameBoardCardSize = {
@@ -37,9 +37,9 @@ export const getFieldZoneGapForInputProfile = (
   boardDensity: GameBoardBoardDensity = 'standard'
 ): string => (
   inputProfile === 'coarse'
-    ? '0.36rem'
+    ? '1.14rem'
     : boardDensity === 'overview'
-      ? '1.05rem'
+      ? '1.9rem'
       : '1.9rem'
 );
 
@@ -50,7 +50,7 @@ export const getExZoneGapForInputProfile = (
   inputProfile === 'coarse'
     ? '0.36rem'
     : boardDensity === 'overview'
-      ? '0.5rem'
+      ? '0.4rem'
       : '1rem'
 );
 
@@ -61,7 +61,7 @@ export const getStackAttachmentOffsetForInputProfile = (
   inputProfile === 'coarse'
     ? { top: 14, left: 10 }
     : boardDensity === 'overview'
-      ? { top: 16, left: 12 }
+      ? { top: 13, left: 10 }
     : { top: 20, left: 15 }
 );
 
@@ -72,7 +72,7 @@ export const getLinkedCardOffsetForInputProfile = (
   inputProfile === 'coarse'
     ? { top: 14, left: 10, paddingBottom: 16 }
     : boardDensity === 'overview'
-      ? { top: 16, left: 12, paddingBottom: 18 }
+      ? { top: 13, left: 10, paddingBottom: 14 }
     : { top: 20, left: 15, paddingBottom: 24 }
 );
 
@@ -87,9 +87,9 @@ export const getRequiredFieldWidthForCardCount = (
 
   const cardSize = getCardSizeForInputProfile(inputProfile, boardDensity);
   const gapRem = inputProfile === 'coarse'
-    ? 0.36
+    ? 1.14
     : boardDensity === 'overview'
-      ? 1.05
+      ? 1.9
       : 1.9;
   const gapPx = gapRem * rootFontSizePx;
   const horizontalPaddingPx = 16;

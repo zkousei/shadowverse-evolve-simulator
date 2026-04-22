@@ -198,8 +198,8 @@ describe('GameBoardPlayerControlsPanel', () => {
       display: 'flex',
       flexDirection: 'column',
     });
-    expect(screen.getByText('Player 1 Controls')).toHaveStyle({ fontSize: '0.8rem' });
-    expect(screen.getByRole('button', { name: 'Draw' })).toHaveStyle({ padding: '0.5rem' });
+    expect(screen.getByText('Player 1 Controls')).toHaveStyle({ fontSize: '0.64rem' });
+    expect(screen.getByRole('button', { name: 'Draw' })).toHaveStyle({ padding: '0.4rem' });
     expect(screen.queryByRole('button', { name: 'Load from My Decks' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Spawn Token' })).toBeInTheDocument();
     expect(screen.getByTestId('player-tracker')).toHaveAttribute('data-compact', 'false');
@@ -230,6 +230,19 @@ describe('GameBoardPlayerControlsPanel', () => {
     expect(screen.queryByTestId('player-controls-tracker-disclosure')).not.toBeInTheDocument();
     expect(screen.queryByTestId('player-controls-tracker-summary')).not.toBeInTheDocument();
     expect(screen.getByTestId('player-tracker')).toHaveAttribute('data-compact', 'true');
+  });
+
+  it('keeps the tracker expanded when compact mode is explicitly disabled', () => {
+    renderWithInputProfile(
+      'coarse',
+      <GameBoardPlayerControlsPanel
+        {...createBaseProps()}
+        panelWidth={132}
+        forceExpandedTracker={true}
+      />
+    );
+
+    expect(screen.getByTestId('player-tracker')).toHaveAttribute('data-compact', 'false');
   });
 
   it('keeps tracker in regular mode on desktop width panels', () => {

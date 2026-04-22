@@ -56,6 +56,13 @@ export const desktopGameBoardLayout = buildLayout('desktop', {
   centerZoneWidth: 800,
 });
 
+export const overviewDesktopGameBoardLayout = buildLayout('desktop', {
+  sidePanelWidth: 176,
+  topPanelWidth: 150,
+  sideZoneWidth: 112,
+  centerZoneWidth: 640,
+});
+
 export const tabletGameBoardLayout = buildLayout('tablet', {
   sidePanelWidth: 180,
   topPanelWidth: 148,
@@ -107,10 +114,12 @@ export const getLayoutProfileForViewportWidth = (
 
 export const resolveBoardLayout = (
   viewportWidth: number,
-  inputProfile: GameBoardLayoutInputProfile = 'coarse'
+  inputProfile: GameBoardLayoutInputProfile = 'coarse',
+  boardDensity: GameBoardBoardDensity = 'standard'
 ): GameBoardLayout => {
   const profile = getLayoutProfileForViewportWidth(viewportWidth, inputProfile);
-  return profile === 'tablet' ? resolveTabletLayout(viewportWidth) : desktopGameBoardLayout;
+  if (profile === 'tablet') return resolveTabletLayout(viewportWidth);
+  return boardDensity === 'overview' ? overviewDesktopGameBoardLayout : desktopGameBoardLayout;
 };
 
 export const getBoardDensityForViewportWidth = (

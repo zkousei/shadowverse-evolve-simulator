@@ -36,9 +36,10 @@ const createCard = (overrides: Partial<CardInstance> = {}): CardInstance => ({
 
 const renderWithInputProfile = (
   profile: 'fine' | 'coarse',
-  ui: React.ReactElement
+  ui: React.ReactElement,
+  boardDensity: 'standard' | 'overview' = 'standard'
 ) => render(
-  <GameBoardInputProfileProvider value={profile}>
+  <GameBoardInputProfileProvider value={profile} boardDensity={boardDensity}>
     {ui}
   </GameBoardInputProfileProvider>
 );
@@ -124,8 +125,8 @@ describe('Card', () => {
     const atkIncreaseButton = screen.getByText('+A');
     expect(atkIncreaseButton).toHaveStyle({
       minWidth: '24px',
-      minHeight: '24px',
-      padding: '4px 4px',
+      minHeight: '22px',
+      padding: '3px 4px',
     });
 
     fireEvent.pointerDown(atkIncreaseButton, { clientX: 10, clientY: 20, button: 0 });
@@ -151,6 +152,48 @@ describe('Card', () => {
     expect(screen.getByText('Cem')).toHaveAttribute('aria-label', 'Send to cemetery');
     expect(screen.getByText('Ban')).toHaveAttribute('title', 'Banish this card');
     expect(screen.getByText('Evolve')).toHaveAttribute('aria-label', 'Return to evolve deck');
+  });
+
+  it('scales fine-input hover quick actions down in overview density', () => {
+    renderWithInputProfile(
+      'fine',
+      <Card
+        card={createCard({ isEvolveCard: true })}
+        onModifyCounter={vi.fn()}
+        onModifyGenericCounter={vi.fn()}
+        onSendToBottom={vi.fn()}
+        onBanish={vi.fn()}
+        onReturnEvolve={vi.fn()}
+        onCemetery={vi.fn()}
+        onTap={vi.fn()}
+      />,
+      'overview'
+    );
+
+    expect(screen.getByTestId('card-controls')).toHaveStyle({
+      padding: '3px',
+      gap: '1px',
+    });
+    expect(screen.getByText('Bot')).toHaveStyle({
+      fontSize: '9px',
+      minWidth: '28px',
+      padding: '1px 3px',
+    });
+    expect(screen.getByText('+A')).toHaveStyle({
+      minWidth: '20px',
+      minHeight: '18px',
+      fontSize: '10px',
+    });
+    expect(screen.getByText('+C')).toHaveStyle({
+      minHeight: '16px',
+      fontSize: '9px',
+    });
+    expect(screen.getByText('REST')).toHaveStyle({
+      minHeight: '18px',
+      minWidth: '30px',
+      fontSize: '8px',
+      display: 'flex',
+    });
   });
 
   it('fires generic counter quick actions for field cards', () => {
@@ -736,6 +779,25 @@ describe('Card', () => {
       lineHeight: '1',
       borderRadius: '3px',
     });
+  });
+
+  it('raises hovered fine-input quick actions above neighboring cards', () => {
+    render(
+      <Card
+        card={createCard({ zone: 'field-host', isTapped: true })}
+        baseStats={{ atk: 3, hp: 4 }}
+        onTap={vi.fn()}
+      />
+    );
+
+    const cardElement = screen.getByAltText('Test Card').closest('.game-card') as HTMLElement;
+    expect(cardElement).toHaveStyle({ zIndex: '1' });
+
+    fireEvent.pointerEnter(cardElement);
+    expect(cardElement).toHaveStyle({ zIndex: '140' });
+
+    fireEvent.pointerLeave(cardElement);
+    expect(cardElement).toHaveStyle({ zIndex: '1' });
   });
 
 });

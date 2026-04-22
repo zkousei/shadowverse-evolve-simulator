@@ -44,6 +44,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
   const inputProfile = useGameBoardInputProfile();
   const boardDensity = useGameBoardBoardDensity();
   const isCompactInput = inputProfile === 'coarse';
+  const isOverviewDesktop = inputProfile === 'fine' && boardDensity === 'overview';
   const { isOver, setNodeRef } = useDroppable({ id });
   const cardSize = getCardSizeForInputProfile(inputProfile, boardDensity);
   const stackAttachmentOffset = getStackAttachmentOffsetForInputProfile(inputProfile, boardDensity);
@@ -141,9 +142,9 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
           display: isCompactInput ? 'grid' : 'inline-flex',
           gridTemplateColumns: isCompactInput ? 'minmax(0, 1fr) auto' : undefined,
           alignItems: 'center',
-          gap: isCompactInput ? '3px' : '6px',
-          maxWidth: 'calc(100% - 20px)',
-          padding: isCompactInput ? '1px 5px' : '2px 8px',
+          gap: isCompactInput ? '3px' : isOverviewDesktop ? '4px' : '6px',
+          maxWidth: isOverviewDesktop ? 'calc(100% - 12px)' : 'calc(100% - 20px)',
+          padding: isCompactInput ? '1px 5px' : isOverviewDesktop ? '1px 6px' : '2px 8px',
           background: 'rgba(17, 24, 39, 0.92)',
           border: '1px solid rgba(255,255,255,0.16)',
           borderRadius: '999px',
@@ -172,12 +173,12 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
           style={{
             maxWidth: isCompactInput ? '100%' : undefined,
             minWidth: 0,
-            fontSize: isCompactInput ? '0.5rem' : '0.72rem',
+            fontSize: isCompactInput ? '0.5rem' : isOverviewDesktop ? '0.64rem' : '0.72rem',
             fontWeight: 'bold',
             color: 'white',
             whiteSpace: isCompactInput ? 'normal' : 'nowrap',
             overflow: isCompactInput ? 'visible' : 'hidden',
-            textOverflow: isCompactInput ? 'clip' : 'ellipsis',
+            textOverflow: isCompactInput || isOverviewDesktop ? 'clip' : 'ellipsis',
             overflowWrap: isCompactInput ? 'normal' : undefined,
             wordBreak: isCompactInput ? 'keep-all' : undefined,
             lineHeight: isCompactInput ? 1.1 : undefined,
@@ -188,12 +189,12 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
         <span
           style={{
             flex: '0 0 auto',
-            minWidth: isCompactInput ? '18px' : '22px',
-            padding: isCompactInput ? '0 4px' : '0 6px',
+            minWidth: isCompactInput ? '18px' : isOverviewDesktop ? '18px' : '22px',
+            padding: isCompactInput ? '0 4px' : isOverviewDesktop ? '0 4px' : '0 6px',
             borderRadius: '999px',
             background: 'rgba(59, 130, 246, 0.24)',
             color: '#bfdbfe',
-            fontSize: isCompactInput ? '0.48rem' : '0.7rem',
+            fontSize: isCompactInput ? '0.48rem' : isOverviewDesktop ? '0.62rem' : '0.7rem',
             fontWeight: 'bold',
             textAlign: 'center'
           }}

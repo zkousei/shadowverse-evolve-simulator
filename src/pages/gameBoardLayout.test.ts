@@ -40,6 +40,19 @@ describe('gameBoardLayout', () => {
     expect(layout.boardShellColumns).toBe('188px 1080px 220px');
   });
 
+  it('uses explicit compact desktop columns for overview density without CSS scaling', () => {
+    const layout = resolveBoardLayout(1440, 'fine', 'overview');
+
+    expect(layout.profile).toBe('desktop');
+    expect(layout.sidePanelWidth).toBe(176);
+    expect(layout.topPanelWidth).toBe(150);
+    expect(layout.sideZoneWidth).toBe(112);
+    expect(layout.centerZoneWidth).toBe(640);
+    expect(layout.boardContentWidth).toBe(864);
+    expect(layout.boardColumns).toBe('112px 640px 112px');
+    expect(layout.boardShellColumns).toBe('150px 864px 176px');
+  });
+
   it('uses tablet profile in 900-1279px only when input profile is coarse', () => {
     expect(getLayoutProfileForViewportWidth(900, 'coarse')).toBe('tablet');
     expect(getLayoutProfileForViewportWidth(1024, 'coarse')).toBe('tablet');

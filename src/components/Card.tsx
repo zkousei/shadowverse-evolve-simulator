@@ -71,7 +71,9 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
   const boardDensity = useGameBoardBoardDensity();
   const [isQuickActionsOpen, setIsQuickActionsOpen] = React.useState(false);
   const [coarseSheetPlacement, setCoarseSheetPlacement] = React.useState<{ top: number; left: number; width: number; maxHeight: number } | null>(null);
+  const [isDesktopQuickActionsHovered, setIsDesktopQuickActionsHovered] = React.useState(false);
   const isCoarseInput = inputProfile === 'coarse';
+  const isOverviewQuickActions = !isCoarseInput && boardDensity === 'overview';
   const cardSize = getCardSizeForInputProfile(inputProfile, boardDensity);
   const isInteractionLocked = isLocked || card.isLeaderCard || card.zone.startsWith('leader-');
   const canShowQuickActionOverlay = !isHidden && !isInteractionLocked;
@@ -212,7 +214,7 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
   const style: React.CSSProperties = {
     // Translate x/y for the drag
     transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
-    zIndex: transform ? 999 : 1,
+    zIndex: transform ? 999 : isDesktopQuickActionsHovered ? 140 : 1,
     cursor: isInteractionLocked ? 'default' : 'grab',
     touchAction: isCoarseInput ? 'none' : undefined,
     position: 'relative',
@@ -249,33 +251,47 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
     toEvolveDeck: t('gameBoard.card.quickActionDescriptions.toEvolveDeck'),
   };
   const compactQuickActionButtonStyle: React.CSSProperties = {
-    padding: '2px 4px',
-    fontSize: '10px',
+    padding: isOverviewQuickActions ? '1px 3px' : '2px 4px',
+    fontSize: isOverviewQuickActions ? '9px' : '10px',
     borderRadius: '2px',
-    minWidth: '32px',
+    minWidth: isOverviewQuickActions ? '28px' : '32px',
     whiteSpace: 'nowrap',
     lineHeight: 1.2,
   };
   const counterAdjustButtonStyle: React.CSSProperties = {
-    padding: '4px 4px',
-    fontSize: '11px',
+    padding: isOverviewQuickActions ? '2px 3px' : '3px 4px',
+    fontSize: isOverviewQuickActions ? '10px' : '11px',
     borderRadius: '4px',
-    minWidth: '24px',
-    minHeight: '24px',
+    minWidth: isOverviewQuickActions ? '20px' : '24px',
+    minHeight: isOverviewQuickActions ? '18px' : '22px',
     border: '1px solid rgba(255,255,255,0.55)',
     fontWeight: 'bold',
     lineHeight: 1,
   };
+  const genericCounterButtonStyle: React.CSSProperties = {
+    padding: isOverviewQuickActions ? '1px 3px' : '1px 4px',
+    fontSize: isOverviewQuickActions ? '9px' : '10px',
+    borderRadius: '2px',
+    width: '100%',
+    minHeight: isOverviewQuickActions ? '16px' : '18px',
+    lineHeight: 1.05,
+  };
   const combatActionButtonStyle: React.CSSProperties = {
-    padding: '2px 5px',
-    minHeight: '22px',
-    fontSize: '10px',
-    lineHeight: 1,
+    padding: isOverviewQuickActions ? '1px 3px' : '2px 5px',
+    minHeight: isOverviewQuickActions ? '18px' : '22px',
+    fontSize: isOverviewQuickActions ? '8px' : '10px',
+    lineHeight: isOverviewQuickActions ? 1.05 : 1,
     borderRadius: '3px',
     flex: '1 1 0',
-    minWidth: 0,
+    minWidth: isOverviewQuickActions ? '30px' : 0,
     fontWeight: 'bold',
     whiteSpace: 'nowrap',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    textOverflow: 'clip',
+    wordBreak: 'keep-all',
   };
   const coarseSheetButtonStyle: React.CSSProperties = {
     minHeight: '34px',
@@ -360,6 +376,14 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
       }}
       onPointerCancel={() => {
         inspectPointerStartRef.current = null;
+      }}
+      onPointerEnter={() => {
+        if (!isCoarseInput && canShowQuickActionOverlay) {
+          setIsDesktopQuickActionsHovered(true);
+        }
+      }}
+      onPointerLeave={() => {
+        setIsDesktopQuickActionsHovered(false);
       }}
       onContextMenu={(e) => {
         e.preventDefault();
@@ -482,17 +506,30 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
               data-quick-actions-open={String(isQuickActionsOpen)}
               style={{
                 position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                display: 'flex', flexDirection: 'column', gap: '2px', padding: '4px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: isOverviewQuickActions ? '1px' : '2px',
+                padding: isOverviewQuickActions ? '3px' : '4px',
                 background: 'rgba(0,0,0,0.6)', opacity: isCoarseInput ? (isQuickActionsOpen ? 1 : 0) : 0, transition: 'opacity 0.2s ease',
                 borderRadius: '4px',
                 pointerEvents: quickActionsDisabled ? 'none' : isCoarseInput ? (isQuickActionsOpen ? 'auto' : 'none') : undefined
               }}>
               {onPlayToField && (card.zone.startsWith('hand') || card.zone.startsWith('ex-')) && (
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '4px', marginBottom: '2px' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: isOverviewQuickActions ? '2px' : '4px', marginBottom: isOverviewQuickActions ? '1px' : '2px' }}>
                   <button
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={(e) => { e.stopPropagation(); onPlayToField(card.id); }}
-                    style={{ background: '#3b82f6', color: 'white', border: '1px solid #fff', padding: '4px 4px', fontSize: '11px', borderRadius: '4px', width: '100%', fontWeight: 'bold' }}
+                    style={{
+                      background: '#3b82f6',
+                      color: 'white',
+                      border: '1px solid #fff',
+                      padding: isOverviewQuickActions ? '3px 3px' : '4px 4px',
+                      fontSize: isOverviewQuickActions ? '10px' : '11px',
+                      borderRadius: '4px',
+                      width: '100%',
+                      fontWeight: 'bold',
+                      minHeight: isOverviewQuickActions ? '20px' : undefined,
+                    }}
                   >
                     {playActionLabel}
                   </button>
@@ -500,23 +537,23 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
               )}
               {onModifyCounter && isStatDisplayZone && !disableCombatAndCounterControls && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: isOverviewQuickActions ? '2px' : '3px' }}>
                     <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onModifyCounter(card.id, 'atk', 1); }} style={{ ...counterAdjustButtonStyle, background: '#3b82f6', color: '#fff' }}>+A</button>
                     <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onModifyCounter(card.id, 'atk', -1); }} style={{ ...counterAdjustButtonStyle, background: '#1a1d24', color: '#fff' }}>-A</button>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: isOverviewQuickActions ? '2px' : '3px' }}>
                     <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onModifyCounter(card.id, 'hp', 1); }} style={{ ...counterAdjustButtonStyle, background: '#ef4444', color: '#fff' }}>+H</button>
                     <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onModifyCounter(card.id, 'hp', -1); }} style={{ ...counterAdjustButtonStyle, background: '#1a1d24', color: '#fff' }}>-H</button>
                   </div>
                 </div>
               )}
               {onModifyGenericCounter && isStatDisplayZone && !disableCombatAndCounterControls && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '4px', width: '100%' }}>
-                  <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onModifyGenericCounter(card.id, 1); }} style={{ background: '#0f766e', color: '#fff', padding: '2px 4px', fontSize: '10px', borderRadius: '2px', width: '100%' }}>+C</button>
-                  <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onModifyGenericCounter(card.id, -1); }} style={{ background: '#7f1d1d', color: '#fff', padding: '2px 4px', fontSize: '10px', borderRadius: '2px', width: '100%' }}>-C</button>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: isOverviewQuickActions ? '2px' : '4px', width: '100%' }}>
+                  <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onModifyGenericCounter(card.id, 1); }} style={{ ...genericCounterButtonStyle, background: '#0f766e', color: '#fff' }}>+C</button>
+                  <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onModifyGenericCounter(card.id, -1); }} style={{ ...genericCounterButtonStyle, background: '#7f1d1d', color: '#fff' }}>-C</button>
                 </div>
               )}
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '4px', marginTop: 'auto' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: isOverviewQuickActions ? '2px' : '4px', marginTop: 'auto' }}>
                 {onSendToBottom && (
                   <button
                     onPointerDown={(e) => e.stopPropagation()}
@@ -552,7 +589,7 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
                 )}
               </div>
               {onReturnEvolve && card.isEvolveCard && (
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '4px', marginTop: '2px' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: isOverviewQuickActions ? '2px' : '4px', marginTop: isOverviewQuickActions ? '1px' : '2px' }}>
                   <button
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={(e) => { e.stopPropagation(); onReturnEvolve(card.id); }}
@@ -565,7 +602,7 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
                 </div>
               )}
               {onTap && !disableCombatAndCounterControls && (
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '3px', marginTop: '2px' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: isOverviewQuickActions ? '2px' : '3px', marginTop: isOverviewQuickActions ? '1px' : '2px' }}>
                   <button
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={(e) => { e.stopPropagation(); onTap(card.id); }}

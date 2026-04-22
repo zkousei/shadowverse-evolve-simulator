@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { useGameBoardInputProfile } from '../contexts/gameBoardInputProfileContext';
+import { useGameBoardBoardDensity, useGameBoardInputProfile } from '../contexts/gameBoardInputProfileContext';
 
 type GameBoardPlayingControlsProps = {
   canShowUndoTurn: boolean;
@@ -17,15 +17,19 @@ const GameBoardPlayingControls: React.FC<GameBoardPlayingControlsProps> = ({
 }) => {
   const { t } = useTranslation();
   const inputProfile = useGameBoardInputProfile();
+  const boardDensity = useGameBoardBoardDensity();
   const isCompactControls = inputProfile === 'coarse';
+  const isOverviewControls = inputProfile === 'fine' && boardDensity === 'overview';
   const compactButtonStyle: React.CSSProperties = isCompactControls
     ? { padding: '0.23rem 0.4rem', fontSize: '0.68rem', minHeight: '30px', lineHeight: 1.15 }
-    : { padding: '0.3rem 0.6rem', fontSize: '0.875rem' };
+    : isOverviewControls
+      ? { padding: '0.24rem 0.48rem', fontSize: '0.7rem' }
+      : { padding: '0.3rem 0.6rem', fontSize: '0.875rem' };
 
   return (
     <div
       data-testid="gameboard-playing-controls"
-      style={{ display: 'flex', gap: isCompactControls ? '0.35rem' : '0.4rem', flexWrap: isCompactControls ? 'wrap' : 'nowrap' }}
+      style={{ display: 'flex', gap: isCompactControls ? '0.35rem' : isOverviewControls ? '0.32rem' : '0.4rem', flexWrap: isCompactControls ? 'wrap' : 'nowrap' }}
     >
       <button
         onClick={onTossCoin}

@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { PlayerRole } from '../types/game';
 import GameBoardPreparationReadyStatus from './GameBoardPreparationReadyStatus';
-import { useGameBoardInputProfile } from '../contexts/gameBoardInputProfileContext';
+import { useGameBoardBoardDensity, useGameBoardInputProfile } from '../contexts/gameBoardInputProfileContext';
 
 type GameBoardPreparationControlsProps = {
   isSoloMode: boolean;
@@ -43,14 +43,17 @@ const GameBoardPreparationControls: React.FC<GameBoardPreparationControlsProps> 
 }) => {
   const { t } = useTranslation();
   const inputProfile = useGameBoardInputProfile();
+  const boardDensity = useGameBoardBoardDensity();
   const isCompactControls = inputProfile === 'coarse';
+  const isOverviewControls = inputProfile === 'fine' && boardDensity === 'overview';
   const canConfigureTurnOrder = isHost || isSoloMode;
   const canStartGame = canConfigureTurnOrder && hostReady && guestReady;
-  const compactButtonPadding = isCompactControls ? '0.2rem 0.36rem' : '0.3rem 0.5rem';
-  const compactButtonFontSize = isCompactControls ? '0.66rem' : '0.75rem';
+  const compactButtonPadding = isCompactControls ? '0.2rem 0.36rem' : isOverviewControls ? '0.24rem 0.4rem' : '0.3rem 0.5rem';
+  const compactButtonFontSize = isCompactControls ? '0.66rem' : isOverviewControls ? '0.6rem' : '0.75rem';
+  const primaryActionPadding = isCompactControls ? '0.24rem 0.5rem' : isOverviewControls ? '0.24rem 0.48rem' : '0.3rem 0.6rem';
 
   return (
-    <div data-testid="preparation-controls" style={{ display: 'flex', gap: isCompactControls ? '0.3rem' : '0.4rem', flexWrap: isCompactControls ? 'wrap' : 'nowrap' }}>
+    <div data-testid="preparation-controls" style={{ display: 'flex', gap: isCompactControls ? '0.3rem' : isOverviewControls ? '0.32rem' : '0.4rem', flexWrap: isCompactControls ? 'wrap' : 'nowrap' }}>
       <button
         onClick={() => onSetInitialTurnOrder()}
         disabled={!canConfigureTurnOrder}
@@ -76,7 +79,7 @@ const GameBoardPreparationControls: React.FC<GameBoardPreparationControlsProps> 
       {!bottomInitialHandDrawn && (
         <button
           onClick={() => onDrawInitialHand(bottomRole)}
-          style={{ padding: isCompactControls ? '0.24rem 0.5rem' : '0.3rem 0.6rem', background: '#3b82f6', color: 'white', fontWeight: 'bold', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: compactButtonFontSize }}
+          style={{ padding: primaryActionPadding, background: '#3b82f6', color: 'white', fontWeight: 'bold', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: compactButtonFontSize }}
         >
           {t('gameBoard.controls.drawHand')}
         </button>
@@ -86,7 +89,7 @@ const GameBoardPreparationControls: React.FC<GameBoardPreparationControlsProps> 
         <button
           onClick={() => onToggleReady(bottomRole)}
           style={{
-            padding: isCompactControls ? '0.24rem 0.5rem' : '0.3rem 0.6rem',
+            padding: primaryActionPadding,
             background: bottomReady ? '#ef4444' : 'var(--vivid-green-cyan)',
             color: bottomReady ? 'white' : 'black',
             fontWeight: 'bold',
@@ -103,7 +106,7 @@ const GameBoardPreparationControls: React.FC<GameBoardPreparationControlsProps> 
       {isSoloMode && !topInitialHandDrawn && (
         <button
           onClick={() => onDrawInitialHand(topRole)}
-          style={{ padding: isCompactControls ? '0.24rem 0.5rem' : '0.3rem 0.6rem', background: '#6366f1', color: 'white', fontWeight: 'bold', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: compactButtonFontSize }}
+          style={{ padding: primaryActionPadding, background: '#6366f1', color: 'white', fontWeight: 'bold', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: compactButtonFontSize }}
         >
           {t('gameBoard.controls.drawP2Hand')}
         </button>
@@ -113,7 +116,7 @@ const GameBoardPreparationControls: React.FC<GameBoardPreparationControlsProps> 
         <button
           onClick={() => onToggleReady(topRole)}
           style={{
-            padding: isCompactControls ? '0.24rem 0.5rem' : '0.3rem 0.6rem',
+            padding: primaryActionPadding,
             background: topReady ? '#ef4444' : '#6366f1',
             color: 'white',
             fontWeight: 'bold',
@@ -131,7 +134,7 @@ const GameBoardPreparationControls: React.FC<GameBoardPreparationControlsProps> 
         onClick={onStartGame}
         disabled={!canStartGame}
         style={{
-          padding: isCompactControls ? '0.24rem 0.5rem' : '0.3rem 0.6rem',
+          padding: primaryActionPadding,
           background: 'var(--vivid-green-cyan)',
           color: 'black',
           fontWeight: 'bold',

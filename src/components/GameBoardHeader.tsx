@@ -5,7 +5,7 @@ import GameBoardRoomStatus from './GameBoardRoomStatus';
 import GameBoardTurnPanel from './GameBoardTurnPanel';
 import type { PlayerRole, SyncState } from '../types/game';
 import type { ConnectionBadgeTone, GameBoardConnectionState } from '../utils/gameBoardPresentation';
-import { useGameBoardInputProfile } from '../contexts/gameBoardInputProfileContext';
+import { useGameBoardBoardDensity, useGameBoardInputProfile } from '../contexts/gameBoardInputProfileContext';
 
 type GameBoardHeaderProps = {
   room: string;
@@ -63,7 +63,9 @@ const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
   onPhaseChange,
 }) => {
   const inputProfile = useGameBoardInputProfile();
+  const boardDensity = useGameBoardBoardDensity();
   const isCompactControls = inputProfile === 'coarse';
+  const isOverviewControls = inputProfile === 'fine' && boardDensity === 'overview';
 
   return (
     <div
@@ -72,17 +74,17 @@ const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
         justifyContent: 'space-between',
         alignItems: isCompactControls ? 'stretch' : 'center',
         flexWrap: isCompactControls ? 'wrap' : 'nowrap',
-        columnGap: isCompactControls ? '0.5rem' : undefined,
-        rowGap: isCompactControls ? '0.4rem' : undefined,
+        columnGap: isCompactControls ? '0.5rem' : isOverviewControls ? '0.8rem' : undefined,
+        rowGap: isCompactControls ? '0.4rem' : isOverviewControls ? '0.32rem' : undefined,
         background: 'var(--bg-surface)',
-        padding: isCompactControls ? '0.48rem 0.62rem' : '0.75rem 1rem',
+        padding: isCompactControls ? '0.48rem 0.62rem' : isOverviewControls ? '0.6rem 0.8rem' : '0.75rem 1rem',
         borderRadius: 'var(--radius-md)',
       }}
     >
       <div
         style={{
           display: 'flex',
-          gap: isCompactControls ? '0.5rem' : '1rem',
+          gap: isCompactControls ? '0.5rem' : isOverviewControls ? '0.8rem' : '1rem',
           alignItems: 'center',
           flexWrap: isCompactControls ? 'wrap' : 'nowrap',
           minWidth: 0,
