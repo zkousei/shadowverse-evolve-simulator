@@ -423,6 +423,7 @@ const GameBoard: React.FC = () => {
   const topControlsPanelProps = {
     label: topLabel,
     panelWidth: topPanelWidth,
+    gameStatus: gameState.gameStatus,
     importDeckLabel: t('gameBoard.zones.importDeck', { label: topLabel }),
     loadSavedDeckLabel: t('gameBoard.zones.loadFromMyDecks', { label: topLabel }),
     canImportDeck: canImportTopDeck,
@@ -534,6 +535,7 @@ const GameBoard: React.FC = () => {
   const bottomControlsPanelProps = {
     label: bottomLabel,
     panelWidth: sidePanelWidth,
+    gameStatus: gameState.gameStatus,
     importDeckLabel: isSoloMode
       ? t('gameBoard.zones.importDeck', { label: bottomLabel })
       : t('gameBoard.zones.importDeckJson'),

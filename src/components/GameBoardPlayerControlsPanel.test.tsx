@@ -39,6 +39,7 @@ const renderWithInputProfile = (
 const createBaseProps = () => ({
   label: 'Player 1',
   panelWidth: 220,
+  gameStatus: 'playing' as const,
   importDeckLabel: 'Import Deck',
   loadSavedDeckLabel: 'Load from My Decks',
   canImportDeck: true,
@@ -114,8 +115,54 @@ describe('GameBoardPlayerControlsPanel', () => {
     expect(screen.getByRole('button', { name: 'Spawn Token' })).toHaveStyle({ color: 'rgb(248, 250, 252)' });
   });
 
+  it('hides playing-only actions while preparing and keeps setup actions visible', () => {
+    render(
+      <GameBoardPlayerControlsPanel
+        {...createBaseProps()}
+        gameStatus="preparing"
+        canUsePlayingActions={false}
+      />
+    );
+
+    expect(screen.getByText('Import Deck')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Load from My Decks' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Draw' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Mill' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Top to EX' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Spawn Token' })).toBeInTheDocument();
+  });
+
+  it('hides setup-only actions while playing and keeps playing actions visible', () => {
+    render(
+      <GameBoardPlayerControlsPanel
+        {...createBaseProps()}
+        gameStatus="playing"
+        canImportDeck={false}
+      />
+    );
+
+    expect(screen.queryByText('Import Deck')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Load from My Decks' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Draw' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Mill' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Top to EX' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Spawn Token' })).toBeInTheDocument();
+  });
+
+  it('keeps in-phase playing actions visible when interaction is temporarily blocked', () => {
+    render(
+      <GameBoardPlayerControlsPanel
+        {...createBaseProps()}
+        gameStatus="playing"
+        canUsePlayingActions={false}
+      />
+    );
+
+    expect(screen.getByRole('button', { name: 'Draw' })).toBeDisabled();
+  });
+
   it('uses compact typography and touch target sizing for coarse input buttons', () => {
-    renderWithInputProfile(
+    const { unmount } = renderWithInputProfile(
       'coarse',
       <GameBoardPlayerControlsPanel
         {...createBaseProps()}
@@ -123,12 +170,22 @@ describe('GameBoardPlayerControlsPanel', () => {
     );
 
     expect(screen.getByRole('button', { name: 'Draw' })).toHaveStyle({ fontSize: '0.64rem', minHeight: '30px' });
-    expect(screen.getByRole('button', { name: 'Load from My Decks' })).toHaveStyle({ fontSize: '0.66rem', minHeight: '30px' });
     expect(screen.getByRole('button', { name: 'Draw' })).toHaveStyle({ whiteSpace: 'normal' });
+
+    unmount();
+    renderWithInputProfile(
+      'coarse',
+      <GameBoardPlayerControlsPanel
+        {...createBaseProps()}
+        gameStatus="preparing"
+      />
+    );
+
+    expect(screen.getByRole('button', { name: 'Load from My Decks' })).toHaveStyle({ fontSize: '0.66rem', minHeight: '30px' });
     expect(screen.getByRole('button', { name: 'Load from My Decks' })).toHaveStyle({ gridColumn: '1 / -1' });
   });
 
-  it('keeps desktop overview controls denser without making buttons or tracker compact', () => {
+  it('keeps desktop overview controls stacked like the standard desktop panel', () => {
     renderWithInputProfile(
       'fine',
       <GameBoardPlayerControlsPanel
@@ -138,11 +195,13 @@ describe('GameBoardPlayerControlsPanel', () => {
     );
 
     expect(screen.getByTestId('player-controls-primary-actions')).toHaveStyle({
-      display: 'grid',
-      gridTemplateColumns: '1fr 1fr',
+      display: 'flex',
+      flexDirection: 'column',
     });
-    expect(screen.getByRole('button', { name: 'Draw' })).toHaveStyle({ fontSize: '0.76rem', minHeight: '34px' });
-    expect(screen.getByRole('button', { name: 'Load from My Decks' })).toHaveStyle({ fontSize: '0.78rem', minHeight: '34px' });
+    expect(screen.getByText('Player 1 Controls')).toHaveStyle({ fontSize: '0.8rem' });
+    expect(screen.getByRole('button', { name: 'Draw' })).toHaveStyle({ padding: '0.5rem' });
+    expect(screen.queryByRole('button', { name: 'Load from My Decks' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Spawn Token' })).toBeInTheDocument();
     expect(screen.getByTestId('player-tracker')).toHaveAttribute('data-compact', 'false');
     expect(screen.queryByTestId('player-controls-tracker-disclosure')).not.toBeInTheDocument();
   });
