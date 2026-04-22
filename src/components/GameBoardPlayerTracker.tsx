@@ -102,7 +102,7 @@ const GameBoardPlayerTracker: React.FC<GameBoardPlayerTrackerProps> = ({
   };
 
   return (
-    <div data-testid={testId} style={trackerContainerStyle}>
+    <div data-testid={testId} data-compact={String(compact)} style={trackerContainerStyle}>
       <div title={t('gameBoard.board.statusLabel', { label })} style={trackerHeaderStyle}>{t('gameBoard.board.statusLabel', { label })}</div>
       <div style={trackerStatRowStyle}>
         <span style={{ ...trackerStatLabelBaseStyle, color: '#ef4444' }}>{t('gameBoard.board.stats.hp')}: {hp}</span>

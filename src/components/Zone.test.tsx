@@ -292,10 +292,10 @@ describe('Zone', () => {
       />
     );
 
-    expect(container.firstChild).toHaveStyle({ gap: '0.36rem' });
+    expect(container.firstChild).toHaveStyle({ gap: '1.14rem' });
   });
 
-  it('keeps more breathing room between field cards in desktop overview mode', () => {
+  it('uses scaled field spacing in desktop overview mode without switching to coarse input', () => {
     const { container } = renderWithInputProfile(
       'fine',
       <Zone
@@ -306,7 +306,7 @@ describe('Zone', () => {
       'overview'
     );
 
-    expect(container.firstChild).toHaveStyle({ gap: '1.05rem' });
+    expect(container.firstChild).toHaveStyle({ gap: '1.9rem' });
   });
 
   it('uses compact zone label typography for coarse input', () => {
@@ -344,6 +344,25 @@ describe('Zone', () => {
     expect(zoneLabel).toHaveStyle({
       overflowWrap: 'normal',
       wordBreak: 'keep-all',
+    });
+  });
+
+  it('uses tighter zone label chrome in desktop overview so evolve labels fit more naturally', () => {
+    renderWithInputProfile(
+      'fine',
+      <Zone
+        id="evolveDeck-host"
+        label="エボルヴ"
+        cards={[createCard('host-card', { zone: 'evolveDeck-host' })]}
+      />,
+      'overview'
+    );
+
+    const zoneLabel = screen.getByText('エボルヴ');
+    expect(zoneLabel).toHaveStyle({
+      fontSize: '0.64rem',
+      textOverflow: 'clip',
+      whiteSpace: 'nowrap',
     });
   });
 });

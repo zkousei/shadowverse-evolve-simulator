@@ -28,6 +28,7 @@ vi.mock('../components/Zone', () => ({
     onAttack,
     hideCards,
     viewerRole,
+    containerStyle,
   }: {
     id: string;
     label: string;
@@ -36,8 +37,14 @@ vi.mock('../components/Zone', () => ({
     onAttack?: (id: string) => void;
     hideCards?: boolean;
     viewerRole?: string;
+    containerStyle?: React.CSSProperties;
   }) => (
-    <section data-testid={`zone-${id}`} data-hide-cards={String(Boolean(hideCards))} data-viewer-role={viewerRole ?? ''}>
+    <section
+      data-testid={`zone-${id}`}
+      data-hide-cards={String(Boolean(hideCards))}
+      data-viewer-role={viewerRole ?? ''}
+      style={containerStyle}
+    >
       <h3>{label}</h3>
       {cards.map((card) => (
         <div key={card.id} className="game-card" data-card-id={card.id}>
@@ -2261,7 +2268,7 @@ describe('GameBoard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Inspect Alpha Knight' }));
     expect(await screen.findByTestId('card-inspector')).toBeInTheDocument();
 
-    fireEvent.keyDown(window, { key: 'Escape' });
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
 
     await waitFor(() => {
       expect(screen.queryByTestId('card-inspector')).not.toBeInTheDocument();
@@ -2431,16 +2438,13 @@ describe('GameBoard', () => {
     render(<GameBoard />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Attack Alpha Knight' }));
+    expect(screen.getByTestId('board-playmat')).toHaveAttribute('data-attack-mode-active', 'true');
+    expect(screen.getByTestId('board-playmat')).toHaveAttribute('data-attack-source-card-id', 'card-1');
 
-    expect(await screen.findByText('ATTACK MODE')).toBeInTheDocument();
-    expect(screen.getByText((_, node) => (
-      node?.textContent === 'Select an enemy follower or leader for Alpha Knight.'
-    ))).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
 
     await waitFor(() => {
-      expect(screen.queryByText('ATTACK MODE')).not.toBeInTheDocument();
+      expect(screen.getByTestId('board-playmat')).toHaveAttribute('data-attack-mode-active', 'false');
     });
   });
 
@@ -2477,7 +2481,7 @@ describe('GameBoard', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Attack Alpha Knight' }));
 
-    expect(await screen.findByText('ATTACK MODE')).toBeInTheDocument();
+    expect(screen.getByTestId('board-playmat')).toHaveAttribute('data-attack-mode-active', 'true');
     expect(screen.queryByTestId('card-inspector')).not.toBeInTheDocument();
   });
 
@@ -2495,12 +2499,12 @@ describe('GameBoard', () => {
 
     const attackButton = screen.getByRole('button', { name: 'Attack Alpha Knight' });
     fireEvent.click(attackButton);
-    expect(await screen.findByText('ATTACK MODE')).toBeInTheDocument();
+    expect(screen.getByTestId('board-playmat')).toHaveAttribute('data-attack-mode-active', 'true');
 
     fireEvent.click(attackButton);
 
     await waitFor(() => {
-      expect(screen.queryByText('ATTACK MODE')).not.toBeInTheDocument();
+      expect(screen.getByTestId('board-playmat')).toHaveAttribute('data-attack-mode-active', 'false');
     });
   });
 
@@ -2526,15 +2530,11 @@ describe('GameBoard', () => {
     render(<GameBoard />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Attack Alpha Knight' }));
-    expect(await screen.findByText((_, node) => (
-      node?.textContent === 'Select an enemy follower or leader for Alpha Knight.'
-    ))).toBeInTheDocument();
+    expect(screen.getByTestId('board-playmat')).toHaveAttribute('data-attack-source-card-id', 'card-1');
 
     fireEvent.click(screen.getByRole('button', { name: 'Attack Beta Mage' }));
 
-    expect(await screen.findByText((_, node) => (
-      node?.textContent === 'Select an enemy follower or leader for Beta Mage.'
-    ))).toBeInTheDocument();
+    expect(screen.getByTestId('board-playmat')).toHaveAttribute('data-attack-source-card-id', 'card-2');
   });
 
   it('closes attack mode from an outside pointer down', async () => {
@@ -2550,14 +2550,14 @@ describe('GameBoard', () => {
     render(<GameBoard />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Attack Alpha Knight' }));
-    expect(await screen.findByText('ATTACK MODE')).toBeInTheDocument();
+    expect(screen.getByTestId('board-playmat')).toHaveAttribute('data-attack-mode-active', 'true');
 
     const outsideTarget = document.createElement('div');
     document.body.appendChild(outsideTarget);
     fireEvent.pointerDown(outsideTarget);
 
     await waitFor(() => {
-      expect(screen.queryByText('ATTACK MODE')).not.toBeInTheDocument();
+      expect(screen.getByTestId('board-playmat')).toHaveAttribute('data-attack-mode-active', 'false');
     });
     outsideTarget.remove();
   });
@@ -2623,7 +2623,7 @@ describe('GameBoard', () => {
     render(<GameBoard />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Attack Alpha Knight' }));
-    expect(await screen.findByText('ATTACK MODE')).toBeInTheDocument();
+    expect(screen.getByTestId('board-playmat')).toHaveAttribute('data-attack-mode-active', 'true');
 
     fireEvent.click(screen.getByRole('button', { name: 'Inspect Beta Mage' }));
 
@@ -2636,7 +2636,7 @@ describe('GameBoard', () => {
       'host'
     );
     await waitFor(() => {
-      expect(screen.queryByText('ATTACK MODE')).not.toBeInTheDocument();
+      expect(screen.getByTestId('board-playmat')).toHaveAttribute('data-attack-mode-active', 'false');
     });
     expect(screen.queryByTestId('card-inspector')).not.toBeInTheDocument();
   });
@@ -2654,12 +2654,12 @@ describe('GameBoard', () => {
     render(<GameBoard />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Attack Alpha Knight' }));
-    expect(await screen.findByText('ATTACK MODE')).toBeInTheDocument();
+    expect(screen.getByTestId('board-playmat')).toHaveAttribute('data-attack-mode-active', 'true');
 
-    fireEvent.keyDown(window, { key: 'Escape' });
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
 
     await waitFor(() => {
-      expect(screen.queryByText('ATTACK MODE')).not.toBeInTheDocument();
+      expect(screen.getByTestId('board-playmat')).toHaveAttribute('data-attack-mode-active', 'false');
     });
   });
 
@@ -2677,7 +2677,7 @@ describe('GameBoard', () => {
     const { rerender } = render(<GameBoard />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Attack Alpha Knight' }));
-    expect(await screen.findByText('ATTACK MODE')).toBeInTheDocument();
+    expect(screen.getByTestId('board-playmat')).toHaveAttribute('data-attack-mode-active', 'true');
 
     currentLogic = buildMockGameBoardLogic({
       connectionState: 'reconnecting',
@@ -2689,7 +2689,7 @@ describe('GameBoard', () => {
     rerender(<GameBoard />);
 
     await waitFor(() => {
-      expect(screen.queryByText('ATTACK MODE')).not.toBeInTheDocument();
+      expect(screen.getByTestId('board-playmat')).toHaveAttribute('data-attack-mode-active', 'false');
     });
   });
 
@@ -2709,7 +2709,7 @@ describe('GameBoard', () => {
     const { rerender } = render(<GameBoard />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Attack Alpha Knight' }));
-    expect(await screen.findByText('ATTACK MODE')).toBeInTheDocument();
+    expect(screen.getByTestId('board-playmat')).toHaveAttribute('data-attack-mode-active', 'true');
 
     currentLogic = buildMockGameBoardLogic({
       mode: 'solo',
@@ -2722,10 +2722,10 @@ describe('GameBoard', () => {
     });
     rerender(<GameBoard />);
 
-    expect(screen.getByText('ATTACK MODE')).toBeInTheDocument();
+    expect(screen.getByTestId('board-playmat')).toHaveAttribute('data-attack-mode-active', 'true');
   });
 
-  it('uses desktop board shell columns when viewport width is 1280px', () => {
+  it('uses compact overview desktop board shell columns when viewport width is 1280px', () => {
     const originalInnerWidth = window.innerWidth;
     Object.defineProperty(window, 'innerWidth', {
       configurable: true,
@@ -2739,7 +2739,7 @@ describe('GameBoard', () => {
       const topSection = screen.getByTestId('board-section-top');
       const topGrid = topSection.firstElementChild as HTMLElement;
 
-      expect(topGrid).toHaveStyle({ gridTemplateColumns: '188px 1080px 220px' });
+      expect(topGrid).toHaveStyle({ gridTemplateColumns: '150px 864px 176px' });
     } finally {
       Object.defineProperty(window, 'innerWidth', {
         configurable: true,
@@ -2882,10 +2882,15 @@ describe('GameBoard', () => {
       expect(shell).toHaveAttribute('data-layout-profile', 'desktop');
       expect(shell).toHaveAttribute('data-input-profile', 'fine');
       expect(shell).toHaveAttribute('data-board-density', 'overview');
-      expect(shell).toHaveStyle({ padding: '0.6rem', gap: '0.55rem' });
-      expect(playmat).toHaveStyle({ padding: '0.55rem', gap: '0.3rem' });
-      expect(topSection).toHaveStyle({ padding: '0.32rem 0.36rem' });
-      expect(topGrid).toHaveStyle({ gridTemplateColumns: '188px 1080px 220px' });
+      expect(shell).toHaveStyle({ padding: '0.48rem', gap: '0.44rem', width: '100%', height: '100%' });
+      expect(shell.style.zoom).toBe('');
+      expect(playmat).toHaveStyle({ padding: '0.44rem', gap: '0.24rem' });
+      expect(topSection).toHaveStyle({ padding: '0.26rem 0.29rem' });
+      expect(topGrid).toHaveStyle({ gridTemplateColumns: '150px 864px 176px' });
+      expect(screen.getByTestId('zone-cemetery-guest')).toHaveStyle({ minHeight: '98px' });
+      expect(screen.getByTestId('zone-field-guest')).toHaveStyle({ minHeight: '109px' });
+      expect(screen.getByTestId('zone-hand-guest')).toHaveStyle({ minHeight: '102px' });
+      expect(screen.getByTestId('zone-hand-host')).toHaveStyle({ minHeight: '109px' });
 
       [
         'hand-guest',
@@ -2954,8 +2959,9 @@ describe('GameBoard', () => {
       expect(shell).toHaveAttribute('data-layout-profile', 'desktop');
       expect(shell).toHaveAttribute('data-input-profile', 'fine');
       expect(shell).toHaveAttribute('data-board-density', 'overview');
-      expect(shell).toHaveStyle({ padding: '0.6rem', gap: '0.55rem' });
-      expect(playmat).toHaveStyle({ padding: '0.55rem', gap: '0.3rem' });
+      expect(shell).toHaveStyle({ padding: '0.48rem', gap: '0.44rem', width: '100%', height: '100%' });
+      expect(shell.style.zoom).toBe('');
+      expect(playmat).toHaveStyle({ padding: '0.44rem', gap: '0.24rem' });
     } finally {
       Object.defineProperty(window, 'innerWidth', {
         configurable: true,
@@ -3081,6 +3087,44 @@ describe('GameBoard', () => {
       expect(playmat).toHaveStyle({ padding: '0.42rem', gap: '0.24rem' });
       expect(topSection).toHaveStyle({ padding: '0.28rem 0.32rem' });
       expect(topGrid).toHaveStyle({ columnGap: '0.5rem' });
+    } finally {
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        writable: true,
+        value: originalInnerWidth,
+      });
+      Object.defineProperty(window, 'matchMedia', {
+        configurable: true,
+        writable: true,
+        value: originalMatchMedia,
+      });
+    }
+  });
+
+  it('keeps solo tablet trackers at the same compact density on roomy tablet widths', () => {
+    const originalInnerWidth = window.innerWidth;
+    const originalMatchMedia = window.matchMedia;
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      writable: true,
+      value: 1180,
+    });
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      writable: true,
+      value: vi.fn(() => ({ matches: true })),
+    });
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      mode: 'solo',
+      isSoloMode: true,
+      gameState: createGameState([], { gameStatus: 'playing' }),
+    }));
+
+    try {
+      render(<GameBoard />);
+
+      expect(screen.getByTestId('player-tracker-guest')).toHaveAttribute('data-compact', 'true');
+      expect(screen.getByTestId('player-tracker-host')).toHaveAttribute('data-compact', 'true');
     } finally {
       Object.defineProperty(window, 'innerWidth', {
         configurable: true,

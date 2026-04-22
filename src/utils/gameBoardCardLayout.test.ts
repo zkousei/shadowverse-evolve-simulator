@@ -18,18 +18,18 @@ describe('gameBoardCardLayout', () => {
     expect(getExZoneGapForInputProfile('fine')).toBe('1rem');
   });
 
-  it('uses a compact card size and tighter zone gaps for coarse input', () => {
+  it('uses a compact card size with slightly wider field spacing for coarse input', () => {
     expect(coarseCardSize).toEqual({ width: 76, height: 106 });
     expect(getCardSizeForInputProfile('coarse')).toEqual(coarseCardSize);
-    expect(getFieldZoneGapForInputProfile('coarse')).toBe('0.36rem');
+    expect(getFieldZoneGapForInputProfile('coarse')).toBe('1.14rem');
     expect(getExZoneGapForInputProfile('coarse')).toBe('0.36rem');
   });
 
   it('uses overview desktop sizing without switching to coarse input behavior', () => {
-    expect(overviewDesktopCardSize).toEqual({ width: 88, height: 123 });
+    expect(overviewDesktopCardSize).toEqual({ width: 70, height: 98 });
     expect(getCardSizeForInputProfile('fine', 'overview')).toEqual(overviewDesktopCardSize);
-    expect(getFieldZoneGapForInputProfile('fine', 'overview')).toBe('1.05rem');
-    expect(getExZoneGapForInputProfile('fine', 'overview')).toBe('0.5rem');
+    expect(getFieldZoneGapForInputProfile('fine', 'overview')).toBe('1.9rem');
+    expect(getExZoneGapForInputProfile('fine', 'overview')).toBe('0.4rem');
   });
 
   it('fits five field cards within tablet center zone width at 1024px', () => {

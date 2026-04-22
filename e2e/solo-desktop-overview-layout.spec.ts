@@ -21,6 +21,16 @@ test.describe('Solo Desktop Overview Layout', () => {
     await expect(page.getByTestId('player-controls-tracker-disclosure')).toHaveCount(0);
     await expect(page.getByTestId('player-tracker-host')).toBeVisible();
 
+    const playmatBox = await page.getByTestId('board-playmat').boundingBox();
+    const bottomSectionBox = await page.getByTestId('board-section-bottom').boundingBox();
+    expect(playmatBox).not.toBeNull();
+    expect(bottomSectionBox).not.toBeNull();
+    if (playmatBox && bottomSectionBox) {
+      const leftGutter = bottomSectionBox.x - playmatBox.x;
+      const rightGutter = (playmatBox.x + playmatBox.width) - (bottomSectionBox.x + bottomSectionBox.width);
+      expect(Math.abs(leftGutter - rightGutter)).toBeLessThanOrEqual(24);
+    }
+
     for (const zoneId of [
       'hand-guest',
       'cemetery-guest',
@@ -41,10 +51,10 @@ test.describe('Solo Desktop Overview Layout', () => {
     }
 
     const firstHandCardBox = await zoneCards(page, 'hand-host').first().boundingBox();
-    expect(firstHandCardBox?.width).toBeGreaterThanOrEqual(86);
-    expect(firstHandCardBox?.width).toBeLessThanOrEqual(90);
-    expect(firstHandCardBox?.height).toBeGreaterThanOrEqual(121);
-    expect(firstHandCardBox?.height).toBeLessThanOrEqual(125);
+    expect(firstHandCardBox?.width).toBeGreaterThanOrEqual(69);
+    expect(firstHandCardBox?.width).toBeLessThanOrEqual(72);
+    expect(firstHandCardBox?.height).toBeGreaterThanOrEqual(97);
+    expect(firstHandCardBox?.height).toBeLessThanOrEqual(100);
 
     await dragFirstZoneCard(page, 'hand-host', 'field-host');
     await expect(zoneCards(page, 'field-host')).toHaveCount(1);

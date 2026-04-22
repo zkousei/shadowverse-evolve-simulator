@@ -32,13 +32,31 @@ test.describe('Solo Combat and Inspector Flows', () => {
     await attacker.hover();
     await attacker.getByRole('button', { name: 'Attack' }).click({ force: true });
 
-    await expect(page.getByText('ATTACK MODE')).toBeVisible();
-    await expect(page.getByText('Select an enemy follower or leader for Token.')).toBeVisible();
+    await expect(page.getByTestId('board-playmat')).toHaveAttribute('data-attack-mode-active', 'true');
 
     await zoneCards(page, 'field-guest').first().click();
 
-    await expect(page.getByText('ATTACK MODE')).toBeHidden();
+    await expect(page.getByTestId('board-playmat')).toHaveAttribute('data-attack-mode-active', 'false');
     await expect(page.getByTestId('card-inspector')).toBeHidden();
     await expect(page.getByText(/attacks/).first()).toBeVisible();
+  });
+
+  test('can stand a rested follower even when adjacent field cards are present', async ({ page }) => {
+    await startSoloGame(page);
+    await spawnDefaultToken(page, 'bottom', 'field');
+    await spawnDefaultToken(page, 'bottom', 'field');
+
+    const secondFollower = zoneCards(page, 'field-host').nth(1);
+
+    await secondFollower.hover();
+    await secondFollower.getByRole('button', { name: 'REST' }).click();
+    await secondFollower.hover();
+    await expect(secondFollower.getByRole('button', { name: 'STAND' })).toBeVisible();
+    await expect(secondFollower.getByRole('button', { name: 'Attack' })).toHaveCount(0);
+
+    await secondFollower.getByRole('button', { name: 'STAND' }).click();
+    await secondFollower.hover();
+    await expect(secondFollower.getByRole('button', { name: 'REST' })).toBeVisible();
+    await expect(secondFollower.getByRole('button', { name: 'Attack' })).toBeVisible();
   });
 });

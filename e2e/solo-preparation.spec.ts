@@ -52,7 +52,7 @@ test.describe('Solo Preparation Flow', () => {
     await preparationControls.getByRole('button', { name: /START GAME/ }).click();
 
     await expect(preparationControls).toBeHidden();
-    await expect(deckInput(page, 'bottom')).toBeDisabled();
-    await expect(deckInput(page, 'top')).toBeDisabled();
+    await expect(deckInput(page, 'bottom')).toHaveCount(0);
+    await expect(deckInput(page, 'top')).toHaveCount(0);
   });
 });

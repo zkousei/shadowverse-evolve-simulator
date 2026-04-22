@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import Zone from '../components/Zone';
 import type { CardInstance } from '../components/Card';
 import CardSearchModal from '../components/CardSearchModal';
-import GameBoardAttackModeBanner from '../components/GameBoardAttackModeBanner';
 import GameBoardBoardRow from '../components/GameBoardBoardRow';
 import GameBoardBottomHandSection from '../components/GameBoardBottomHandSection';
 import GameBoardCardInspectorSection from '../components/GameBoardCardInspectorSection';
@@ -94,19 +93,19 @@ const GameBoard: React.FC = () => {
   );
   const isCompactBoard = inputProfile === 'coarse';
   const isOverviewBoard = boardDensity === 'overview';
-  const boardShellPadding = isCompactBoard ? '0.52rem' : isOverviewBoard ? '0.6rem' : '1rem';
-  const boardShellGap = isCompactBoard ? '0.48rem' : isOverviewBoard ? '0.55rem' : '1rem';
-  const playmatPadding = isCompactBoard ? '0.42rem' : isOverviewBoard ? '0.55rem' : '1rem';
-  const playmatGap = isCompactBoard ? '0.24rem' : isOverviewBoard ? '0.3rem' : '0.5rem';
-  const boardSectionPadding = isCompactBoard ? '0.28rem 0.32rem' : isOverviewBoard ? '0.32rem 0.36rem' : '0.55rem 0.6rem';
-  const boardSectionGap = isCompactBoard ? '0.22rem' : isOverviewBoard ? '0.26rem' : '0.5rem';
-  const boardShellColumnGap = isCompactBoard ? '0.5rem' : isOverviewBoard ? '0.55rem' : '1rem';
-  const boardColumnStackGap = isCompactBoard ? '0.34rem' : isOverviewBoard ? '0.36rem' : '0.65rem';
-  const boardSectionDividerMargin = isCompactBoard ? '0.4rem 0' : isOverviewBoard ? '0.35rem 0' : '1rem 0';
-  const stackZoneMinHeight = isCompactBoard ? '110px' : isOverviewBoard ? '122px' : '150px';
-  const fieldZoneMinHeight = isCompactBoard ? '124px' : isOverviewBoard ? '136px' : '160px';
-  const handZoneMinHeight = isCompactBoard ? '116px' : isOverviewBoard ? '128px' : '150px';
-  const bottomHandZoneMinHeight = isCompactBoard ? '124px' : isOverviewBoard ? '136px' : '160px';
+  const boardShellPadding = isCompactBoard ? '0.52rem' : isOverviewBoard ? '0.48rem' : '1rem';
+  const boardShellGap = isCompactBoard ? '0.48rem' : isOverviewBoard ? '0.44rem' : '1rem';
+  const playmatPadding = isCompactBoard ? '0.42rem' : isOverviewBoard ? '0.44rem' : '1rem';
+  const playmatGap = isCompactBoard ? '0.24rem' : isOverviewBoard ? '0.24rem' : '0.5rem';
+  const boardSectionPadding = isCompactBoard ? '0.28rem 0.32rem' : isOverviewBoard ? '0.26rem 0.29rem' : '0.55rem 0.6rem';
+  const boardSectionGap = isCompactBoard ? '0.22rem' : isOverviewBoard ? '0.21rem' : '0.5rem';
+  const boardShellColumnGap = isCompactBoard ? '0.5rem' : isOverviewBoard ? '0.44rem' : '1rem';
+  const boardColumnStackGap = isCompactBoard ? '0.34rem' : isOverviewBoard ? '0.29rem' : '0.65rem';
+  const boardSectionDividerMargin = isCompactBoard ? '0.4rem 0' : isOverviewBoard ? '0.28rem 0' : '1rem 0';
+  const stackZoneMinHeight = isCompactBoard ? '110px' : isOverviewBoard ? '98px' : '150px';
+  const fieldZoneMinHeight = isCompactBoard ? '124px' : isOverviewBoard ? '109px' : '160px';
+  const handZoneMinHeight = isCompactBoard ? '116px' : isOverviewBoard ? '102px' : '150px';
+  const bottomHandZoneMinHeight = isCompactBoard ? '124px' : isOverviewBoard ? '109px' : '160px';
   const {
     sidePanelWidth,
     topPanelWidth,
@@ -116,8 +115,8 @@ const GameBoard: React.FC = () => {
     boardColumns,
     boardShellColumns,
   } = React.useMemo(
-    () => resolveBoardLayout(viewportWidth, inputProfile),
-    [viewportWidth, inputProfile]
+    () => resolveBoardLayout(viewportWidth, inputProfile, boardDensity),
+    [viewportWidth, inputProfile, boardDensity]
   );
   const { t } = useTranslation();
   const {
@@ -445,6 +444,7 @@ const GameBoard: React.FC = () => {
     playerState: gameState[topRole],
     onAdjustStat: (stat: 'hp' | 'pp' | 'maxPp' | 'ep' | 'sep' | 'combo', delta: number) => handleStatChange(topRole, stat, delta),
     readOnlyTracker: isSpectator,
+    forceExpandedTracker: false,
   };
   const topSoloHandSectionProps = {
     columns: boardColumns,
@@ -560,6 +560,7 @@ const GameBoard: React.FC = () => {
     trackerTestId: `player-tracker-${bottomRole}`,
     playerState: gameState[bottomRole],
     onAdjustStat: (stat: 'hp' | 'pp' | 'maxPp' | 'ep' | 'sep' | 'combo', delta: number) => handleStatChange(bottomRole, stat, delta),
+    forceExpandedTracker: false,
     containerStyle: { marginLeft: '1.25rem' },
   };
   const savedDeckPickerDialogProps = savedDeckImportTargetRole && savedDeckPickerTargetLabel
@@ -617,7 +618,15 @@ const GameBoard: React.FC = () => {
           data-layout-profile={layoutProfile}
           data-input-profile={inputProfile}
           data-board-density={boardDensity}
-          style={{ padding: boardShellPadding, display: 'flex', flexDirection: 'column', height: '100%', gap: boardShellGap, overflow: 'hidden' }}
+          style={{
+            padding: boardShellPadding,
+            display: 'flex',
+            flexDirection: 'column',
+            width: '100%',
+            height: '100%',
+            gap: boardShellGap,
+            overflow: 'hidden',
+          }}
         >
 
         <GameBoardHeader
@@ -660,13 +669,6 @@ const GameBoard: React.FC = () => {
           />
         )}
 
-        {attackSourceCard && (
-          <GameBoardAttackModeBanner
-            attackerName={attackSourceCard.name}
-            onCancel={clearAttackSource}
-          />
-        )}
-
         {gameState.gameStatus === 'preparing' && (
           <GameBoardPreparationPanel
             isSoloMode={isSoloMode}
@@ -687,6 +689,8 @@ const GameBoard: React.FC = () => {
         {/* Board Playmat */}
         <div
           data-testid="board-playmat"
+          data-attack-mode-active={String(Boolean(attackSourceCard))}
+          data-attack-source-card-id={attackSourceCard?.id ?? ''}
           style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: playmatGap, background: 'url("https://shadowverse-evolve.com/wordpress/wp-content/themes/shadowverse-evolve-release_v0/assets/images/common/bg.jpg")', backgroundSize: 'cover', backgroundPosition: 'center', borderRadius: 'var(--radius-lg)', padding: playmatPadding, overflowY: 'auto', overflowX: 'auto', alignItems: 'center' }}
         >
 

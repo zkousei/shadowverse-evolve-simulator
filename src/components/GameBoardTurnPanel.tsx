@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { useGameBoardInputProfile } from '../contexts/gameBoardInputProfileContext';
+import { useGameBoardBoardDensity, useGameBoardInputProfile } from '../contexts/gameBoardInputProfileContext';
 
 type GamePhase = 'Start' | 'Main' | 'End';
 
@@ -27,20 +27,22 @@ const GameBoardTurnPanel: React.FC<GameBoardTurnPanelProps> = ({
 }) => {
   const { t } = useTranslation();
   const inputProfile = useGameBoardInputProfile();
+  const boardDensity = useGameBoardBoardDensity();
   const isCompactControls = inputProfile === 'coarse';
+  const isOverviewControls = inputProfile === 'fine' && boardDensity === 'overview';
 
   return (
     <div
       data-testid="gameboard-turn-panel"
       style={{
         display: 'flex',
-        gap: isCompactControls ? '0.5rem' : '1rem',
+        gap: isCompactControls ? '0.5rem' : isOverviewControls ? '0.8rem' : '1rem',
         flexWrap: isCompactControls ? 'wrap' : 'nowrap',
         alignItems: 'center',
         background: isBottomTurnActive
           ? 'linear-gradient(90deg, rgba(0, 208, 132, 0.18), rgba(17, 24, 39, 0.92))'
           : 'var(--bg-overlay)',
-        padding: isCompactControls ? '0.36rem 0.55rem' : '0.55rem 1rem',
+        padding: isCompactControls ? '0.36rem 0.55rem' : isOverviewControls ? '0.44rem 0.8rem' : '0.55rem 1rem',
         borderRadius: '10px',
         border: isBottomTurnActive ? '1px solid rgba(0, 208, 132, 0.28)' : '1px solid transparent',
         boxShadow: isBottomTurnActive ? '0 0 18px rgba(0, 208, 132, 0.16)' : 'none',
@@ -52,6 +54,8 @@ const GameBoardTurnPanel: React.FC<GameBoardTurnPanelProps> = ({
           color: isSoloMode || isCurrentPlayerTurn ? 'var(--vivid-green-cyan)' : 'var(--vivid-red)',
           fontSize: isCompactControls
             ? (isBottomTurnActive ? '0.78rem' : '0.74rem')
+            : isOverviewControls
+              ? (isBottomTurnActive ? '0.8rem' : '0.74rem')
             : (isBottomTurnActive ? '1rem' : '0.92rem'),
           fontWeight: 900,
           letterSpacing: '0.06em',
@@ -62,7 +66,7 @@ const GameBoardTurnPanel: React.FC<GameBoardTurnPanelProps> = ({
           ? t('gameBoard.turn.p1', { label: currentTurnLabel.toUpperCase() })
           : isCurrentPlayerTurn ? t('gameBoard.turn.your') : t('gameBoard.turn.opponent')}
       </span>
-      <span className="Garamond" style={{ fontSize: isCompactControls ? (isBottomTurnActive ? '0.84rem' : '0.78rem') : (isBottomTurnActive ? '1.08rem' : undefined) }}>
+      <span className="Garamond" style={{ fontSize: isCompactControls ? (isBottomTurnActive ? '0.84rem' : '0.78rem') : isOverviewControls ? (isBottomTurnActive ? '0.86rem' : '0.8rem') : (isBottomTurnActive ? '1.08rem' : undefined) }}>
         {t('gameBoard.turn.count', { count: turnCount })}
       </span>
       <select
@@ -71,11 +75,11 @@ const GameBoardTurnPanel: React.FC<GameBoardTurnPanelProps> = ({
         onChange={(event) => onPhaseChange(event.target.value as GamePhase)}
         disabled={!canChangePhase}
         style={{
-          padding: isCompactControls ? '0.14rem 0.24rem' : '0.2rem',
+          padding: isCompactControls ? '0.14rem 0.24rem' : isOverviewControls ? '0.16rem' : '0.2rem',
           borderRadius: '4px',
           background: 'black',
           color: 'white',
-          fontSize: isCompactControls ? '0.66rem' : undefined,
+          fontSize: isCompactControls ? '0.66rem' : isOverviewControls ? '0.8rem' : undefined,
           minHeight: isCompactControls ? '28px' : undefined,
           border: isBottomTurnActive ? '1px solid rgba(0, 208, 132, 0.35)' : undefined,
         }}

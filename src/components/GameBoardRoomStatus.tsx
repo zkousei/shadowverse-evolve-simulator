@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { useGameBoardInputProfile } from '../contexts/gameBoardInputProfileContext';
+import { useGameBoardBoardDensity, useGameBoardInputProfile } from '../contexts/gameBoardInputProfileContext';
 
 type ConnectionBadgeTone = {
   background: string;
@@ -36,10 +36,12 @@ const GameBoardRoomStatus: React.FC<GameBoardRoomStatusProps> = ({
 }) => {
   const { t } = useTranslation();
   const inputProfile = useGameBoardInputProfile();
+  const boardDensity = useGameBoardBoardDensity();
   const isCompactControls = inputProfile === 'coarse';
-  const pillFontSize = isCompactControls ? '0.62rem' : '0.72rem';
-  const statusFontSize = isCompactControls ? '0.66rem' : undefined;
-  const buttonPadding = isCompactControls ? '0.2rem 0.4rem' : '0.28rem 0.55rem';
+  const isOverviewControls = inputProfile === 'fine' && boardDensity === 'overview';
+  const pillFontSize = isCompactControls ? '0.62rem' : isOverviewControls ? '0.58rem' : '0.72rem';
+  const statusFontSize = isCompactControls ? '0.66rem' : isOverviewControls ? '0.8rem' : undefined;
+  const buttonPadding = isCompactControls ? '0.2rem 0.4rem' : isOverviewControls ? '0.22rem 0.44rem' : '0.28rem 0.55rem';
 
   return (
     <div
@@ -47,12 +49,12 @@ const GameBoardRoomStatus: React.FC<GameBoardRoomStatusProps> = ({
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: isCompactControls ? '0.4rem' : '0.6rem',
+        gap: isCompactControls ? '0.4rem' : isOverviewControls ? '0.48rem' : '0.6rem',
         flexWrap: isCompactControls ? 'wrap' : 'nowrap',
         minWidth: 0,
       }}
     >
-      <span style={{ fontSize: isCompactControls ? '0.68rem' : undefined, lineHeight: 1.2 }}>
+      <span style={{ fontSize: isCompactControls ? '0.68rem' : isOverviewControls ? '0.8rem' : undefined, lineHeight: 1.2 }}>
         {isSoloMode ? t('gameBoard.header.mode') : t('gameBoard.header.room')}:{' '}
         <strong>{isSoloMode ? t('gameBoard.header.soloPlayBeta') : room}</strong>
       </span>
@@ -79,11 +81,11 @@ const GameBoardRoomStatus: React.FC<GameBoardRoomStatusProps> = ({
       {isSoloMode && (
         <span
           style={{
-            fontSize: isCompactControls ? '0.68rem' : '0.75rem',
+            fontSize: isCompactControls ? '0.68rem' : isOverviewControls ? '0.6rem' : '0.75rem',
             fontWeight: 'bold',
             color: '#111827',
             background: '#f59e0b',
-            padding: '0.2rem 0.45rem',
+            padding: isOverviewControls ? '0.16rem 0.36rem' : '0.2rem 0.45rem',
             borderRadius: '999px',
             whiteSpace: 'nowrap',
           }}
@@ -94,7 +96,7 @@ const GameBoardRoomStatus: React.FC<GameBoardRoomStatusProps> = ({
       {!isSoloMode && (
         <span
           style={{
-            padding: '0.22rem 0.55rem',
+            padding: isOverviewControls ? '0.18rem 0.44rem' : '0.22rem 0.55rem',
             borderRadius: '999px',
             border: `1px solid ${connectionBadgeTone.border}`,
             background: connectionBadgeTone.background,
@@ -126,13 +128,13 @@ const GameBoardRoomStatus: React.FC<GameBoardRoomStatusProps> = ({
           disabled={connectionState === 'connecting'}
           title={connectionState === 'connecting' ? t('gameBoard.header.reconnectMessageConnecting') : t('gameBoard.header.reconnectMessageRetry')}
           style={{
-            padding: isCompactControls ? '0.25rem 0.5rem' : '0.3rem 0.6rem',
+            padding: isCompactControls ? '0.25rem 0.5rem' : isOverviewControls ? '0.24rem 0.48rem' : '0.3rem 0.6rem',
             background: '#334155',
             color: 'white',
             border: '1px solid rgba(255,255,255,0.14)',
             borderRadius: '4px',
             cursor: connectionState === 'connecting' ? 'not-allowed' : 'pointer',
-            fontSize: isCompactControls ? '0.68rem' : '0.75rem',
+            fontSize: isCompactControls ? '0.68rem' : isOverviewControls ? '0.6rem' : '0.75rem',
             opacity: connectionState === 'connecting' ? 0.6 : 1,
             whiteSpace: 'nowrap',
           }}
