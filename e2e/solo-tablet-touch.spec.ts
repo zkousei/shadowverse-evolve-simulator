@@ -40,6 +40,15 @@ test.describe('Solo Tablet Touch Controls', () => {
     await expect(boardRoot).toHaveAttribute('data-layout-profile', 'tablet');
     await expect(boardRoot).toHaveAttribute('data-input-profile', 'coarse');
 
+    const hostMainDeckBox = await page.getByTestId('zone-mainDeck-host').boundingBox();
+    const hostTrackerBox = await page.getByTestId('player-tracker-host').boundingBox();
+    expect(hostMainDeckBox).not.toBeNull();
+    expect(hostTrackerBox).not.toBeNull();
+    if (hostMainDeckBox && hostTrackerBox) {
+      const controlsGap = hostTrackerBox.x - (hostMainDeckBox.x + hostMainDeckBox.width);
+      expect(controlsGap).toBeGreaterThanOrEqual(14);
+    }
+
     await expect(zoneCards(page, 'mainDeck-host')).toHaveCount(2);
     await expect(zoneCards(page, 'hand-host')).toHaveCount(4);
 

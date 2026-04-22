@@ -2891,6 +2891,8 @@ describe('GameBoard', () => {
       expect(screen.getByTestId('zone-field-guest')).toHaveStyle({ minHeight: '109px' });
       expect(screen.getByTestId('zone-hand-guest')).toHaveStyle({ minHeight: '102px' });
       expect(screen.getByTestId('zone-hand-host')).toHaveStyle({ minHeight: '109px' });
+      const hostControlsPanel = screen.getByTestId('player-tracker-host').parentElement as HTMLElement;
+      expect(hostControlsPanel).toHaveStyle({ marginLeft: '1.5rem' });
 
       [
         'hand-guest',
@@ -3075,6 +3077,9 @@ describe('GameBoard', () => {
       writable: true,
       value: vi.fn(() => ({ matches: true })),
     });
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      gameState: createGameState([], { gameStatus: 'playing' }),
+    }));
 
     try {
       const { container } = render(<GameBoard />);
@@ -3087,6 +3092,11 @@ describe('GameBoard', () => {
       expect(playmat).toHaveStyle({ padding: '0.42rem', gap: '0.24rem' });
       expect(topSection).toHaveStyle({ padding: '0.28rem 0.32rem' });
       expect(topGrid).toHaveStyle({ columnGap: '0.5rem' });
+      const hostControlsPanel = screen.getByTestId('player-tracker-host').parentElement as HTMLElement;
+      expect(hostControlsPanel).toHaveStyle({ marginLeft: '1.35rem' });
+      const turnPanelWrapper = screen.getByTestId('gameboard-turn-panel').parentElement as HTMLElement;
+      expect(turnPanelWrapper).toHaveStyle({ justifyContent: 'flex-end' });
+      expect(turnPanelWrapper.style.flex).toBe('');
     } finally {
       Object.defineProperty(window, 'innerWidth', {
         configurable: true,
