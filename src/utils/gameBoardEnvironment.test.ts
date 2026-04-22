@@ -20,7 +20,7 @@ describe('gameBoardEnvironment', () => {
     });
   });
 
-  it('keeps taller fine desktop viewports on standard density', () => {
+  it('keeps taller fine desktop viewports on overview density', () => {
     const environment = resolveBoardEnvironment({
       viewportWidth: 1440,
       viewportHeight: 1024,
@@ -30,7 +30,7 @@ describe('gameBoardEnvironment', () => {
     expect(environment).toEqual({
       inputProfile: 'fine',
       layoutProfile: 'desktop',
-      boardDensity: 'standard',
+      boardDensity: 'overview',
     });
   });
 
