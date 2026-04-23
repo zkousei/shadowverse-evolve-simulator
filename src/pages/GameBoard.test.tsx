@@ -3094,6 +3094,10 @@ describe('GameBoard', () => {
       expect(playmat).toHaveStyle({ padding: '0.36rem', gap: '0.22rem' });
       expect(topSection).toHaveStyle({ padding: '0.24rem 0.28rem' });
       expect(topGrid).toHaveStyle({ columnGap: '0.5rem' });
+      expect(screen.getByTestId('zone-cemetery-guest')).toHaveStyle({ minHeight: '108px' });
+      expect(screen.getByTestId('zone-field-guest')).toHaveStyle({ minHeight: '120px' });
+      expect(screen.getByTestId('zone-hand-guest')).toHaveStyle({ minHeight: '112px' });
+      expect(screen.getByTestId('zone-hand-host')).toHaveStyle({ minHeight: '120px' });
       const hostControlsPanel = screen.getByTestId('player-tracker-host').parentElement as HTMLElement;
       expect(hostControlsPanel).toHaveStyle({ marginLeft: '1.35rem' });
       const turnPanelWrapper = screen.getByTestId('gameboard-turn-panel').parentElement as HTMLElement;

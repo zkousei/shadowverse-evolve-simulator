@@ -310,7 +310,7 @@ describe('Zone', () => {
   });
 
   it('uses compact zone label typography for coarse input', () => {
-    renderWithInputProfile(
+    const { container } = renderWithInputProfile(
       'coarse',
       <Zone
         id="field-host"
@@ -319,8 +319,9 @@ describe('Zone', () => {
       />
     );
 
+    expect(container.firstChild).toHaveStyle({ padding: '0.32rem' });
     const zoneLabel = screen.getByText('Cemetery');
-    expect(zoneLabel).toHaveStyle({ fontSize: '0.5rem' });
+    expect(zoneLabel).toHaveStyle({ fontSize: '0.48rem' });
     expect(zoneLabel).toHaveStyle({
       whiteSpace: 'normal',
       textOverflow: 'clip',
