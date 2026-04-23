@@ -93,13 +93,14 @@ const GameBoard: React.FC = () => {
   );
   const isCompactBoard = inputProfile === 'coarse';
   const isTabletLayout = layoutProfile === 'tablet';
+  const isTabletCompactBoard = isCompactBoard && isTabletLayout;
   const isOverviewBoard = boardDensity === 'overview';
-  const boardShellPadding = isCompactBoard ? '0.52rem' : isOverviewBoard ? '0.48rem' : '1rem';
-  const boardShellGap = isCompactBoard ? '0.48rem' : isOverviewBoard ? '0.44rem' : '1rem';
-  const playmatPadding = isCompactBoard ? '0.42rem' : isOverviewBoard ? '0.44rem' : '1rem';
-  const playmatGap = isCompactBoard ? '0.24rem' : isOverviewBoard ? '0.24rem' : '0.5rem';
-  const boardSectionPadding = isCompactBoard ? '0.28rem 0.32rem' : isOverviewBoard ? '0.26rem 0.29rem' : '0.55rem 0.6rem';
-  const boardSectionGap = isCompactBoard ? '0.22rem' : isOverviewBoard ? '0.21rem' : '0.5rem';
+  const boardShellPadding = isTabletCompactBoard ? '0.46rem' : isCompactBoard ? '0.52rem' : isOverviewBoard ? '0.48rem' : '1rem';
+  const boardShellGap = isTabletCompactBoard ? '0.4rem' : isCompactBoard ? '0.48rem' : isOverviewBoard ? '0.44rem' : '1rem';
+  const playmatPadding = isTabletCompactBoard ? '0.36rem' : isCompactBoard ? '0.42rem' : isOverviewBoard ? '0.44rem' : '1rem';
+  const playmatGap = isTabletCompactBoard ? '0.22rem' : isCompactBoard ? '0.24rem' : isOverviewBoard ? '0.24rem' : '0.5rem';
+  const boardSectionPadding = isTabletCompactBoard ? '0.24rem 0.28rem' : isCompactBoard ? '0.28rem 0.32rem' : isOverviewBoard ? '0.26rem 0.29rem' : '0.55rem 0.6rem';
+  const boardSectionGap = isTabletCompactBoard ? '0.18rem' : isCompactBoard ? '0.22rem' : isOverviewBoard ? '0.21rem' : '0.5rem';
   const boardShellColumnGap = isCompactBoard ? '0.5rem' : isOverviewBoard ? '0.56rem' : '1rem';
   const bottomPanelMarginLeft = isCompactBoard
     ? (isTabletLayout ? '1.35rem' : '1.1rem')
@@ -107,7 +108,7 @@ const GameBoard: React.FC = () => {
       ? '1.5rem'
       : '1.25rem';
   const boardColumnStackGap = isCompactBoard ? '0.34rem' : isOverviewBoard ? '0.29rem' : '0.65rem';
-  const boardSectionDividerMargin = isCompactBoard ? '0.4rem 0' : isOverviewBoard ? '0.28rem 0' : '1rem 0';
+  const boardSectionDividerMargin = isTabletCompactBoard ? '0.3rem 0' : isCompactBoard ? '0.4rem 0' : isOverviewBoard ? '0.28rem 0' : '1rem 0';
   const stackZoneMinHeight = isCompactBoard ? '110px' : isOverviewBoard ? '98px' : '150px';
   const fieldZoneMinHeight = isCompactBoard ? '124px' : isOverviewBoard ? '109px' : '160px';
   const handZoneMinHeight = isCompactBoard ? '116px' : isOverviewBoard ? '102px' : '150px';

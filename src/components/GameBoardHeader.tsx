@@ -68,6 +68,10 @@ const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
   const boardDensity = useGameBoardBoardDensity();
   const isCompactControls = inputProfile === 'coarse';
   const keepInlineCompactHeader = isCompactControls && isTabletLayout;
+  const compactHeaderColumnGap = keepInlineCompactHeader ? '0.42rem' : '0.5rem';
+  const compactHeaderRowGap = keepInlineCompactHeader ? '0.28rem' : '0.4rem';
+  const compactHeaderPadding = keepInlineCompactHeader ? '0.42rem 0.56rem' : '0.48rem 0.62rem';
+  const compactLeftBlockGap = keepInlineCompactHeader ? '0.42rem' : '0.5rem';
   const isOverviewControls = inputProfile === 'fine' && boardDensity === 'overview';
 
   return (
@@ -77,17 +81,17 @@ const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
         justifyContent: 'space-between',
         alignItems: keepInlineCompactHeader ? 'center' : isCompactControls ? 'stretch' : 'center',
         flexWrap: keepInlineCompactHeader ? 'nowrap' : isCompactControls ? 'wrap' : 'nowrap',
-        columnGap: isCompactControls ? '0.5rem' : isOverviewControls ? '0.8rem' : undefined,
-        rowGap: isCompactControls ? '0.4rem' : isOverviewControls ? '0.32rem' : undefined,
+        columnGap: isCompactControls ? compactHeaderColumnGap : isOverviewControls ? '0.8rem' : undefined,
+        rowGap: isCompactControls ? compactHeaderRowGap : isOverviewControls ? '0.32rem' : undefined,
         background: 'var(--bg-surface)',
-        padding: isCompactControls ? '0.48rem 0.62rem' : isOverviewControls ? '0.6rem 0.8rem' : '0.75rem 1rem',
+        padding: isCompactControls ? compactHeaderPadding : isOverviewControls ? '0.6rem 0.8rem' : '0.75rem 1rem',
         borderRadius: 'var(--radius-md)',
       }}
     >
       <div
         style={{
           display: 'flex',
-          gap: isCompactControls ? '0.5rem' : isOverviewControls ? '0.8rem' : '1rem',
+          gap: isCompactControls ? compactLeftBlockGap : isOverviewControls ? '0.8rem' : '1rem',
           alignItems: 'center',
           flexWrap: keepInlineCompactHeader ? 'nowrap' : isCompactControls ? 'wrap' : 'nowrap',
           minWidth: 0,
