@@ -2970,6 +2970,7 @@ describe('GameBoard', () => {
       const playmat = screen.getByTestId('board-playmat');
       const topSection = screen.getByTestId('board-section-top');
       const topGrid = topSection.firstElementChild as HTMLElement;
+      const sectionDivider = container.querySelector('hr');
 
       expect(shell).toHaveAttribute('data-layout-profile', 'desktop');
       expect(shell).toHaveAttribute('data-input-profile', 'fine');
@@ -2979,6 +2980,8 @@ describe('GameBoard', () => {
       expect(playmat).toHaveStyle({ padding: '0.44rem', gap: '0.24rem' });
       expect(topSection).toHaveStyle({ padding: '0.26rem 0.29rem' });
       expect(topGrid).toHaveStyle({ gridTemplateColumns: '150px 864px 176px' });
+      expect(sectionDivider).not.toBeNull();
+      expect(sectionDivider as HTMLElement).toHaveStyle({ margin: '0.18rem 0' });
       expect(screen.getByTestId('zone-cemetery-guest')).toHaveStyle({ minHeight: '98px' });
       expect(screen.getByTestId('zone-field-guest')).toHaveStyle({ minHeight: '109px' });
       expect(screen.getByTestId('zone-hand-guest')).toHaveStyle({ minHeight: '102px' });

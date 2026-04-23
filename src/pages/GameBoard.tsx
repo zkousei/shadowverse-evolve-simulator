@@ -109,7 +109,7 @@ const GameBoard: React.FC = () => {
       : '1.25rem';
   const boardColumnStackGap = isCompactBoard ? '0.34rem' : isOverviewBoard ? '0.29rem' : '0.65rem';
   const bottomBoardRowSecondaryMarginTop = isTabletCompactBoard ? '0.2rem' : '0';
-  const boardSectionDividerMargin = isTabletCompactBoard ? '0.3rem 0' : isCompactBoard ? '0.4rem 0' : isOverviewBoard ? '0.28rem 0' : '1rem 0';
+  const boardSectionDividerMargin = isTabletCompactBoard ? '0.3rem 0' : isCompactBoard ? '0.4rem 0' : isOverviewBoard ? '0.18rem 0' : '1rem 0';
   const stackZoneMinHeight = isTabletCompactBoard ? '108px' : isCompactBoard ? '110px' : isOverviewBoard ? '98px' : '150px';
   const fieldZoneMinHeight = isTabletCompactBoard ? '120px' : isCompactBoard ? '124px' : isOverviewBoard ? '109px' : '160px';
   const handZoneMinHeight = isTabletCompactBoard ? '112px' : isCompactBoard ? '116px' : isOverviewBoard ? '102px' : '150px';
