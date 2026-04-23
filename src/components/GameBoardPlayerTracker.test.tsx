@@ -39,9 +39,9 @@ describe('GameBoardPlayerTracker', () => {
     );
 
     expect(screen.getByTestId('player-tracker-host')).toHaveStyle({
-      marginTop: '0.25rem',
-      padding: '0.36rem',
-      gap: '0.24rem',
+      marginTop: '0.18rem',
+      padding: '0.32rem',
+      gap: '0.2rem',
     });
     expect(screen.getByText('Player 2 Status')).toHaveStyle({
       fontSize: '0.66rem',
@@ -50,7 +50,7 @@ describe('GameBoardPlayerTracker', () => {
     });
     expect(screen.getByText('HP: 20').parentElement).toHaveStyle({
       flexWrap: 'nowrap',
-      gap: '0.16rem',
+      gap: '0.14rem',
     });
   });
 

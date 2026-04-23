@@ -46,7 +46,7 @@ test.describe('Solo Tablet Touch Controls', () => {
     expect(hostTrackerBox).not.toBeNull();
     if (hostMainDeckBox && hostTrackerBox) {
       const controlsGap = hostTrackerBox.x - (hostMainDeckBox.x + hostMainDeckBox.width);
-      expect(controlsGap).toBeGreaterThanOrEqual(14);
+      expect(controlsGap).toBeGreaterThanOrEqual(12);
     }
 
     await expect(zoneCards(page, 'mainDeck-host')).toHaveCount(2);

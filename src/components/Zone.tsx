@@ -116,7 +116,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
         border: `2px dashed ${isOver ? 'var(--vivid-green-cyan)' : 'var(--border-light)'}`,
         backgroundColor: isOver ? 'rgba(0, 208, 132, 0.1)' : 'rgba(26, 29, 36, 0.5)',
         borderRadius: 'var(--radius-md)',
-        padding: isCompactInput ? '0.36rem' : '0.5rem',
+        padding: isCompactInput ? '0.32rem' : '0.5rem',
         position: 'relative',
         display: 'flex',
         flexDirection: isStack ? 'column' : 'row',
@@ -136,15 +136,15 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
       <div
         style={{
           position: 'absolute',
-          top: isCompactInput ? -8 : -12,
-          left: isCompactInput ? 8 : 10,
+          top: isCompactInput ? -7 : -12,
+          left: isCompactInput ? 7 : 10,
           zIndex: 20,
           display: isCompactInput ? 'grid' : 'inline-flex',
           gridTemplateColumns: isCompactInput ? 'minmax(0, 1fr) auto' : undefined,
           alignItems: 'center',
-          gap: isCompactInput ? '3px' : isOverviewDesktop ? '4px' : '6px',
+          gap: isCompactInput ? '2px' : isOverviewDesktop ? '4px' : '6px',
           maxWidth: isOverviewDesktop ? 'calc(100% - 12px)' : 'calc(100% - 20px)',
-          padding: isCompactInput ? '1px 5px' : isOverviewDesktop ? '1px 6px' : '2px 8px',
+          padding: isCompactInput ? '1px 4px' : isOverviewDesktop ? '1px 6px' : '2px 8px',
           background: 'rgba(17, 24, 39, 0.92)',
           border: '1px solid rgba(255,255,255,0.16)',
           borderRadius: '999px',
@@ -173,7 +173,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
           style={{
             maxWidth: isCompactInput ? '100%' : undefined,
             minWidth: 0,
-            fontSize: isCompactInput ? '0.5rem' : isOverviewDesktop ? '0.64rem' : '0.72rem',
+            fontSize: isCompactInput ? '0.48rem' : isOverviewDesktop ? '0.64rem' : '0.72rem',
             fontWeight: 'bold',
             color: 'white',
             whiteSpace: isCompactInput ? 'normal' : 'nowrap',
@@ -181,7 +181,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
             textOverflow: isCompactInput || isOverviewDesktop ? 'clip' : 'ellipsis',
             overflowWrap: isCompactInput ? 'normal' : undefined,
             wordBreak: isCompactInput ? 'keep-all' : undefined,
-            lineHeight: isCompactInput ? 1.1 : undefined,
+            lineHeight: isCompactInput ? 1.05 : undefined,
           }}
         >
           {displayLabel}
@@ -189,12 +189,12 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
         <span
           style={{
             flex: '0 0 auto',
-            minWidth: isCompactInput ? '18px' : isOverviewDesktop ? '18px' : '22px',
-            padding: isCompactInput ? '0 4px' : isOverviewDesktop ? '0 4px' : '0 6px',
+            minWidth: isCompactInput ? '16px' : isOverviewDesktop ? '18px' : '22px',
+            padding: isCompactInput ? '0 3px' : isOverviewDesktop ? '0 4px' : '0 6px',
             borderRadius: '999px',
             background: 'rgba(59, 130, 246, 0.24)',
             color: '#bfdbfe',
-            fontSize: isCompactInput ? '0.48rem' : isOverviewDesktop ? '0.62rem' : '0.7rem',
+            fontSize: isCompactInput ? '0.44rem' : isOverviewDesktop ? '0.62rem' : '0.7rem',
             fontWeight: 'bold',
             textAlign: 'center'
           }}
