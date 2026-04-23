@@ -114,7 +114,7 @@ const GameBoard: React.FC = () => {
   const fieldZoneMinHeight = isTabletCompactBoard ? '120px' : isCompactBoard ? '124px' : isOverviewBoard ? '109px' : '160px';
   const handZoneMinHeight = isTabletCompactBoard ? '112px' : isCompactBoard ? '116px' : isOverviewBoard ? '102px' : '150px';
   const bottomHandZoneMinHeight = isTabletCompactBoard ? '120px' : isCompactBoard ? '124px' : isOverviewBoard ? '109px' : '160px';
-  const leaderZoneMinHeight = isTabletCompactBoard ? '124px' : '150px';
+  const leaderZoneMinHeight = isTabletCompactBoard ? '124px' : isOverviewBoard ? '114px' : '150px';
   const {
     sidePanelWidth,
     topPanelWidth,

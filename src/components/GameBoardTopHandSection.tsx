@@ -52,8 +52,8 @@ const GameBoardTopHandSection: React.FC<GameBoardTopHandSectionProps> = ({
   const isCompactInput = inputProfile === 'coarse';
   const actionMenuWrapperStyle: React.CSSProperties = {
     position: 'absolute',
-    right: isCompactInput ? '8px' : '10px',
-    bottom: isCompactInput ? '8px' : '-32px',
+    right: '8px',
+    bottom: '8px',
     width: isCompactInput ? '164px' : '180px',
     zIndex: 30,
   };
@@ -75,7 +75,7 @@ const GameBoardTopHandSection: React.FC<GameBoardTopHandSectionProps> = ({
             activeMenuId={activeMenuId}
             actionsLabel={actionMenu.actionsLabel}
             actions={actionMenu.actions}
-            direction={isCompactInput ? 'up' : 'down'}
+            direction="down"
             onActiveMenuChange={onActiveMenuChange}
           />
         </div>

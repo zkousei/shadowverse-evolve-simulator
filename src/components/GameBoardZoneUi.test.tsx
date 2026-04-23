@@ -175,6 +175,7 @@ describe('GameBoard extracted UI components - zones and controls', () => {
 
     expect(button).toHaveAttribute('title', 'Unavailable');
     expect(button).toHaveStyle({ cursor: 'not-allowed' });
+    expect(button).toHaveStyle({ fontSize: '0.7rem', minHeight: '22px', padding: '3px 5px' });
 
     fireEvent.click(button);
 
@@ -379,6 +380,16 @@ describe('GameBoard extracted UI components - zones and controls', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Actions' }));
     fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+
+    expect(screen.getByRole('button', { name: 'Actions' })).toHaveStyle({
+      fontSize: '0.7rem',
+      minHeight: '22px',
+      padding: '3px 5px',
+    });
+    expect(screen.getByRole('button', { name: 'Search' })).toHaveStyle({
+      fontSize: '0.75rem',
+      padding: '5px 6px',
+    });
 
     expect(onToggle).toHaveBeenCalledTimes(1);
     expect(onActionClick).toHaveBeenCalledTimes(1);

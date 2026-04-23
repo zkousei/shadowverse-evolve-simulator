@@ -1106,6 +1106,52 @@ describe('GameBoard', () => {
     expect(discardRandomHandCards).toHaveBeenCalledWith('guest', 2, 'host');
   });
 
+  it('renders opponent hand actions trigger inside the zone on desktop', () => {
+    const guestHandCard = makeCard({
+      id: 'hand-guest-1',
+      zone: 'hand-guest',
+      owner: 'guest',
+    });
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      gameState: createGameState([guestHandCard], {
+        gameStatus: 'playing',
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    const opponentHandPanel = screen.getByTestId('zone-hand-guest').parentElement;
+    expect(opponentHandPanel).not.toBeNull();
+
+    const actionsButton = within(opponentHandPanel as HTMLElement).getByRole('button', { name: 'Actions' });
+    expect(actionsButton.parentElement?.parentElement).toHaveStyle({ bottom: '8px' });
+  });
+
+  it('opens opponent hand actions downward in p2p mode', () => {
+    const guestHandCard = makeCard({
+      id: 'hand-guest-1',
+      zone: 'hand-guest',
+      owner: 'guest',
+    });
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      gameState: createGameState([guestHandCard], {
+        gameStatus: 'playing',
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    const opponentHandPanel = screen.getByTestId('zone-hand-guest').parentElement;
+    expect(opponentHandPanel).not.toBeNull();
+
+    fireEvent.click(within(opponentHandPanel as HTMLElement).getByRole('button', { name: 'Actions' }));
+
+    const randomDiscardButton = screen.getByRole('button', { name: 'Random Discard' });
+    expect(randomDiscardButton.parentElement).toHaveStyle({ top: 'calc(100% + 4px)' });
+  });
+
   it('reopens random discard with the default value after canceling', async () => {
     const discardRandomHandCards = vi.fn();
     const guestHandCard = makeCard({
@@ -1259,6 +1305,52 @@ describe('GameBoard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Reveal Hand' }));
 
     expect(revealHand).toHaveBeenCalledTimes(1);
+  });
+
+  it('opens local hand actions upward in p2p mode', () => {
+    const hostHandCard = makeCard({
+      id: 'hand-host-1',
+      zone: 'hand-host',
+      owner: 'host',
+    });
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      gameState: createGameState([hostHandCard], {
+        gameStatus: 'playing',
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    const localHandPanel = screen.getByTestId('zone-hand-host').parentElement;
+    expect(localHandPanel).not.toBeNull();
+
+    fireEvent.click(within(localHandPanel as HTMLElement).getByRole('button', { name: 'Actions' }));
+
+    const revealHandButton = screen.getByRole('button', { name: 'Reveal Hand' });
+    expect(revealHandButton.parentElement).toHaveStyle({ bottom: 'calc(100% + 4px)' });
+  });
+
+  it('renders local hand actions trigger inside the zone on desktop', () => {
+    const hostHandCard = makeCard({
+      id: 'hand-host-1',
+      zone: 'hand-host',
+      owner: 'host',
+    });
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      gameState: createGameState([hostHandCard], {
+        gameStatus: 'playing',
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    const localHandPanel = screen.getByTestId('zone-hand-host').parentElement;
+    expect(localHandPanel).not.toBeNull();
+
+    const actionsButton = within(localHandPanel as HTMLElement).getByRole('button', { name: 'Actions' });
+    expect(actionsButton.parentElement?.parentElement).toHaveStyle({ bottom: '8px' });
   });
 
   it('does not show the p2p hand reveal action for an empty local hand', () => {
@@ -2891,6 +2983,8 @@ describe('GameBoard', () => {
       expect(screen.getByTestId('zone-field-guest')).toHaveStyle({ minHeight: '109px' });
       expect(screen.getByTestId('zone-hand-guest')).toHaveStyle({ minHeight: '102px' });
       expect(screen.getByTestId('zone-hand-host')).toHaveStyle({ minHeight: '109px' });
+      expect(screen.getByTestId('zone-leader-guest')).toHaveStyle({ minHeight: '114px' });
+      expect(screen.getByTestId('zone-leader-host')).toHaveStyle({ minHeight: '114px' });
       const hostControlsPanel = screen.getByTestId('player-tracker-host').parentElement as HTMLElement;
       expect(hostControlsPanel).toHaveStyle({ marginLeft: '1.5rem' });
 
