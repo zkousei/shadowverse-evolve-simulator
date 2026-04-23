@@ -72,12 +72,14 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
   const inputProfile = useGameBoardInputProfile();
   const boardDensity = useGameBoardBoardDensity();
   const isCompactControls = inputProfile === 'coarse';
+  const isNarrowCompactPanel = isCompactControls && panelWidth <= 160;
   const isOverviewControls = inputProfile === 'fine' && boardDensity === 'overview';
   const showSetupActions = gameStatus === 'preparing';
   const showPlayingActions = gameStatus === 'playing';
-  const compactPanelPadding = isCompactControls ? '0.55rem' : isOverviewControls ? '0.8rem' : '1rem';
-  const compactSectionGap = isCompactControls ? '0.3rem' : isOverviewControls ? '0.4rem' : '0.5rem';
-  const compactCellPadding = isCompactControls ? '0.36rem' : isOverviewControls ? '0.4rem' : '0.5rem';
+  const compactPanelPadding = isCompactControls ? (isNarrowCompactPanel ? '0.48rem' : '0.55rem') : isOverviewControls ? '0.8rem' : '1rem';
+  const compactPanelGap = isCompactControls ? (isNarrowCompactPanel ? '0.26rem' : '0.32rem') : isOverviewControls ? '0.4rem' : '0.5rem';
+  const compactSectionGap = isCompactControls ? (isNarrowCompactPanel ? '0.24rem' : '0.3rem') : isOverviewControls ? '0.4rem' : '0.5rem';
+  const compactCellPadding = isCompactControls ? (isNarrowCompactPanel ? '0.32rem' : '0.36rem') : isOverviewControls ? '0.4rem' : '0.5rem';
   const compactButtonBaseStyle: React.CSSProperties = isCompactControls || isOverviewControls
     ? {
         minHeight: isCompactControls ? '30px' : '24px',
@@ -105,14 +107,14 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
         boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'column',
-        gap: isCompactControls ? '0.32rem' : isOverviewControls ? '0.4rem' : '0.5rem',
+        gap: compactPanelGap,
         background: 'rgba(0,0,0,0.8)',
         padding: compactPanelPadding,
         borderRadius: 'var(--radius-md)',
         ...containerStyle,
       }}
     >
-      <div style={{ fontSize: isCompactControls ? '0.72rem' : isOverviewControls ? '0.64rem' : '0.8rem', fontWeight: 'bold', color: 'white', marginBottom: isCompactControls ? '0.16rem' : isOverviewControls ? '0.2rem' : '0.25rem' }}>
+      <div style={{ fontSize: isCompactControls ? (isNarrowCompactPanel ? '0.68rem' : '0.72rem') : isOverviewControls ? '0.64rem' : '0.8rem', fontWeight: 'bold', color: 'white', marginBottom: isCompactControls ? (isNarrowCompactPanel ? '0.12rem' : '0.16rem') : isOverviewControls ? '0.2rem' : '0.25rem' }}>
         {t('gameBoard.zones.controls', { label })}
       </div>
       <div
@@ -121,7 +123,7 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
           display: isCompactControls ? 'grid' : 'flex',
           flexDirection: isCompactControls ? undefined : 'column',
           gridTemplateColumns: isCompactControls ? '1fr 1fr' : undefined,
-          gap: isCompactControls ? '0.28rem' : isOverviewControls ? '0.4rem' : '0.5rem',
+          gap: isCompactControls ? (isNarrowCompactPanel ? '0.24rem' : '0.28rem') : isOverviewControls ? '0.4rem' : '0.5rem',
         }}
       >
         {showSetupActions && (

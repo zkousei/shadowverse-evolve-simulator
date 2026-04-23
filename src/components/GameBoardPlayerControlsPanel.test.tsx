@@ -215,6 +215,10 @@ describe('GameBoardPlayerControlsPanel', () => {
       />
     );
 
+    const panel = screen.getByText('Player 1 Controls').parentElement as HTMLElement;
+    expect(panel).toHaveStyle({ padding: '0.48rem', gap: '0.26rem' });
+    expect(screen.getByTestId('player-controls-primary-actions')).toHaveStyle({ gap: '0.24rem' });
+    expect(screen.getByRole('button', { name: 'Draw' })).toHaveStyle({ padding: '0.32rem' });
     expect(screen.getByTestId('player-tracker')).toHaveAttribute('data-compact', 'true');
   });
 
