@@ -348,6 +348,39 @@ describe('Zone', () => {
     });
   });
 
+  it('uses compact but slightly larger zone label typography on desktop without ellipsis', () => {
+    renderWithInputProfile(
+      'fine',
+      <Zone
+        id="evolveDeck-host"
+        label="エボルヴデッキ"
+        cards={[createCard('host-card', { zone: 'evolveDeck-host' })]}
+      />
+    );
+
+    const zoneLabel = screen.getByText('エボルヴデッキ');
+    expect(zoneLabel).toHaveStyle({
+      fontSize: '0.52rem',
+      textOverflow: 'clip',
+      whiteSpace: 'nowrap',
+    });
+    expect(screen.getByText('1')).toHaveStyle({ fontSize: '0.46rem' });
+  });
+
+  it('lowers floating zone label chrome on desktop to reduce overlap with nearby buttons', () => {
+    renderWithInputProfile(
+      'fine',
+      <Zone
+        id="field-host"
+        label="Field"
+        cards={[createCard('host-card')]}
+      />
+    );
+
+    const zoneLabel = screen.getByText('Field');
+    expect(zoneLabel.parentElement).toHaveStyle({ top: '-6px' });
+  });
+
   it('uses tighter zone label chrome in desktop overview so evolve labels fit more naturally', () => {
     renderWithInputProfile(
       'fine',
@@ -361,9 +394,10 @@ describe('Zone', () => {
 
     const zoneLabel = screen.getByText('エボルヴ');
     expect(zoneLabel).toHaveStyle({
-      fontSize: '0.64rem',
+      fontSize: '0.52rem',
       textOverflow: 'clip',
       whiteSpace: 'nowrap',
     });
+    expect(screen.getByText('1')).toHaveStyle({ fontSize: '0.46rem' });
   });
 });

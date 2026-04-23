@@ -47,6 +47,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
   const inputProfile = useGameBoardInputProfile();
   const boardDensity = useGameBoardBoardDensity();
   const isCompactInput = inputProfile === 'coarse';
+  const isFineInput = inputProfile === 'fine';
   const isOverviewDesktop = inputProfile === 'fine' && boardDensity === 'overview';
   const { isOver, setNodeRef } = useDroppable({ id });
   const cardSize = getCardSizeForInputProfile(inputProfile, boardDensity);
@@ -62,6 +63,12 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
   const isFieldZone = id.startsWith('field-');
   const isExZone = id.startsWith('ex-');
   const isReadOnlySpectator = viewerRole === 'spectator';
+  const zoneLabelChipGap = isCompactInput ? '2px' : isFineInput ? '3px' : isOverviewDesktop ? '4px' : '6px';
+  const zoneLabelChipPadding = isCompactInput ? '1px 4px' : isFineInput ? '1px 5px' : isOverviewDesktop ? '1px 6px' : '2px 8px';
+  const zoneLabelFontSize = isCompactInput ? '0.48rem' : isFineInput ? '0.52rem' : isOverviewDesktop ? '0.62rem' : '0.68rem';
+  const zoneCountMinWidth = isCompactInput ? '16px' : isFineInput ? '17px' : isOverviewDesktop ? '18px' : '22px';
+  const zoneCountPadding = isCompactInput ? '0 3px' : isFineInput ? '0 4px' : isOverviewDesktop ? '0 4px' : '0 6px';
+  const zoneCountFontSize = isCompactInput ? '0.44rem' : isFineInput ? '0.46rem' : isOverviewDesktop ? '0.62rem' : '0.7rem';
 
   const displayLabel = label.replace(/^(My|Opponent|Player 1|Player 2|自分|相手|1P|2P)\s+/, '');
   const hasCardOnTop = React.useCallback((cardId: string) => cards.some(card => card.attachedTo === cardId), [cards]);
@@ -165,15 +172,15 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
       <div
         style={{
           position: 'absolute',
-          top: isCompactInput ? -7 : -12,
+          top: -6,
           left: isCompactInput ? 7 : 10,
           zIndex: 20,
           display: isCompactInput ? 'grid' : 'inline-flex',
           gridTemplateColumns: isCompactInput ? 'minmax(0, 1fr) auto' : undefined,
           alignItems: 'center',
-          gap: isCompactInput ? '2px' : isOverviewDesktop ? '4px' : '6px',
+          gap: zoneLabelChipGap,
           maxWidth: isOverviewDesktop ? 'calc(100% - 12px)' : 'calc(100% - 20px)',
-          padding: isCompactInput ? '1px 4px' : isOverviewDesktop ? '1px 6px' : '2px 8px',
+          padding: zoneLabelChipPadding,
           background: 'rgba(17, 24, 39, 0.92)',
           border: '1px solid rgba(255,255,255,0.16)',
           borderRadius: '999px',
@@ -202,12 +209,12 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
           style={{
             maxWidth: isCompactInput ? '100%' : undefined,
             minWidth: 0,
-            fontSize: isCompactInput ? '0.48rem' : isOverviewDesktop ? '0.64rem' : '0.72rem',
+            fontSize: zoneLabelFontSize,
             fontWeight: 'bold',
             color: 'white',
             whiteSpace: isCompactInput ? 'normal' : 'nowrap',
             overflow: isCompactInput ? 'visible' : 'hidden',
-            textOverflow: isCompactInput || isOverviewDesktop ? 'clip' : 'ellipsis',
+            textOverflow: 'clip',
             overflowWrap: isCompactInput ? 'normal' : undefined,
             wordBreak: isCompactInput ? 'keep-all' : undefined,
             lineHeight: isCompactInput ? 1.05 : undefined,
@@ -218,12 +225,12 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
         <span
           style={{
             flex: '0 0 auto',
-            minWidth: isCompactInput ? '16px' : isOverviewDesktop ? '18px' : '22px',
-            padding: isCompactInput ? '0 3px' : isOverviewDesktop ? '0 4px' : '0 6px',
+            minWidth: zoneCountMinWidth,
+            padding: zoneCountPadding,
             borderRadius: '999px',
             background: 'rgba(59, 130, 246, 0.24)',
             color: '#bfdbfe',
-            fontSize: isCompactInput ? '0.44rem' : isOverviewDesktop ? '0.62rem' : '0.7rem',
+            fontSize: zoneCountFontSize,
             fontWeight: 'bold',
             textAlign: 'center'
           }}

@@ -52,8 +52,8 @@ const GameBoardBottomHandSection: React.FC<GameBoardBottomHandSectionProps> = ({
   const minHeight = zoneProps.containerStyle?.minHeight ?? '160px';
   const actionMenuWrapperStyle: React.CSSProperties = {
     position: 'absolute',
-    right: isCompactInput ? '8px' : '10px',
-    bottom: isCompactInput ? '8px' : '-32px',
+    right: '8px',
+    bottom: '8px',
     width: isCompactInput ? '164px' : '180px',
     zIndex: 30,
   };
@@ -69,7 +69,7 @@ const GameBoardBottomHandSection: React.FC<GameBoardBottomHandSectionProps> = ({
             activeMenuId={activeMenuId}
             actionsLabel={randomDiscardZoneActions.actionsLabel}
             actions={randomDiscardZoneActions.actions}
-            direction={isCompactInput ? 'up' : 'down'}
+            direction="up"
             onActiveMenuChange={onActiveMenuChange}
           />
         </div>
@@ -82,7 +82,7 @@ const GameBoardBottomHandSection: React.FC<GameBoardBottomHandSectionProps> = ({
             activeMenuId={activeMenuId}
             actionsLabel={revealHandZoneActions.actionsLabel}
             actions={revealHandZoneActions.actions}
-            direction={isCompactInput ? 'up' : 'down'}
+            direction="up"
             onActiveMenuChange={onActiveMenuChange}
           />
         </div>
