@@ -108,9 +108,24 @@ export const spawnDefaultToken = async (
 
 export const openMainDeckActions = async (page: Page, role: 'host' | 'guest') => {
   const mainDeckSection = zone(page, `mainDeck-${role}`).locator('..');
+  const actionsButton = mainDeckSection.getByRole('button', { name: 'Actions' });
 
   await zone(page, `mainDeck-${role}`).scrollIntoViewIfNeeded();
-  await mainDeckSection.getByRole('button', { name: 'Actions' }).click();
+  if (await actionsButton.count()) {
+    await actionsButton.click();
+    return mainDeckSection;
+  }
 
-  return mainDeckSection;
+  const mainDeckCard = zoneCards(page, `mainDeck-${role}`).first();
+  if (await mainDeckCard.count()) {
+    await expect(mainDeckCard).toBeVisible();
+    await mainDeckCard.click();
+  } else {
+    await zone(page, `mainDeck-${role}`).click();
+  }
+
+  const touchSheet = page.getByTestId('gameboard-touch-action-sheet');
+  await expect(touchSheet).toBeVisible();
+
+  return touchSheet;
 };

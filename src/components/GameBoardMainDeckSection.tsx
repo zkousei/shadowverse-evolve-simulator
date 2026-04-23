@@ -1,4 +1,5 @@
 import React from 'react';
+import GameBoardTouchActionSheet from './GameBoardTouchActionSheet';
 import Zone from './Zone';
 import GameBoardZoneActionsSection from './GameBoardZoneActionsSection';
 
@@ -16,6 +17,7 @@ type GameBoardMainDeckSectionProps = {
   actions?: ZoneAction[];
   direction?: 'down' | 'up';
   onActiveMenuChange: (menuId: string | null) => void;
+  useTapToOpenActions?: boolean;
 };
 
 const GameBoardMainDeckSection: React.FC<GameBoardMainDeckSectionProps> = ({
@@ -26,20 +28,63 @@ const GameBoardMainDeckSection: React.FC<GameBoardMainDeckSectionProps> = ({
   actions,
   direction,
   onActiveMenuChange,
-}) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-    <Zone {...zoneProps} />
-    {actions && actions.length > 0 ? (
-      <GameBoardZoneActionsSection
-        menuId={menuId}
-        activeMenuId={activeMenuId}
-        actionsLabel={actionsLabel}
-        actions={actions}
-        direction={direction}
-        onActiveMenuChange={onActiveMenuChange}
+  useTapToOpenActions = false,
+}) => {
+  const [isTouchSheetOpen, setIsTouchSheetOpen] = React.useState(false);
+  const [touchSheetAnchor, setTouchSheetAnchor] = React.useState<{ x: number; y: number } | null>(null);
+  const hasActions = Boolean(actions && actions.length > 0);
+  const shouldUseTapToOpenActions = useTapToOpenActions && hasActions;
+
+  React.useEffect(() => {
+    if (!shouldUseTapToOpenActions) {
+      setIsTouchSheetOpen(false);
+      setTouchSheetAnchor(null);
+    }
+  }, [shouldUseTapToOpenActions]);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+      <Zone
+        {...zoneProps}
+        onCardTapAction={(_, anchor) => {
+          if (!shouldUseTapToOpenActions) return false;
+          onActiveMenuChange(null);
+          setTouchSheetAnchor(anchor);
+          setIsTouchSheetOpen(true);
+          return true;
+        }}
+        onZoneTapAction={(anchor) => {
+          if (!shouldUseTapToOpenActions) return;
+          onActiveMenuChange(null);
+          setTouchSheetAnchor(anchor);
+          setIsTouchSheetOpen(true);
+        }}
       />
-    ) : null}
-  </div>
-);
+      {!shouldUseTapToOpenActions && hasActions ? (
+        <GameBoardZoneActionsSection
+          menuId={menuId}
+          activeMenuId={activeMenuId}
+          actionsLabel={actionsLabel}
+          actions={actions as ZoneAction[]}
+          direction={direction}
+          onActiveMenuChange={onActiveMenuChange}
+        />
+      ) : null}
+      <GameBoardTouchActionSheet
+        isOpen={isTouchSheetOpen}
+        actions={(actions ?? []).map((action) => ({
+          label: action.label,
+          onClick: action.onClick,
+          tone: action.tone,
+        }))}
+        anchor={touchSheetAnchor}
+        onClose={() => {
+          setIsTouchSheetOpen(false);
+          setTouchSheetAnchor(null);
+        }}
+      />
+    </div>
+  );
+};
 
 export default GameBoardMainDeckSection;

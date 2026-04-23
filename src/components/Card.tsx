@@ -38,6 +38,11 @@ export interface CardInspectAnchor {
   height: number;
 }
 
+export interface CardTapAnchor {
+  x: number;
+  y: number;
+}
+
 interface Props {
   card: CardInstance;
   baseStats?: BaseCardStats;
@@ -55,6 +60,7 @@ interface Props {
   onReturnEvolve?: (id: string) => void;
   onCemetery?: (id: string) => void;
   onPlayToField?: (id: string) => void;
+  onCardTapAction?: (card: CardInstance, anchor: CardTapAnchor) => boolean | void;
   isHidden?: boolean; // if true, STRICTLY render card back only
   isLocked?: boolean; // if true, prevent dragging and operating (opponent's hand/deck/ex)
   quickActionsDisabled?: boolean;
@@ -62,7 +68,7 @@ interface Props {
   debugIndex?: number;
 }
 
-const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideCurrentStats, highlightTone, onInspect, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, isHidden, isLocked, quickActionsDisabled, disableCombatAndCounterControls, debugIndex }) => {
+const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideCurrentStats, highlightTone, onInspect, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, onCardTapAction, isHidden, isLocked, quickActionsDisabled, disableCombatAndCounterControls, debugIndex }) => {
   const { t } = useTranslation();
   const inspectPointerStartRef = React.useRef<{ x: number; y: number } | null>(null);
   const cardElementRef = React.useRef<HTMLElement | null>(null);
@@ -347,11 +353,17 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
 
         if (!pointerStart) return;
         if ((event.target as HTMLElement).closest('button')) return;
-        if (isHidden || card.isFlipped) return;
 
         const deltaX = Math.abs(event.clientX - pointerStart.x);
         const deltaY = Math.abs(event.clientY - pointerStart.y);
         if (deltaX > 6 || deltaY > 6) return;
+
+        const tapActionHandled = onCardTapAction?.(card, {
+          x: event.clientX,
+          y: event.clientY,
+        });
+        if (tapActionHandled) return;
+        if (isHidden || card.isFlipped) return;
 
         if (canToggleQuickActions) {
           setIsQuickActionsOpen(prev => {

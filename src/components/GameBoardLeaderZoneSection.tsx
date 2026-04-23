@@ -10,6 +10,7 @@ type GameBoardLeaderZoneSectionProps = {
   zoneLabel: string;
   side: 'left' | 'right';
   extraOffset?: number;
+  zoneMinHeight?: string;
   leaderCards: CardInstance[];
   sideZoneWidth: number;
   cardDetailLookup: CardDetailLookup;
@@ -28,6 +29,7 @@ const GameBoardLeaderZoneSection: React.FC<GameBoardLeaderZoneSectionProps> = ({
   zoneLabel,
   side,
   extraOffset = 0,
+  zoneMinHeight = '150px',
   leaderCards,
   sideZoneWidth,
   cardDetailLookup,
@@ -52,6 +54,7 @@ const GameBoardLeaderZoneSection: React.FC<GameBoardLeaderZoneSectionProps> = ({
       leaderCards={leaderCards}
       side={side}
       sideZoneWidth={sideZoneWidth}
+      zoneMinHeight={zoneMinHeight}
       extraOffset={extraOffset}
       cardDetailLookup={cardDetailLookup}
       getHighlightTone={getHighlightTone}
