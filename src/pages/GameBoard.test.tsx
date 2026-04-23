@@ -3098,6 +3098,9 @@ describe('GameBoard', () => {
       expect(screen.getByTestId('zone-field-guest')).toHaveStyle({ minHeight: '120px' });
       expect(screen.getByTestId('zone-hand-guest')).toHaveStyle({ minHeight: '112px' });
       expect(screen.getByTestId('zone-hand-host')).toHaveStyle({ minHeight: '120px' });
+      expect(screen.getByTestId('zone-leader-guest')).toHaveStyle({ minHeight: '124px' });
+      expect(screen.getByTestId('zone-leader-host')).toHaveStyle({ minHeight: '124px' });
+      expect(screen.getByTestId('bottom-board-row-secondary-wrap')).toHaveStyle({ marginTop: '0.2rem' });
       const hostControlsPanel = screen.getByTestId('player-tracker-host').parentElement as HTMLElement;
       expect(hostControlsPanel).toHaveStyle({ marginLeft: '1.35rem' });
       const turnPanelWrapper = screen.getByTestId('gameboard-turn-panel').parentElement as HTMLElement;

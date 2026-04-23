@@ -11,6 +11,7 @@ type GameBoardLeaderZoneProps = {
   leaderCards: CardInstance[];
   side: 'left' | 'right';
   sideZoneWidth: number;
+  zoneMinHeight?: string;
   extraOffset?: number;
   cardDetailLookup: CardDetailLookup;
   getHighlightTone?: (card: CardInstance) => 'attack-source' | 'attack-target' | undefined;
@@ -29,6 +30,7 @@ const GameBoardLeaderZone: React.FC<GameBoardLeaderZoneProps> = ({
   leaderCards,
   side,
   sideZoneWidth,
+  zoneMinHeight = '150px',
   extraOffset = 0,
   cardDetailLookup,
   getHighlightTone,
@@ -62,7 +64,7 @@ const GameBoardLeaderZone: React.FC<GameBoardLeaderZoneProps> = ({
       viewerRole={viewerRole}
       containerStyle={{
         minWidth: `${sideZoneWidth}px`,
-        minHeight: '150px',
+        minHeight: zoneMinHeight,
         border: isAttackTargetLeader ? '2px solid rgba(250, 204, 21, 0.65)' : undefined,
         boxShadow: isAttackTargetLeader ? '0 0 18px rgba(250, 204, 21, 0.18)' : undefined,
       }}

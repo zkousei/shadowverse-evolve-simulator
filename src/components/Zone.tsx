@@ -1,6 +1,6 @@
 import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
-import Card, { type CardInspectAnchor, type CardInstance } from './Card';
+import Card, { type CardInspectAnchor, type CardInstance, type CardTapAnchor } from './Card';
 import type { PlayerRole } from '../types/game';
 import type { CardStatLookup } from '../utils/cardStats';
 import type { CardDetailLookup } from '../utils/cardDetails';
@@ -29,6 +29,8 @@ interface Props {
   onReturnEvolve?: (id: string) => void;
   onCemetery?: (id: string) => void;
   onPlayToField?: (id: string) => void;
+  onCardTapAction?: (card: CardInstance, anchor: CardTapAnchor) => boolean | void;
+  onZoneTapAction?: (anchor: CardTapAnchor) => void;
   hideCards?: boolean; // e.g. opponent hand
   layout?: 'horizontal' | 'stack';
   isProtected?: boolean; // if true, opponent cannot operate cards in this zone
@@ -40,7 +42,8 @@ interface Props {
   isDebug?: boolean;
 }
 
-const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLookup, onInspectCard, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, hideCards, layout = 'horizontal', isProtected, lockCards, disableQuickActionsForCard, getHighlightTone, viewerRole, containerStyle, isDebug }) => {
+const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLookup, onInspectCard, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, onCardTapAction, onZoneTapAction, hideCards, layout = 'horizontal', isProtected, lockCards, disableQuickActionsForCard, getHighlightTone, viewerRole, containerStyle, isDebug }) => {
+  const zoneTapPointerStartRef = React.useRef<{ x: number; y: number } | null>(null);
   const inputProfile = useGameBoardInputProfile();
   const boardDensity = useGameBoardBoardDensity();
   const isCompactInput = inputProfile === 'coarse';
@@ -100,16 +103,42 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
           isLocked={lockCards || isReadOnlySpectator || (isProtected && viewerRole !== 'all' && linkedCard.owner !== viewerRole)}
           quickActionsDisabled={disableQuickActionsForCard?.(linkedCard)}
           disableCombatAndCounterControls={true}
+          onCardTapAction={onCardTapAction}
           debugIndex={isDebug ? index : undefined}
         />
       </div>
     ));
-  }, [attachmentLeftOffset, attachmentTopOffset, cardDetailLookup, cardStatLookup, disableQuickActionsForCard, getHighlightTone, hideCards, isDebug, isProtected, isReadOnlySpectator, linkedCardLeftOffset, linkedCardTopOffset, lockCards, onBanish, onCemetery, onInspectCard, onReturnEvolve, onSendToBottom, viewerRole]);
+  }, [attachmentLeftOffset, attachmentTopOffset, cardDetailLookup, cardStatLookup, disableQuickActionsForCard, getHighlightTone, hideCards, isDebug, isProtected, isReadOnlySpectator, linkedCardLeftOffset, linkedCardTopOffset, lockCards, onBanish, onCardTapAction, onCemetery, onInspectCard, onReturnEvolve, onSendToBottom, viewerRole]);
 
   return (
     <div
       ref={setNodeRef}
       data-testid={`zone-${id}`}
+      onPointerDownCapture={(event) => {
+        if (event.button !== 0) return;
+        if (!onZoneTapAction) return;
+        if ((event.target as HTMLElement).closest('button')) return;
+        zoneTapPointerStartRef.current = { x: event.clientX, y: event.clientY };
+      }}
+      onPointerUpCapture={(event) => {
+        const pointerStart = zoneTapPointerStartRef.current;
+        zoneTapPointerStartRef.current = null;
+        if (!onZoneTapAction || !pointerStart) return;
+        if ((event.target as HTMLElement).closest('button')) return;
+        if ((event.target as HTMLElement).closest('[data-card-id]')) return;
+
+        const deltaX = Math.abs(event.clientX - pointerStart.x);
+        const deltaY = Math.abs(event.clientY - pointerStart.y);
+        if (deltaX > 6 || deltaY > 6) return;
+
+        onZoneTapAction({
+          x: event.clientX,
+          y: event.clientY,
+        });
+      }}
+      onPointerCancel={() => {
+        zoneTapPointerStartRef.current = null;
+      }}
       style={{
         flex: 1,
         minHeight: '160px',
@@ -248,6 +277,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
                       isLocked={lockCards || isReadOnlySpectator || (isProtected && viewerRole !== 'all' && card.owner !== viewerRole)}
                       quickActionsDisabled={disableQuickActionsForCard?.(card)}
                       disableCombatAndCounterControls={hasCardOnTop(card.id)}
+                      onCardTapAction={onCardTapAction}
                       debugIndex={isDebug ? index : undefined}
                     />
                     {renderLinkedCards(linkedCards, attachments.length)}
@@ -276,6 +306,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
                           isLocked={lockCards || isReadOnlySpectator || (isProtected && viewerRole !== 'all' && attachedCard.owner !== viewerRole)}
                           quickActionsDisabled={disableQuickActionsForCard?.(attachedCard)}
                           disableCombatAndCounterControls={hasCardOnTop(attachedCard.id)}
+                          onCardTapAction={onCardTapAction}
                           debugIndex={isDebug ? i : undefined}
                         />
                       </div>
@@ -320,6 +351,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
                 isLocked={lockCards || isReadOnlySpectator || (isProtected && viewerRole !== 'all' && card.owner !== viewerRole)}
                 quickActionsDisabled={disableQuickActionsForCard?.(card)}
                 disableCombatAndCounterControls={hasCardOnTop(card.id)}
+                onCardTapAction={onCardTapAction}
                 debugIndex={isDebug ? topLevelCards.indexOf(card) : undefined}
               />
               {renderLinkedCards(linkedCards, attachments.length)}
@@ -348,6 +380,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
                     isLocked={lockCards || isReadOnlySpectator || (isProtected && viewerRole !== 'all' && attachedCard.owner !== viewerRole)}
                     quickActionsDisabled={disableQuickActionsForCard?.(attachedCard)}
                     disableCombatAndCounterControls={hasCardOnTop(attachedCard.id)}
+                    onCardTapAction={onCardTapAction}
                     debugIndex={isDebug ? i : undefined}
                   />
                 </div>

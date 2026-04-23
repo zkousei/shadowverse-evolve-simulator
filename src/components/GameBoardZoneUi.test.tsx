@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import GameBoardEndTurnButton from './GameBoardEndTurnButton';
 import GameBoardEndTurnSection from './GameBoardEndTurnSection';
@@ -8,6 +8,8 @@ import GameBoardPlayerTracker from './GameBoardPlayerTracker';
 import GameBoardPlayerTrackerSection from './GameBoardPlayerTrackerSection';
 import GameBoardReadOnlyStatusPanel from './GameBoardReadOnlyStatusPanel';
 import GameBoardReadOnlyStatusSection from './GameBoardReadOnlyStatusSection';
+import GameBoardMainDeckSection from './GameBoardMainDeckSection';
+import GameBoardSearchableStackSection from './GameBoardSearchableStackSection';
 import GameBoardSearchableZoneStack from './GameBoardSearchableZoneStack';
 import GameBoardTurnPanel from './GameBoardTurnPanel';
 import GameBoardZoneActionsMenu from './GameBoardZoneActionsMenu';
@@ -24,15 +26,29 @@ vi.mock('./Zone', () => ({
     label,
     cards,
     containerStyle,
+    onCardTapAction,
+    onZoneTapAction,
   }: {
     id: string;
     label: string;
     cards: Array<{ id: string }>;
     containerStyle?: React.CSSProperties;
+    onCardTapAction?: (card: { id: string }, anchor: { x: number; y: number }) => boolean | void;
+    onZoneTapAction?: (anchor: { x: number; y: number }) => void;
   }) => (
-    <section data-testid={`zone-${id}`} data-border={containerStyle?.border ?? ''}>
+    <section data-testid={`zone-${id}`} data-border={containerStyle?.border ?? ''} data-min-height={containerStyle?.minHeight ?? ''}>
       <h3>{label}</h3>
       <span>{cards.length} cards</span>
+      {onCardTapAction ? (
+        <button type="button" onClick={() => onCardTapAction({ id: `${id}-card` }, { x: 320, y: 240 })}>
+          Tap zone card
+        </button>
+      ) : null}
+      {onZoneTapAction ? (
+        <button type="button" onClick={() => onZoneTapAction({ x: 180, y: 220 })}>
+          Tap zone
+        </button>
+      ) : null}
     </section>
   ),
 }));
@@ -122,6 +138,27 @@ describe('GameBoard extracted UI components - zones and controls', () => {
     expect(screen.getByTestId('zone-leader-host')).toHaveAttribute('data-border', '');
   });
 
+  it('passes custom leader zone min height', () => {
+    render(
+      <GameBoardLeaderZoneSection
+        playerRole="host"
+        label="Player 1"
+        zoneLabel="Player 1 Leader"
+        side="left"
+        zoneMinHeight="124px"
+        leaderCards={[]}
+        sideZoneWidth={120}
+        cardDetailLookup={{}}
+        viewerRole="host"
+        attackSourceController={null}
+        searchLabel="Search"
+        onSearch={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('zone-leader-host')).toHaveAttribute('data-min-height', '124px');
+  });
+
   it('renders zone search button and wires click action', () => {
     const onClick = vi.fn();
 
@@ -164,6 +201,52 @@ describe('GameBoard extracted UI components - zones and controls', () => {
 
     fireEvent.click(button);
 
+    expect(onSearch).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses tap-to-open zone search actions when enabled and cards exist', () => {
+    const onSearch = vi.fn();
+
+    render(
+      <GameBoardSearchableStackSection
+        zoneProps={{
+          id: 'banish-host',
+          label: 'Banish',
+          cards: [{ id: 'card-1' } as never],
+        }}
+        searchLabel="Search"
+        onSearch={onSearch}
+        useTapToOpenActions={true}
+      />
+    );
+
+    expect(screen.queryByRole('button', { name: 'Search' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tap zone card' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+
+    expect(onSearch).toHaveBeenCalledTimes(1);
+  });
+
+  it('hides inline zone search button for empty zones and opens via zone tap when tap-to-open is enabled', () => {
+    const onSearch = vi.fn();
+
+    render(
+      <GameBoardSearchableStackSection
+        zoneProps={{
+          id: 'banish-host',
+          label: 'Banish',
+          cards: [],
+        }}
+        searchLabel="Search"
+        onSearch={onSearch}
+        useTapToOpenActions={true}
+      />
+    );
+
+    expect(screen.queryByRole('button', { name: 'Search' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Tap zone' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
     expect(onSearch).toHaveBeenCalledTimes(1);
   });
 
@@ -338,6 +421,121 @@ describe('GameBoard extracted UI components - zones and controls', () => {
 
     expect(searchAction).toHaveBeenCalledTimes(1);
     expect(onActiveMenuChange).toHaveBeenCalledWith(null);
+  });
+
+  it('uses tap-to-open main deck actions when enabled and cards exist', () => {
+    const onSearch = vi.fn();
+    const onActiveMenuChange = vi.fn();
+
+    render(
+      <GameBoardMainDeckSection
+        zoneProps={{
+          id: 'mainDeck-host',
+          label: 'Main Deck',
+          cards: [{ id: 'card-1' } as never],
+        }}
+        menuId="mainDeck-host"
+        activeMenuId={null}
+        actionsLabel="Actions"
+        actions={[{ label: 'Search', onClick: onSearch }]}
+        onActiveMenuChange={onActiveMenuChange}
+        useTapToOpenActions={true}
+      />
+    );
+
+    expect(screen.queryByRole('button', { name: 'Actions' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tap zone card' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+
+    expect(onActiveMenuChange).toHaveBeenCalledWith(null);
+    expect(onSearch).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses a compact two-column touch sheet layout for multiple main deck actions', () => {
+    render(
+      <GameBoardMainDeckSection
+        zoneProps={{
+          id: 'mainDeck-host',
+          label: 'Main Deck',
+          cards: [{ id: 'card-1' } as never],
+        }}
+        menuId="mainDeck-host"
+        activeMenuId={null}
+        actionsLabel="Actions"
+        actions={[
+          { label: 'Search', onClick: vi.fn() },
+          { label: 'Shuffle', onClick: vi.fn() },
+          { label: 'Look Top', onClick: vi.fn(), tone: 'accent' },
+        ]}
+        onActiveMenuChange={vi.fn()}
+        useTapToOpenActions={true}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tap zone card' }));
+
+    const touchSheet = screen.getByTestId('gameboard-touch-action-sheet').firstElementChild as HTMLElement;
+    expect(touchSheet).toHaveStyle({ gridTemplateColumns: '1fr 1fr', gap: '0.28rem' });
+    expect(screen.getByRole('button', { name: 'Search' })).toHaveStyle({ minHeight: '30px' });
+    const touchSheetWidth = parseInt(touchSheet.style.width, 10);
+    expect(touchSheetWidth).toBeGreaterThanOrEqual(220);
+    expect(touchSheetWidth).toBeLessThan(380);
+  });
+
+  it('positions touch sheet near tapped zone coordinates', async () => {
+    render(
+      <GameBoardMainDeckSection
+        zoneProps={{
+          id: 'mainDeck-host',
+          label: 'Main Deck',
+          cards: [{ id: 'card-1' } as never],
+        }}
+        menuId="mainDeck-host"
+        activeMenuId={null}
+        actionsLabel="Actions"
+        actions={[{ label: 'Search', onClick: vi.fn() }]}
+        onActiveMenuChange={vi.fn()}
+        useTapToOpenActions={true}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tap zone card' }));
+
+    await waitFor(() => {
+      const sheet = screen.getByTestId('gameboard-touch-action-sheet') as HTMLElement;
+      expect(sheet).toHaveStyle({ top: '248px' });
+      const left = parseInt(sheet.style.left, 10);
+      expect(left).toBeGreaterThanOrEqual(220);
+      expect(left).toBeLessThanOrEqual(280);
+    });
+  });
+
+  it('hides inline main deck actions for empty main deck and opens via zone tap when tap-to-open is enabled', () => {
+    const onSearch = vi.fn();
+    const onActiveMenuChange = vi.fn();
+
+    render(
+      <GameBoardMainDeckSection
+        zoneProps={{
+          id: 'mainDeck-host',
+          label: 'Main Deck',
+          cards: [],
+        }}
+        menuId="mainDeck-host"
+        activeMenuId={null}
+        actionsLabel="Actions"
+        actions={[{ label: 'Search', onClick: onSearch }]}
+        onActiveMenuChange={onActiveMenuChange}
+        useTapToOpenActions={true}
+      />
+    );
+
+    expect(screen.queryByRole('button', { name: 'Actions' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Tap zone' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+    expect(onActiveMenuChange).toHaveBeenCalledWith(null);
+    expect(onSearch).toHaveBeenCalledTimes(1);
   });
 
   it('renders end turn section and delegates end turn for the active player', () => {
