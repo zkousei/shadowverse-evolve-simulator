@@ -2,7 +2,7 @@ import type { DeckBuilderCardData } from '../models/deckBuilderCard';
 import type { DeckState } from '../models/deckState';
 import type { DeckFormat, DeckRuleConfig } from '../models/deckRule';
 
-export type ExportableDeckCard = Omit<DeckBuilderCardData, 'related_cards'>;
+export type ExportableDeckCard = Omit<DeckBuilderCardData, 'related_cards' | 'faces'>;
 
 export type ExportableDeckPayload = {
   deckName: string;
@@ -18,8 +18,9 @@ export type ExportableDeckPayload = {
 };
 
 const toExportableDeckCard = (card: DeckBuilderCardData): ExportableDeckCard => {
-  const { related_cards: omittedRelatedCards, ...exportableCard } = card;
+  const { related_cards: omittedRelatedCards, faces: omittedFaces, ...exportableCard } = card;
   void omittedRelatedCards;
+  void omittedFaces;
   return exportableCard;
 };
 

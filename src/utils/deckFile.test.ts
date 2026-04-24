@@ -18,6 +18,24 @@ const baseCard: DeckBuilderCardData = {
   card_kind_normalized: 'follower',
   deck_section: 'main',
   related_cards: [{ id: 'TK01-001', name: 'Knight Token' }],
+  faces: [
+    {
+      side: 'front',
+      name: 'Alpha Knight',
+      image: '/alpha-front.png',
+      type: 'フォロワー',
+      card_kind_normalized: 'follower',
+      deck_section: 'main',
+    },
+    {
+      side: 'back',
+      name: 'Alpha Knight Back',
+      image: '/alpha-back.png',
+      type: 'フォロワー',
+      card_kind_normalized: 'follower',
+      deck_section: 'main',
+    },
+  ],
 };
 
 const ruleConfig: DeckRuleConfig = {
@@ -38,7 +56,7 @@ describe('deckFile', () => {
     vi.restoreAllMocks();
   });
 
-  it('builds an exportable payload without related card metadata', () => {
+  it('builds an exportable payload without catalog-only metadata', () => {
     const payload = buildExportableDeckPayload('My Deck', ruleConfig, {
       mainDeck: [baseCard],
       evolveDeck: [],
@@ -57,6 +75,7 @@ describe('deckFile', () => {
       deck_section: 'main',
     });
     expect(payload.mainDeck[0]).not.toHaveProperty('related_cards');
+    expect(payload.mainDeck[0]).not.toHaveProperty('faces');
   });
 
   it('sanitizes export file names and preserves supported characters', () => {

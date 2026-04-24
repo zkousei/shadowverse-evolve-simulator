@@ -54,6 +54,50 @@ RELATION_ONLY_HTML = """
 </div>
 """
 
+DOUBLE_FACED_DETAIL_HTML = """
+<div class="cardlist-Detail">
+  <div class="cardlist-Detail_Box">
+    <div class="cardlist-Detail_Box_Inner">
+      <div class="img w100"><img src="/wordpress/wp-content/images/cardlist/BP08/bp08-003_front.png" alt="決意の人形・オーキス" /></div>
+      <div class="txt">
+        <h1 class="ttl Sans">決意の人形・オーキス</h1>
+        <div class="info">
+          <dl><dt>クラス</dt><dd>エルフ</dd></dl>
+          <dl><dt>カード種類</dt><dd>フォロワー・エボルヴ</dd></dl>
+          <dl><dt>タイプ</dt><dd>人形・光輝</dd></dl>
+          <dl><dt>レアリティ</dt><dd>LG</dd></dl>
+          <dl><dt>収録商品</dt><dd>ブースターパック第8弾「次元混沌」</dd></dl>
+        </div>
+        <div class="status">
+          <span class="status-Item-Cost">コスト-</span>
+          <span class="status-Item-Power">攻撃力3</span>
+          <span class="status-Item-Hp">体力3</span>
+        </div>
+        <div class="detail"><p>表面テキスト<br />【進化時】表面能力。</p></div>
+      </div>
+    </div>
+    <div class="cardlist-Detail_Box_Inner">
+      <div class="img w100"><img src="/wordpress/wp-content/images/cardlist/BP08/bp08-003_back.png" alt="復讐の人形・オーキス" /></div>
+      <div class="txt">
+        <h1 class="ttl Sans">復讐の人形・オーキス</h1>
+        <div class="info">
+          <dl><dt>クラス</dt><dd>エルフ</dd></dl>
+          <dl><dt>カード種類</dt><dd>フォロワー・エボルヴ</dd></dl>
+          <dl><dt>タイプ</dt><dd>人形・キラー</dd></dl>
+          <dl><dt>レアリティ</dt><dd>LG</dd></dl>
+        </div>
+        <div class="status">
+          <span class="status-Item-Cost">コスト-</span>
+          <span class="status-Item-Power">攻撃力4</span>
+          <span class="status-Item-Hp">体力4</span>
+        </div>
+        <div class="detail"><p>裏面テキスト<br />【進化時】裏面能力。</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+"""
+
 
 class ScrapeDetailsTest(unittest.TestCase):
     def test_parse_card_detail_html_adds_related_cards_without_dropping_existing_fields(self) -> None:
@@ -85,6 +129,10 @@ class ScrapeDetailsTest(unittest.TestCase):
                 {"id": "BP02-009", "name": "クリスタリア・リリィ"},
                 {"id": "BP02-T01", "name": "フェアリー"},
             ],
+        )
+        self.assertLess(
+            list(updated.keys()).index("related_cards"),
+            list(updated.keys()).index("card_kind_normalized"),
         )
         self.assertEqual(updated["card_kind_normalized"], "follower")
         self.assertEqual(updated["deck_section"], "main")
@@ -122,6 +170,64 @@ class ScrapeDetailsTest(unittest.TestCase):
         self.assertEqual(updated["hp"], "4")
         self.assertEqual(updated["card_kind_normalized"], "evolve_follower")
         self.assertEqual(updated["deck_section"], "evolve")
+
+    def test_parse_card_detail_html_adds_double_faced_card_faces_without_changing_front_fields(self) -> None:
+        card = {
+            "id": "BP08-003",
+            "name": "決意の人形・オーキス",
+            "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP08/bp08-003_front.png",
+        }
+
+        updated = parse_card_detail_html(card, DOUBLE_FACED_DETAIL_HTML)
+
+        self.assertEqual(updated["name"], "決意の人形・オーキス")
+        self.assertEqual(updated["image"], "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP08/bp08-003_front.png")
+        self.assertEqual(updated["subtype"], "人形・光輝")
+        self.assertEqual(updated["atk"], "3")
+        self.assertEqual(updated["hp"], "3")
+        self.assertEqual(updated["ability_text"], "表面テキスト 【進化時】表面能力。")
+        self.assertEqual(
+            updated["faces"],
+            [
+                {
+                    "side": "front",
+                    "name": "決意の人形・オーキス",
+                    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP08/bp08-003_front.png",
+                    "class": "エルフ",
+                    "type": "フォロワー・エボルヴ",
+                    "subtype": "人形・光輝",
+                    "rarity": "LG",
+                    "product_name": "ブースターパック第8弾「次元混沌」",
+                    "cost": "-",
+                    "atk": "3",
+                    "hp": "3",
+                    "ability_text": "表面テキスト 【進化時】表面能力。",
+                    "card_kind_normalized": "evolve_follower",
+                    "deck_section": "evolve",
+                    "is_token": False,
+                    "is_evolve_card": True,
+                    "is_deck_build_legal": True,
+                },
+                {
+                    "side": "back",
+                    "name": "復讐の人形・オーキス",
+                    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP08/bp08-003_back.png",
+                    "class": "エルフ",
+                    "type": "フォロワー・エボルヴ",
+                    "subtype": "人形・キラー",
+                    "rarity": "LG",
+                    "cost": "-",
+                    "atk": "4",
+                    "hp": "4",
+                    "ability_text": "裏面テキスト 【進化時】裏面能力。",
+                    "card_kind_normalized": "evolve_follower",
+                    "deck_section": "evolve",
+                    "is_token": False,
+                    "is_evolve_card": True,
+                    "is_deck_build_legal": True,
+                },
+            ],
+        )
 
 
 if __name__ == "__main__":

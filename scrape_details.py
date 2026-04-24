@@ -11,11 +11,35 @@ from card_metadata import derive_card_metadata
 
 
 DETAIL_URL_TEMPLATE = "https://shadowverse-evolve.com/cardlist/?cardno={card_id}&view=text"
+CARD_SITE_ORIGIN = "https://shadowverse-evolve.com"
 INPUT_PATH = "public/cards.json"
 OUTPUT_PATH = "public/cards_detailed.json"
 BATCH_SIZE = 50
 MAX_RETRIES = 3
 RECOVERY_PASSES = 3
+
+CARD_FIELD_ORDER = [
+    "id",
+    "name",
+    "image",
+    "class",
+    "title",
+    "type",
+    "subtype",
+    "rarity",
+    "product_name",
+    "cost",
+    "atk",
+    "hp",
+    "ability_text",
+    "related_cards",
+    "faces",
+    "card_kind_normalized",
+    "deck_section",
+    "is_token",
+    "is_evolve_card",
+    "is_deck_build_legal",
+]
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0",
@@ -42,6 +66,14 @@ def first_nonempty_text(*values: Optional[str]) -> Optional[str]:
 
 def has_core_details(card: dict) -> bool:
     return all(field in card for field in ("class", "type", "subtype", "cost", "atk", "hp"))
+
+
+def order_card_fields(card: dict) -> dict:
+    ordered = {key: card[key] for key in CARD_FIELD_ORDER if key in card}
+    for key, value in card.items():
+        if key not in ordered:
+            ordered[key] = value
+    return ordered
 
 
 def extract_detail_text(detail_html: str) -> str:
@@ -95,45 +127,120 @@ def extract_related_cards(soup: BeautifulSoup) -> list[dict[str, str]]:
     return related_cards
 
 
+def detail_side_name(index: int) -> str:
+    if index == 0:
+        return "front"
+    if index == 1:
+        return "back"
+    return f"face_{index + 1}"
+
+
+def extract_info_fields(container: BeautifulSoup) -> dict:
+    fields = {}
+    info_div = container.select_one(".info")
+    if not info_div:
+        return fields
+
+    for dl in info_div.select("dl"):
+        dt = clean_text(dl.select_one("dt").get_text()) if dl.select_one("dt") else ""
+        dd = clean_text(dl.select_one("dd").get_text()) if dl.select_one("dd") else ""
+        if dt == "クラス":
+            fields["class"] = dd
+        elif dt == "タイトル":
+            fields["title"] = dd
+        elif dt == "カード種類":
+            fields["type"] = dd
+        elif dt == "タイプ":
+            fields["subtype"] = dd
+        elif dt == "レアリティ":
+            fields["rarity"] = dd
+        elif dt == "収録商品":
+            fields["product_name"] = dd
+
+    return fields
+
+
+def extract_status_fields(container: BeautifulSoup) -> dict:
+    fields = {}
+    status_div = container.select_one(".status")
+    if not status_div:
+        return fields
+
+    cost = status_div.select_one(".status-Item-Cost")
+    atk = status_div.select_one(".status-Item-Power")
+    hp = status_div.select_one(".status-Item-Hp")
+    if cost:
+        fields["cost"] = clean_text(cost.get_text().replace("コスト", ""))
+    if atk:
+        fields["atk"] = clean_text(atk.get_text().replace("攻撃力", ""))
+    if hp:
+        fields["hp"] = clean_text(hp.get_text().replace("体力", ""))
+
+    return fields
+
+
+def extract_image_url(container: BeautifulSoup) -> Optional[str]:
+    image = container.select_one(".img img")
+    if not image:
+        image = container.select_one('img[src*="/cardlist/"]')
+    if not image:
+        return None
+
+    image_src = image.get("src")
+    if not image_src:
+        return None
+
+    return urllib.parse.urljoin(CARD_SITE_ORIGIN, image_src)
+
+
+def parse_card_face(container: BeautifulSoup, side: str) -> dict:
+    face = {"side": side}
+
+    image = container.select_one(".img img")
+    title = container.select_one(".ttl")
+    name = first_nonempty_text(
+        title.get_text(" ", strip=True) if title else None,
+        image.get("alt") if image else None,
+        image.get("title") if image else None,
+    )
+    if name:
+        face["name"] = name
+
+    image_url = extract_image_url(container)
+    if image_url:
+        face["image"] = image_url
+
+    face.update(extract_info_fields(container))
+    face.update(extract_status_fields(container))
+
+    detail_div = container.select_one(".detail")
+    if detail_div:
+        detail_text = extract_detail_text(detail_div.decode_contents())
+        if detail_text:
+            face["ability_text"] = detail_text
+
+    return derive_card_metadata(face)
+
+
 def parse_card_detail_html(card: dict, html: str) -> dict:
     updated_card = dict(card)
     soup = BeautifulSoup(html, "html.parser")
 
-    info_div = soup.select_one(".info")
-    if info_div:
-        for dl in info_div.select("dl"):
-            dt = clean_text(dl.select_one("dt").get_text()) if dl.select_one("dt") else ""
-            dd = clean_text(dl.select_one("dd").get_text()) if dl.select_one("dd") else ""
-            if dt == "クラス":
-                updated_card["class"] = dd
-            elif dt == "タイトル":
-                updated_card["title"] = dd
-            elif dt == "カード種類":
-                updated_card["type"] = dd
-            elif dt == "タイプ":
-                updated_card["subtype"] = dd
-            elif dt == "レアリティ":
-                updated_card["rarity"] = dd
-            elif dt == "収録商品":
-                updated_card["product_name"] = dd
+    face_nodes = soup.select(".cardlist-Detail_Box_Inner") or [soup]
+    faces = [
+        parse_card_face(face_node, detail_side_name(index))
+        for index, face_node in enumerate(face_nodes)
+    ]
 
-    status_div = soup.select_one(".status")
-    if status_div:
-        cost = status_div.select_one(".status-Item-Cost")
-        atk = status_div.select_one(".status-Item-Power")
-        hp = status_div.select_one(".status-Item-Hp")
-        if cost:
-            updated_card["cost"] = clean_text(cost.get_text().replace("コスト", ""))
-        if atk:
-            updated_card["atk"] = clean_text(atk.get_text().replace("攻撃力", ""))
-        if hp:
-            updated_card["hp"] = clean_text(hp.get_text().replace("体力", ""))
+    primary_face = faces[0] if faces else {}
+    for key, value in primary_face.items():
+        if key != "side":
+            updated_card[key] = value
 
-    detail_div = soup.select_one(".detail")
-    if detail_div:
-        detail_text = extract_detail_text(detail_div.decode_contents())
-        if detail_text:
-            updated_card["ability_text"] = detail_text
+    if len(faces) > 1:
+        updated_card["faces"] = faces
+    else:
+        updated_card.pop("faces", None)
 
     related_cards = extract_related_cards(soup)
     if related_cards:
@@ -141,7 +248,7 @@ def parse_card_detail_html(card: dict, html: str) -> dict:
     else:
         updated_card.pop("related_cards", None)
 
-    return derive_card_metadata(updated_card)
+    return order_card_fields(derive_card_metadata(updated_card))
 
 
 async def fetch_html(session: aiohttp.ClientSession, url: str) -> Optional[str]:
@@ -194,7 +301,7 @@ async def main() -> None:
                 cards[index] = await fetch_card_detail(session, cards[index])
             await asyncio.sleep(0.2)
 
-    cards = [derive_card_metadata(card) for card in cards]
+    cards = [order_card_fields(derive_card_metadata(card)) for card in cards]
 
     with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
         json.dump(cards, f, ensure_ascii=False, indent=2)
