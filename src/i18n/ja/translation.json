@@ -198,7 +198,13 @@
       "closeAria": "カードプレビューを閉じる",
       "openAria": "{{name}} をプレビュー",
       "openTitle": "{{name}} をプレビュー",
-      "enlargedAlt": "{{name}} の拡大表示"
+      "enlargedAlt": "{{name}} の拡大表示",
+      "faces": {
+        "heading": "カードの表裏",
+        "front": "表面",
+        "back": "裏面",
+        "imageAlt": "{{side}}: {{name}}"
+      }
     },
     "pagination": {
       "prev": "前へ",

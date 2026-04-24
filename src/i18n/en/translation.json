@@ -261,7 +261,13 @@
       "closeAria": "Close card preview",
       "openAria": "Preview {{name}}",
       "openTitle": "Preview {{name}}",
-      "enlargedAlt": "{{name}} enlarged"
+      "enlargedAlt": "{{name}} enlarged",
+      "faces": {
+        "heading": "Card Faces",
+        "front": "Front",
+        "back": "Back",
+        "imageAlt": "{{side}}: {{name}}"
+      }
     },
     "pagination": {
       "prev": "Prev",
