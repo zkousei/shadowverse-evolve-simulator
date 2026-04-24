@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import Card, { type CardInstance } from './Card';
 import GameBoardInputProfileProvider from '../contexts/GameBoardInputProfileProvider';
+import type { CardDetail } from '../utils/cardDetails';
 
 const dndState = {
   transform: null as null | { x: number; y: number },
@@ -65,6 +66,71 @@ describe('Card', () => {
 
     rerender(<Card card={createCard({ isFlipped: true })} />);
     expect(screen.getByAltText('Card Back')).toBeInTheDocument();
+  });
+
+  it('uses the selected face image only while the card is visible', () => {
+    const detail: CardDetail = {
+      id: 'BP08-003',
+      name: 'Front Face',
+      image: '/front.png',
+      className: 'エルフ',
+      title: '',
+      type: 'フォロワー・エボルヴ',
+      subtype: '人形・光輝',
+      cardKindNormalized: 'evolve_follower',
+      cost: '-',
+      atk: 3,
+      hp: 3,
+      abilityText: '',
+      faces: [
+        {
+          side: 'front',
+          name: 'Front Face',
+          image: '/front.png',
+          className: 'エルフ',
+          title: '',
+          type: 'フォロワー・エボルヴ',
+          subtype: '人形・光輝',
+          cardKindNormalized: 'evolve_follower',
+          cost: '-',
+          atk: 3,
+          hp: 3,
+          abilityText: '',
+        },
+        {
+          side: 'back',
+          name: 'Back Face',
+          image: '/back.png',
+          className: 'エルフ',
+          title: '',
+          type: 'フォロワー・エボルヴ',
+          subtype: '人形・キラー',
+          cardKindNormalized: 'evolve_follower',
+          cost: '-',
+          atk: 4,
+          hp: 4,
+          abilityText: '',
+        },
+      ],
+    };
+
+    const { rerender } = render(
+      <Card
+        card={createCard({ cardId: 'BP08-003', selectedFaceSide: 'back' })}
+        detail={detail}
+      />
+    );
+
+    expect(screen.getByAltText('Test Card')).toHaveAttribute('src', '/back.png');
+
+    rerender(
+      <Card
+        card={createCard({ cardId: 'BP08-003', selectedFaceSide: 'back', isFlipped: true })}
+        detail={detail}
+      />
+    );
+
+    expect(screen.getByAltText('Card Back')).toHaveAttribute('src', '/card_back.png');
   });
 
   it('fires quick actions for visible unlocked cards', () => {

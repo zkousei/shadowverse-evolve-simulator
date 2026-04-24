@@ -4310,4 +4310,71 @@ describe('useGameBoardLogic action handlers', () => {
     expect(screen.getByTestId('evolve-search-attached-to')).toHaveTextContent('none');
   });
 
+  it('uses the selected face name when an evolve-deck card is played to field', async () => {
+    installMockCatalogFetch([
+      createCatalogCard({
+        id: 'BP08-003',
+        name: '決意の人形・オーキス',
+        deck_section: 'evolve',
+        card_kind_normalized: 'evolve_follower',
+        faces: [
+          {
+            side: 'front',
+            name: '決意の人形・オーキス',
+            image: '/orkis-front.png',
+            class: 'エルフ',
+            type: 'フォロワー・エボルヴ',
+            subtype: '人形・光輝',
+            cost: '-',
+            atk: '3',
+            hp: '3',
+            ability_text: 'Front ability',
+          },
+          {
+            side: 'back',
+            name: '復讐の人形・オーキス',
+            image: '/orkis-back.png',
+            class: 'エルフ',
+            type: 'フォロワー・エボルヴ',
+            subtype: '人形・キラー',
+            cost: '-',
+            atk: '4',
+            hp: '4',
+            ability_text: 'Back ability',
+          },
+        ],
+      }),
+    ]);
+
+    renderResumedHostHarness({
+      cards: [
+        {
+          id: 'evolve-search-card',
+          cardId: 'BP08-003',
+          name: '決意の人形・オーキス',
+          image: '/orkis-front.png',
+          zone: 'evolveDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+          isEvolveCard: true,
+          selectedFaceSide: 'back',
+        },
+      ],
+      gameStatus: 'playing',
+      turnCount: 2,
+      phase: 'Main',
+      revision: 8,
+    });
+
+    await flushCatalogEffects();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Extract Evolve to Field' }));
+
+    expect(screen.getByTestId('card-play-message')).toHaveTextContent(
+      'You played to field 復讐の人形・オーキス from Evolve Deck'
+    );
+  });
+
 });

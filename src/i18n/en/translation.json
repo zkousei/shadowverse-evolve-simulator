@@ -261,7 +261,13 @@
       "closeAria": "Close card preview",
       "openAria": "Preview {{name}}",
       "openTitle": "Preview {{name}}",
-      "enlargedAlt": "{{name}} enlarged"
+      "enlargedAlt": "{{name}} enlarged",
+      "faces": {
+        "heading": "Card Faces",
+        "front": "Front",
+        "back": "Back",
+        "imageAlt": "{{side}}: {{name}}"
+      }
     },
     "pagination": {
       "prev": "Prev",
@@ -657,6 +663,10 @@
         "addToEx": "Add to EX Area",
         "setUsed": "Set USED",
         "setUnused": "Set UNUSED",
+        "face": {
+          "front": "Front",
+          "back": "Back"
+        },
         "empty": "This zone is empty.",
         "typeCounts": "Follower: {{follower}} / Spell: {{spell}} / Amulet: {{amulet}}",
         "stats": "Stats",

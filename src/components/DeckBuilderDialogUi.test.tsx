@@ -225,6 +225,78 @@ describe('DeckBuilder extracted UI components - dialogs', () => {
     expect(onClose).toHaveBeenCalledTimes(2);
   });
 
+  it('renders both faces in the preview modal for double-faced cards', () => {
+    const onClose = vi.fn();
+    const doubleFacedCard: DeckBuilderCardData = {
+      ...sampleCard,
+      id: 'BP08-003',
+      name: '決意の人形・オーキス',
+      image: '/orchis-front.png',
+      class: 'エルフ',
+      type: 'フォロワー・エボルヴ',
+      subtype: '人形・光輝',
+      cost: '-',
+      atk: '3',
+      hp: '3',
+      card_kind_normalized: 'evolve_follower',
+      deck_section: 'evolve',
+      is_evolve_card: true,
+      faces: [
+        {
+          side: 'front',
+          name: '決意の人形・オーキス',
+          image: '/orchis-front.png',
+          class: 'エルフ',
+          type: 'フォロワー・エボルヴ',
+          subtype: '人形・光輝',
+          cost: '-',
+          atk: '3',
+          hp: '3',
+          ability_text: '表面能力。',
+          card_kind_normalized: 'evolve_follower',
+          deck_section: 'evolve',
+          is_evolve_card: true,
+        },
+        {
+          side: 'back',
+          name: '復讐の人形・オーキス',
+          image: '/orchis-back.png',
+          class: 'エルフ',
+          type: 'フォロワー・エボルヴ',
+          subtype: '人形・キラー',
+          cost: '-',
+          atk: '4',
+          hp: '4',
+          ability_text: '裏面能力。',
+          card_kind_normalized: 'evolve_follower',
+          deck_section: 'evolve',
+          is_evolve_card: true,
+        },
+      ],
+    };
+
+    render(
+      <DeckBuilderPreviewModal
+        previewCard={doubleFacedCard}
+        previewDetail={null}
+        onClose={onClose}
+      />
+    );
+
+    expect(screen.getByRole('heading', { name: 'Card Faces' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Front: 決意の人形・オーキス' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Back: 復讐の人形・オーキス' })).toBeInTheDocument();
+    expect(screen.getAllByText('決意の人形・オーキス')).toHaveLength(2);
+    expect(screen.getByText('復讐の人形・オーキス')).toBeInTheDocument();
+    expect(screen.getAllByText(/人形・光輝/)).toHaveLength(2);
+    expect(screen.getByText(/人形・キラー/)).toBeInTheDocument();
+    expect(screen.getByText('3 / 3')).toBeInTheDocument();
+    expect(screen.getByText('4 / 4')).toBeInTheDocument();
+    expect(screen.getAllByText('Ability Text')).toHaveLength(2);
+    expect(screen.getByText('表面能力。')).toBeInTheDocument();
+    expect(screen.getByText('裏面能力。')).toBeInTheDocument();
+  });
+
   it('renders hover preview content with the expected fixed position', () => {
     const { container } = render(
       <DeckBuilderHoverPreview

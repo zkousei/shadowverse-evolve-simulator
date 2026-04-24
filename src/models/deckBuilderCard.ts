@@ -7,6 +7,27 @@ export interface RelatedCardReference {
   name: string;
 }
 
+export interface CardFaceData {
+  side: string;
+  name?: string;
+  image?: string;
+  class?: CardClassValue;
+  title?: string;
+  type?: string;
+  subtype?: string;
+  rarity?: string;
+  product_name?: string;
+  cost?: string;
+  atk?: string;
+  hp?: string;
+  ability_text?: string;
+  card_kind_normalized?: CardKindNormalized;
+  deck_section?: DeckSection;
+  is_token?: boolean;
+  is_evolve_card?: boolean;
+  is_deck_build_legal?: boolean;
+}
+
 export interface DeckBuilderCardData {
   id: string; // EXP-NUM format, e.g PCS01-001
   name: string;
@@ -27,6 +48,7 @@ export interface DeckBuilderCardData {
   is_evolve_card?: boolean;
   is_deck_build_legal?: boolean;
   related_cards?: RelatedCardReference[];
+  faces?: CardFaceData[];
 }
 
 const compareJa = (left: string, right: string) => left.localeCompare(right, 'ja');

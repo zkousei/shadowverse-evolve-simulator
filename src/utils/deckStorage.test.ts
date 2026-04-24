@@ -36,6 +36,24 @@ const mockCards: DeckBuilderCardData[] = [
         name: 'Knight Token',
       },
     ],
+    faces: [
+      {
+        side: 'front',
+        name: 'Alpha Knight',
+        image: '/alpha-front.png',
+        type: 'フォロワー',
+        card_kind_normalized: 'follower',
+        deck_section: 'main',
+      },
+      {
+        side: 'back',
+        name: 'Alpha Knight Back',
+        image: '/alpha-back.png',
+        type: 'フォロワー',
+        card_kind_normalized: 'follower',
+        deck_section: 'main',
+      },
+    ],
   },
   {
     id: 'EV01-001',
@@ -136,7 +154,7 @@ describe('deckStorage', () => {
     expect(restoredDraft.snapshot.deckState.mainDeck).toEqual([mockCards[0], mockCards[0]]);
   });
 
-  it('stores only card references while restoring catalog metadata such as related cards', () => {
+  it('stores only card references while restoring catalog metadata such as related cards and faces', () => {
     saveDeck({
       name: 'Royal Related Test',
       ruleConfig: otherRuleConfig,
@@ -164,14 +182,18 @@ describe('deckStorage', () => {
     const draftPayload = window.localStorage.getItem(DECK_BUILDER_DRAFT_KEY) ?? '';
 
     expect(savedDecksPayload).not.toContain('related_cards');
+    expect(savedDecksPayload).not.toContain('faces');
     expect(draftPayload).not.toContain('related_cards');
+    expect(draftPayload).not.toContain('faces');
 
     const savedDeck = listSavedDecks()[0];
     const restoredSaved = restoreSavedDeckToSnapshot(savedDeck, mockCards);
     const restoredDraft = restoreDraftToSnapshot(loadDraft()!, mockCards);
 
     expect(restoredSaved.snapshot.deckState.mainDeck[0].related_cards).toEqual(mockCards[0].related_cards);
+    expect(restoredSaved.snapshot.deckState.mainDeck[0].faces).toEqual(mockCards[0].faces);
     expect(restoredDraft.snapshot.deckState.mainDeck[0].related_cards).toEqual(mockCards[0].related_cards);
+    expect(restoredDraft.snapshot.deckState.mainDeck[0].faces).toEqual(mockCards[0].faces);
   });
 
   it('ignores broken storage payloads and clears drafts safely', () => {

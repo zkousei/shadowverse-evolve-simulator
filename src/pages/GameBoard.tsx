@@ -57,6 +57,7 @@ import {
 import {
   getAttackTargetFromCard as resolveAttackTargetFromCard,
 } from '../utils/gameBoardCombat';
+import { canEditSearchedEvolveDeck } from '../utils/gameBoardEvolveFaceSelection';
 
 const GameBoard: React.FC = () => {
   const [viewportWidth, setViewportWidth] = React.useState(() => (
@@ -137,7 +138,7 @@ const GameBoard: React.FC = () => {
     handlePureCoinFlip, handleRollDice, handleStartGame, handleToggleReady,
     handleDrawInitialHand, startMulligan, handleMulliganOrderSelect, executeMulligan,
     drawCard, handleExtractCard, handleExtractCards, confirmResetGame, handleDeckUpload, importDeckData, spawnTokens,
-    handleModifyCounter, handleModifyGenericCounter, handleDragEnd, toggleTap, handleFlipCard, handleSendToBottom, handleSendCardsToBottom,
+    handleModifyCounter, handleModifyGenericCounter, handleDragEnd, toggleTap, handleFlipCard, handleSetCardFace, handleSendToBottom, handleSendCardsToBottom,
     handleBanish, handleBanishCards, handlePlayToField, handleSendToCemetery, handleSendCardsToCemetery, handleReturnEvolve, handleShuffleDeck, handleDeclareAttack,
     handleSetRevealHandsMode, handleSetEndStop,
     evolveAutoAttachSelection, confirmEvolveAutoAttachSelection, cancelEvolveAutoAttachSelection,
@@ -1149,6 +1150,14 @@ const GameBoard: React.FC = () => {
         onBanish={handleBanish}
         onBanishCards={handleBanishCards}
         onToggleFlip={(cardId) => handleFlipCard(cardId, searchTargetRole)}
+        onSetCardFace={(cardId, faceSide) => handleSetCardFace(cardId, faceSide, searchTargetRole)}
+        canEditSearchedEvolveDeck={canEditSearchedEvolveDeck({
+          searchZoneId: searchZone?.id,
+          isSoloMode,
+          isSpectator,
+          searchTargetRole,
+          role,
+        })}
         viewerRole={searchTargetRole}
         targetRole={searchTargetRole}
         onRequestMainDeckShuffleConfirm={handleRequestMainDeckShuffleConfirm}

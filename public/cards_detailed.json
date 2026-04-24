@@ -86696,6 +86696,45 @@
         "name": "愛の妖精・ポーラ"
       }
     ],
+    "faces": [
+      {
+        "side": "front",
+        "name": "深緑の純心・ポーラ",
+        "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-005.png",
+        "class": "エルフ",
+        "type": "フォロワー・エボルヴ",
+        "subtype": "妖精",
+        "rarity": "GR",
+        "product_name": "ブースターパック第9弾「光影の二重奏」",
+        "cost": "-",
+        "atk": "3",
+        "hp": "3",
+        "ability_text": "【進化時】自分のデッキの上5枚を見る。その中から、[エルフ]スペル1枚を公開して手札に加えてよい。残りを好きな順にデッキの下に置く。",
+        "card_kind_normalized": "evolve_follower",
+        "deck_section": "evolve",
+        "is_token": false,
+        "is_evolve_card": true,
+        "is_deck_build_legal": true
+      },
+      {
+        "side": "back",
+        "name": "真紅の絆・ポーラ",
+        "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-005_ura.png",
+        "class": "エルフ",
+        "type": "フォロワー・エボルヴ",
+        "subtype": "妖精",
+        "rarity": "GR",
+        "cost": "-",
+        "atk": "3",
+        "hp": "3",
+        "ability_text": "【攻撃時】【コンボ_3】相手の場のフォロワー1体を選ぶ。それに3ダメージ。 【進化時】自分の場の他のカード2枚まで選ぶ。それをEXエリアに置く。",
+        "card_kind_normalized": "evolve_follower",
+        "deck_section": "evolve",
+        "is_token": false,
+        "is_evolve_card": true,
+        "is_deck_build_legal": true
+      }
+    ],
     "card_kind_normalized": "evolve_follower",
     "deck_section": "evolve",
     "is_token": false,
@@ -87038,6 +87077,45 @@
       {
         "id": "BP09-T07",
         "name": "シールドガーディアン"
+      }
+    ],
+    "faces": [
+      {
+        "side": "front",
+        "name": "希望の戦術家・セリア",
+        "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-019.png",
+        "class": "ロイヤル",
+        "type": "フォロワー・エボルヴ",
+        "subtype": "指揮官・光輝",
+        "rarity": "LG",
+        "product_name": "ブースターパック第9弾「光影の二重奏」",
+        "cost": "-",
+        "atk": "2",
+        "hp": "2",
+        "ability_text": "【進化時】『シールドガーディアン』1体を出す。 ――――――――――――――― 『シールドガーディアン』[ロイヤル]兵士・フォロワー[コスト1][攻撃力]1/[体力]1【守護】",
+        "card_kind_normalized": "evolve_follower",
+        "deck_section": "evolve",
+        "is_token": false,
+        "is_evolve_card": true,
+        "is_deck_build_legal": true
+      },
+      {
+        "side": "back",
+        "name": "絶望の使者・セリア",
+        "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-019_ura.png",
+        "class": "ロイヤル",
+        "type": "フォロワー・エボルヴ",
+        "subtype": "指揮官・キラー",
+        "rarity": "LG",
+        "cost": "-",
+        "atk": "4",
+        "hp": "4",
+        "ability_text": "【疾走】 【進化時】『スティールナイト』1体と『ナイト』1体を出す。 ――――――――――――――― 『スティールナイト』[ロイヤル]兵士・フォロワー[コスト2][攻撃力]2/[体力]2 『ナイト』[ロイヤル]兵士・フォロワー[コスト1][攻撃力]1/[体力]1",
+        "card_kind_normalized": "evolve_follower",
+        "deck_section": "evolve",
+        "is_token": false,
+        "is_evolve_card": true,
+        "is_deck_build_legal": true
       }
     ],
     "card_kind_normalized": "evolve_follower",
@@ -87536,6 +87614,45 @@
         "name": "マナリアの竜術士"
       }
     ],
+    "faces": [
+      {
+        "side": "front",
+        "name": "マナリアの白竜",
+        "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-039.png",
+        "class": "ウィッチ",
+        "type": "フォロワー・エボルヴ",
+        "subtype": "学院・光輝",
+        "rarity": "GR",
+        "product_name": "ブースターパック第9弾「光影の二重奏」",
+        "cost": "-",
+        "atk": "5",
+        "hp": "5",
+        "ability_text": "【守護】 【進化時】自分のリーダーは[体力]+3する",
+        "card_kind_normalized": "evolve_follower",
+        "deck_section": "evolve",
+        "is_token": false,
+        "is_evolve_card": true,
+        "is_deck_build_legal": true
+      },
+      {
+        "side": "back",
+        "name": "マナリアの黒竜",
+        "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-039_ura.png",
+        "class": "ウィッチ",
+        "type": "フォロワー・エボルヴ",
+        "subtype": "学院・キラー",
+        "rarity": "GR",
+        "cost": "-",
+        "atk": "5",
+        "hp": "5",
+        "ability_text": "【指定攻撃】 【進化時】相手のリーダーすべてに3ダメージ。",
+        "card_kind_normalized": "evolve_follower",
+        "deck_section": "evolve",
+        "is_token": false,
+        "is_evolve_card": true,
+        "is_deck_build_legal": true
+      }
+    ],
     "card_kind_normalized": "evolve_follower",
     "deck_section": "evolve",
     "is_token": false,
@@ -87941,6 +88058,45 @@
         "name": "リントヴルム"
       }
     ],
+    "faces": [
+      {
+        "side": "front",
+        "name": "聖竜・リントヴルム",
+        "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-056.png",
+        "class": "ドラゴン",
+        "type": "フォロワー・エボルヴ",
+        "subtype": "竜族・光輝",
+        "rarity": "GR",
+        "product_name": "ブースターパック第9弾「光影の二重奏」",
+        "cost": "-",
+        "atk": "10",
+        "hp": "10",
+        "ability_text": "【守護】 自分のエンドフェイズが来たとき、自分のリーダーは[体力]+6する。3枚引く。",
+        "card_kind_normalized": "evolve_follower",
+        "deck_section": "evolve",
+        "is_token": false,
+        "is_evolve_card": true,
+        "is_deck_build_legal": true
+      },
+      {
+        "side": "back",
+        "name": "邪竜・リントヴルム",
+        "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-056_ura.png",
+        "class": "ドラゴン",
+        "type": "フォロワー・エボルヴ",
+        "subtype": "竜族・キラー",
+        "rarity": "GR",
+        "cost": "-",
+        "atk": "10",
+        "hp": "10",
+        "ability_text": "【疾走】 これは【守護】を無視して攻撃できる。",
+        "card_kind_normalized": "evolve_follower",
+        "deck_section": "evolve",
+        "is_token": false,
+        "is_evolve_card": true,
+        "is_deck_build_legal": true
+      }
+    ],
     "card_kind_normalized": "evolve_follower",
     "deck_section": "evolve",
     "is_token": false,
@@ -88261,6 +88417,45 @@
       {
         "id": "BP09-069",
         "name": "闇夜の姫・ヴァンピィ"
+      }
+    ],
+    "faces": [
+      {
+        "side": "front",
+        "name": "カインドクイーン・ヴァンピィ",
+        "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-070.png",
+        "class": "ナイトメア",
+        "type": "フォロワー・エボルヴ",
+        "subtype": "吸血鬼・プリンセス・光輝",
+        "rarity": "LG",
+        "product_name": "ブースターパック第9弾「光影の二重奏」",
+        "cost": "-",
+        "atk": "4",
+        "hp": "4",
+        "ability_text": "これがいる限り、自分が『フォレストバット』をプレイする際、コストを-1する。 自分の場に『フォレストバット』が出たとき、自分のリーダーは[体力]+1する。 【進化時】1枚引く。自分の手札1枚を捨てる。",
+        "card_kind_normalized": "evolve_follower",
+        "deck_section": "evolve",
+        "is_token": false,
+        "is_evolve_card": true,
+        "is_deck_build_legal": true
+      },
+      {
+        "side": "back",
+        "name": "ブラッドクイーン・ヴァンピィ",
+        "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-070_ura.png",
+        "class": "ナイトメア",
+        "type": "フォロワー・エボルヴ",
+        "subtype": "吸血鬼・プリンセス・キラー",
+        "rarity": "LG",
+        "cost": "-",
+        "atk": "6",
+        "hp": "6",
+        "ability_text": "【疾走】 これがいる限り、自分が『フォレストバット』をプレイする際、コストを-1する。 自分の場に『フォレストバット』が出たとき、相手の場のフォロワー1体を選ぶ。それに3ダメージ。",
+        "card_kind_normalized": "evolve_follower",
+        "deck_section": "evolve",
+        "is_token": false,
+        "is_evolve_card": true,
+        "is_deck_build_legal": true
       }
     ],
     "card_kind_normalized": "evolve_follower",
@@ -88763,6 +88958,45 @@
       {
         "id": "BP09-089",
         "name": "ケリュネイア"
+      }
+    ],
+    "faces": [
+      {
+        "side": "front",
+        "name": "明転の牝鹿・ケリュネイア",
+        "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-090.png",
+        "class": "ビショップ",
+        "type": "フォロワー・エボルヴ",
+        "subtype": "信仰・獣・光輝",
+        "rarity": "GR",
+        "product_name": "ブースターパック第9弾「光影の二重奏」",
+        "cost": "-",
+        "atk": "5",
+        "hp": "5",
+        "ability_text": "【守護】 【進化時】場のアミュレット1つを墓場に置く：自分のリーダーは[体力]+4する。",
+        "card_kind_normalized": "evolve_follower",
+        "deck_section": "evolve",
+        "is_token": false,
+        "is_evolve_card": true,
+        "is_deck_build_legal": true
+      },
+      {
+        "side": "back",
+        "name": "暗転の牝鹿・ケリュネイア",
+        "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-090_ura.png",
+        "class": "ビショップ",
+        "type": "フォロワー・エボルヴ",
+        "subtype": "信仰・獣・キラー",
+        "rarity": "GR",
+        "cost": "-",
+        "atk": "5",
+        "hp": "5",
+        "ability_text": "【必殺】 【進化時】場のアミュレット1つを墓場に置く：相手のリーダー1人か相手の場のフォロワー1体を選ぶ。それに4ダメージ。",
+        "card_kind_normalized": "evolve_follower",
+        "deck_section": "evolve",
+        "is_token": false,
+        "is_evolve_card": true,
+        "is_deck_build_legal": true
       }
     ],
     "card_kind_normalized": "evolve_follower",
@@ -89486,6 +89720,45 @@
         "name": "愛の妖精・ポーラ"
       }
     ],
+    "faces": [
+      {
+        "side": "front",
+        "name": "深緑の純心・ポーラ",
+        "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-p02.png",
+        "class": "エルフ",
+        "type": "フォロワー・エボルヴ",
+        "subtype": "妖精",
+        "rarity": "GR・プレミアム",
+        "product_name": "ブースターパック第9弾「光影の二重奏」",
+        "cost": "-",
+        "atk": "3",
+        "hp": "3",
+        "ability_text": "【進化時】自分のデッキの上5枚を見る。その中から、[エルフ]スペル1枚を公開して手札に加えてよい。残りを好きな順にデッキの下に置く。",
+        "card_kind_normalized": "evolve_follower",
+        "deck_section": "evolve",
+        "is_token": false,
+        "is_evolve_card": true,
+        "is_deck_build_legal": true
+      },
+      {
+        "side": "back",
+        "name": "真紅の絆・ポーラ",
+        "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-p02_ura.png",
+        "class": "エルフ",
+        "type": "フォロワー・エボルヴ",
+        "subtype": "妖精",
+        "rarity": "GR・プレミアム",
+        "cost": "-",
+        "atk": "3",
+        "hp": "3",
+        "ability_text": "【攻撃時】【コンボ_3】相手の場のフォロワー1体を選ぶ。それに3ダメージ。 【進化時】自分の場の他のカード2枚まで選ぶ。それをEXエリアに置く。",
+        "card_kind_normalized": "evolve_follower",
+        "deck_section": "evolve",
+        "is_token": false,
+        "is_evolve_card": true,
+        "is_deck_build_legal": true
+      }
+    ],
     "card_kind_normalized": "evolve_follower",
     "deck_section": "evolve",
     "is_token": false,
@@ -89744,6 +90017,45 @@
         "name": "マナリアの竜術士"
       }
     ],
+    "faces": [
+      {
+        "side": "front",
+        "name": "マナリアの白竜",
+        "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-p12.png",
+        "class": "ウィッチ",
+        "type": "フォロワー・エボルヴ",
+        "subtype": "学院・光輝",
+        "rarity": "GR・プレミアム",
+        "product_name": "ブースターパック第9弾「光影の二重奏」",
+        "cost": "-",
+        "atk": "5",
+        "hp": "5",
+        "ability_text": "【守護】 【進化時】自分のリーダーは[体力]+3する",
+        "card_kind_normalized": "evolve_follower",
+        "deck_section": "evolve",
+        "is_token": false,
+        "is_evolve_card": true,
+        "is_deck_build_legal": true
+      },
+      {
+        "side": "back",
+        "name": "マナリアの黒竜",
+        "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-p12_ura.png",
+        "class": "ウィッチ",
+        "type": "フォロワー・エボルヴ",
+        "subtype": "学院・キラー",
+        "rarity": "GR・プレミアム",
+        "cost": "-",
+        "atk": "5",
+        "hp": "5",
+        "ability_text": "【指定攻撃】 【進化時】相手のリーダーすべてに3ダメージ。",
+        "card_kind_normalized": "evolve_follower",
+        "deck_section": "evolve",
+        "is_token": false,
+        "is_evolve_card": true,
+        "is_deck_build_legal": true
+      }
+    ],
     "card_kind_normalized": "evolve_follower",
     "deck_section": "evolve",
     "is_token": false,
@@ -89869,6 +90181,45 @@
       {
         "id": "BP09-P16",
         "name": "リントヴルム"
+      }
+    ],
+    "faces": [
+      {
+        "side": "front",
+        "name": "聖竜・リントヴルム",
+        "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-p17.png",
+        "class": "ドラゴン",
+        "type": "フォロワー・エボルヴ",
+        "subtype": "竜族・光輝",
+        "rarity": "GR・プレミアム",
+        "product_name": "ブースターパック第9弾「光影の二重奏」",
+        "cost": "-",
+        "atk": "10",
+        "hp": "10",
+        "ability_text": "【守護】 自分のエンドフェイズが来たとき、自分のリーダーは[体力]+6する。3枚引く。",
+        "card_kind_normalized": "evolve_follower",
+        "deck_section": "evolve",
+        "is_token": false,
+        "is_evolve_card": true,
+        "is_deck_build_legal": true
+      },
+      {
+        "side": "back",
+        "name": "邪竜・リントヴルム",
+        "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-p17_ura.png",
+        "class": "ドラゴン",
+        "type": "フォロワー・エボルヴ",
+        "subtype": "竜族・キラー",
+        "rarity": "GR・プレミアム",
+        "cost": "-",
+        "atk": "10",
+        "hp": "10",
+        "ability_text": "【疾走】 これは【守護】を無視して攻撃できる。",
+        "card_kind_normalized": "evolve_follower",
+        "deck_section": "evolve",
+        "is_token": false,
+        "is_evolve_card": true,
+        "is_deck_build_legal": true
       }
     ],
     "card_kind_normalized": "evolve_follower",
@@ -90129,6 +90480,45 @@
         "name": "ケリュネイア"
       }
     ],
+    "faces": [
+      {
+        "side": "front",
+        "name": "明転の牝鹿・ケリュネイア",
+        "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-p27.png",
+        "class": "ビショップ",
+        "type": "フォロワー・エボルヴ",
+        "subtype": "信仰・獣・光輝",
+        "rarity": "GR・プレミアム",
+        "product_name": "ブースターパック第9弾「光影の二重奏」",
+        "cost": "-",
+        "atk": "5",
+        "hp": "5",
+        "ability_text": "【守護】 【進化時】場のアミュレット1つを墓場に置く：自分のリーダーは[体力]+4する。",
+        "card_kind_normalized": "evolve_follower",
+        "deck_section": "evolve",
+        "is_token": false,
+        "is_evolve_card": true,
+        "is_deck_build_legal": true
+      },
+      {
+        "side": "back",
+        "name": "暗転の牝鹿・ケリュネイア",
+        "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-p27_ura.png",
+        "class": "ビショップ",
+        "type": "フォロワー・エボルヴ",
+        "subtype": "信仰・獣・キラー",
+        "rarity": "GR・プレミアム",
+        "cost": "-",
+        "atk": "5",
+        "hp": "5",
+        "ability_text": "【必殺】 【進化時】場のアミュレット1つを墓場に置く：相手のリーダー1人か相手の場のフォロワー1体を選ぶ。それに4ダメージ。",
+        "card_kind_normalized": "evolve_follower",
+        "deck_section": "evolve",
+        "is_token": false,
+        "is_evolve_card": true,
+        "is_deck_build_legal": true
+      }
+    ],
     "card_kind_normalized": "evolve_follower",
     "deck_section": "evolve",
     "is_token": false,
@@ -90379,6 +90769,45 @@
         "name": "シールドガーディアン"
       }
     ],
+    "faces": [
+      {
+        "side": "front",
+        "name": "希望の戦術家・セリア",
+        "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-sl05.png",
+        "class": "ロイヤル",
+        "type": "フォロワー・エボルヴ",
+        "subtype": "指揮官・光輝",
+        "rarity": "SL",
+        "product_name": "ブースターパック第9弾「光影の二重奏」",
+        "cost": "-",
+        "atk": "2",
+        "hp": "2",
+        "ability_text": "【進化時】『シールドガーディアン』1体を出す。 ――――――――――――――― 『シールドガーディアン』[ロイヤル]兵士・フォロワー[コスト1][攻撃力]1/[体力]1【守護】",
+        "card_kind_normalized": "evolve_follower",
+        "deck_section": "evolve",
+        "is_token": false,
+        "is_evolve_card": true,
+        "is_deck_build_legal": true
+      },
+      {
+        "side": "back",
+        "name": "絶望の使者・セリア",
+        "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-sl05_ura.png",
+        "class": "ロイヤル",
+        "type": "フォロワー・エボルヴ",
+        "subtype": "指揮官・キラー",
+        "rarity": "SL",
+        "cost": "-",
+        "atk": "4",
+        "hp": "4",
+        "ability_text": "【疾走】 【進化時】『スティールナイト』1体と『ナイト』1体を出す。 ――――――――――――――― 『スティールナイト』[ロイヤル]兵士・フォロワー[コスト2][攻撃力]2/[体力]2 『ナイト』[ロイヤル]兵士・フォロワー[コスト1][攻撃力]1/[体力]1",
+        "card_kind_normalized": "evolve_follower",
+        "deck_section": "evolve",
+        "is_token": false,
+        "is_evolve_card": true,
+        "is_deck_build_legal": true
+      }
+    ],
     "card_kind_normalized": "evolve_follower",
     "deck_section": "evolve",
     "is_token": false,
@@ -90610,6 +91039,45 @@
       {
         "id": "BP09-SL13",
         "name": "闇夜の姫・ヴァンピィ"
+      }
+    ],
+    "faces": [
+      {
+        "side": "front",
+        "name": "カインドクイーン・ヴァンピィ",
+        "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-sl14.png",
+        "class": "ナイトメア",
+        "type": "フォロワー・エボルヴ",
+        "subtype": "吸血鬼・プリンセス・光輝",
+        "rarity": "SL",
+        "product_name": "ブースターパック第9弾「光影の二重奏」",
+        "cost": "-",
+        "atk": "4",
+        "hp": "4",
+        "ability_text": "これがいる限り、自分が『フォレストバット』をプレイする際、コストを-1する。 自分の場に『フォレストバット』が出たとき、自分のリーダーは[体力]+1する。 【進化時】1枚引く。自分の手札1枚を捨てる。",
+        "card_kind_normalized": "evolve_follower",
+        "deck_section": "evolve",
+        "is_token": false,
+        "is_evolve_card": true,
+        "is_deck_build_legal": true
+      },
+      {
+        "side": "back",
+        "name": "ブラッドクイーン・ヴァンピィ",
+        "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP09/bp09-sl14_ura.png",
+        "class": "ナイトメア",
+        "type": "フォロワー・エボルヴ",
+        "subtype": "吸血鬼・プリンセス・キラー",
+        "rarity": "SL",
+        "cost": "-",
+        "atk": "6",
+        "hp": "6",
+        "ability_text": "【疾走】 これがいる限り、自分が『フォレストバット』をプレイする際、コストを-1する。 自分の場に『フォレストバット』が出たとき、相手の場のフォロワー1体を選ぶ。それに3ダメージ。",
+        "card_kind_normalized": "evolve_follower",
+        "deck_section": "evolve",
+        "is_token": false,
+        "is_evolve_card": true,
+        "is_deck_build_legal": true
       }
     ],
     "card_kind_normalized": "evolve_follower",
@@ -91304,6 +91772,45 @@
       {
         "id": "BP08-T09",
         "name": "操り人形"
+      }
+    ],
+    "faces": [
+      {
+        "side": "front",
+        "name": "決意の人形・オーキス",
+        "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP08/bp08-003_front.png",
+        "class": "エルフ",
+        "type": "フォロワー・エボルヴ",
+        "subtype": "人形・光輝",
+        "rarity": "LG",
+        "product_name": "ブースターパック第8弾「次元混沌」",
+        "cost": "-",
+        "atk": "3",
+        "hp": "3",
+        "ability_text": "自分のターンごとに1回、自分の『操り人形』が場を離れたとき、『ロイド』1枚をEXエリアに置く。 【進化時】『操り人形』2体を出す。 ――――――――――――――― 『操り人形』[ニュートラル]人形・フォロワー[コスト1][攻撃力]1/[体力]1【突進】 『ロイド』[エルフ]人形・フォロワー[コスト0][攻撃力]2/[体力]4これは場にいる限り、『操り人形』でもある。【守護】[ファンファーレ]自分のリーダーは[体力]+2する。",
+        "card_kind_normalized": "evolve_follower",
+        "deck_section": "evolve",
+        "is_token": false,
+        "is_evolve_card": true,
+        "is_deck_build_legal": true
+      },
+      {
+        "side": "back",
+        "name": "復讐の人形・オーキス",
+        "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP08/bp08-003_back.png",
+        "class": "エルフ",
+        "type": "フォロワー・エボルヴ",
+        "subtype": "人形・キラー",
+        "rarity": "LG",
+        "cost": "-",
+        "atk": "4",
+        "hp": "4",
+        "ability_text": "これがいる限り、自分の場の『操り人形』すべては【指定攻撃】を持つ。 自分の『操り人形』が場を離れたとき、相手のリーダー1人か相手の場のフォロワー1体を選ぶ。それに2ダメージ。 【進化時】『操り人形』4体を出す。",
+        "card_kind_normalized": "evolve_follower",
+        "deck_section": "evolve",
+        "is_token": false,
+        "is_evolve_card": true,
+        "is_deck_build_legal": true
       }
     ],
     "card_kind_normalized": "evolve_follower",
@@ -94745,6 +95252,45 @@
       {
         "id": "BP08-T09",
         "name": "操り人形"
+      }
+    ],
+    "faces": [
+      {
+        "side": "front",
+        "name": "決意の人形・オーキス",
+        "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP08/bp08-sl03_front.png",
+        "class": "エルフ",
+        "type": "フォロワー・エボルヴ",
+        "subtype": "人形・光輝",
+        "rarity": "SL",
+        "product_name": "ブースターパック第8弾「次元混沌」",
+        "cost": "-",
+        "atk": "3",
+        "hp": "3",
+        "ability_text": "自分のターンごとに1回、自分の『操り人形』が場を離れたとき、『ロイド』1枚をEXエリアに置く。 【進化時】『操り人形』2体を出す。 ――――――――――――――― 『操り人形』[ニュートラル]人形・フォロワー[コスト1][攻撃力]1/[体力]1【突進】 『ロイド』[エルフ]人形・フォロワー[コスト0][攻撃力]2/[体力]4これは場にいる限り、『操り人形』でもある。【守護】[ファンファーレ]自分のリーダーは[体力]+2する。",
+        "card_kind_normalized": "evolve_follower",
+        "deck_section": "evolve",
+        "is_token": false,
+        "is_evolve_card": true,
+        "is_deck_build_legal": true
+      },
+      {
+        "side": "back",
+        "name": "復讐の人形・オーキス",
+        "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP08/bp08-sl03_back.png",
+        "class": "エルフ",
+        "type": "フォロワー・エボルヴ",
+        "subtype": "人形・キラー",
+        "rarity": "SL",
+        "cost": "-",
+        "atk": "4",
+        "hp": "4",
+        "ability_text": "これがいる限り、自分の場の『操り人形』すべては【指定攻撃】を持つ。 自分の『操り人形』が場を離れたとき、相手のリーダー1人か相手の場のフォロワー1体を選ぶ。それに2ダメージ。 【進化時】『操り人形』4体を出す。",
+        "card_kind_normalized": "evolve_follower",
+        "deck_section": "evolve",
+        "is_token": false,
+        "is_evolve_card": true,
+        "is_deck_build_legal": true
       }
     ],
     "card_kind_normalized": "evolve_follower",
@@ -130684,7 +131230,7 @@
   },
   {
     "id": "CSD01-T01",
-    "name": "レジェンドレース　VSスペシャルウィーク",
+    "name": "レジェンドレース VSスペシャルウィーク",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CSD01/csd01-t01.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -135852,7 +136398,7 @@
   },
   {
     "id": "CP01-T11",
-    "name": "レジェンドレース　VSエルコンドルパサー",
+    "name": "レジェンドレース VSエルコンドルパサー",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t11.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -135872,7 +136418,7 @@
   },
   {
     "id": "CP01-T12",
-    "name": "レジェンドレース　VSシンボリルドルフ",
+    "name": "レジェンドレース VSシンボリルドルフ",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t12.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -135892,7 +136438,7 @@
   },
   {
     "id": "CP01-T13",
-    "name": "レジェンドレース　VSキングヘイロー",
+    "name": "レジェンドレース VSキングヘイロー",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t13.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -135912,7 +136458,7 @@
   },
   {
     "id": "CP01-T14",
-    "name": "レジェンドレース　VSタイキシャトル",
+    "name": "レジェンドレース VSタイキシャトル",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t14.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -135932,7 +136478,7 @@
   },
   {
     "id": "CP01-T15",
-    "name": "レジェンドレース　VSサクラバクシンオー",
+    "name": "レジェンドレース VSサクラバクシンオー",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t15.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -135952,7 +136498,7 @@
   },
   {
     "id": "CP01-T16",
-    "name": "レジェンドレース　VSカレンチャン",
+    "name": "レジェンドレース VSカレンチャン",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t16.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -135972,7 +136518,7 @@
   },
   {
     "id": "CP01-T17",
-    "name": "レジェンドレース　VSウイニングチケット",
+    "name": "レジェンドレース VSウイニングチケット",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t17.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -135992,7 +136538,7 @@
   },
   {
     "id": "CP01-T18",
-    "name": "レジェンドレース　VSウオッカ",
+    "name": "レジェンドレース VSウオッカ",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t18.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -136012,7 +136558,7 @@
   },
   {
     "id": "CP01-T19",
-    "name": "レジェンドレース　VSトウカイテイオー",
+    "name": "レジェンドレース VSトウカイテイオー",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t19.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -136032,7 +136578,7 @@
   },
   {
     "id": "CP01-T20",
-    "name": "レジェンドレース　VSマヤノトップガン",
+    "name": "レジェンドレース VSマヤノトップガン",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t20.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -136052,7 +136598,7 @@
   },
   {
     "id": "CP01-T21",
-    "name": "レジェンドレース　VSメジロマックイーン",
+    "name": "レジェンドレース VSメジロマックイーン",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t21.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -136072,7 +136618,7 @@
   },
   {
     "id": "CP01-T22",
-    "name": "レジェンドレース　VSテイエムオペラオー",
+    "name": "レジェンドレース VSテイエムオペラオー",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t22.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -136092,7 +136638,7 @@
   },
   {
     "id": "CP01-T23",
-    "name": "レジェンドレース　VSスーパークリーク",
+    "name": "レジェンドレース VSスーパークリーク",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t23.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -136112,7 +136658,7 @@
   },
   {
     "id": "CP01-T24",
-    "name": "レジェンドレース　VSメジロライアン",
+    "name": "レジェンドレース VSメジロライアン",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t24.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -136132,7 +136678,7 @@
   },
   {
     "id": "CP01-T25",
-    "name": "レジェンドレース　VSサイレンススズカ",
+    "name": "レジェンドレース VSサイレンススズカ",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t25.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -136152,7 +136698,7 @@
   },
   {
     "id": "CP01-T26",
-    "name": "レジェンドレース　VSゴールドシップ",
+    "name": "レジェンドレース VSゴールドシップ",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t26.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -136172,7 +136718,7 @@
   },
   {
     "id": "CP01-T27",
-    "name": "レジェンドレース　VSマルゼンスキー",
+    "name": "レジェンドレース VSマルゼンスキー",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t27.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -136192,7 +136738,7 @@
   },
   {
     "id": "CP01-T28",
-    "name": "レジェンドレース　VSフジキセキ",
+    "name": "レジェンドレース VSフジキセキ",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t28.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -136212,7 +136758,7 @@
   },
   {
     "id": "CP01-T29",
-    "name": "レジェンドレース　VSミホノブルボン",
+    "name": "レジェンドレース VSミホノブルボン",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t29.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -136232,7 +136778,7 @@
   },
   {
     "id": "CP01-T30",
-    "name": "レジェンドレース　VSマチカネフクキタル",
+    "name": "レジェンドレース VSマチカネフクキタル",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t30.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -136252,7 +136798,7 @@
   },
   {
     "id": "CP01-T31",
-    "name": "レジェンドレース　VSセイウンスカイ",
+    "name": "レジェンドレース VSセイウンスカイ",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t31.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -136272,7 +136818,7 @@
   },
   {
     "id": "CP01-T32",
-    "name": "レジェンドレース　VSビワハヤヒデ",
+    "name": "レジェンドレース VSビワハヤヒデ",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t32.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -136292,7 +136838,7 @@
   },
   {
     "id": "CP01-T33",
-    "name": "レジェンドレース　VSエアグルーヴ",
+    "name": "レジェンドレース VSエアグルーヴ",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t33.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -136312,7 +136858,7 @@
   },
   {
     "id": "CP01-T34",
-    "name": "レジェンドレース　VSエイシンフラッシュ",
+    "name": "レジェンドレース VSエイシンフラッシュ",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t34.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -136332,7 +136878,7 @@
   },
   {
     "id": "CP01-T35",
-    "name": "レジェンドレース　VSアグネスデジタル",
+    "name": "レジェンドレース VSアグネスデジタル",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t35.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -136352,7 +136898,7 @@
   },
   {
     "id": "CP01-T36",
-    "name": "レジェンドレース　VSナイスネイチャ",
+    "name": "レジェンドレース VSナイスネイチャ",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t36.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -136372,7 +136918,7 @@
   },
   {
     "id": "CP01-T37",
-    "name": "レジェンドレース　VSグラスワンダー",
+    "name": "レジェンドレース VSグラスワンダー",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t37.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -136392,7 +136938,7 @@
   },
   {
     "id": "CP01-T38",
-    "name": "レジェンドレース　VSオグリキャップ",
+    "name": "レジェンドレース VSオグリキャップ",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t38.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -136412,7 +136958,7 @@
   },
   {
     "id": "CP01-T39",
-    "name": "レジェンドレース　VSヒシアマゾン",
+    "name": "レジェンドレース VSヒシアマゾン",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t39.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -136432,7 +136978,7 @@
   },
   {
     "id": "CP01-T40",
-    "name": "レジェンドレース　VSメジロドーベル",
+    "name": "レジェンドレース VSメジロドーベル",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t40.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -136452,7 +136998,7 @@
   },
   {
     "id": "CP01-T41",
-    "name": "レジェンドレース　VSゴールドシチー",
+    "name": "レジェンドレース VSゴールドシチー",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t41.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -136472,7 +137018,7 @@
   },
   {
     "id": "CP01-T42",
-    "name": "レジェンドレース　VSアグネスタキオン",
+    "name": "レジェンドレース VSアグネスタキオン",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t42.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -136492,7 +137038,7 @@
   },
   {
     "id": "CP01-T43",
-    "name": "レジェンドレース　VSナリタタイシン",
+    "name": "レジェンドレース VSナリタタイシン",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t43.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -136512,7 +137058,7 @@
   },
   {
     "id": "CP01-T44",
-    "name": "レジェンドレース　VSナリタブライアン",
+    "name": "レジェンドレース VSナリタブライアン",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t44.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -136532,7 +137078,7 @@
   },
   {
     "id": "CP01-T45",
-    "name": "レジェンドレース　VSメジロマックイーン",
+    "name": "レジェンドレース VSメジロマックイーン",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t45.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -136552,7 +137098,7 @@
   },
   {
     "id": "CP01-T46",
-    "name": "レジェンドレース　VSライスシャワー",
+    "name": "レジェンドレース VSライスシャワー",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t46.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -136572,7 +137118,7 @@
   },
   {
     "id": "CP01-T47",
-    "name": "レジェンドレース　VSメジロブライト",
+    "name": "レジェンドレース VSメジロブライト",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t47.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -136592,7 +137138,7 @@
   },
   {
     "id": "CP01-T48",
-    "name": "レジェンドレース　VSタマモクロス",
+    "name": "レジェンドレース VSタマモクロス",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t48.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -136612,7 +137158,7 @@
   },
   {
     "id": "CP01-T49",
-    "name": "レジェンドレース　VSメイショウドトウ",
+    "name": "レジェンドレース VSメイショウドトウ",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/CP01/cp01-t49.png",
     "class": "-",
     "title": "ウマ娘 プリティーダービー",
@@ -162327,6 +162873,307 @@
     "deck_section": "main",
     "is_token": false,
     "is_evolve_card": false,
+    "is_deck_build_legal": true
+  },
+  {
+    "id": "PR-527",
+    "name": "アズヴォルト",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-527.png",
+    "class": "ニュートラル",
+    "type": "アミュレット",
+    "subtype": "八獄",
+    "rarity": "PR",
+    "product_name": "PRカード",
+    "cost": "1",
+    "atk": "-",
+    "hp": "-",
+    "ability_text": "[ファンファーレ]自分のデッキの上4枚を見る。その中から、八獄・カード1枚を公開して手札に加えてよい。残りを好きな順にデッキの下に置く。 [起動]これを[アクト]墓場に置く：自分のターンが8ターン目かそれ以降なら、1枚引く。",
+    "card_kind_normalized": "amulet",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true
+  },
+  {
+    "id": "PR-528",
+    "name": "剪定の咎人・マガチヨ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-528.png",
+    "class": "エルフ",
+    "type": "フォロワー",
+    "subtype": "八獄・エルフ族",
+    "rarity": "PR",
+    "product_name": "PRカード",
+    "cost": "2",
+    "atk": "2",
+    "hp": "2",
+    "ability_text": "[進化][コスト1]：これは進化する。",
+    "related_cards": [
+      {
+        "id": "BP19-002",
+        "name": "剪定の咎人・マガチヨ"
+      }
+    ],
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true
+  },
+  {
+    "id": "PR-529",
+    "name": "対空射撃",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-529.png",
+    "class": "エルフ",
+    "type": "スペル",
+    "subtype": "エルフ族・狩人",
+    "rarity": "PR",
+    "product_name": "PRカード",
+    "cost": "1",
+    "atk": "-",
+    "hp": "-",
+    "ability_text": "自分の場の[エルフ]カード1枚と相手の場のフォロワー1体を選ぶ。前者を手札に戻す。後者に3ダメージ。",
+    "card_kind_normalized": "spell",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true
+  },
+  {
+    "id": "PR-530",
+    "name": "アルセーヌ・ルパン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-530.png",
+    "class": "ロイヤル",
+    "type": "フォロワー",
+    "subtype": "兵士・盗賊",
+    "rarity": "PR",
+    "product_name": "PRカード",
+    "cost": "2",
+    "atk": "2",
+    "hp": "1",
+    "ability_text": "[進化][コスト1]：これは進化する。 [ファンファーレ]相手プレイヤーすべては、自身のデッキの上1枚を墓場に置く。墓場に置いたカードの中にフォロワーがあるなら、自分は『黄金の小剣』1枚をEXエリアに置く。墓場に置いたカードの中にスペルやアミュレットがあるなら、自分は『黄金の杯』1枚をEXエリアに置く。",
+    "related_cards": [
+      {
+        "id": "BP15-T01",
+        "name": "黄金の小剣"
+      },
+      {
+        "id": "BP15-T02",
+        "name": "黄金の杯"
+      },
+      {
+        "id": "PR-531",
+        "name": "アルセーヌ・ルパン"
+      }
+    ],
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true
+  },
+  {
+    "id": "PR-531",
+    "name": "アルセーヌ・ルパン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-531.png",
+    "class": "ロイヤル",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "兵士・盗賊",
+    "rarity": "PR",
+    "product_name": "PRカード",
+    "cost": "-",
+    "atk": "3",
+    "hp": "2",
+    "ability_text": "【進化時】自分のデッキの上4枚を見る。その中から、盗賊・カード1枚を公開して手札に加えてよい。残りを好きな順にデッキの下に置く。",
+    "related_cards": [
+      {
+        "id": "PR-530",
+        "name": "アルセーヌ・ルパン"
+      }
+    ],
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true
+  },
+  {
+    "id": "PR-532",
+    "name": "ファイアーチェイン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-532.png",
+    "class": "ウィッチ",
+    "type": "スペル",
+    "subtype": "魔法使い",
+    "rarity": "PR",
+    "product_name": "PRカード",
+    "cost": "2",
+    "atk": "-",
+    "hp": "-",
+    "ability_text": "[クイック] 相手の場のフォロワー2体まで選ぶ。それに3ダメージを割りふる。",
+    "card_kind_normalized": "spell",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true
+  },
+  {
+    "id": "PR-533",
+    "name": "ドラゴニックコール",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-533.png",
+    "class": "ドラゴン",
+    "type": "スペル",
+    "subtype": "竜族",
+    "rarity": "PR",
+    "product_name": "PRカード",
+    "cost": "2",
+    "atk": "-",
+    "hp": "-",
+    "ability_text": "[クイック] 自分のデッキの上5枚を見る。その中から、元のコスト7以上の[ドラゴン]カード2枚まで公開して手札に加えてよい。残りを好きな順にデッキの下に置く。",
+    "card_kind_normalized": "spell",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true
+  },
+  {
+    "id": "PR-534",
+    "name": "パルクールウルフ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-534.png",
+    "class": "ナイトメア",
+    "type": "フォロワー",
+    "subtype": "魔界・獣",
+    "rarity": "PR",
+    "product_name": "PRカード",
+    "cost": "4",
+    "atk": "4",
+    "hp": "4",
+    "ability_text": "これは能力ダメージを受けない。 【攻撃時】相手のリーダーすべてに2ダメージ。自分のリーダーは[体力]+2する。 [起動][コスト2]：これは【疾走】を持つ。",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true
+  },
+  {
+    "id": "PR-535",
+    "name": "加虐の独房",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-535.png",
+    "class": "ナイトメア",
+    "type": "アミュレット",
+    "subtype": "魔界",
+    "rarity": "PR",
+    "product_name": "PRカード",
+    "cost": "2",
+    "atk": "-",
+    "hp": "-",
+    "ability_text": "[ファンファーレ]これに加虐カウンター2個を置く。1枚引く。 [起動]これを[アクト]これの加虐カウンター1個を取る：自分のリーダーに1ダメージ。これに加虐カウンターが置かれていないなら、これを墓場に置く。",
+    "card_kind_normalized": "amulet",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true
+  },
+  {
+    "id": "PR-536",
+    "name": "伝道の司祭・ロレーナ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-536.png",
+    "class": "ビショップ",
+    "type": "フォロワー",
+    "subtype": "信仰",
+    "rarity": "PR",
+    "product_name": "PRカード",
+    "cost": "4",
+    "atk": "3",
+    "hp": "3",
+    "ability_text": "[進化][コスト1]：これは進化する。 [ファンファーレ]自分のリーダーは[体力]+4する。",
+    "related_cards": [
+      {
+        "id": "PR-537",
+        "name": "伝道の司祭・ロレーナ"
+      }
+    ],
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true
+  },
+  {
+    "id": "PR-537",
+    "name": "伝道の司祭・ロレーナ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-537.png",
+    "class": "ビショップ",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "信仰",
+    "rarity": "PR",
+    "product_name": "PRカード",
+    "cost": "-",
+    "atk": "4",
+    "hp": "4",
+    "ability_text": "【進化時】相手の場のフォロワー1体を選ぶ。それに「これの攻撃力」と同じダメージ。",
+    "related_cards": [
+      {
+        "id": "PR-536",
+        "name": "伝道の司祭・ロレーナ"
+      }
+    ],
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true
+  },
+  {
+    "id": "PR-538",
+    "name": "溶鉄の腹心",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-538.png",
+    "class": "ニュートラル",
+    "type": "フォロワー",
+    "subtype": "八獄・超克",
+    "rarity": "PR",
+    "product_name": "PRカード",
+    "cost": "2",
+    "atk": "3",
+    "hp": "2",
+    "ability_text": "[ファンファーレ]1枚引く。自分の場か自分の墓場に「カード名に『カットスロート』を含むフォロワー」があるなら、自分のPPを2回復する。",
+    "related_cards": [
+      {
+        "id": "BP19-110",
+        "name": "機鋒の咎人・カットスロート"
+      },
+      {
+        "id": "BP19-111",
+        "name": "機鋒の咎人・カットスロート"
+      }
+    ],
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true
+  },
+  {
+    "id": "PR-539",
+    "name": "迸る光明・アポロン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-539.png",
+    "class": "ニュートラル",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "大神",
+    "rarity": "PR",
+    "product_name": "PRカード",
+    "cost": "-",
+    "atk": "4",
+    "hp": "4",
+    "ability_text": "【進化時】相手のリーダーすべてと相手の場のフォロワーすべてに1ダメージ。",
+    "related_cards": [
+      {
+        "id": "PR-508",
+        "name": "迸る光明・アポロン"
+      }
+    ],
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
     "is_deck_build_legal": true
   },
   {

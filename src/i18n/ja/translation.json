@@ -198,7 +198,13 @@
       "closeAria": "カードプレビューを閉じる",
       "openAria": "{{name}} をプレビュー",
       "openTitle": "{{name}} をプレビュー",
-      "enlargedAlt": "{{name}} の拡大表示"
+      "enlargedAlt": "{{name}} の拡大表示",
+      "faces": {
+        "heading": "カードの表裏",
+        "front": "表面",
+        "back": "裏面",
+        "imageAlt": "{{side}}: {{name}}"
+      }
     },
     "pagination": {
       "prev": "前へ",
@@ -603,6 +609,10 @@
         "addToEx": "EXエリアに置く",
         "setUsed": "使用済にする",
         "setUnused": "未使用にする",
+        "face": {
+          "front": "表面",
+          "back": "裏面"
+        },
         "empty": "このゾーンは空です",
         "typeCounts": "フォロワー: {{follower}} / スペル: {{spell}} / アミュレット: {{amulet}}",
         "stats": "スタッツ",

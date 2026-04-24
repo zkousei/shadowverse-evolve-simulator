@@ -77,6 +77,88 @@ describe('GameBoard extracted UI components - card inspector', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it('renders both faces for double-faced cards in the inspector', () => {
+    render(
+      <GameBoardCardInspector
+        selectedInspectorCard={{
+          id: 'card-1',
+          cardId: 'BP08-003',
+          name: '決意の人形・オーキス',
+          image: '/front.png',
+          zone: 'field-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: false,
+          counters: { atk: 0, hp: 0 },
+          genericCounter: 0,
+          baseCardType: 'follower',
+          cardKindNormalized: 'evolve_follower',
+        }}
+        selectedInspectorDetail={{
+          id: 'BP08-003',
+          name: '決意の人形・オーキス',
+          image: '/front.png',
+          className: 'エルフ',
+          title: '',
+          type: 'フォロワー・エボルヴ',
+          subtype: '人形・光輝',
+          cardKindNormalized: 'evolve_follower',
+          cost: '-',
+          atk: 3,
+          hp: 3,
+          abilityText: 'Front ability',
+          faces: [
+            {
+              side: 'front',
+              name: '決意の人形・オーキス',
+              image: '/front.png',
+              className: 'エルフ',
+              title: '',
+              type: 'フォロワー・エボルヴ',
+              subtype: '人形・光輝',
+              cardKindNormalized: 'evolve_follower',
+              cost: '-',
+              atk: 3,
+              hp: 3,
+              abilityText: 'Front face ability',
+            },
+            {
+              side: 'back',
+              name: '復讐の人形・オーキス',
+              image: '/back.png',
+              className: 'エルフ',
+              title: '',
+              type: 'フォロワー・エボルヴ',
+              subtype: '人形・キラー',
+              cardKindNormalized: 'evolve_follower',
+              cost: '-',
+              atk: 4,
+              hp: 4,
+              abilityText: 'Back face ability',
+            },
+          ],
+        }}
+        inspectorPresentation={{
+          primaryMeta: 'エルフ',
+          secondaryMeta: 'フォロワー・エボルヴ / 人形・光輝',
+          stats: '3 / 3',
+        }}
+        inspectorPopoverStyle={{ position: 'fixed', top: 40, left: 40 }}
+        onClose={vi.fn()}
+      />
+    );
+
+    const facePreview = screen.getByTestId('game-board-card-face-preview');
+    expect(facePreview).toHaveTextContent('決意の人形・オーキス');
+    expect(facePreview).toHaveTextContent('復讐の人形・オーキス');
+    expect(facePreview).toHaveTextContent('人形・光輝');
+    expect(facePreview).toHaveTextContent('人形・キラー');
+    expect(facePreview).toHaveTextContent('3 / 3');
+    expect(facePreview).toHaveTextContent('4 / 4');
+    expect(facePreview).toHaveTextContent('Front face ability');
+    expect(facePreview).toHaveTextContent('Back face ability');
+  });
+
   it('renders card inspector section and returns null without selection', () => {
     const { rerender } = render(
       <GameBoardCardInspectorSection

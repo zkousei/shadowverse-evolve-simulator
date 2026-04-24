@@ -1170,6 +1170,90 @@ describe('gameSyncReducer', () => {
     expect(duringGameFlip.cards.find(c => c.id === 'guest-evo')?.isFlipped).toBe(false);
   });
 
+  it('sets the selected face for an owned evolve-deck card without changing usage state', () => {
+    const state = createState({
+      revision: 4,
+      gameStatus: 'playing',
+      cards: [
+        {
+          id: 'guest-evo',
+          cardId: 'BP08-003',
+          name: 'Double Face Evolve',
+          image: '',
+          zone: 'evolveDeck-guest',
+          owner: 'guest',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+          isEvolveCard: true,
+        },
+      ],
+    });
+
+    const result = applyGameSyncEvent(state, {
+      id: 'evt-set-face',
+      type: 'SET_CARD_FACE',
+      actor: 'guest',
+      cardId: 'guest-evo',
+      faceSide: 'back',
+    });
+
+    const updatedCard = result.cards.find(c => c.id === 'guest-evo');
+    expect(updatedCard?.selectedFaceSide).toBe('back');
+    expect(updatedCard?.isFlipped).toBe(true);
+    expect(result.revision).toBe(5);
+  });
+
+  it('rejects selected face changes from the wrong requester or non-evolve deck cards', () => {
+    const state = createState({
+      revision: 4,
+      cards: [
+        {
+          id: 'guest-evo',
+          cardId: 'BP08-003',
+          name: 'Guest Evolve',
+          image: '',
+          zone: 'evolveDeck-guest',
+          owner: 'guest',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+          isEvolveCard: true,
+        },
+        {
+          id: 'host-main',
+          cardId: 'BP01-001',
+          name: 'Host Main',
+          image: '',
+          zone: 'evolveDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+          isEvolveCard: false,
+        },
+      ],
+    });
+
+    const wrongRequester = applyGameSyncEvent(state, {
+      id: 'evt-set-face-denied-requester',
+      type: 'SET_CARD_FACE',
+      actor: 'guest',
+      cardId: 'guest-evo',
+      faceSide: 'back',
+    }, 'host');
+    expect(wrongRequester).toBe(state);
+
+    const nonEvolve = applyGameSyncEvent(state, {
+      id: 'evt-set-face-denied-kind',
+      type: 'SET_CARD_FACE',
+      actor: 'host',
+      cardId: 'host-main',
+      faceSide: 'back',
+    });
+    expect(nonEvolve).toBe(state);
+  });
+
   it('applies shortcut movement events through shared card rules', () => {
     const state = createState({
       revision: 10,
