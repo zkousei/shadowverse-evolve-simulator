@@ -21,6 +21,9 @@ type GameBoardMainDeckSectionProps = {
   actionPlacement?: 'below' | 'overlay';
 };
 
+const MAIN_DECK_ACTIONS_Z_INDEX = 180;
+const OPEN_MAIN_DECK_ACTIONS_Z_INDEX = 220;
+
 const GameBoardMainDeckSection: React.FC<GameBoardMainDeckSectionProps> = ({
   zoneProps,
   menuId,
@@ -88,7 +91,7 @@ const GameBoardMainDeckSection: React.FC<GameBoardMainDeckSectionProps> = ({
             right: '6px',
             bottom: '6px',
             width: 'min(72px, calc(100% - 12px))',
-            zIndex: activeMenuId === menuId ? 70 : 30,
+            zIndex: activeMenuId === menuId ? OPEN_MAIN_DECK_ACTIONS_Z_INDEX : MAIN_DECK_ACTIONS_Z_INDEX,
           }}
         >
           {actionsSection}

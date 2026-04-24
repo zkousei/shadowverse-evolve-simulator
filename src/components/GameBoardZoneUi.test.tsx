@@ -573,7 +573,7 @@ describe('GameBoard extracted UI components - zones and controls', () => {
 
     const button = screen.getByRole('button', { name: 'Actions' });
 
-    expect(button.parentElement?.parentElement).toHaveStyle({ zIndex: '70' });
+    expect(button.parentElement?.parentElement).toHaveStyle({ zIndex: '220' });
     expect(screen.getByRole('button', { name: 'Search' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Look Top (N)' }).parentElement).toHaveStyle({
       minWidth: '154px',
@@ -582,6 +582,28 @@ describe('GameBoard extracted UI components - zones and controls', () => {
     expect(screen.getByRole('button', { name: 'Look Top (N)' })).toHaveStyle({
       whiteSpace: 'nowrap',
     });
+  });
+
+  it('keeps overlaid main deck actions above a full deck stack while closed', () => {
+    render(
+      <GameBoardMainDeckSection
+        zoneProps={{
+          id: 'mainDeck-host',
+          label: 'Main Deck',
+          cards: Array.from({ length: 40 }, (_, index) => ({ id: `card-${index}` } as never)),
+        }}
+        menuId="mainDeck-host"
+        activeMenuId={null}
+        actionsLabel="Actions"
+        actions={[{ label: 'Search', onClick: vi.fn() }]}
+        onActiveMenuChange={vi.fn()}
+        actionPlacement="overlay"
+      />
+    );
+
+    const button = screen.getByRole('button', { name: 'Actions' });
+
+    expect(button.parentElement?.parentElement).toHaveStyle({ zIndex: '180' });
   });
 
   it('uses a compact two-column touch sheet layout for multiple main deck actions', () => {
