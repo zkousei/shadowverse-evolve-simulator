@@ -2,6 +2,8 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { describe, expect, it, vi } from 'vitest';
 import GameBoardEndTurnButton from './GameBoardEndTurnButton';
 import GameBoardEndTurnSection from './GameBoardEndTurnSection';
+import GameBoardBoardRow from './GameBoardBoardRow';
+import GameBoardHandRow from './GameBoardHandRow';
 import GameBoardLeaderZone from './GameBoardLeaderZone';
 import GameBoardLeaderZoneSection from './GameBoardLeaderZoneSection';
 import GameBoardPlayerTracker from './GameBoardPlayerTracker';
@@ -63,6 +65,24 @@ const renderWithInputProfile = (
 );
 
 describe('GameBoard extracted UI components - zones and controls', () => {
+  it('lets board and hand rows share the board spacing token', () => {
+    render(
+      <>
+        <GameBoardBoardRow columns="100px 200px 100px" width={400} rowGap="0.42rem">
+          <div />
+          <div />
+          <div />
+        </GameBoardBoardRow>
+        <GameBoardHandRow columns="100px 200px 100px" width={400} centerWidth={200} rowGap="0.42rem">
+          <div>Hand</div>
+        </GameBoardHandRow>
+      </>
+    );
+
+    expect(screen.getByText('Hand').parentElement?.parentElement).toHaveStyle({ gap: '0.42rem' });
+    expect(screen.getByText('Hand').parentElement?.parentElement?.previousElementSibling).toHaveStyle({ gap: '0.42rem' });
+  });
+
   it('renders leader zone section and wires search action', () => {
     const onSearch = vi.fn();
 

@@ -15,6 +15,26 @@ export type GameBoardLayout = {
   boardShellColumns: string;
 };
 
+export type GameBoardLayoutSpacing = {
+  boardShellPadding: string;
+  boardShellGap: string;
+  playmatPadding: string;
+  playmatGap: string;
+  boardSectionPadding: string;
+  boardSectionGap: string;
+  boardShellColumnGap: string;
+  bottomPanelMarginLeft: string;
+  boardColumnStackGap: string;
+  bottomBoardRowSecondaryMarginTop: string;
+  boardSectionDividerMargin: string;
+  boardRowGap: string;
+  stackZoneMinHeight: string;
+  fieldZoneMinHeight: string;
+  handZoneMinHeight: string;
+  bottomHandZoneMinHeight: string;
+  leaderZoneMinHeight: string;
+};
+
 const TABLET_MIN_WIDTH = 900;
 const DESKTOP_MIN_WIDTH = 1280;
 const BOARD_SHELL_COLUMN_GAP = 16;
@@ -131,6 +151,102 @@ export const getBoardDensityForViewportWidth = (
     ? 'overview'
     : 'standard'
 );
+
+export const resolveBoardLayoutSpacing = (
+  inputProfile: GameBoardLayoutInputProfile = 'coarse',
+  layoutProfile: GameBoardLayoutProfile = 'desktop',
+  boardDensity: GameBoardBoardDensity = 'standard'
+): GameBoardLayoutSpacing => {
+  const isCompactBoard = inputProfile === 'coarse';
+  const isTabletCompactBoard = isCompactBoard && layoutProfile === 'tablet';
+  const isOverviewBoard = boardDensity === 'overview';
+
+  if (isTabletCompactBoard) {
+    return {
+      boardShellPadding: '0.42rem',
+      boardShellGap: '0.34rem',
+      playmatPadding: '0.32rem',
+      playmatGap: '0.18rem',
+      boardSectionPadding: '0.2rem 0.24rem',
+      boardSectionGap: '0.16rem',
+      boardShellColumnGap: '0.5rem',
+      bottomPanelMarginLeft: '1.35rem',
+      boardColumnStackGap: '0.28rem',
+      bottomBoardRowSecondaryMarginTop: '0.2rem',
+      boardSectionDividerMargin: '0.24rem 0',
+      boardRowGap: '0.42rem',
+      stackZoneMinHeight: '104px',
+      fieldZoneMinHeight: '116px',
+      handZoneMinHeight: '108px',
+      bottomHandZoneMinHeight: '116px',
+      leaderZoneMinHeight: '120px',
+    };
+  }
+
+  if (isOverviewBoard) {
+    return {
+      boardShellPadding: '0.44rem',
+      boardShellGap: '0.36rem',
+      playmatPadding: '0.38rem',
+      playmatGap: '0.18rem',
+      boardSectionPadding: '0.22rem 0.26rem',
+      boardSectionGap: '0.18rem',
+      boardShellColumnGap: '0.56rem',
+      bottomPanelMarginLeft: '1.5rem',
+      boardColumnStackGap: '0.24rem',
+      bottomBoardRowSecondaryMarginTop: '0',
+      boardSectionDividerMargin: '0.12rem 0',
+      boardRowGap: '0.5rem',
+      stackZoneMinHeight: '96px',
+      fieldZoneMinHeight: '106px',
+      handZoneMinHeight: '100px',
+      bottomHandZoneMinHeight: '106px',
+      leaderZoneMinHeight: '110px',
+    };
+  }
+
+  if (isCompactBoard) {
+    return {
+      boardShellPadding: '0.52rem',
+      boardShellGap: '0.48rem',
+      playmatPadding: '0.42rem',
+      playmatGap: '0.24rem',
+      boardSectionPadding: '0.28rem 0.32rem',
+      boardSectionGap: '0.22rem',
+      boardShellColumnGap: '0.5rem',
+      bottomPanelMarginLeft: '1.1rem',
+      boardColumnStackGap: '0.34rem',
+      bottomBoardRowSecondaryMarginTop: '0',
+      boardSectionDividerMargin: '0.4rem 0',
+      boardRowGap: '0.5rem',
+      stackZoneMinHeight: '110px',
+      fieldZoneMinHeight: '124px',
+      handZoneMinHeight: '116px',
+      bottomHandZoneMinHeight: '124px',
+      leaderZoneMinHeight: '150px',
+    };
+  }
+
+  return {
+    boardShellPadding: '1rem',
+    boardShellGap: '1rem',
+    playmatPadding: '1rem',
+    playmatGap: '0.5rem',
+    boardSectionPadding: '0.55rem 0.6rem',
+    boardSectionGap: '0.5rem',
+    boardShellColumnGap: '1rem',
+    bottomPanelMarginLeft: '1.25rem',
+    boardColumnStackGap: '0.65rem',
+    bottomBoardRowSecondaryMarginTop: '0',
+    boardSectionDividerMargin: '1rem 0',
+    boardRowGap: '0.75rem',
+    stackZoneMinHeight: '150px',
+    fieldZoneMinHeight: '160px',
+    handZoneMinHeight: '150px',
+    bottomHandZoneMinHeight: '160px',
+    leaderZoneMinHeight: '150px',
+  };
+};
 
 // Keep legacy exports as desktop defaults to avoid changing the existing PC path.
 export const sidePanelWidth = desktopGameBoardLayout.sidePanelWidth;

@@ -2975,19 +2975,19 @@ describe('GameBoard', () => {
       expect(shell).toHaveAttribute('data-layout-profile', 'desktop');
       expect(shell).toHaveAttribute('data-input-profile', 'fine');
       expect(shell).toHaveAttribute('data-board-density', 'overview');
-      expect(shell).toHaveStyle({ padding: '0.48rem', gap: '0.44rem', width: '100%', height: '100%' });
+      expect(shell).toHaveStyle({ padding: '0.44rem', gap: '0.36rem', width: '100%', height: '100%' });
       expect(shell.style.zoom).toBe('');
-      expect(playmat).toHaveStyle({ padding: '0.44rem', gap: '0.24rem' });
-      expect(topSection).toHaveStyle({ padding: '0.26rem 0.29rem' });
+      expect(playmat).toHaveStyle({ padding: '0.38rem', gap: '0.18rem' });
+      expect(topSection).toHaveStyle({ padding: '0.22rem 0.26rem' });
       expect(topGrid).toHaveStyle({ gridTemplateColumns: '150px 864px 176px' });
       expect(sectionDivider).not.toBeNull();
-      expect(sectionDivider as HTMLElement).toHaveStyle({ margin: '0.18rem 0' });
-      expect(screen.getByTestId('zone-cemetery-guest')).toHaveStyle({ minHeight: '98px' });
-      expect(screen.getByTestId('zone-field-guest')).toHaveStyle({ minHeight: '109px' });
-      expect(screen.getByTestId('zone-hand-guest')).toHaveStyle({ minHeight: '102px' });
-      expect(screen.getByTestId('zone-hand-host')).toHaveStyle({ minHeight: '109px' });
-      expect(screen.getByTestId('zone-leader-guest')).toHaveStyle({ minHeight: '114px' });
-      expect(screen.getByTestId('zone-leader-host')).toHaveStyle({ minHeight: '114px' });
+      expect(sectionDivider as HTMLElement).toHaveStyle({ margin: '0.12rem 0' });
+      expect(screen.getByTestId('zone-cemetery-guest')).toHaveStyle({ minHeight: '96px' });
+      expect(screen.getByTestId('zone-field-guest')).toHaveStyle({ minHeight: '106px' });
+      expect(screen.getByTestId('zone-hand-guest')).toHaveStyle({ minHeight: '100px' });
+      expect(screen.getByTestId('zone-hand-host')).toHaveStyle({ minHeight: '106px' });
+      expect(screen.getByTestId('zone-leader-guest')).toHaveStyle({ minHeight: '110px' });
+      expect(screen.getByTestId('zone-leader-host')).toHaveStyle({ minHeight: '110px' });
       const hostControlsPanel = screen.getByTestId('player-tracker-host').parentElement as HTMLElement;
       expect(hostControlsPanel).toHaveStyle({ marginLeft: '1.5rem' });
 
@@ -3058,9 +3058,9 @@ describe('GameBoard', () => {
       expect(shell).toHaveAttribute('data-layout-profile', 'desktop');
       expect(shell).toHaveAttribute('data-input-profile', 'fine');
       expect(shell).toHaveAttribute('data-board-density', 'overview');
-      expect(shell).toHaveStyle({ padding: '0.48rem', gap: '0.44rem', width: '100%', height: '100%' });
+      expect(shell).toHaveStyle({ padding: '0.44rem', gap: '0.36rem', width: '100%', height: '100%' });
       expect(shell.style.zoom).toBe('');
-      expect(playmat).toHaveStyle({ padding: '0.44rem', gap: '0.24rem' });
+      expect(playmat).toHaveStyle({ padding: '0.38rem', gap: '0.18rem' });
     } finally {
       Object.defineProperty(window, 'innerWidth', {
         configurable: true,
@@ -3186,17 +3186,17 @@ describe('GameBoard', () => {
       const topSection = screen.getByTestId('board-section-top');
       const topGrid = topSection.firstElementChild as HTMLElement;
 
-      expect(shell).toHaveStyle({ padding: '0.46rem', gap: '0.4rem' });
+      expect(shell).toHaveStyle({ padding: '0.42rem', gap: '0.34rem' });
       expect(header).toHaveStyle({ padding: '0.42rem 0.56rem', rowGap: '0.28rem' });
-      expect(playmat).toHaveStyle({ padding: '0.36rem', gap: '0.22rem' });
-      expect(topSection).toHaveStyle({ padding: '0.24rem 0.28rem' });
+      expect(playmat).toHaveStyle({ padding: '0.32rem', gap: '0.18rem' });
+      expect(topSection).toHaveStyle({ padding: '0.2rem 0.24rem' });
       expect(topGrid).toHaveStyle({ columnGap: '0.5rem' });
-      expect(screen.getByTestId('zone-cemetery-guest')).toHaveStyle({ minHeight: '108px' });
-      expect(screen.getByTestId('zone-field-guest')).toHaveStyle({ minHeight: '120px' });
-      expect(screen.getByTestId('zone-hand-guest')).toHaveStyle({ minHeight: '112px' });
-      expect(screen.getByTestId('zone-hand-host')).toHaveStyle({ minHeight: '120px' });
-      expect(screen.getByTestId('zone-leader-guest')).toHaveStyle({ minHeight: '124px' });
-      expect(screen.getByTestId('zone-leader-host')).toHaveStyle({ minHeight: '124px' });
+      expect(screen.getByTestId('zone-cemetery-guest')).toHaveStyle({ minHeight: '104px' });
+      expect(screen.getByTestId('zone-field-guest')).toHaveStyle({ minHeight: '116px' });
+      expect(screen.getByTestId('zone-hand-guest')).toHaveStyle({ minHeight: '108px' });
+      expect(screen.getByTestId('zone-hand-host')).toHaveStyle({ minHeight: '116px' });
+      expect(screen.getByTestId('zone-leader-guest')).toHaveStyle({ minHeight: '120px' });
+      expect(screen.getByTestId('zone-leader-host')).toHaveStyle({ minHeight: '120px' });
       expect(screen.getByTestId('bottom-board-row-secondary-wrap')).toHaveStyle({ marginTop: '0.2rem' });
       const hostControlsPanel = screen.getByTestId('player-tracker-host').parentElement as HTMLElement;
       expect(hostControlsPanel).toHaveStyle({ marginLeft: '1.35rem' });

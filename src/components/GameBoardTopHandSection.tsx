@@ -17,6 +17,7 @@ type GameBoardTopHandSectionProps = {
   centerWidth: number;
   justifyCenter?: boolean;
   minHeight?: string;
+  rowGap?: string;
   zoneProps: React.ComponentProps<typeof Zone>;
   activeMenuId: string | null;
   onActiveMenuChange: (menuId: string | null) => void;
@@ -38,6 +39,7 @@ const GameBoardTopHandSection: React.FC<GameBoardTopHandSectionProps> = ({
   centerWidth,
   justifyCenter = false,
   minHeight,
+  rowGap,
   zoneProps,
   activeMenuId,
   onActiveMenuChange,
@@ -65,6 +67,7 @@ const GameBoardTopHandSection: React.FC<GameBoardTopHandSectionProps> = ({
       centerWidth={centerWidth}
       justifyCenter={justifyCenter}
       minHeight={minHeight}
+      rowGap={rowGap}
     >
       <Zone {...zoneProps} />
 

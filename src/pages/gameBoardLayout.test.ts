@@ -6,6 +6,7 @@ import {
   centerZoneWidth,
   getBoardDensityForViewportWidth,
   getLayoutProfileForViewportWidth,
+  resolveBoardLayoutSpacing,
   resolveBoardLayout,
   sidePanelWidth,
   sideZoneWidth,
@@ -89,5 +90,43 @@ describe('gameBoardLayout', () => {
     expect(getBoardDensityForViewportWidth(1920, 1200, 'fine')).toBe('overview');
     expect(getBoardDensityForViewportWidth(1024, 900, 'fine')).toBe('standard');
     expect(getBoardDensityForViewportWidth(1024, 900, 'coarse')).toBe('standard');
+  });
+
+  it('centralizes compact overview spacing without changing card sizes', () => {
+    expect(resolveBoardLayoutSpacing('fine', 'desktop', 'overview')).toMatchObject({
+      boardShellPadding: '0.44rem',
+      boardShellGap: '0.36rem',
+      playmatPadding: '0.38rem',
+      playmatGap: '0.18rem',
+      boardSectionPadding: '0.22rem 0.26rem',
+      boardSectionGap: '0.18rem',
+      boardColumnStackGap: '0.24rem',
+      boardRowGap: '0.5rem',
+      boardSectionDividerMargin: '0.12rem 0',
+      stackZoneMinHeight: '96px',
+      fieldZoneMinHeight: '106px',
+      handZoneMinHeight: '100px',
+      bottomHandZoneMinHeight: '106px',
+      leaderZoneMinHeight: '110px',
+    });
+  });
+
+  it('centralizes tablet spacing around touch-safe zone heights', () => {
+    expect(resolveBoardLayoutSpacing('coarse', 'tablet', 'standard')).toMatchObject({
+      boardShellPadding: '0.42rem',
+      boardShellGap: '0.34rem',
+      playmatPadding: '0.32rem',
+      playmatGap: '0.18rem',
+      boardSectionPadding: '0.2rem 0.24rem',
+      boardSectionGap: '0.16rem',
+      boardColumnStackGap: '0.28rem',
+      boardRowGap: '0.42rem',
+      boardSectionDividerMargin: '0.24rem 0',
+      stackZoneMinHeight: '104px',
+      fieldZoneMinHeight: '116px',
+      handZoneMinHeight: '108px',
+      bottomHandZoneMinHeight: '116px',
+      leaderZoneMinHeight: '120px',
+    });
   });
 });

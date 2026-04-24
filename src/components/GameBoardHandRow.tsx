@@ -6,6 +6,7 @@ type GameBoardHandRowProps = {
   centerWidth: number;
   justifyCenter?: boolean;
   minHeight?: string;
+  rowGap?: string;
   children: React.ReactNode;
 };
 
@@ -15,13 +16,14 @@ const GameBoardHandRow: React.FC<GameBoardHandRowProps> = ({
   centerWidth,
   justifyCenter = false,
   minHeight,
+  rowGap = '0.75rem',
   children,
 }) => (
   <div
     style={{
       display: 'grid',
       gridTemplateColumns: columns,
-      gap: '0.75rem',
+      gap: rowGap,
       width: `${width}px`,
       alignItems: 'start',
     }}

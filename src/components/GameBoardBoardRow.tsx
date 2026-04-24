@@ -5,6 +5,7 @@ type GameBoardBoardRowProps = {
   width: number;
   children: React.ReactNode;
   overlay?: React.ReactNode;
+  rowGap?: string;
 };
 
 const GameBoardBoardRow: React.FC<GameBoardBoardRowProps> = ({
@@ -12,13 +13,14 @@ const GameBoardBoardRow: React.FC<GameBoardBoardRowProps> = ({
   width,
   children,
   overlay,
+  rowGap = '0.75rem',
 }) => {
   const grid = (
     <div
       style={{
         display: 'grid',
         gridTemplateColumns: columns,
-        gap: '0.75rem',
+        gap: rowGap,
         width: `${width}px`,
         alignItems: 'start',
       }}
