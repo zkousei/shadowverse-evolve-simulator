@@ -11,6 +11,24 @@ export interface CardDetail {
   atk: number | null;
   hp: number | null;
   abilityText: string;
+  faces?: CardFaceDetail[];
+}
+
+export type CardFaceSide = 'front' | 'back';
+
+export interface CardFaceDetail {
+  side: CardFaceSide;
+  name: string;
+  image: string;
+  className: string;
+  title: string;
+  type: string;
+  subtype: string;
+  cardKindNormalized?: string;
+  cost: string;
+  atk: number | null;
+  hp: number | null;
+  abilityText: string;
 }
 
 export type CardDetailLookup = Record<string, CardDetail>;
@@ -22,6 +40,22 @@ export type CardDetailPresentation = {
 
 interface CardDetailSource {
   id: string;
+  name?: string;
+  image?: string;
+  class?: string;
+  title?: string;
+  type?: string;
+  subtype?: string;
+  card_kind_normalized?: string;
+  cost?: string;
+  atk?: string;
+  hp?: string;
+  ability_text?: string;
+  faces?: CardFaceSource[];
+}
+
+interface CardFaceSource {
+  side?: string;
   name?: string;
   image?: string;
   class?: string;
@@ -47,6 +81,23 @@ const parseNumericStat = (value?: string): number | null => {
 
 export const buildCardDetailLookup = (cards: CardDetailSource[]): CardDetailLookup => (
   cards.reduce<CardDetailLookup>((lookup, card) => {
+    const faces = (card.faces ?? [])
+      .filter((face): face is CardFaceSource & { side: CardFaceSide } => face.side === 'front' || face.side === 'back')
+      .map<CardFaceDetail>((face) => ({
+        side: face.side,
+        name: face.name ?? '',
+        image: face.image ?? '',
+        className: face.class ?? '',
+        title: face.title ?? '',
+        type: face.type ?? '',
+        subtype: face.subtype ?? '',
+        cardKindNormalized: face.card_kind_normalized ?? '',
+        cost: face.cost ?? '-',
+        atk: parseNumericStat(face.atk),
+        hp: parseNumericStat(face.hp),
+        abilityText: face.ability_text ?? '',
+      }));
+
     lookup[card.id] = {
       id: card.id,
       name: card.name ?? '',
@@ -60,10 +111,43 @@ export const buildCardDetailLookup = (cards: CardDetailSource[]): CardDetailLook
       atk: parseNumericStat(card.atk),
       hp: parseNumericStat(card.hp),
       abilityText: card.ability_text ?? '',
+      ...(faces.length > 0 ? { faces } : {}),
     };
 
     return lookup;
   }, {})
+);
+
+export const resolveSelectedCardFaceDetail = (
+  detail: CardDetail | undefined | null,
+  selectedFaceSide?: string | null
+): CardDetail | undefined | null => {
+  if (!detail || !selectedFaceSide) return detail;
+
+  const selectedFace = detail.faces?.find(face => face.side === selectedFaceSide);
+  if (!selectedFace) return detail;
+
+  return {
+    ...detail,
+    name: selectedFace.name,
+    image: selectedFace.image,
+    className: selectedFace.className,
+    title: selectedFace.title,
+    type: selectedFace.type,
+    subtype: selectedFace.subtype,
+    cardKindNormalized: selectedFace.cardKindNormalized,
+    cost: selectedFace.cost,
+    atk: selectedFace.atk,
+    hp: selectedFace.hp,
+    abilityText: selectedFace.abilityText,
+  };
+};
+
+export const resolveCardDisplayName = (
+  card: { cardId: string; name: string; selectedFaceSide?: string | null },
+  detailLookup: CardDetailLookup
+): string => (
+  resolveSelectedCardFaceDetail(detailLookup[card.cardId], card.selectedFaceSide)?.name || card.name
 );
 
 export const formatAbilityText = (abilityText: string): string => (

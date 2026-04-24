@@ -2,7 +2,7 @@ import React from 'react';
 import type { CardInspectAnchor, CardInstance } from '../components/Card';
 import { canInspectCard, shouldClearInspectorSelection } from '../utils/gameBoardCombat';
 import type { CardDetailLookup } from '../utils/cardDetails';
-import { buildCardDetailPresentation } from '../utils/cardDetails';
+import { buildCardDetailPresentation, resolveSelectedCardFaceDetail } from '../utils/cardDetails';
 import { getInspectorPopoverStyle } from '../utils/gameBoardPresentation';
 import {
   shouldDismissInspectorOnPointerDown,
@@ -88,7 +88,7 @@ export const useGameBoardInspectorUi = ({
     ? cards.find((card) => card.id === selectedInspectorCardId) ?? null
     : null;
   const selectedInspectorDetail = selectedInspectorCard
-    ? cardDetailLookup[selectedInspectorCard.cardId]
+    ? resolveSelectedCardFaceDetail(cardDetailLookup[selectedInspectorCard.cardId], selectedInspectorCard.selectedFaceSide)
     : null;
   const inspectorPresentation = buildCardDetailPresentation(selectedInspectorDetail);
   const inspectorPopoverStyle = React.useMemo<React.CSSProperties | null>(() => {

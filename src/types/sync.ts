@@ -1,6 +1,7 @@
 import type { CardInstance } from '../components/Card';
 import type { PlayerRole, SyncState, TokenOption } from './game';
 import type { TopDeckResult } from '../utils/cardLogic';
+import type { CardFaceSide } from '../utils/cardDetails';
 
 export interface PublicCardView {
   cardId: string;
@@ -33,6 +34,7 @@ export type GameSyncEvent =
   | { id: string; type: 'MOVE_TOP_CARD_TO_EX'; actor: PlayerRole }
   | { id: string; type: 'TOGGLE_TAP'; actor: PlayerRole; cardId: string }
   | { id: string; type: 'TOGGLE_FLIP'; actor: PlayerRole; cardId: string }
+  | { id: string; type: 'SET_CARD_FACE'; actor: PlayerRole; cardId: string; faceSide: CardFaceSide }
   | { id: string; type: 'SEND_TO_BOTTOM'; actor: PlayerRole; cardId: string }
   | { id: string; type: 'SEND_TO_BOTTOM_BATCH'; actor: PlayerRole; cardIds: string[] }
   | { id: string; type: 'BANISH_CARD'; actor: PlayerRole; cardId: string }

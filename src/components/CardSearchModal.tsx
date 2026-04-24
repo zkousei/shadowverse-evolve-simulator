@@ -1,9 +1,10 @@
 import React from 'react';
 import type { CardInstance } from './Card';
 import type { PlayerRole } from '../types/game';
-import { formatAbilityText, type CardDetailLookup } from '../utils/cardDetails';
+import { formatAbilityText, resolveSelectedCardFaceDetail, type CardDetailLookup, type CardFaceSide } from '../utils/cardDetails';
 import { normalizeBaseCardType, type RuntimeBaseCardType } from '../utils/cardType';
 import CardArtwork from './CardArtwork';
+import GameBoardCardFacePreview from './GameBoardCardFacePreview';
 import { useTranslation } from 'react-i18next';
 import { useGameBoardInputProfile } from '../contexts/gameBoardInputProfileContext';
 
@@ -22,6 +23,8 @@ interface CardSearchModalProps {
   onBanish?: (cardId: string) => void;
   onBanishCards?: (cardIds: string[]) => void;
   onToggleFlip?: (cardId: string) => void;
+  onSetCardFace?: (cardId: string, faceSide: CardFaceSide) => void;
+  canEditSearchedEvolveDeck?: boolean;
   viewerRole?: PlayerRole;
   targetRole?: PlayerRole;
   zoneId?: string;
@@ -73,6 +76,8 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
   onBanish,
   onBanishCards,
   onToggleFlip,
+  onSetCardFace,
+  canEditSearchedEvolveDeck = false,
   viewerRole,
   targetRole,
   zoneId,
@@ -215,7 +220,9 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
   const actionRole = targetRole ?? viewerRole;
   const bulkSelectedCards = cards.filter(card => bulkSelectedCardIds.includes(card.id));
   const selectedCard = selectedCardId ? cards.find(card => card.id === selectedCardId) ?? null : null;
-  const selectedCardDetail = selectedCard ? cardDetailLookup[selectedCard.cardId] : null;
+  const selectedCardDetail = selectedCard
+    ? resolveSelectedCardFaceDetail(cardDetailLookup[selectedCard.cardId], selectedCard.selectedFaceSide)
+    : null;
   const selectedCardMeta = [
     selectedCardDetail?.className,
     selectedCardDetail?.title
@@ -227,6 +234,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
   const selectedCardStats = selectedCardDetail && selectedCardDetail.atk !== null && selectedCardDetail.hp !== null
     ? `${selectedCardDetail.atk} / ${selectedCardDetail.hp}`
     : null;
+  const selectedCardHasFaces = Boolean(selectedCardDetail?.faces && selectedCardDetail.faces.length > 1);
 
   const canAddCardToHand = (card: CardInstance) => (
     !isPreparingMainDeckSearch && card.owner === viewerRole && !card.isEvolveCard
@@ -520,6 +528,11 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
           }}
         >
           {visibleCards.map(c => {
+            const baseCardDetail = cardDetailLookup[c.cardId];
+            const cardDisplayDetail = resolveSelectedCardFaceDetail(baseCardDetail, c.selectedFaceSide) ?? undefined;
+            const hasSelectableFaces = Boolean(baseCardDetail?.faces && baseCardDetail.faces.length > 1);
+            const selectedFaceSide = c.selectedFaceSide ?? 'front';
+            const canSetCardFace = Boolean(onSetCardFace && canEditSearchedEvolveDeck && c.isEvolveCard && c.owner === targetRole && hasSelectableFaces);
             const isUsed = isEvolveDeck && !c.isFlipped;
             const canAddToHand = canAddCardToHand(c);
             const canRevealToHand = canRevealCardToHand(c);
@@ -552,9 +565,9 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
                 }}
               >
                 <CardArtwork
-                  image={c.image}
+                  image={cardDisplayDetail?.image || c.image}
                   alt={c.name}
-                  detail={cardDetailLookup[c.cardId]}
+                  detail={cardDisplayDetail}
                   baseCardType={c.baseCardType}
                   isLeaderCard={c.isLeaderCard}
                   isTokenCard={c.isTokenCard}
@@ -736,6 +749,44 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
                         {c.isFlipped ? t('gameBoard.modals.search.setUsed') : t('gameBoard.modals.search.setUnused')}
                       </button>
                     )}
+                    {canSetCardFace && (
+                      <div
+                        style={{
+                          width: '100%',
+                          display: 'grid',
+                          gridTemplateColumns: '1fr 1fr',
+                          gap: '3px',
+                          marginTop: '2px',
+                        }}
+                      >
+                        {(['front', 'back'] as const).map((faceSide) => {
+                          const isSelected = selectedFaceSide === faceSide;
+                          return (
+                            <button
+                              key={faceSide}
+                              type="button"
+                              aria-pressed={isSelected}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                onSetCardFace?.(c.id, faceSide);
+                              }}
+                              style={{
+                                background: isSelected ? '#f59e0b' : '#334155',
+                                color: isSelected ? '#111827' : 'white',
+                                border: isSelected ? '1px solid #fbbf24' : '1px solid #64748b',
+                                padding: '3px',
+                                borderRadius: '4px',
+                                fontSize: '10px',
+                                fontWeight: 'bold',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              {t(`gameBoard.modals.search.face.${faceSide}`)}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -887,7 +938,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
               right: '1rem',
               bottom: '1rem',
               width: 'min(320px, calc(100% - 2rem))',
-              maxHeight: '190px',
+              maxHeight: selectedCardHasFaces ? '360px' : '190px',
               overflowY: 'auto',
               background: 'rgba(15, 23, 42, 0.98)',
               border: '1px solid rgba(255,255,255,0.12)',
@@ -935,18 +986,26 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
               </button>
             </div>
 
-            <div style={{
-              borderTop: '1px solid rgba(255,255,255,0.08)',
-              paddingTop: '0.5rem',
-              whiteSpace: 'pre-wrap',
-              color: '#e5e7eb',
-              fontSize: '0.74rem',
-              lineHeight: 1.55
-            }}>
-              {selectedCardDetail?.abilityText
-                ? formatAbilityText(selectedCardDetail.abilityText)
-                : t('gameBoard.modals.search.noDetailText')}
-            </div>
+            {selectedCardHasFaces && selectedCardDetail ? (
+              <GameBoardCardFacePreview
+                card={selectedCard}
+                detail={selectedCardDetail}
+                compact={true}
+              />
+            ) : (
+              <div style={{
+                borderTop: '1px solid rgba(255,255,255,0.08)',
+                paddingTop: '0.5rem',
+                whiteSpace: 'pre-wrap',
+                color: '#e5e7eb',
+                fontSize: '0.74rem',
+                lineHeight: 1.55
+              }}>
+                {selectedCardDetail?.abilityText
+                  ? formatAbilityText(selectedCardDetail.abilityText)
+                  : t('gameBoard.modals.search.noDetailText')}
+              </div>
+            )}
           </div>
         )}
       </div>

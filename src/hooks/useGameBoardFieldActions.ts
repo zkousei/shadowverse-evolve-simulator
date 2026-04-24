@@ -227,6 +227,10 @@ export function useGameBoardFieldActions({
         dispatchGameEvent({ type: 'TOGGLE_FLIP', actor: targetRole, cardId });
     }, [dispatchGameEvent]);
 
+    const handleSetCardFace = useCallback((cardId: string, faceSide: 'front' | 'back', targetRole?: PlayerRole) => {
+        dispatchGameEvent({ type: 'SET_CARD_FACE', actor: targetRole, cardId, faceSide });
+    }, [dispatchGameEvent]);
+
     const handleSendToBottom = useCallback((cardId: string) => {
         dispatchGameEvent({ type: 'SEND_TO_BOTTOM', actor: getSoloCardMoveActor(cardId), cardId });
         setSearchZone(null);
@@ -368,6 +372,7 @@ export function useGameBoardFieldActions({
         handleDragEnd,
         toggleTap,
         handleFlipCard,
+        handleSetCardFace,
         handleSendToBottom,
         handleSendCardsToBottom,
         handleBanish,

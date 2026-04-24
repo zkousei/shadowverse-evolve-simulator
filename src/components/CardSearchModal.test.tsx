@@ -490,6 +490,116 @@ describe('CardSearchModal', () => {
     expect(onToggleFlip).toHaveBeenCalledWith('card-1');
   });
 
+  it('fires selected face changes for editable double-faced evolve cards', () => {
+    const onSetCardFace = vi.fn();
+    render(
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="My Evolve Deck"
+        zoneId="evolveDeck-host"
+        cards={[createCard({ cardId: 'BP08-003', isEvolveCard: true, zone: 'evolveDeck-host', selectedFaceSide: 'front' })]}
+        cardDetailLookup={{
+          'BP08-003': {
+            id: 'BP08-003',
+            name: '決意の人形・オーキス',
+            image: '/front.png',
+            className: 'エルフ',
+            title: '',
+            type: 'フォロワー・エボルヴ',
+            subtype: '人形・光輝',
+            cardKindNormalized: 'evolve_follower',
+            cost: '-',
+            atk: 3,
+            hp: 3,
+            abilityText: 'Front ability',
+            faces: [
+              {
+                side: 'front',
+                name: '決意の人形・オーキス',
+                image: '/front.png',
+                className: 'エルフ',
+                title: '',
+                type: 'フォロワー・エボルヴ',
+                subtype: '人形・光輝',
+                cardKindNormalized: 'evolve_follower',
+                cost: '-',
+                atk: 3,
+                hp: 3,
+                abilityText: 'Front ability',
+              },
+              {
+                side: 'back',
+                name: '復讐の人形・オーキス',
+                image: '/back.png',
+                className: 'エルフ',
+                title: '',
+                type: 'フォロワー・エボルヴ',
+                subtype: '人形・キラー',
+                cardKindNormalized: 'evolve_follower',
+                cost: '-',
+                atk: 4,
+                hp: 4,
+                abilityText: 'Back ability',
+              },
+            ],
+          },
+        }}
+        onExtractCard={vi.fn()}
+        onSetCardFace={onSetCardFace}
+        canEditSearchedEvolveDeck={true}
+        viewerRole="host"
+        targetRole="host"
+        allowHandExtraction={false}
+      />
+    );
+
+    expect(screen.getByRole('button', { name: 'Front' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(onSetCardFace).toHaveBeenCalledWith('card-1', 'back');
+  });
+
+  it('hides selected face controls when the searched evolve deck is not editable', () => {
+    render(
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Opponent Evolve Deck"
+        zoneId="evolveDeck-guest"
+        cards={[createCard({ cardId: 'BP08-003', owner: 'guest', isEvolveCard: true, zone: 'evolveDeck-guest' })]}
+        cardDetailLookup={{
+          'BP08-003': {
+            id: 'BP08-003',
+            name: '決意の人形・オーキス',
+            image: '/front.png',
+            className: 'エルフ',
+            title: '',
+            type: 'フォロワー・エボルヴ',
+            subtype: '人形・光輝',
+            cardKindNormalized: 'evolve_follower',
+            cost: '-',
+            atk: 3,
+            hp: 3,
+            abilityText: '',
+            faces: [
+              { side: 'front', name: 'Front', image: '/front.png', className: '', title: '', type: '', subtype: '', cardKindNormalized: '', cost: '-', atk: 3, hp: 3, abilityText: '' },
+              { side: 'back', name: 'Back', image: '/back.png', className: '', title: '', type: '', subtype: '', cardKindNormalized: '', cost: '-', atk: 4, hp: 4, abilityText: '' },
+            ],
+          },
+        }}
+        onExtractCard={vi.fn()}
+        onSetCardFace={vi.fn()}
+        canEditSearchedEvolveDeck={false}
+        viewerRole="guest"
+        targetRole="guest"
+        allowHandExtraction={false}
+      />
+    );
+
+    expect(screen.queryByRole('button', { name: 'Front' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Back' })).not.toBeInTheDocument();
+  });
+
   it('hides action controls in read-only mode', () => {
     render(
       <CardSearchModal
@@ -591,6 +701,80 @@ describe('CardSearchModal', () => {
     fireEvent.click(screen.getByAltText('First Card'));
     expect(screen.getByTestId('search-card-detail-popover')).toHaveTextContent('Sample ability text');
     expect(screen.getByTestId('search-card-grid')).toHaveStyle({ paddingBottom: '1.5rem' });
+  });
+
+  it('shows both faces in the detail popover for double-faced cards', () => {
+    render(
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Evolve Deck"
+        zoneId="evolveDeck-host"
+        cards={[createCard({ cardId: 'BP08-003', name: '決意の人形・オーキス', isEvolveCard: true, zone: 'evolveDeck-host' })]}
+        cardDetailLookup={{
+          'BP08-003': {
+            id: 'BP08-003',
+            name: '決意の人形・オーキス',
+            image: '/front.png',
+            className: 'エルフ',
+            title: '',
+            type: 'フォロワー・エボルヴ',
+            subtype: '人形・光輝',
+            cardKindNormalized: 'evolve_follower',
+            cost: '-',
+            atk: 3,
+            hp: 3,
+            abilityText: 'Front ability',
+            faces: [
+              {
+                side: 'front',
+                name: '決意の人形・オーキス',
+                image: '/front.png',
+                className: 'エルフ',
+                title: '',
+                type: 'フォロワー・エボルヴ',
+                subtype: '人形・光輝',
+                cardKindNormalized: 'evolve_follower',
+                cost: '-',
+                atk: 3,
+                hp: 3,
+                abilityText: 'Front face ability',
+              },
+              {
+                side: 'back',
+                name: '復讐の人形・オーキス',
+                image: '/back.png',
+                className: 'エルフ',
+                title: '',
+                type: 'フォロワー・エボルヴ',
+                subtype: '人形・キラー',
+                cardKindNormalized: 'evolve_follower',
+                cost: '-',
+                atk: 4,
+                hp: 4,
+                abilityText: 'Back face ability',
+              },
+            ],
+          },
+        }}
+        onExtractCard={vi.fn()}
+        viewerRole="host"
+      />
+    );
+
+    fireEvent.click(screen.getByAltText('決意の人形・オーキス'));
+
+    const popover = screen.getByTestId('search-card-detail-popover');
+    expect(popover).toHaveTextContent('Front');
+    expect(popover).toHaveTextContent('Back');
+    expect(popover).toHaveTextContent('決意の人形・オーキス');
+    expect(popover).toHaveTextContent('復讐の人形・オーキス');
+    expect(popover).toHaveTextContent('人形・光輝');
+    expect(popover).toHaveTextContent('人形・キラー');
+    expect(popover).toHaveTextContent('3 / 3');
+    expect(popover).toHaveTextContent('4 / 4');
+    expect(popover).toHaveTextContent('Front face ability');
+    expect(popover).toHaveTextContent('Back face ability');
   });
 
   it('only reserves extra bottom space for the detail popover when the grid overflows', () => {

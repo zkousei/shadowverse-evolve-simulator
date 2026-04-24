@@ -663,6 +663,10 @@
         "addToEx": "Add to EX Area",
         "setUsed": "Set USED",
         "setUnused": "Set UNUSED",
+        "face": {
+          "front": "Front",
+          "back": "Back"
+        },
         "empty": "This zone is empty.",
         "typeCounts": "Follower: {{follower}} / Spell: {{spell}} / Amulet: {{amulet}}",
         "stats": "Stats",

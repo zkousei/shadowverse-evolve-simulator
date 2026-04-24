@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
 import type { BaseCardStats } from '../utils/cardStats';
 import { isMainDeckSpellCard, type RuntimeBaseCardType } from '../utils/cardType';
-import type { CardDetail } from '../utils/cardDetails';
+import { resolveSelectedCardFaceDetail, type CardDetail, type CardFaceSide } from '../utils/cardDetails';
 import CardArtwork from './CardArtwork';
 import { useGameBoardBoardDensity, useGameBoardInputProfile } from '../contexts/gameBoardInputProfileContext';
 import { getCardSizeForInputProfile } from '../utils/gameBoardCardLayout';
@@ -27,6 +27,7 @@ export interface CardInstance {
   isTokenCard?: boolean;
   baseCardType?: RuntimeBaseCardType | null;
   cardKindNormalized?: string;
+  selectedFaceSide?: CardFaceSide;
 }
 
 export interface CardInspectAnchor {
@@ -46,7 +47,7 @@ export interface CardTapAnchor {
 interface Props {
   card: CardInstance;
   baseStats?: BaseCardStats;
-  detail?: Pick<CardDetail, 'name' | 'cost' | 'atk' | 'hp' | 'type' | 'image'>;
+  detail?: CardDetail;
   displayCounters?: { atk: number; hp: number };
   hideCurrentStats?: boolean;
   highlightTone?: 'attack-source' | 'attack-target';
@@ -237,7 +238,8 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
   }
 
   const isStatDisplayZone = card.zone.startsWith('field-') || card.zone.startsWith('ex-');
-  const resolvedImage = detail?.image || card.image;
+  const displayDetail = resolveSelectedCardFaceDetail(detail, card.selectedFaceSide) ?? undefined;
+  const resolvedImage = displayDetail?.image || card.image;
   const effectiveDisplayCounters = displayCounters ?? card.counters;
   const genericCounterValue = card.genericCounter ?? 0;
   const isNormalSpellPlay = isMainDeckSpellCard(card);
@@ -410,7 +412,7 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
           image={resolvedImage}
           alt={card.name}
           isBack={true}
-          detail={detail}
+          detail={displayDetail}
           baseCardType={card.baseCardType}
           isLeaderCard={card.isLeaderCard}
           isTokenCard={card.isTokenCard}
@@ -423,7 +425,7 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
           <CardArtwork
             image={resolvedImage}
             alt={card.name}
-            detail={detail}
+            detail={displayDetail}
             baseCardType={card.baseCardType}
             isLeaderCard={card.isLeaderCard}
             isTokenCard={card.isTokenCard}

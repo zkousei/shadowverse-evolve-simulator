@@ -259,6 +259,18 @@ describe('useGameBoardFieldActions (Pure Hook)', () => {
     });
   });
 
+  it('dispatches SET_CARD_FACE for the searched player role', () => {
+    const { result } = renderHook(() => useGameBoardFieldActions(defaultArgs));
+    result.current.handleSetCardFace('card-1', 'back', 'guest');
+
+    expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledWith({
+      type: 'SET_CARD_FACE',
+      actor: 'guest',
+      cardId: 'card-1',
+      faceSide: 'back',
+    });
+  });
+
   // ─── 8. handleSendToBottom ────────────────────────────────────────
   it('dispatches SEND_TO_BOTTOM', () => {
     const { result } = renderHook(() => useGameBoardFieldActions(defaultArgs));

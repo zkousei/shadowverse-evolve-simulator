@@ -156,6 +156,22 @@ const canToggleEvolveDeckUsage = (
   return card.owner === actor && card.zone === `evolveDeck-${actor}` && card.isEvolveCard === true;
 };
 
+const setSelectedCardFace = (
+  cards: SyncState['cards'],
+  cardId: string,
+  faceSide: Extract<GameSyncEvent, { type: 'SET_CARD_FACE' }>['faceSide']
+): SyncState['cards'] => {
+  let didChange = false;
+  const nextCards = cards.map(card => {
+    if (card.id !== cardId) return card;
+    if (card.selectedFaceSide === faceSide) return card;
+    didChange = true;
+    return { ...card, selectedFaceSide: faceSide };
+  });
+
+  return didChange ? nextCards : cards;
+};
+
 const isPreparingMainDeckFieldSet = (
   state: SyncState,
   actor: GameSyncEvent['actor'],
@@ -393,6 +409,17 @@ export const applyGameSyncEvent = (
       if (!isActorRequester(requester, event.actor)) return state;
       if (!canToggleEvolveDeckUsage(state, event.actor, event.cardId)) return state;
       const nextCards = CardLogic.toggleFlip(state.cards, event.cardId);
+      if (nextCards === state.cards) return state;
+      return bumpRevision({
+        ...state,
+        cards: nextCards,
+      });
+    }
+
+    case 'SET_CARD_FACE': {
+      if (!isActorRequester(requester, event.actor)) return state;
+      if (!canToggleEvolveDeckUsage(state, event.actor, event.cardId)) return state;
+      const nextCards = setSelectedCardFace(state.cards, event.cardId, event.faceSide);
       if (nextCards === state.cards) return state;
       return bumpRevision({
         ...state,

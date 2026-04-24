@@ -609,6 +609,10 @@
         "addToEx": "EXエリアに置く",
         "setUsed": "使用済にする",
         "setUnused": "未使用にする",
+        "face": {
+          "front": "表面",
+          "back": "裏面"
+        },
         "empty": "このゾーンは空です",
         "typeCounts": "フォロワー: {{follower}} / スペル: {{spell}} / アミュレット: {{amulet}}",
         "stats": "スタッツ",

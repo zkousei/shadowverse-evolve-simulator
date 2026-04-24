@@ -18,6 +18,7 @@ import { buildTopDeckSummaryEffect } from '../utils/topDeckSummary';
 import { buildCardRevealEffect } from '../utils/cardReveal';
 import { buildAttackDeclaredEffect } from '../utils/attackUi';
 import { buildCardPlayedEffect } from '../utils/cardPlayUi';
+import { resolveCardDisplayName } from '../utils/cardDetails';
 
 import {
   buildSnapshotRequestMessage,
@@ -69,6 +70,7 @@ export type DispatchableGameSyncEvent =
   | { type: 'MOVE_TOP_CARD_TO_EX'; actor?: PlayerRole }
   | { type: 'TOGGLE_TAP'; actor?: PlayerRole; cardId: string }
   | { type: 'TOGGLE_FLIP'; actor?: PlayerRole; cardId: string }
+  | { type: 'SET_CARD_FACE'; actor?: PlayerRole; cardId: string; faceSide: 'front' | 'back' }
   | { type: 'SEND_TO_BOTTOM'; actor?: PlayerRole; cardId: string }
   | { type: 'SEND_TO_BOTTOM_BATCH'; actor?: PlayerRole; cardIds: string[] }
   | { type: 'BANISH_CARD'; actor?: PlayerRole; cardId: string }
@@ -575,7 +577,7 @@ export const useGameBoardLogic = () => {
         const effect: SharedUiEffect = {
           type: 'EVOLVE_CARD_PLACED',
           actor: event.actor,
-          cardName: evolveExtractedCards[0].name,
+          cardName: resolveCardDisplayName(evolveExtractedCards[0], cardDetailLookupRef.current),
         };
         queueSnapshotEffect(effect);
       }
@@ -676,7 +678,7 @@ export const useGameBoardLogic = () => {
         const effect: SharedUiEffect = {
           type: 'EVOLVE_USAGE_TOGGLED',
           actor: event.actor,
-          cardName: toggledCard.name,
+          cardName: resolveCardDisplayName(toggledCard, cardDetailLookupRef.current),
           isUsed: toggledCard.isFlipped,
         };
         playSharedUiEffect(effect);
@@ -753,7 +755,7 @@ export const useGameBoardLogic = () => {
         sendSharedUiEffect(effect);
       }
     }
-  }, [applyLocalState, playSharedUiEffect, role, sendSharedUiEffect, sendSnapshot]);
+  }, [applyLocalState, cardDetailLookupRef, playSharedUiEffect, role, sendSharedUiEffect, sendSnapshot]);
 
   const dispatchGameEvent = useCallback((event: DispatchableGameSyncEvent) => {
     if (!canInteract) {
@@ -1226,6 +1228,7 @@ export const useGameBoardLogic = () => {
     handleDragEnd,
     toggleTap,
     handleFlipCard,
+    handleSetCardFace,
     handleSendToBottom,
     handleSendCardsToBottom,
     handleBanish,
@@ -1285,7 +1288,7 @@ export const useGameBoardLogic = () => {
     handlePureCoinFlip, handleRollDice, handleStartGame, handleToggleReady,
     handleDrawInitialHand, startMulligan, handleMulliganOrderSelect, executeMulligan,
     drawCard, handleExtractCard, handleExtractCards, confirmResetGame, handleDeckUpload, importDeckData, spawnToken, spawnTokens,
-    handleModifyCounter, handleModifyGenericCounter, handleDragEnd, toggleTap, handleFlipCard, handleSendToBottom, handleSendCardsToBottom,
+    handleModifyCounter, handleModifyGenericCounter, handleDragEnd, toggleTap, handleFlipCard, handleSetCardFace, handleSendToBottom, handleSendCardsToBottom,
     handleBanish, handleBanishCards, handlePlayToField, handleSendToCemetery, handleSendCardsToCemetery, handleReturnEvolve, handleShuffleDeck, handleDeclareAttack,
     handleSetRevealHandsMode, handleSetEndStop,
     evolveAutoAttachSelection, confirmEvolveAutoAttachSelection, cancelEvolveAutoAttachSelection,
