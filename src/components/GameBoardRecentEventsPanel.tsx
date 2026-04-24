@@ -22,6 +22,10 @@ const GameBoardRecentEventsPanel: React.FC<GameBoardRecentEventsPanelProps> = ({
       style={{
         alignSelf: 'flex-end',
         width: isCompact ? 'min(240px, 100%)' : 'min(320px, 100%)',
+        boxSizing: 'border-box',
+        maxHeight: isCompact ? '76px' : '132px',
+        overflowY: 'auto',
+        overflowX: 'hidden',
         background: 'rgba(15, 23, 42, 0.88)',
         border: '1px solid rgba(148, 163, 184, 0.22)',
         borderRadius: '12px',
