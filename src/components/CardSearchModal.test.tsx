@@ -1055,6 +1055,28 @@ describe('CardSearchModal', () => {
     expect(onSendToCemetery).toHaveBeenCalledWith('card-1');
   });
 
+  it('sends a banished card to cemetery immediately', () => {
+    const onSendToCemetery = vi.fn();
+
+    render(
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Banish"
+        zoneId="banish-host"
+        cards={[createCard({ zone: 'banish-host' })]}
+        onExtractCard={vi.fn()}
+        onSendToCemetery={onSendToCemetery}
+        viewerRole="host"
+        allowHandExtraction={true}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send to cemetery' }));
+
+    expect(onSendToCemetery).toHaveBeenCalledWith('card-1');
+  });
+
   it('supports bulk sending selected main-deck cards to cemetery', () => {
     const onSendCardsToCemetery = vi.fn();
 
@@ -1067,6 +1089,34 @@ describe('CardSearchModal', () => {
         cards={[
           createCard({ id: 'card-1', name: 'First Card', zone: 'mainDeck-host' }),
           createCard({ id: 'card-2', cardId: 'BP01-002', name: 'Second Card', zone: 'mainDeck-host' }),
+        ]}
+        onExtractCard={vi.fn()}
+        onSendCardsToCemetery={onSendCardsToCemetery}
+        viewerRole="host"
+        allowHandExtraction={true}
+      />
+    );
+
+    fireEvent.click(screen.getByText('Select Multiple'));
+    fireEvent.click(screen.getByAltText('First Card'));
+    fireEvent.click(screen.getByAltText('Second Card'));
+    fireEvent.click(screen.getByRole('button', { name: 'Send to cemetery' }));
+
+    expect(onSendCardsToCemetery).toHaveBeenCalledWith(['card-1', 'card-2']);
+  });
+
+  it('supports bulk sending selected banished cards to cemetery', () => {
+    const onSendCardsToCemetery = vi.fn();
+
+    render(
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Banish"
+        zoneId="banish-host"
+        cards={[
+          createCard({ id: 'card-1', name: 'First Card', zone: 'banish-host' }),
+          createCard({ id: 'card-2', cardId: 'BP01-002', name: 'Second Card', zone: 'banish-host' }),
         ]}
         onExtractCard={vi.fn()}
         onSendCardsToCemetery={onSendCardsToCemetery}

@@ -10,6 +10,7 @@ type GameBoardSearchableStackSectionProps = {
   searchTitle?: string;
   isSearchInteractive?: boolean;
   useTapToOpenActions?: boolean;
+  actionPlacement?: 'below' | 'overlay';
 };
 
 const GameBoardSearchableStackSection: React.FC<GameBoardSearchableStackSectionProps> = ({
@@ -19,10 +20,20 @@ const GameBoardSearchableStackSection: React.FC<GameBoardSearchableStackSectionP
   searchTitle,
   isSearchInteractive,
   useTapToOpenActions = false,
+  actionPlacement = 'below',
 }) => {
   const [isTouchSheetOpen, setIsTouchSheetOpen] = React.useState(false);
   const [touchSheetAnchor, setTouchSheetAnchor] = React.useState<{ x: number; y: number } | null>(null);
   const shouldUseTapToOpenActions = useTapToOpenActions;
+  const shouldOverlayActions = actionPlacement === 'overlay' && !shouldUseTapToOpenActions;
+  const searchButton = (
+    <GameBoardZoneSearchButton
+      label={searchLabel}
+      onClick={onSearch}
+      title={searchTitle}
+      isInteractive={isSearchInteractive}
+    />
+  );
 
   React.useEffect(() => {
     if (!shouldUseTapToOpenActions) {
@@ -32,7 +43,14 @@ const GameBoardSearchableStackSection: React.FC<GameBoardSearchableStackSectionP
   }, [shouldUseTapToOpenActions]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: shouldOverlayActions ? '0' : '4px',
+        position: shouldOverlayActions ? 'relative' : undefined,
+      }}
+    >
       <Zone
         {...zoneProps}
         onCardTapAction={(_, anchor) => {
@@ -47,14 +65,19 @@ const GameBoardSearchableStackSection: React.FC<GameBoardSearchableStackSectionP
           setIsTouchSheetOpen(true);
         }}
       />
-      {!shouldUseTapToOpenActions ? (
-        <GameBoardZoneSearchButton
-          label={searchLabel}
-          onClick={onSearch}
-          title={searchTitle}
-          isInteractive={isSearchInteractive}
-        />
-      ) : null}
+      {shouldOverlayActions ? (
+        <div
+          style={{
+            position: 'absolute',
+            right: '6px',
+            bottom: '6px',
+            width: 'min(72px, calc(100% - 12px))',
+            zIndex: 30,
+          }}
+        >
+          {searchButton}
+        </div>
+      ) : !shouldUseTapToOpenActions ? searchButton : null}
       <GameBoardTouchActionSheet
         isOpen={isTouchSheetOpen}
         actions={[{ label: searchLabel, onClick: onSearch, tone: 'accent' }]}

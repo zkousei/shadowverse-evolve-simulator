@@ -13,6 +13,7 @@ type GameBoardZoneActionsSectionProps = {
   actionsLabel: string;
   actions: ZoneAction[];
   direction?: 'down' | 'up';
+  menuMinWidth?: string;
   onActiveMenuChange: (menuId: string | null) => void;
 };
 
@@ -22,6 +23,7 @@ const GameBoardZoneActionsSection: React.FC<GameBoardZoneActionsSectionProps> = 
   actionsLabel,
   actions,
   direction = 'down',
+  menuMinWidth,
   onActiveMenuChange,
 }) => {
   const isOpen = activeMenuId === menuId;
@@ -32,6 +34,7 @@ const GameBoardZoneActionsSection: React.FC<GameBoardZoneActionsSectionProps> = 
       isOpen={isOpen}
       actions={actions}
       direction={direction}
+      menuMinWidth={menuMinWidth}
       onToggle={() => onActiveMenuChange(isOpen ? null : menuId)}
       onActionClick={(action) => {
         action();

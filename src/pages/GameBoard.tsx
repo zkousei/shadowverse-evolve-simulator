@@ -52,6 +52,7 @@ import {
 import {
   activeBoardSectionStyle,
   resolveBoardLayout,
+  resolveBoardLayoutSpacing,
   soloMulliganButtonStyle,
 } from './gameBoardLayout';
 import {
@@ -95,27 +96,29 @@ const GameBoard: React.FC = () => {
   const isCompactBoard = inputProfile === 'coarse';
   const isTabletLayout = layoutProfile === 'tablet';
   const isTabletCompactBoard = isCompactBoard && isTabletLayout;
-  const isOverviewBoard = boardDensity === 'overview';
-  const boardShellPadding = isTabletCompactBoard ? '0.46rem' : isCompactBoard ? '0.52rem' : isOverviewBoard ? '0.48rem' : '1rem';
-  const boardShellGap = isTabletCompactBoard ? '0.4rem' : isCompactBoard ? '0.48rem' : isOverviewBoard ? '0.44rem' : '1rem';
-  const playmatPadding = isTabletCompactBoard ? '0.36rem' : isCompactBoard ? '0.42rem' : isOverviewBoard ? '0.44rem' : '1rem';
-  const playmatGap = isTabletCompactBoard ? '0.22rem' : isCompactBoard ? '0.24rem' : isOverviewBoard ? '0.24rem' : '0.5rem';
-  const boardSectionPadding = isTabletCompactBoard ? '0.24rem 0.28rem' : isCompactBoard ? '0.28rem 0.32rem' : isOverviewBoard ? '0.26rem 0.29rem' : '0.55rem 0.6rem';
-  const boardSectionGap = isTabletCompactBoard ? '0.18rem' : isCompactBoard ? '0.22rem' : isOverviewBoard ? '0.21rem' : '0.5rem';
-  const boardShellColumnGap = isCompactBoard ? '0.5rem' : isOverviewBoard ? '0.56rem' : '1rem';
-  const bottomPanelMarginLeft = isCompactBoard
-    ? (isTabletLayout ? '1.35rem' : '1.1rem')
-    : isOverviewBoard
-      ? '1.5rem'
-      : '1.25rem';
-  const boardColumnStackGap = isCompactBoard ? '0.34rem' : isOverviewBoard ? '0.29rem' : '0.65rem';
-  const bottomBoardRowSecondaryMarginTop = isTabletCompactBoard ? '0.2rem' : '0';
-  const boardSectionDividerMargin = isTabletCompactBoard ? '0.3rem 0' : isCompactBoard ? '0.4rem 0' : isOverviewBoard ? '0.18rem 0' : '1rem 0';
-  const stackZoneMinHeight = isTabletCompactBoard ? '108px' : isCompactBoard ? '110px' : isOverviewBoard ? '98px' : '150px';
-  const fieldZoneMinHeight = isTabletCompactBoard ? '120px' : isCompactBoard ? '124px' : isOverviewBoard ? '109px' : '160px';
-  const handZoneMinHeight = isTabletCompactBoard ? '112px' : isCompactBoard ? '116px' : isOverviewBoard ? '102px' : '150px';
-  const bottomHandZoneMinHeight = isTabletCompactBoard ? '120px' : isCompactBoard ? '124px' : isOverviewBoard ? '109px' : '160px';
-  const leaderZoneMinHeight = isTabletCompactBoard ? '124px' : isOverviewBoard ? '114px' : '150px';
+  const zoneActionPlacement = inputProfile === 'fine' && boardDensity === 'overview' ? 'overlay' : 'below';
+  const {
+    boardShellPadding,
+    boardShellGap,
+    playmatPadding,
+    playmatGap,
+    boardSectionPadding,
+    boardSectionGap,
+    boardShellColumnGap,
+    bottomPanelMarginLeft,
+    boardColumnStackGap,
+    bottomBoardRowSecondaryMarginTop,
+    boardSectionDividerMargin,
+    boardRowGap,
+    stackZoneMinHeight,
+    fieldZoneMinHeight,
+    handZoneMinHeight,
+    bottomHandZoneMinHeight,
+    leaderZoneMinHeight,
+  } = React.useMemo(
+    () => resolveBoardLayoutSpacing(inputProfile, layoutProfile, boardDensity),
+    [inputProfile, layoutProfile, boardDensity]
+  );
   const {
     sidePanelWidth,
     topPanelWidth,
@@ -460,6 +463,7 @@ const GameBoard: React.FC = () => {
     columns: boardColumns,
     width: boardContentWidth,
     centerWidth: centerZoneWidth,
+    rowGap: boardRowGap,
     minHeight: handZoneMinHeight,
     zoneProps: {
       id: `hand-${topRole}`,
@@ -493,6 +497,7 @@ const GameBoard: React.FC = () => {
     columns: boardColumns,
     width: boardContentWidth,
     centerWidth: centerZoneWidth,
+    rowGap: boardRowGap,
     justifyCenter: true,
     zoneProps: {
       id: `hand-${topRole}`,
@@ -734,7 +739,7 @@ const GameBoard: React.FC = () => {
                 <div style={{ width: `${boardContentWidth}px`, minWidth: 0, display: 'flex', flexDirection: 'column', gap: boardColumnStackGap, alignItems: 'flex-start' }}>
                   <GameBoardTopHandSection {...topSoloHandSectionProps} />
 
-                  <GameBoardBoardRow columns={boardColumns} width={boardContentWidth}>
+                  <GameBoardBoardRow columns={boardColumns} width={boardContentWidth} rowGap={boardRowGap}>
                     <GameBoardSearchableStackSection
                       zoneProps={{ id: `cemetery-${topRole}`, label: t('gameBoard.zones.cemetery', { label: topLabel }), cards: getCards(`cemetery-${topRole}`), cardDetailLookup, layout: 'stack', onInspectCard: handleInspectCard, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: stackZoneMinHeight }, isDebug }}
                       searchLabel={t('gameBoard.zones.search')}
@@ -742,6 +747,7 @@ const GameBoard: React.FC = () => {
                       searchTitle={interactionBlockedTitle}
                       isSearchInteractive={canView}
                       useTapToOpenActions={isTabletCompactBoard}
+                      actionPlacement={zoneActionPlacement}
                     />
                     <Zone
                       id={`ex-${topRole}`}
@@ -768,12 +774,14 @@ const GameBoard: React.FC = () => {
                       searchTitle={interactionBlockedTitle}
                       isSearchInteractive={canView}
                       useTapToOpenActions={isTabletCompactBoard}
+                      actionPlacement={zoneActionPlacement}
                     />
                   </GameBoardBoardRow>
 
                   <GameBoardBoardRow
                     columns={boardColumns}
                     width={boardContentWidth}
+                    rowGap={boardRowGap}
                     overlay={
                       <GameBoardLeaderZoneSection
                         playerRole={topRole}
@@ -804,6 +812,7 @@ const GameBoard: React.FC = () => {
                         direction="up"
                         onActiveMenuChange={setActiveZoneActions}
                         useTapToOpenActions={isTabletCompactBoard}
+                        actionPlacement={zoneActionPlacement}
                       />
                       <Zone
                         id={`field-${topRole}`}
@@ -834,6 +843,7 @@ const GameBoard: React.FC = () => {
                         searchTitle={interactionBlockedTitle}
                         isSearchInteractive={canView}
                         useTapToOpenActions={isTabletCompactBoard}
+                        actionPlacement={zoneActionPlacement}
                       />
                   </GameBoardBoardRow>
                 </div>
@@ -851,12 +861,13 @@ const GameBoard: React.FC = () => {
                 <div style={{ width: `${boardContentWidth}px`, minWidth: 0, display: 'flex', flexDirection: 'column', gap: boardColumnStackGap, alignItems: 'flex-start' }}>
                   <GameBoardTopHandSection {...topReadOnlyHandSectionProps} />
 
-                  <GameBoardBoardRow columns={boardColumns} width={boardContentWidth}>
+                  <GameBoardBoardRow columns={boardColumns} width={boardContentWidth} rowGap={boardRowGap}>
                     <GameBoardSearchableStackSection
                       zoneProps={{ id: `cemetery-${topRole}`, label: t('gameBoard.zones.cemetery', { label: topLabel }), cards: getCards(`cemetery-${topRole}`), cardDetailLookup, layout: 'stack', onInspectCard: handleInspectCard, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: stackZoneMinHeight }, isDebug }}
                       searchLabel={t('gameBoard.zones.search')}
                       onSearch={() => openSearchZone(`cemetery-${topRole}`, t('gameBoard.zones.cemetery', { label: topLabel }))}
                       useTapToOpenActions={isTabletCompactBoard}
+                      actionPlacement={zoneActionPlacement}
                     />
                     <Zone
                       id={`ex-${topRole}`}
@@ -874,12 +885,14 @@ const GameBoard: React.FC = () => {
                       searchLabel={t('gameBoard.zones.search')}
                       onSearch={() => openSearchZone(`banish-${topRole}`, t('gameBoard.zones.banish', { label: topLabel }))}
                       useTapToOpenActions={isTabletCompactBoard}
+                      actionPlacement={zoneActionPlacement}
                     />
                   </GameBoardBoardRow>
 
                   <GameBoardBoardRow
                     columns={boardColumns}
                     width={boardContentWidth}
+                    rowGap={boardRowGap}
                     overlay={
                       <GameBoardLeaderZoneSection
                         playerRole={topRole}
@@ -910,6 +923,7 @@ const GameBoard: React.FC = () => {
                         direction="up"
                         onActiveMenuChange={setActiveZoneActions}
                         useTapToOpenActions={isTabletCompactBoard}
+                        actionPlacement={zoneActionPlacement}
                       />
                       <Zone
                         id={`field-${topRole}`}
@@ -932,6 +946,7 @@ const GameBoard: React.FC = () => {
                         searchLabel={t('common.buttons.search')}
                         onSearch={() => openSearchZone(`evolveDeck-${topRole}`, t('gameBoard.zones.evolveDeck', { label: topLabel }))}
                         useTapToOpenActions={isTabletCompactBoard}
+                        actionPlacement={zoneActionPlacement}
                       />
                   </GameBoardBoardRow>
                 </div>
@@ -954,6 +969,7 @@ const GameBoard: React.FC = () => {
 	                <GameBoardBoardRow
                     columns={boardColumns}
                     width={boardContentWidth}
+                    rowGap={boardRowGap}
                     overlay={
                       <GameBoardLeaderZoneSection
                         playerRole={bottomRole}
@@ -981,6 +997,7 @@ const GameBoard: React.FC = () => {
                     searchTitle={interactionBlockedTitle}
                     isSearchInteractive={canView}
                     useTapToOpenActions={isTabletCompactBoard}
+                    actionPlacement={zoneActionPlacement}
                   />
                   <Zone id={`field-${bottomRole}`} label={t('gameBoard.zones.field', { label: bottomLabel })} cards={getCards(`field-${bottomRole}`)} cardStatLookup={cardStatLookup} cardDetailLookup={cardDetailLookup} getHighlightTone={getAttackHighlightTone} onInspectCard={handleInspectCard} onAttack={gameState.turnPlayer === bottomRole ? handleStartAttack : undefined} onTap={toggleTap} onModifyCounter={handleModifyCounter} onModifyGenericCounter={handleModifyGenericCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} disableQuickActionsForCard={shouldDisableQuickActionsForAttackTarget} viewerRole={viewerRole} containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: fieldZoneMinHeight, width: `${centerZoneWidth}px`, flex: 'none' }} isDebug={isDebug} />
                   <GameBoardMainDeckSection
@@ -991,6 +1008,7 @@ const GameBoard: React.FC = () => {
                     actions={bottomMainDeckZoneActions.actions}
                     onActiveMenuChange={setActiveZoneActions}
                     useTapToOpenActions={isTabletCompactBoard}
+                    actionPlacement={zoneActionPlacement}
                   />
                   </GameBoardBoardRow>
 
@@ -998,7 +1016,7 @@ const GameBoard: React.FC = () => {
                     data-testid="bottom-board-row-secondary-wrap"
                     style={{ marginTop: bottomBoardRowSecondaryMarginTop }}
                   >
-                  <GameBoardBoardRow columns={boardColumns} width={boardContentWidth}>
+                  <GameBoardBoardRow columns={boardColumns} width={boardContentWidth} rowGap={boardRowGap}>
                   <GameBoardSearchableStackSection
                     zoneProps={{ id: `banish-${bottomRole}`, label: t('gameBoard.zones.banish', { label: bottomLabel }), cards: getCards(`banish-${bottomRole}`), cardDetailLookup, layout: 'stack', onInspectCard: handleInspectCard, onModifyCounter: handleModifyCounter, onSendToBottom: handleSendToBottom, onCemetery: handleSendToCemetery, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: stackZoneMinHeight }, isDebug }}
                     searchLabel={t('common.buttons.search')}
@@ -1006,6 +1024,7 @@ const GameBoard: React.FC = () => {
                     searchTitle={interactionBlockedTitle}
                     isSearchInteractive={canView}
                     useTapToOpenActions={isTabletCompactBoard}
+                    actionPlacement={zoneActionPlacement}
                   />
 		                  <Zone id={`ex-${bottomRole}`} label={t('gameBoard.zones.exArea', { label: bottomLabel })} cards={getCards(`ex-${bottomRole}`)} cardStatLookup={cardStatLookup} cardDetailLookup={cardDetailLookup} onInspectCard={handleInspectCard} onModifyCounter={handleModifyCounter} onModifyGenericCounter={handleModifyGenericCounter} onSendToBottom={handleSendToBottom} onBanish={handleBanish} onReturnEvolve={handleReturnEvolve} onCemetery={handleSendToCemetery} onPlayToField={handlePlayToField} viewerRole={viewerRole} containerStyle={{ maxWidth: `${centerZoneWidth}px`, minHeight: stackZoneMinHeight, flex: 'none', width: `${centerZoneWidth}px` }} isDebug={isDebug} />
                   <GameBoardSearchableStackSection
@@ -1015,6 +1034,7 @@ const GameBoard: React.FC = () => {
                     searchTitle={interactionBlockedTitle}
                     isSearchInteractive={canView}
                     useTapToOpenActions={isTabletCompactBoard}
+                    actionPlacement={zoneActionPlacement}
                   />
 	                </GameBoardBoardRow>
                   </div>

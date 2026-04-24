@@ -18,7 +18,11 @@ type GameBoardMainDeckSectionProps = {
   direction?: 'down' | 'up';
   onActiveMenuChange: (menuId: string | null) => void;
   useTapToOpenActions?: boolean;
+  actionPlacement?: 'below' | 'overlay';
 };
+
+const MAIN_DECK_ACTIONS_Z_INDEX = 180;
+const OPEN_MAIN_DECK_ACTIONS_Z_INDEX = 220;
 
 const GameBoardMainDeckSection: React.FC<GameBoardMainDeckSectionProps> = ({
   zoneProps,
@@ -29,11 +33,24 @@ const GameBoardMainDeckSection: React.FC<GameBoardMainDeckSectionProps> = ({
   direction,
   onActiveMenuChange,
   useTapToOpenActions = false,
+  actionPlacement = 'below',
 }) => {
   const [isTouchSheetOpen, setIsTouchSheetOpen] = React.useState(false);
   const [touchSheetAnchor, setTouchSheetAnchor] = React.useState<{ x: number; y: number } | null>(null);
   const hasActions = Boolean(actions && actions.length > 0);
   const shouldUseTapToOpenActions = useTapToOpenActions && hasActions;
+  const shouldOverlayActions = actionPlacement === 'overlay' && !shouldUseTapToOpenActions && hasActions;
+  const actionsSection = hasActions ? (
+    <GameBoardZoneActionsSection
+      menuId={menuId}
+      activeMenuId={activeMenuId}
+      actionsLabel={actionsLabel}
+      actions={actions as ZoneAction[]}
+      direction={direction}
+      menuMinWidth={shouldOverlayActions ? '154px' : undefined}
+      onActiveMenuChange={onActiveMenuChange}
+    />
+  ) : null;
 
   React.useEffect(() => {
     if (!shouldUseTapToOpenActions) {
@@ -43,7 +60,14 @@ const GameBoardMainDeckSection: React.FC<GameBoardMainDeckSectionProps> = ({
   }, [shouldUseTapToOpenActions]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: shouldOverlayActions ? '0' : '4px',
+        position: shouldOverlayActions ? 'relative' : undefined,
+      }}
+    >
       <Zone
         {...zoneProps}
         onCardTapAction={(_, anchor) => {
@@ -60,16 +84,19 @@ const GameBoardMainDeckSection: React.FC<GameBoardMainDeckSectionProps> = ({
           setIsTouchSheetOpen(true);
         }}
       />
-      {!shouldUseTapToOpenActions && hasActions ? (
-        <GameBoardZoneActionsSection
-          menuId={menuId}
-          activeMenuId={activeMenuId}
-          actionsLabel={actionsLabel}
-          actions={actions as ZoneAction[]}
-          direction={direction}
-          onActiveMenuChange={onActiveMenuChange}
-        />
-      ) : null}
+      {shouldOverlayActions ? (
+        <div
+          style={{
+            position: 'absolute',
+            right: '6px',
+            bottom: '6px',
+            width: 'min(72px, calc(100% - 12px))',
+            zIndex: activeMenuId === menuId ? OPEN_MAIN_DECK_ACTIONS_Z_INDEX : MAIN_DECK_ACTIONS_Z_INDEX,
+          }}
+        >
+          {actionsSection}
+        </div>
+      ) : !shouldUseTapToOpenActions ? actionsSection : null}
       <GameBoardTouchActionSheet
         isOpen={isTouchSheetOpen}
         actions={(actions ?? []).map((action) => ({

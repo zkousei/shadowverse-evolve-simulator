@@ -387,6 +387,32 @@ describe('GameBoard extracted UI components - status and preparation', () => {
     expect(screen.getByText('Guest evolved Alpha Knight.')).toBeInTheDocument();
   });
 
+  it('keeps all fine-input recent events inside a fixed-height scroll panel', () => {
+    render(
+      <GameBoardRecentEventsPanel
+        eventHistory={[
+          'Host drew a card.',
+          'Guest evolved Alpha Knight.',
+          'Host added Alpha Knight to hand.',
+          'Guest revealed Beta Mage.',
+        ]}
+      />
+    );
+
+    const panel = screen.getByTestId('gameboard-recent-events');
+    expect(panel).toHaveStyle({
+      maxHeight: '132px',
+      overflowY: 'auto',
+      overflowX: 'hidden',
+      boxSizing: 'border-box',
+    });
+    expect(screen.getByText('Host drew a card.')).toBeInTheDocument();
+    expect(screen.getByText('Guest evolved Alpha Knight.')).toBeInTheDocument();
+    expect(screen.getByText('Host added Alpha Knight to hand.')).toBeInTheDocument();
+    expect(screen.getByText('Guest revealed Beta Mage.')).toBeInTheDocument();
+    expect(screen.queryByText('+')).not.toBeInTheDocument();
+  });
+
   it('shows a compact recent events panel and truncates history in coarse mode', () => {
     renderWithInputProfile(
       'coarse',
@@ -400,7 +426,7 @@ describe('GameBoard extracted UI components - status and preparation', () => {
     );
 
     const panel = screen.getByTestId('gameboard-recent-events');
-    expect(panel).toHaveStyle({ width: 'min(240px, 100%)', padding: '0.45rem 0.52rem' });
+    expect(panel).toHaveStyle({ width: 'min(240px, 100%)', maxHeight: '76px', overflowY: 'auto', padding: '0.45rem 0.52rem' });
     expect(screen.getByText('Host drew a card.')).toBeInTheDocument();
     expect(screen.getByText('Guest evolved Alpha Knight.')).toBeInTheDocument();
     expect(screen.queryByText('Host attacked the leader.')).not.toBeInTheDocument();

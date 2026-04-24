@@ -12,6 +12,7 @@ type GameBoardZoneActionsMenuProps = {
   isOpen: boolean;
   actions: ZoneAction[];
   direction?: 'down' | 'up';
+  menuMinWidth?: string;
   onToggle: () => void;
   onActionClick: (action: () => void) => void;
 };
@@ -21,6 +22,7 @@ const GameBoardZoneActionsMenu: React.FC<GameBoardZoneActionsMenuProps> = ({
   isOpen,
   actions,
   direction = 'down',
+  menuMinWidth,
   onToggle,
   onActionClick,
 }) => {
@@ -59,8 +61,9 @@ const GameBoardZoneActionsMenu: React.FC<GameBoardZoneActionsMenuProps> = ({
             position: 'absolute',
             top: direction === 'down' ? 'calc(100% + 4px)' : 'auto',
             bottom: direction === 'up' ? 'calc(100% + 4px)' : 'auto',
-            left: 0,
+            left: menuMinWidth ? 'auto' : 0,
             right: 0,
+            minWidth: menuMinWidth,
             zIndex: 62,
             display: 'flex',
             flexDirection: 'column',
@@ -84,6 +87,7 @@ const GameBoardZoneActionsMenu: React.FC<GameBoardZoneActionsMenuProps> = ({
                 color: 'white',
                 borderRadius: '4px',
                 cursor: 'pointer',
+                whiteSpace: menuMinWidth ? 'nowrap' : undefined,
               }}
             >
               {action.label}
