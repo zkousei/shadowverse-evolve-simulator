@@ -44,6 +44,7 @@ const GameBoardMainDeckSection: React.FC<GameBoardMainDeckSectionProps> = ({
       actionsLabel={actionsLabel}
       actions={actions as ZoneAction[]}
       direction={direction}
+      menuMinWidth={shouldOverlayActions ? '154px' : undefined}
       onActiveMenuChange={onActiveMenuChange}
     />
   ) : null;

@@ -62,10 +62,11 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
   const isStack = layout === 'stack';
   const isFieldZone = id.startsWith('field-');
   const isExZone = id.startsWith('ex-');
+  const shouldDisableZoneQuickActions = id.startsWith('cemetery-') || id.startsWith('banish-');
   const isReadOnlySpectator = viewerRole === 'spectator';
   const zoneLabelChipGap = isCompactInput ? '2px' : isFineInput ? '3px' : isOverviewDesktop ? '4px' : '6px';
   const zoneLabelChipPadding = isCompactInput ? '1px 4px' : isFineInput ? '1px 5px' : isOverviewDesktop ? '1px 6px' : '2px 8px';
-  const zoneLabelFontSize = isCompactInput ? '0.48rem' : isFineInput ? '0.52rem' : isOverviewDesktop ? '0.62rem' : '0.68rem';
+  const zoneLabelFontSize = isCompactInput ? '0.5rem' : isFineInput ? '0.56rem' : isOverviewDesktop ? '0.62rem' : '0.68rem';
   const zoneCountMinWidth = isCompactInput ? '16px' : isFineInput ? '17px' : isOverviewDesktop ? '18px' : '22px';
   const zoneCountPadding = isCompactInput ? '0 3px' : isFineInput ? '0 4px' : isOverviewDesktop ? '0 4px' : '0 6px';
   const zoneCountFontSize = isCompactInput ? '0.44rem' : isFineInput ? '0.46rem' : isOverviewDesktop ? '0.62rem' : '0.7rem';
@@ -108,14 +109,14 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
           onCemetery={linkedCard.isTokenCard ? onCemetery : undefined}
           isHidden={hideCards}
           isLocked={lockCards || isReadOnlySpectator || (isProtected && viewerRole !== 'all' && linkedCard.owner !== viewerRole)}
-          quickActionsDisabled={disableQuickActionsForCard?.(linkedCard)}
+          quickActionsDisabled={shouldDisableZoneQuickActions || disableQuickActionsForCard?.(linkedCard)}
           disableCombatAndCounterControls={true}
           onCardTapAction={onCardTapAction}
           debugIndex={isDebug ? index : undefined}
         />
       </div>
     ));
-  }, [attachmentLeftOffset, attachmentTopOffset, cardDetailLookup, cardStatLookup, disableQuickActionsForCard, getHighlightTone, hideCards, isDebug, isProtected, isReadOnlySpectator, linkedCardLeftOffset, linkedCardTopOffset, lockCards, onBanish, onCardTapAction, onCemetery, onInspectCard, onReturnEvolve, onSendToBottom, viewerRole]);
+  }, [attachmentLeftOffset, attachmentTopOffset, cardDetailLookup, cardStatLookup, disableQuickActionsForCard, getHighlightTone, hideCards, isDebug, isProtected, isReadOnlySpectator, linkedCardLeftOffset, linkedCardTopOffset, lockCards, onBanish, onCardTapAction, onCemetery, onInspectCard, onReturnEvolve, onSendToBottom, shouldDisableZoneQuickActions, viewerRole]);
 
   return (
     <div
@@ -282,7 +283,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
                       onPlayToField={onPlayToField}
                       isHidden={hideCards}
                       isLocked={lockCards || isReadOnlySpectator || (isProtected && viewerRole !== 'all' && card.owner !== viewerRole)}
-                      quickActionsDisabled={disableQuickActionsForCard?.(card)}
+                      quickActionsDisabled={shouldDisableZoneQuickActions || disableQuickActionsForCard?.(card)}
                       disableCombatAndCounterControls={hasCardOnTop(card.id)}
                       onCardTapAction={onCardTapAction}
                       debugIndex={isDebug ? index : undefined}
@@ -311,7 +312,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
                           onPlayToField={onPlayToField}
                           isHidden={hideCards}
                           isLocked={lockCards || isReadOnlySpectator || (isProtected && viewerRole !== 'all' && attachedCard.owner !== viewerRole)}
-                          quickActionsDisabled={disableQuickActionsForCard?.(attachedCard)}
+                          quickActionsDisabled={shouldDisableZoneQuickActions || disableQuickActionsForCard?.(attachedCard)}
                           disableCombatAndCounterControls={hasCardOnTop(attachedCard.id)}
                           onCardTapAction={onCardTapAction}
                           debugIndex={isDebug ? i : undefined}
@@ -356,7 +357,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
                 onPlayToField={onPlayToField}
                 isHidden={hideCards}
                 isLocked={lockCards || isReadOnlySpectator || (isProtected && viewerRole !== 'all' && card.owner !== viewerRole)}
-                quickActionsDisabled={disableQuickActionsForCard?.(card)}
+                quickActionsDisabled={shouldDisableZoneQuickActions || disableQuickActionsForCard?.(card)}
                 disableCombatAndCounterControls={hasCardOnTop(card.id)}
                 onCardTapAction={onCardTapAction}
                 debugIndex={isDebug ? topLevelCards.indexOf(card) : undefined}
@@ -385,7 +386,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
                     onPlayToField={onPlayToField}
                     isHidden={hideCards}
                     isLocked={lockCards || isReadOnlySpectator || (isProtected && viewerRole !== 'all' && attachedCard.owner !== viewerRole)}
-                    quickActionsDisabled={disableQuickActionsForCard?.(attachedCard)}
+                    quickActionsDisabled={shouldDisableZoneQuickActions || disableQuickActionsForCard?.(attachedCard)}
                     disableCombatAndCounterControls={hasCardOnTop(attachedCard.id)}
                     onCardTapAction={onCardTapAction}
                     debugIndex={isDebug ? i : undefined}

@@ -36,12 +36,13 @@ vi.mock('react-i18next', () => ({
 }));
 
 vi.mock('./Card', () => ({
-  default: ({ card, isHidden, isLocked, debugIndex, hideCurrentStats, displayCounters, baseStats, onSendToBottom, onBanish, onCemetery, onReturnEvolve }: { card: CardInstance; isHidden?: boolean; isLocked?: boolean; debugIndex?: number; hideCurrentStats?: boolean; displayCounters?: { atk: number; hp: number }; baseStats?: { atk: number; hp: number }; onSendToBottom?: (id: string) => void; onBanish?: (id: string) => void; onCemetery?: (id: string) => void; onReturnEvolve?: (id: string) => void }) => (
+  default: ({ card, isHidden, isLocked, quickActionsDisabled, debugIndex, hideCurrentStats, displayCounters, baseStats, onSendToBottom, onBanish, onCemetery, onReturnEvolve }: { card: CardInstance; isHidden?: boolean; isLocked?: boolean; quickActionsDisabled?: boolean; debugIndex?: number; hideCurrentStats?: boolean; displayCounters?: { atk: number; hp: number }; baseStats?: { atk: number; hp: number }; onSendToBottom?: (id: string) => void; onBanish?: (id: string) => void; onCemetery?: (id: string) => void; onReturnEvolve?: (id: string) => void }) => (
     <div
       data-testid="mock-card"
       data-card-id={card.id}
       data-hidden={String(Boolean(isHidden))}
       data-locked={String(Boolean(isLocked))}
+      data-quick-actions-disabled={String(Boolean(quickActionsDisabled))}
       data-debug-index={debugIndex ?? ''}
       data-hide-current-stats={String(Boolean(hideCurrentStats))}
       data-display-counters={displayCounters ? `${displayCounters.atk}/${displayCounters.hp}` : ''}
@@ -282,6 +283,40 @@ describe('Zone', () => {
     expect(linkedCard).toHaveAttribute('data-has-return-evolve', 'true');
   });
 
+  it('disables hover quick actions for cemetery and banish cards without locking drag or inspect', () => {
+    const { rerender } = render(
+      <Zone
+        id="cemetery-host"
+        label="Cemetery"
+        cards={[createCard('cemetery-card', { zone: 'cemetery-host' })]}
+        onInspectCard={vi.fn()}
+        onSendToBottom={vi.fn()}
+        onBanish={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('mock-card')).toHaveAttribute('data-quick-actions-disabled', 'true');
+    expect(screen.getByTestId('mock-card')).toHaveAttribute('data-locked', 'false');
+    expect(screen.getByTestId('mock-card')).toHaveAttribute('data-has-send-to-bottom', 'true');
+    expect(screen.getByTestId('mock-card')).toHaveAttribute('data-has-banish', 'true');
+
+    rerender(
+      <Zone
+        id="banish-host"
+        label="Banish"
+        cards={[createCard('banish-card', { zone: 'banish-host' })]}
+        onInspectCard={vi.fn()}
+        onSendToBottom={vi.fn()}
+        onCemetery={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('mock-card')).toHaveAttribute('data-quick-actions-disabled', 'true');
+    expect(screen.getByTestId('mock-card')).toHaveAttribute('data-locked', 'false');
+    expect(screen.getByTestId('mock-card')).toHaveAttribute('data-has-send-to-bottom', 'true');
+    expect(screen.getByTestId('mock-card')).toHaveAttribute('data-has-cemetery', 'true');
+  });
+
   it('uses tighter field spacing for coarse input', () => {
     const { container } = renderWithInputProfile(
       'coarse',
@@ -321,7 +356,7 @@ describe('Zone', () => {
 
     expect(container.firstChild).toHaveStyle({ padding: '0.32rem' });
     const zoneLabel = screen.getByText('Cemetery');
-    expect(zoneLabel).toHaveStyle({ fontSize: '0.48rem' });
+    expect(zoneLabel).toHaveStyle({ fontSize: '0.5rem' });
     expect(zoneLabel).toHaveStyle({
       whiteSpace: 'normal',
       textOverflow: 'clip',
@@ -360,7 +395,7 @@ describe('Zone', () => {
 
     const zoneLabel = screen.getByText('エボルヴデッキ');
     expect(zoneLabel).toHaveStyle({
-      fontSize: '0.52rem',
+      fontSize: '0.56rem',
       textOverflow: 'clip',
       whiteSpace: 'nowrap',
     });
@@ -394,7 +429,7 @@ describe('Zone', () => {
 
     const zoneLabel = screen.getByText('エボルヴ');
     expect(zoneLabel).toHaveStyle({
-      fontSize: '0.52rem',
+      fontSize: '0.56rem',
       textOverflow: 'clip',
       whiteSpace: 'nowrap',
     });

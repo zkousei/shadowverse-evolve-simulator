@@ -514,7 +514,7 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
           )}
 
           {/* Quick Edit Overlay - desktop/fine path */}
-          {canShowQuickActionOverlay && !isCoarseInput && (
+          {canShowQuickActionOverlay && !quickActionsDisabled && !isCoarseInput && (
             <div className="card-controls"
               data-testid="card-controls"
               data-quick-actions-open={String(isQuickActionsOpen)}
@@ -649,7 +649,7 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
           )}
 
           {/* Coarse input uses an external action sheet with larger touch targets */}
-          {canShowQuickActionOverlay && isCoarseInput && isQuickActionsOpen && typeof document !== 'undefined' && createPortal(
+          {canShowQuickActionOverlay && !quickActionsDisabled && isCoarseInput && isQuickActionsOpen && typeof document !== 'undefined' && createPortal(
             <div
               ref={coarseActionSheetRef}
               data-testid="card-coarse-action-sheet"

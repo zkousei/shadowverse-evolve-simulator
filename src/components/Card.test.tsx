@@ -505,16 +505,24 @@ describe('Card', () => {
     expect(screen.getByText('-1')).toBeInTheDocument();
   });
 
-  it('disables quick-action pointer events when requested', () => {
+  it('hides quick actions when requested while keeping click inspect available', () => {
+    const onInspect = vi.fn();
     render(
       <Card
         card={createCard()}
         onCemetery={vi.fn()}
+        onInspect={onInspect}
         quickActionsDisabled={true}
       />
     );
 
-    expect(screen.getByTestId('card-controls')).toHaveStyle({ pointerEvents: 'none' });
+    expect(screen.queryByTestId('card-controls')).not.toBeInTheDocument();
+
+    const cardElement = screen.getByAltText('Test Card').closest('.game-card') as HTMLElement;
+    fireEvent.pointerDown(cardElement, { clientX: 10, clientY: 20, button: 0 });
+    fireEvent.pointerUp(cardElement, { clientX: 10, clientY: 20, button: 0 });
+
+    expect(onInspect).toHaveBeenCalledWith(expect.objectContaining({ id: 'card-1' }), expect.any(Object));
   });
 
   it('keeps quick actions hidden by default for coarse input until card tap', () => {

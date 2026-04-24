@@ -562,7 +562,10 @@ describe('GameBoard extracted UI components - zones and controls', () => {
         menuId="mainDeck-host"
         activeMenuId="mainDeck-host"
         actionsLabel="Actions"
-        actions={[{ label: 'Search', onClick: vi.fn() }]}
+        actions={[
+          { label: 'Search', onClick: vi.fn() },
+          { label: 'Look Top (N)', onClick: vi.fn(), tone: 'accent' },
+        ]}
         onActiveMenuChange={vi.fn()}
         actionPlacement="overlay"
       />
@@ -572,6 +575,13 @@ describe('GameBoard extracted UI components - zones and controls', () => {
 
     expect(button.parentElement?.parentElement).toHaveStyle({ zIndex: '70' });
     expect(screen.getByRole('button', { name: 'Search' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Look Top (N)' }).parentElement).toHaveStyle({
+      minWidth: '154px',
+      right: 0,
+    });
+    expect(screen.getByRole('button', { name: 'Look Top (N)' })).toHaveStyle({
+      whiteSpace: 'nowrap',
+    });
   });
 
   it('uses a compact two-column touch sheet layout for multiple main deck actions', () => {
