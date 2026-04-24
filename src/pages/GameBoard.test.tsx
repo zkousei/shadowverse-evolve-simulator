@@ -2988,6 +2988,8 @@ describe('GameBoard', () => {
       expect(screen.getByTestId('zone-hand-host')).toHaveStyle({ minHeight: '106px' });
       expect(screen.getByTestId('zone-leader-guest')).toHaveStyle({ minHeight: '110px' });
       expect(screen.getByTestId('zone-leader-host')).toHaveStyle({ minHeight: '110px' });
+      expect(screen.getByTestId('zone-cemetery-guest').parentElement).toHaveStyle({ gap: '0' });
+      expect(screen.getByTestId('zone-mainDeck-host').parentElement).toHaveStyle({ gap: '0' });
       const hostControlsPanel = screen.getByTestId('player-tracker-host').parentElement as HTMLElement;
       expect(hostControlsPanel).toHaveStyle({ marginLeft: '1.5rem' });
 

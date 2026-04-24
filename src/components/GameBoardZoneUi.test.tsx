@@ -249,6 +249,38 @@ describe('GameBoard extracted UI components - zones and controls', () => {
     expect(onSearch).toHaveBeenCalledTimes(1);
   });
 
+  it('overlays stack search actions without adding vertical height', () => {
+    const onSearch = vi.fn();
+
+    render(
+      <GameBoardSearchableStackSection
+        zoneProps={{
+          id: 'banish-host',
+          label: 'Banish',
+          cards: [{ id: 'card-1' } as never],
+        }}
+        searchLabel="Search"
+        onSearch={onSearch}
+        actionPlacement="overlay"
+      />
+    );
+
+    const button = screen.getByRole('button', { name: 'Search' });
+    expect(screen.getByTestId('zone-banish-host').parentElement).toHaveStyle({
+      gap: '0',
+      position: 'relative',
+    });
+    expect(button.parentElement).toHaveStyle({
+      position: 'absolute',
+      right: '6px',
+      bottom: '6px',
+    });
+
+    fireEvent.click(button);
+
+    expect(onSearch).toHaveBeenCalledTimes(1);
+  });
+
   it('hides inline zone search button for empty zones and opens via zone tap when tap-to-open is enabled', () => {
     const onSearch = vi.fn();
 
@@ -481,6 +513,65 @@ describe('GameBoard extracted UI components - zones and controls', () => {
 
     expect(onActiveMenuChange).toHaveBeenCalledWith(null);
     expect(onSearch).toHaveBeenCalledTimes(1);
+  });
+
+  it('overlays main deck actions without adding vertical height', () => {
+    const onSearch = vi.fn();
+    const onActiveMenuChange = vi.fn();
+
+    render(
+      <GameBoardMainDeckSection
+        zoneProps={{
+          id: 'mainDeck-host',
+          label: 'Main Deck',
+          cards: [{ id: 'card-1' } as never],
+        }}
+        menuId="mainDeck-host"
+        activeMenuId={null}
+        actionsLabel="Actions"
+        actions={[{ label: 'Search', onClick: onSearch }]}
+        onActiveMenuChange={onActiveMenuChange}
+        actionPlacement="overlay"
+      />
+    );
+
+    const button = screen.getByRole('button', { name: 'Actions' });
+    expect(screen.getByTestId('zone-mainDeck-host').parentElement).toHaveStyle({
+      gap: '0',
+      position: 'relative',
+    });
+    expect(button.parentElement?.parentElement).toHaveStyle({
+      position: 'absolute',
+      right: '6px',
+      bottom: '6px',
+    });
+
+    fireEvent.click(button);
+
+    expect(onActiveMenuChange).toHaveBeenCalledWith('mainDeck-host');
+  });
+
+  it('raises overlaid main deck actions while the menu is open', () => {
+    render(
+      <GameBoardMainDeckSection
+        zoneProps={{
+          id: 'mainDeck-host',
+          label: 'Main Deck',
+          cards: [{ id: 'card-1' } as never],
+        }}
+        menuId="mainDeck-host"
+        activeMenuId="mainDeck-host"
+        actionsLabel="Actions"
+        actions={[{ label: 'Search', onClick: vi.fn() }]}
+        onActiveMenuChange={vi.fn()}
+        actionPlacement="overlay"
+      />
+    );
+
+    const button = screen.getByRole('button', { name: 'Actions' });
+
+    expect(button.parentElement?.parentElement).toHaveStyle({ zIndex: '70' });
+    expect(screen.getByRole('button', { name: 'Search' })).toBeInTheDocument();
   });
 
   it('uses a compact two-column touch sheet layout for multiple main deck actions', () => {
