@@ -82,11 +82,12 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
   );
   const topLevelCards = cards.filter(c => !validAttachedIds.has(c.id) && !validLinkedIds.has(c.id));
   const handleQuickActionsHoverChange = React.useCallback((cardId: string, isHovered: boolean) => {
+    if (!isFieldZone && !isExZone) return;
     setQuickActionsHoveredCardId(current => {
       if (isHovered) return cardId;
       return current === cardId ? null : current;
     });
-  }, []);
+  }, [isExZone, isFieldZone]);
 
   React.useEffect(() => {
     if (!quickActionsHoveredCardId) return;

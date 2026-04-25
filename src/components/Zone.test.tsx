@@ -438,6 +438,23 @@ describe('Zone', () => {
     expect(zone.style.zIndex).toBe('');
   });
 
+  it('does not raise stack zones above their overlay search actions on card hover', () => {
+    renderWithInputProfile(
+      'fine',
+      <Zone
+        id="evolveDeck-host"
+        label="Evolve Deck"
+        layout="stack"
+        cards={[createCard('evolve-card', { zone: 'evolveDeck-host' })]}
+      />
+    );
+
+    const zone = screen.getByTestId('zone-evolveDeck-host');
+
+    fireEvent.pointerEnter(screen.getByTestId('mock-card'));
+    expect(zone.style.zIndex).toBe('');
+  });
+
   it('uses tighter zone label chrome in desktop overview so evolve labels fit more naturally', () => {
     renderWithInputProfile(
       'fine',
