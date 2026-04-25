@@ -2831,7 +2831,7 @@ describe('GameBoard', () => {
       const topSection = screen.getByTestId('board-section-top');
       const topGrid = topSection.firstElementChild as HTMLElement;
 
-      expect(topGrid).toHaveStyle({ gridTemplateColumns: '150px 864px 176px' });
+      expect(topGrid).toHaveStyle({ gridTemplateColumns: '176px 864px 176px' });
     } finally {
       Object.defineProperty(window, 'innerWidth', {
         configurable: true,
@@ -2861,7 +2861,7 @@ describe('GameBoard', () => {
       const topSection = screen.getByTestId('board-section-top');
       const topGrid = topSection.firstElementChild as HTMLElement;
 
-      expect(topGrid).toHaveStyle({ gridTemplateColumns: '188px 1080px 220px' });
+      expect(topGrid).toHaveStyle({ gridTemplateColumns: '220px 1080px 220px' });
     } finally {
       Object.defineProperty(window, 'innerWidth', {
         configurable: true,
@@ -2896,7 +2896,7 @@ describe('GameBoard', () => {
       const topSection = screen.getByTestId('board-section-top');
       const topGrid = topSection.firstElementChild as HTMLElement;
 
-      expect(topGrid).toHaveStyle({ gridTemplateColumns: '132px 629px 151px' });
+      expect(topGrid).toHaveStyle({ gridTemplateColumns: '141.5px 629px 141.5px' });
     } finally {
       Object.defineProperty(window, 'innerWidth', {
         configurable: true,
@@ -2979,7 +2979,7 @@ describe('GameBoard', () => {
       expect(shell.style.zoom).toBe('');
       expect(playmat).toHaveStyle({ padding: '0.38rem', gap: '0.18rem' });
       expect(topSection).toHaveStyle({ padding: '0.22rem 0.26rem' });
-      expect(topGrid).toHaveStyle({ gridTemplateColumns: '150px 864px 176px' });
+      expect(topGrid).toHaveStyle({ gridTemplateColumns: '176px 864px 176px' });
       expect(sectionDivider).not.toBeNull();
       expect(sectionDivider as HTMLElement).toHaveStyle({ margin: '0.12rem 0' });
       expect(screen.getByTestId('zone-cemetery-guest')).toHaveStyle({ minHeight: '96px' });
@@ -2992,6 +2992,8 @@ describe('GameBoard', () => {
       expect(screen.getByTestId('zone-mainDeck-host').parentElement).toHaveStyle({ gap: '0' });
       const hostControlsPanel = screen.getByTestId('player-tracker-host').parentElement as HTMLElement;
       expect(hostControlsPanel).toHaveStyle({ marginLeft: '1.5rem' });
+      expect(topGrid.firstElementChild).toHaveStyle({ width: '176px' });
+      expect(hostControlsPanel).toHaveStyle({ width: '176px' });
 
       [
         'hand-guest',
@@ -3193,6 +3195,7 @@ describe('GameBoard', () => {
       expect(playmat).toHaveStyle({ padding: '0.32rem', gap: '0.18rem' });
       expect(topSection).toHaveStyle({ padding: '0.2rem 0.24rem' });
       expect(topGrid).toHaveStyle({ columnGap: '0.5rem' });
+      expect(topGrid).toHaveStyle({ gridTemplateColumns: '141.5px 629px 141.5px' });
       expect(screen.getByTestId('zone-cemetery-guest')).toHaveStyle({ minHeight: '104px' });
       expect(screen.getByTestId('zone-field-guest')).toHaveStyle({ minHeight: '116px' });
       expect(screen.getByTestId('zone-hand-guest')).toHaveStyle({ minHeight: '108px' });

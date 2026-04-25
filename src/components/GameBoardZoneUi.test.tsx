@@ -340,7 +340,6 @@ describe('GameBoard extracted UI components - zones and controls', () => {
         maxPp={5}
         ep={2}
         sep={1}
-        combo={4}
       />
     );
 
@@ -349,7 +348,7 @@ describe('GameBoard extracted UI components - zones and controls', () => {
     expect(screen.getByText('18')).toBeInTheDocument();
     expect(screen.getByText('2')).toBeInTheDocument();
     expect(screen.getByText('1')).toBeInTheDocument();
-    expect(screen.getByText('4')).toBeInTheDocument();
+    expect(screen.queryByText('Combo')).not.toBeInTheDocument();
   });
 
   it('renders player tracker values and wires stat adjustments', () => {
@@ -362,7 +361,6 @@ describe('GameBoard extracted UI components - zones and controls', () => {
         hp={20}
         ep={3}
         sep={1}
-        combo={0}
         pp={2}
         maxPp={5}
         onAdjustStat={onAdjustStat}
@@ -382,6 +380,7 @@ describe('GameBoard extracted UI components - zones and controls', () => {
     expect(onAdjustStat).toHaveBeenCalledWith('ep', -1);
     expect(onAdjustStat).toHaveBeenCalledWith('maxPp', 1);
     expect(onAdjustStat).toHaveBeenCalledWith('pp', -1);
+    expect(screen.queryByTestId('player-tracker-host-combo-increase')).not.toBeInTheDocument();
   });
 
   it('renders player tracker section from player state', () => {

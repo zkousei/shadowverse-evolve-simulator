@@ -9,7 +9,6 @@ vi.mock('react-i18next', () => ({
       if (key === 'gameBoard.board.stats.hp') return 'HP';
       if (key === 'gameBoard.board.stats.ep') return 'EP';
       if (key === 'gameBoard.board.stats.sep') return 'SEP';
-      if (key === 'gameBoard.board.stats.combo') return 'Combo';
       if (key === 'gameBoard.board.stats.max') return 'MAX';
       if (key === 'gameBoard.board.stats.playPoints') return 'PP';
       return key;
@@ -23,7 +22,6 @@ const createBaseProps = () => ({
   hp: 20,
   ep: 2,
   sep: 1,
-  combo: 0,
   pp: 3,
   maxPp: 4,
   onAdjustStat: vi.fn(),
@@ -52,6 +50,7 @@ describe('GameBoardPlayerTracker', () => {
       flexWrap: 'nowrap',
       gap: '0.14rem',
     });
+    expect(screen.queryByText(/Combo/)).not.toBeInTheDocument();
   });
 
   it('uses slightly larger compact status text for tablet readability', () => {
@@ -85,9 +84,11 @@ describe('GameBoardPlayerTracker', () => {
 
     expect(props.onAdjustStat).toHaveBeenCalledWith('hp', 1);
     expect(props.onAdjustStat).toHaveBeenCalledWith('pp', -1);
+    expect(screen.queryByTestId('player-tracker-host-combo-increase')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('player-tracker-host-combo-decrease')).not.toBeInTheDocument();
   });
 
-  it('uses larger compact adjustment buttons for tablet touch targets', () => {
+  it('uses compact fixed-size adjustment buttons to reduce tracker height without layout drift', () => {
     render(
       <GameBoardPlayerTracker
         {...createBaseProps()}
@@ -96,20 +97,22 @@ describe('GameBoardPlayerTracker', () => {
     );
 
     expect(screen.getByTestId('player-tracker-host-hp-increase')).toHaveStyle({
-      minWidth: '24px',
-      minHeight: '22px',
-      fontSize: '0.72rem',
+      minWidth: '22px',
+      minHeight: '20px',
+      padding: '1px 5px',
+      fontSize: '0.68rem',
     });
     expect(screen.getByTestId('player-tracker-host-maxPp-increase')).toHaveStyle({
-      width: '24px',
-      height: '22px',
-      minWidth: '24px',
-      fontSize: '0.72rem',
+      width: '22px',
+      height: '20px',
+      minWidth: '22px',
+      fontSize: '0.68rem',
     });
     expect(screen.getByTestId('player-tracker-host-pp-increase')).toHaveStyle({
-      width: '28px',
-      height: '28px',
-      fontSize: '0.94rem',
+      width: '24px',
+      height: '24px',
+      fontSize: '0.86rem',
+      borderRadius: '50%',
     });
   });
 });

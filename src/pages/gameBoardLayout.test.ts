@@ -14,14 +14,14 @@ import {
 } from './gameBoardLayout';
 
 describe('gameBoardLayout', () => {
-  it('keeps legacy desktop constants unchanged', () => {
+  it('keeps desktop constants with matching control column widths', () => {
     expect(sidePanelWidth).toBe(220);
-    expect(topPanelWidth).toBe(188);
+    expect(topPanelWidth).toBe(220);
     expect(sideZoneWidth).toBe(140);
     expect(centerZoneWidth).toBe(800);
     expect(boardContentWidth).toBe(1080);
     expect(boardColumns).toBe('140px 800px 140px');
-    expect(boardShellColumns).toBe('188px 1080px 220px');
+    expect(boardShellColumns).toBe('220px 1080px 220px');
   });
 
   it('uses desktop profile for widths >= 1280px', () => {
@@ -33,12 +33,12 @@ describe('gameBoardLayout', () => {
     const layout = resolveBoardLayout(1280, 'fine');
     expect(layout.profile).toBe('desktop');
     expect(layout.sidePanelWidth).toBe(220);
-    expect(layout.topPanelWidth).toBe(188);
+    expect(layout.topPanelWidth).toBe(220);
     expect(layout.sideZoneWidth).toBe(140);
     expect(layout.centerZoneWidth).toBe(800);
     expect(layout.boardContentWidth).toBe(1080);
     expect(layout.boardColumns).toBe('140px 800px 140px');
-    expect(layout.boardShellColumns).toBe('188px 1080px 220px');
+    expect(layout.boardShellColumns).toBe('220px 1080px 220px');
   });
 
   it('uses explicit compact desktop columns for overview density without CSS scaling', () => {
@@ -46,12 +46,12 @@ describe('gameBoardLayout', () => {
 
     expect(layout.profile).toBe('desktop');
     expect(layout.sidePanelWidth).toBe(176);
-    expect(layout.topPanelWidth).toBe(150);
+    expect(layout.topPanelWidth).toBe(176);
     expect(layout.sideZoneWidth).toBe(112);
     expect(layout.centerZoneWidth).toBe(640);
     expect(layout.boardContentWidth).toBe(864);
     expect(layout.boardColumns).toBe('112px 640px 112px');
-    expect(layout.boardShellColumns).toBe('150px 864px 176px');
+    expect(layout.boardShellColumns).toBe('176px 864px 176px');
   });
 
   it('uses tablet profile in 900-1279px only when input profile is coarse', () => {
@@ -71,7 +71,9 @@ describe('gameBoardLayout', () => {
     const layout = resolveBoardLayout(viewportWidth, 'coarse');
 
     expect(layout.profile).toBe('tablet');
-    expect(layout.boardShellColumns).toBe('132px 629px 151px');
+    expect(layout.topPanelWidth).toBe(layout.sidePanelWidth);
+    expect(layout.boardShellColumns).toBe('141.5px 629px 141.5px');
+    expect(layout.boardColumns).toBe('80px 469px 80px');
 
     const boardShellWidth = layout.topPanelWidth + layout.boardContentWidth + layout.sidePanelWidth + (16 * 2);
     expect(boardShellWidth).toBeLessThanOrEqual(944);
@@ -80,7 +82,8 @@ describe('gameBoardLayout', () => {
   it('keeps desktop board shell at 1024px when input profile is fine', () => {
     const layout = resolveBoardLayout(1024, 'fine');
     expect(layout.profile).toBe('desktop');
-    expect(layout.boardShellColumns).toBe('188px 1080px 220px');
+    expect(layout.topPanelWidth).toBe(layout.sidePanelWidth);
+    expect(layout.boardShellColumns).toBe('220px 1080px 220px');
   });
 
   it('uses overview density for PC desktop viewports while keeping tablet layouts standard', () => {
