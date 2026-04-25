@@ -71,21 +71,21 @@ const buildLayout = (
 
 export const desktopGameBoardLayout = buildLayout('desktop', {
   sidePanelWidth: 220,
-  topPanelWidth: 188,
+  topPanelWidth: 220,
   sideZoneWidth: 140,
   centerZoneWidth: 800,
 });
 
 export const overviewDesktopGameBoardLayout = buildLayout('desktop', {
   sidePanelWidth: 176,
-  topPanelWidth: 150,
+  topPanelWidth: 176,
   sideZoneWidth: 112,
   centerZoneWidth: 640,
 });
 
 export const tabletGameBoardLayout = buildLayout('tablet', {
   sidePanelWidth: 180,
-  topPanelWidth: 148,
+  topPanelWidth: 180,
   sideZoneWidth: 120,
   centerZoneWidth: 640,
 });
@@ -97,9 +97,12 @@ const resolveTabletLayout = (viewportWidth: number): GameBoardLayout => {
     TABLET_MAX_SHELL_WIDTH
   );
 
-  const topPanelWidth = clamp(Math.round(boardShellWidth * 0.14), 112, 148);
-  const sidePanelWidth = clamp(Math.round(boardShellWidth * 0.16), 128, 180);
-  const boardContentWidth = boardShellWidth - topPanelWidth - sidePanelWidth - (BOARD_SHELL_COLUMN_GAP * 2);
+  const legacyTopPanelWidth = clamp(Math.round(boardShellWidth * 0.14), 112, 148);
+  const legacySidePanelWidth = clamp(Math.round(boardShellWidth * 0.16), 128, 180);
+  const controlPanelWidth = (legacyTopPanelWidth + legacySidePanelWidth) / 2;
+  const topPanelWidth = controlPanelWidth;
+  const sidePanelWidth = controlPanelWidth;
+  const boardContentWidth = boardShellWidth - legacyTopPanelWidth - legacySidePanelWidth - (BOARD_SHELL_COLUMN_GAP * 2);
 
   let sideZoneWidth = clamp(Math.round(boardContentWidth * 0.125), 80, 104);
   let centerZoneWidth = boardContentWidth - (sideZoneWidth * 2);
