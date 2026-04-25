@@ -44,6 +44,7 @@ interface Props {
 
 const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLookup, onInspectCard, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, onCardTapAction, onZoneTapAction, hideCards, layout = 'horizontal', isProtected, lockCards, disableQuickActionsForCard, getHighlightTone, viewerRole, containerStyle, isDebug }) => {
   const zoneTapPointerStartRef = React.useRef<{ x: number; y: number } | null>(null);
+  const [quickActionsHoveredCardId, setQuickActionsHoveredCardId] = React.useState<string | null>(null);
   const inputProfile = useGameBoardInputProfile();
   const boardDensity = useGameBoardBoardDensity();
   const isCompactInput = inputProfile === 'coarse';
@@ -80,6 +81,18 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
     cards.filter(c => c.linkedTo && cards.some(parent => parent.id === c.linkedTo)).map(c => c.id)
   );
   const topLevelCards = cards.filter(c => !validAttachedIds.has(c.id) && !validLinkedIds.has(c.id));
+  const handleQuickActionsHoverChange = React.useCallback((cardId: string, isHovered: boolean) => {
+    setQuickActionsHoveredCardId(current => {
+      if (isHovered) return cardId;
+      return current === cardId ? null : current;
+    });
+  }, []);
+
+  React.useEffect(() => {
+    if (!quickActionsHoveredCardId) return;
+    if (cards.some(card => card.id === quickActionsHoveredCardId)) return;
+    setQuickActionsHoveredCardId(null);
+  }, [cards, quickActionsHoveredCardId]);
 
   const renderLinkedCards = React.useCallback((linkedCards: CardInstance[], attachmentCount: number) => {
     if (linkedCards.length === 0) return null;
@@ -112,11 +125,12 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
           quickActionsDisabled={shouldDisableZoneQuickActions || disableQuickActionsForCard?.(linkedCard)}
           disableCombatAndCounterControls={true}
           onCardTapAction={onCardTapAction}
+          onQuickActionsHoverChange={handleQuickActionsHoverChange}
           debugIndex={isDebug ? index : undefined}
         />
       </div>
     ));
-  }, [attachmentLeftOffset, attachmentTopOffset, cardDetailLookup, cardStatLookup, disableQuickActionsForCard, getHighlightTone, hideCards, isDebug, isProtected, isReadOnlySpectator, linkedCardLeftOffset, linkedCardTopOffset, lockCards, onBanish, onCardTapAction, onCemetery, onInspectCard, onReturnEvolve, onSendToBottom, shouldDisableZoneQuickActions, viewerRole]);
+  }, [attachmentLeftOffset, attachmentTopOffset, cardDetailLookup, cardStatLookup, disableQuickActionsForCard, getHighlightTone, handleQuickActionsHoverChange, hideCards, isDebug, isProtected, isReadOnlySpectator, linkedCardLeftOffset, linkedCardTopOffset, lockCards, onBanish, onCardTapAction, onCemetery, onInspectCard, onReturnEvolve, onSendToBottom, shouldDisableZoneQuickActions, viewerRole]);
 
   return (
     <div
@@ -166,6 +180,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
               : '0.5rem',
         flexWrap: isStack ? 'nowrap' : 'wrap',
         alignItems: isStack ? 'center' : 'flex-start',
+        zIndex: quickActionsHoveredCardId ? 240 : undefined,
         transition: 'var(--transition-fast)',
         ...containerStyle
       }}
@@ -286,6 +301,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
                       quickActionsDisabled={shouldDisableZoneQuickActions || disableQuickActionsForCard?.(card)}
                       disableCombatAndCounterControls={hasCardOnTop(card.id)}
                       onCardTapAction={onCardTapAction}
+                      onQuickActionsHoverChange={handleQuickActionsHoverChange}
                       debugIndex={isDebug ? index : undefined}
                     />
                     {renderLinkedCards(linkedCards, attachments.length)}
@@ -315,6 +331,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
                           quickActionsDisabled={shouldDisableZoneQuickActions || disableQuickActionsForCard?.(attachedCard)}
                           disableCombatAndCounterControls={hasCardOnTop(attachedCard.id)}
                           onCardTapAction={onCardTapAction}
+                          onQuickActionsHoverChange={handleQuickActionsHoverChange}
                           debugIndex={isDebug ? i : undefined}
                         />
                       </div>
@@ -360,6 +377,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
                 quickActionsDisabled={shouldDisableZoneQuickActions || disableQuickActionsForCard?.(card)}
                 disableCombatAndCounterControls={hasCardOnTop(card.id)}
                 onCardTapAction={onCardTapAction}
+                onQuickActionsHoverChange={handleQuickActionsHoverChange}
                 debugIndex={isDebug ? topLevelCards.indexOf(card) : undefined}
               />
               {renderLinkedCards(linkedCards, attachments.length)}
@@ -389,6 +407,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
                     quickActionsDisabled={shouldDisableZoneQuickActions || disableQuickActionsForCard?.(attachedCard)}
                     disableCombatAndCounterControls={hasCardOnTop(attachedCard.id)}
                     onCardTapAction={onCardTapAction}
+                    onQuickActionsHoverChange={handleQuickActionsHoverChange}
                     debugIndex={isDebug ? i : undefined}
                   />
                 </div>

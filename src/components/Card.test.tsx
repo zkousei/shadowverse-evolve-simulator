@@ -874,4 +874,24 @@ describe('Card', () => {
     expect(cardElement).toHaveStyle({ zIndex: '1' });
   });
 
+  it('notifies the parent zone when fine-input quick actions are hovered', () => {
+    const onQuickActionsHoverChange = vi.fn();
+    render(
+      <Card
+        card={createCard({ zone: 'field-host', isTapped: true })}
+        baseStats={{ atk: 3, hp: 4 }}
+        onTap={vi.fn()}
+        onQuickActionsHoverChange={onQuickActionsHoverChange}
+      />
+    );
+
+    const cardElement = screen.getByAltText('Test Card').closest('.game-card') as HTMLElement;
+
+    fireEvent.pointerEnter(cardElement);
+    expect(onQuickActionsHoverChange).toHaveBeenCalledWith('card-1', true);
+
+    fireEvent.pointerLeave(cardElement);
+    expect(onQuickActionsHoverChange).toHaveBeenCalledWith('card-1', false);
+  });
+
 });
