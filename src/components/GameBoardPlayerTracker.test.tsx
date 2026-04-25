@@ -88,7 +88,7 @@ describe('GameBoardPlayerTracker', () => {
     expect(screen.queryByTestId('player-tracker-host-combo-decrease')).not.toBeInTheDocument();
   });
 
-  it('uses larger compact adjustment buttons for tablet touch targets', () => {
+  it('uses compact fixed-size adjustment buttons to reduce tracker height without layout drift', () => {
     render(
       <GameBoardPlayerTracker
         {...createBaseProps()}
@@ -97,20 +97,22 @@ describe('GameBoardPlayerTracker', () => {
     );
 
     expect(screen.getByTestId('player-tracker-host-hp-increase')).toHaveStyle({
-      minWidth: '24px',
-      minHeight: '22px',
-      fontSize: '0.72rem',
+      minWidth: '22px',
+      minHeight: '20px',
+      padding: '1px 5px',
+      fontSize: '0.68rem',
     });
     expect(screen.getByTestId('player-tracker-host-maxPp-increase')).toHaveStyle({
-      width: '24px',
-      height: '22px',
-      minWidth: '24px',
-      fontSize: '0.72rem',
+      width: '22px',
+      height: '20px',
+      minWidth: '22px',
+      fontSize: '0.68rem',
     });
     expect(screen.getByTestId('player-tracker-host-pp-increase')).toHaveStyle({
-      width: '28px',
-      height: '28px',
-      fontSize: '0.94rem',
+      width: '24px',
+      height: '24px',
+      fontSize: '0.86rem',
+      borderRadius: '50%',
     });
   });
 });

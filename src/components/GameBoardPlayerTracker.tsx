@@ -63,14 +63,14 @@ const GameBoardPlayerTracker: React.FC<GameBoardPlayerTrackerProps> = ({
     whiteSpace: 'nowrap',
   };
   const trackerAdjustButtonBaseStyle: React.CSSProperties = {
-    minWidth: compact ? '24px' : '28px',
-    minHeight: compact ? '22px' : undefined,
-    padding: compact ? '2px 6px' : '2px 8px',
+    minWidth: compact ? '22px' : '26px',
+    minHeight: compact ? '20px' : undefined,
+    padding: compact ? '1px 5px' : '1px 7px',
     borderRadius: '4px',
     border: '1px solid',
     color: '#f8fafc',
     fontWeight: 'bold',
-    fontSize: compact ? '0.72rem' : undefined,
+    fontSize: compact ? '0.68rem' : undefined,
     cursor: 'pointer',
     boxShadow: '0 2px 6px rgba(0,0,0,0.22)',
   };
@@ -126,9 +126,9 @@ const GameBoardPlayerTracker: React.FC<GameBoardPlayerTrackerProps> = ({
       <div style={ppSectionStyle}>
         <div style={trackerStatRowStyle}>
           {!readOnly && <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: compact ? '1px' : '2px', flexShrink: 0 }}>
-            <button data-testid={`${testId}-maxPp-increase`} onClick={() => onAdjustStat('maxPp', 1)} style={{ ...trackerIncreaseButtonStyle, width: '24px', height: compact ? '22px' : '20px', minWidth: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, fontSize: compact ? '0.72rem' : '0.75rem' }}>+</button>
+            <button data-testid={`${testId}-maxPp-increase`} onClick={() => onAdjustStat('maxPp', 1)} style={{ ...trackerIncreaseButtonStyle, width: compact ? '22px' : '24px', height: compact ? '20px' : '18px', minWidth: compact ? '22px' : '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, fontSize: compact ? '0.68rem' : '0.72rem' }}>+</button>
             <span style={{ fontSize: compact ? '0.58rem' : '0.6rem', color: '#93c5fd', fontWeight: 'bold', lineHeight: 1 }}>{t('gameBoard.board.stats.max')}</span>
-            <button data-testid={`${testId}-maxPp-decrease`} onClick={() => onAdjustStat('maxPp', -1)} style={{ ...trackerDecreaseButtonStyle, width: '24px', height: compact ? '22px' : '20px', minWidth: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, fontSize: compact ? '0.72rem' : '0.75rem' }}>-</button>
+            <button data-testid={`${testId}-maxPp-decrease`} onClick={() => onAdjustStat('maxPp', -1)} style={{ ...trackerDecreaseButtonStyle, width: compact ? '22px' : '24px', height: compact ? '20px' : '18px', minWidth: compact ? '22px' : '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, fontSize: compact ? '0.68rem' : '0.72rem' }}>-</button>
           </div>}
           <div style={{ textAlign: 'center', flex: 1 }}>
             <div style={{ fontSize: compact ? '0.62rem' : '0.7rem', color: '#3b82f6', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: compact ? 0 : '-2px', lineHeight: 1.1 }}>{t('gameBoard.board.stats.playPoints')}</div>
@@ -138,9 +138,9 @@ const GameBoardPlayerTracker: React.FC<GameBoardPlayerTrackerProps> = ({
               <span style={{ color: '#fff', fontSize: compact ? '1rem' : '1.25rem', fontWeight: 'bold', lineHeight: 1 }}>{maxPp}</span>
             </div>
           </div>
-          {!readOnly && <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? '4px' : '6px', alignItems: 'center', flexShrink: 0 }}>
-            <button data-testid={`${testId}-pp-increase`} onClick={() => onAdjustStat('pp', 1)} style={{ width: compact ? '28px' : '30px', height: compact ? '28px' : '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', borderRadius: '50%', cursor: 'pointer', fontSize: compact ? '0.94rem' : '1rem', color: '#3b82f6', fontWeight: 'bold' }}>∧</button>
-            <button data-testid={`${testId}-pp-decrease`} onClick={() => onAdjustStat('pp', -1)} style={{ width: compact ? '28px' : '30px', height: compact ? '28px' : '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', borderRadius: '50%', cursor: 'pointer', fontSize: compact ? '0.94rem' : '1rem', color: '#3b82f6', fontWeight: 'bold' }}>∨</button>
+          {!readOnly && <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? '3px' : '5px', alignItems: 'center', flexShrink: 0 }}>
+            <button data-testid={`${testId}-pp-increase`} onClick={() => onAdjustStat('pp', 1)} style={{ width: compact ? '24px' : '28px', height: compact ? '24px' : '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', borderRadius: '50%', cursor: 'pointer', fontSize: compact ? '0.86rem' : '0.94rem', color: '#3b82f6', fontWeight: 'bold' }}>∧</button>
+            <button data-testid={`${testId}-pp-decrease`} onClick={() => onAdjustStat('pp', -1)} style={{ width: compact ? '24px' : '28px', height: compact ? '24px' : '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', borderRadius: '50%', cursor: 'pointer', fontSize: compact ? '0.86rem' : '0.94rem', color: '#3b82f6', fontWeight: 'bold' }}>∨</button>
           </div>}
         </div>
       </div>
