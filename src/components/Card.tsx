@@ -62,6 +62,7 @@ interface Props {
   onCemetery?: (id: string) => void;
   onPlayToField?: (id: string) => void;
   onCardTapAction?: (card: CardInstance, anchor: CardTapAnchor) => boolean | void;
+  onQuickActionsHoverChange?: (id: string, isHovered: boolean) => void;
   isHidden?: boolean; // if true, STRICTLY render card back only
   isLocked?: boolean; // if true, prevent dragging and operating (opponent's hand/deck/ex)
   quickActionsDisabled?: boolean;
@@ -69,7 +70,7 @@ interface Props {
   debugIndex?: number;
 }
 
-const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideCurrentStats, highlightTone, onInspect, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, onCardTapAction, isHidden, isLocked, quickActionsDisabled, disableCombatAndCounterControls, debugIndex }) => {
+const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideCurrentStats, highlightTone, onInspect, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, onCardTapAction, onQuickActionsHoverChange, isHidden, isLocked, quickActionsDisabled, disableCombatAndCounterControls, debugIndex }) => {
   const { t } = useTranslation();
   const inspectPointerStartRef = React.useRef<{ x: number; y: number } | null>(null);
   const cardElementRef = React.useRef<HTMLElement | null>(null);
@@ -394,10 +395,14 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
       onPointerEnter={() => {
         if (!isCoarseInput && canShowQuickActionOverlay) {
           setIsDesktopQuickActionsHovered(true);
+          onQuickActionsHoverChange?.(card.id, true);
         }
       }}
       onPointerLeave={() => {
         setIsDesktopQuickActionsHovered(false);
+        if (!isCoarseInput && canShowQuickActionOverlay) {
+          onQuickActionsHoverChange?.(card.id, false);
+        }
       }}
       onContextMenu={(e) => {
         e.preventDefault();

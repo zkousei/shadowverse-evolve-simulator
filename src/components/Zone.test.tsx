@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import Zone from './Zone';
 import type { CardInstance } from './Card';
@@ -36,10 +36,12 @@ vi.mock('react-i18next', () => ({
 }));
 
 vi.mock('./Card', () => ({
-  default: ({ card, isHidden, isLocked, quickActionsDisabled, debugIndex, hideCurrentStats, displayCounters, baseStats, onSendToBottom, onBanish, onCemetery, onReturnEvolve }: { card: CardInstance; isHidden?: boolean; isLocked?: boolean; quickActionsDisabled?: boolean; debugIndex?: number; hideCurrentStats?: boolean; displayCounters?: { atk: number; hp: number }; baseStats?: { atk: number; hp: number }; onSendToBottom?: (id: string) => void; onBanish?: (id: string) => void; onCemetery?: (id: string) => void; onReturnEvolve?: (id: string) => void }) => (
+  default: ({ card, isHidden, isLocked, quickActionsDisabled, debugIndex, hideCurrentStats, displayCounters, baseStats, onSendToBottom, onBanish, onCemetery, onReturnEvolve, onQuickActionsHoverChange }: { card: CardInstance; isHidden?: boolean; isLocked?: boolean; quickActionsDisabled?: boolean; debugIndex?: number; hideCurrentStats?: boolean; displayCounters?: { atk: number; hp: number }; baseStats?: { atk: number; hp: number }; onSendToBottom?: (id: string) => void; onBanish?: (id: string) => void; onCemetery?: (id: string) => void; onReturnEvolve?: (id: string) => void; onQuickActionsHoverChange?: (id: string, isHovered: boolean) => void }) => (
     <div
       data-testid="mock-card"
       data-card-id={card.id}
+      onPointerEnter={() => onQuickActionsHoverChange?.(card.id, true)}
+      onPointerLeave={() => onQuickActionsHoverChange?.(card.id, false)}
       data-hidden={String(Boolean(isHidden))}
       data-locked={String(Boolean(isLocked))}
       data-quick-actions-disabled={String(Boolean(quickActionsDisabled))}
@@ -414,6 +416,26 @@ describe('Zone', () => {
 
     const zoneLabel = screen.getByText('Field');
     expect(zoneLabel.parentElement).toHaveStyle({ top: '-6px' });
+  });
+
+  it('raises the hovered card zone above adjacent zone labels', () => {
+    renderWithInputProfile(
+      'fine',
+      <Zone
+        id="field-host"
+        label="Field"
+        cards={[createCard('host-card')]}
+      />
+    );
+
+    const zone = screen.getByTestId('zone-field-host');
+    expect(zone.style.zIndex).toBe('');
+
+    fireEvent.pointerEnter(screen.getByTestId('mock-card'));
+    expect(zone).toHaveStyle({ zIndex: '240' });
+
+    fireEvent.pointerLeave(screen.getByTestId('mock-card'));
+    expect(zone.style.zIndex).toBe('');
   });
 
   it('uses tighter zone label chrome in desktop overview so evolve labels fit more naturally', () => {
