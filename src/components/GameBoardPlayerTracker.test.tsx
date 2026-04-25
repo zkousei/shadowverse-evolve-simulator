@@ -9,7 +9,6 @@ vi.mock('react-i18next', () => ({
       if (key === 'gameBoard.board.stats.hp') return 'HP';
       if (key === 'gameBoard.board.stats.ep') return 'EP';
       if (key === 'gameBoard.board.stats.sep') return 'SEP';
-      if (key === 'gameBoard.board.stats.combo') return 'Combo';
       if (key === 'gameBoard.board.stats.max') return 'MAX';
       if (key === 'gameBoard.board.stats.playPoints') return 'PP';
       return key;
@@ -23,7 +22,6 @@ const createBaseProps = () => ({
   hp: 20,
   ep: 2,
   sep: 1,
-  combo: 0,
   pp: 3,
   maxPp: 4,
   onAdjustStat: vi.fn(),
@@ -52,6 +50,7 @@ describe('GameBoardPlayerTracker', () => {
       flexWrap: 'nowrap',
       gap: '0.14rem',
     });
+    expect(screen.queryByText(/Combo/)).not.toBeInTheDocument();
   });
 
   it('uses slightly larger compact status text for tablet readability', () => {
@@ -85,6 +84,8 @@ describe('GameBoardPlayerTracker', () => {
 
     expect(props.onAdjustStat).toHaveBeenCalledWith('hp', 1);
     expect(props.onAdjustStat).toHaveBeenCalledWith('pp', -1);
+    expect(screen.queryByTestId('player-tracker-host-combo-increase')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('player-tracker-host-combo-decrease')).not.toBeInTheDocument();
   });
 
   it('uses larger compact adjustment buttons for tablet touch targets', () => {

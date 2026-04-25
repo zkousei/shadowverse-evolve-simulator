@@ -8,7 +8,7 @@ type GameBoardPlayerTrackerSectionProps = {
   playerState: SyncState['host'];
   compact?: boolean;
   onAdjustStat: (
-    stat: 'hp' | 'pp' | 'maxPp' | 'ep' | 'sep' | 'combo',
+    stat: 'hp' | 'pp' | 'maxPp' | 'ep' | 'sep',
     delta: number
   ) => void;
   readOnly?: boolean;
@@ -28,7 +28,6 @@ const GameBoardPlayerTrackerSection: React.FC<GameBoardPlayerTrackerSectionProps
     hp={playerState.hp}
     ep={playerState.ep}
     sep={playerState.sep}
-    combo={playerState.combo}
     pp={playerState.pp}
     maxPp={playerState.maxPp}
     compact={compact}

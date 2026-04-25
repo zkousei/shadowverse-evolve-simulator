@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
-type TrackerStat = 'hp' | 'ep' | 'sep' | 'combo' | 'pp' | 'maxPp';
+type TrackerStat = 'hp' | 'ep' | 'sep' | 'pp' | 'maxPp';
 
 type GameBoardPlayerTrackerProps = {
   testId: string;
@@ -9,7 +9,6 @@ type GameBoardPlayerTrackerProps = {
   hp: number;
   ep: number;
   sep: number;
-  combo: number;
   pp: number;
   maxPp: number;
   compact?: boolean;
@@ -23,7 +22,6 @@ const GameBoardPlayerTracker: React.FC<GameBoardPlayerTrackerProps> = ({
   hp,
   ep,
   sep,
-  combo,
   pp,
   maxPp,
   compact = false,
@@ -123,13 +121,6 @@ const GameBoardPlayerTracker: React.FC<GameBoardPlayerTrackerProps> = ({
         {!readOnly && <div style={trackerButtonRowStyle}>
           <button data-testid={`${testId}-sep-increase`} onClick={() => onAdjustStat('sep', 1)} style={trackerIncreaseButtonStyle}>+</button>
           <button data-testid={`${testId}-sep-decrease`} onClick={() => onAdjustStat('sep', -1)} style={trackerDecreaseButtonStyle}>-</button>
-        </div>}
-      </div>
-      <div style={trackerStatRowStyle}>
-        <span style={{ ...trackerStatLabelBaseStyle, color: '#fff' }}>{t('gameBoard.board.stats.combo')}: {combo}</span>
-        {!readOnly && <div style={trackerButtonRowStyle}>
-          <button data-testid={`${testId}-combo-increase`} onClick={() => onAdjustStat('combo', 1)} style={trackerIncreaseButtonStyle}>+</button>
-          <button data-testid={`${testId}-combo-decrease`} onClick={() => onAdjustStat('combo', -1)} style={trackerDecreaseButtonStyle}>-</button>
         </div>}
       </div>
       <div style={ppSectionStyle}>

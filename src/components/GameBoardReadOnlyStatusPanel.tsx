@@ -8,7 +8,6 @@ type GameBoardReadOnlyStatusPanelProps = {
   maxPp: number;
   ep: number;
   sep: number;
-  combo: number;
 };
 
 const GameBoardReadOnlyStatusPanel: React.FC<GameBoardReadOnlyStatusPanelProps> = ({
@@ -18,7 +17,6 @@ const GameBoardReadOnlyStatusPanel: React.FC<GameBoardReadOnlyStatusPanelProps> 
   maxPp,
   ep,
   sep,
-  combo,
 }) => {
   const { t } = useTranslation();
 
@@ -52,10 +50,6 @@ const GameBoardReadOnlyStatusPanel: React.FC<GameBoardReadOnlyStatusPanelProps> 
       <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', fontSize: '0.95rem' }}>
         <span>{t('gameBoard.board.stats.sep')}</span>
         <strong style={{ color: '#facc15' }}>{sep}</strong>
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', fontSize: '0.95rem' }}>
-        <span>{t('gameBoard.board.stats.combo')}</span>
-        <strong>{combo}</strong>
       </div>
     </div>
   );

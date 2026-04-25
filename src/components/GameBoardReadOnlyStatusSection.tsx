@@ -18,7 +18,6 @@ const GameBoardReadOnlyStatusSection: React.FC<GameBoardReadOnlyStatusSectionPro
     maxPp={playerState.maxPp}
     ep={playerState.ep}
     sep={playerState.sep}
-    combo={playerState.combo}
   />
 );
 
