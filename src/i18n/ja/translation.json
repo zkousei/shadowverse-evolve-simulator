@@ -379,7 +379,8 @@
       "roomId": "ルームID",
       "copyAria": "ルームIDをコピー",
       "copy": "コピー",
-      "copied": "コピー済み"
+      "copied": "コピー済み",
+      "spectators": "観戦者 {{count}} / {{max}}"
     },
     "board": {
       "leaderLabel": "{{label}} リーダー",

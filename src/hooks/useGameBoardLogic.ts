@@ -33,6 +33,7 @@ import { getSnapshotRetryTimeoutDecision } from '../utils/gameBoardSnapshotRetry
 import { buildDebugGameBoardState } from '../utils/gameBoardDebugState';
 import { getCanUndoMove, getCanUndoTurn } from '../utils/gameBoardUndoAvailability';
 import { getTurnMessageDecision } from '../utils/gameBoardTurnMessage';
+import { MAX_SPECTATOR_CONNECTIONS } from '../utils/gameBoardSpectators';
 
 import { getCanInteractWithGameBoard, getCanViewGameBoard } from '../utils/gameBoardInteraction';
 import {
@@ -122,6 +123,7 @@ export const useGameBoardLogic = () => {
   const [statusKey, setStatusKey] = useState<GameBoardStatusKey>('gameBoard.status.initializing');
   const status = t(statusKey);
   const [connectionState, setConnectionState] = useState<ConnectionState>('idle');
+  const [spectatorCount, setSpectatorCount] = useState(0);
   const canInteract = getCanInteractWithGameBoard({ isSoloMode, isHost, isSpectator, connectionState });
   const canView = getCanViewGameBoard({ isSoloMode, isHost, connectionState });
   const [gameState, setGameState] = useState<SyncState>(initialState);
@@ -143,7 +145,7 @@ export const useGameBoardLogic = () => {
 
   const peerRef = useRef<Peer | null>(null);
   const connRef = useRef<DataConnection | null>(null);
-  const spectatorConnRef = useRef<DataConnection | null>(null);
+  const spectatorConnectionsRef = useRef<Map<string, DataConnection>>(new Map());
   const setupConnectionRef = useRef<(conn: DataConnection) => void>(() => undefined);
   const gameStateRef = useRef<SyncState>(initialState);
   const {
@@ -160,7 +162,6 @@ export const useGameBoardLogic = () => {
   const topDeckTargetRoleRef = useRef<PlayerRole>(role);
   const awaitingInitialSnapshotRef = useRef(false);
   const activeConnectionTokenRef = useRef<string | null>(null);
-  const activeSpectatorConnectionTokenRef = useRef<string | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const snapshotRequestTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const snapshotRetryCountRef = useRef(0);
@@ -208,7 +209,7 @@ export const useGameBoardLogic = () => {
 
   const { sendMessage, clearPendingSnapshotMessage } = useGameBoardSnapshotMessaging({
     connRef,
-    spectatorConnRef,
+    spectatorConnectionsRef,
   });
 
   const clearReconnectTimer = useCallback(() => {
@@ -871,7 +872,7 @@ export const useGameBoardLogic = () => {
   }, []);
 
   const isActiveSpectatorConnectionToken = useCallback((token: string) => {
-    return activeSpectatorConnectionTokenRef.current === token;
+    return spectatorConnectionsRef.current.has(token);
   }, []);
 
   const isCurrentActiveConnection = useCallback((conn: DataConnection, token: string) => {
@@ -944,17 +945,18 @@ export const useGameBoardLogic = () => {
   const {
     clearActiveConnectionLifecycleState,
     clearSpectatorConnectionLifecycleState,
+    removeSpectatorConnection,
     prepareActiveConnection,
     prepareSpectatorConnection,
   } = useGameBoardConnectionLifecycleState({
     activeConnectionTokenRef,
-    activeSpectatorConnectionTokenRef,
     awaitingInitialSnapshotRef,
     clearPendingSnapshotMessage,
     clearReconnectTimer,
     clearSnapshotRequestTimer,
     connRef,
-    spectatorConnRef,
+    spectatorConnectionsRef,
+    setSpectatorCount,
   });
 
   const handleConnectionTermination = useCallback((kind: 'close' | 'error') => {
@@ -1000,7 +1002,6 @@ export const useGameBoardLogic = () => {
   }, [handleConnectionTermination, isActiveConnectionToken]);
 
   const { setupConnection, handlePeerIncomingConnection } = useGameBoardConnectionSetup({
-    clearSpectatorConnectionLifecycleState,
     handleConnectionLifecycleEvent,
     handleConnectionOpen,
     handleIncomingConnectionData,
@@ -1008,7 +1009,9 @@ export const useGameBoardLogic = () => {
     isActiveSpectatorConnectionToken,
     isHost,
     prepareActiveConnection,
+    removeSpectatorConnection,
     prepareSpectatorConnection,
+    spectatorConnectionsRef,
     uuidFactory: uuid,
   });
 
@@ -1280,7 +1283,7 @@ export const useGameBoardLogic = () => {
   ];
 
   return {
-    room, mode, isSoloMode, isHost, isSpectator, role, status, connectionState, canInteract, canView, attemptReconnect, gameState, savedSessionCandidate, resumeSavedSession, discardSavedSession, searchZone, setSearchZone,
+    room, mode, isSoloMode, isHost, isSpectator, role, status, connectionState, spectatorCount, maxSpectatorConnections: MAX_SPECTATOR_CONNECTIONS, canInteract, canView, attemptReconnect, gameState, savedSessionCandidate, resumeSavedSession, discardSavedSession, searchZone, setSearchZone,
     showResetConfirm, setShowResetConfirm, coinMessage, turnMessage, cardPlayMessage, attackMessage, attackHistory, eventHistory, attackVisual, revealedCardsOverlay,
     cardStatLookup, cardDetailLookup,
     isRollingDice, diceValue, mulliganOrder, isMulliganModalOpen, setIsMulliganModalOpen,

@@ -9,12 +9,12 @@ type SnapshotMessage = Extract<SyncMessage, { type: 'STATE_SNAPSHOT' }>;
 
 type UseGameBoardSnapshotMessagingArgs = {
   connRef: React.RefObject<DataConnection | null>;
-  spectatorConnRef: React.RefObject<DataConnection | null>;
+  spectatorConnectionsRef: React.RefObject<Map<string, DataConnection>>;
 };
 
 export const useGameBoardSnapshotMessaging = ({
   connRef,
-  spectatorConnRef,
+  spectatorConnectionsRef,
 }: UseGameBoardSnapshotMessagingArgs) => {
   const snapshotFlushTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingSnapshotMessageRef = React.useRef<SnapshotMessage | null>(null);
@@ -38,9 +38,11 @@ export const useGameBoardSnapshotMessaging = ({
   }, [connRef]);
 
   const sendSpectatorImmediate = React.useCallback((message: SyncMessage) => {
-    if (!spectatorConnRef.current?.open) return;
-    spectatorConnRef.current.send(message);
-  }, [spectatorConnRef]);
+    spectatorConnectionsRef.current.forEach((spectatorConn) => {
+      if (!spectatorConn.open) return;
+      spectatorConn.send(message);
+    });
+  }, [spectatorConnectionsRef]);
 
   const scheduleSnapshotFlush = React.useCallback((flush: () => void) => {
     snapshotFlushTimeoutRef.current = setTimeout(() => {

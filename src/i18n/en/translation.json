@@ -433,7 +433,8 @@
       "roomId": "Room ID",
       "copyAria": "Copy Room ID",
       "copy": "Copy",
-      "copied": "Copied"
+      "copied": "Copied",
+      "spectators": "Spectators {{count}} / {{max}}"
     },
     "board": {
       "leaderLabel": "{{label}} Leader",

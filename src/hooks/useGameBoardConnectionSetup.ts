@@ -1,6 +1,7 @@
 import React from 'react';
 import type { DataConnection } from 'peerjs';
 import { getPeerIncomingConnectionDecision } from '../utils/gameBoardPeerIncomingConnection';
+import { MAX_SPECTATOR_CONNECTIONS } from '../utils/gameBoardSpectators';
 
 type ConnectionRole = 'guest' | 'spectator';
 
@@ -11,7 +12,6 @@ type DataConnectionWithMetadata = DataConnection & {
 };
 
 type UseGameBoardConnectionSetupArgs = {
-  clearSpectatorConnectionLifecycleState: () => void;
   handleConnectionLifecycleEvent: (token: string, kind: 'close' | 'error') => void;
   handleConnectionOpen: (conn: DataConnection, token: string) => void;
   handleIncomingConnectionData: (conn: DataConnection, token: string, rawData: unknown) => void;
@@ -19,12 +19,13 @@ type UseGameBoardConnectionSetupArgs = {
   isActiveSpectatorConnectionToken: (token: string) => boolean;
   isHost: boolean;
   prepareActiveConnection: (conn: DataConnection, token: string) => void;
+  removeSpectatorConnection: (token: string, conn: DataConnection) => void;
   prepareSpectatorConnection: (conn: DataConnection, token: string) => void;
+  spectatorConnectionsRef: React.RefObject<Map<string, DataConnection>>;
   uuidFactory: () => string;
 };
 
 export const useGameBoardConnectionSetup = ({
-  clearSpectatorConnectionLifecycleState,
   handleConnectionLifecycleEvent,
   handleConnectionOpen,
   handleIncomingConnectionData,
@@ -32,7 +33,9 @@ export const useGameBoardConnectionSetup = ({
   isActiveSpectatorConnectionToken,
   isHost,
   prepareActiveConnection,
+  removeSpectatorConnection,
   prepareSpectatorConnection,
+  spectatorConnectionsRef,
   uuidFactory,
 }: UseGameBoardConnectionSetupArgs) => {
   const setupConnection = React.useCallback((conn: DataConnection) => {
@@ -58,27 +61,33 @@ export const useGameBoardConnectionSetup = ({
     uuidFactory,
   ]);
 
-  const handleSpectatorConnectionLifecycleEvent = React.useCallback((token: string) => {
+  const handleSpectatorConnectionLifecycleEvent = React.useCallback((conn: DataConnection, token: string) => {
     if (!isActiveSpectatorConnectionToken(token)) return;
-    clearSpectatorConnectionLifecycleState();
-  }, [clearSpectatorConnectionLifecycleState, isActiveSpectatorConnectionToken]);
+    removeSpectatorConnection(token, conn);
+  }, [isActiveSpectatorConnectionToken, removeSpectatorConnection]);
 
   const setupSpectatorConnection = React.useCallback((conn: DataConnection) => {
+    if (spectatorConnectionsRef.current.size >= MAX_SPECTATOR_CONNECTIONS) {
+      conn.close();
+      return;
+    }
+
     const token = uuidFactory();
     prepareSpectatorConnection(conn, token);
     conn.on('data', (rawData: unknown) => {
       handleIncomingSpectatorConnectionData(conn, token, rawData);
     });
     conn.on('close', () => {
-      handleSpectatorConnectionLifecycleEvent(token);
+      handleSpectatorConnectionLifecycleEvent(conn, token);
     });
     conn.on('error', () => {
-      handleSpectatorConnectionLifecycleEvent(token);
+      handleSpectatorConnectionLifecycleEvent(conn, token);
     });
   }, [
     handleIncomingSpectatorConnectionData,
     handleSpectatorConnectionLifecycleEvent,
     prepareSpectatorConnection,
+    spectatorConnectionsRef,
     uuidFactory,
   ]);
 
