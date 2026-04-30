@@ -17,6 +17,8 @@ type GameBoardRoomStatusProps = {
   isHost: boolean;
   status: string;
   connectionState: ConnectionState;
+  spectatorCount?: number;
+  maxSpectatorConnections?: number;
   connectionBadgeTone: ConnectionBadgeTone;
   isRoomCopied: boolean;
   onCopyRoomId: () => void;
@@ -29,6 +31,8 @@ const GameBoardRoomStatus: React.FC<GameBoardRoomStatusProps> = ({
   isHost,
   status,
   connectionState,
+  spectatorCount = 0,
+  maxSpectatorConnections = 0,
   connectionBadgeTone,
   isRoomCopied,
   onCopyRoomId,
@@ -108,6 +112,26 @@ const GameBoardRoomStatus: React.FC<GameBoardRoomStatusProps> = ({
           }}
         >
           {connectionBadgeTone.label}
+        </span>
+      )}
+      {!isSoloMode && isHost && maxSpectatorConnections > 0 && (
+        <span
+          data-testid="spectator-count-badge"
+          style={{
+            padding: isOverviewControls ? '0.18rem 0.44rem' : '0.22rem 0.55rem',
+            borderRadius: '999px',
+            border: '1px solid rgba(125, 211, 252, 0.36)',
+            background: 'rgba(14, 165, 233, 0.12)',
+            color: '#bae6fd',
+            fontSize: pillFontSize,
+            fontWeight: 'bold',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {t('gameBoard.room.spectators', {
+            count: spectatorCount,
+            max: maxSpectatorConnections,
+          })}
         </span>
       )}
       <span

@@ -133,7 +133,7 @@ const GameBoard: React.FC = () => {
   );
   const { t } = useTranslation();
   const {
-    room, isSoloMode, isHost, isSpectator, role, status, connectionState, canInteract, canView, attemptReconnect, gameState, savedSessionCandidate, resumeSavedSession, discardSavedSession, searchZone, setSearchZone,
+    room, isSoloMode, isHost, isSpectator, role, status, connectionState, spectatorCount, maxSpectatorConnections, canInteract, canView, attemptReconnect, gameState, savedSessionCandidate, resumeSavedSession, discardSavedSession, searchZone, setSearchZone,
     showResetConfirm, setShowResetConfirm, coinMessage, turnMessage, cardPlayMessage, attackMessage, eventHistory, attackVisual, revealedCardsOverlay,
     cardStatLookup, cardDetailLookup,
     isRollingDice, diceValue, mulliganOrder, isMulliganModalOpen, setIsMulliganModalOpen,
@@ -653,6 +653,8 @@ const GameBoard: React.FC = () => {
           role={role}
           status={status}
           connectionState={connectionState}
+          spectatorCount={spectatorCount}
+          maxSpectatorConnections={maxSpectatorConnections}
           connectionBadgeTone={connectionBadgeTone}
           isRoomCopied={isRoomCopied}
           gameState={gameState}

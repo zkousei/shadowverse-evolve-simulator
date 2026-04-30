@@ -75,6 +75,44 @@ describe('GameBoard extracted UI components - status and preparation', () => {
     expect(onCopyRoomId).toHaveBeenCalledTimes(1);
   });
 
+  it('shows spectator count only for host room status', () => {
+    const props = {
+      room: 'ROOM123',
+      isSoloMode: false,
+      status: 'Connected',
+      connectionState: 'connected' as const,
+      spectatorCount: 2,
+      maxSpectatorConnections: 4,
+      connectionBadgeTone: {
+        label: 'Connected',
+        background: 'rgba(16, 185, 129, 0.16)',
+        border: 'rgba(16, 185, 129, 0.4)',
+        color: '#d1fae5',
+      },
+      isRoomCopied: false,
+      onCopyRoomId: vi.fn(),
+      onReconnect: vi.fn(),
+    };
+
+    const { rerender } = render(
+      <GameBoardRoomStatus
+        {...props}
+        isHost={true}
+      />
+    );
+
+    expect(screen.getByTestId('spectator-count-badge')).toHaveTextContent('Spectators 2 / 4');
+
+    rerender(
+      <GameBoardRoomStatus
+        {...props}
+        isHost={false}
+      />
+    );
+
+    expect(screen.queryByTestId('spectator-count-badge')).not.toBeInTheDocument();
+  });
+
   it('renders reconnect action for disconnected guest state', () => {
     const onReconnect = vi.fn();
 

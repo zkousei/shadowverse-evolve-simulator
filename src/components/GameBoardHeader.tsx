@@ -16,6 +16,8 @@ type GameBoardHeaderProps = {
   role: PlayerRole;
   status: string;
   connectionState: GameBoardConnectionState;
+  spectatorCount: number;
+  maxSpectatorConnections: number;
   connectionBadgeTone: ConnectionBadgeTone;
   isRoomCopied: boolean;
   gameState: SyncState;
@@ -45,6 +47,8 @@ const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
   role,
   status,
   connectionState,
+  spectatorCount,
+  maxSpectatorConnections,
   connectionBadgeTone,
   isRoomCopied,
   gameState,
@@ -104,6 +108,8 @@ const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
         isHost={isHost}
         status={status}
         connectionState={connectionState}
+        spectatorCount={spectatorCount}
+        maxSpectatorConnections={maxSpectatorConnections}
         connectionBadgeTone={connectionBadgeTone}
         isRoomCopied={isRoomCopied}
         onCopyRoomId={onCopyRoomId}
