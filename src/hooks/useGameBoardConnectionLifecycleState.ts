@@ -8,6 +8,7 @@ type UseGameBoardConnectionLifecycleStateArgs = {
   clearReconnectTimer: () => void;
   clearSnapshotRequestTimer: () => void;
   connRef: React.RefObject<DataConnection | null>;
+  openedSpectatorConnectionTokensRef: React.RefObject<Set<string>>;
   spectatorConnectionsRef: React.RefObject<Map<string, DataConnection>>;
   setSpectatorCount: React.Dispatch<React.SetStateAction<number>>;
 };
@@ -19,6 +20,7 @@ export const useGameBoardConnectionLifecycleState = ({
   clearReconnectTimer,
   clearSnapshotRequestTimer,
   connRef,
+  openedSpectatorConnectionTokensRef,
   spectatorConnectionsRef,
   setSpectatorCount,
 }: UseGameBoardConnectionLifecycleStateArgs) => {
@@ -42,15 +44,39 @@ export const useGameBoardConnectionLifecycleState = ({
 
   const clearSpectatorConnectionLifecycleState = React.useCallback(() => {
     spectatorConnectionsRef.current.clear();
+    openedSpectatorConnectionTokensRef.current.clear();
     updateSpectatorCount();
-  }, [spectatorConnectionsRef, updateSpectatorCount]);
+  }, [openedSpectatorConnectionTokensRef, spectatorConnectionsRef, updateSpectatorCount]);
+
+  const markSpectatorConnectionOpen = React.useCallback((token: string, conn: DataConnection) => {
+    if (spectatorConnectionsRef.current.get(token) !== conn) return;
+
+    openedSpectatorConnectionTokensRef.current.add(token);
+  }, [openedSpectatorConnectionTokensRef, spectatorConnectionsRef]);
 
   const removeSpectatorConnection = React.useCallback((token: string, conn: DataConnection) => {
     if (spectatorConnectionsRef.current.get(token) !== conn) return;
 
     spectatorConnectionsRef.current.delete(token);
+    openedSpectatorConnectionTokensRef.current.delete(token);
     updateSpectatorCount();
-  }, [spectatorConnectionsRef, updateSpectatorCount]);
+  }, [openedSpectatorConnectionTokensRef, spectatorConnectionsRef, updateSpectatorCount]);
+
+  const pruneInactiveSpectatorConnections = React.useCallback(() => {
+    let didPrune = false;
+
+    spectatorConnectionsRef.current.forEach((conn, token) => {
+      if (conn.open || !openedSpectatorConnectionTokensRef.current.has(token)) return;
+
+      spectatorConnectionsRef.current.delete(token);
+      openedSpectatorConnectionTokensRef.current.delete(token);
+      didPrune = true;
+    });
+
+    if (didPrune) {
+      updateSpectatorCount();
+    }
+  }, [openedSpectatorConnectionTokensRef, spectatorConnectionsRef, updateSpectatorCount]);
 
   const prepareActiveConnection = React.useCallback((conn: DataConnection, token: string) => {
     activeConnectionTokenRef.current = token;
@@ -83,6 +109,8 @@ export const useGameBoardConnectionLifecycleState = ({
   return {
     clearActiveConnectionLifecycleState,
     clearSpectatorConnectionLifecycleState,
+    markSpectatorConnectionOpen,
+    pruneInactiveSpectatorConnections,
     removeSpectatorConnection,
     prepareActiveConnection,
     prepareSpectatorConnection,

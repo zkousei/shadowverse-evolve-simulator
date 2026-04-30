@@ -1,5 +1,6 @@
 import React from 'react';
 import type { DataConnection } from 'peerjs';
+import type { SyncMessage } from '../types/sync';
 import { getPeerIncomingConnectionDecision } from '../utils/gameBoardPeerIncomingConnection';
 import { MAX_SPECTATOR_CONNECTIONS } from '../utils/gameBoardSpectators';
 
@@ -18,7 +19,9 @@ type UseGameBoardConnectionSetupArgs = {
   handleIncomingSpectatorConnectionData: (conn: DataConnection, token: string, rawData: unknown) => void;
   isActiveSpectatorConnectionToken: (token: string) => boolean;
   isHost: boolean;
+  markSpectatorConnectionOpen: (token: string, conn: DataConnection) => void;
   prepareActiveConnection: (conn: DataConnection, token: string) => void;
+  pruneInactiveSpectatorConnections: () => void;
   removeSpectatorConnection: (token: string, conn: DataConnection) => void;
   prepareSpectatorConnection: (conn: DataConnection, token: string) => void;
   spectatorConnectionsRef: React.RefObject<Map<string, DataConnection>>;
@@ -32,7 +35,9 @@ export const useGameBoardConnectionSetup = ({
   handleIncomingSpectatorConnectionData,
   isActiveSpectatorConnectionToken,
   isHost,
+  markSpectatorConnectionOpen,
   prepareActiveConnection,
+  pruneInactiveSpectatorConnections,
   removeSpectatorConnection,
   prepareSpectatorConnection,
   spectatorConnectionsRef,
@@ -67,6 +72,8 @@ export const useGameBoardConnectionSetup = ({
   }, [isActiveSpectatorConnectionToken, removeSpectatorConnection]);
 
   const setupSpectatorConnection = React.useCallback((conn: DataConnection) => {
+    pruneInactiveSpectatorConnections();
+
     if (spectatorConnectionsRef.current.size >= MAX_SPECTATOR_CONNECTIONS) {
       conn.close();
       return;
@@ -74,7 +81,16 @@ export const useGameBoardConnectionSetup = ({
 
     const token = uuidFactory();
     prepareSpectatorConnection(conn, token);
+    conn.on('open', () => {
+      markSpectatorConnectionOpen(token, conn);
+    });
     conn.on('data', (rawData: unknown) => {
+      const data = rawData as SyncMessage;
+      if (data.type === 'SPECTATOR_LEAVE') {
+        removeSpectatorConnection(token, conn);
+        return;
+      }
+
       handleIncomingSpectatorConnectionData(conn, token, rawData);
     });
     conn.on('close', () => {
@@ -86,7 +102,10 @@ export const useGameBoardConnectionSetup = ({
   }, [
     handleIncomingSpectatorConnectionData,
     handleSpectatorConnectionLifecycleEvent,
+    markSpectatorConnectionOpen,
     prepareSpectatorConnection,
+    pruneInactiveSpectatorConnections,
+    removeSpectatorConnection,
     spectatorConnectionsRef,
     uuidFactory,
   ]);

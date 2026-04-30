@@ -996,6 +996,151 @@ describe('useGameBoardLogic P2P reconnect', () => {
     expect(spectatorConns[4].send).not.toHaveBeenCalled();
   });
 
+  it('sends a leave message and closes the spectator connection on pagehide', () => {
+    renderHarness('/game?spectator=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const conn = peer.connections[0];
+    act(() => {
+      conn.open = true;
+      conn.emit('open');
+    });
+
+    conn.send.mockClear();
+
+    act(() => {
+      window.dispatchEvent(new Event('pagehide'));
+    });
+
+    expect(conn.send).toHaveBeenCalledWith({
+      type: 'SPECTATOR_LEAVE',
+    });
+    expect(conn.close).toHaveBeenCalledTimes(1);
+  });
+
+  it('removes a leaving spectator and lets a new spectator use the freed slot', () => {
+    renderHarness('/game?host=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const guestConn = mockPeerJs.createConnection('guest');
+    const spectatorConns = Array.from({ length: 5 }, (_, index) => (
+      mockPeerJs.createConnection(`spectator-${index + 1}`, { connectionRole: 'spectator' })
+    ));
+    act(() => {
+      peer.emit('connection', guestConn);
+      guestConn.open = true;
+      guestConn.emit('open');
+      spectatorConns.slice(0, 4).forEach((spectatorConn) => {
+        peer.emit('connection', spectatorConn);
+        spectatorConn.open = true;
+        spectatorConn.emit('open');
+      });
+      spectatorConns[0].emit('data', {
+        type: 'SPECTATOR_LEAVE',
+      });
+      peer.emit('connection', spectatorConns[4]);
+      spectatorConns[4].open = true;
+      spectatorConns[4].emit('open');
+    });
+
+    expect(screen.getByTestId('spectator-count')).toHaveTextContent('4');
+    expect(spectatorConns[4].close).not.toHaveBeenCalled();
+
+    guestConn.send.mockClear();
+    spectatorConns.forEach((spectatorConn) => spectatorConn.send.mockClear());
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Spawn Token to EX' }));
+    });
+
+    expect(guestConn.send).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'STATE_SNAPSHOT',
+      source: 'host',
+    }));
+    expect(spectatorConns[0].send).not.toHaveBeenCalled();
+    spectatorConns.slice(1).forEach((spectatorConn) => {
+      expect(spectatorConn.send).toHaveBeenCalledWith(expect.objectContaining({
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+      }));
+    });
+  });
+
+  it('prunes non-open spectator connections before enforcing the spectator limit', () => {
+    renderHarness('/game?host=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const spectatorConns = Array.from({ length: 5 }, (_, index) => (
+      mockPeerJs.createConnection(`spectator-${index + 1}`, { connectionRole: 'spectator' })
+    ));
+    act(() => {
+      spectatorConns.slice(0, 4).forEach((spectatorConn) => {
+        peer.emit('connection', spectatorConn);
+        spectatorConn.open = true;
+        spectatorConn.emit('open');
+      });
+    });
+
+    spectatorConns[0].open = false;
+
+    act(() => {
+      peer.emit('connection', spectatorConns[4]);
+      spectatorConns[4].open = true;
+      spectatorConns[4].emit('open');
+    });
+
+    expect(spectatorConns[4].close).not.toHaveBeenCalled();
+    expect(screen.getByTestId('spectator-count')).toHaveTextContent('4');
+
+    spectatorConns.forEach((spectatorConn) => spectatorConn.send.mockClear());
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Spawn Token to EX' }));
+    });
+
+    expect(spectatorConns[0].send).not.toHaveBeenCalled();
+    spectatorConns.slice(1).forEach((spectatorConn) => {
+      expect(spectatorConn.send).toHaveBeenCalledWith(expect.objectContaining({
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+      }));
+    });
+  });
+
+  it('does not prune spectator connections that have not opened yet', () => {
+    renderHarness('/game?host=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const spectatorConns = Array.from({ length: 5 }, (_, index) => (
+      mockPeerJs.createConnection(`spectator-${index + 1}`, { connectionRole: 'spectator' })
+    ));
+    act(() => {
+      spectatorConns.slice(0, 4).forEach((spectatorConn) => {
+        peer.emit('connection', spectatorConn);
+      });
+      peer.emit('connection', spectatorConns[4]);
+    });
+
+    expect(spectatorConns[4].close).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('spectator-count')).toHaveTextContent('4');
+  });
+
   it('ignores spectator events on the host side and does not treat spectator close as guest disconnect', () => {
     renderHarness('/game?host=true&room=ROOM123');
 

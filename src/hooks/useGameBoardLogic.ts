@@ -162,6 +162,7 @@ export const useGameBoardLogic = () => {
   const topDeckTargetRoleRef = useRef<PlayerRole>(role);
   const awaitingInitialSnapshotRef = useRef(false);
   const activeConnectionTokenRef = useRef<string | null>(null);
+  const openedSpectatorConnectionTokensRef = useRef<Set<string>>(new Set());
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const snapshotRequestTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const snapshotRetryCountRef = useRef(0);
@@ -945,6 +946,8 @@ export const useGameBoardLogic = () => {
   const {
     clearActiveConnectionLifecycleState,
     clearSpectatorConnectionLifecycleState,
+    markSpectatorConnectionOpen,
+    pruneInactiveSpectatorConnections,
     removeSpectatorConnection,
     prepareActiveConnection,
     prepareSpectatorConnection,
@@ -955,6 +958,7 @@ export const useGameBoardLogic = () => {
     clearReconnectTimer,
     clearSnapshotRequestTimer,
     connRef,
+    openedSpectatorConnectionTokensRef,
     spectatorConnectionsRef,
     setSpectatorCount,
   });
@@ -1008,7 +1012,9 @@ export const useGameBoardLogic = () => {
     handleIncomingSpectatorConnectionData,
     isActiveSpectatorConnectionToken,
     isHost,
+    markSpectatorConnectionOpen,
     prepareActiveConnection,
+    pruneInactiveSpectatorConnections,
     removeSpectatorConnection,
     prepareSpectatorConnection,
     spectatorConnectionsRef,
@@ -1018,6 +1024,23 @@ export const useGameBoardLogic = () => {
   useEffect(() => {
     setupConnectionRef.current = setupConnection;
   }, [setupConnection]);
+
+  useEffect(() => {
+    if (!isSpectator) return undefined;
+
+    const leaveSpectatorRoom = () => {
+      const conn = connRef.current;
+      if (!conn?.open) return;
+
+      conn.send({ type: 'SPECTATOR_LEAVE' });
+      conn.close();
+    };
+
+    window.addEventListener('pagehide', leaveSpectatorRoom);
+    return () => {
+      window.removeEventListener('pagehide', leaveSpectatorRoom);
+    };
+  }, [isSpectator]);
 
   const handlePeerOpen = useCallback(() => {
     const openDecision = getPeerOpenDecision({ isHost });
