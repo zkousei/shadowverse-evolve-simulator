@@ -1,5 +1,1360 @@
 [
   {
+    "id": "BP20-001",
+    "name": "絶命の顕現・エズディア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-001.png"
+  },
+  {
+    "id": "BP20-002",
+    "name": "不殺の継承者・クルル",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-002.png"
+  },
+  {
+    "id": "BP20-003",
+    "name": "不殺の継承者・クルル",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-003.png"
+  },
+  {
+    "id": "BP20-004",
+    "name": "安らぎの女神・プルメリア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-004.png"
+  },
+  {
+    "id": "BP20-005",
+    "name": "エレガンスシルフィード",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-005.png"
+  },
+  {
+    "id": "BP20-006",
+    "name": "エレガンスシルフィード",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-006.png"
+  },
+  {
+    "id": "BP20-007",
+    "name": "不殺の団結者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-007.png"
+  },
+  {
+    "id": "BP20-008",
+    "name": "駆逐の死矢",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-008.png"
+  },
+  {
+    "id": "BP20-009",
+    "name": "不殺の祈祷者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-009.png"
+  },
+  {
+    "id": "BP20-010",
+    "name": "不殺の祈祷者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-010.png"
+  },
+  {
+    "id": "BP20-011",
+    "name": "樹海の戦士",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-011.png"
+  },
+  {
+    "id": "BP20-012",
+    "name": "不殺の里",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-012.png"
+  },
+  {
+    "id": "BP20-013",
+    "name": "妖精剣の担い手",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-013.png"
+  },
+  {
+    "id": "BP20-014",
+    "name": "妖精剣の担い手",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-014.png"
+  },
+  {
+    "id": "BP20-015",
+    "name": "不殺の肯定者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-015.png"
+  },
+  {
+    "id": "BP20-016",
+    "name": "眺望のエルフ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-016.png"
+  },
+  {
+    "id": "BP20-017",
+    "name": "キューティーキャット",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-017.png"
+  },
+  {
+    "id": "BP20-018",
+    "name": "野生の猛襲",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-018.png"
+  },
+  {
+    "id": "BP20-019",
+    "name": "空絶の顕現・オクトリス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-019.png"
+  },
+  {
+    "id": "BP20-020",
+    "name": "簒奪の継承者・シンセライズ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-020.png"
+  },
+  {
+    "id": "BP20-021",
+    "name": "簒奪の継承者・シンセライズ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-021.png"
+  },
+  {
+    "id": "BP20-022",
+    "name": "グロリアスセイバー・オーレリア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-022.png"
+  },
+  {
+    "id": "BP20-023",
+    "name": "簒奪の団結者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-023.png"
+  },
+  {
+    "id": "BP20-024",
+    "name": "簒奪の団結者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-024.png"
+  },
+  {
+    "id": "BP20-025",
+    "name": "イベイジョンマーセナリー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-025.png"
+  },
+  {
+    "id": "BP20-026",
+    "name": "返還の剣閃",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-026.png"
+  },
+  {
+    "id": "BP20-027",
+    "name": "スナッピースカウト",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-027.png"
+  },
+  {
+    "id": "BP20-028",
+    "name": "スナッピースカウト",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-028.png"
+  },
+  {
+    "id": "BP20-029",
+    "name": "簒奪の祈祷者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-029.png"
+  },
+  {
+    "id": "BP20-030",
+    "name": "簒奪のアジト",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-030.png"
+  },
+  {
+    "id": "BP20-031",
+    "name": "剣聖の同胞",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-031.png"
+  },
+  {
+    "id": "BP20-032",
+    "name": "剣聖の同胞",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-032.png"
+  },
+  {
+    "id": "BP20-033",
+    "name": "簒奪の肯定者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-033.png"
+  },
+  {
+    "id": "BP20-034",
+    "name": "ツインフェンサー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-034.png"
+  },
+  {
+    "id": "BP20-035",
+    "name": "パレスナイト",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-035.png"
+  },
+  {
+    "id": "BP20-036",
+    "name": "シールドバッシュ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-036.png"
+  },
+  {
+    "id": "BP20-037",
+    "name": "奏絶の顕現・リーシェナ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-037.png"
+  },
+  {
+    "id": "BP20-038",
+    "name": "真実の継承者・ヴェハリヤー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-038.png"
+  },
+  {
+    "id": "BP20-039",
+    "name": "真実の継承者・ヴェハリヤー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-039.png"
+  },
+  {
+    "id": "BP20-040",
+    "name": "破壊の継承者・アクシア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-040.png"
+  },
+  {
+    "id": "BP20-041",
+    "name": "破壊の継承者・アクシア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-041.png"
+  },
+  {
+    "id": "BP20-042",
+    "name": "絶尽の顕現・ライオ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-042.png"
+  },
+  {
+    "id": "BP20-043",
+    "name": "絶尽の顕現・ライオ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-043.png"
+  },
+  {
+    "id": "BP20-044",
+    "name": "破壊の団結者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-044.png"
+  },
+  {
+    "id": "BP20-045",
+    "name": "殲滅の歌声",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-045.png"
+  },
+  {
+    "id": "BP20-046",
+    "name": "真実の団結者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-046.png"
+  },
+  {
+    "id": "BP20-047",
+    "name": "真実の団結者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-047.png"
+  },
+  {
+    "id": "BP20-048",
+    "name": "破壊の祈祷者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-048.png"
+  },
+  {
+    "id": "BP20-049",
+    "name": "虚偽の術式",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-049.png"
+  },
+  {
+    "id": "BP20-050",
+    "name": "破壊の肯定者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-050.png"
+  },
+  {
+    "id": "BP20-051",
+    "name": "破壊の肯定者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-051.png"
+  },
+  {
+    "id": "BP20-052",
+    "name": "真実の祈祷者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-052.png"
+  },
+  {
+    "id": "BP20-053",
+    "name": "真実の肯定者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-053.png"
+  },
+  {
+    "id": "BP20-054",
+    "name": "五行の修行者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-054.png"
+  },
+  {
+    "id": "BP20-055",
+    "name": "破壊の荒野",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-055.png"
+  },
+  {
+    "id": "BP20-056",
+    "name": "烈絶の顕現・ガルミーユ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-056.png"
+  },
+  {
+    "id": "BP20-057",
+    "name": "侮蔑の継承者・アジュラフリート",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-057.png"
+  },
+  {
+    "id": "BP20-058",
+    "name": "侮蔑の継承者・アジュラフリート",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-058.png"
+  },
+  {
+    "id": "BP20-059",
+    "name": "深海の覇王・ダゴン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-059.png"
+  },
+  {
+    "id": "BP20-060",
+    "name": "ラグジュアリーマーメイド",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-060.png"
+  },
+  {
+    "id": "BP20-061",
+    "name": "ラグジュアリーマーメイド",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-061.png"
+  },
+  {
+    "id": "BP20-062",
+    "name": "侮蔑の団結者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-062.png"
+  },
+  {
+    "id": "BP20-063",
+    "name": "蒼炎の猛威",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-063.png"
+  },
+  {
+    "id": "BP20-064",
+    "name": "侮蔑の祈祷者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-064.png"
+  },
+  {
+    "id": "BP20-065",
+    "name": "侮蔑の祈祷者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-065.png"
+  },
+  {
+    "id": "BP20-066",
+    "name": "深海の接近",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-066.png"
+  },
+  {
+    "id": "BP20-067",
+    "name": "侮蔑の国",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-067.png"
+  },
+  {
+    "id": "BP20-068",
+    "name": "吹雪のドラゴニュート",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-068.png"
+  },
+  {
+    "id": "BP20-069",
+    "name": "吹雪のドラゴニュート",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-069.png"
+  },
+  {
+    "id": "BP20-070",
+    "name": "侮蔑の肯定者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-070.png"
+  },
+  {
+    "id": "BP20-071",
+    "name": "人魚の守護者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-071.png"
+  },
+  {
+    "id": "BP20-072",
+    "name": "オーシャンライダー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-072.png"
+  },
+  {
+    "id": "BP20-073",
+    "name": "サンダーレイジ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-073.png"
+  },
+  {
+    "id": "BP20-074",
+    "name": "絶叫と愛絶の顕現・ルルナイ＆ヴァーナレク",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-074.png"
+  },
+  {
+    "id": "BP20-075",
+    "name": "絶叫と愛絶の顕現・ルルナイ＆ヴァーナレク",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-075.png"
+  },
+  {
+    "id": "BP20-076",
+    "name": "混融の継承者・シャム＝ナクア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-076.png"
+  },
+  {
+    "id": "BP20-077",
+    "name": "混融の継承者・シャム＝ナクア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-077.png"
+  },
+  {
+    "id": "BP20-078",
+    "name": "ディアボロス・ヘドネ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-078.png"
+  },
+  {
+    "id": "BP20-079",
+    "name": "混融の団結者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-079.png"
+  },
+  {
+    "id": "BP20-080",
+    "name": "混融の団結者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-080.png"
+  },
+  {
+    "id": "BP20-081",
+    "name": "ヘルヴォール",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-081.png"
+  },
+  {
+    "id": "BP20-082",
+    "name": "叫喚と憎悪",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-082.png"
+  },
+  {
+    "id": "BP20-083",
+    "name": "フレッシュグレイブキーパー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-083.png"
+  },
+  {
+    "id": "BP20-084",
+    "name": "フレッシュグレイブキーパー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-084.png"
+  },
+  {
+    "id": "BP20-085",
+    "name": "混融の祈祷者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-085.png"
+  },
+  {
+    "id": "BP20-086",
+    "name": "混融の城",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-086.png"
+  },
+  {
+    "id": "BP20-087",
+    "name": "泡沫の鬼姫",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-087.png"
+  },
+  {
+    "id": "BP20-088",
+    "name": "泡沫の鬼姫",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-088.png"
+  },
+  {
+    "id": "BP20-089",
+    "name": "混融の肯定者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-089.png"
+  },
+  {
+    "id": "BP20-090",
+    "name": "イビルコレクター",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-090.png"
+  },
+  {
+    "id": "BP20-091",
+    "name": "ネメアの獅子",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-091.png"
+  },
+  {
+    "id": "BP20-092",
+    "name": "暴虐の行進",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-092.png"
+  },
+  {
+    "id": "BP20-093",
+    "name": "絶望の顕現・マーウィン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-093.png"
+  },
+  {
+    "id": "BP20-094",
+    "name": "安息の継承者・ヒメカ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-094.png"
+  },
+  {
+    "id": "BP20-095",
+    "name": "安息の継承者・ヒメカ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-095.png"
+  },
+  {
+    "id": "BP20-096",
+    "name": "聖蛇の加護",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-096.png"
+  },
+  {
+    "id": "BP20-097",
+    "name": "安息の団結者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-097.png"
+  },
+  {
+    "id": "BP20-098",
+    "name": "安息の団結者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-098.png"
+  },
+  {
+    "id": "BP20-099",
+    "name": "セイクリッドシープ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-099.png"
+  },
+  {
+    "id": "BP20-100",
+    "name": "輝く失意",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-100.png"
+  },
+  {
+    "id": "BP20-101",
+    "name": "安息の祈祷者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-101.png"
+  },
+  {
+    "id": "BP20-102",
+    "name": "安息の祈祷者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-102.png"
+  },
+  {
+    "id": "BP20-103",
+    "name": "安息の神殿",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-103.png"
+  },
+  {
+    "id": "BP20-104",
+    "name": "有翼の獅子像",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-104.png"
+  },
+  {
+    "id": "BP20-105",
+    "name": "聖騎士の団員",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-105.png"
+  },
+  {
+    "id": "BP20-106",
+    "name": "聖騎士の団員",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-106.png"
+  },
+  {
+    "id": "BP20-107",
+    "name": "安息の肯定者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-107.png"
+  },
+  {
+    "id": "BP20-108",
+    "name": "配達の翼人",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-108.png"
+  },
+  {
+    "id": "BP20-109",
+    "name": "グルメアルミラージ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-109.png"
+  },
+  {
+    "id": "BP20-110",
+    "name": "セイントフラッシュ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-110.png"
+  },
+  {
+    "id": "BP20-111",
+    "name": "絶大の顕現・マゼルベイン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-111.png"
+  },
+  {
+    "id": "BP20-112",
+    "name": "絶大の顕現・マゼルベイン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-112.png"
+  },
+  {
+    "id": "BP20-113",
+    "name": "干絶の顕現・ギルネリーゼ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-113.png"
+  },
+  {
+    "id": "BP20-114",
+    "name": "勇気に満ちし者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-114.png"
+  },
+  {
+    "id": "BP20-115",
+    "name": "勇気に満ちし者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-115.png"
+  },
+  {
+    "id": "BP20-116",
+    "name": "嘆きに立ちし者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-116.png"
+  },
+  {
+    "id": "BP20-117",
+    "name": "試練の石板",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-117.png"
+  },
+  {
+    "id": "BP20-118",
+    "name": "干絶の使徒",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-118.png"
+  },
+  {
+    "id": "BP20-119",
+    "name": "干絶の使徒",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-119.png"
+  },
+  {
+    "id": "BP20-120",
+    "name": "至高の凌駕",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-120.png"
+  },
+  {
+    "id": "BP20-LD01",
+    "name": "廻天剣・アマツ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-ld01.png"
+  },
+  {
+    "id": "BP20-LD02",
+    "name": "尽きざる闘志・カゲミツ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-ld02.png"
+  },
+  {
+    "id": "BP20-LD03",
+    "name": "五行掌握・クオン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-ld03.png"
+  },
+  {
+    "id": "BP20-LD04",
+    "name": "溶けぬ銀氷・フィルレイン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-ld04.png"
+  },
+  {
+    "id": "BP20-LD05",
+    "name": "享楽の妖狐・ギンセツ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-ld05.png"
+  },
+  {
+    "id": "BP20-LD06",
+    "name": "悲嘆の聖騎士・ウィルバート",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-ld06.png"
+  },
+  {
+    "id": "BP20-P01",
+    "name": "エレガンスシルフィード",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p01.png"
+  },
+  {
+    "id": "BP20-P02",
+    "name": "エレガンスシルフィード",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p02.png"
+  },
+  {
+    "id": "BP20-P03",
+    "name": "駆逐の死矢",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p03.png"
+  },
+  {
+    "id": "BP20-P04",
+    "name": "不殺の祈祷者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p04.png"
+  },
+  {
+    "id": "BP20-P05",
+    "name": "不殺の祈祷者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p05.png"
+  },
+  {
+    "id": "BP20-P06",
+    "name": "不殺の里",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p06.png"
+  },
+  {
+    "id": "BP20-P07",
+    "name": "妖精剣の担い手",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p07.png"
+  },
+  {
+    "id": "BP20-P08",
+    "name": "妖精剣の担い手",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p08.png"
+  },
+  {
+    "id": "BP20-P09",
+    "name": "不殺の肯定者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p09.png"
+  },
+  {
+    "id": "BP20-P10",
+    "name": "眺望のエルフ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p10.png"
+  },
+  {
+    "id": "BP20-P11",
+    "name": "キューティーキャット",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p11.png"
+  },
+  {
+    "id": "BP20-P12",
+    "name": "野生の猛襲",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p12.png"
+  },
+  {
+    "id": "BP20-P13",
+    "name": "簒奪の団結者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p13.png"
+  },
+  {
+    "id": "BP20-P14",
+    "name": "簒奪の団結者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p14.png"
+  },
+  {
+    "id": "BP20-P15",
+    "name": "イベイジョンマーセナリー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p15.png"
+  },
+  {
+    "id": "BP20-P16",
+    "name": "簒奪の祈祷者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p16.png"
+  },
+  {
+    "id": "BP20-P17",
+    "name": "剣聖の同胞",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p17.png"
+  },
+  {
+    "id": "BP20-P18",
+    "name": "剣聖の同胞",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p18.png"
+  },
+  {
+    "id": "BP20-P19",
+    "name": "簒奪の肯定者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p19.png"
+  },
+  {
+    "id": "BP20-P20",
+    "name": "パレスナイト",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p20.png"
+  },
+  {
+    "id": "BP20-P21",
+    "name": "破壊の団結者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p21.png"
+  },
+  {
+    "id": "BP20-P22",
+    "name": "真実の団結者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p22.png"
+  },
+  {
+    "id": "BP20-P23",
+    "name": "真実の団結者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p23.png"
+  },
+  {
+    "id": "BP20-P24",
+    "name": "破壊の肯定者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p24.png"
+  },
+  {
+    "id": "BP20-P25",
+    "name": "破壊の肯定者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p25.png"
+  },
+  {
+    "id": "BP20-P26",
+    "name": "真実の祈祷者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p26.png"
+  },
+  {
+    "id": "BP20-P27",
+    "name": "真実の肯定者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p27.png"
+  },
+  {
+    "id": "BP20-P28",
+    "name": "五行の修行者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p28.png"
+  },
+  {
+    "id": "BP20-P29",
+    "name": "破壊の荒野",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p29.png"
+  },
+  {
+    "id": "BP20-P30",
+    "name": "ラグジュアリーマーメイド",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p30.png"
+  },
+  {
+    "id": "BP20-P31",
+    "name": "ラグジュアリーマーメイド",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p31.png"
+  },
+  {
+    "id": "BP20-P32",
+    "name": "侮蔑の団結者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p32.png"
+  },
+  {
+    "id": "BP20-P33",
+    "name": "侮蔑の祈祷者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p33.png"
+  },
+  {
+    "id": "BP20-P34",
+    "name": "侮蔑の祈祷者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p34.png"
+  },
+  {
+    "id": "BP20-P35",
+    "name": "侮蔑の国",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p35.png"
+  },
+  {
+    "id": "BP20-P36",
+    "name": "吹雪のドラゴニュート",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p36.png"
+  },
+  {
+    "id": "BP20-P37",
+    "name": "吹雪のドラゴニュート",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p37.png"
+  },
+  {
+    "id": "BP20-P38",
+    "name": "侮蔑の肯定者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p38.png"
+  },
+  {
+    "id": "BP20-P39",
+    "name": "人魚の守護者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p39.png"
+  },
+  {
+    "id": "BP20-P40",
+    "name": "オーシャンライダー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p40.png"
+  },
+  {
+    "id": "BP20-P41",
+    "name": "ヘルヴォール",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p41.png"
+  },
+  {
+    "id": "BP20-P42",
+    "name": "叫喚と憎悪",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p42.png"
+  },
+  {
+    "id": "BP20-P43",
+    "name": "混融の城",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p43.png"
+  },
+  {
+    "id": "BP20-P44",
+    "name": "泡沫の鬼姫",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p44.png"
+  },
+  {
+    "id": "BP20-P45",
+    "name": "泡沫の鬼姫",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p45.png"
+  },
+  {
+    "id": "BP20-P46",
+    "name": "イビルコレクター",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p46.png"
+  },
+  {
+    "id": "BP20-P47",
+    "name": "安息の団結者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p47.png"
+  },
+  {
+    "id": "BP20-P48",
+    "name": "安息の団結者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p48.png"
+  },
+  {
+    "id": "BP20-P49",
+    "name": "輝く失意",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p49.png"
+  },
+  {
+    "id": "BP20-P50",
+    "name": "安息の祈祷者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p50.png"
+  },
+  {
+    "id": "BP20-P51",
+    "name": "安息の祈祷者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p51.png"
+  },
+  {
+    "id": "BP20-P52",
+    "name": "有翼の獅子像",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p52.png"
+  },
+  {
+    "id": "BP20-P53",
+    "name": "安息の肯定者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p53.png"
+  },
+  {
+    "id": "BP20-P54",
+    "name": "セイントフラッシュ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p54.png"
+  },
+  {
+    "id": "BP20-P55",
+    "name": "嘆きに立ちし者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p55.png"
+  },
+  {
+    "id": "BP20-P56",
+    "name": "試練の石板",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p56.png"
+  },
+  {
+    "id": "BP20-P57",
+    "name": "干絶の使徒",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p57.png"
+  },
+  {
+    "id": "BP20-P58",
+    "name": "干絶の使徒",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p58.png"
+  },
+  {
+    "id": "BP20-P59",
+    "name": "至高の凌駕",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p59.png"
+  },
+  {
+    "id": "BP20-P60",
+    "name": "クレスト 不殺の継承者・クルル",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p60.png"
+  },
+  {
+    "id": "BP20-P61",
+    "name": "クレスト 空絶の顕現・オクトリス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p61.png"
+  },
+  {
+    "id": "BP20-P62",
+    "name": "新約・白の章",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p62.png"
+  },
+  {
+    "id": "BP20-P63",
+    "name": "新約・黒の章",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p63.png"
+  },
+  {
+    "id": "BP20-P64",
+    "name": "クレスト 烈絶の顕現・ガルミーユ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p64.png"
+  },
+  {
+    "id": "BP20-P65",
+    "name": "クレスト 混融の継承者・シャム＝ナクア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p65.png"
+  },
+  {
+    "id": "BP20-P66",
+    "name": "クレスト 絶望の顕現・マーウィン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p66.png"
+  },
+  {
+    "id": "BP20-P67",
+    "name": "クレスト 安息の継承者・ヒメカ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p67.png"
+  },
+  {
+    "id": "BP20-P68",
+    "name": "クレスト 安息の団結者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p68.png"
+  },
+  {
+    "id": "BP20-P69",
+    "name": "クレスト 安息の祈祷者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p69.png"
+  },
+  {
+    "id": "BP20-P70",
+    "name": "クレスト 絶大の顕現・マゼルベイン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-p70.png"
+  },
+  {
+    "id": "BP20-PR01",
+    "name": "破壊の絶傑・リーシェナ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-pr01.png"
+  },
+  {
+    "id": "BP20-R01",
+    "name": "不殺の絶傑・エズディア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-r01.png"
+  },
+  {
+    "id": "BP20-R02",
+    "name": "不殺の絶傑・エズディア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-r02.png"
+  },
+  {
+    "id": "BP20-R03",
+    "name": "簒奪の絶傑・オクトリス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-r03.png"
+  },
+  {
+    "id": "BP20-R04",
+    "name": "簒奪の絶傑・オクトリス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-r04.png"
+  },
+  {
+    "id": "BP20-R05",
+    "name": "真実の絶傑・ライオ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-r05.png"
+  },
+  {
+    "id": "BP20-R06",
+    "name": "真実の絶傑・ライオ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-r06.png"
+  },
+  {
+    "id": "BP20-R07",
+    "name": "破壊の絶傑・リーシェナ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-r07.png"
+  },
+  {
+    "id": "BP20-R08",
+    "name": "侮蔑の絶傑・ガルミーユ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-r08.png"
+  },
+  {
+    "id": "BP20-R09",
+    "name": "侮蔑の絶傑・ガルミーユ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-r09.png"
+  },
+  {
+    "id": "BP20-R10",
+    "name": "欲望の絶傑・ヴァーナレク",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-r10.png"
+  },
+  {
+    "id": "BP20-R11",
+    "name": "沈黙の絶傑・ルルナイ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-r11.png"
+  },
+  {
+    "id": "BP20-R12",
+    "name": "沈黙の絶傑・ルルナイ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-r12.png"
+  },
+  {
+    "id": "BP20-R13",
+    "name": "安息の絶傑・マーウィン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-r13.png"
+  },
+  {
+    "id": "BP20-R14",
+    "name": "安息の絶傑・マーウィン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-r14.png"
+  },
+  {
+    "id": "BP20-R15",
+    "name": "唯我の絶傑・マゼルベイン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-r15.png"
+  },
+  {
+    "id": "BP20-R16",
+    "name": "唯我の絶傑・マゼルベイン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-r16.png"
+  },
+  {
+    "id": "BP20-R17",
+    "name": "飢餓の絶傑・ギルネリーゼ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-r17.png"
+  },
+  {
+    "id": "BP20-SL01",
+    "name": "絶命の顕現・エズディア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-sl01.png"
+  },
+  {
+    "id": "BP20-SL02",
+    "name": "不殺の継承者・クルル",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-sl02.png"
+  },
+  {
+    "id": "BP20-SL03",
+    "name": "不殺の継承者・クルル",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-sl03.png"
+  },
+  {
+    "id": "BP20-SL04",
+    "name": "安らぎの女神・プルメリア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-sl04.png"
+  },
+  {
+    "id": "BP20-SL05",
+    "name": "空絶の顕現・オクトリス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-sl05.png"
+  },
+  {
+    "id": "BP20-SL06",
+    "name": "簒奪の継承者・シンセライズ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-sl06.png"
+  },
+  {
+    "id": "BP20-SL07",
+    "name": "簒奪の継承者・シンセライズ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-sl07.png"
+  },
+  {
+    "id": "BP20-SL08",
+    "name": "グロリアスセイバー・オーレリア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-sl08.png"
+  },
+  {
+    "id": "BP20-SL09",
+    "name": "奏絶の顕現・リーシェナ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-sl09.png"
+  },
+  {
+    "id": "BP20-SL10",
+    "name": "真実の継承者・ヴェハリヤー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-sl10.png"
+  },
+  {
+    "id": "BP20-SL11",
+    "name": "真実の継承者・ヴェハリヤー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-sl11.png"
+  },
+  {
+    "id": "BP20-SL12",
+    "name": "破壊の継承者・アクシア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-sl12.png"
+  },
+  {
+    "id": "BP20-SL13",
+    "name": "破壊の継承者・アクシア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-sl13.png"
+  },
+  {
+    "id": "BP20-SL14",
+    "name": "絶尽の顕現・ライオ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-sl14.png"
+  },
+  {
+    "id": "BP20-SL15",
+    "name": "絶尽の顕現・ライオ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-sl15.png"
+  },
+  {
+    "id": "BP20-SL16",
+    "name": "烈絶の顕現・ガルミーユ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-sl16.png"
+  },
+  {
+    "id": "BP20-SL17",
+    "name": "侮蔑の継承者・アジュラフリート",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-sl17.png"
+  },
+  {
+    "id": "BP20-SL18",
+    "name": "侮蔑の継承者・アジュラフリート",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-sl18.png"
+  },
+  {
+    "id": "BP20-SL19",
+    "name": "深海の覇王・ダゴン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-sl19.png"
+  },
+  {
+    "id": "BP20-SL20",
+    "name": "絶叫と愛絶の顕現・ルルナイ＆ヴァーナレク",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-sl20.png"
+  },
+  {
+    "id": "BP20-SL21",
+    "name": "絶叫と愛絶の顕現・ルルナイ＆ヴァーナレク",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-sl21.png"
+  },
+  {
+    "id": "BP20-SL22",
+    "name": "混融の継承者・シャム＝ナクア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-sl22.png"
+  },
+  {
+    "id": "BP20-SL23",
+    "name": "混融の継承者・シャム＝ナクア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-sl23.png"
+  },
+  {
+    "id": "BP20-SL24",
+    "name": "ディアボロス・ヘドネ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-sl24.png"
+  },
+  {
+    "id": "BP20-SL25",
+    "name": "絶望の顕現・マーウィン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-sl25.png"
+  },
+  {
+    "id": "BP20-SL26",
+    "name": "安息の継承者・ヒメカ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-sl26.png"
+  },
+  {
+    "id": "BP20-SL27",
+    "name": "安息の継承者・ヒメカ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-sl27.png"
+  },
+  {
+    "id": "BP20-SL28",
+    "name": "聖蛇の加護",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-sl28.png"
+  },
+  {
+    "id": "BP20-SL29",
+    "name": "絶大の顕現・マゼルベイン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-sl29.png"
+  },
+  {
+    "id": "BP20-SL30",
+    "name": "絶大の顕現・マゼルベイン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-sl30.png"
+  },
+  {
+    "id": "BP20-SL31",
+    "name": "干絶の顕現・ギルネリーゼ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-sl31.png"
+  },
+  {
+    "id": "BP20-T01",
+    "name": "クレスト 不殺の継承者・クルル",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-t01.png"
+  },
+  {
+    "id": "BP20-T02",
+    "name": "クレスト 空絶の顕現・オクトリス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-t02.png"
+  },
+  {
+    "id": "BP20-T03",
+    "name": "新約・白の章",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-t03.png"
+  },
+  {
+    "id": "BP20-T04",
+    "name": "新約・黒の章",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-t04.png"
+  },
+  {
+    "id": "BP20-T05",
+    "name": "クレスト 烈絶の顕現・ガルミーユ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-t05.png"
+  },
+  {
+    "id": "BP20-T06",
+    "name": "クレスト 混融の継承者・シャム＝ナクア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-t06.png"
+  },
+  {
+    "id": "BP20-T07",
+    "name": "クレスト 絶望の顕現・マーウィン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-t07.png"
+  },
+  {
+    "id": "BP20-T08",
+    "name": "クレスト 安息の継承者・ヒメカ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-t08.png"
+  },
+  {
+    "id": "BP20-T09",
+    "name": "クレスト 安息の団結者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-t09.png"
+  },
+  {
+    "id": "BP20-T10",
+    "name": "クレスト 安息の祈祷者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-t10.png"
+  },
+  {
+    "id": "BP20-T11",
+    "name": "クレスト 絶大の顕現・マゼルベイン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-t11.png"
+  },
+  {
+    "id": "BP20-T12",
+    "name": "絶命の痛撃",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-t12.png"
+  },
+  {
+    "id": "BP20-T13",
+    "name": "奏絶の独唱",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-t13.png"
+  },
+  {
+    "id": "BP20-T14",
+    "name": "絶尽の偽証",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-t14.png"
+  },
+  {
+    "id": "BP20-T15",
+    "name": "白き破壊のアーティファクト",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-t15.png"
+  },
+  {
+    "id": "BP20-T16",
+    "name": "黒き破壊のアーティファクト",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-t16.png"
+  },
+  {
+    "id": "BP20-T17",
+    "name": "絶叫の残響・ルルナイ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-t17.png"
+  },
+  {
+    "id": "BP20-T18",
+    "name": "干絶の甘露",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-t18.png"
+  },
+  {
+    "id": "BP20-U01",
+    "name": "不殺の継承者・クルル",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-u01.png"
+  },
+  {
+    "id": "BP20-U02",
+    "name": "簒奪の継承者・シンセライズ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-u02.png"
+  },
+  {
+    "id": "BP20-U03",
+    "name": "真実の継承者・ヴェハリヤー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-u03.png"
+  },
+  {
+    "id": "BP20-U04",
+    "name": "破壊の継承者・アクシア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-u04.png"
+  },
+  {
+    "id": "BP20-U05",
+    "name": "烈絶の顕現・ガルミーユ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-u05.png"
+  },
+  {
+    "id": "BP20-U06",
+    "name": "絶叫と愛絶の顕現・ルルナイ＆ヴァーナレク",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-u06.png"
+  },
+  {
+    "id": "BP20-U07",
+    "name": "安息の継承者・ヒメカ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-u07.png"
+  },
+  {
+    "id": "BP20-U08",
+    "name": "干絶の顕現・ギルネリーゼ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-u08.png"
+  },
+  {
     "id": "BP19-001",
     "name": "剪定の咎人・マガチヨ",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP19/bp19-001.png"
@@ -33845,6 +35200,11 @@
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-525.png"
   },
   {
+    "id": "PR-526",
+    "name": "鮮やかな奪取",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-526.png"
+  },
+  {
     "id": "PR-527",
     "name": "アズヴォルト",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-527.png"
@@ -33918,5 +35278,105 @@
     "id": "PR-541",
     "name": "デッドペナルティ",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-541.png"
+  },
+  {
+    "id": "PR-542",
+    "name": "混融の団結者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-542.png"
+  },
+  {
+    "id": "PR-543",
+    "name": "混融の団結者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-543.png"
+  },
+  {
+    "id": "PR-544",
+    "name": "深緑の弓使い・アリサ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-544.png"
+  },
+  {
+    "id": "PR-545",
+    "name": "不殺の団結者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-545.png"
+  },
+  {
+    "id": "PR-546",
+    "name": "簒奪のアジト",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-546.png"
+  },
+  {
+    "id": "PR-547",
+    "name": "破壊の祈祷者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-547.png"
+  },
+  {
+    "id": "PR-548",
+    "name": "深海の接近",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-548.png"
+  },
+  {
+    "id": "PR-549",
+    "name": "混融の肯定者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-549.png"
+  },
+  {
+    "id": "PR-550",
+    "name": "セイクリッドシープ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-550.png"
+  },
+  {
+    "id": "PR-551",
+    "name": "返還の剣閃",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-551.png"
+  },
+  {
+    "id": "PR-552",
+    "name": "殲滅の歌声",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-552.png"
+  },
+  {
+    "id": "PR-553",
+    "name": "蒼炎の猛威",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-553.png"
+  },
+  {
+    "id": "PR-554",
+    "name": "混融の祈祷者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-554.png"
+  },
+  {
+    "id": "PR-555",
+    "name": "勇気に満ちし者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-555.png"
+  },
+  {
+    "id": "PR-556",
+    "name": "勇気に満ちし者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-556.png"
+  },
+  {
+    "id": "PR-557",
+    "name": "耽溺の咎人・セフィー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-557.png"
+  },
+  {
+    "id": "PR-560",
+    "name": "安息の神殿",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-560.png"
+  },
+  {
+    "id": "PR-561",
+    "name": "混融の継承者・シャム＝ナクア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-561.png"
+  },
+  {
+    "id": "PR-562",
+    "name": "虚偽の術式",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-562.png"
+  },
+  {
+    "id": "PR-563",
+    "name": "SEP",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-563.png"
   }
 ]
