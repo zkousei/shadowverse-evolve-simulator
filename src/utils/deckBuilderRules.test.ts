@@ -318,6 +318,71 @@ const tokenCardWithRelatedTokens: DeckBuilderCardData = {
   ],
 };
 
+const deeplyChainedRelatedToken: DeckBuilderCardData = {
+  ...tokenCard,
+  id: 'TK01-014',
+  name: 'Deeply Chained Token',
+  image: '/deeply-chained-token.png',
+};
+
+const allowedRelatedTokenWhite: DeckBuilderCardData = {
+  ...tokenCard,
+  id: 'TK01-030',
+  name: '新約・白の章',
+  image: '/white-chapter.png',
+  related_cards: [
+    { id: 'TK01-031', name: '新約・黒の章' },
+  ],
+};
+
+const allowedRelatedTokenBlack: DeckBuilderCardData = {
+  ...tokenCard,
+  id: 'TK01-031',
+  name: '新約・黒の章',
+  image: '/black-chapter.png',
+  related_cards: [
+    { id: 'TK01-030', name: '新約・白の章' },
+  ],
+};
+
+const mainCardWithAllowedRelatedToken: DeckBuilderCardData = {
+  ...mainCard,
+  id: 'BP01-030',
+  name: 'Source Allowed Related Token Card',
+  related_cards: [
+    { id: allowedRelatedTokenWhite.id, name: allowedRelatedTokenWhite.name },
+  ],
+};
+
+const cyclicRelatedTokenA: DeckBuilderCardData = {
+  ...tokenCard,
+  id: 'TK01-020',
+  name: 'Cyclic Token A',
+  image: '/cyclic-token-a.png',
+  related_cards: [
+    { id: 'TK01-021', name: 'Cyclic Token B' },
+  ],
+};
+
+const cyclicRelatedTokenB: DeckBuilderCardData = {
+  ...tokenCard,
+  id: 'TK01-021',
+  name: 'Cyclic Token B',
+  image: '/cyclic-token-b.png',
+  related_cards: [
+    { id: 'TK01-020', name: 'Cyclic Token A' },
+  ],
+};
+
+const mainCardWithCyclicRelatedToken: DeckBuilderCardData = {
+  ...mainCard,
+  id: 'BP01-020',
+  name: 'Source Cyclic Token Card',
+  related_cards: [
+    { id: cyclicRelatedTokenA.id, name: cyclicRelatedTokenA.name },
+  ],
+};
+
 const cutthroatCard: DeckBuilderCardData = {
   id: 'BP19-110',
   name: '機鋒の咎人・カットスロート',
@@ -680,6 +745,94 @@ describe('deckBuilderRules', () => {
     expect(deckState.tokenDeck.map(card => card.id)).toEqual([
       relatedTokenVariantB.id,
       secondaryRelatedToken.id,
+    ]);
+  });
+
+  it('appends allowlisted token related tokens and stops when the allowlisted relation cycles back', () => {
+    const deckState = appendRelatedTokensToDeckState({
+      mainDeck: [mainCardWithAllowedRelatedToken],
+      evolveDeck: [],
+      leaderCards: [],
+      tokenDeck: [],
+    }, [
+      mainCardWithAllowedRelatedToken,
+      allowedRelatedTokenWhite,
+      allowedRelatedTokenBlack,
+    ], constructedRoyalRule);
+
+    expect(deckState.tokenDeck.map(card => card.id)).toEqual([
+      allowedRelatedTokenWhite.id,
+      allowedRelatedTokenBlack.id,
+    ]);
+  });
+
+  it('expands allowlisted token relations when the direct token is already present', () => {
+    const deckState = appendRelatedTokensToDeckState({
+      mainDeck: [mainCardWithAllowedRelatedToken],
+      evolveDeck: [],
+      leaderCards: [],
+      tokenDeck: [allowedRelatedTokenWhite],
+    }, [
+      mainCardWithAllowedRelatedToken,
+      allowedRelatedTokenWhite,
+      allowedRelatedTokenBlack,
+    ], constructedRoyalRule);
+
+    expect(deckState.tokenDeck.map(card => card.id)).toEqual([
+      allowedRelatedTokenWhite.id,
+      allowedRelatedTokenBlack.id,
+    ]);
+  });
+
+  it('does not append non-allowlisted token related tokens or non-token relations', () => {
+    const shallowChainedToken = {
+      ...tokenCardWithRelatedTokens,
+      related_cards: [
+        { id: chainedRelatedToken.id, name: chainedRelatedToken.name },
+        { id: mainCard.id, name: mainCard.name },
+      ],
+    };
+    const twoHopChainedToken = {
+      ...chainedRelatedToken,
+      related_cards: [
+        { id: deeplyChainedRelatedToken.id, name: deeplyChainedRelatedToken.name },
+      ],
+    };
+
+    const deckState = appendRelatedTokensToDeckState({
+      mainDeck: [mainCardWithRelatedTokens],
+      evolveDeck: [],
+      leaderCards: [],
+      tokenDeck: [],
+    }, [
+      mainCardWithRelatedTokens,
+      shallowChainedToken,
+      secondaryRelatedToken,
+      twoHopChainedToken,
+      deeplyChainedRelatedToken,
+      mainCard,
+    ], constructedRoyalRule);
+
+    expect(deckState.tokenDeck.map(card => card.id)).toEqual([
+      shallowChainedToken.id,
+      secondaryRelatedToken.id,
+    ]);
+  });
+
+  it('does not follow non-allowlisted token cycles', () => {
+    const deckState = appendRelatedTokensToDeckState({
+      mainDeck: [mainCardWithCyclicRelatedToken],
+      evolveDeck: [],
+      leaderCards: [],
+      tokenDeck: [],
+    }, [
+      mainCardWithCyclicRelatedToken,
+      cyclicRelatedTokenA,
+      cyclicRelatedTokenB,
+    ], constructedRoyalRule);
+
+    expect(deckState.tokenDeck.map(card => card.id)).toEqual([
+      cyclicRelatedTokenA.id,
     ]);
   });
 
