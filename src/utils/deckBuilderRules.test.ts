@@ -161,6 +161,39 @@ const limitedCrossoverEvolveCard: DeckBuilderCardData = {
   is_deck_build_legal: true,
 };
 
+const bannedCrossoverMainCard: DeckBuilderCardData = {
+  id: 'BP19-104',
+  name: 'セイントタイガー',
+  image: '/saint-tiger-main.png',
+  class: 'ビショップ',
+  type: 'フォロワー',
+  card_kind_normalized: 'follower',
+  deck_section: 'main',
+  is_token: false,
+  is_evolve_card: false,
+  is_deck_build_legal: true,
+};
+
+const bannedCrossoverEvolveCard: DeckBuilderCardData = {
+  id: 'BP19-105',
+  name: 'セイントタイガー',
+  image: '/saint-tiger-evolve.png',
+  class: 'ビショップ',
+  type: 'フォロワー・エボルヴ',
+  card_kind_normalized: 'evolve_follower',
+  deck_section: 'evolve',
+  is_token: false,
+  is_evolve_card: true,
+  is_deck_build_legal: true,
+};
+
+const allowedBishopEvolveCard: DeckBuilderCardData = {
+  ...bannedCrossoverEvolveCard,
+  id: 'EV01-020',
+  name: 'Allowed Bishop Evolve',
+  image: '/allowed-bishop-evolve.png',
+};
+
 const tokenCard: DeckBuilderCardData = {
   id: 'TK01-001',
   name: 'Token Card',
@@ -341,6 +374,14 @@ const constructedWitchRule: DeckRuleConfig = {
   selectedClasses: [null, null],
 };
 
+const crossoverBishopWitchRule: DeckRuleConfig = {
+  format: 'crossover',
+  identityType: 'class',
+  selectedClass: null,
+  selectedTitle: null,
+  selectedClasses: [CLASS.BISHOP, CLASS.WITCH],
+};
+
 describe('deckBuilderRules', () => {
   it('returns the allowed deck section for each card', () => {
     expect(getAllowedSections(mainCard)).toEqual(['main']);
@@ -445,6 +486,20 @@ describe('deckBuilderRules', () => {
       leaderCards: [royalLeaderCard, witchLeaderCard],
       tokenDeck: [],
     }, crossoverRule)).toBe(true);
+
+    expect(canAddCardToDeckState(bannedCrossoverMainCard, 'main', {
+      mainDeck: [],
+      evolveDeck: [],
+      leaderCards: [],
+      tokenDeck: [],
+    }, crossoverBishopWitchRule)).toBe(false);
+
+    expect(canAddCardToDeckState(bannedCrossoverEvolveCard, 'evolve', {
+      mainDeck: [],
+      evolveDeck: [],
+      leaderCards: [],
+      tokenDeck: [],
+    }, crossoverBishopWitchRule)).toBe(true);
   });
 
   it('applies constructed class and title restrictions when adding cards', () => {
@@ -534,6 +589,22 @@ describe('deckBuilderRules', () => {
     );
 
     expect(sanitizedMain).toEqual([limitedConstructedWitchCard]);
+
+    const sanitizedCrossoverMain = sanitizeImportedSection(
+      [bannedCrossoverMainCard, witchCard],
+      [bannedCrossoverMainCard, witchCard],
+      'main',
+      crossoverBishopWitchRule
+    );
+    const sanitizedCrossoverEvolve = sanitizeImportedSection(
+      [bannedCrossoverEvolveCard, allowedBishopEvolveCard],
+      [bannedCrossoverEvolveCard, allowedBishopEvolveCard],
+      'evolve',
+      crossoverBishopWitchRule
+    );
+
+    expect(sanitizedCrossoverMain).toEqual([witchCard]);
+    expect(sanitizedCrossoverEvolve).toEqual([bannedCrossoverEvolveCard, allowedBishopEvolveCard]);
   });
 
   it('sanitizes imported deck states for both new and legacy leader formats', () => {
@@ -713,6 +784,20 @@ describe('deckBuilderRules', () => {
         { id: 'deckBuilder.validation.limited', params: { cardName: 'お菓子の家', format: 'constructed', actual: 2 } },
       ])
     );
+
+    const crossoverMessages = getDeckValidationMessages({
+      mainDeck: [bannedCrossoverMainCard],
+      evolveDeck: [bannedCrossoverEvolveCard],
+      leaderCards: [],
+      tokenDeck: [],
+    }, crossoverBishopWitchRule);
+
+    expect(crossoverMessages).toEqual(
+      expect.arrayContaining([
+        { id: 'deckBuilder.validation.banned', params: { cardName: 'セイントタイガー', format: 'crossover' } },
+      ])
+    );
+    expect(crossoverMessages.filter(message => message.id === 'deckBuilder.validation.banned')).toHaveLength(1);
   });
 
   describe('Cutthroat Rule', () => {
