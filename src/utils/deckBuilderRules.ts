@@ -593,10 +593,27 @@ const getRelatedTokenIdentityKey = (card: Pick<DeckBuilderCardData, 'id' | 'name
 
 const MAX_RELATED_TOKEN_EXPANSION_DEPTH = 2;
 
+const ALLOWED_RELATED_TOKEN_EXPANSION_NAME_PAIRS = new Set([
+  '新約・白の章::新約・黒の章',
+  '新約・黒の章::新約・白の章',
+]);
+
 type RelatedTokenExpansionEntry = {
   card: DeckBuilderCardData;
   depth: number;
 };
+
+const getRelatedTokenExpansionPairKey = (
+  sourceToken: DeckBuilderCardData,
+  relatedToken: DeckBuilderCardData
+): string => `${sourceToken.name.trim()}::${relatedToken.name.trim()}`;
+
+const canExpandRelatedTokenFromToken = (
+  sourceToken: DeckBuilderCardData,
+  relatedToken: DeckBuilderCardData
+): boolean => ALLOWED_RELATED_TOKEN_EXPANSION_NAME_PAIRS.has(
+  getRelatedTokenExpansionPairKey(sourceToken, relatedToken)
+);
 
 export const appendRelatedTokensToDeckState = (
   deckState: DeckState,
@@ -627,12 +644,13 @@ export const appendRelatedTokensToDeckState = (
       if (!canAddCardToSection(relatedToken, 'token', ruleConfig)) return;
       const relatedDepth = depth + 1;
       if (relatedDepth > MAX_RELATED_TOKEN_EXPANSION_DEPTH) return;
+      if (depth > 0 && !canExpandRelatedTokenFromToken(card, relatedToken)) return;
 
       const tokenIdentityKey = getRelatedTokenIdentityKey(relatedToken);
-      if (tokenIdentityKeys.has(tokenIdentityKey)) return;
-
-      tokenIdentityKeys.add(tokenIdentityKey);
-      tokensToAppend.push(relatedToken);
+      if (!tokenIdentityKeys.has(tokenIdentityKey)) {
+        tokenIdentityKeys.add(tokenIdentityKey);
+        tokensToAppend.push(relatedToken);
+      }
 
       if (relatedDepth < MAX_RELATED_TOKEN_EXPANSION_DEPTH) {
         expansionQueue.push({ card: relatedToken, depth: relatedDepth });
