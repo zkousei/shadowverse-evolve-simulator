@@ -82,7 +82,7 @@ describe('GameBoard extracted UI components - status and preparation', () => {
       status: 'Connected',
       connectionState: 'connected' as const,
       spectatorCount: 2,
-      maxSpectatorConnections: 4,
+      maxSpectatorConnections: 8,
       connectionBadgeTone: {
         label: 'Connected',
         background: 'rgba(16, 185, 129, 0.16)',
@@ -101,7 +101,7 @@ describe('GameBoard extracted UI components - status and preparation', () => {
       />
     );
 
-    expect(screen.getByTestId('spectator-count-badge')).toHaveTextContent('Spectators 2 / 4');
+    expect(screen.getByTestId('spectator-count-badge')).toHaveTextContent('Spectators 2 / 8');
 
     rerender(
       <GameBoardRoomStatus
