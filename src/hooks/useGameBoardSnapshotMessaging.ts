@@ -40,7 +40,12 @@ export const useGameBoardSnapshotMessaging = ({
   const sendSpectatorImmediate = React.useCallback((message: SyncMessage) => {
     spectatorConnectionsRef.current.forEach((spectatorConn) => {
       if (!spectatorConn.open) return;
-      spectatorConn.send(message);
+
+      try {
+        spectatorConn.send(message);
+      } catch {
+        // Keep broadcasting to the remaining spectators.
+      }
     });
   }, [spectatorConnectionsRef]);
 

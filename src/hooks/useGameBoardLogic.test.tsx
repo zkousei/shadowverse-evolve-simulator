@@ -950,7 +950,7 @@ describe('useGameBoardLogic P2P reconnect', () => {
     }));
   });
 
-  it('rejects a fifth spectator while keeping the first four active', () => {
+  it('rejects a ninth spectator while keeping the first eight active', () => {
     renderHarness('/game?host=true&room=ROOM123');
 
     const peer = mockPeerJs.peers[0];
@@ -959,7 +959,7 @@ describe('useGameBoardLogic P2P reconnect', () => {
     });
 
     const guestConn = mockPeerJs.createConnection('guest');
-    const spectatorConns = Array.from({ length: 5 }, (_, index) => (
+    const spectatorConns = Array.from({ length: 9 }, (_, index) => (
       mockPeerJs.createConnection(`spectator-${index + 1}`, { connectionRole: 'spectator' })
     ));
     act(() => {
@@ -973,8 +973,8 @@ describe('useGameBoardLogic P2P reconnect', () => {
       });
     });
 
-    expect(spectatorConns[4].close).toHaveBeenCalledTimes(1);
-    expect(screen.getByTestId('spectator-count')).toHaveTextContent('4');
+    expect(spectatorConns[8].close).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('spectator-count')).toHaveTextContent('8');
 
     guestConn.send.mockClear();
     spectatorConns.forEach((spectatorConn) => spectatorConn.send.mockClear());
@@ -987,13 +987,59 @@ describe('useGameBoardLogic P2P reconnect', () => {
       type: 'STATE_SNAPSHOT',
       source: 'host',
     }));
-    spectatorConns.slice(0, 4).forEach((spectatorConn) => {
+    spectatorConns.slice(0, 8).forEach((spectatorConn) => {
       expect(spectatorConn.send).toHaveBeenCalledWith(expect.objectContaining({
         type: 'STATE_SNAPSHOT',
         source: 'host',
       }));
     });
-    expect(spectatorConns[4].send).not.toHaveBeenCalled();
+    expect(spectatorConns[8].send).not.toHaveBeenCalled();
+  });
+
+  it('continues broadcasting to other spectators when one spectator send fails', () => {
+    renderHarness('/game?host=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+    });
+
+    const guestConn = mockPeerJs.createConnection('guest');
+    const spectatorConns = Array.from({ length: 3 }, (_, index) => (
+      mockPeerJs.createConnection(`spectator-${index + 1}`, { connectionRole: 'spectator' })
+    ));
+    act(() => {
+      peer.emit('connection', guestConn);
+      guestConn.open = true;
+      guestConn.emit('open');
+      spectatorConns.forEach((spectatorConn) => {
+        peer.emit('connection', spectatorConn);
+        spectatorConn.open = true;
+        spectatorConn.emit('open');
+      });
+    });
+
+    guestConn.send.mockClear();
+    spectatorConns.forEach((spectatorConn) => spectatorConn.send.mockClear());
+    spectatorConns[0].send.mockImplementationOnce(() => {
+      throw new Error('send failed');
+    });
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Spawn Token to EX' }));
+    });
+
+    expect(guestConn.send).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'STATE_SNAPSHOT',
+      source: 'host',
+    }));
+    expect(spectatorConns[0].send).toHaveBeenCalledTimes(1);
+    spectatorConns.slice(1).forEach((spectatorConn) => {
+      expect(spectatorConn.send).toHaveBeenCalledWith(expect.objectContaining({
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+      }));
+    });
   });
 
   it('sends a leave message and closes the spectator connection on pagehide', () => {
@@ -1031,14 +1077,14 @@ describe('useGameBoardLogic P2P reconnect', () => {
     });
 
     const guestConn = mockPeerJs.createConnection('guest');
-    const spectatorConns = Array.from({ length: 5 }, (_, index) => (
+    const spectatorConns = Array.from({ length: 9 }, (_, index) => (
       mockPeerJs.createConnection(`spectator-${index + 1}`, { connectionRole: 'spectator' })
     ));
     act(() => {
       peer.emit('connection', guestConn);
       guestConn.open = true;
       guestConn.emit('open');
-      spectatorConns.slice(0, 4).forEach((spectatorConn) => {
+      spectatorConns.slice(0, 8).forEach((spectatorConn) => {
         peer.emit('connection', spectatorConn);
         spectatorConn.open = true;
         spectatorConn.emit('open');
@@ -1046,13 +1092,13 @@ describe('useGameBoardLogic P2P reconnect', () => {
       spectatorConns[0].emit('data', {
         type: 'SPECTATOR_LEAVE',
       });
-      peer.emit('connection', spectatorConns[4]);
-      spectatorConns[4].open = true;
-      spectatorConns[4].emit('open');
+      peer.emit('connection', spectatorConns[8]);
+      spectatorConns[8].open = true;
+      spectatorConns[8].emit('open');
     });
 
-    expect(screen.getByTestId('spectator-count')).toHaveTextContent('4');
-    expect(spectatorConns[4].close).not.toHaveBeenCalled();
+    expect(screen.getByTestId('spectator-count')).toHaveTextContent('8');
+    expect(spectatorConns[8].close).not.toHaveBeenCalled();
 
     guestConn.send.mockClear();
     spectatorConns.forEach((spectatorConn) => spectatorConn.send.mockClear());
@@ -1082,11 +1128,11 @@ describe('useGameBoardLogic P2P reconnect', () => {
       peer.emit('open');
     });
 
-    const spectatorConns = Array.from({ length: 5 }, (_, index) => (
+    const spectatorConns = Array.from({ length: 9 }, (_, index) => (
       mockPeerJs.createConnection(`spectator-${index + 1}`, { connectionRole: 'spectator' })
     ));
     act(() => {
-      spectatorConns.slice(0, 4).forEach((spectatorConn) => {
+      spectatorConns.slice(0, 8).forEach((spectatorConn) => {
         peer.emit('connection', spectatorConn);
         spectatorConn.open = true;
         spectatorConn.emit('open');
@@ -1096,13 +1142,13 @@ describe('useGameBoardLogic P2P reconnect', () => {
     spectatorConns[0].open = false;
 
     act(() => {
-      peer.emit('connection', spectatorConns[4]);
-      spectatorConns[4].open = true;
-      spectatorConns[4].emit('open');
+      peer.emit('connection', spectatorConns[8]);
+      spectatorConns[8].open = true;
+      spectatorConns[8].emit('open');
     });
 
-    expect(spectatorConns[4].close).not.toHaveBeenCalled();
-    expect(screen.getByTestId('spectator-count')).toHaveTextContent('4');
+    expect(spectatorConns[8].close).not.toHaveBeenCalled();
+    expect(screen.getByTestId('spectator-count')).toHaveTextContent('8');
 
     spectatorConns.forEach((spectatorConn) => spectatorConn.send.mockClear());
 
@@ -1127,18 +1173,18 @@ describe('useGameBoardLogic P2P reconnect', () => {
       peer.emit('open');
     });
 
-    const spectatorConns = Array.from({ length: 5 }, (_, index) => (
+    const spectatorConns = Array.from({ length: 9 }, (_, index) => (
       mockPeerJs.createConnection(`spectator-${index + 1}`, { connectionRole: 'spectator' })
     ));
     act(() => {
-      spectatorConns.slice(0, 4).forEach((spectatorConn) => {
+      spectatorConns.slice(0, 8).forEach((spectatorConn) => {
         peer.emit('connection', spectatorConn);
       });
-      peer.emit('connection', spectatorConns[4]);
+      peer.emit('connection', spectatorConns[8]);
     });
 
-    expect(spectatorConns[4].close).toHaveBeenCalledTimes(1);
-    expect(screen.getByTestId('spectator-count')).toHaveTextContent('4');
+    expect(spectatorConns[8].close).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('spectator-count')).toHaveTextContent('8');
   });
 
   it('ignores spectator events on the host side and does not treat spectator close as guest disconnect', () => {

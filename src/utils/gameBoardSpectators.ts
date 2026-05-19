@@ -1,1 +1,1 @@
-export const MAX_SPECTATOR_CONNECTIONS = 4;
+export const MAX_SPECTATOR_CONNECTIONS = 8;
