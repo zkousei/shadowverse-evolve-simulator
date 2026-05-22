@@ -646,6 +646,53 @@ describe('CardSearchModal', () => {
     expect(onExtractCard).toHaveBeenCalledWith('card-1', 'hand-host');
   });
 
+  it('shows card details in a reserved bottom pane outside the grid for coarse input', () => {
+    renderWithInputProfile(
+      'coarse',
+      <CardSearchModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Evolve Deck"
+        zoneId="evolveDeck-host"
+        cards={[createCard({ name: 'Evolve Angel', isEvolveCard: true, zone: 'evolveDeck-host' })]}
+        cardDetailLookup={{
+          'BP01-001': {
+            id: 'BP01-001',
+            name: 'Evolve Angel',
+            image: '/test.png',
+            className: 'ロイヤル',
+            title: 'Sample',
+            type: 'フォロワー・エボルヴ',
+            subtype: '兵士',
+            cost: '2',
+            atk: 2,
+            hp: 3,
+            abilityText: 'Tablet-safe detail text',
+          },
+        }}
+        onExtractCard={vi.fn()}
+        onToggleFlip={vi.fn()}
+        viewerRole="host"
+        allowHandExtraction={true}
+      />
+    );
+
+    const content = screen.getByTestId('search-card-content');
+    expect(content).toHaveStyle({ flexDirection: 'column' });
+
+    const detailPane = screen.getByTestId('search-card-detail-pane');
+    expect(detailPane).toHaveStyle({ height: 'min(20vh, 140px)', visibility: 'hidden' });
+
+    fireEvent.click(screen.getByAltText('Evolve Angel'));
+
+    expect(screen.queryByTestId('search-card-detail-popover')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('search-card-detail-inline')).not.toBeInTheDocument();
+    expect(detailPane).toHaveTextContent('Tablet-safe detail text');
+    expect(detailPane).toHaveStyle({ visibility: 'visible' });
+    expect(screen.getByTestId('search-card-grid')).not.toContainElement(detailPane);
+    expect(screen.getByTestId('search-card-grid')).toHaveStyle({ paddingBottom: '0' });
+  });
+
   it('closes coarse-input quick controls when tapping modal empty space', () => {
     renderWithInputProfile(
       'coarse',
