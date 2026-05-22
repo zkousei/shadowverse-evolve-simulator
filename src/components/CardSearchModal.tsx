@@ -135,7 +135,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
   }, [isOpen, selectedCardId]);
 
   React.useEffect(() => {
-    if (!isOpen || !selectedCardId) {
+    if (!isOpen || !selectedCardId || isCoarseInput) {
       setReserveDetailSpace(false);
       return;
     }
@@ -151,7 +151,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
     window.addEventListener('resize', measureScrollRoom);
 
     return () => window.removeEventListener('resize', measureScrollRoom);
-  }, [cards.length, isOpen, selectedCardId]);
+  }, [cards.length, isCoarseInput, isOpen, selectedCardId]);
 
   // Search behavior must key off the structural zone id, not the localized
   // modal title, otherwise i18n changes can alter which actions are allowed.
@@ -235,6 +235,8 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
     ? `${selectedCardDetail.atk} / ${selectedCardDetail.hp}`
     : null;
   const selectedCardHasFaces = Boolean(selectedCardDetail?.faces && selectedCardDetail.faces.length > 1);
+  const shouldShowDetailPopover = Boolean(selectedCard && !isBulkSelecting && !isCoarseInput);
+  const shouldShowCoarseDetailPane = isCoarseInput && !isBulkSelecting;
 
   const canAddCardToHand = (card: CardInstance) => (
     !isPreparingMainDeckSearch && card.owner === viewerRole && !card.isEvolveCard
@@ -380,6 +382,69 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
     bulkSelectedCardIds.forEach(cardId => onBanish?.(cardId));
   };
 
+  const renderSelectedCardDetailContent = (card: CardInstance) => (
+    <>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '0.45rem' }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ color: '#f8fafc', fontWeight: 800, fontSize: '0.85rem', lineHeight: 1.35 }}>
+            {selectedCardDetail?.name || card.name}
+          </div>
+          {selectedCardMeta && (
+            <div style={{ color: '#cbd5e1', fontSize: '0.68rem', marginTop: '0.12rem', lineHeight: 1.4 }}>
+              {selectedCardMeta}
+            </div>
+          )}
+          {selectedCardType && (
+            <div style={{ color: '#94a3b8', fontSize: '0.66rem', marginTop: '0.08rem', lineHeight: 1.4 }}>
+              {selectedCardType}
+            </div>
+          )}
+          {selectedCardStats && (
+            <div style={{ color: '#e2e8f0', fontSize: '0.68rem', marginTop: '0.12rem', lineHeight: 1.4 }}>
+              {t('gameBoard.modals.search.stats')}: {selectedCardStats}
+            </div>
+          )}
+        </div>
+        <button
+          onClick={() => setSelectedCardId(null)}
+          style={{
+            background: 'rgba(255,255,255,0.06)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            color: 'white',
+            padding: '0.12rem 0.45rem',
+            borderRadius: '999px',
+            cursor: 'pointer',
+            fontSize: '0.68rem',
+            fontWeight: 'bold'
+          }}
+        >
+          {t('common.buttons.close')}
+        </button>
+      </div>
+
+      {selectedCardHasFaces && selectedCardDetail ? (
+        <GameBoardCardFacePreview
+          card={card}
+          detail={selectedCardDetail}
+          compact={true}
+        />
+      ) : (
+        <div style={{
+          borderTop: '1px solid rgba(255,255,255,0.08)',
+          paddingTop: '0.5rem',
+          whiteSpace: 'pre-wrap',
+          color: '#e5e7eb',
+          fontSize: '0.74rem',
+          lineHeight: 1.55
+        }}>
+          {selectedCardDetail?.abilityText
+            ? formatAbilityText(selectedCardDetail.abilityText)
+            : t('gameBoard.modals.search.noDetailText')}
+        </div>
+      )}
+    </>
+  );
+
   return (
     <div
       style={{
@@ -521,18 +586,31 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
         </div>
 
         <div
-          ref={cardGridRef}
-          data-testid="search-card-grid"
+          data-testid="search-card-content"
           style={{
-            padding: '1.5rem',
-            overflowY: 'auto',
             flex: 1,
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
-            gap: '1rem',
-            paddingBottom: selectedCard && reserveDetailSpace ? '11rem' : '1.5rem'
+            minHeight: 0,
+            display: 'flex',
+            flexDirection: isCoarseInput ? 'column' : undefined,
+            gap: isCoarseInput ? '1rem' : undefined,
+            padding: isCoarseInput ? '1.5rem' : undefined,
           }}
         >
+          <div
+            ref={cardGridRef}
+            data-testid="search-card-grid"
+            style={{
+              padding: isCoarseInput ? 0 : '1.5rem',
+              overflowY: 'auto',
+              flex: 1,
+              minHeight: 0,
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+              alignContent: 'start',
+              gap: '1rem',
+              paddingBottom: shouldShowDetailPopover && reserveDetailSpace ? '11rem' : isCoarseInput ? 0 : '1.5rem'
+            }}
+          >
           {visibleCards.map(c => {
             const baseCardDetail = cardDetailLookup[c.cardId];
             const cardDisplayDetail = resolveSelectedCardFaceDetail(baseCardDetail, c.selectedFaceSide) ?? undefined;
@@ -803,6 +881,26 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
               {t('gameBoard.modals.search.empty')}
             </div>
           )}
+          </div>
+          {shouldShowCoarseDetailPane && (
+            <div
+              data-testid="search-card-detail-pane"
+              ref={detailPopoverRef}
+              style={{
+                flex: '0 0 auto',
+                height: 'min(20vh, 140px)',
+                overflowY: 'auto',
+                visibility: selectedCard ? 'visible' : 'hidden',
+                background: 'rgba(15, 23, 42, 0.98)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: '8px',
+                boxShadow: '0 10px 22px rgba(0,0,0,0.35)',
+                padding: '0.8rem'
+              }}
+            >
+              {selectedCard && renderSelectedCardDetailContent(selectedCard)}
+            </div>
+          )}
         </div>
 
         {isBulkSelecting && (
@@ -935,7 +1033,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
           </div>
         )}
 
-        {selectedCard && !isBulkSelecting && (
+        {shouldShowDetailPopover && selectedCard && (
           <div
             data-testid="search-card-detail-popover"
             ref={detailPopoverRef}
@@ -954,64 +1052,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
               zIndex: 2
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '0.45rem' }}>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ color: '#f8fafc', fontWeight: 800, fontSize: '0.85rem', lineHeight: 1.35 }}>
-                  {selectedCardDetail?.name || selectedCard.name}
-                </div>
-                {selectedCardMeta && (
-                  <div style={{ color: '#cbd5e1', fontSize: '0.68rem', marginTop: '0.12rem', lineHeight: 1.4 }}>
-                    {selectedCardMeta}
-                  </div>
-                )}
-                {selectedCardType && (
-                  <div style={{ color: '#94a3b8', fontSize: '0.66rem', marginTop: '0.08rem', lineHeight: 1.4 }}>
-                    {selectedCardType}
-                  </div>
-                )}
-                {selectedCardStats && (
-                  <div style={{ color: '#e2e8f0', fontSize: '0.68rem', marginTop: '0.12rem', lineHeight: 1.4 }}>
-                    {t('gameBoard.modals.search.stats')}: {selectedCardStats}
-                  </div>
-                )}
-              </div>
-              <button
-                onClick={() => setSelectedCardId(null)}
-                style={{
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  color: 'white',
-                  padding: '0.12rem 0.45rem',
-                  borderRadius: '999px',
-                  cursor: 'pointer',
-                  fontSize: '0.68rem',
-                  fontWeight: 'bold'
-                }}
-              >
-                {t('common.buttons.close')}
-              </button>
-            </div>
-
-            {selectedCardHasFaces && selectedCardDetail ? (
-              <GameBoardCardFacePreview
-                card={selectedCard}
-                detail={selectedCardDetail}
-                compact={true}
-              />
-            ) : (
-              <div style={{
-                borderTop: '1px solid rgba(255,255,255,0.08)',
-                paddingTop: '0.5rem',
-                whiteSpace: 'pre-wrap',
-                color: '#e5e7eb',
-                fontSize: '0.74rem',
-                lineHeight: 1.55
-              }}>
-                {selectedCardDetail?.abilityText
-                  ? formatAbilityText(selectedCardDetail.abilityText)
-                  : t('gameBoard.modals.search.noDetailText')}
-              </div>
-            )}
+            {renderSelectedCardDetailContent(selectedCard)}
           </div>
         )}
       </div>
