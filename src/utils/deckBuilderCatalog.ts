@@ -22,6 +22,7 @@ export type DeckBuilderCatalogFilters = {
   selectedSubtypeTags: string[];
   deckSectionFilter: DeckBuilderDeckSectionFilter;
   hideSameNameVariants: boolean;
+  showPreviewCards?: boolean;
   page: number;
   pageSize: number;
 };
@@ -44,6 +45,8 @@ export const buildDeckBuilderCatalogView = (
   const normalizedSearch = filters.search.toLowerCase();
 
   const filteredCards = cards.filter(card => {
+    if (card.catalog_status === 'preview' && !filters.showPreviewCards) return false;
+
     if ((isConstructed || isCrossover) && isRuleReady && !isCardAllowedByRule(card, deckRuleConfig)) return false;
 
     if (!card.name.toLowerCase().includes(normalizedSearch)) return false;

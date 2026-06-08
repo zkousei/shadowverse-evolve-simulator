@@ -16,10 +16,12 @@ import { getFilteredSubtypeOptions } from '../utils/deckBuilderSelections';
 
 type UseDeckBuilderLibraryFiltersArgs = {
   subtypeTags: string[];
+  releasedSubtypeTags?: string[];
 };
 
 export const useDeckBuilderLibraryFilters = ({
   subtypeTags,
+  releasedSubtypeTags = subtypeTags,
 }: UseDeckBuilderLibraryFiltersArgs) => {
   const [search, setSearch] = React.useState('');
   const [costFilter, setCostFilter] = React.useState('All');
@@ -32,6 +34,7 @@ export const useDeckBuilderLibraryFilters = ({
   const [selectedSubtypeTags, setSelectedSubtypeTags] = React.useState<string[]>([]);
   const [deckSectionFilter, setDeckSectionFilter] = React.useState<DeckBuilderDeckSectionFilter>('All');
   const [hideSameNameVariants, setHideSameNameVariants] = React.useState(false);
+  const [showPreviewCards, setShowPreviewCards] = React.useState(false);
   const [page, setPage] = React.useState(0);
 
   const buildCurrentLibraryFilterState = React.useCallback((): DeckBuilderLibraryFilterState => ({
@@ -46,6 +49,7 @@ export const useDeckBuilderLibraryFilters = ({
     selectedSubtypeTags,
     deckSectionFilter,
     hideSameNameVariants,
+    showPreviewCards,
     page,
   }), [
     cardTypeFilter,
@@ -59,6 +63,7 @@ export const useDeckBuilderLibraryFilters = ({
     rarityFilter,
     search,
     selectedSubtypeTags,
+    showPreviewCards,
     subtypeSearch,
   ]);
 
@@ -74,6 +79,7 @@ export const useDeckBuilderLibraryFilters = ({
     setSelectedSubtypeTags(state.selectedSubtypeTags);
     setDeckSectionFilter(state.deckSectionFilter);
     setHideSameNameVariants(state.hideSameNameVariants);
+    setShowPreviewCards(state.showPreviewCards);
     setPage(state.page);
   }, []);
 
@@ -101,14 +107,15 @@ export const useDeckBuilderLibraryFilters = ({
   }, [applyDeckBuilderLibraryFilterState, buildCurrentLibraryFilterState]);
 
   const addSubtypeTag = React.useCallback((tag: string) => {
+    const availableSubtypeTags = showPreviewCards ? subtypeTags : releasedSubtypeTags;
     applyDeckBuilderLibraryFilterState(
       buildSubtypeAddedDeckBuilderLibraryFilterState(
         buildCurrentLibraryFilterState(),
-        subtypeTags,
+        availableSubtypeTags,
         tag
       )
     );
-  }, [applyDeckBuilderLibraryFilterState, buildCurrentLibraryFilterState, subtypeTags]);
+  }, [applyDeckBuilderLibraryFilterState, buildCurrentLibraryFilterState, releasedSubtypeTags, showPreviewCards, subtypeTags]);
 
   const removeSubtypeTag = React.useCallback((tag: string) => {
     applyDeckBuilderLibraryFilterState(
@@ -117,8 +124,8 @@ export const useDeckBuilderLibraryFilters = ({
   }, [applyDeckBuilderLibraryFilterState, buildCurrentLibraryFilterState]);
 
   const filteredSubtypeOptions = React.useMemo(
-    () => getFilteredSubtypeOptions(subtypeTags, subtypeSearch),
-    [subtypeSearch, subtypeTags]
+    () => getFilteredSubtypeOptions(showPreviewCards ? subtypeTags : releasedSubtypeTags, subtypeSearch),
+    [releasedSubtypeTags, showPreviewCards, subtypeSearch, subtypeTags]
   );
 
   return {
@@ -133,6 +140,7 @@ export const useDeckBuilderLibraryFilters = ({
     selectedSubtypeTags,
     deckSectionFilter,
     hideSameNameVariants,
+    showPreviewCards,
     page,
     filteredSubtypeOptions,
     resetLibraryFilters,

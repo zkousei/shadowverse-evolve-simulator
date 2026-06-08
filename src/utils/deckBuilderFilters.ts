@@ -21,6 +21,7 @@ export type DeckBuilderLibraryFilterState = {
   selectedSubtypeTags: string[];
   deckSectionFilter: DeckBuilderDeckSectionFilter;
   hideSameNameVariants: boolean;
+  showPreviewCards: boolean;
   page: number;
 };
 
@@ -36,6 +37,7 @@ export const buildDefaultDeckBuilderLibraryFilterState = (): DeckBuilderLibraryF
   selectedSubtypeTags: [],
   deckSectionFilter: 'All',
   hideSameNameVariants: false,
+  showPreviewCards: false,
   page: 0,
 });
 

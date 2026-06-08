@@ -31,6 +31,31 @@ describe('CardArtwork', () => {
     dummyArtEnabled = true;
   });
 
+  it('renders dummy artwork in official mode when no image is available', () => {
+    dummyArtEnabled = false;
+
+    render(
+      <CardArtwork
+        image=""
+        alt="Preview Without Image"
+        detail={{
+          name: 'Preview Without Image',
+          image: '',
+          cost: '2',
+          atk: 2,
+          hp: 3,
+          type: 'フォロワー',
+          cardKindNormalized: 'follower',
+        }}
+      />
+    );
+
+    expect(screen.getByLabelText('Preview Without Image')).toBeInTheDocument();
+    expect(screen.getByText('Preview Without Image')).toBeInTheDocument();
+    expect(screen.queryByAltText('Preview Without Image')).not.toBeInTheDocument();
+    dummyArtEnabled = true;
+  });
+
   it('shows an ADVANCE badge for advance cards instead of EVOLVE', () => {
     render(
       <CardArtwork

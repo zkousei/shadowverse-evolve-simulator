@@ -13,6 +13,7 @@ describe('useDeckBuilderLibraryFilters', () => {
     expect(result.current.classFilter).toBe('All');
     expect(result.current.cardTypeFilter).toBe('All');
     expect(result.current.selectedSubtypeTags).toEqual([]);
+    expect(result.current.showPreviewCards).toBe(false);
     expect(result.current.page).toBe(0);
   });
 
@@ -47,9 +48,10 @@ describe('useDeckBuilderLibraryFilters', () => {
     const { result } = renderHook(() => useDeckBuilderLibraryFilters({ subtypeTags }));
 
     act(() => {
-      result.current.updateLibraryFilters({ search: 'Modified', classFilter: 'ニュートラル' });
+      result.current.updateLibraryFilters({ search: 'Modified', classFilter: 'ニュートラル', showPreviewCards: true });
     });
     expect(result.current.search).toBe('Modified');
+    expect(result.current.showPreviewCards).toBe(true);
 
     act(() => {
       result.current.resetLibraryFilters();
@@ -57,6 +59,7 @@ describe('useDeckBuilderLibraryFilters', () => {
 
     expect(result.current.search).toBe('');
     expect(result.current.classFilter).toBe('All');
+    expect(result.current.showPreviewCards).toBe(false);
   });
 
   it('manages subtype tags', () => {

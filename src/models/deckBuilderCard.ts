@@ -32,6 +32,7 @@ export interface DeckBuilderCardData {
   id: string; // EXP-NUM format, e.g PCS01-001
   name: string;
   image: string;
+  catalog_status?: 'released' | 'preview';
   class?: CardClassValue;
   title?: string;
   type?: string;

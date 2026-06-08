@@ -13,7 +13,9 @@
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
-    "cards:audit": "python3 audit_cards.py"
+    "cards:audit": "python3 audit_cards.py",
+    "cards:audit:preview": "python3 audit_preview_cards.py",
+    "cards:audit:all": "npm run cards:audit && npm run cards:audit:preview"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

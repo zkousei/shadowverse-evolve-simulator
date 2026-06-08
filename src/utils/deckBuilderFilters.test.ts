@@ -22,6 +22,7 @@ describe('deckBuilderFilters', () => {
       selectedSubtypeTags: [],
       deckSectionFilter: 'All',
       hideSameNameVariants: false,
+      showPreviewCards: false,
       page: 0,
     });
   });
@@ -39,6 +40,7 @@ describe('deckBuilderFilters', () => {
       selectedSubtypeTags: ['兵士'],
       deckSectionFilter: 'main',
       hideSameNameVariants: true,
+      showPreviewCards: false,
       page: 3,
     };
 
