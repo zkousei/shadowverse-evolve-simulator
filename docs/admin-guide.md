@@ -105,6 +105,7 @@ npm run cards:audit
 
 公式カードリストに反映される前のカードは `public/cards_preview.json` に追加します。
 形式は `public/cards_detailed.json` と同じです。画像が未確定の場合は `image` を空文字にできます。
+入力例は [`./preview-card-data-sample.json`](./preview-card-data-sample.json) を参照してください。このファイルはドキュメント用サンプルで、アプリの読み込み対象ではありません。
 
 リリース前には次を実行し、正式カードとのID重複や分類不整合が残っていないことを確認してください。
 
