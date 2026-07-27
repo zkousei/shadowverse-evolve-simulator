@@ -354,6 +354,39 @@ const mainCardWithAllowedRelatedToken: DeckBuilderCardData = {
   ],
 };
 
+const emergencySummonToken: DeckBuilderCardData = {
+  ...tokenCard,
+  id: 'BP21-T04',
+  name: '緊急召喚',
+  card_kind_normalized: 'token_amulet',
+  type: 'アミュレット・トークン',
+  related_cards: [
+    { id: 'BP12-T07', name: '防御型ゴーレム' },
+    { id: 'BP16-T01', name: 'ガーディアンゴーレム' },
+  ],
+};
+
+const defensiveGolemToken: DeckBuilderCardData = {
+  ...tokenCard,
+  id: 'BP12-T07',
+  name: '防御型ゴーレム',
+};
+
+const guardianGolemToken: DeckBuilderCardData = {
+  ...tokenCard,
+  id: 'BP16-T01',
+  name: 'ガーディアンゴーレム',
+};
+
+const mainCardWithEmergencySummonToken: DeckBuilderCardData = {
+  ...mainCard,
+  id: 'BP21-044',
+  name: '神秘の魔法陣',
+  related_cards: [
+    { id: emergencySummonToken.id, name: emergencySummonToken.name },
+  ],
+};
+
 const cyclicRelatedTokenA: DeckBuilderCardData = {
   ...tokenCard,
   id: 'TK01-020',
@@ -781,6 +814,26 @@ describe('deckBuilderRules', () => {
     expect(deckState.tokenDeck.map(card => card.id)).toEqual([
       allowedRelatedTokenWhite.id,
       allowedRelatedTokenBlack.id,
+    ]);
+  });
+
+  it('appends emergency summon golem tokens from the allowlisted token relation', () => {
+    const deckState = appendRelatedTokensToDeckState({
+      mainDeck: [mainCardWithEmergencySummonToken],
+      evolveDeck: [],
+      leaderCards: [],
+      tokenDeck: [],
+    }, [
+      mainCardWithEmergencySummonToken,
+      emergencySummonToken,
+      defensiveGolemToken,
+      guardianGolemToken,
+    ], constructedRoyalRule);
+
+    expect(deckState.tokenDeck.map(card => card.id)).toEqual([
+      emergencySummonToken.id,
+      defensiveGolemToken.id,
+      guardianGolemToken.id,
     ]);
   });
 

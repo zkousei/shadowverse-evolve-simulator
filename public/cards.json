@@ -1,5 +1,1330 @@
 [
   {
+    "id": "BP21-001",
+    "name": "新緑の新入生・カステル",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-001.png"
+  },
+  {
+    "id": "BP21-002",
+    "name": "無謬の偶像・ライル",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-002.png"
+  },
+  {
+    "id": "BP21-003",
+    "name": "無謬の偶像・ライル",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-003.png"
+  },
+  {
+    "id": "BP21-004",
+    "name": "翅の女王・ティターニア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-004.png"
+  },
+  {
+    "id": "BP21-005",
+    "name": "カッティングキャット",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-005.png"
+  },
+  {
+    "id": "BP21-006",
+    "name": "カッティングキャット",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-006.png"
+  },
+  {
+    "id": "BP21-007",
+    "name": "フォレストシバルリー・シンシア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-007.png"
+  },
+  {
+    "id": "BP21-008",
+    "name": "伐採斧のドワーフ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-008.png"
+  },
+  {
+    "id": "BP21-009",
+    "name": "農作のエルフ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-009.png"
+  },
+  {
+    "id": "BP21-010",
+    "name": "農作のエルフ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-010.png"
+  },
+  {
+    "id": "BP21-011",
+    "name": "ナチュラルテイマー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-011.png"
+  },
+  {
+    "id": "BP21-012",
+    "name": "妖精の学習",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-012.png"
+  },
+  {
+    "id": "BP21-013",
+    "name": "ソードラビット",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-013.png"
+  },
+  {
+    "id": "BP21-014",
+    "name": "ソードラビット",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-014.png"
+  },
+  {
+    "id": "BP21-015",
+    "name": "タイガーガール",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-015.png"
+  },
+  {
+    "id": "BP21-016",
+    "name": "宿り木のモモンガ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-016.png"
+  },
+  {
+    "id": "BP21-017",
+    "name": "ワイルドエレメンタラー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-017.png"
+  },
+  {
+    "id": "BP21-018",
+    "name": "繚乱の庭",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-018.png"
+  },
+  {
+    "id": "BP21-019",
+    "name": "学び舎の黄昏・リーシャ＆ナノ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-019.png"
+  },
+  {
+    "id": "BP21-020",
+    "name": "英傑の学園長・ガルドル",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-020.png"
+  },
+  {
+    "id": "BP21-021",
+    "name": "英傑の学園長・ガルドル",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-021.png"
+  },
+  {
+    "id": "BP21-022",
+    "name": "レヴィオンの超越者・ユリウス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-022.png"
+  },
+  {
+    "id": "BP21-023",
+    "name": "飛躍の双剣使い",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-023.png"
+  },
+  {
+    "id": "BP21-024",
+    "name": "飛躍の双剣使い",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-024.png"
+  },
+  {
+    "id": "BP21-025",
+    "name": "選別の教員・ヴァイス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-025.png"
+  },
+  {
+    "id": "BP21-026",
+    "name": "黄昏と白銀",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-026.png"
+  },
+  {
+    "id": "BP21-027",
+    "name": "愚直なる研磨・トニー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-027.png"
+  },
+  {
+    "id": "BP21-028",
+    "name": "愚直なる研磨・トニー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-028.png"
+  },
+  {
+    "id": "BP21-029",
+    "name": "必中の訓練生",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-029.png"
+  },
+  {
+    "id": "BP21-030",
+    "name": "才気の戦略家",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-030.png"
+  },
+  {
+    "id": "BP21-031",
+    "name": "サージェントキャット",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-031.png"
+  },
+  {
+    "id": "BP21-032",
+    "name": "サージェントキャット",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-032.png"
+  },
+  {
+    "id": "BP21-033",
+    "name": "奮闘する格闘家",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-033.png"
+  },
+  {
+    "id": "BP21-034",
+    "name": "レヴィオンの弓使い",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-034.png"
+  },
+  {
+    "id": "BP21-035",
+    "name": "快進撃",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-035.png"
+  },
+  {
+    "id": "BP21-036",
+    "name": "戦場の記録",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-036.png"
+  },
+  {
+    "id": "BP21-037",
+    "name": "御伽の姫・アマリリス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-037.png"
+  },
+  {
+    "id": "BP21-038",
+    "name": "精彩の魔導・アン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-038.png"
+  },
+  {
+    "id": "BP21-039",
+    "name": "精彩の魔導・アン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-039.png"
+  },
+  {
+    "id": "BP21-040",
+    "name": "双魂の久遠・ケリドウェン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-040.png"
+  },
+  {
+    "id": "BP21-041",
+    "name": "結びの紅蓮・グレア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-041.png"
+  },
+  {
+    "id": "BP21-042",
+    "name": "結びの紅蓮・グレア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-042.png"
+  },
+  {
+    "id": "BP21-043",
+    "name": "マナリアパーティー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-043.png"
+  },
+  {
+    "id": "BP21-044",
+    "name": "神秘の魔法陣",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-044.png"
+  },
+  {
+    "id": "BP21-045",
+    "name": "ルナルの教会長・グリュネ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-045.png"
+  },
+  {
+    "id": "BP21-046",
+    "name": "ルナルの教会長・グリュネ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-046.png"
+  },
+  {
+    "id": "BP21-047",
+    "name": "カースドソーサラー・リーズ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-047.png"
+  },
+  {
+    "id": "BP21-048",
+    "name": "鐘の魔術師",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-048.png"
+  },
+  {
+    "id": "BP21-049",
+    "name": "群れの召喚士",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-049.png"
+  },
+  {
+    "id": "BP21-050",
+    "name": "群れの召喚士",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-050.png"
+  },
+  {
+    "id": "BP21-051",
+    "name": "紡ぎ繋ぐ糸・エヴァミア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-051.png"
+  },
+  {
+    "id": "BP21-052",
+    "name": "魔術指南",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-052.png"
+  },
+  {
+    "id": "BP21-053",
+    "name": "リキッドスフィア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-053.png"
+  },
+  {
+    "id": "BP21-054",
+    "name": "束縛術式",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-054.png"
+  },
+  {
+    "id": "BP21-055",
+    "name": "竜の魔女・リリウム",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-055.png"
+  },
+  {
+    "id": "BP21-056",
+    "name": "竜の魔女・リリウム",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-056.png"
+  },
+  {
+    "id": "BP21-057",
+    "name": "熱血の竜教師・ジョー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-057.png"
+  },
+  {
+    "id": "BP21-058",
+    "name": "金色の威信・リュミオール",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-058.png"
+  },
+  {
+    "id": "BP21-059",
+    "name": "グランドスラムの竜使い",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-059.png"
+  },
+  {
+    "id": "BP21-060",
+    "name": "グランドスラムの竜使い",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-060.png"
+  },
+  {
+    "id": "BP21-061",
+    "name": "緋色の貴公子・ディオン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-061.png"
+  },
+  {
+    "id": "BP21-062",
+    "name": "銀色の清純・アルジャンテ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-062.png"
+  },
+  {
+    "id": "BP21-063",
+    "name": "竜人のストライカー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-063.png"
+  },
+  {
+    "id": "BP21-064",
+    "name": "竜人のストライカー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-064.png"
+  },
+  {
+    "id": "BP21-065",
+    "name": "貫禄のドラゴニュート・ガンベイン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-065.png"
+  },
+  {
+    "id": "BP21-066",
+    "name": "ドラゴニュート・シャルロット",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-066.png"
+  },
+  {
+    "id": "BP21-067",
+    "name": "イプピアーラ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-067.png"
+  },
+  {
+    "id": "BP21-068",
+    "name": "イプピアーラ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-068.png"
+  },
+  {
+    "id": "BP21-069",
+    "name": "オルカサーファー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-069.png"
+  },
+  {
+    "id": "BP21-070",
+    "name": "砕石竜",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-070.png"
+  },
+  {
+    "id": "BP21-071",
+    "name": "荒天のドラゴン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-071.png"
+  },
+  {
+    "id": "BP21-072",
+    "name": "ドラゴンハント",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-072.png"
+  },
+  {
+    "id": "BP21-073",
+    "name": "屍術王・コルネリウス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-073.png"
+  },
+  {
+    "id": "BP21-074",
+    "name": "屍術王・コルネリウス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-074.png"
+  },
+  {
+    "id": "BP21-075",
+    "name": "エンペラーフィスト・ガロム",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-075.png"
+  },
+  {
+    "id": "BP21-076",
+    "name": "逢魔の校長・ヴォルガス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-076.png"
+  },
+  {
+    "id": "BP21-077",
+    "name": "バッドスピナー・アルカ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-077.png"
+  },
+  {
+    "id": "BP21-078",
+    "name": "バッドスピナー・アルカ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-078.png"
+  },
+  {
+    "id": "BP21-079",
+    "name": "ノクターンジェネラル・エクセラ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-079.png"
+  },
+  {
+    "id": "BP21-080",
+    "name": "バッドスクールライフ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-080.png"
+  },
+  {
+    "id": "BP21-081",
+    "name": "韋駄天のパシリ・マロン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-081.png"
+  },
+  {
+    "id": "BP21-082",
+    "name": "韋駄天のパシリ・マロン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-082.png"
+  },
+  {
+    "id": "BP21-083",
+    "name": "魔眼のスケバン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-083.png"
+  },
+  {
+    "id": "BP21-084",
+    "name": "悪魔の令嬢",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-084.png"
+  },
+  {
+    "id": "BP21-085",
+    "name": "スケルトンブレイカー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-085.png"
+  },
+  {
+    "id": "BP21-086",
+    "name": "スケルトンブレイカー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-086.png"
+  },
+  {
+    "id": "BP21-087",
+    "name": "極徒会表番・デナン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-087.png"
+  },
+  {
+    "id": "BP21-088",
+    "name": "マリシャスブレイダー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-088.png"
+  },
+  {
+    "id": "BP21-089",
+    "name": "誘いの夢魔",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-089.png"
+  },
+  {
+    "id": "BP21-090",
+    "name": "霊体の侵入",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-090.png"
+  },
+  {
+    "id": "BP21-091",
+    "name": "異端の指導者・ベルディリア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-091.png"
+  },
+  {
+    "id": "BP21-092",
+    "name": "異端の指導者・ベルディリア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-092.png"
+  },
+  {
+    "id": "BP21-093",
+    "name": "華麗なる淑女・エルヴィーラ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-093.png"
+  },
+  {
+    "id": "BP21-094",
+    "name": "嗚咽の聖騎士・ウィルバート",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-094.png"
+  },
+  {
+    "id": "BP21-095",
+    "name": "嗚咽の聖騎士・ウィルバート",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-095.png"
+  },
+  {
+    "id": "BP21-096",
+    "name": "優雅なる修練・ルゥ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-096.png"
+  },
+  {
+    "id": "BP21-097",
+    "name": "優雅なる修練・ルゥ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-097.png"
+  },
+  {
+    "id": "BP21-098",
+    "name": "不退転の乙女・キーラ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-098.png"
+  },
+  {
+    "id": "BP21-099",
+    "name": "オーキッドの試験場",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-099.png"
+  },
+  {
+    "id": "BP21-100",
+    "name": "浄火の令嬢",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-100.png"
+  },
+  {
+    "id": "BP21-101",
+    "name": "浄火の令嬢",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-101.png"
+  },
+  {
+    "id": "BP21-102",
+    "name": "希望の断片・キリエ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-102.png"
+  },
+  {
+    "id": "BP21-103",
+    "name": "純真の花少女",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-103.png"
+  },
+  {
+    "id": "BP21-104",
+    "name": "ズラトロク",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-104.png"
+  },
+  {
+    "id": "BP21-105",
+    "name": "ズラトロク",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-105.png"
+  },
+  {
+    "id": "BP21-106",
+    "name": "アクアプリースト",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-106.png"
+  },
+  {
+    "id": "BP21-107",
+    "name": "聖鎧のチーター",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-107.png"
+  },
+  {
+    "id": "BP21-108",
+    "name": "教皇の祭器",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-108.png"
+  },
+  {
+    "id": "BP21-109",
+    "name": "気高き魔除け",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-109.png"
+  },
+  {
+    "id": "BP21-110",
+    "name": "レジェンドティーチャー・ルシウス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-110.png"
+  },
+  {
+    "id": "BP21-111",
+    "name": "レジェンドティーチャー・ルシウス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-111.png"
+  },
+  {
+    "id": "BP21-112",
+    "name": "駆動の領域・グレティナ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-112.png"
+  },
+  {
+    "id": "BP21-113",
+    "name": "煌奏の学徒・アンリエット",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-113.png"
+  },
+  {
+    "id": "BP21-114",
+    "name": "大いなる学び舎",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-114.png"
+  },
+  {
+    "id": "BP21-115",
+    "name": "スマートゴブリン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-115.png"
+  },
+  {
+    "id": "BP21-116",
+    "name": "絆の証明",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-116.png"
+  },
+  {
+    "id": "BP21-P01",
+    "name": "カッティングキャット",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p01.png"
+  },
+  {
+    "id": "BP21-P02",
+    "name": "カッティングキャット",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p02.png"
+  },
+  {
+    "id": "BP21-P03",
+    "name": "伐採斧のドワーフ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p03.png"
+  },
+  {
+    "id": "BP21-P04",
+    "name": "農作のエルフ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p04.png"
+  },
+  {
+    "id": "BP21-P05",
+    "name": "農作のエルフ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p05.png"
+  },
+  {
+    "id": "BP21-P06",
+    "name": "妖精の学習",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p06.png"
+  },
+  {
+    "id": "BP21-P07",
+    "name": "ソードラビット",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p07.png"
+  },
+  {
+    "id": "BP21-P08",
+    "name": "ソードラビット",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p08.png"
+  },
+  {
+    "id": "BP21-P09",
+    "name": "タイガーガール",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p09.png"
+  },
+  {
+    "id": "BP21-P10",
+    "name": "宿り木のモモンガ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p10.png"
+  },
+  {
+    "id": "BP21-P11",
+    "name": "飛躍の双剣使い",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p11.png"
+  },
+  {
+    "id": "BP21-P12",
+    "name": "飛躍の双剣使い",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p12.png"
+  },
+  {
+    "id": "BP21-P13",
+    "name": "愚直なる研磨・トニー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p13.png"
+  },
+  {
+    "id": "BP21-P14",
+    "name": "愚直なる研磨・トニー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p14.png"
+  },
+  {
+    "id": "BP21-P15",
+    "name": "才気の戦略家",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p15.png"
+  },
+  {
+    "id": "BP21-P16",
+    "name": "サージェントキャット",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p16.png"
+  },
+  {
+    "id": "BP21-P17",
+    "name": "サージェントキャット",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p17.png"
+  },
+  {
+    "id": "BP21-P18",
+    "name": "奮闘する格闘家",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p18.png"
+  },
+  {
+    "id": "BP21-P19",
+    "name": "レヴィオンの弓使い",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p19.png"
+  },
+  {
+    "id": "BP21-P20",
+    "name": "快進撃",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p20.png"
+  },
+  {
+    "id": "BP21-P21",
+    "name": "神秘の魔法陣",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p21.png"
+  },
+  {
+    "id": "BP21-P22",
+    "name": "ルナルの教会長・グリュネ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p22.png"
+  },
+  {
+    "id": "BP21-P23",
+    "name": "ルナルの教会長・グリュネ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p23.png"
+  },
+  {
+    "id": "BP21-P24",
+    "name": "鐘の魔術師",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p24.png"
+  },
+  {
+    "id": "BP21-P25",
+    "name": "紡ぎ繋ぐ糸・エヴァミア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p25.png"
+  },
+  {
+    "id": "BP21-P26",
+    "name": "魔術指南",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p26.png"
+  },
+  {
+    "id": "BP21-P27",
+    "name": "リキッドスフィア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p27.png"
+  },
+  {
+    "id": "BP21-P28",
+    "name": "束縛術式",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p28.png"
+  },
+  {
+    "id": "BP21-P29",
+    "name": "グランドスラムの竜使い",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p29.png"
+  },
+  {
+    "id": "BP21-P30",
+    "name": "グランドスラムの竜使い",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p30.png"
+  },
+  {
+    "id": "BP21-P31",
+    "name": "緋色の貴公子・ディオン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p31.png"
+  },
+  {
+    "id": "BP21-P32",
+    "name": "竜人のストライカー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p32.png"
+  },
+  {
+    "id": "BP21-P33",
+    "name": "竜人のストライカー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p33.png"
+  },
+  {
+    "id": "BP21-P34",
+    "name": "貫禄のドラゴニュート・ガンベイン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p34.png"
+  },
+  {
+    "id": "BP21-P35",
+    "name": "ドラゴニュート・シャルロット",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p35.png"
+  },
+  {
+    "id": "BP21-P36",
+    "name": "イプピアーラ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p36.png"
+  },
+  {
+    "id": "BP21-P37",
+    "name": "イプピアーラ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p37.png"
+  },
+  {
+    "id": "BP21-P38",
+    "name": "荒天のドラゴン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p38.png"
+  },
+  {
+    "id": "BP21-P39",
+    "name": "ドラゴンハント",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p39.png"
+  },
+  {
+    "id": "BP21-P40",
+    "name": "バッドスピナー・アルカ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p40.png"
+  },
+  {
+    "id": "BP21-P41",
+    "name": "バッドスピナー・アルカ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p41.png"
+  },
+  {
+    "id": "BP21-P42",
+    "name": "ノクターンジェネラル・エクセラ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p42.png"
+  },
+  {
+    "id": "BP21-P43",
+    "name": "バッドスクールライフ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p43.png"
+  },
+  {
+    "id": "BP21-P44",
+    "name": "魔眼のスケバン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p44.png"
+  },
+  {
+    "id": "BP21-P45",
+    "name": "悪魔の令嬢",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p45.png"
+  },
+  {
+    "id": "BP21-P46",
+    "name": "スケルトンブレイカー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p46.png"
+  },
+  {
+    "id": "BP21-P47",
+    "name": "スケルトンブレイカー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p47.png"
+  },
+  {
+    "id": "BP21-P48",
+    "name": "極徒会表番・デナン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p48.png"
+  },
+  {
+    "id": "BP21-P49",
+    "name": "マリシャスブレイダー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p49.png"
+  },
+  {
+    "id": "BP21-P50",
+    "name": "霊体の侵入",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p50.png"
+  },
+  {
+    "id": "BP21-P51",
+    "name": "不退転の乙女・キーラ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p51.png"
+  },
+  {
+    "id": "BP21-P52",
+    "name": "オーキッドの試験場",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p52.png"
+  },
+  {
+    "id": "BP21-P53",
+    "name": "浄火の令嬢",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p53.png"
+  },
+  {
+    "id": "BP21-P54",
+    "name": "浄火の令嬢",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p54.png"
+  },
+  {
+    "id": "BP21-P55",
+    "name": "希望の断片・キリエ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p55.png"
+  },
+  {
+    "id": "BP21-P56",
+    "name": "純真の花少女",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p56.png"
+  },
+  {
+    "id": "BP21-P57",
+    "name": "ズラトロク",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p57.png"
+  },
+  {
+    "id": "BP21-P58",
+    "name": "ズラトロク",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p58.png"
+  },
+  {
+    "id": "BP21-P59",
+    "name": "アクアプリースト",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p59.png"
+  },
+  {
+    "id": "BP21-P60",
+    "name": "教皇の祭器",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p60.png"
+  },
+  {
+    "id": "BP21-P61",
+    "name": "気高き魔除け",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p61.png"
+  },
+  {
+    "id": "BP21-P62",
+    "name": "絆の証明",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p62.png"
+  },
+  {
+    "id": "BP21-P63",
+    "name": "ライルの人形",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p63.png"
+  },
+  {
+    "id": "BP21-P64",
+    "name": "緑の顕現",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p64.png"
+  },
+  {
+    "id": "BP21-P65",
+    "name": "痛苦",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p65.png"
+  },
+  {
+    "id": "BP21-P66",
+    "name": "リリウムの幼竜",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p66.png"
+  },
+  {
+    "id": "BP21-P67",
+    "name": "リリウムの巨竜",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p67.png"
+  },
+  {
+    "id": "BP21-P68",
+    "name": "聖騎兵",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p68.png"
+  },
+  {
+    "id": "BP21-P69",
+    "name": "長久の導き",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p69.png"
+  },
+  {
+    "id": "BP21-P70",
+    "name": "クレスト 嗚咽の聖騎士・ウィルバート",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-p70.png"
+  },
+  {
+    "id": "BP21-PR01",
+    "name": "真紅の抗戦者・モノ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-pr01.png"
+  },
+  {
+    "id": "BP21-PR02",
+    "name": "優美な猫姉妹・シャム＆シャマ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-pr02.png"
+  },
+  {
+    "id": "BP21-PR03",
+    "name": "アネモネタイガー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-pr03.png"
+  },
+  {
+    "id": "BP21-PR04",
+    "name": "カースドクイーン・ナハト・ナハト",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-pr04.png"
+  },
+  {
+    "id": "BP21-PR05",
+    "name": "月の刃・リオード",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-pr05.png"
+  },
+  {
+    "id": "BP21-PR06",
+    "name": "月の刃・リオード",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-pr06.png"
+  },
+  {
+    "id": "BP21-PR07",
+    "name": "マナリアクイーン・アン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-pr07.png"
+  },
+  {
+    "id": "BP21-PR08",
+    "name": "エンシェントアルケミスト",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-pr08.png"
+  },
+  {
+    "id": "BP21-PR09",
+    "name": "エンシェントアルケミスト",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-pr09.png"
+  },
+  {
+    "id": "BP21-PR10",
+    "name": "グレアの炎熱",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-pr10.png"
+  },
+  {
+    "id": "BP21-PR11",
+    "name": "焦熱の竜翼・ドラーク",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-pr11.png"
+  },
+  {
+    "id": "BP21-PR12",
+    "name": "憧れの飛躍・イツルギ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-pr12.png"
+  },
+  {
+    "id": "BP21-PR13",
+    "name": "楽園の終焉・イツルギ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-pr13.png"
+  },
+  {
+    "id": "BP21-PR14",
+    "name": "優美な猫姉妹・シャム＆シャマ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-pr14.png"
+  },
+  {
+    "id": "BP21-PR15",
+    "name": "カースドクイーン・ナハト・ナハト",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-pr15.png"
+  },
+  {
+    "id": "BP21-PR16",
+    "name": "マナリアクイーン・アン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-pr16.png"
+  },
+  {
+    "id": "BP21-PR17",
+    "name": "焦熱の竜翼・ドラーク",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-pr17.png"
+  },
+  {
+    "id": "BP21-PR18",
+    "name": "憧れの飛躍・イツルギ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-pr18.png"
+  },
+  {
+    "id": "BP21-PR19",
+    "name": "楽園の終焉・イツルギ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-pr19.png"
+  },
+  {
+    "id": "BP21-SL01",
+    "name": "新緑の新入生・カステル",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-sl01.png"
+  },
+  {
+    "id": "BP21-SL02",
+    "name": "無謬の偶像・ライル",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-sl02.png"
+  },
+  {
+    "id": "BP21-SL03",
+    "name": "無謬の偶像・ライル",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-sl03.png"
+  },
+  {
+    "id": "BP21-SL04",
+    "name": "翅の女王・ティターニア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-sl04.png"
+  },
+  {
+    "id": "BP21-SL05",
+    "name": "学び舎の黄昏・リーシャ＆ナノ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-sl05.png"
+  },
+  {
+    "id": "BP21-SL06",
+    "name": "英傑の学園長・ガルドル",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-sl06.png"
+  },
+  {
+    "id": "BP21-SL07",
+    "name": "英傑の学園長・ガルドル",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-sl07.png"
+  },
+  {
+    "id": "BP21-SL08",
+    "name": "レヴィオンの超越者・ユリウス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-sl08.png"
+  },
+  {
+    "id": "BP21-SL09",
+    "name": "御伽の姫・アマリリス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-sl09.png"
+  },
+  {
+    "id": "BP21-SL10",
+    "name": "精彩の魔導・アン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-sl10.png"
+  },
+  {
+    "id": "BP21-SL11",
+    "name": "精彩の魔導・アン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-sl11.png"
+  },
+  {
+    "id": "BP21-SL12",
+    "name": "双魂の久遠・ケリドウェン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-sl12.png"
+  },
+  {
+    "id": "BP21-SL13",
+    "name": "竜の魔女・リリウム",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-sl13.png"
+  },
+  {
+    "id": "BP21-SL14",
+    "name": "竜の魔女・リリウム",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-sl14.png"
+  },
+  {
+    "id": "BP21-SL15",
+    "name": "熱血の竜教師・ジョー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-sl15.png"
+  },
+  {
+    "id": "BP21-SL16",
+    "name": "金色の威信・リュミオール",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-sl16.png"
+  },
+  {
+    "id": "BP21-SL17",
+    "name": "屍術王・コルネリウス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-sl17.png"
+  },
+  {
+    "id": "BP21-SL18",
+    "name": "屍術王・コルネリウス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-sl18.png"
+  },
+  {
+    "id": "BP21-SL19",
+    "name": "エンペラーフィスト・ガロム",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-sl19.png"
+  },
+  {
+    "id": "BP21-SL20",
+    "name": "逢魔の校長・ヴォルガス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-sl20.png"
+  },
+  {
+    "id": "BP21-SL21",
+    "name": "異端の指導者・ベルディリア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-sl21.png"
+  },
+  {
+    "id": "BP21-SL22",
+    "name": "異端の指導者・ベルディリア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-sl22.png"
+  },
+  {
+    "id": "BP21-SL23",
+    "name": "華麗なる淑女・エルヴィーラ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-sl23.png"
+  },
+  {
+    "id": "BP21-SL24",
+    "name": "嗚咽の聖騎士・ウィルバート",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-sl24.png"
+  },
+  {
+    "id": "BP21-SL25",
+    "name": "嗚咽の聖騎士・ウィルバート",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-sl25.png"
+  },
+  {
+    "id": "BP21-SL26",
+    "name": "レジェンドティーチャー・ルシウス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-sl26.png"
+  },
+  {
+    "id": "BP21-SL27",
+    "name": "レジェンドティーチャー・ルシウス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-sl27.png"
+  },
+  {
+    "id": "BP21-SL28",
+    "name": "駆動の領域・グレティナ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-sl28.png"
+  },
+  {
+    "id": "BP21-SP01",
+    "name": "金色の威信・リュミオール",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-sp01.png"
+  },
+  {
+    "id": "BP21-T01",
+    "name": "ライルの人形",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-t01.png"
+  },
+  {
+    "id": "BP21-T02",
+    "name": "緑の顕現",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-t02.png"
+  },
+  {
+    "id": "BP21-T03",
+    "name": "痛苦",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-t03.png"
+  },
+  {
+    "id": "BP21-T04",
+    "name": "緊急召喚",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-t04.png"
+  },
+  {
+    "id": "BP21-T05",
+    "name": "術式結界",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-t05.png"
+  },
+  {
+    "id": "BP21-T06",
+    "name": "リリウムの幼竜",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-t06.png"
+  },
+  {
+    "id": "BP21-T07",
+    "name": "リリウムの巨竜",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-t07.png"
+  },
+  {
+    "id": "BP21-T08",
+    "name": "聖騎兵",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-t08.png"
+  },
+  {
+    "id": "BP21-T09",
+    "name": "長久の導き",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-t09.png"
+  },
+  {
+    "id": "BP21-T10",
+    "name": "クレスト 嗚咽の聖騎士・ウィルバート",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-t10.png"
+  },
+  {
+    "id": "BP21-T11",
+    "name": "フェアリー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-t11.png"
+  },
+  {
+    "id": "BP21-T12",
+    "name": "アンの大英霊",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-t12.png"
+  },
+  {
+    "id": "BP21-T13",
+    "name": "刹那の劇薬",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-t13.png"
+  },
+  {
+    "id": "BP21-T14",
+    "name": "久遠の秘薬",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-t14.png"
+  },
+  {
+    "id": "BP21-U01",
+    "name": "翅の女王・ティターニア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-u01.png"
+  },
+  {
+    "id": "BP21-U02",
+    "name": "レヴィオンの超越者・ユリウス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-u02.png"
+  },
+  {
+    "id": "BP21-U03",
+    "name": "双魂の久遠・ケリドウェン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-u03.png"
+  },
+  {
+    "id": "BP21-U04",
+    "name": "金色の威信・リュミオール",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-u04.png"
+  },
+  {
+    "id": "BP21-U05",
+    "name": "エンペラーフィスト・ガロム",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-u05.png"
+  },
+  {
+    "id": "BP21-U06",
+    "name": "華麗なる淑女・エルヴィーラ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-u06.png"
+  },
+  {
+    "id": "BP21-U07",
+    "name": "駆動の領域・グレティナ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-u07.png"
+  },
+  {
+    "id": "SCS01-001",
+    "name": "自然の妖精姫・アリア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/SCS01/scs01-001.png"
+  },
+  {
+    "id": "SCS01-002",
+    "name": "プロシードハート・オーキス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/SCS01/scs01-002.png"
+  },
+  {
+    "id": "SCS01-003",
+    "name": "空絶の簒奪・オクトリス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/SCS01/scs01-003.png"
+  },
+  {
+    "id": "SCS01-004",
+    "name": "マナリアフレンズ・アン＆グレア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/SCS01/scs01-004.png"
+  },
+  {
+    "id": "SCS01-005",
+    "name": "万華の鳳凰",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/SCS01/scs01-005.png"
+  },
+  {
+    "id": "SCS01-006",
+    "name": "《恋人》・ミルティオ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/SCS01/scs01-006.png"
+  },
+  {
+    "id": "SCS01-007",
+    "name": "羅刹の咎人・ガロダート",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/SCS01/scs01-007.png"
+  },
+  {
+    "id": "SCS01-008",
+    "name": "ブライトパラディン・ウィルバート",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/SCS01/scs01-008.png"
+  },
+  {
+    "id": "SCS01-009",
+    "name": "干絶の飢餓・ギルネリーゼ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/SCS01/scs01-009.png"
+  },
+  {
+    "id": "SCS01-010",
+    "name": "SEP",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/SCS01/scs01-010.png"
+  },
+  {
     "id": "BP20-001",
     "name": "絶命の顕現・エズディア",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP20/bp20-001.png"
@@ -35360,6 +36685,16 @@
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-557.png"
   },
   {
+    "id": "PR-558",
+    "name": "静寂のアナテマ・ギルダリア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-558.png"
+  },
+  {
+    "id": "PR-559",
+    "name": "静寂のアナテマ・ギルダリア（EVOLVE）",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-559.png"
+  },
+  {
     "id": "PR-560",
     "name": "安息の神殿",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-560.png"
@@ -35378,5 +36713,120 @@
     "id": "PR-563",
     "name": "SEP",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-563.png"
+  },
+  {
+    "id": "PR-564",
+    "name": "極意たる空絶",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-564.png"
+  },
+  {
+    "id": "PR-565",
+    "name": "煌奏の学徒・アンリエット",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-565.png"
+  },
+  {
+    "id": "PR-566",
+    "name": "EP",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-566.png"
+  },
+  {
+    "id": "PR-567",
+    "name": "EP",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-567.png"
+  },
+  {
+    "id": "PR-568",
+    "name": "EP",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-568.png"
+  },
+  {
+    "id": "PR-569",
+    "name": "ナチュラルテイマー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-569.png"
+  },
+  {
+    "id": "PR-570",
+    "name": "必中の訓練生",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-570.png"
+  },
+  {
+    "id": "PR-571",
+    "name": "マナリアパーティー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-571.png"
+  },
+  {
+    "id": "PR-572",
+    "name": "オルカサーファー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-572.png"
+  },
+  {
+    "id": "PR-573",
+    "name": "韋駄天のパシリ・マロン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-573.png"
+  },
+  {
+    "id": "PR-574",
+    "name": "韋駄天のパシリ・マロン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-574.png"
+  },
+  {
+    "id": "PR-575",
+    "name": "フォレストシバルリー・シンシア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-575.png"
+  },
+  {
+    "id": "PR-576",
+    "name": "選別の教員・ヴァイス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-576.png"
+  },
+  {
+    "id": "PR-577",
+    "name": "カースドソーサラー・リーズ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-577.png"
+  },
+  {
+    "id": "PR-578",
+    "name": "銀色の清純・アルジャンテ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-578.png"
+  },
+  {
+    "id": "PR-579",
+    "name": "優雅なる修練・ルゥ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-579.png"
+  },
+  {
+    "id": "PR-580",
+    "name": "優雅なる修練・ルゥ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-580.png"
+  },
+  {
+    "id": "PR-581",
+    "name": "闇の賞金稼ぎ・バルト",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-581.png"
+  },
+  {
+    "id": "PR-582",
+    "name": "大いなる学び舎",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-582.png"
+  },
+  {
+    "id": "PR-583",
+    "name": "御伽の姫・アマリリス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-583.png"
+  },
+  {
+    "id": "PR-584",
+    "name": "スマートゴブリン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-584.png"
+  },
+  {
+    "id": "PR-585",
+    "name": "黄昏と白銀",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-585.png"
+  },
+  {
+    "id": "PR-589",
+    "name": "砕石竜",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-589.png"
   }
 ]

@@ -596,6 +596,8 @@ const MAX_RELATED_TOKEN_EXPANSION_DEPTH = 2;
 const ALLOWED_RELATED_TOKEN_EXPANSION_NAME_PAIRS = new Set([
   '新約・白の章::新約・黒の章',
   '新約・黒の章::新約・白の章',
+  '緊急召喚::防御型ゴーレム',
+  '緊急召喚::ガーディアンゴーレム',
 ]);
 
 type RelatedTokenExpansionEntry = {
