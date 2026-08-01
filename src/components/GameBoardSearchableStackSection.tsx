@@ -3,6 +3,8 @@ import GameBoardTouchActionSheet from './GameBoardTouchActionSheet';
 import GameBoardZoneSearchButton from './GameBoardZoneSearchButton';
 import Zone from './Zone';
 
+const STACK_SEARCH_ACTION_Z_INDEX = 180;
+
 type GameBoardSearchableStackSectionProps = {
   zoneProps: React.ComponentProps<typeof Zone>;
   searchLabel: string;
@@ -72,7 +74,7 @@ const GameBoardSearchableStackSection: React.FC<GameBoardSearchableStackSectionP
             right: '6px',
             bottom: '6px',
             width: 'min(72px, calc(100% - 12px))',
-            zIndex: 30,
+            zIndex: STACK_SEARCH_ACTION_Z_INDEX,
           }}
         >
           {searchButton}

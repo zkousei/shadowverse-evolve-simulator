@@ -281,6 +281,25 @@ describe('GameBoard extracted UI components - zones and controls', () => {
     expect(onSearch).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps overlaid stack search actions above a full cemetery stack', () => {
+    render(
+      <GameBoardSearchableStackSection
+        zoneProps={{
+          id: 'cemetery-host',
+          label: 'Cemetery',
+          cards: Array.from({ length: 40 }, (_, index) => ({ id: `card-${index}` } as never)),
+        }}
+        searchLabel="Search"
+        onSearch={vi.fn()}
+        actionPlacement="overlay"
+      />
+    );
+
+    const button = screen.getByRole('button', { name: 'Search' });
+
+    expect(button.parentElement).toHaveStyle({ zIndex: '180' });
+  });
+
   it('hides inline zone search button for empty zones and opens via zone tap when tap-to-open is enabled', () => {
     const onSearch = vi.fn();
 
