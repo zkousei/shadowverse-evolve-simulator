@@ -18,6 +18,7 @@ type DeckBuilderLibraryPaneProps = {
   cardDetailLookup: Record<string, CardDetail>;
   search: string;
   hideSameNameVariants: boolean;
+  showPreviewCards: boolean;
   deckSectionFilter: DeckBuilderDeckSectionFilter;
   classFilter: ClassFilter;
   cardTypeFilter: DeckBuilderCardTypeFilter;
@@ -43,6 +44,7 @@ type DeckBuilderLibraryPaneProps = {
   canAddToSection: (card: DeckBuilderCardData, section: DeckTargetSection) => boolean;
   onSearchChange: (value: string) => void;
   onHideSameNameVariantsChange: (checked: boolean) => void;
+  onShowPreviewCardsChange: (checked: boolean) => void;
   onReset: () => void;
   onDeckSectionFilterChange: (value: DeckBuilderDeckSectionFilter) => void;
   onClassFilterChange: (value: ClassFilter) => void;
@@ -66,6 +68,7 @@ const DeckBuilderLibraryPane: React.FC<DeckBuilderLibraryPaneProps> = ({
   cardDetailLookup,
   search,
   hideSameNameVariants,
+  showPreviewCards,
   deckSectionFilter,
   classFilter,
   cardTypeFilter,
@@ -91,6 +94,7 @@ const DeckBuilderLibraryPane: React.FC<DeckBuilderLibraryPaneProps> = ({
   canAddToSection,
   onSearchChange,
   onHideSameNameVariantsChange,
+  onShowPreviewCardsChange,
   onReset,
   onDeckSectionFilterChange,
   onClassFilterChange,
@@ -116,6 +120,7 @@ const DeckBuilderLibraryPane: React.FC<DeckBuilderLibraryPaneProps> = ({
       <DeckBuilderLibraryFilters
         search={search}
         hideSameNameVariants={hideSameNameVariants}
+        showPreviewCards={showPreviewCards}
         deckSectionFilter={deckSectionFilter}
         classFilter={classFilter}
         cardTypeFilter={cardTypeFilter}
@@ -135,6 +140,7 @@ const DeckBuilderLibraryPane: React.FC<DeckBuilderLibraryPaneProps> = ({
         canAddSubtype={canAddSubtype}
         onSearchChange={onSearchChange}
         onHideSameNameVariantsChange={onHideSameNameVariantsChange}
+        onShowPreviewCardsChange={onShowPreviewCardsChange}
         onReset={onReset}
         onDeckSectionFilterChange={onDeckSectionFilterChange}
         onClassFilterChange={onClassFilterChange}

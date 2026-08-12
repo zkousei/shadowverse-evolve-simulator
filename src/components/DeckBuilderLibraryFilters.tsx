@@ -37,6 +37,7 @@ const DECK_SECTION_LABEL_KEYS: Record<DeckBuilderDeckSectionFilter, string> = {
 type DeckBuilderLibraryFiltersProps = {
   search: string;
   hideSameNameVariants: boolean;
+  showPreviewCards: boolean;
   deckSectionFilter: DeckBuilderDeckSectionFilter;
   cardTypeFilter: DeckBuilderCardTypeFilter;
   costFilter: string;
@@ -56,6 +57,7 @@ type DeckBuilderLibraryFiltersProps = {
   canAddSubtype: boolean;
   onSearchChange: (value: string) => void;
   onHideSameNameVariantsChange: (checked: boolean) => void;
+  onShowPreviewCardsChange: (checked: boolean) => void;
   onReset: () => void;
   onDeckSectionFilterChange: (value: DeckBuilderDeckSectionFilter) => void;
   onClassFilterChange: (value: ClassFilter) => void;
@@ -83,6 +85,7 @@ const segmentedGroupStyle: React.CSSProperties = {
 const DeckBuilderLibraryFilters: React.FC<DeckBuilderLibraryFiltersProps> = ({
   search,
   hideSameNameVariants,
+  showPreviewCards,
   deckSectionFilter,
   cardTypeFilter,
   costFilter,
@@ -102,6 +105,7 @@ const DeckBuilderLibraryFilters: React.FC<DeckBuilderLibraryFiltersProps> = ({
   canAddSubtype,
   onSearchChange,
   onHideSameNameVariantsChange,
+  onShowPreviewCardsChange,
   onReset,
   onDeckSectionFilterChange,
   onClassFilterChange,
@@ -164,6 +168,24 @@ const DeckBuilderLibraryFilters: React.FC<DeckBuilderLibraryFiltersProps> = ({
             onChange={(event) => onHideSameNameVariantsChange(event.target.checked)}
           />
           {t('deckBuilder.filters.hideSameNameVariants')}
+        </label>
+
+        <label
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            color: 'var(--text-muted)',
+            fontSize: '0.875rem',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={showPreviewCards}
+            onChange={(event) => onShowPreviewCardsChange(event.target.checked)}
+          />
+          {t('deckBuilder.filters.showPreviewCards')}
         </label>
 
         <button

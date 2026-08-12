@@ -71,6 +71,7 @@ describe('DeckBuilder extracted UI components - library', () => {
   it('renders library filters and wires filter callbacks', () => {
     const onSearchChange = vi.fn();
     const onHideSameNameVariantsChange = vi.fn();
+    const onShowPreviewCardsChange = vi.fn();
     const onReset = vi.fn();
     const onDeckSectionFilterChange = vi.fn();
     const onClassFilterChange = vi.fn();
@@ -87,6 +88,7 @@ describe('DeckBuilder extracted UI components - library', () => {
       <DeckBuilderLibraryFilters
         search=""
         hideSameNameVariants={false}
+        showPreviewCards={false}
         deckSectionFilter="All"
         cardTypeFilter="All"
         costFilter="All"
@@ -106,6 +108,7 @@ describe('DeckBuilder extracted UI components - library', () => {
         canAddSubtype={true}
         onSearchChange={onSearchChange}
         onHideSameNameVariantsChange={onHideSameNameVariantsChange}
+        onShowPreviewCardsChange={onShowPreviewCardsChange}
         onReset={onReset}
         onDeckSectionFilterChange={onDeckSectionFilterChange}
         onClassFilterChange={onClassFilterChange}
@@ -122,6 +125,7 @@ describe('DeckBuilder extracted UI components - library', () => {
 
     fireEvent.change(screen.getByPlaceholderText('Search cards by name...'), { target: { value: 'Alpha' } });
     fireEvent.click(screen.getByLabelText('Hide same-name variants'));
+    fireEvent.click(screen.getByLabelText('Show preview cards'));
     fireEvent.click(screen.getByRole('button', { name: 'Reset Filters' }));
     fireEvent.click(within(screen.getByRole('group', { name: 'Deck section filter' })).getByRole('button', { name: 'Main' }));
     fireEvent.click(within(screen.getByRole('group', { name: 'Class filter' })).getByRole('button', { name: 'Royal' }));
@@ -136,6 +140,7 @@ describe('DeckBuilder extracted UI components - library', () => {
 
     expect(onSearchChange).toHaveBeenCalledWith('Alpha');
     expect(onHideSameNameVariantsChange).toHaveBeenCalledWith(true);
+    expect(onShowPreviewCardsChange).toHaveBeenCalledWith(true);
     expect(onReset).toHaveBeenCalledTimes(1);
     expect(onDeckSectionFilterChange).toHaveBeenCalledWith('main');
     expect(onClassFilterChange).toHaveBeenCalledWith('ロイヤル');
@@ -172,9 +177,25 @@ describe('DeckBuilder extracted UI components - library', () => {
     expect(onAddToSection).toHaveBeenCalledWith(sampleCard, 'main');
   });
 
+  it('marks preview cards in the library card', () => {
+    render(
+      <DeckBuilderLibraryCard
+        card={{ ...sampleCard, catalog_status: 'preview' }}
+        detail={sampleCardDetail}
+        allowedSections={['main']}
+        canAddToSection={() => true}
+        onOpenPreview={vi.fn()}
+        onAddToSection={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('PREVIEW')).toBeInTheDocument();
+  });
+
   it('renders the library pane and delegates filter, pagination, and card actions', () => {
     const onSearchChange = vi.fn();
     const onHideSameNameVariantsChange = vi.fn();
+    const onShowPreviewCardsChange = vi.fn();
     const onReset = vi.fn();
     const onDeckSectionFilterChange = vi.fn();
     const onClassFilterChange = vi.fn();
@@ -198,6 +219,7 @@ describe('DeckBuilder extracted UI components - library', () => {
         cardDetailLookup={{ 'BP01-001': sampleCardDetail }}
         search=""
         hideSameNameVariants={false}
+        showPreviewCards={false}
         deckSectionFilter="All"
         classFilter="All"
         cardTypeFilter="All"
@@ -223,6 +245,7 @@ describe('DeckBuilder extracted UI components - library', () => {
         canAddToSection={() => true}
         onSearchChange={onSearchChange}
         onHideSameNameVariantsChange={onHideSameNameVariantsChange}
+        onShowPreviewCardsChange={onShowPreviewCardsChange}
         onReset={onReset}
         onDeckSectionFilterChange={onDeckSectionFilterChange}
         onClassFilterChange={onClassFilterChange}

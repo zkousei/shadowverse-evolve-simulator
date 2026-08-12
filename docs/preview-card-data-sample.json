@@ -1,0 +1,68 @@
+[
+  {
+    "id": "BP99-001",
+    "name": "サンプルフォロワー",
+    "image": "",
+    "class": "エルフ",
+    "title": "Shadowverse EVOLVE",
+    "type": "フォロワー",
+    "subtype": "妖精",
+    "rarity": "LG",
+    "product_name": "ブースターパック第99弾",
+    "cost": "2",
+    "atk": "2",
+    "hp": "3",
+    "ability_text": "【ファンファーレ】カードを1枚引く。",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true
+  },
+  {
+    "id": "BP99-002",
+    "name": "サンプルエボルヴ",
+    "image": "https://example.com/bp99-002.png",
+    "class": "エルフ",
+    "title": "Shadowverse EVOLVE",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "妖精",
+    "rarity": "GR",
+    "product_name": "ブースターパック第99弾",
+    "cost": "-",
+    "atk": "4",
+    "hp": "5",
+    "ability_text": "【進化時】相手のフォロワー1体を選ぶ。それに2ダメージ。",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "related_cards": [
+      {
+        "id": "BP99-001",
+        "name": "サンプルフォロワー"
+      }
+    ]
+  },
+  {
+    "id": "BP99-T01",
+    "name": "サンプルトークン",
+    "image": "",
+    "class": "エルフ",
+    "title": "Shadowverse EVOLVE",
+    "type": "フォロワー・トークン",
+    "subtype": "妖精",
+    "rarity": "PR",
+    "product_name": "ブースターパック第99弾",
+    "cost": "1",
+    "atk": "1",
+    "hp": "1",
+    "ability_text": "",
+    "card_kind_normalized": "token_follower",
+    "deck_section": "token",
+    "is_token": true,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true
+  }
+]

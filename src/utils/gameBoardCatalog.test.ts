@@ -53,6 +53,18 @@ describe('buildGameBoardCatalogResources', () => {
         card_kind_normalized: 'token_crest',
         type: 'クレスト・トークン',
       },
+      {
+        id: 'preview-follower',
+        name: 'Preview Follower',
+        title: 'Preview Title',
+        image: '',
+        deck_section: 'main',
+        card_kind_normalized: 'follower',
+        type: 'Follower',
+        atk: '4',
+        hp: '5',
+        catalog_status: 'preview',
+      },
     ];
 
     const resources = buildGameBoardCatalogResources(cards);
@@ -65,5 +77,8 @@ describe('buildGameBoardCatalogResources', () => {
     expect(resources.fieldLinkCardIds.has('field-link')).toBe(true);
     expect(resources.tokenEquipmentCardIds.has('token-equipment')).toBe(true);
     expect(resources.tokenEquipmentCardIds.has('crest-token')).toBe(false);
+    expect(resources.catalogById['preview-follower']?.catalog_status).toBe('preview');
+    expect(resources.statLookup['preview-follower']).toMatchObject({ atk: 4, hp: 5 });
+    expect(resources.detailLookup['preview-follower']?.image).toBe('');
   });
 });
