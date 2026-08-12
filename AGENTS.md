@@ -153,6 +153,36 @@ short-lived branch before editing code.
 - If the user explicitly says not to create a branch, or asks to work on the
   current branch, follow that instruction.
 
+Recommended Codex-driven workflow:
+
+1. The user asks Codex to start from branch creation, or asks for a feature or
+   fix without saying to stay on the current branch.
+2. Codex checks the current branch and working tree status.
+3. Codex creates or reuses a suitable `codex/...` branch.
+4. Codex follows the repository TDD workflow, choosing the narrowest owning test
+   layer before production changes.
+5. Codex runs targeted checks while iterating, then the broader completion
+   checks when appropriate.
+6. Codex summarizes the behavior, owning test file, verification commands, and
+   any remaining manual-check-only risk.
+7. If requested, Codex can commit, push, and help prepare the pull request.
+8. After the pull request is merged on GitHub, Codex can switch local work back
+   to `main` and pull the latest remote state when the user asks.
+
+## Post-Merge Local Sync
+
+After a feature or fix branch has been merged on GitHub, Codex may handle local
+cleanup and sync when the user asks.
+
+- Check the current branch and working tree status first.
+- If there are uncommitted changes, do not overwrite, discard, or stash them
+  unless the user explicitly approves the action.
+- Switch back to `main`.
+- Pull the latest `main` from the remote.
+- Do not delete the merged local branch unless the user explicitly asks.
+- Report the final branch, whether `main` was updated, and any local changes
+  that remain.
+
 ## Safe Change Rules
 
 - Prefer characterization tests before refactoring risky behavior.
