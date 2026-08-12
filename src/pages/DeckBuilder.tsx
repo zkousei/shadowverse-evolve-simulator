@@ -147,6 +147,14 @@ const DeckBuilder: React.FC = () => {
   const [deckSortMode, setDeckSortMode] = useState<DeckSortMode>('added');
   const [savedDecks, setSavedDecks] = useState<SavedDeckRecordV1[]>(() => listSavedDecks());
   const subtypeTags = getAvailableSubtypeTags(cards);
+  const releasedCards = React.useMemo(
+    () => cards.filter(card => card.catalog_status !== 'preview'),
+    [cards]
+  );
+  const releasedSubtypeTags = React.useMemo(
+    () => getAvailableSubtypeTags(releasedCards),
+    [releasedCards]
+  );
   const {
     selectedSavedDeckId,
     savedBaselineSnapshot,
@@ -176,6 +184,7 @@ const DeckBuilder: React.FC = () => {
     selectedSubtypeTags,
     deckSectionFilter,
     hideSameNameVariants,
+    showPreviewCards,
     page,
     filteredSubtypeOptions,
     resetLibraryFilters,
@@ -185,6 +194,7 @@ const DeckBuilder: React.FC = () => {
     removeSubtypeTag,
   } = useDeckBuilderLibraryFilters({
     subtypeTags,
+    releasedSubtypeTags,
   });
   const {
     previewCard,
@@ -236,10 +246,12 @@ const DeckBuilder: React.FC = () => {
   }, []);
 
   // Extract unique expansions (prefix before hyphen)
-  const expansions = getAvailableExpansions(cards);
-  const rarities = getAvailableRarities(cards);
-  const productNames = getAvailableProductNames(cards);
-  const titles = getAvailableTitles(cards);
+  const filterOptionCards = showPreviewCards ? cards : releasedCards;
+  const activeSubtypeTags = showPreviewCards ? subtypeTags : releasedSubtypeTags;
+  const expansions = getAvailableExpansions(filterOptionCards);
+  const rarities = getAvailableRarities(filterOptionCards);
+  const productNames = getAvailableProductNames(filterOptionCards);
+  const titles = getAvailableTitles(filterOptionCards);
   const cardDetailLookup = React.useMemo(() => buildCardDetailLookup(cards), [cards]);
   const isRuleReady = isRuleConfigured(deckRuleConfig);
   const leaderLimit = getDeckLimit('leader', deckRuleConfig);
@@ -257,6 +269,7 @@ const DeckBuilder: React.FC = () => {
     selectedSubtypeTags,
     deckSectionFilter,
     hideSameNameVariants,
+    showPreviewCards,
     page,
     pageSize: PAGE_SIZE,
   });
@@ -554,6 +567,7 @@ const DeckBuilder: React.FC = () => {
     cardDetailLookup,
     search,
     hideSameNameVariants,
+    showPreviewCards,
     deckSectionFilter,
     classFilter,
     cardTypeFilter,
@@ -570,7 +584,7 @@ const DeckBuilder: React.FC = () => {
     expansions,
     rarities,
     productNames,
-    canAddSubtype: canAddSubtypeTag(subtypeTags, selectedSubtypeTags, subtypeSearch),
+    canAddSubtype: canAddSubtypeTag(activeSubtypeTags, selectedSubtypeTags, subtypeSearch),
     page,
     totalPages,
     canGoPrev: page > 0,
@@ -582,6 +596,9 @@ const DeckBuilder: React.FC = () => {
     onSearchChange: (value: string) => updateLibraryFiltersWithPageReset({ search: value }),
     onHideSameNameVariantsChange: (checked: boolean) => (
       updateLibraryFiltersWithPageReset({ hideSameNameVariants: checked })
+    ),
+    onShowPreviewCardsChange: (checked: boolean) => (
+      updateLibraryFiltersWithPageReset({ showPreviewCards: checked })
     ),
     onReset: resetLibraryFilters,
     onDeckSectionFilterChange: (value: DeckBuilderDeckSectionFilter) => (

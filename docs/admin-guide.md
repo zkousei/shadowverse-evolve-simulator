@@ -101,6 +101,20 @@ npm run cards:audit
 
 更新後はブラウザをリロードすると、Deck Builder と GameBoard の両方に反映されます。
 
+### プレビューカードを手動更新する
+
+公式カードリストに反映される前のカードは `public/cards_preview.json` に追加します。
+形式は `public/cards_detailed.json` と同じです。画像が未確定の場合は `image` を空文字にできます。
+入力例は [`./preview-card-data-sample.json`](./preview-card-data-sample.json) を参照してください。このファイルはドキュメント用サンプルで、アプリの読み込み対象ではありません。
+
+リリース前には次を実行し、正式カードとのID重複や分類不整合が残っていないことを確認してください。
+
+```bash
+npm run cards:audit:preview
+```
+
+正式カードと同じ `id` があるプレビューカードは、アプリ実行時には正式カードが優先されます。監査ではエラーとして扱うため、正式取り込み後は `public/cards_preview.json` から削除してください。
+
 ## 7. デッキ制限ルール更新の基本手順
 
 更新対象:

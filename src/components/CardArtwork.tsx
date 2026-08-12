@@ -119,8 +119,9 @@ const CardArtwork: React.FC<Props> = ({
   // Network snapshots may omit official image URLs for size reasons, so prefer
   // the catalog-backed detail image whenever it is available locally.
   const resolvedImage = detail?.image || image;
+  const hasResolvedImage = resolvedImage.trim().length > 0;
 
-  if (!isDummyCardArtEnabled()) {
+  if (!isDummyCardArtEnabled() && (isBack || hasResolvedImage)) {
     return (
       <img
         src={isBack ? '/card_back.png' : resolvedImage}

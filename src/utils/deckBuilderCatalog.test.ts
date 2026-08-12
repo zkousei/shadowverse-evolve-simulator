@@ -264,6 +264,56 @@ describe('deckBuilderCatalog', () => {
     expect(sevenPlus.filteredCards.map(card => card.id)).toEqual(['BP02-007']);
   });
 
+  it('hides preview cards unless the preview filter is enabled', () => {
+    const previewCard: DeckBuilderCardData = {
+      id: 'PV01-001',
+      name: 'Preview Knight',
+      image: '',
+      cost: '2',
+      class: 'ロイヤル',
+      title: 'Hero Tale',
+      type: 'フォロワー',
+      rarity: 'PR',
+      product_name: 'Preview Pack',
+      card_kind_normalized: 'follower',
+      deck_section: 'main',
+      catalog_status: 'preview',
+    };
+    const cards = [...mockCards, previewCard];
+    const baseFilters = {
+      search: '',
+      costFilter: 'All',
+      expansionFilter: 'All',
+      classFilter: 'All' as const,
+      cardTypeFilter: 'All' as const,
+      rarityFilter: 'All',
+      productNameFilter: 'All',
+      selectedSubtypeTags: [],
+      deckSectionFilter: 'All' as const,
+      hideSameNameVariants: false,
+      page: 0,
+      pageSize: 50,
+    };
+
+    const hiddenView = buildDeckBuilderCatalogView(cards, {
+      ...createDefaultDeckRuleConfig(),
+      format: 'other',
+    }, {
+      ...baseFilters,
+      showPreviewCards: false,
+    });
+    const shownView = buildDeckBuilderCatalogView(cards, {
+      ...createDefaultDeckRuleConfig(),
+      format: 'other',
+    }, {
+      ...baseFilters,
+      showPreviewCards: true,
+    });
+
+    expect(hiddenView.filteredCards.map(card => card.id)).not.toContain('PV01-001');
+    expect(shownView.filteredCards.map(card => card.id)).toContain('PV01-001');
+  });
+
   it('builds crossover class options while preventing duplicate class picks', () => {
     expect(getCrossoverClassOptions([CLASS.ROYAL, CLASS.WITCH])).toEqual({
       firstOptions: [CLASS.ELF, CLASS.ROYAL, CLASS.DRAGON, CLASS.NIGHTMARE, CLASS.BISHOP],

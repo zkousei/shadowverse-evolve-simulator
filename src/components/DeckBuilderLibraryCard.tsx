@@ -72,6 +72,7 @@ const DeckBuilderLibraryCard: React.FC<DeckBuilderLibraryCardProps> = ({
         title={t('deckBuilder.preview.openTitle', { name: card.name })}
         onClick={() => onOpenPreview(card)}
         style={{
+          position: 'relative',
           padding: 0,
           border: 'none',
           background: 'transparent',
@@ -90,6 +91,26 @@ const DeckBuilderLibraryCard: React.FC<DeckBuilderLibraryCardProps> = ({
           style={{ width: '100%', borderRadius: '4px' }}
           draggable={false}
         />
+        {card.catalog_status === 'preview' && (
+          <span
+            style={{
+              position: 'absolute',
+              top: 6,
+              left: 6,
+              padding: '2px 6px',
+              borderRadius: '4px',
+              background: 'rgba(15, 23, 42, 0.88)',
+              border: '1px solid rgba(251, 191, 36, 0.72)',
+              color: '#fde68a',
+              fontSize: '0.56rem',
+              fontWeight: 900,
+              letterSpacing: '0.04em',
+              lineHeight: 1.2,
+            }}
+          >
+            PREVIEW
+          </span>
+        )}
       </button>
 
       <p

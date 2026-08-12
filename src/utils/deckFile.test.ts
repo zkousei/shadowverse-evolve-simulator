@@ -12,6 +12,7 @@ const baseCard: DeckBuilderCardData = {
   id: 'BP01-001',
   name: 'Alpha Knight',
   image: '/alpha.png',
+  catalog_status: 'preview',
   class: 'ロイヤル',
   title: 'Hero Tale',
   type: 'フォロワー',
@@ -76,6 +77,7 @@ describe('deckFile', () => {
     });
     expect(payload.mainDeck[0]).not.toHaveProperty('related_cards');
     expect(payload.mainDeck[0]).not.toHaveProperty('faces');
+    expect(payload.mainDeck[0]).not.toHaveProperty('catalog_status');
   });
 
   it('sanitizes export file names and preserves supported characters', () => {
