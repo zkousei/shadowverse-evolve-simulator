@@ -132,6 +132,27 @@ Keep manual checks limited to:
 If a manual check reveals an important regression risk, add an automated test
 for the underlying rule, contract, or E2E flow as soon as practical.
 
+## Branch Workflow
+
+For feature development and bug fixes, Codex should normally create a dedicated
+short-lived branch before editing code.
+
+- Use the `codex/` prefix by default.
+- Prefer descriptive branch names:
+  - `codex/feature-...`
+  - `codex/fix-...`
+  - `codex/refactor-...`
+  - `codex/test-...`
+- If the user names a branch, use that exact branch name.
+- If already on a suitable `codex/...` branch, continue on it.
+- Before creating or switching branches, check the current branch and working
+  tree status.
+- Do not overwrite, discard, or move unrelated user changes.
+- If unrelated uncommitted changes are present, leave them untouched and ask
+  only when they block the requested work.
+- If the user explicitly says not to create a branch, or asks to work on the
+  current branch, follow that instruction.
+
 ## Safe Change Rules
 
 - Prefer characterization tests before refactoring risky behavior.
