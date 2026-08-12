@@ -2,7 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import type { CardInstance } from './Card';
 import { useTranslation } from 'react-i18next';
 import CardArtwork from './CardArtwork';
-import type { CardDetailLookup } from '../utils/cardDetails';
+import {
+  buildCardDetailPresentation,
+  formatAbilityText,
+  resolveSelectedCardFaceDetail,
+  type CardDetailLookup,
+} from '../utils/cardDetails';
 
 export type TopDeckAction = 'hand' | 'revealedHand' | 'field' | 'ex' | 'cemetery' | 'top' | 'bottom';
 
@@ -21,6 +26,34 @@ interface AssignedCard {
   order?: number;
 }
 
+type HoveredTopDeckCard = {
+  card: CardInstance;
+  left: number;
+  top: number;
+};
+
+const HOVER_PREVIEW_WIDTH = 320;
+const HOVER_PREVIEW_HEIGHT = 420;
+const HOVER_PREVIEW_OFFSET = 18;
+const HOVER_PREVIEW_PADDING = 12;
+
+const getTopDeckHoverPreviewPosition = (clientX: number, clientY: number) => {
+  const visualViewport = window.visualViewport;
+  const viewportLeft = visualViewport?.offsetLeft ?? 0;
+  const viewportTop = visualViewport?.offsetTop ?? 0;
+  const viewportWidth = visualViewport?.width ?? window.innerWidth;
+  const viewportHeight = visualViewport?.height ?? window.innerHeight;
+  const minLeft = viewportLeft + HOVER_PREVIEW_PADDING;
+  const minTop = viewportTop + HOVER_PREVIEW_PADDING;
+  const maxLeft = Math.max(minLeft, viewportLeft + viewportWidth - HOVER_PREVIEW_WIDTH - HOVER_PREVIEW_PADDING);
+  const maxTop = Math.max(minTop, viewportTop + viewportHeight - HOVER_PREVIEW_HEIGHT - HOVER_PREVIEW_PADDING);
+
+  return {
+    left: Math.max(minLeft, Math.min(clientX + HOVER_PREVIEW_OFFSET, maxLeft)),
+    top: Math.max(minTop, Math.min(clientY + HOVER_PREVIEW_OFFSET, maxTop)),
+  };
+};
+
 const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLookup = {}, handCards, onConfirm, onCancel }) => {
   const { t } = useTranslation();
   const [pendingCards, setPendingCards] = useState<CardInstance[]>([]);
@@ -28,6 +61,7 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
   const [currentAction, setCurrentAction] = useState<TopDeckAction>('top');
   const [isHandOpen, setIsHandOpen] = useState(true);
   const [isBottomOrderRandomized, setIsBottomOrderRandomized] = useState(false);
+  const [hoveredTopDeckCard, setHoveredTopDeckCard] = useState<HoveredTopDeckCard | null>(null);
   const wasOpenRef = useRef(false);
   const previousCardIdsKeyRef = useRef('');
 
@@ -35,6 +69,7 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
     if (!isOpen) {
       wasOpenRef.current = false;
       previousCardIdsKeyRef.current = '';
+      setHoveredTopDeckCard(null);
       return;
     }
 
@@ -71,6 +106,7 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
   if (!isOpen) return null;
 
   const handleAssign = (card: CardInstance) => {
+    setHoveredTopDeckCard(null);
     setPendingCards(prev => prev.filter(c => c.id !== card.id));
     setAssignedCards(prev => {
       const isDeckBack = currentAction === 'top' || currentAction === 'bottom';
@@ -86,6 +122,7 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
   };
 
   const handleUnassign = (cardId: string) => {
+    setHoveredTopDeckCard(null);
     const target = assignedCards.find(a => a.card.id === cardId);
     if (!target) return;
 
@@ -137,6 +174,24 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
       return [...group].sort((a, b) => (a.order || 0) - (b.order || 0));
     }
     return group;
+  };
+
+  const showTopDeckCardPreview = (card: CardInstance, event: React.MouseEvent) => {
+    setHoveredTopDeckCard({
+      card,
+      ...getTopDeckHoverPreviewPosition(event.clientX, event.clientY),
+    });
+  };
+
+  const moveTopDeckCardPreview = (card: CardInstance, event: React.MouseEvent) => {
+    setHoveredTopDeckCard({
+      card,
+      ...getTopDeckHoverPreviewPosition(event.clientX, event.clientY),
+    });
+  };
+
+  const hideTopDeckCardPreview = () => {
+    setHoveredTopDeckCard(null);
   };
 
   const getConfirmResults = () => {
@@ -222,7 +277,14 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
             </h3>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', minHeight: '180px', background: 'rgba(255,255,255,0.02)', padding: '1.5rem', borderRadius: '12px', border: '1px dashed #30363d' }}>
               {pendingCards.map(card => (
-                <div key={card.id} onClick={() => handleAssign(card)} style={{ cursor: 'pointer', transition: 'transform 0.2s' }}>
+                <div
+                  key={card.id}
+                  onClick={() => handleAssign(card)}
+                  onMouseEnter={(event) => showTopDeckCardPreview(card, event)}
+                  onMouseMove={(event) => moveTopDeckCardPreview(card, event)}
+                  onMouseLeave={hideTopDeckCardPreview}
+                  style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
+                >
                   <CardArtwork
                     image={card.image}
                     alt={card.name}
@@ -281,7 +343,14 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
                   )}
                   <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                     {group.map(a => (
-                      <div key={a.card.id} onClick={() => handleUnassign(a.card.id)} style={{ position: 'relative', cursor: 'pointer' }}>
+                      <div
+                        key={a.card.id}
+                        onClick={() => handleUnassign(a.card.id)}
+                        onMouseEnter={(event) => showTopDeckCardPreview(a.card, event)}
+                        onMouseMove={(event) => moveTopDeckCardPreview(a.card, event)}
+                        onMouseLeave={hideTopDeckCardPreview}
+                        style={{ position: 'relative', cursor: 'pointer' }}
+                      >
                         <CardArtwork
                           image={a.card.image}
                           alt={a.card.name}
@@ -410,7 +479,13 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
                 overflowX: 'auto', alignItems: 'flex-end',
               }}>
                 {handCards.map(card => (
-                  <div key={card.id} style={{ flexShrink: 0 }}>
+                  <div
+                    key={card.id}
+                    onMouseEnter={(event) => showTopDeckCardPreview(card, event)}
+                    onMouseMove={(event) => moveTopDeckCardPreview(card, event)}
+                    onMouseLeave={hideTopDeckCardPreview}
+                    style={{ flexShrink: 0 }}
+                  >
                     <CardArtwork
                       image={card.image}
                       alt={card.name}
@@ -448,6 +523,112 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
           >
             {t('common.buttons.confirm')}
           </button>
+        </div>
+      </div>
+      {hoveredTopDeckCard && (
+        <TopDeckHoverPreview
+          card={hoveredTopDeckCard.card}
+          cardDetailLookup={cardDetailLookup}
+          left={hoveredTopDeckCard.left}
+          top={hoveredTopDeckCard.top}
+        />
+      )}
+    </div>
+  );
+};
+
+const TopDeckHoverPreview: React.FC<{
+  card: CardInstance;
+  cardDetailLookup: CardDetailLookup;
+  left: number;
+  top: number;
+}> = ({ card, cardDetailLookup, left, top }) => {
+  const { t } = useTranslation();
+  const detail = resolveSelectedCardFaceDetail(cardDetailLookup[card.cardId], card.selectedFaceSide);
+  const presentation = buildCardDetailPresentation(detail);
+  const displayName = detail?.name || card.name;
+
+  return (
+    <div
+      data-testid="top-deck-hover-preview"
+      style={{
+        position: 'fixed',
+        left,
+        top,
+        zIndex: 7000,
+        pointerEvents: 'none',
+        width: `${HOVER_PREVIEW_WIDTH}px`,
+        maxHeight: `${HOVER_PREVIEW_HEIGHT}px`,
+        overflow: 'hidden',
+        background: 'rgba(15, 23, 42, 0.96)',
+        border: '1px solid rgba(148, 163, 184, 0.35)',
+        borderRadius: '12px',
+        padding: '0.75rem',
+        boxShadow: '0 18px 45px rgba(0,0,0,0.5)',
+        color: '#e5e7eb',
+      }}
+    >
+      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+        <CardArtwork
+          image={detail?.image || card.image}
+          alt={displayName}
+          detail={detail ?? undefined}
+          baseCardType={card.baseCardType}
+          isLeaderCard={card.isLeaderCard}
+          isTokenCard={card.isTokenCard}
+          isEvolveCard={card.isEvolveCard}
+          style={{
+            width: '96px',
+            height: '134px',
+            borderRadius: '8px',
+            boxShadow: '0 8px 20px rgba(0,0,0,0.35)',
+            flexShrink: 0,
+          }}
+          draggable={false}
+        />
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ fontWeight: 800, fontSize: '0.95rem', lineHeight: 1.35, color: '#f8fafc' }}>
+            {displayName}
+          </div>
+          {presentation.primaryMeta && (
+            <div style={{ color: '#cbd5e1', fontSize: '0.73rem', marginTop: '0.22rem', lineHeight: 1.4 }}>
+              {presentation.primaryMeta}
+            </div>
+          )}
+          {presentation.secondaryMeta && (
+            <div style={{ color: '#94a3b8', fontSize: '0.72rem', marginTop: '0.14rem', lineHeight: 1.4 }}>
+              {presentation.secondaryMeta}
+            </div>
+          )}
+          <div style={{ display: 'grid', gridTemplateColumns: '52px 1fr', gap: '0.18rem 0.45rem', marginTop: '0.55rem', fontSize: '0.74rem' }}>
+            <span style={{ color: '#94a3b8' }}>{t('gameBoard.inspector.id')}</span>
+            <span>{card.cardId}</span>
+            <span style={{ color: '#94a3b8' }}>{t('gameBoard.inspector.cost')}</span>
+            <span>{detail?.cost || '-'}</span>
+            {presentation.stats && (
+              <>
+                <span style={{ color: '#94a3b8' }}>{t('gameBoard.inspector.stats')}</span>
+                <span>{presentation.stats}</span>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+      <div style={{ borderTop: '1px solid rgba(148, 163, 184, 0.18)', marginTop: '0.75rem', paddingTop: '0.65rem' }}>
+        <div style={{ color: '#f8fafc', fontWeight: 700, fontSize: '0.8rem', marginBottom: '0.4rem' }}>
+          {t('gameBoard.inspector.abilityText')}
+        </div>
+        <div
+          style={{
+            whiteSpace: 'pre-wrap',
+            color: '#e5e7eb',
+            fontSize: '0.76rem',
+            lineHeight: 1.55,
+            maxHeight: '150px',
+            overflow: 'hidden',
+          }}
+        >
+          {detail?.abilityText ? formatAbilityText(detail.abilityText) : t('gameBoard.inspector.noAbilityText')}
         </div>
       </div>
     </div>
