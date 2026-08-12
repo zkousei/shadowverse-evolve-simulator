@@ -1222,6 +1222,7 @@ export const useGameBoardLogic = () => {
     moveTopCardToEx,
     discardRandomHandCards,
     revealHand,
+    revealSelectedHandCards,
     handleLookAtTop,
     handleResolveTopDeck,
     handleUndoCardMove,
@@ -1318,7 +1319,7 @@ export const useGameBoardLogic = () => {
     handleBanish, handleBanishCards, handlePlayToField, handleSendToCemetery, handleSendCardsToCemetery, handleReturnEvolve, handleShuffleDeck, handleDeclareAttack,
     handleSetRevealHandsMode, handleSetEndStop,
     evolveAutoAttachSelection, confirmEvolveAutoAttachSelection, cancelEvolveAutoAttachSelection,
-    getCards, getTokenOptions, lastGameState: gameState.lastGameState, millCard, moveTopCardToEx, discardRandomHandCards, revealHand,
+    getCards, getTokenOptions, lastGameState: gameState.lastGameState, millCard, moveTopCardToEx, discardRandomHandCards, revealHand, revealSelectedHandCards,
     topDeckCards, topDeckTargetRole, setTopDeckTargetRole, handleLookAtTop, handleResolveTopDeck, setTopDeckCards,
     handleUndoCardMove, hasUndoableMove, canUndoTurn,
     isDebug

@@ -9,6 +9,7 @@ import * as gameBoardInteraction from '../utils/gameBoardInteraction';
 
 vi.mock('../utils/cardReveal', () => ({
   buildHandRevealEffect: vi.fn(),
+  buildSelectedHandRevealEffect: vi.fn(),
 }));
 
 vi.mock('../utils/gameBoardInteraction', () => ({
@@ -91,6 +92,26 @@ describe('useGameBoardCardActions (Pure Hook)', () => {
 
     expect(defaultArgs.playSharedUiEffect).toHaveBeenCalledWith(mockEffect);
     expect(defaultArgs.sendSharedUiEffect).toHaveBeenCalledWith(mockEffect);
+  });
+
+  it('revealSelectedHandCards plays and sends shared effect for selected hand cards', () => {
+    const mockEffect = { type: 'REVEAL_HAND_CARDS' as const, actor: 'host' as const, cards: [] } as SharedUiEffect;
+    vi.mocked(cardReveal.buildSelectedHandRevealEffect).mockReturnValue(mockEffect);
+
+    const { result } = renderHook(() => useGameBoardCardActions(defaultArgs));
+    result.current.revealSelectedHandCards(['hand-1', 'hand-2']);
+
+    expect(cardReveal.buildSelectedHandRevealEffect).toHaveBeenCalledWith(defaultArgs.gameStateCards, 'host', ['hand-1', 'hand-2']);
+    expect(defaultArgs.playSharedUiEffect).toHaveBeenCalledWith(mockEffect);
+    expect(defaultArgs.sendSharedUiEffect).toHaveBeenCalledWith(mockEffect);
+  });
+
+  it('revealSelectedHandCards aborts for empty selection', () => {
+    const { result } = renderHook(() => useGameBoardCardActions(defaultArgs));
+    result.current.revealSelectedHandCards([]);
+
+    expect(cardReveal.buildSelectedHandRevealEffect).not.toHaveBeenCalled();
+    expect(defaultArgs.playSharedUiEffect).not.toHaveBeenCalled();
   });
 
   it('handleLookAtTop slices deck and sets top deck state', () => {

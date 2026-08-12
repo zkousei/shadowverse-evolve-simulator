@@ -593,6 +593,7 @@
       "lookTop": "Look Top (N)",
       "randomDiscardHand": "Random Discard",
       "revealHand": "Reveal Hand",
+      "revealSelectedHand": "Reveal Selected Hand",
       "importDeckJson": "Import Deck (.json)",
       "loadFromMyDecksGeneric": "Load from My Decks"
     },
@@ -642,6 +643,11 @@
         "custom": "Other",
         "customInput": "Custom discard count",
         "confirm": "Discard"
+      },
+      "handReveal": {
+        "title": "Reveal Selected Hand Cards",
+        "instructions": "Choose the cards to reveal to your opponent.",
+        "confirm": "Reveal Selected"
       },
       "search": {
         "setFaceDown": "Set Face-Down to Field",

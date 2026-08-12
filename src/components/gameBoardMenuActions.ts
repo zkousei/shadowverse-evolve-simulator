@@ -18,12 +18,18 @@ export const buildRandomDiscardHandAction = (
 ];
 
 export const buildRevealHandAction = (
-  onClick: () => void,
+  onRevealAll: () => void,
+  onRevealSelected: () => void,
   t: TranslationFn
 ): GameBoardMenuAction[] => [
   {
     label: t('gameBoard.zones.revealHand'),
-    onClick,
+    onClick: onRevealAll,
+    tone: 'accent',
+  },
+  {
+    label: t('gameBoard.zones.revealSelectedHand'),
+    onClick: onRevealSelected,
     tone: 'accent',
   },
 ];
