@@ -23,16 +23,21 @@ describe('gameBoardMenuActions', () => {
     });
 
     describe('buildRevealHandAction', () => {
-        it('returns a single accent action with the translation key', () => {
-            const onClick = vi.fn();
-            const actions = buildRevealHandAction(onClick, t);
+        it('returns reveal hand actions with translation keys', () => {
+            const onRevealAll = vi.fn();
+            const onRevealSelected = vi.fn();
+            const actions = buildRevealHandAction(onRevealAll, onRevealSelected, t);
 
-            expect(actions).toHaveLength(1);
-            expect(actions[0]).toEqual({
+            expect(actions).toHaveLength(2);
+            expect(actions).toEqual([{
                 label: 'gameBoard.zones.revealHand',
-                onClick,
+                onClick: onRevealAll,
                 tone: 'accent',
-            });
+            }, {
+                label: 'gameBoard.zones.revealSelectedHand',
+                onClick: onRevealSelected,
+                tone: 'accent',
+            }]);
         });
     });
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CardInstance } from '../components/Card';
-import { buildCardRevealEffect, buildHandRevealEffect, buildSingleCardRevealEffect } from './cardReveal';
+import { buildCardRevealEffect, buildHandRevealEffect, buildSelectedHandRevealEffect, buildSingleCardRevealEffect } from './cardReveal';
 
 const createCard = (id: string): CardInstance => ({
   id,
@@ -98,5 +98,36 @@ describe('cardReveal', () => {
 
   it('does not build a hand reveal effect for an empty actor hand', () => {
     expect(buildHandRevealEffect([createCardInZone('guest-hand-1', 'hand-guest')], 'host')).toBeNull();
+  });
+
+  it('builds a selected hand reveal effect only for matching actor hand cards', () => {
+    expect(buildSelectedHandRevealEffect(
+      [
+        createCardInZone('host-hand-1', 'hand-host'),
+        createCardInZone('host-hand-2', 'hand-host'),
+        createCardInZone('guest-hand-1', 'hand-guest'),
+        createCardInZone('host-deck-1', 'mainDeck-host'),
+      ],
+      'host',
+      ['guest-hand-1', 'host-deck-1', 'host-hand-2', 'missing']
+    )).toEqual({
+      type: 'REVEAL_HAND_CARDS',
+      actor: 'host',
+      cards: [
+        {
+          cardId: 'host-hand-2',
+          name: 'Card host-hand-2',
+          image: '',
+        },
+      ],
+    });
+  });
+
+  it('does not build a selected hand reveal effect for no valid selections', () => {
+    expect(buildSelectedHandRevealEffect(
+      [createCardInZone('host-hand-1', 'hand-host')],
+      'host',
+      ['missing']
+    )).toBeNull();
   });
 });

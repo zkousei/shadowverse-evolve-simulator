@@ -63,3 +63,22 @@ export const buildHandRevealEffect = (
     cards: handCards,
   };
 };
+
+export const buildSelectedHandRevealEffect = (
+  cards: CardInstance[],
+  actor: PlayerRole,
+  cardIds: string[]
+): SharedUiEffect | null => {
+  const selectedIds = new Set(cardIds);
+  const handCards = cards
+    .filter((card) => card.zone === `hand-${actor}` && selectedIds.has(card.id))
+    .map((card) => toPublicCardView(card, false));
+
+  if (handCards.length === 0) return null;
+
+  return {
+    type: 'REVEAL_HAND_CARDS',
+    actor,
+    cards: handCards,
+  };
+};

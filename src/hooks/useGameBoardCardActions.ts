@@ -5,7 +5,7 @@ import type { CardInstance } from '../components/Card';
 import * as CardLogic from '../utils/cardLogic';
 import type { DispatchableGameSyncEvent } from './useGameBoardLogic';
 import { canLookAtTopDeck } from '../utils/gameBoardInteraction';
-import { buildHandRevealEffect } from '../utils/cardReveal';
+import { buildHandRevealEffect, buildSelectedHandRevealEffect } from '../utils/cardReveal';
 
 interface UseGameBoardCardActionsArgs {
     canInteract: boolean;
@@ -73,6 +73,15 @@ export function useGameBoardCardActions({
         sendSharedUiEffect(effect);
     }, [canInteract, gameStateCards, gameStatus, isSoloMode, playSharedUiEffect, role, sendSharedUiEffect]);
 
+    const revealSelectedHandCards = useCallback((cardIds: string[]) => {
+        if (isSoloMode || !canInteract || gameStatus !== 'playing' || cardIds.length === 0) return;
+        const effect = buildSelectedHandRevealEffect(gameStateCards, role, cardIds);
+        if (!effect) return;
+
+        playSharedUiEffect(effect);
+        sendSharedUiEffect(effect);
+    }, [canInteract, gameStateCards, gameStatus, isSoloMode, playSharedUiEffect, role, sendSharedUiEffect]);
+
     const handleLookAtTop = useCallback((n: number, targetRole: PlayerRole = role) => {
         if (!canLookAtTopDeck({ canInteract, gameStatus })) return;
         const myDeck = gameStateCards.filter(c => c.zone === `mainDeck-${targetRole}`);
@@ -102,6 +111,7 @@ export function useGameBoardCardActions({
         moveTopCardToEx,
         discardRandomHandCards,
         revealHand,
+        revealSelectedHandCards,
         handleLookAtTop,
         handleResolveTopDeck,
         handleUndoCardMove,

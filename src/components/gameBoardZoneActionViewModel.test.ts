@@ -22,13 +22,16 @@ describe('gameBoardZoneActionViewModel', () => {
 
     describe('buildRevealHandZoneActions', () => {
         it('builds config with player-specific menuId', () => {
-            const onClick = vi.fn();
-            const config = buildRevealHandZoneActions('guest', onClick, t);
+            const onRevealAll = vi.fn();
+            const onRevealSelected = vi.fn();
+            const config = buildRevealHandZoneActions('guest', onRevealAll, onRevealSelected, t);
 
             expect(config.menuId).toBe('hand-reveal-guest');
             expect(config.actionsLabel).toBe('gameBoard.board.actions');
-            expect(config.actions).toHaveLength(1);
-            expect(config.actions[0].label).toBe('gameBoard.zones.revealHand');
+            expect(config.actions.map(action => action.label)).toEqual([
+                'gameBoard.zones.revealHand',
+                'gameBoard.zones.revealSelectedHand',
+            ]);
         });
     });
 

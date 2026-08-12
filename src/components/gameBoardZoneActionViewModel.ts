@@ -25,12 +25,13 @@ export const buildRandomDiscardHandZoneActions = (
 
 export const buildRevealHandZoneActions = (
   playerRole: string,
-  onClick: () => void,
+  onRevealAll: () => void,
+  onRevealSelected: () => void,
   t: TranslationFn
 ): ZoneActionsConfig => ({
   menuId: `hand-reveal-${playerRole}`,
   actionsLabel: t('gameBoard.board.actions'),
-  actions: buildRevealHandAction(onClick, t),
+  actions: buildRevealHandAction(onRevealAll, onRevealSelected, t),
 });
 
 type BuildMainDeckZoneActionsArgs = {

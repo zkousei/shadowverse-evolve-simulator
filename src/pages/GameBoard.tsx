@@ -12,6 +12,7 @@ import GameBoardDialogsHost from '../components/GameBoardDialogsHost';
 import GameBoardEndTurnSection from '../components/GameBoardEndTurnSection';
 import GameBoardGlobalOverlays from '../components/GameBoardGlobalOverlays';
 import GameBoardHeader from '../components/GameBoardHeader';
+import GameBoardHandRevealDialog from '../components/GameBoardHandRevealDialog';
 import GameBoardLeaderZoneSection from '../components/GameBoardLeaderZoneSection';
 import GameBoardMainDeckSection from '../components/GameBoardMainDeckSection';
 import GameBoardMulliganDialog from '../components/GameBoardMulliganDialog';
@@ -145,7 +146,7 @@ const GameBoard: React.FC = () => {
     handleBanish, handleBanishCards, handlePlayToField, handleSendToCemetery, handleSendCardsToCemetery, handleReturnEvolve, handleShuffleDeck, handleDeclareAttack,
     handleSetRevealHandsMode, handleSetEndStop,
     evolveAutoAttachSelection, confirmEvolveAutoAttachSelection, cancelEvolveAutoAttachSelection,
-    getCards, getTokenOptions, millCard, moveTopCardToEx, discardRandomHandCards, revealHand,
+    getCards, getTokenOptions, millCard, moveTopCardToEx, discardRandomHandCards, revealHand, revealSelectedHandCards,
     topDeckCards, topDeckTargetRole, setTopDeckTargetRole, handleLookAtTop, handleResolveTopDeck, setTopDeckCards,
     handleUndoCardMove, hasUndoableMove, canUndoTurn,
     isDebug
@@ -155,6 +156,8 @@ const GameBoard: React.FC = () => {
   const [activeZoneActions, setActiveZoneActions] = React.useState<string | null>(null);
   const [searchShuffleTargetRole, setSearchShuffleTargetRole] = React.useState<PlayerRole | null>(null);
   const [isRoomCopied, setIsRoomCopied] = React.useState(false);
+  const [isHandRevealDialogOpen, setIsHandRevealDialogOpen] = React.useState(false);
+  const [selectedHandRevealIds, setSelectedHandRevealIds] = React.useState<string[]>([]);
   const {
     allCardsLength,
     savedDeckSearch,
@@ -385,6 +388,21 @@ const GameBoard: React.FC = () => {
   const handleRequestMainDeckShuffleConfirm = React.useCallback((targetRole: PlayerRole) => {
     setSearchShuffleTargetRole(targetRole);
   }, []);
+  const openSelectedHandRevealDialog = React.useCallback(() => {
+    setSelectedHandRevealIds([]);
+    setIsHandRevealDialogOpen(true);
+  }, []);
+  const closeSelectedHandRevealDialog = React.useCallback(() => {
+    setIsHandRevealDialogOpen(false);
+    setSelectedHandRevealIds([]);
+  }, []);
+  const toggleSelectedHandRevealCard = React.useCallback((cardId: string) => {
+    setSelectedHandRevealIds((previous) => (
+      previous.includes(cardId)
+        ? previous.filter((selectedId) => selectedId !== cardId)
+        : [...previous, cardId]
+    ));
+  }, []);
   const topHandRandomDiscardZoneActions = buildRandomDiscardHandZoneActions(
     topRole,
     () => openRandomDiscardDialog(topRole, bottomRole),
@@ -407,7 +425,7 @@ const GameBoard: React.FC = () => {
     () => openRandomDiscardDialog(bottomRole, topRole),
     t
   );
-  const bottomHandRevealZoneActions = buildRevealHandZoneActions(bottomRole, revealHand, t);
+  const bottomHandRevealZoneActions = buildRevealHandZoneActions(bottomRole, revealHand, openSelectedHandRevealDialog, t);
   const bottomMainDeckZoneActions = buildMainDeckZoneActions({
     playerRole: bottomRole,
     onSearch: () => openSearchZone(`mainDeck-${bottomRole}`, t('gameBoard.zones.mainDeck', { label: bottomLabel })),
@@ -1148,6 +1166,24 @@ const GameBoard: React.FC = () => {
         onCancel={() => setIsMulliganModalOpen(false)}
         onConfirm={() => executeMulligan(mulliganTargetRole)}
       />
+
+      {isHandRevealDialogOpen && (
+        <GameBoardHandRevealDialog
+          title={t('gameBoard.modals.handReveal.title')}
+          instructions={t('gameBoard.modals.handReveal.instructions')}
+          cards={getCards(`hand-${bottomRole}`)}
+          selectedCardIds={selectedHandRevealIds}
+          cardDetailLookup={cardDetailLookup}
+          cancelLabel={t('common.buttons.cancel')}
+          confirmLabel={t('gameBoard.modals.handReveal.confirm')}
+          onToggleCard={toggleSelectedHandRevealCard}
+          onCancel={closeSelectedHandRevealDialog}
+          onConfirm={() => {
+            revealSelectedHandCards(selectedHandRevealIds);
+            closeSelectedHandRevealDialog();
+          }}
+        />
+      )}
 
       <CardSearchModal
         isOpen={searchZone !== null}

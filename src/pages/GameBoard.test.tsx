@@ -343,6 +343,7 @@ const buildMockGameBoardLogic = (
     moveTopCardToEx: vi.fn(),
     discardRandomHandCards: vi.fn(),
     revealHand: vi.fn(),
+    revealSelectedHandCards: vi.fn(),
     topDeckCards: [],
     topDeckTargetRole: 'host',
     setTopDeckTargetRole: vi.fn(),
@@ -1305,6 +1306,43 @@ describe('GameBoard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Reveal Hand' }));
 
     expect(revealHand).toHaveBeenCalledTimes(1);
+  });
+
+  it('reveals selected local hand cards from the p2p hand actions menu', () => {
+    const revealSelectedHandCards = vi.fn();
+    const hostHandCards = [
+      makeCard({
+        id: 'hand-host-1',
+        name: 'First Hand Card',
+        zone: 'hand-host',
+        owner: 'host',
+      }),
+      makeCard({
+        id: 'hand-host-2',
+        name: 'Second Hand Card',
+        zone: 'hand-host',
+        owner: 'host',
+      }),
+    ];
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      revealSelectedHandCards,
+      gameState: createGameState(hostHandCards, {
+        gameStatus: 'playing',
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    const localHandPanel = screen.getByTestId('zone-hand-host').parentElement;
+    expect(localHandPanel).not.toBeNull();
+
+    fireEvent.click(within(localHandPanel as HTMLElement).getByRole('button', { name: 'Actions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reveal Selected Hand' }));
+    fireEvent.click(screen.getByRole('button', { name: 'First Hand Card' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reveal Selected' }));
+
+    expect(revealSelectedHandCards).toHaveBeenCalledWith(['hand-host-1']);
   });
 
   it('opens local hand actions upward in p2p mode', () => {
