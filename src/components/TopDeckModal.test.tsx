@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import TopDeckModal from './TopDeckModal';
 import type { CardInstance } from './Card';
+import type { CardDetail } from '../utils/cardDetails';
 
 const createCard = (id: string): CardInstance => ({
   id,
@@ -13,6 +14,20 @@ const createCard = (id: string): CardInstance => ({
   isTapped: false,
   isFlipped: true,
   counters: { atk: 0, hp: 0 },
+});
+
+const createCardDetail = (id: string): CardDetail => ({
+  id,
+  name: `Detailed ${id}`,
+  image: `/${id}.png`,
+  className: 'Elf',
+  title: 'Forestcraft',
+  type: 'Follower',
+  subtype: 'Fairy',
+  cost: '2',
+  atk: 2,
+  hp: 3,
+  abilityText: '[Fanfare] Draw a card.',
 });
 
 describe('TopDeckModal', () => {
@@ -249,5 +264,31 @@ describe('TopDeckModal', () => {
       { cardId: 'c1', action: 'top', order: 1 },
       { cardId: 'c2', action: 'top', order: 2 },
     ]);
+  });
+
+  it('shows card details while hovering top-deck cards', () => {
+    render(
+      <TopDeckModal
+        isOpen={true}
+        cards={[createCard('c1')]}
+        cardDetailLookup={{ c1: createCardDetail('c1') }}
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />
+    );
+
+    const cardImage = screen.getByAltText('Card c1');
+    fireEvent.mouseEnter(cardImage, { clientX: 120, clientY: 140 });
+
+    const preview = screen.getByTestId('top-deck-hover-preview');
+    expect(preview).toHaveTextContent('Detailed c1');
+    expect(preview).toHaveTextContent('Elf / Forestcraft');
+    expect(preview).toHaveTextContent('Follower / Fairy');
+    expect(preview).toHaveTextContent('2 / 3');
+    expect(preview).toHaveTextContent('[Fanfare] Draw a card.');
+
+    fireEvent.mouseLeave(cardImage);
+
+    expect(screen.queryByTestId('top-deck-hover-preview')).not.toBeInTheDocument();
   });
 });
