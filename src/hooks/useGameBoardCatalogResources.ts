@@ -15,7 +15,7 @@ export const useGameBoardCatalogResources = () => {
   const evolveAutoAttachResolverRef = React.useRef<EvolveAutoAttachResolver | null>(null);
   const fieldLinkAutoAttachResolverRef = React.useRef<FieldLinkAutoAttachResolver | null>(null);
   const fieldLinkCardIdsRef = React.useRef<Set<string>>(new Set());
-  const tokenEquipmentCardIdsRef = React.useRef<Set<string>>(new Set());
+  const tokenManualLinkCardIdsRef = React.useRef<Set<string>>(new Set());
 
   React.useEffect(() => {
     let isActive = true;
@@ -39,7 +39,7 @@ export const useGameBoardCatalogResources = () => {
         evolveAutoAttachResolverRef.current = resources.evolveAutoAttachResolver;
         fieldLinkAutoAttachResolverRef.current = resources.fieldLinkAutoAttachResolver;
         fieldLinkCardIdsRef.current = resources.fieldLinkCardIds;
-        tokenEquipmentCardIdsRef.current = resources.tokenEquipmentCardIds;
+        tokenManualLinkCardIdsRef.current = resources.tokenManualLinkCardIds;
       })
       .catch(err => console.error('Could not load card stats', err));
 
@@ -49,7 +49,7 @@ export const useGameBoardCatalogResources = () => {
       evolveAutoAttachResolverRef.current = null;
       fieldLinkAutoAttachResolverRef.current = null;
       fieldLinkCardIdsRef.current = new Set();
-      tokenEquipmentCardIdsRef.current = new Set();
+      tokenManualLinkCardIdsRef.current = new Set();
     };
   }, []);
 
@@ -61,6 +61,6 @@ export const useGameBoardCatalogResources = () => {
     evolveAutoAttachResolverRef,
     fieldLinkAutoAttachResolverRef,
     fieldLinkCardIdsRef,
-    tokenEquipmentCardIdsRef,
+    tokenManualLinkCardIdsRef,
   };
 };

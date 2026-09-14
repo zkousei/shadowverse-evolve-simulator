@@ -12,8 +12,10 @@ export type GameBoardCatalogResources = {
   evolveAutoAttachResolver: EvolveAutoAttachResolver;
   fieldLinkAutoAttachResolver: FieldLinkAutoAttachResolver;
   fieldLinkCardIds: Set<string>;
-  tokenEquipmentCardIds: Set<string>;
+  tokenManualLinkCardIds: Set<string>;
 };
+
+const TOKEN_MANUAL_LINK_CARD_KINDS = new Set(['token_equipment', 'token_treasure']);
 
 export const buildGameBoardCatalogResources = (
   data: DeckBuilderCardData[]
@@ -34,9 +36,9 @@ export const buildGameBoardCatalogResources = (
         .filter((card) => Boolean(getFieldLinkGroupId(card)))
         .map((card) => card.id)
     ),
-    tokenEquipmentCardIds: new Set(
+    tokenManualLinkCardIds: new Set(
       data
-        .filter((card) => card.card_kind_normalized === 'token_equipment')
+        .filter((card) => TOKEN_MANUAL_LINK_CARD_KINDS.has(card.card_kind_normalized ?? ''))
         .map((card) => card.id)
     ),
   };

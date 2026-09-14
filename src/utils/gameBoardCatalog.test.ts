@@ -45,6 +45,15 @@ describe('buildGameBoardCatalogResources', () => {
         type: 'Amulet',
       },
       {
+        id: 'token-treasure',
+        name: 'Token Treasure',
+        title: 'Test Title',
+        image: '/token-treasure.png',
+        deck_section: 'token',
+        card_kind_normalized: 'token_treasure',
+        type: 'Treasure',
+      },
+      {
         id: 'crest-token',
         name: 'Crest Token',
         title: 'Test Title',
@@ -75,8 +84,9 @@ describe('buildGameBoardCatalogResources', () => {
     expect(resources.evolveAutoAttachResolver).not.toBeNull();
     expect(resources.fieldLinkAutoAttachResolver).not.toBeNull();
     expect(resources.fieldLinkCardIds.has('field-link')).toBe(true);
-    expect(resources.tokenEquipmentCardIds.has('token-equipment')).toBe(true);
-    expect(resources.tokenEquipmentCardIds.has('crest-token')).toBe(false);
+    expect(resources.tokenManualLinkCardIds.has('token-equipment')).toBe(true);
+    expect(resources.tokenManualLinkCardIds.has('token-treasure')).toBe(true);
+    expect(resources.tokenManualLinkCardIds.has('crest-token')).toBe(false);
     expect(resources.catalogById['preview-follower']?.catalog_status).toBe('preview');
     expect(resources.statLookup['preview-follower']).toMatchObject({ atk: 4, hp: 5 });
     expect(resources.detailLookup['preview-follower']?.image).toBe('');

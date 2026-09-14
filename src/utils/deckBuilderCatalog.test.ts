@@ -106,6 +106,21 @@ const mockCards: DeckBuilderCardData[] = [
     deck_section: 'token',
     is_token: true,
   },
+  {
+    id: 'TK01-003',
+    name: 'Treasure Token',
+    image: '/treasure.png',
+    cost: '-',
+    class: '-',
+    title: 'Hero Tale',
+    type: 'トレジャー・トークン',
+    subtype: '-',
+    rarity: 'PR',
+    product_name: 'Token Pack',
+    card_kind_normalized: 'token_treasure',
+    deck_section: 'token',
+    is_token: true,
+  },
 ];
 
 describe('deckBuilderCatalog', () => {
@@ -236,8 +251,8 @@ describe('deckBuilderCatalog', () => {
       pageSize: 2,
     });
 
-    expect(view.filteredCards.map(card => card.id)).toEqual(['BP01-001', 'BP01-002', 'LDR01-001', 'TK01-001', 'TK01-020', 'TK01-002']);
-    expect(view.displayCards.map(card => card.id)).toEqual(['BP01-001', 'LDR01-001', 'TK01-001', 'TK01-020', 'TK01-002']);
+    expect(view.filteredCards.map(card => card.id)).toEqual(['BP01-001', 'BP01-002', 'LDR01-001', 'TK01-001', 'TK01-020', 'TK01-002', 'TK01-003']);
+    expect(view.displayCards.map(card => card.id)).toEqual(['BP01-001', 'LDR01-001', 'TK01-001', 'TK01-020', 'TK01-002', 'TK01-003']);
     expect(view.paginatedCards.map(card => card.id)).toEqual(['BP01-001', 'LDR01-001']);
     expect(view.totalPages).toBe(3);
   });

@@ -92,6 +92,7 @@ const DECKLOG_TYPE_TO_CARD_KIND: Record<string, CardKindNormalized> = {
   'スペル・トークン': 'token_spell',
   'アミュレット・トークン': 'token_amulet',
   'イクイップメント・トークン': 'token_equipment',
+  'トレジャー・トークン': 'token_treasure',
   'クレスト・トークン': 'token_crest',
   'フォロワー・アドバンス': 'advance_follower',
   'スペル・アドバンス': 'advance_spell',
