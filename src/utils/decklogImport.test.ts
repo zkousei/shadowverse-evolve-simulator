@@ -244,6 +244,33 @@ describe('convertDeckLogResponse', () => {
     expect(result.missingCardIds).toEqual([]);
   });
 
+  it('resolves treasure token fallbacks by DeckLog card type', () => {
+    const fallbackCards: DeckBuilderCardData[] = [
+      {
+        id: 'TK21-001',
+        name: 'Treasure',
+        image: '/treasure.png',
+        class: '-',
+        type: 'トレジャー・トークン',
+        card_kind_normalized: 'token_treasure',
+        deck_section: 'token',
+        is_token: true,
+      },
+    ];
+
+    const result = convertDeckLogResponse({
+      id: 1,
+      title: 'Treasure Fallback Deck',
+      game_title_id: 6,
+      list: [
+        { card_number: 'PR-778', name: 'Treasure', num: 1, card_kind: '・トレジャー・トークン・' },
+      ],
+    }, fallbackCards);
+
+    expect(result.deckState.mainDeck.map(card => card.id)).toEqual(['TK21-001']);
+    expect(result.missingCardIds).toEqual([]);
+  });
+
   it('collects missing card ids', () => {
     const result = convertDeckLogResponse({
       id: 1,

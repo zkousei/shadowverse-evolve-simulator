@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { CardInstance } from '../components/Card';
 import type { DeckBuilderCardData } from '../models/deckBuilderCard';
-import { findUnitRootCard, isEquipmentLinkTargetCard, isTokenEquipmentCard } from './gameBoardManualLink';
+import { findUnitRootCard, isEquipmentLinkTargetCard, isTokenManualLinkCard } from './gameBoardManualLink';
 
 const buildCard = (overrides: Partial<CardInstance> = {}): CardInstance => ({
   id: 'card-1',
@@ -36,15 +36,17 @@ describe('gameBoardManualLink', () => {
     });
   });
 
-  describe('isTokenEquipmentCard', () => {
-    it('accepts runtime token equipment cards and catalog-derived token equipment ids', () => {
-      const catalogIds = new Set(['CATALOG-EQUIPMENT']);
+  describe('isTokenManualLinkCard', () => {
+    it('accepts runtime token equipment and treasure cards plus catalog-derived link token ids', () => {
+      const catalogIds = new Set(['CATALOG-EQUIPMENT', 'CATALOG-TREASURE']);
 
-      expect(isTokenEquipmentCard(buildCard({ cardKindNormalized: 'token_equipment' }), new Set())).toBe(true);
-      expect(isTokenEquipmentCard(buildCard({ cardKindNormalized: 'token_crest' }), new Set())).toBe(false);
-      expect(isTokenEquipmentCard(buildCard({ cardId: 'CATALOG-EQUIPMENT' }), catalogIds)).toBe(true);
-      expect(isTokenEquipmentCard(buildCard({ cardId: 'OTHER' }), catalogIds)).toBe(false);
-      expect(isTokenEquipmentCard(undefined, catalogIds)).toBe(false);
+      expect(isTokenManualLinkCard(buildCard({ cardKindNormalized: 'token_equipment' }), new Set())).toBe(true);
+      expect(isTokenManualLinkCard(buildCard({ cardKindNormalized: 'token_treasure' }), new Set())).toBe(true);
+      expect(isTokenManualLinkCard(buildCard({ cardKindNormalized: 'token_crest' }), new Set())).toBe(false);
+      expect(isTokenManualLinkCard(buildCard({ cardId: 'CATALOG-EQUIPMENT' }), catalogIds)).toBe(true);
+      expect(isTokenManualLinkCard(buildCard({ cardId: 'CATALOG-TREASURE' }), catalogIds)).toBe(true);
+      expect(isTokenManualLinkCard(buildCard({ cardId: 'OTHER' }), catalogIds)).toBe(false);
+      expect(isTokenManualLinkCard(undefined, catalogIds)).toBe(false);
     });
   });
 

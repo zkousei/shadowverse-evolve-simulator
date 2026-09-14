@@ -9,8 +9,9 @@ describe('cardClassification helpers', () => {
     expect(getBaseCardType('token_amulet')).toBe('amulet');
   });
 
-  it('does not treat token equipment as an amulet base card type', () => {
+  it('does not treat token equipment or treasure as an amulet base card type', () => {
     expect(getBaseCardType('token_equipment')).toBeNull();
+    expect(getBaseCardType('token_treasure')).toBeNull();
   });
 
   it('recognizes crest as a token-only kind without a base card type', () => {

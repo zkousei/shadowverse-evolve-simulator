@@ -10,7 +10,7 @@ import * as gameBoardManualLink from '../utils/gameBoardManualLink';
 
 vi.mock('../utils/gameBoardManualLink', () => ({
   findUnitRootCard: vi.fn((_cards: CardInstance[], card: CardInstance) => card),
-  isTokenEquipmentCard: vi.fn(() => false),
+  isTokenManualLinkCard: vi.fn(() => false),
   isEquipmentLinkTargetCard: vi.fn(() => false),
 }));
 
@@ -46,7 +46,7 @@ describe('useGameBoardFieldActions (Pure Hook)', () => {
     uuid: () => 'mock-uuid',
     defaultTokenOption: { current: makeTokenOption() },
     cardCatalogByIdRef: { current: {} as Record<string, unknown> },
-    tokenEquipmentCardIdsRef: { current: new Set<string>() },
+    tokenManualLinkCardIdsRef: { current: new Set<string>() },
     fieldLinkCardIdsRef: { current: new Set<string>() },
     setSearchZone: vi.fn(),
     resolveEvolveAutoAttachSelection: vi.fn(),
@@ -58,7 +58,7 @@ describe('useGameBoardFieldActions (Pure Hook)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(gameBoardManualLink.findUnitRootCard).mockImplementation((_cards, card) => card);
-    vi.mocked(gameBoardManualLink.isTokenEquipmentCard).mockReturnValue(false);
+    vi.mocked(gameBoardManualLink.isTokenManualLinkCard).mockReturnValue(false);
     vi.mocked(gameBoardManualLink.isEquipmentLinkTargetCard).mockReturnValue(false);
   });
 
@@ -721,7 +721,7 @@ describe('useGameBoardFieldActions (Pure Hook)', () => {
           makeCard({ id: 'unit-1', zone: 'field-host', owner: 'host' }),
         ],
       });
-      vi.mocked(gameBoardManualLink.isTokenEquipmentCard).mockReturnValue(true);
+      vi.mocked(gameBoardManualLink.isTokenManualLinkCard).mockReturnValue(true);
       vi.mocked(gameBoardManualLink.isEquipmentLinkTargetCard).mockReturnValue(true);
 
       const { result } = renderHook(() => useGameBoardFieldActions({
@@ -738,6 +738,30 @@ describe('useGameBoardFieldActions (Pure Hook)', () => {
       });
     });
 
+    it('dispatches LINK_CARD_TO_FIELD for token treasure moved to a unit', () => {
+      const gameState = buildSyncState({
+        cards: [
+          makeCard({ id: 'treasure-1', cardId: 'TREASURE-001', zone: 'ex-host', owner: 'host', cardKindNormalized: 'token_treasure' }),
+          makeCard({ id: 'unit-1', zone: 'field-host', owner: 'host' }),
+        ],
+      });
+      vi.mocked(gameBoardManualLink.isTokenManualLinkCard).mockReturnValue(true);
+      vi.mocked(gameBoardManualLink.isEquipmentLinkTargetCard).mockReturnValue(true);
+
+      const { result } = renderHook(() => useGameBoardFieldActions({
+        ...defaultArgs,
+        gameStateRef: { current: gameState },
+      }));
+      result.current.handleDragEnd(makeDragEvent('treasure-1', 'unit-1'));
+
+      expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledWith({
+        type: 'LINK_CARD_TO_FIELD',
+        actor: 'host',
+        cardId: 'treasure-1',
+        parentCardId: 'unit-1',
+      });
+    });
+
     it('resolves to root card when linking equipment to an evolved unit', () => {
       const rootCard = makeCard({ id: 'root-unit', zone: 'field-host', owner: 'host' });
       const evolvedCard = makeCard({
@@ -748,7 +772,7 @@ describe('useGameBoardFieldActions (Pure Hook)', () => {
 
       const gameState = buildSyncState({ cards: [equipCard, rootCard, evolvedCard] });
 
-      vi.mocked(gameBoardManualLink.isTokenEquipmentCard).mockReturnValue(true);
+      vi.mocked(gameBoardManualLink.isTokenManualLinkCard).mockReturnValue(true);
       vi.mocked(gameBoardManualLink.isEquipmentLinkTargetCard).mockReturnValue(true);
       vi.mocked(gameBoardManualLink.findUnitRootCard).mockReturnValue(rootCard);
 
@@ -773,7 +797,7 @@ describe('useGameBoardFieldActions (Pure Hook)', () => {
           makeCard({ id: 'amulet-1', zone: 'field-host', owner: 'host' }),
         ],
       });
-      vi.mocked(gameBoardManualLink.isTokenEquipmentCard).mockReturnValue(true);
+      vi.mocked(gameBoardManualLink.isTokenManualLinkCard).mockReturnValue(true);
       vi.mocked(gameBoardManualLink.isEquipmentLinkTargetCard).mockReturnValue(false);
 
       const { result } = renderHook(() => useGameBoardFieldActions({

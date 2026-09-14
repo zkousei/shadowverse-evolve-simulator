@@ -17,12 +17,17 @@ export const findUnitRootCard = (cards: CardInstance[], card: CardInstance): Car
   return rootCard;
 };
 
-export const isTokenEquipmentCard = (
+const TOKEN_MANUAL_LINK_CARD_KINDS = new Set(['token_equipment', 'token_treasure']);
+
+export const isTokenManualLinkCard = (
   card: CardInstance | undefined,
-  tokenEquipmentCardIds: Set<string>
+  tokenManualLinkCardIds: Set<string>
 ): boolean => {
   if (!card) return false;
-  return card.cardKindNormalized === 'token_equipment' || tokenEquipmentCardIds.has(card.cardId);
+  return (
+    TOKEN_MANUAL_LINK_CARD_KINDS.has(card.cardKindNormalized ?? '') ||
+    tokenManualLinkCardIds.has(card.cardId)
+  );
 };
 
 export const isEquipmentLinkTargetCard = (

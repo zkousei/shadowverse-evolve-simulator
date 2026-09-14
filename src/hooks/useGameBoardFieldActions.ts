@@ -5,7 +5,7 @@ import type { AttackTarget } from '../types/sync';
 import type { CardInstance } from '../components/Card';
 import type { DispatchableGameSyncEvent } from './useGameBoardLogic';
 import { buildSpawnTokenInstance, buildSpawnTokens } from '../utils/gameBoardDeckActions';
-import { findUnitRootCard, isEquipmentLinkTargetCard, isTokenEquipmentCard } from '../utils/gameBoardManualLink';
+import { findUnitRootCard, isEquipmentLinkTargetCard, isTokenManualLinkCard } from '../utils/gameBoardManualLink';
 
 
 interface UseGameBoardFieldActionsArgs {
@@ -16,7 +16,7 @@ interface UseGameBoardFieldActionsArgs {
     defaultTokenOption: React.MutableRefObject<TokenOption>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     cardCatalogByIdRef: React.MutableRefObject<Record<string, any>>;
-    tokenEquipmentCardIdsRef: React.MutableRefObject<Set<string>>;
+    tokenManualLinkCardIdsRef: React.MutableRefObject<Set<string>>;
     fieldLinkCardIdsRef: React.MutableRefObject<Set<string>>;
     setSearchZone: React.Dispatch<React.SetStateAction<{ id: string; title: string; } | null>>;
     resolveEvolveAutoAttachSelection: (cardId: string) => { placement: 'linked' | 'stack'; candidateCards: CardInstance[] } | null;
@@ -32,7 +32,7 @@ export function useGameBoardFieldActions({
     uuid,
     defaultTokenOption,
     cardCatalogByIdRef,
-    tokenEquipmentCardIdsRef,
+    tokenManualLinkCardIdsRef,
     fieldLinkCardIdsRef,
     setSearchZone,
     resolveEvolveAutoAttachSelection,
@@ -160,7 +160,7 @@ export function useGameBoardFieldActions({
                 sourceCard &&
                 overRootCard &&
                 cardId !== overId &&
-                isTokenEquipmentCard(sourceCard, tokenEquipmentCardIdsRef.current) &&
+                isTokenManualLinkCard(sourceCard, tokenManualLinkCardIdsRef.current) &&
                 (sourceCard.zone === `field-${sourceCard.owner}` || sourceCard.zone === `ex-${sourceCard.owner}`) &&
                 overRootCard.zone === `field-${sourceCard.owner}` &&
                 overRootCard.owner === sourceCard.owner &&
@@ -217,7 +217,7 @@ export function useGameBoardFieldActions({
             cardId,
             overId,
         });
-    }, [cardCatalogByIdRef, dispatchGameEvent, executeEvolveAutoAttach, fieldLinkCardIdsRef, gameStateRef, isSoloMode, queueEvolveAutoAttachSelection, resolveEvolveAutoAttachSelection, tokenEquipmentCardIdsRef]);
+    }, [cardCatalogByIdRef, dispatchGameEvent, executeEvolveAutoAttach, fieldLinkCardIdsRef, gameStateRef, isSoloMode, queueEvolveAutoAttachSelection, resolveEvolveAutoAttachSelection, tokenManualLinkCardIdsRef]);
 
     const toggleTap = useCallback((cardId: string) => {
         dispatchGameEvent({ type: 'TOGGLE_TAP', cardId });

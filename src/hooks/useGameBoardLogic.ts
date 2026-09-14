@@ -156,7 +156,7 @@ export const useGameBoardLogic = () => {
     evolveAutoAttachResolverRef,
     fieldLinkAutoAttachResolverRef,
     fieldLinkCardIdsRef,
-    tokenEquipmentCardIdsRef,
+    tokenManualLinkCardIdsRef,
   } = useGameBoardCatalogResources();
   const topDeckCardsRef = useRef<CardInstance[]>([]);
   const topDeckTargetRoleRef = useRef<PlayerRole>(role);
@@ -1275,7 +1275,7 @@ export const useGameBoardLogic = () => {
     uuid,
     defaultTokenOption,
     cardCatalogByIdRef,
-    tokenEquipmentCardIdsRef,
+    tokenManualLinkCardIdsRef,
     fieldLinkCardIdsRef,
     setSearchZone,
     resolveEvolveAutoAttachSelection,
