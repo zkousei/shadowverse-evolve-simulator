@@ -1,5 +1,5 @@
 import React from 'react';
-import Zone from '../Zone';
+import Zone from './Zone';
 import GameBoardHandRow from './GameBoardHandRow';
 import GameBoardMulliganButton from './GameBoardMulliganButton';
 import GameBoardZoneActionsSection from './GameBoardZoneActionsSection';

@@ -2,8 +2,8 @@ import { getFieldLinkGroupId } from '../../data/fieldLinkRules';
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
 import { buildCardDetailLookup, type CardDetailLookup } from '../cardDetails';
 import { buildCardStatLookup, type CardStatLookup } from '../cardStats';
-import { buildEvolveAutoAttachResolver, type EvolveAutoAttachResolver } from '../evolveAutoAttach';
-import { buildFieldLinkAutoAttachResolver, type FieldLinkAutoAttachResolver } from '../fieldLinkAutoAttach';
+import { buildEvolveAutoAttachResolver, type EvolveAutoAttachResolver } from './evolveAutoAttach';
+import { buildFieldLinkAutoAttachResolver, type FieldLinkAutoAttachResolver } from './fieldLinkAutoAttach';
 
 export type GameBoardCatalogResources = {
   catalogById: Record<string, DeckBuilderCardData>;

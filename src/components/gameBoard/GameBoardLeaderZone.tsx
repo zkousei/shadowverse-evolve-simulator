@@ -1,5 +1,5 @@
 import React from 'react';
-import Zone from '../Zone';
+import Zone from './Zone';
 import type { CardInspectAnchor, CardInstance } from '../Card';
 import type { CardDetailLookup } from '../../utils/cardDetails';
 import type { PlayerRole } from '../../types/game';

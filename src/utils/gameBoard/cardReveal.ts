@@ -1,6 +1,6 @@
-import type { CardInstance } from '../components/Card';
-import type { PlayerRole } from '../types/game';
-import type { PublicCardView, SharedUiEffect } from '../types/sync';
+import type { CardInstance } from '../../components/Card';
+import type { PlayerRole } from '../../types/game';
+import type { PublicCardView, SharedUiEffect } from '../../types/sync';
 
 const toPublicCardView = (card: CardInstance, includeImage = true): PublicCardView => ({
   cardId: card.cardId,

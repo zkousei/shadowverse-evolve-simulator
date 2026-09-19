@@ -5,7 +5,7 @@ import type { CardInstance } from '../../components/Card';
 import * as CardLogic from '../../utils/cardLogic';
 import type { DispatchableGameSyncEvent } from './useGameBoardLogic';
 import { canLookAtTopDeck } from '../../utils/gameBoard/gameBoardInteraction';
-import { buildHandRevealEffect, buildSelectedHandRevealEffect } from '../../utils/cardReveal';
+import { buildHandRevealEffect, buildSelectedHandRevealEffect } from '../../utils/gameBoard/cardReveal';
 
 interface UseGameBoardCardActionsArgs {
     canInteract: boolean;

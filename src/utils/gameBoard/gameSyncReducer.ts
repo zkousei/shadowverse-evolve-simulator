@@ -1,6 +1,6 @@
-import { initialState, type SyncState } from '../types/game';
-import type { GameSyncEvent } from '../types/sync';
-import * as CardLogic from './cardLogic';
+import { initialState, type SyncState } from '../../types/game';
+import type { GameSyncEvent } from '../../types/sync';
+import * as CardLogic from '../cardLogic';
 import { canImportDeck, isHandCardMovementLocked } from './gameRules';
 import { canDeclareAttack } from './attackUi';
 

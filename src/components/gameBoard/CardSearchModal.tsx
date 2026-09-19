@@ -1,12 +1,12 @@
 import React from 'react';
-import type { CardInstance } from './Card';
-import type { PlayerRole } from '../types/game';
-import { formatAbilityText, resolveSelectedCardFaceDetail, type CardDetailLookup, type CardFaceSide } from '../utils/cardDetails';
-import { normalizeBaseCardType, type RuntimeBaseCardType } from '../utils/cardType';
-import CardArtwork from './CardArtwork';
-import GameBoardCardFacePreview from './gameBoard/GameBoardCardFacePreview';
+import type { CardInstance } from '../Card';
+import type { PlayerRole } from '../../types/game';
+import { formatAbilityText, resolveSelectedCardFaceDetail, type CardDetailLookup, type CardFaceSide } from '../../utils/cardDetails';
+import { normalizeBaseCardType, type RuntimeBaseCardType } from '../../utils/cardType';
+import CardArtwork from '../CardArtwork';
+import GameBoardCardFacePreview from './GameBoardCardFacePreview';
 import { useTranslation } from 'react-i18next';
-import { useGameBoardInputProfile } from '../contexts/gameBoardInputProfileContext';
+import { useGameBoardInputProfile } from '../../contexts/gameBoardInputProfileContext';
 
 interface CardSearchModalProps {
   isOpen: boolean;

@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import type { CardInstance } from './Card';
+import type { CardInstance } from '../Card';
 import { useTranslation } from 'react-i18next';
-import CardArtwork from './CardArtwork';
+import CardArtwork from '../CardArtwork';
 import {
   buildCardDetailPresentation,
   formatAbilityText,
   resolveSelectedCardFaceDetail,
   type CardDetailLookup,
-} from '../utils/cardDetails';
+} from '../../utils/cardDetails';
 
 export type TopDeckAction = 'hand' | 'revealedHand' | 'field' | 'ex' | 'cemetery' | 'top' | 'bottom';
 

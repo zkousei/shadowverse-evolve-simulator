@@ -4,10 +4,10 @@ import { useGameBoardCardActions } from './useGameBoardCardActions';
 import type { SyncState } from '../../types/game';
 import type { SharedUiEffect } from '../../types/sync';
 
-import * as cardReveal from '../../utils/cardReveal';
+import * as cardReveal from '../../utils/gameBoard/cardReveal';
 import * as gameBoardInteraction from '../../utils/gameBoard/gameBoardInteraction';
 
-vi.mock('../../utils/cardReveal', () => ({
+vi.mock('../../utils/gameBoard/cardReveal', () => ({
   buildHandRevealEffect: vi.fn(),
   buildSelectedHandRevealEffect: vi.fn(),
 }));

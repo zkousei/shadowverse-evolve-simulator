@@ -1,8 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import CardSearchModal from './CardSearchModal';
-import type { CardInstance } from './Card';
-import GameBoardInputProfileProvider from '../contexts/GameBoardInputProfileProvider';
+import type { CardInstance } from '../Card';
+import GameBoardInputProfileProvider from '../../contexts/GameBoardInputProfileProvider';
 
 const createCard = (overrides: Partial<CardInstance> = {}): CardInstance => ({
   id: 'card-1',

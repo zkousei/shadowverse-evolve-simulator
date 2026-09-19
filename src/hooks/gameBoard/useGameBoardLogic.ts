@@ -10,14 +10,14 @@ import { type AttackTarget, type GameSyncEvent, type SharedUiEffect } from '../.
 import { uuid } from '../../utils/helpers';
 import * as CardLogic from '../../utils/cardLogic';
 
-import { applyGameSyncEvent } from '../../utils/gameSyncReducer';
+import { applyGameSyncEvent } from '../../utils/gameBoard/gameSyncReducer';
 import { flipSharedCoin, rollSharedDie } from '../../utils/sharedRandom';
 import { createEventDeduper } from '../../utils/eventDeduper';
-import { buildTopDeckRevealEffect } from '../../utils/topDeckReveal';
-import { buildTopDeckSummaryEffect } from '../../utils/topDeckSummary';
-import { buildCardRevealEffect } from '../../utils/cardReveal';
-import { buildAttackDeclaredEffect } from '../../utils/attackUi';
-import { buildCardPlayedEffect } from '../../utils/cardPlayUi';
+import { buildTopDeckRevealEffect } from '../../utils/gameBoard/topDeckReveal';
+import { buildTopDeckSummaryEffect } from '../../utils/gameBoard/topDeckSummary';
+import { buildCardRevealEffect } from '../../utils/gameBoard/cardReveal';
+import { buildAttackDeclaredEffect } from '../../utils/gameBoard/attackUi';
+import { buildCardPlayedEffect } from '../../utils/gameBoard/cardPlayUi';
 import { resolveCardDisplayName } from '../../utils/cardDetails';
 
 import {

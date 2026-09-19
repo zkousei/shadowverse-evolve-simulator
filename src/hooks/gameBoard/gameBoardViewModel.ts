@@ -1,5 +1,5 @@
-import { canImportDeck, canUndoLastTurn, isHandCardMovementLocked } from '../../utils/gameRules';
-import { getPlayerLabel, getZoneOwner } from '../../utils/soloMode';
+import { canImportDeck, canUndoLastTurn, isHandCardMovementLocked } from '../../utils/gameBoard/gameRules';
+import { getPlayerLabel, getZoneOwner } from '../../utils/gameBoard/soloMode';
 import { getConnectionBadgeTone, getInteractionBlockedTitle } from '../../utils/gameBoard/gameBoardPresentation';
 import type { ConnectionBadgeTone, GameBoardConnectionState } from '../../utils/gameBoard/gameBoardPresentation';
 import type { PlayerRole, SyncState } from '../../types/game';

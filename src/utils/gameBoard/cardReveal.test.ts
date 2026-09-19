@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { CardInstance } from '../components/Card';
+import type { CardInstance } from '../../components/Card';
 import { buildCardRevealEffect, buildHandRevealEffect, buildSelectedHandRevealEffect, buildSingleCardRevealEffect } from './cardReveal';
 
 const createCard = (id: string): CardInstance => ({

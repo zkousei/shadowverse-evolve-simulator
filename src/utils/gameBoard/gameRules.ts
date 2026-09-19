@@ -1,4 +1,4 @@
-import type { PlayerRole, SyncState } from '../types/game';
+import type { PlayerRole, SyncState } from '../../types/game';
 
 export const canImportDeck = (
   state: SyncState,

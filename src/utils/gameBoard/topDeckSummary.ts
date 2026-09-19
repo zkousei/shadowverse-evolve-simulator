@@ -1,7 +1,7 @@
-import type { CardInstance } from '../components/Card';
-import type { PlayerRole } from '../types/game';
-import type { SharedUiEffect } from '../types/sync';
-import type { TopDeckResult } from './cardLogic';
+import type { CardInstance } from '../../components/Card';
+import type { PlayerRole } from '../../types/game';
+import type { SharedUiEffect } from '../../types/sync';
+import type { TopDeckResult } from '../cardLogic';
 
 export const buildTopDeckSummaryEffect = (
   cards: CardInstance[],

@@ -2,13 +2,13 @@ import { describe, expect, it, vi } from 'vitest';
 import { buildGameBoardViewModel } from './gameBoardViewModel';
 import { buildSyncState } from './gameBoardTestUtils';
 
-vi.mock('../../utils/gameRules', () => ({
+vi.mock('../../utils/gameBoard/gameRules', () => ({
     canImportDeck: vi.fn(() => true),
     canUndoLastTurn: vi.fn(() => false),
     isHandCardMovementLocked: vi.fn(() => false),
 }));
 
-vi.mock('../../utils/soloMode', () => ({
+vi.mock('../../utils/gameBoard/soloMode', () => ({
     getPlayerLabel: vi.fn((role: string) => `label-${role}`),
     getZoneOwner: vi.fn((zoneId: string) => {
         const match = zoneId.match(/-(host|guest)$/);
@@ -21,7 +21,7 @@ vi.mock('../../utils/gameBoard/gameBoardPresentation', () => ({
     getInteractionBlockedTitle: vi.fn(() => undefined),
 }));
 
-import { canImportDeck, canUndoLastTurn, isHandCardMovementLocked } from '../../utils/gameRules';
+import { canImportDeck, canUndoLastTurn, isHandCardMovementLocked } from '../../utils/gameBoard/gameRules';
 
 const t = (key: string) => key;
 

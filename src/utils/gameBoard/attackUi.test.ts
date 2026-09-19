@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { TFunction } from 'i18next';
-import type { CardInstance } from '../components/Card';
+import type { CardInstance } from '../../components/Card';
 import { buildAttackDeclaredEffect, canDeclareAttack, formatAttackEffect } from './attackUi';
 
 const createCard = (overrides: Partial<CardInstance>): CardInstance => ({
