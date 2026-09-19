@@ -3,6 +3,8 @@ import re
 import time
 import urllib.parse
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 from typing import Optional
 
 from bs4 import BeautifulSoup
@@ -11,14 +13,21 @@ from bs4 import BeautifulSoup
 BASE_SEARCH_URL = "https://shadowverse-evolve.com/cardlist/cardsearch/?view=image"
 EXTRA_PAGE_URL = "https://shadowverse-evolve.com/cardlist/cardsearch_ex?view=image&page={page}"
 OUTPUT_PATH = "public/cards.json"
-REQUEST_DELAY_SECONDS = 0.05
 MAX_RETRIES = 3
+LIST_PAGE_WORKERS = 8
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
     "Referer": "https://shadowverse-evolve.com/cardlist/",
     "Accept-Language": "ja,en-US;q=0.9,en;q=0.8",
 }
+
+
+@dataclass(frozen=True)
+class CardIndexResult:
+    cards: list[dict]
+    expected_count: Optional[int]
+    max_page: int
 
 
 def fetch_html(url: str) -> str:
@@ -78,34 +87,39 @@ def dedupe_cards(cards: list[dict]) -> list[dict]:
     return list(unique_cards.values())
 
 
-def main() -> None:
-    print("Starting scraper...")
+def fetch_all_cards() -> CardIndexResult:
     all_cards: list[dict] = []
 
     first_page_html = fetch_html(BASE_SEARCH_URL)
     max_page = extract_max_page(first_page_html)
     expected_count = extract_expected_count(first_page_html)
-    first_page_cards = extract_cards(first_page_html)
-    all_cards.extend(first_page_cards)
-    print(f"Discovered {max_page} pages.")
-    print(f"Scraped page 1/{max_page} ({len(all_cards)} cards so far)")
+    all_cards.extend(extract_cards(first_page_html))
 
-    for page in range(2, max_page + 1):
-        html = fetch_html(EXTRA_PAGE_URL.format(page=page))
-        page_cards = extract_cards(html)
-        all_cards.extend(page_cards)
-        if page % 10 == 0 or page == max_page:
-            print(f"Scraped page {page}/{max_page} ({len(all_cards)} cards so far)")
-        time.sleep(REQUEST_DELAY_SECONDS)
+    extra_urls = [EXTRA_PAGE_URL.format(page=page) for page in range(2, max_page + 1)]
+    with ThreadPoolExecutor(max_workers=LIST_PAGE_WORKERS) as executor:
+        for html in executor.map(fetch_html, extra_urls):
+            all_cards.extend(extract_cards(html))
 
     unique_cards = dedupe_cards(all_cards)
+    if expected_count is not None and len(unique_cards) != expected_count:
+        raise RuntimeError(
+            f"Official index expected {expected_count} cards but fetched {len(unique_cards)} unique cards"
+        )
+
+    return CardIndexResult(unique_cards, expected_count, max_page)
+
+
+def main() -> None:
+    print("Starting scraper...")
+    result = fetch_all_cards()
+    print(f"Discovered and scraped {result.max_page} pages.")
 
     with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
-        json.dump(unique_cards, f, ensure_ascii=False, indent=2)
+        json.dump(result.cards, f, ensure_ascii=False, indent=2)
 
-    print(f"Saved {len(unique_cards)} cards to {OUTPUT_PATH}")
-    if expected_count is not None:
-        print(f"Expected count from official search page: {expected_count}")
+    print(f"Saved {len(result.cards)} cards to {OUTPUT_PATH}")
+    if result.expected_count is not None:
+        print(f"Expected count from official search page: {result.expected_count}")
 
 
 if __name__ == "__main__":

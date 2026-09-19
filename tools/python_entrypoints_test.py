@@ -63,6 +63,32 @@ class PythonEntrypointsTest(unittest.TestCase):
             self.assertEqual(result[0]['deck_section'], 'token')
             self.assertEqual(json.loads(Path('public/cards.json').read_text()), initial)
 
+    def test_official_incremental_module_dry_run_preserves_existing_files(self):
+        from tools.official_cards.scraper import CardIndexResult
+
+        initial_summary = [{'id': 'TEST-001', 'name': 'Test', 'image': '/test.png'}]
+        initial_detail = [{
+            **initial_summary[0],
+            'class': 'エルフ', 'type': 'フォロワー', 'subtype': '妖精',
+            'cost': '1', 'atk': '1', 'hp': '1',
+            'card_kind_normalized': 'follower', 'deck_section': 'main',
+            'is_token': False, 'is_evolve_card': False, 'is_deck_build_legal': True,
+        }]
+        official = [
+            {'id': 'NEW-001', 'name': 'New', 'image': '/new.png'},
+            initial_summary[0],
+        ]
+        with self.workspace():
+            Path('public/cards.json').write_text(json.dumps(initial_summary))
+            Path('public/cards_detailed.json').write_text(json.dumps(initial_detail))
+            before = {p: p.read_bytes() for p in Path('public').iterdir()}
+            with patch(
+                'tools.official_cards.scraper.fetch_all_cards',
+                return_value=CardIndexResult(official, 2, 1),
+            ), patch.object(sys, 'argv', ['sync_incremental', '--dry-run']):
+                self.run_module('tools.official_cards.sync_incremental')
+            self.assertEqual({p: p.read_bytes() for p in Path('public').iterdir()}, before)
+
     def test_audit_modules_read_existing_paths_and_exit_on_invalid_data(self):
         valid = {
             'id': 'TEST-001', 'name': 'Test', 'image': '/test.png',

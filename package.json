@@ -16,6 +16,7 @@
     "test:e2e": "playwright test",
     "cards:fetch:official": "python3 -m tools.official_cards.scraper",
     "cards:fetch:official:details": "python3 -m tools.official_cards.scrape_details",
+    "cards:fetch:official:incremental": "python3 -m tools.official_cards.sync_incremental",
     "cards:sync:preview": "python3 -m tools.svestats_preview.sync",
     "cards:audit": "python3 -m tools.card_data.audit_cards",
     "cards:audit:preview": "python3 -m tools.card_data.audit_preview_cards",
