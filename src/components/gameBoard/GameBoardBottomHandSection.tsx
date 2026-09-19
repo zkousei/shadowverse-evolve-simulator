@@ -1,5 +1,5 @@
 import React from 'react';
-import Zone from '../Zone';
+import Zone from './Zone';
 import GameBoardMulliganButton from './GameBoardMulliganButton';
 import GameBoardZoneActionsSection from './GameBoardZoneActionsSection';
 import { useGameBoardInputProfile } from '../../contexts/gameBoardInputProfileContext';

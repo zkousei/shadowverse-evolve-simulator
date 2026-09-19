@@ -1,8 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import Zone from './Zone';
-import type { CardInstance } from './Card';
-import GameBoardInputProfileProvider from '../contexts/GameBoardInputProfileProvider';
+import type { CardInstance } from '../Card';
+import GameBoardInputProfileProvider from '../../contexts/GameBoardInputProfileProvider';
 
 const droppableState = { isOver: false };
 
@@ -35,7 +35,7 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-vi.mock('./Card', () => ({
+vi.mock('../Card', () => ({
   default: ({ card, isHidden, isLocked, quickActionsDisabled, debugIndex, hideCurrentStats, displayCounters, baseStats, onSendToBottom, onBanish, onCemetery, onReturnEvolve, onQuickActionsHoverChange }: { card: CardInstance; isHidden?: boolean; isLocked?: boolean; quickActionsDisabled?: boolean; debugIndex?: number; hideCurrentStats?: boolean; displayCounters?: { atk: number; hp: number }; baseStats?: { atk: number; hp: number }; onSendToBottom?: (id: string) => void; onBanish?: (id: string) => void; onCemetery?: (id: string) => void; onReturnEvolve?: (id: string) => void; onQuickActionsHoverChange?: (id: string, isHovered: boolean) => void }) => (
     <div
       data-testid="mock-card"

@@ -1,17 +1,17 @@
 import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
-import Card, { type CardInspectAnchor, type CardInstance, type CardTapAnchor } from './Card';
-import type { PlayerRole } from '../types/game';
-import type { CardStatLookup } from '../utils/cardStats';
-import type { CardDetailLookup } from '../utils/cardDetails';
-import { useGameBoardBoardDensity, useGameBoardInputProfile } from '../contexts/gameBoardInputProfileContext';
+import Card, { type CardInspectAnchor, type CardInstance, type CardTapAnchor } from '../Card';
+import type { PlayerRole } from '../../types/game';
+import type { CardStatLookup } from '../../utils/cardStats';
+import type { CardDetailLookup } from '../../utils/cardDetails';
+import { useGameBoardBoardDensity, useGameBoardInputProfile } from '../../contexts/gameBoardInputProfileContext';
 import {
   getCardSizeForInputProfile,
   getExZoneGapForInputProfile,
   getFieldZoneGapForInputProfile,
   getLinkedCardOffsetForInputProfile,
   getStackAttachmentOffsetForInputProfile,
-} from '../utils/gameBoard/gameBoardCardLayout';
+} from '../../utils/gameBoard/gameBoardCardLayout';
 
 interface Props {
   id: string;

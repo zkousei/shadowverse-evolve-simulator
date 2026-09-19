@@ -1,7 +1,7 @@
 import type { PlayerRole, SyncState } from '../../types/game';
 import type { DispatchableGameSyncEvent } from './useGameBoardLogic';
 import { buildImportedDeckPayload, type ImportableDeckData } from '../../utils/gameBoard/gameBoardDeckActions';
-import { canImportDeck } from '../../utils/gameRules';
+import { canImportDeck } from '../../utils/gameBoard/gameRules';
 
 interface UseGameBoardSetupActionsArgs {
     canInteract: boolean;

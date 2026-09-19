@@ -1,4 +1,4 @@
-import type { PlayerRole } from '../types/game';
+import type { PlayerRole } from '../../types/game';
 
 export const getZoneOwner = (zoneId: string): PlayerRole | null => {
   if (zoneId.endsWith('-host')) return 'host';

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { CardInstance } from '../components/Card';
+import type { CardInstance } from '../../components/Card';
 import { buildTopDeckSummaryEffect } from './topDeckSummary';
 
 const createCard = (id: string, name = `Card ${id}`): CardInstance => ({

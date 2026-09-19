@@ -4,10 +4,10 @@ import { useGameBoardSetupActions } from './useGameBoardSetupActions';
 import { buildSyncState } from './gameBoardTestUtils';
 
 // Mock dependencies
-vi.mock('../../utils/gameRules', () => ({
+vi.mock('../../utils/gameBoard/gameRules', () => ({
     canImportDeck: vi.fn(),
 }));
-import { canImportDeck } from '../../utils/gameRules';
+import { canImportDeck } from '../../utils/gameBoard/gameRules';
 
 describe('useGameBoardSetupActions (Pure Hook)', () => {
     const defaultArgs = {

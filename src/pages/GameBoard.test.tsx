@@ -19,7 +19,7 @@ vi.mock('@dnd-kit/core', () => ({
   DndContext: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
 }));
 
-vi.mock('../components/Zone', () => ({
+vi.mock('../components/gameBoard/Zone', () => ({
   default: ({
     id,
     label,
@@ -75,7 +75,7 @@ vi.mock('../components/Zone', () => ({
   ),
 }));
 
-vi.mock('../components/CardSearchModal', () => ({
+vi.mock('../components/gameBoard/CardSearchModal', () => ({
   default: ({
     isOpen,
     title,
@@ -113,7 +113,7 @@ vi.mock('../components/CardSearchModal', () => ({
   ),
 }));
 
-vi.mock('../components/TopDeckModal', () => ({
+vi.mock('../components/gameBoard/TopDeckModal', () => ({
   default: ({
     isOpen,
     onCancel,

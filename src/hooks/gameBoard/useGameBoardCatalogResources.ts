@@ -4,8 +4,8 @@ import { loadCardCatalog } from '../../utils/cardCatalog';
 import { buildGameBoardCatalogResources } from '../../utils/gameBoard/gameBoardCatalog';
 import type { CardStatLookup } from '../../utils/cardStats';
 import type { CardDetailLookup } from '../../utils/cardDetails';
-import type { EvolveAutoAttachResolver } from '../../utils/evolveAutoAttach';
-import type { FieldLinkAutoAttachResolver } from '../../utils/fieldLinkAutoAttach';
+import type { EvolveAutoAttachResolver } from '../../utils/gameBoard/evolveAutoAttach';
+import type { FieldLinkAutoAttachResolver } from '../../utils/gameBoard/fieldLinkAutoAttach';
 
 export const useGameBoardCatalogResources = () => {
   const [cardStatLookup, setCardStatLookup] = React.useState<CardStatLookup>({});

@@ -1,9 +1,9 @@
 import React from 'react';
 import { DndContext } from '@dnd-kit/core';
 import { useTranslation } from 'react-i18next';
-import Zone from '../components/Zone';
+import Zone from '../components/gameBoard/Zone';
 import type { CardInstance } from '../components/Card';
-import CardSearchModal from '../components/CardSearchModal';
+import CardSearchModal from '../components/gameBoard/CardSearchModal';
 import GameBoardBoardRow from '../components/gameBoard/GameBoardBoardRow';
 import GameBoardBottomHandSection from '../components/gameBoard/GameBoardBottomHandSection';
 import GameBoardCardInspectorSection from '../components/gameBoard/GameBoardCardInspectorSection';
@@ -34,7 +34,7 @@ import {
   buildRandomDiscardHandZoneActions,
   buildRevealHandZoneActions,
 } from '../components/gameBoard/gameBoardZoneActionViewModel';
-import TopDeckModal from '../components/TopDeckModal';
+import TopDeckModal from '../components/gameBoard/TopDeckModal';
 import { useGameBoardAttackUi } from '../hooks/gameBoard/useGameBoardAttackUi';
 import { useGameBoardLogic } from '../hooks/gameBoard/useGameBoardLogic';
 import { buildGameBoardViewModel } from '../hooks/gameBoard/gameBoardViewModel';

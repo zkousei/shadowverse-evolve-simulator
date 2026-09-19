@@ -1,6 +1,6 @@
 import React from 'react';
 import GameBoardTouchActionSheet from './GameBoardTouchActionSheet';
-import Zone from '../Zone';
+import Zone from './Zone';
 import GameBoardZoneActionsSection from './GameBoardZoneActionsSection';
 
 type ZoneAction = {

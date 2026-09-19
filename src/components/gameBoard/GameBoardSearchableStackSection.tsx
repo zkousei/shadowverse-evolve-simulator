@@ -1,7 +1,7 @@
 import React from 'react';
 import GameBoardTouchActionSheet from './GameBoardTouchActionSheet';
 import GameBoardZoneSearchButton from './GameBoardZoneSearchButton';
-import Zone from '../Zone';
+import Zone from './Zone';
 
 const STACK_SEARCH_ACTION_Z_INDEX = 180;
 

@@ -1,8 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import TopDeckModal from './TopDeckModal';
-import type { CardInstance } from './Card';
-import type { CardDetail } from '../utils/cardDetails';
+import type { CardInstance } from '../Card';
+import type { CardDetail } from '../../utils/cardDetails';
 
 const createCard = (id: string): CardInstance => ({
   id,

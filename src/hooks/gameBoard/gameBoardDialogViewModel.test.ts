@@ -10,7 +10,7 @@ vi.mock('../../utils/gameBoard/gameBoardPresentation', () => ({
     ),
 }));
 
-vi.mock('../../utils/soloMode', () => ({
+vi.mock('../../utils/gameBoard/soloMode', () => ({
     getPlayerLabel: vi.fn((_role: string, _isSolo: boolean, self: string, opponent: string) =>
         _role === 'host' ? self : opponent
     ),

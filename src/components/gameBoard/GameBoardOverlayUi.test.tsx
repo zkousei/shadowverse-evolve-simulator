@@ -10,7 +10,7 @@ import GameBoardTransientMessage from './GameBoardTransientMessage';
 vi.mock('../CardArtwork', () => ({
   default: ({ alt }: { alt: string }) => <img alt={alt} />,
 }));
-vi.mock('../Zone', () => ({
+vi.mock('./Zone', () => ({
   default: ({
     id,
     label,

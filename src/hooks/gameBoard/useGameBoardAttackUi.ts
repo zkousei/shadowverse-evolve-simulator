@@ -11,7 +11,7 @@ import {
   shouldDismissAttackModeOnPointerDown,
   shouldDismissOnEscapeKey,
 } from '../../utils/gameBoard/gameBoardDismissals';
-import { getZoneOwner } from '../../utils/soloMode';
+import { getZoneOwner } from '../../utils/gameBoard/soloMode';
 import type { AttackTarget } from '../../types/sync';
 import type { SyncState } from '../../types/game';
 

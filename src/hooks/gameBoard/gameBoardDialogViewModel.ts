@@ -1,4 +1,4 @@
-import { getPlayerLabel } from '../../utils/soloMode';
+import { getPlayerLabel } from '../../utils/gameBoard/soloMode';
 import { filterSavedDeckOptionsBySearch } from '../../utils/gameBoard/gameBoardPresentation';
 import { getTotalTokenSpawnCount } from '../../utils/gameBoard/gameBoardTokens';
 import type { LegalSavedDeckOption } from '../../utils/gameBoard/gameBoardSavedDecks';

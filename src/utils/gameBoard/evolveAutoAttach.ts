@@ -1,5 +1,5 @@
-import type { CardInstance } from '../components/Card';
-import type { DeckBuilderCardData } from '../models/deckBuilderCard';
+import type { CardInstance } from '../../components/Card';
+import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
 
 export interface EvolveAutoAttachCandidate {
   card: CardInstance;

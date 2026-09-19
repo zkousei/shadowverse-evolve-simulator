@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { initialState, type SyncState } from '../types/game';
+import { initialState, type SyncState } from '../../types/game';
 import { applyGameSyncEvent } from './gameSyncReducer';
-import * as CardLogic from './cardLogic';
+import * as CardLogic from '../cardLogic';
 
 const createState = (overrides: Partial<SyncState> = {}): SyncState => ({
   ...initialState,

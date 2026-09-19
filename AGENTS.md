@@ -42,7 +42,7 @@ automated test as soon as the behavior becomes clear.
 - Pure card movement and zone rules:
   - `src/utils/cardLogic.test.ts`
 - Reducer event handling, guards, no-op behavior, undo/turn rules:
-  - `src/utils/gameSyncReducer.test.ts`
+  - `src/utils/gameBoard/gameSyncReducer.test.ts`
 - Lower-level P2P, reconnect, snapshot, saved-session, and shared UI effect rules:
   - `src/utils/gameBoard/**/*.test.ts`
   - Prefer the narrowest existing utility/contract test first when behavior is
@@ -70,7 +70,7 @@ automated test as soon as the behavior becomes clear.
 - Component-level UI wiring and DOM behavior:
   - `src/components/gameBoard/GameBoard*.test.tsx`
   - `src/components/deckBuilder/DeckBuilder*.test.tsx`
-  - `src/components/Zone.test.tsx`
+  - `src/components/gameBoard/Zone.test.tsx`
   - Prefer this layer before page tests when the behavior is confined to a
     single component tree or dialog host.
 - Page-level user flows and dialog behavior (DOM integration):

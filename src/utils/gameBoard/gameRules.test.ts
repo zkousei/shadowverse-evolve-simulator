@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { initialState } from '../types/game';
+import { initialState } from '../../types/game';
 import { canImportDeck, canUndoLastTurn, isHandCardMovementLocked } from './gameRules';
 
 describe('gameRules', () => {

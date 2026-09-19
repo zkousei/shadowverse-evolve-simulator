@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { CardInstance } from '../components/Card';
-import type { DeckBuilderCardData } from '../models/deckBuilderCard';
+import type { CardInstance } from '../../components/Card';
+import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
 import { buildEvolveAutoAttachResolver } from './evolveAutoAttach';
 
 const createCatalogCard = (overrides: Partial<DeckBuilderCardData>): DeckBuilderCardData => ({
