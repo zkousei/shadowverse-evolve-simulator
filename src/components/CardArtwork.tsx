@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { CardDetail } from '../utils/cardDetails';
-import { isDummyCardArtEnabled } from '../utils/cardArtMode';
-import type { RuntimeBaseCardType } from '../utils/cardType';
+import type { CardDetail } from '../utils/card/cardDetails';
+import { isDummyCardArtEnabled } from '../utils/card/cardArtMode';
+import type { RuntimeBaseCardType } from '../utils/card/cardType';
 
 type DummyKind = 'follower' | 'spell' | 'amulet' | 'equipment' | 'leader' | 'token' | 'other';
 

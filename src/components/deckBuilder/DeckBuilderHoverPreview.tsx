@@ -2,7 +2,7 @@ import React from 'react';
 import CardArtwork from '../CardArtwork';
 import { getBaseCardType } from '../../models/cardClassification';
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
-import type { CardDetail } from '../../utils/cardDetails';
+import type { CardDetail } from '../../utils/card/cardDetails';
 
 type DeckBuilderHoverPreviewProps = {
   hoveredDeckCard: DeckBuilderCardData;

@@ -1,13 +1,13 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { useDeckBuilderSessionTracking } from './useDeckBuilderSessionTracking';
-import * as DeckStorage from '../../utils/deckStorage';
+import * as DeckStorage from '../../utils/deck/deckStorage';
 import { createDefaultDeckRuleConfig } from '../../models/deckRule';
 import { createEmptyDeckState } from '../../models/deckState';
 
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
 
-vi.mock('../../utils/deckStorage', () => ({
+vi.mock('../../utils/deck/deckStorage', () => ({
   loadDraft: vi.fn(),
   getSavedDeckById: vi.fn(),
   clearDraft: vi.fn(),

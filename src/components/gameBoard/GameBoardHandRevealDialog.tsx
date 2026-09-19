@@ -1,7 +1,7 @@
 import React from 'react';
 import type { CardInstance } from '../Card';
 import CardArtwork from '../CardArtwork';
-import type { CardDetailLookup } from '../../utils/cardDetails';
+import type { CardDetailLookup } from '../../utils/card/cardDetails';
 
 type GameBoardHandRevealDialogProps = {
   title: string;

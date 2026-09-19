@@ -2,7 +2,7 @@ import React from 'react';
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
 import type { DeckRuleConfig } from '../../models/deckRule';
 import type { DeckState } from '../../models/deckState';
-import { clearDraft, getSavedDeckById, loadDraft, type DeckBuilderSnapshot } from '../../utils/deckStorage';
+import { clearDraft, getSavedDeckById, loadDraft, type DeckBuilderSnapshot } from '../../utils/deck/deckStorage';
 import {
   buildContinuedDraftRestoreSessionState,
   buildPendingDraftRestoreState,

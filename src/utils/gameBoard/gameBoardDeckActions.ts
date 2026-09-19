@@ -1,6 +1,6 @@
 import type { CardInstance } from '../../components/Card';
 import type { PlayerRole, TokenOption } from '../../types/game';
-import { normalizeBaseCardType } from '../cardType';
+import { normalizeBaseCardType } from '../card/cardType';
 
 export type ImportableDeckCard = {
   id: string;

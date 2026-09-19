@@ -7,7 +7,7 @@ import {
 import { createEmptyDeckState, type DeckState } from '../../models/deckState';
 import { resolveDeckName } from './deckBuilderDisplay';
 import { sanitizeImportedDeckState } from './deckBuilderRules';
-import { resolveImportedDeckName } from '../deckFile';
+import { resolveImportedDeckName } from '../deck/deckFile';
 import {
   areDeckSnapshotsEqual,
   createDeckSnapshot,
@@ -18,8 +18,8 @@ import {
   type DeckBuilderDraftV1,
   type DeckBuilderSnapshot,
   type SavedDeckRecordV1,
-} from '../deckStorage';
-import { DeckLogImportError, type DeckLogImportResult } from '../decklogImport';
+} from '../deck/deckStorage';
+import { DeckLogImportError, type DeckLogImportResult } from '../deck/decklogImport';
 
 type ImportedDeckLike = {
   deckName?: unknown;

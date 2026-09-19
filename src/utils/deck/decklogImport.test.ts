@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { DeckBuilderCardData } from '../models/deckBuilderCard';
+import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
 import {
   DeckLogImportError,
   convertDeckLogResponse,

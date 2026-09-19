@@ -1,5 +1,5 @@
-import type { CardInstance } from '../components/Card';
-import type { SyncState } from '../types/game';
+import type { CardInstance } from '../../components/Card';
+import type { SyncState } from '../../types/game';
 import { isMainDeckSpellCard, isPureEvolveCard } from './cardType';
 
 /**

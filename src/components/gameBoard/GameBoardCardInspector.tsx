@@ -7,7 +7,7 @@ import {
   formatAbilityText,
   type CardDetail,
   type CardDetailPresentation,
-} from '../../utils/cardDetails';
+} from '../../utils/card/cardDetails';
 
 type GameBoardCardInspectorProps = {
   selectedInspectorCard: CardInstance;

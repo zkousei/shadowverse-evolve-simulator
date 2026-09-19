@@ -1,7 +1,7 @@
 import { getFieldLinkGroupId } from '../../data/fieldLinkRules';
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
-import { buildCardDetailLookup, type CardDetailLookup } from '../cardDetails';
-import { buildCardStatLookup, type CardStatLookup } from '../cardStats';
+import { buildCardDetailLookup, type CardDetailLookup } from '../card/cardDetails';
+import { buildCardStatLookup, type CardStatLookup } from '../card/cardStats';
 import { buildEvolveAutoAttachResolver, type EvolveAutoAttachResolver } from './evolveAutoAttach';
 import { buildFieldLinkAutoAttachResolver, type FieldLinkAutoAttachResolver } from './fieldLinkAutoAttach';
 

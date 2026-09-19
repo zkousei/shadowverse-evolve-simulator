@@ -1,5 +1,5 @@
 import type { SyncState } from '../../../types/game';
-import type { CardDetailLookup } from '../../cardDetails';
+import type { CardDetailLookup } from '../../card/cardDetails';
 
 export const buildGameBoardNetworkSnapshotState = (
   state: SyncState,

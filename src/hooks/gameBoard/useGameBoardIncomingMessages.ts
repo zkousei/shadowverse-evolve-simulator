@@ -2,7 +2,7 @@ import React from 'react';
 import type { DataConnection } from 'peerjs';
 import type { PlayerRole, SyncState } from '../../types/game';
 import type { SyncMessage } from '../../types/sync';
-import type { CardDetailLookup } from '../../utils/cardDetails';
+import type { CardDetailLookup } from '../../utils/card/cardDetails';
 import {
   buildSnapshotSyncMessage,
   buildWaitingForHostSessionMessage,

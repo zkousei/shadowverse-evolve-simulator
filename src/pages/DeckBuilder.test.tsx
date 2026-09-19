@@ -9,11 +9,11 @@ import {
   saveDraft,
   serializeDeckState,
   type SavedDeckRecordV1,
-} from '../utils/deckStorage';
+} from '../utils/deck/deckStorage';
 import type { DeckBuilderCardData } from '../models/deckBuilderCard';
 import type { DeckRuleConfig } from '../models/deckRule';
 import enTranslations from '../i18n/en/translation.json';
-import { loadCardCatalog } from '../utils/cardCatalog';
+import { loadCardCatalog } from '../utils/card/cardCatalog';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -37,7 +37,7 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-vi.mock('../utils/cardCatalog', () => ({
+vi.mock('../utils/card/cardCatalog', () => ({
   loadCardCatalog: vi.fn(),
 }));
 

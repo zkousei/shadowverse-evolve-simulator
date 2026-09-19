@@ -3,7 +3,7 @@ import type { CardInstance } from '../../components/Card';
 import type { PlayerRole } from '../../types/game';
 import type { SharedUiEffect } from '../../types/sync';
 import { getSharedActorLabel } from '../sharedUiMessage';
-import { isMainDeckSpellCard } from '../cardType';
+import { isMainDeckSpellCard } from '../card/cardType';
 
 export const buildCardPlayedEffect = (
   cards: CardInstance[],

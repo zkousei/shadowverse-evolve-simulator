@@ -3,8 +3,8 @@
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { CARD_KIND_NORMALIZED_VALUES, type CardKindNormalized, type DeckSection } from '../models/cardClassification';
-import { inferDeckSection } from './deckBuilder/deckBuilderRules';
+import { CARD_KIND_NORMALIZED_VALUES, type CardKindNormalized, type DeckSection } from '../../models/cardClassification';
+import { inferDeckSection } from '../deckBuilder/deckBuilderRules';
 
 // Exercise the actual Python definitions rather than a copied fixture.
 const metadata: {
@@ -15,7 +15,7 @@ const metadata: {
   'from tools.card_data.card_metadata import CARD_KIND_BY_TYPE, DECK_SECTION_BY_CARD_KIND',
   'print(json.dumps({"kinds": CARD_KIND_BY_TYPE, "sections": DECK_SECTION_BY_CARD_KIND}))',
 ].join('\n')], {
-  cwd: fileURLToPath(new URL('../../', import.meta.url)),
+  cwd: fileURLToPath(new URL('../../../', import.meta.url)),
   encoding: 'utf8',
 }));
 

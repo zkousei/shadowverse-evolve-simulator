@@ -1,6 +1,6 @@
 import React from 'react';
 import type { CardInstance } from '../../components/Card';
-import type { CardStatLookup } from '../../utils/cardStats';
+import type { CardStatLookup } from '../../utils/card/cardStats';
 import {
   canStartAttack,
   getAttackHighlightTone as resolveAttackHighlightTone,

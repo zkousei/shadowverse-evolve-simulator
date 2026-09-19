@@ -4,7 +4,7 @@ import CardArtwork from './CardArtwork';
 
 let dummyArtEnabled = true;
 
-vi.mock('../utils/cardArtMode', () => ({
+vi.mock('../utils/card/cardArtMode', () => ({
   isDummyCardArtEnabled: () => dummyArtEnabled,
 }));
 

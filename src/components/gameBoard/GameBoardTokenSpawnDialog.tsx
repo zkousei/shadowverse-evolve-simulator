@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import CardArtwork from '../CardArtwork';
-import type { CardDetailLookup } from '../../utils/cardDetails';
+import type { CardDetailLookup } from '../../utils/card/cardDetails';
 import type { TokenOption } from '../../types/game';
 
 type GameBoardTokenSpawnDialogProps = {

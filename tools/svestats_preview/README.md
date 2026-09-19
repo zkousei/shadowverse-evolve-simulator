@@ -42,7 +42,7 @@ npm run cards:audit:preview
 | --- | --- |
 | [`public/cards_detailed.json`](../../public/cards_detailed.json) | 同期時の入力。正式収録済みIDの除外と関連カードの名前解決に使用する。ツールからは更新しない |
 | [`public/cards_preview.json`](../../public/cards_preview.json) | 同期結果の出力。既存のカード形式を維持し、出典・取得日時は別の任意レポートに記録する |
-| [`src/utils/cardCatalog.ts`](../../src/utils/cardCatalog.ts) | 正式・previewのJSONを読み込み、同じIDでは正式カードを優先する。今回の変更なし |
+| [`src/utils/card/cardCatalog.ts`](../../src/utils/card/cardCatalog.ts) | 正式・previewのJSONを読み込み、同じIDでは正式カードを優先する。今回の変更なし |
 | [`src/components/CardArtwork.tsx`](../../src/components/CardArtwork.tsx) | 保存された画像URLと既存の代替表示を利用する。今回、画像読み込み失敗時にも代替表示へ切り替える汎用処理を追加 |
 
 依存方向は「専用ツール → 共通の分類・監査処理」と
@@ -92,7 +92,7 @@ URL組み立ては `converter.py` にあり、配信先変更時はここを更�
 
 ```sh
 npm run test:python
-npx vitest run src/components/CardArtwork.test.tsx src/utils/cardCatalog.test.ts
+npx vitest run src/components/CardArtwork.test.tsx src/utils/card/cardCatalog.test.ts
 ```
 
 取得はモック化し、fixtureは架空のカードです。実データ件数や外部接続に依存するテストはありません。

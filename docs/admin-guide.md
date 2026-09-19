@@ -37,7 +37,7 @@ pip3 install -r requirements.txt
 
 ```bash
 npm run test:python
-npx vitest run src/utils/cardMetadataParity.test.ts src/utils/gameBoard/gameBoardDeckActions.test.ts
+npx vitest run src/utils/card/cardMetadataParity.test.ts src/utils/gameBoard/gameBoardDeckActions.test.ts
 npm run cards:audit:all
 ```
 
@@ -150,7 +150,7 @@ Pythonツール・分類・監査を変更した場合:
 ```bash
 npm run test:python
 npm run cards:audit:all
-npx vitest run src/utils/cardMetadataParity.test.ts
+npx vitest run src/utils/card/cardMetadataParity.test.ts
 ```
 
 アプリ側の変更を含む場合:

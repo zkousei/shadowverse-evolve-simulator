@@ -10,7 +10,7 @@ import DeckBuilderSaveFeedback from './DeckBuilderSaveFeedback';
 import DeckBuilderSavedDeckConfirmDialog from './DeckBuilderSavedDeckConfirmDialog';
 
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
-import type { CardDetail } from '../../utils/cardDetails';
+import type { CardDetail } from '../../utils/card/cardDetails';
 
 const sampleCardDetail: CardDetail = {
   id: 'BP01-001',

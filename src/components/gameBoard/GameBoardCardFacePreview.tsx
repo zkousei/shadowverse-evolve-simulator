@@ -6,7 +6,7 @@ import {
   formatAbilityText,
   type CardDetail,
   type CardFaceDetail,
-} from '../../utils/cardDetails';
+} from '../../utils/card/cardDetails';
 import type { CardInstance } from '../Card';
 
 type GameBoardCardFacePreviewProps = {

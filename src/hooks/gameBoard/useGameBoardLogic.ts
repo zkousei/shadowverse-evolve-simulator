@@ -8,7 +8,7 @@ import { type CardInstance } from '../../components/Card';
 import { type PlayerRole, type SyncState, type TokenOption, initialState } from '../../types/game';
 import { type AttackTarget, type GameSyncEvent, type SharedUiEffect } from '../../types/sync';
 import { uuid } from '../../utils/helpers';
-import * as CardLogic from '../../utils/cardLogic';
+import * as CardLogic from '../../utils/card/cardLogic';
 
 import { applyGameSyncEvent } from '../../utils/gameBoard/gameSyncReducer';
 import { flipSharedCoin, rollSharedDie } from '../../utils/sharedRandom';
@@ -18,7 +18,7 @@ import { buildTopDeckSummaryEffect } from '../../utils/gameBoard/topDeckSummary'
 import { buildCardRevealEffect } from '../../utils/gameBoard/cardReveal';
 import { buildAttackDeclaredEffect } from '../../utils/gameBoard/attackUi';
 import { buildCardPlayedEffect } from '../../utils/gameBoard/cardPlayUi';
-import { resolveCardDisplayName } from '../../utils/cardDetails';
+import { resolveCardDisplayName } from '../../utils/card/cardDetails';
 
 import {
   buildSnapshotRequestMessage,

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
 import { createDefaultDeckRuleConfig, type DeckRuleConfig } from '../../models/deckRule';
-import { serializeDeckState, type SavedDeckRecordV1 } from '../deckStorage';
+import { serializeDeckState, type SavedDeckRecordV1 } from '../deck/deckStorage';
 import {
   addSubtypeTagSelection,
   areAllShownSavedDecksSelected,

@@ -35,7 +35,7 @@ import {
   isRuleConfigured,
   type DeckTargetSection,
 } from '../utils/deckBuilder/deckBuilderRules';
-import { buildCardDetailLookup } from '../utils/cardDetails';
+import { buildCardDetailLookup } from '../utils/card/cardDetails';
 import {
   buildDeckBuilderCatalogView,
   getCrossoverClassOptions,
@@ -90,11 +90,11 @@ import {
   saveDeck,
   saveDraft,
   type SavedDeckRecordV1,
-} from '../utils/deckStorage';
+} from '../utils/deck/deckStorage';
 import {
   buildExportableDeckPayload,
   downloadDeckJson,
-} from '../utils/deckFile';
+} from '../utils/deck/deckFile';
 import { addCardToDeckState, removeCardFromDeckState } from '../utils/deckBuilder/deckBuilderMutations';
 import {
   buildClearedSavedDeckTrackingState,
@@ -125,8 +125,8 @@ import {
   sortDeckCardsForDisplay,
   type DeckSortMode,
 } from '../utils/deckBuilder/deckBuilderDisplay';
-import { loadCardCatalog } from '../utils/cardCatalog';
-import { fetchDeckLogImport } from '../utils/decklogImport';
+import { loadCardCatalog } from '../utils/card/cardCatalog';
+import { fetchDeckLogImport } from '../utils/deck/decklogImport';
 import { useDeckBuilderPreviewUi } from '../hooks/deckBuilder/useDeckBuilderPreviewUi';
 import { useDeckBuilderModalUi } from '../hooks/deckBuilder/useDeckBuilderModalUi';
 import { useDeckBuilderSavedDeckUi } from '../hooks/deckBuilder/useDeckBuilderSavedDeckUi';

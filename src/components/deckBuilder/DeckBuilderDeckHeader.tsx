@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Download, Upload } from 'lucide-react';
-import { DEFAULT_DECK_NAME } from '../../utils/deckStorage';
+import { DEFAULT_DECK_NAME } from '../../utils/deck/deckStorage';
 
 type DeckBuilderDeckHeaderProps = {
   deckName: string;

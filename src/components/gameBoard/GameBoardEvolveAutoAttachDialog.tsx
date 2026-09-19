@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { CardInstance } from '../Card';
 import CardArtwork from '../CardArtwork';
-import type { CardDetailLookup } from '../../utils/cardDetails';
+import type { CardDetailLookup } from '../../utils/card/cardDetails';
 
 type GameBoardEvolveAutoAttachDialogProps = {
   sourceCard: CardInstance;

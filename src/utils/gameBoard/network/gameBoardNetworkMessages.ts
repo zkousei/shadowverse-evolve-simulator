@@ -1,6 +1,6 @@
 import type { SyncState, PlayerRole } from '../../../types/game';
 import type { SharedUiEffect, SyncMessage } from '../../../types/sync';
-import type { CardDetailLookup } from '../../cardDetails';
+import type { CardDetailLookup } from '../../card/cardDetails';
 import { buildGameBoardNetworkSnapshotState } from '../snapshot/gameBoardSnapshot';
 
 type SnapshotMessage = Extract<SyncMessage, { type: 'STATE_SNAPSHOT' }>;

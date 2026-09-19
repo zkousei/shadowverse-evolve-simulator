@@ -7,7 +7,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, vi } from 'vitest';
 import type { SyncState } from '../../types/game';
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
-import { loadCardCatalog } from '../../utils/cardCatalog';
+import { loadCardCatalog } from '../../utils/card/cardCatalog';
 import { useGameBoardLogic } from './useGameBoardLogic';
 
 vi.mock('react-i18next', () => ({
@@ -124,7 +124,7 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-vi.mock('../../utils/cardCatalog', () => ({
+vi.mock('../../utils/card/cardCatalog', () => ({
   loadCardCatalog: vi.fn(),
 }));
 

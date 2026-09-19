@@ -1,7 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { useDeckBuilderSavedDeckUi } from './useDeckBuilderSavedDeckUi';
-import type { SavedDeckRecordV1 } from '../../utils/deckStorage';
+import type { SavedDeckRecordV1 } from '../../utils/deck/deckStorage';
 import { createDefaultDeckRuleConfig } from '../../models/deckRule';
 
 describe('useDeckBuilderSavedDeckUi', () => {
