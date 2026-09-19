@@ -4,6 +4,16 @@ from card_metadata import derive_card_metadata
 
 
 class CardMetadataTest(unittest.TestCase):
+    def test_treasure_token_metadata(self) -> None:
+        self.assertDerived(
+            "トレジャー・トークン",
+            card_kind_normalized="token_treasure",
+            deck_section="token",
+            is_token=True,
+            is_evolve_card=False,
+            is_deck_build_legal=True,
+        )
+
     def assertDerived(
         self,
         card_type: str,

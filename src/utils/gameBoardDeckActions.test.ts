@@ -8,6 +8,25 @@ import {
 } from './gameBoardDeckActions';
 
 describe('gameBoardDeckActions', () => {
+  it('preserves treasure classification from deck import through token spawning', () => {
+    const payload = buildImportedDeckPayload({
+      tokenDeck: [{
+        id: 'treasure-1', name: 'Treasure', image: '/treasure.png',
+        type: 'トレジャー・トークン', deck_section: 'token', card_kind_normalized: 'token_treasure',
+      }],
+    }, 'host', () => 'unused');
+
+    expect(payload.tokenOptions).toEqual([{
+      cardId: 'treasure-1', name: 'Treasure', image: '/treasure.png',
+      baseCardType: null, cardKindNormalized: 'token_treasure',
+    }]);
+    const token = buildSpawnTokenInstance('host', payload.tokenOptions[0], 'ex', () => 'spawned-treasure');
+    expect(token).toMatchObject({
+      id: 'spawned-treasure', cardId: 'treasure-1', zone: 'ex-host',
+      isTokenCard: true, baseCardType: null, cardKindNormalized: 'token_treasure',
+    });
+  });
+
   it('builds imported deck payloads for main, evolve, leader, and token sections', () => {
     const createId = vi
       .fn<() => string>()

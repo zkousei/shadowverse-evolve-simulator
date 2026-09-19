@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",
+    "test:python": "python3 -m unittest discover -p '*_test.py'",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "cards:audit": "python3 audit_cards.py",

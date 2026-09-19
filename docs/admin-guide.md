@@ -24,13 +24,25 @@ npm install
 
 ### Python 環境
 
-カード更新スクリプトを使う場合のみ必要です。
+Vitest の分類整合性テストは `python3` を実行します（Python 標準ライブラリのみ使用）。
+カード更新スクリプトや Python テスト全体を実行する場合は、以下の依存関係も準備してください。
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip3 install -r requirements.txt
 ```
+
+### カード分類の検証
+
+```bash
+npm run test:python
+npx vitest run src/utils/cardMetadataParity.test.ts src/utils/gameBoardDeckActions.test.ts
+npm run cards:audit:all
+```
+
+カード種別を追加したら、Python のメタデータ生成とアプリの分類・セクション判定が
+一致することを確認してください。分類整合性テストは通常の Vitest 実行にも含まれます。
 
 ## 3. ローカル起動
 
