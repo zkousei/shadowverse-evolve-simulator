@@ -1265,6 +1265,68 @@ describe('DeckBuilder', () => {
     expect(within(mainDeckSection).queryByText('Beta Mage')).not.toBeInTheDocument();
   });
 
+  it('keeps saved-deck catalog actions disabled until the card catalog is ready', async () => {
+    seedSavedDecks(1, () => ({
+      mainDeck: [mockCards[0]],
+      evolveDeck: [],
+      leaderCards: [],
+      tokenDeck: [],
+    }));
+
+    let resolveCatalog!: (cards: DeckBuilderCardData[]) => void;
+    mockLoadCardCatalog.mockReturnValue(new Promise((resolve) => {
+      resolveCatalog = resolve;
+    }));
+
+    const { container } = render(<DeckBuilder />);
+    fireEvent.click(screen.getByRole('button', { name: 'My Decks' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'My Decks' });
+    expect(within(dialog).getByRole('button', { name: 'Load' })).toBeDisabled();
+    expect(within(dialog).getByRole('button', { name: 'Duplicate' })).toBeEnabled();
+    expect(within(dialog).getByRole('button', { name: 'Export' })).toBeDisabled();
+    expect(within(dialog).queryByText('Illegal deck')).not.toBeInTheDocument();
+    expect(container.querySelector('input[type="file"]')).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Import from DeckLog/i })).toBeDisabled();
+
+    await act(async () => {
+      resolveCatalog(mockCards);
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(within(dialog).getByRole('button', { name: 'Load' })).toBeEnabled();
+      expect(within(dialog).getByRole('button', { name: 'Duplicate' })).toBeEnabled();
+      expect(container.querySelector('input[type="file"]')).toBeEnabled();
+      expect(screen.getByRole('button', { name: /Import from DeckLog/i })).toBeEnabled();
+    });
+  });
+
+  it.each([
+    ['fails to load', () => mockLoadCardCatalog.mockRejectedValue(new Error('catalog unavailable'))],
+    ['loads an empty result', () => mockLoadCardCatalog.mockResolvedValue([])],
+  ])('keeps catalog-dependent actions disabled when the card catalog %s', async (_scenario, configureCatalogLoad) => {
+    seedSavedDecks(1, () => ({
+      mainDeck: [mockCards[0]],
+      evolveDeck: [],
+      leaderCards: [],
+      tokenDeck: [],
+    }));
+    configureCatalogLoad();
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const { container } = render(<DeckBuilder />);
+    await flushDeckBuilderCatalogLoad();
+    fireEvent.click(screen.getByRole('button', { name: 'My Decks' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'My Decks' });
+    expect(within(dialog).getByRole('button', { name: 'Load' })).toBeDisabled();
+    expect(within(dialog).getByRole('button', { name: 'Export' })).toBeDisabled();
+    expect(within(dialog).queryByText('Illegal deck')).not.toBeInTheDocument();
+    expect(container.querySelector('input[type="file"]')).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Import from DeckLog/i })).toBeDisabled();
+  });
+
   it('clears save feedback automatically after the timeout elapses', async () => {
     vi.useFakeTimers();
     await renderLoadedDeckBuilder();

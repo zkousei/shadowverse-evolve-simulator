@@ -12,6 +12,7 @@ import DeckBuilderDeckSection from './DeckBuilderDeckSection';
 import DeckBuilderRulePanel from './DeckBuilderRulePanel';
 
 type DeckBuilderDeckPaneProps = {
+  isCardCatalogReady: boolean;
   deckName: string;
   canSaveCurrentDeck: boolean;
   canExportDeck: boolean;
@@ -69,6 +70,7 @@ type DeckBuilderDeckPaneProps = {
 };
 
 const DeckBuilderDeckPane: React.FC<DeckBuilderDeckPaneProps> = ({
+  isCardCatalogReady,
   deckName,
   canSaveCurrentDeck,
   canExportDeck,
@@ -133,6 +135,7 @@ const DeckBuilderDeckPane: React.FC<DeckBuilderDeckPaneProps> = ({
   return (
     <div className="glass-panel" style={{ width: '350px', display: 'flex', flexDirection: 'column', borderRight: 'none', borderTop: 'none', borderBottom: 'none', borderRadius: 0 }}>
       <DeckBuilderDeckHeader
+        isCardCatalogReady={isCardCatalogReady}
         deckName={deckName}
         canSaveCurrentDeck={canSaveCurrentDeck}
         canExportDeck={canExportDeck}

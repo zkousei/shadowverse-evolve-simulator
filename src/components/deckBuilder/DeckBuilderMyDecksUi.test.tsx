@@ -105,6 +105,7 @@ describe('DeckBuilder extracted UI components - my decks', () => {
       <DeckBuilderSavedDeckItem
         savedDeck={sampleSavedDeck}
         canExport={false}
+        isCardCatalogReady={true}
         isSavedDeckSelectMode={false}
         isSelected={false}
         isCurrent={true}
@@ -137,6 +138,7 @@ describe('DeckBuilder extracted UI components - my decks', () => {
       <DeckBuilderSavedDeckItem
         savedDeck={sampleSavedDeck}
         canExport={true}
+        isCardCatalogReady={true}
         isSavedDeckSelectMode={true}
         isSelected={true}
         isCurrent={false}
@@ -171,6 +173,7 @@ describe('DeckBuilder extracted UI components - my decks', () => {
 
     render(
       <DeckBuilderMyDecksModal
+        isCardCatalogReady={true}
         canCreateNewSavedDeck={true}
         hardSavedDeckLimit={200}
         isSavedDeckSelectMode={false}

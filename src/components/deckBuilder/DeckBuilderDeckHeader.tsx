@@ -4,6 +4,7 @@ import { Download, Upload } from 'lucide-react';
 import { DEFAULT_DECK_NAME } from '../../utils/deck/deckStorage';
 
 type DeckBuilderDeckHeaderProps = {
+  isCardCatalogReady: boolean;
   deckName: string;
   canSaveCurrentDeck: boolean;
   canExportDeck: boolean;
@@ -24,6 +25,7 @@ type DeckBuilderDeckHeaderProps = {
 };
 
 const DeckBuilderDeckHeader: React.FC<DeckBuilderDeckHeaderProps> = ({
+  isCardCatalogReady,
   deckName,
   canSaveCurrentDeck,
   canExportDeck,
@@ -170,24 +172,43 @@ const DeckBuilderDeckHeader: React.FC<DeckBuilderDeckHeaderProps> = ({
             {t('deckBuilder.deckArea.file')}
           </span>
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'var(--bg-overlay)', padding: '0.45rem 0.75rem', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontSize: '0.875rem', border: '1px solid var(--border-light)' }}>
-              <Upload size={14} /> {t('deckBuilder.deckArea.actions.import')}
-              <input type="file" accept=".json" onChange={onImportDeck} style={{ display: 'none' }} />
-            </label>
-            <button
-              type="button"
-              onClick={onOpenDeckLogImport}
+            <label
+              aria-disabled={!isCardCatalogReady}
+              title={isCardCatalogReady ? undefined : t('deckBuilder.myDecks.actions.catalogLoadingTitle')}
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.25rem',
-                background: 'var(--bg-overlay)',
-                color: 'var(--text-main)',
+                background: isCardCatalogReady ? 'var(--bg-overlay)' : 'var(--bg-surface-elevated)',
+                color: isCardCatalogReady ? 'var(--text-main)' : 'var(--text-muted)',
+                padding: '0.45rem 0.75rem',
+                borderRadius: 'var(--radius-md)',
+                cursor: isCardCatalogReady ? 'pointer' : 'not-allowed',
+                opacity: isCardCatalogReady ? 1 : 0.7,
+                fontSize: '0.875rem',
+                border: '1px solid var(--border-light)',
+              }}
+            >
+              <Upload size={14} /> {t('deckBuilder.deckArea.actions.import')}
+              <input type="file" accept=".json" disabled={!isCardCatalogReady} onChange={onImportDeck} style={{ display: 'none' }} />
+            </label>
+            <button
+              type="button"
+              onClick={onOpenDeckLogImport}
+              disabled={!isCardCatalogReady}
+              title={isCardCatalogReady ? undefined : t('deckBuilder.myDecks.actions.catalogLoadingTitle')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+                background: isCardCatalogReady ? 'var(--bg-overlay)' : 'var(--bg-surface-elevated)',
+                color: isCardCatalogReady ? 'var(--text-main)' : 'var(--text-muted)',
                 border: '1px solid var(--border-light)',
                 padding: '0.45rem 0.75rem',
                 borderRadius: 'var(--radius-md)',
                 fontSize: '0.875rem',
-                cursor: 'pointer',
+                cursor: isCardCatalogReady ? 'pointer' : 'not-allowed',
+                opacity: isCardCatalogReady ? 1 : 0.7,
               }}
             >
               <Upload size={14} />
