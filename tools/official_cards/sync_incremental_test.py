@@ -90,6 +90,67 @@ class IncrementalSyncTest(unittest.IsolatedAsyncioTestCase):
         fetch_details.assert_not_awaited()
         self.assertEqual(result.new_ids, [])
 
+    async def test_normalizes_existing_detail_name_like_full_detail_scrape(self) -> None:
+        official_name = "Legend Race\u3000VS Character"
+        detailed_name = "Legend Race VS Character"
+        card_summary = summary("OLD-001", official_name)
+        self.write_existing([card_summary], [detailed("OLD-001", detailed_name)])
+
+        await run_incremental_sync(
+            list_path=self.list_path,
+            detail_path=self.detail_path,
+            fetch_index=Mock(return_value=CardIndexResult([card_summary], 1, 1)),
+            fetch_details=AsyncMock(),
+        )
+
+        summaries = json.loads(self.list_path.read_text(encoding="utf-8"))
+        details = json.loads(self.detail_path.read_text(encoding="utf-8"))
+        self.assertEqual(summaries[0]["name"], official_name)
+        self.assertEqual(details[0]["name"], detailed_name)
+
+    async def test_repeated_sync_with_same_index_is_byte_stable(self) -> None:
+        card_summary = summary("OLD-001", "Legend Race\u3000VS Character")
+        self.write_existing(
+            [card_summary],
+            [detailed("OLD-001", "Legend Race VS Character")],
+        )
+        fetch_index = Mock(return_value=CardIndexResult([card_summary], 1, 1))
+        fetch_details = AsyncMock()
+
+        await run_incremental_sync(
+            list_path=self.list_path,
+            detail_path=self.detail_path,
+            fetch_index=fetch_index,
+            fetch_details=fetch_details,
+        )
+        first_list = self.list_path.read_bytes()
+        first_details = self.detail_path.read_bytes()
+
+        await run_incremental_sync(
+            list_path=self.list_path,
+            detail_path=self.detail_path,
+            fetch_index=fetch_index,
+            fetch_details=fetch_details,
+        )
+
+        fetch_details.assert_not_awaited()
+        self.assertEqual(self.list_path.read_bytes(), first_list)
+        self.assertEqual(self.detail_path.read_bytes(), first_details)
+
+    async def test_writes_same_eof_style_as_full_fetch(self) -> None:
+        card_summary = summary("OLD-001", "Old")
+        self.write_existing([card_summary], [detailed("OLD-001", "Old")])
+
+        await run_incremental_sync(
+            list_path=self.list_path,
+            detail_path=self.detail_path,
+            fetch_index=Mock(return_value=CardIndexResult([card_summary], 1, 1)),
+            fetch_details=AsyncMock(),
+        )
+
+        self.assertFalse(self.list_path.read_bytes().endswith(b"\n"))
+        self.assertFalse(self.detail_path.read_bytes().endswith(b"\n"))
+
     async def test_incomplete_new_detail_does_not_modify_existing_files(self) -> None:
         old_summary = summary("OLD-001", "Old")
         self.write_existing([old_summary], [detailed("OLD-001", "Old")])
