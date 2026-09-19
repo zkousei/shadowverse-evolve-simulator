@@ -1,0 +1,5 @@
+[
+  {"oracle_id":"TEST-001","name":"テスト","class":"エルフ","card_type":["フォロワー"],"tribe":["妖精"],"title":null,"cost":0,"atk":1,"hp":2,"text":"能力\n本文","expansion":"TEST","image_url":"TEST-001.png","source_url":"https://example.com/announcement","evolves_to":["TEST-002"]},
+  {"oracle_id":"TEST-002","name":"テスト","class":"エルフ","card_type":["フォロワー","エボルヴ"],"tribe":[],"cost":3,"atk":3,"hp":4,"text":"進化時","expansion":"TEST","evolved_from":["TEST-001"]},
+  {"oracle_id":"TEST-T01","name":"宝物","class":"ニュートラル","card_type":["トレジャー","トークン"],"tribe":[],"cost":null,"atk":null,"hp":null,"text":"宝物の能力","expansion":"TEST"}
+]

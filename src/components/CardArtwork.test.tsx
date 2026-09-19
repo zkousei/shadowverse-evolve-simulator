@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import CardArtwork from './CardArtwork';
 
@@ -9,6 +9,17 @@ vi.mock('../utils/cardArtMode', () => ({
 }));
 
 describe('CardArtwork', () => {
+  it('shows a placeholder after an image error and loads a changed image', () => {
+    dummyArtEnabled = false;
+    const { rerender } = render(<CardArtwork image="/failed.png" alt="Preview" />);
+    fireEvent.error(screen.getByAltText('Preview'));
+    expect(screen.queryByAltText('Preview')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Preview')).toBeInTheDocument();
+    rerender(<CardArtwork image="/replacement.png" alt="Preview" />);
+    expect(screen.getByAltText('Preview')).toHaveAttribute('src', '/replacement.png');
+    dummyArtEnabled = true;
+  });
+
   it('falls back to detail image in official mode when card image is empty', () => {
     dummyArtEnabled = false;
 

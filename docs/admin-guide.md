@@ -113,19 +113,23 @@ npm run cards:audit
 
 更新後はブラウザをリロードすると、Deck Builder と GameBoard の両方に反映されます。
 
-### プレビューカードを手動更新する
+### プレビューカードを同期する
 
-公式カードリストに反映される前のカードは `public/cards_preview.json` に追加します。
-形式は `public/cards_detailed.json` と同じです。画像が未確定の場合は `image` を空文字にできます。
-入力例は [`./preview-card-data-sample.json`](./preview-card-data-sample.json) を参照してください。このファイルはドキュメント用サンプルで、アプリの読み込み対象ではありません。
-
-リリース前には次を実行し、正式カードとのID重複や分類不整合が残っていないことを確認してください。
+`public/cards_preview.json` は svestats の公開データから生成します。直接編集した内容は次回同期で上書きされます。
 
 ```bash
+npm run cards:sync:preview -- --dry-run
+npm run cards:sync:preview
 npm run cards:audit:preview
 ```
 
-正式カードと同じ `id` があるプレビューカードは、アプリ実行時には正式カードが優先されます。監査ではエラーとして扱うため、正式取り込み後は `public/cards_preview.json` から削除してください。
+取得元の追加・更新・削除を反映し、正式データと同じIDおよび再録指定を除外します。
+正式カードの取得後にも同期を実行してください。通信・検証失敗時は既存JSONを保持します。
+画像は外部配信URLを参照するため、表示時に外部アクセスが発生します。
+
+空データの扱い、出典レポート、商品名対応表、テストについては
+[専用ツールのREADME](../tools/svestats_preview/README.md) を参照してください。
+入力形式の例は [サンプル](./preview-card-data-sample.json) にあります。
 
 ## 7. デッキ制限ルール更新の基本手順
 
