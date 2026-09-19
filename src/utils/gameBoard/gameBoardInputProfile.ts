@@ -1,4 +1,4 @@
-import { isTabletViewportWidth } from '../../pages/gameBoardLayout';
+import { isTabletViewportWidth } from './gameBoardLayout';
 
 export type GameBoardInputProfile = 'fine' | 'coarse';
 

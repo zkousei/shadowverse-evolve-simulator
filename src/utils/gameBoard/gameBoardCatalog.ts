@@ -1,4 +1,4 @@
-import { getFieldLinkGroupId } from '../../data/fieldLinkRules';
+import { getFieldLinkGroupId } from './fieldLinkRules';
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
 import { buildCardDetailLookup, type CardDetailLookup } from '../card/cardDetails';
 import { buildCardStatLookup, type CardStatLookup } from '../card/cardStats';

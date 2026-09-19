@@ -1,4 +1,4 @@
-import type { DeckBuilderCardData } from '../models/deckBuilderCard';
+import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
 
 export interface FieldLinkRuleMember {
   name: string;

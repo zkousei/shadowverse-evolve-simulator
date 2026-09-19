@@ -3,7 +3,7 @@ import {
   getLayoutProfileForViewportWidth,
   type GameBoardLayoutInputProfile,
   type GameBoardLayoutProfile,
-} from '../../pages/gameBoardLayout';
+} from './gameBoardLayout';
 import {
   getInputProfileForViewportWidth,
   type GameBoardInputProfile,

@@ -1,6 +1,6 @@
 import type { CardInstance } from '../../components/Card';
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
-import { getFieldLinkGroupId } from '../../data/fieldLinkRules';
+import { getFieldLinkGroupId } from './fieldLinkRules';
 
 const isAdvanceKind = (cardKindNormalized?: string): boolean => (
   Boolean(cardKindNormalized?.startsWith('advance_'))

@@ -2,7 +2,7 @@ import type { TFunction } from 'i18next';
 import type { CardInstance } from '../../components/Card';
 import type { PlayerRole } from '../../types/game';
 import type { SharedUiEffect } from '../../types/sync';
-import { getSharedActorLabel } from '../sharedUiMessage';
+import { getSharedActorLabel } from './sharedUiMessage';
 import { isMainDeckSpellCard } from '../card/cardType';
 
 export const buildCardPlayedEffect = (
