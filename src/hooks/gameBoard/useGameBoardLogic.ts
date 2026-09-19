@@ -11,8 +11,8 @@ import { uuid } from '../../utils/helpers';
 import * as CardLogic from '../../utils/card/cardLogic';
 
 import { applyGameSyncEvent } from '../../utils/gameBoard/gameSyncReducer';
-import { flipSharedCoin, rollSharedDie } from '../../utils/sharedRandom';
-import { createEventDeduper } from '../../utils/eventDeduper';
+import { flipSharedCoin, rollSharedDie } from '../../utils/gameBoard/sharedRandom';
+import { createEventDeduper } from '../../utils/gameBoard/eventDeduper';
 import { buildTopDeckRevealEffect } from '../../utils/gameBoard/topDeckReveal';
 import { buildTopDeckSummaryEffect } from '../../utils/gameBoard/topDeckSummary';
 import { buildCardRevealEffect } from '../../utils/gameBoard/cardReveal';

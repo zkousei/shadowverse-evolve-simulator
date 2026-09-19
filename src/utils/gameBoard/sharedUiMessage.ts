@@ -1,6 +1,6 @@
 import type { TFunction } from 'i18next';
-import type { PlayerRole } from '../types/game';
-import type { SharedUiEffect } from '../types/sync';
+import type { PlayerRole } from '../../types/game';
+import type { SharedUiEffect } from '../../types/sync';
 
 export const getSharedActorLabel = (
   actor: PlayerRole,

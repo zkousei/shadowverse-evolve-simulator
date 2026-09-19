@@ -2,7 +2,7 @@ import React from 'react';
 import type { TFunction } from 'i18next';
 import type { PlayerRole } from '../../types/game';
 import type { SharedUiEffect, SyncMessage, PublicCardView } from '../../types/sync';
-import { formatSharedUiMessage, getSharedActorLabel } from '../../utils/sharedUiMessage';
+import { formatSharedUiMessage, getSharedActorLabel } from '../../utils/gameBoard/sharedUiMessage';
 import { formatAttackEffect } from '../../utils/gameBoard/attackUi';
 import { formatCardPlayedEffect } from '../../utils/gameBoard/cardPlayUi';
 import { getIncomingSharedUiEffects } from '../../utils/gameBoard/network/gameBoardIncomingSharedUiEffects';

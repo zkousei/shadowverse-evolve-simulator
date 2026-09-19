@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import type { GameBoardBoardDensity } from '../utils/gameBoard/gameBoardBoardDensity';
+import type { GameBoardBoardDensity } from './gameBoardBoardDensity';
 
 export type GameBoardLayoutProfile = 'desktop' | 'tablet';
 export type GameBoardLayoutInputProfile = 'fine' | 'coarse';

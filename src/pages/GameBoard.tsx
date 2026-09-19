@@ -55,7 +55,7 @@ import {
   resolveBoardLayout,
   resolveBoardLayoutSpacing,
   soloMulliganButtonStyle,
-} from './gameBoardLayout';
+} from '../utils/gameBoard/gameBoardLayout';
 import {
   getAttackTargetFromCard as resolveAttackTargetFromCard,
 } from '../utils/gameBoard/gameBoardCombat';

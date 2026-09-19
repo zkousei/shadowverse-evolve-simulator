@@ -8,7 +8,7 @@ import {
   getRequiredFieldWidthForCardCount,
   overviewDesktopCardSize,
 } from './gameBoardCardLayout';
-import { resolveBoardLayout } from '../../pages/gameBoardLayout';
+import { resolveBoardLayout } from './gameBoardLayout';
 
 describe('gameBoardCardLayout', () => {
   it('keeps desktop card size unchanged for fine input', () => {
