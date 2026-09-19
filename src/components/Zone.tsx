@@ -11,7 +11,7 @@ import {
   getFieldZoneGapForInputProfile,
   getLinkedCardOffsetForInputProfile,
   getStackAttachmentOffsetForInputProfile,
-} from '../utils/gameBoardCardLayout';
+} from '../utils/gameBoard/gameBoardCardLayout';
 
 interface Props {
   id: string;

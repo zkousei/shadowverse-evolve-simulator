@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import DeckBuilderDeckPane from '../components/DeckBuilderDeckPane';
-import DeckBuilderDeckLogImportDialog from '../components/DeckBuilderDeckLogImportDialog';
-import DeckBuilderDeleteSavedDecksDialog from '../components/DeckBuilderDeleteSavedDecksDialog';
-import DeckBuilderDraftRestoreDialog from '../components/DeckBuilderDraftRestoreDialog';
-import DeckBuilderHoverPreview from '../components/DeckBuilderHoverPreview';
-import DeckBuilderLibraryPane from '../components/DeckBuilderLibraryPane';
-import DeckBuilderMyDecksModal from '../components/DeckBuilderMyDecksModal';
-import DeckBuilderPreviewModal from '../components/DeckBuilderPreviewModal';
-import DeckBuilderResetDialog from '../components/DeckBuilderResetDialog';
-import DeckBuilderSaveFeedback from '../components/DeckBuilderSaveFeedback';
-import DeckBuilderSavedDeckConfirmDialog from '../components/DeckBuilderSavedDeckConfirmDialog';
+import DeckBuilderDeckPane from '../components/deckBuilder/DeckBuilderDeckPane';
+import DeckBuilderDeckLogImportDialog from '../components/deckBuilder/DeckBuilderDeckLogImportDialog';
+import DeckBuilderDeleteSavedDecksDialog from '../components/deckBuilder/DeckBuilderDeleteSavedDecksDialog';
+import DeckBuilderDraftRestoreDialog from '../components/deckBuilder/DeckBuilderDraftRestoreDialog';
+import DeckBuilderHoverPreview from '../components/deckBuilder/DeckBuilderHoverPreview';
+import DeckBuilderLibraryPane from '../components/deckBuilder/DeckBuilderLibraryPane';
+import DeckBuilderMyDecksModal from '../components/deckBuilder/DeckBuilderMyDecksModal';
+import DeckBuilderPreviewModal from '../components/deckBuilder/DeckBuilderPreviewModal';
+import DeckBuilderResetDialog from '../components/deckBuilder/DeckBuilderResetDialog';
+import DeckBuilderSaveFeedback from '../components/deckBuilder/DeckBuilderSaveFeedback';
+import DeckBuilderSavedDeckConfirmDialog from '../components/deckBuilder/DeckBuilderSavedDeckConfirmDialog';
 import {
   getAvailableExpansions,
   getAvailableProductNames,
@@ -34,16 +34,16 @@ import {
   getDeckValidationMessages,
   isRuleConfigured,
   type DeckTargetSection,
-} from '../utils/deckBuilderRules';
+} from '../utils/deckBuilder/deckBuilderRules';
 import { buildCardDetailLookup } from '../utils/cardDetails';
 import {
   buildDeckBuilderCatalogView,
   getCrossoverClassOptions,
-} from '../utils/deckBuilderCatalog';
+} from '../utils/deckBuilder/deckBuilderCatalog';
 import {
   type DeckBuilderCardTypeFilter,
   type DeckBuilderDeckSectionFilter,
-} from '../utils/deckBuilderFilters';
+} from '../utils/deckBuilder/deckBuilderFilters';
 import {
   buildCompletedDeleteAllSavedDecksUiState,
   buildCompletedDeleteSelectedSavedDecksUiState,
@@ -57,7 +57,7 @@ import {
   buildOpenedMyDecksUiState,
   buildOpenedPendingSavedDeckDeleteUiState,
   buildOpenedPendingSavedDeckLoadUiState,
-} from '../utils/deckBuilderMyDecksState';
+} from '../utils/deckBuilder/deckBuilderMyDecksState';
 import {
   buildDismissedDeckLogImportUiState,
   buildDismissedResetBuilderDialogUiState,
@@ -67,14 +67,14 @@ import {
   buildOpenedResetBuilderDialogUiState,
   buildOpenedResetDeckDialogUiState,
   buildStartedDeckLogImportUiState,
-} from '../utils/deckBuilderModalState';
+} from '../utils/deckBuilder/deckBuilderModalState';
 import {
   buildConstructedClassUpdatedRuleConfig,
   buildConstructedTitleUpdatedRuleConfig,
   buildCrossoverClassUpdatedRuleConfig,
   buildDeckFormatUpdatedRuleConfig,
   buildDeckIdentityTypeUpdatedRuleConfig,
-} from '../utils/deckBuilderRuleConfig';
+} from '../utils/deckBuilder/deckBuilderRuleConfig';
 import {
   clearDraft,
   createDeckSnapshot,
@@ -95,7 +95,7 @@ import {
   buildExportableDeckPayload,
   downloadDeckJson,
 } from '../utils/deckFile';
-import { addCardToDeckState, removeCardFromDeckState } from '../utils/deckBuilderMutations';
+import { addCardToDeckState, removeCardFromDeckState } from '../utils/deckBuilder/deckBuilderMutations';
 import {
   buildClearedSavedDeckTrackingState,
   buildDeckBuilderSaveState,
@@ -111,10 +111,10 @@ import {
   getDraftPersistenceAction,
   getDeckLogImportMessage,
   shouldDetachSavedDeckTracking,
-} from '../utils/deckBuilderPersistence';
+} from '../utils/deckBuilder/deckBuilderPersistence';
 import {
   canAddSubtypeTag,
-} from '../utils/deckBuilderSelections';
+} from '../utils/deckBuilder/deckBuilderSelections';
 import {
   DECK_HOVER_PREVIEW_MAX_HEIGHT,
   DECK_HOVER_PREVIEW_VIEWPORT_PADDING,
@@ -124,14 +124,14 @@ import {
   resolveDeckName,
   sortDeckCardsForDisplay,
   type DeckSortMode,
-} from '../utils/deckBuilderDisplay';
+} from '../utils/deckBuilder/deckBuilderDisplay';
 import { loadCardCatalog } from '../utils/cardCatalog';
 import { fetchDeckLogImport } from '../utils/decklogImport';
-import { useDeckBuilderPreviewUi } from '../hooks/useDeckBuilderPreviewUi';
-import { useDeckBuilderModalUi } from '../hooks/useDeckBuilderModalUi';
-import { useDeckBuilderSavedDeckUi } from '../hooks/useDeckBuilderSavedDeckUi';
-import { useDeckBuilderLibraryFilters } from '../hooks/useDeckBuilderLibraryFilters';
-import { useDeckBuilderSessionTracking } from '../hooks/useDeckBuilderSessionTracking';
+import { useDeckBuilderPreviewUi } from '../hooks/deckBuilder/useDeckBuilderPreviewUi';
+import { useDeckBuilderModalUi } from '../hooks/deckBuilder/useDeckBuilderModalUi';
+import { useDeckBuilderSavedDeckUi } from '../hooks/deckBuilder/useDeckBuilderSavedDeckUi';
+import { useDeckBuilderLibraryFilters } from '../hooks/deckBuilder/useDeckBuilderLibraryFilters';
+import { useDeckBuilderSessionTracking } from '../hooks/deckBuilder/useDeckBuilderSessionTracking';
 
 const PAGE_SIZE = 50;
 const COST_FILTER_VALUES = ['All', '0', '1', '2', '3', '4', '5', '6', '7+'] as const;

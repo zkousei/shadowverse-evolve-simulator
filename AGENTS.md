@@ -44,32 +44,32 @@ automated test as soon as the behavior becomes clear.
 - Reducer event handling, guards, no-op behavior, undo/turn rules:
   - `src/utils/gameSyncReducer.test.ts`
 - Lower-level P2P, reconnect, snapshot, saved-session, and shared UI effect rules:
-  - `src/utils/gameBoard*.test.ts`
+  - `src/utils/gameBoard/**/*.test.ts`
   - Prefer the narrowest existing utility/contract test first when behavior is
     already factored there (snapshot queue, waiting state, peer open/close,
     incoming event handling, connection termination, etc.).
 - Cross-helper orchestration and end-to-end hook contracts:
-  - `src/hooks/useGameBoardLogic.test.tsx`
+  - `src/hooks/gameBoard/useGameBoardLogic.test.tsx`
 - Action hook dispatch and internal branching logic:
-  - `src/hooks/useGameBoardFieldActions.test.tsx` — drag-end, link, evolve auto-attach, counters, spawn tokens
-  - `src/hooks/useGameBoardCardActions.test.tsx` — draw, mill, discard, look-at-top, undo card move
-  - `src/hooks/useGameBoardSystemActions.test.tsx` — stat change, phase, turn, coin flip, dice roll
-  - `src/hooks/useGameBoardMulliganActions.test.tsx` — mulligan start, select, execute
-  - `src/hooks/useGameBoardSetupActions.test.tsx` — deck import, deck upload, reset
+  - `src/hooks/gameBoard/useGameBoardFieldActions.test.tsx` — drag-end, link, evolve auto-attach, counters, spawn tokens
+  - `src/hooks/gameBoard/useGameBoardCardActions.test.tsx` — draw, mill, discard, look-at-top, undo card move
+  - `src/hooks/gameBoard/useGameBoardSystemActions.test.tsx` — stat change, phase, turn, coin flip, dice roll
+  - `src/hooks/gameBoard/useGameBoardMulliganActions.test.tsx` — mulligan start, select, execute
+  - `src/hooks/gameBoard/useGameBoardSetupActions.test.tsx` — deck import, deck upload, reset
 - ViewModel and presentation logic:
-  - `src/hooks/gameBoardViewModel.test.ts` — board layout, roles, import, hand visibility, end stop
-  - `src/hooks/gameBoardDialogViewModel.test.ts` — saved deck picker, token spawn
-  - `src/components/gameBoardMenuActions.test.ts` — menu action builders
-  - `src/components/gameBoardZoneActionViewModel.test.ts` — zone action config builders
+  - `src/hooks/gameBoard/gameBoardViewModel.test.ts` — board layout, roles, import, hand visibility, end stop
+  - `src/hooks/gameBoard/gameBoardDialogViewModel.test.ts` — saved deck picker, token spawn
+  - `src/components/gameBoard/gameBoardMenuActions.test.ts` — menu action builders
+  - `src/components/gameBoard/gameBoardZoneActionViewModel.test.ts` — zone action config builders
 - Deck Builder logic (State & Hooks):
-  - `src/hooks/useDeckBuilderLibraryFilters.test.ts` — search, cost, class filters
-  - `src/hooks/useDeckBuilderSavedDeckUi.test.ts` — saved deck search, bulk selection
-  - `src/hooks/useDeckBuilderSessionTracking.test.ts` — draft persistence, dirty state
-  - `src/hooks/useDeckBuilderPreviewUi.test.ts` — card preview, hover positioning
-  - `src/hooks/useDeckBuilderModalUi.test.ts` — dialog timing, import/reset modals
+  - `src/hooks/deckBuilder/useDeckBuilderLibraryFilters.test.ts` — search, cost, class filters
+  - `src/hooks/deckBuilder/useDeckBuilderSavedDeckUi.test.ts` — saved deck search, bulk selection
+  - `src/hooks/deckBuilder/useDeckBuilderSessionTracking.test.ts` — draft persistence, dirty state
+  - `src/hooks/deckBuilder/useDeckBuilderPreviewUi.test.ts` — card preview, hover positioning
+  - `src/hooks/deckBuilder/useDeckBuilderModalUi.test.ts` — dialog timing, import/reset modals
 - Component-level UI wiring and DOM behavior:
-  - `src/components/GameBoard*.test.tsx`
-  - `src/components/DeckBuilder*.test.tsx`
+  - `src/components/gameBoard/GameBoard*.test.tsx`
+  - `src/components/deckBuilder/DeckBuilder*.test.tsx`
   - `src/components/Zone.test.tsx`
   - Prefer this layer before page tests when the behavior is confined to a
     single component tree or dialog host.
@@ -98,7 +98,7 @@ When implementing a change, decide the layer first:
    send, internal branching like auto-attach or solo-mode actor resolution),
    test it in the relevant action hook test file.
 3. If the behavior is a synchronization or orchestration contract (P2P,
-   reconnect, snapshot), first ask whether a narrower `src/utils/gameBoard*.test.ts`
+   reconnect, snapshot), first ask whether a narrower `src/utils/gameBoard/**/*.test.ts`
    can own it; use `useGameBoardLogic` when the behavior spans helpers or is
    truly hook-level orchestration.
 4. If the behavior is a DOM/View wiring concern inside one component tree,

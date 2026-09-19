@@ -4,7 +4,7 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { CARD_KIND_NORMALIZED_VALUES, type CardKindNormalized, type DeckSection } from '../models/cardClassification';
-import { inferDeckSection } from './deckBuilderRules';
+import { inferDeckSection } from './deckBuilder/deckBuilderRules';
 
 // Exercise the actual Python definitions rather than a copied fixture.
 const metadata: {

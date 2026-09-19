@@ -1,0 +1,338 @@
+import { describe, expect, it } from 'vitest';
+import { CLASS } from '../../models/class';
+import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
+import { createDefaultDeckRuleConfig } from '../../models/deckRule';
+import { buildDeckBuilderCatalogView, getCrossoverClassOptions } from './deckBuilderCatalog';
+
+const mockCards: DeckBuilderCardData[] = [
+  {
+    id: 'BP01-001',
+    name: 'Alpha Knight',
+    image: '/alpha.png',
+    cost: '1',
+    class: 'ロイヤル',
+    title: 'Hero Tale',
+    type: 'フォロワー',
+    subtype: '兵士',
+    rarity: 'LG',
+    product_name: 'Booster Pack 1',
+    card_kind_normalized: 'follower',
+    deck_section: 'main',
+  },
+  {
+    id: 'BP01-002',
+    name: 'Alpha Knight',
+    image: '/alpha-2.png',
+    cost: '2',
+    class: 'ロイヤル',
+    title: 'Hero Tale',
+    type: 'フォロワー',
+    subtype: '兵士',
+    rarity: 'LG',
+    product_name: 'Booster Pack 1',
+    card_kind_normalized: 'follower',
+    deck_section: 'main',
+  },
+  {
+    id: 'BP02-007',
+    name: 'Beta Mage',
+    image: '/beta.png',
+    cost: '7',
+    class: 'ウィッチ',
+    title: 'Mage Tale',
+    type: 'スペル',
+    subtype: '魔法使い・学院',
+    rarity: 'GR',
+    product_name: 'Booster Pack 2',
+    card_kind_normalized: 'spell',
+    deck_section: 'main',
+  },
+  {
+    id: 'LDR01-001',
+    name: 'Leader Luna',
+    image: '/leader.png',
+    cost: '-',
+    class: 'ロイヤル',
+    title: 'Hero Tale',
+    type: 'リーダー',
+    subtype: '指揮官',
+    rarity: 'PR',
+    product_name: 'Leader Set',
+    card_kind_normalized: 'leader',
+    deck_section: 'leader',
+  },
+  {
+    id: 'TK01-001',
+    name: 'Knight Token',
+    image: '/token.png',
+    cost: '1',
+    class: 'ロイヤル',
+    title: 'Hero Tale',
+    type: 'アミュレット・トークン',
+    subtype: '兵士',
+    rarity: 'PR',
+    product_name: 'Token Pack',
+    card_kind_normalized: 'token_amulet',
+    deck_section: 'token',
+    is_token: true,
+  },
+  {
+    id: 'TK01-020',
+    name: 'Crest Token',
+    image: '/crest.png',
+    cost: '-',
+    class: '-',
+    title: 'Hero Tale',
+    type: 'クレスト・トークン',
+    subtype: '-',
+    rarity: 'PR',
+    product_name: 'Token Pack',
+    card_kind_normalized: 'token_crest',
+    deck_section: 'token',
+    is_token: true,
+  },
+  {
+    id: 'TK01-002',
+    name: 'Blade Equipment',
+    image: '/equipment.png',
+    cost: '1',
+    class: 'ロイヤル',
+    title: 'Hero Tale',
+    type: 'イクイップメント・トークン',
+    subtype: '兵士',
+    rarity: 'PR',
+    product_name: 'Token Pack',
+    card_kind_normalized: 'token_equipment',
+    deck_section: 'token',
+    is_token: true,
+  },
+  {
+    id: 'TK01-003',
+    name: 'Treasure Token',
+    image: '/treasure.png',
+    cost: '-',
+    class: '-',
+    title: 'Hero Tale',
+    type: 'トレジャー・トークン',
+    subtype: '-',
+    rarity: 'PR',
+    product_name: 'Token Pack',
+    card_kind_normalized: 'token_treasure',
+    deck_section: 'token',
+    is_token: true,
+  },
+];
+
+describe('deckBuilderCatalog', () => {
+  it('filters cards by search, type, rarity, product, subtype, and section', () => {
+    const view = buildDeckBuilderCatalogView(mockCards, {
+      ...createDefaultDeckRuleConfig(),
+      format: 'other',
+    }, {
+      search: 'knight',
+      costFilter: 'All',
+      expansionFilter: 'All',
+      classFilter: 'All',
+      cardTypeFilter: 'amulet',
+      rarityFilter: 'PR',
+      productNameFilter: 'Token Pack',
+      selectedSubtypeTags: ['兵士'],
+      deckSectionFilter: 'token',
+      hideSameNameVariants: false,
+      page: 0,
+      pageSize: 50,
+    });
+
+    expect(view.filteredCards.map(card => card.id)).toEqual(['TK01-001']);
+    expect(view.paginatedCards.map(card => card.id)).toEqual(['TK01-001']);
+    expect(view.totalPages).toBe(1);
+  });
+
+  it('shows crest tokens in the token section without treating them as an amulet filter match', () => {
+    const tokenSectionView = buildDeckBuilderCatalogView(mockCards, {
+      ...createDefaultDeckRuleConfig(),
+      format: 'other',
+    }, {
+      search: 'crest',
+      costFilter: 'All',
+      expansionFilter: 'All',
+      classFilter: 'All',
+      cardTypeFilter: 'All',
+      rarityFilter: 'All',
+      productNameFilter: 'All',
+      selectedSubtypeTags: [],
+      deckSectionFilter: 'token',
+      hideSameNameVariants: false,
+      page: 0,
+      pageSize: 50,
+    });
+
+    expect(tokenSectionView.filteredCards.map(card => card.id)).toEqual(['TK01-020']);
+
+    const amuletFilterView = buildDeckBuilderCatalogView(mockCards, {
+      ...createDefaultDeckRuleConfig(),
+      format: 'other',
+    }, {
+      search: 'crest',
+      costFilter: 'All',
+      expansionFilter: 'All',
+      classFilter: 'All',
+      cardTypeFilter: 'amulet',
+      rarityFilter: 'All',
+      productNameFilter: 'All',
+      selectedSubtypeTags: [],
+      deckSectionFilter: 'token',
+      hideSameNameVariants: false,
+      page: 0,
+      pageSize: 50,
+    });
+
+    expect(amuletFilterView.filteredCards).toEqual([]);
+  });
+
+  it('shows token equipment in the token section without matching the amulet filter', () => {
+    const tokenSectionView = buildDeckBuilderCatalogView(mockCards, {
+      ...createDefaultDeckRuleConfig(),
+      format: 'other',
+    }, {
+      search: 'equipment',
+      costFilter: 'All',
+      expansionFilter: 'All',
+      classFilter: 'All',
+      cardTypeFilter: 'All',
+      rarityFilter: 'All',
+      productNameFilter: 'All',
+      selectedSubtypeTags: [],
+      deckSectionFilter: 'token',
+      hideSameNameVariants: false,
+      page: 0,
+      pageSize: 50,
+    });
+
+    expect(tokenSectionView.filteredCards.map(card => card.id)).toEqual(['TK01-002']);
+
+    const amuletFilterView = buildDeckBuilderCatalogView(mockCards, {
+      ...createDefaultDeckRuleConfig(),
+      format: 'other',
+    }, {
+      search: 'equipment',
+      costFilter: 'All',
+      expansionFilter: 'All',
+      classFilter: 'All',
+      cardTypeFilter: 'amulet',
+      rarityFilter: 'All',
+      productNameFilter: 'All',
+      selectedSubtypeTags: [],
+      deckSectionFilter: 'token',
+      hideSameNameVariants: false,
+      page: 0,
+      pageSize: 50,
+    });
+
+    expect(amuletFilterView.filteredCards).toEqual([]);
+  });
+
+  it('applies rule filtering, dedupe, and pagination for the card catalog', () => {
+    const view = buildDeckBuilderCatalogView(mockCards, {
+      ...createDefaultDeckRuleConfig(),
+      selectedClass: CLASS.ROYAL,
+    }, {
+      search: '',
+      costFilter: 'All',
+      expansionFilter: 'All',
+      classFilter: 'All',
+      cardTypeFilter: 'All',
+      rarityFilter: 'All',
+      productNameFilter: 'All',
+      selectedSubtypeTags: [],
+      deckSectionFilter: 'All',
+      hideSameNameVariants: true,
+      page: 0,
+      pageSize: 2,
+    });
+
+    expect(view.filteredCards.map(card => card.id)).toEqual(['BP01-001', 'BP01-002', 'LDR01-001', 'TK01-001', 'TK01-020', 'TK01-002', 'TK01-003']);
+    expect(view.displayCards.map(card => card.id)).toEqual(['BP01-001', 'LDR01-001', 'TK01-001', 'TK01-020', 'TK01-002', 'TK01-003']);
+    expect(view.paginatedCards.map(card => card.id)).toEqual(['BP01-001', 'LDR01-001']);
+    expect(view.totalPages).toBe(3);
+  });
+
+  it('supports cost and expansion filters including the 7+ bucket', () => {
+    const sevenPlus = buildDeckBuilderCatalogView(mockCards, {
+      ...createDefaultDeckRuleConfig(),
+      format: 'other',
+    }, {
+      search: '',
+      costFilter: '7+',
+      expansionFilter: 'BP02',
+      classFilter: 'All',
+      cardTypeFilter: 'All',
+      rarityFilter: 'All',
+      productNameFilter: 'All',
+      selectedSubtypeTags: [],
+      deckSectionFilter: 'All',
+      hideSameNameVariants: false,
+      page: 0,
+      pageSize: 50,
+    });
+
+    expect(sevenPlus.filteredCards.map(card => card.id)).toEqual(['BP02-007']);
+  });
+
+  it('hides preview cards unless the preview filter is enabled', () => {
+    const previewCard: DeckBuilderCardData = {
+      id: 'PV01-001',
+      name: 'Preview Knight',
+      image: '',
+      cost: '2',
+      class: 'ロイヤル',
+      title: 'Hero Tale',
+      type: 'フォロワー',
+      rarity: 'PR',
+      product_name: 'Preview Pack',
+      card_kind_normalized: 'follower',
+      deck_section: 'main',
+      catalog_status: 'preview',
+    };
+    const cards = [...mockCards, previewCard];
+    const baseFilters = {
+      search: '',
+      costFilter: 'All',
+      expansionFilter: 'All',
+      classFilter: 'All' as const,
+      cardTypeFilter: 'All' as const,
+      rarityFilter: 'All',
+      productNameFilter: 'All',
+      selectedSubtypeTags: [],
+      deckSectionFilter: 'All' as const,
+      hideSameNameVariants: false,
+      page: 0,
+      pageSize: 50,
+    };
+
+    const hiddenView = buildDeckBuilderCatalogView(cards, {
+      ...createDefaultDeckRuleConfig(),
+      format: 'other',
+    }, {
+      ...baseFilters,
+      showPreviewCards: false,
+    });
+    const shownView = buildDeckBuilderCatalogView(cards, {
+      ...createDefaultDeckRuleConfig(),
+      format: 'other',
+    }, {
+      ...baseFilters,
+      showPreviewCards: true,
+    });
+
+    expect(hiddenView.filteredCards.map(card => card.id)).not.toContain('PV01-001');
+    expect(shownView.filteredCards.map(card => card.id)).toContain('PV01-001');
+  });
+
+  it('builds crossover class options while preventing duplicate class picks', () => {
+    expect(getCrossoverClassOptions([CLASS.ROYAL, CLASS.WITCH])).toEqual({
+      firstOptions: [CLASS.ELF, CLASS.ROYAL, CLASS.DRAGON, CLASS.NIGHTMARE, CLASS.BISHOP],
+      secondOptions: [CLASS.ELF, CLASS.WITCH, CLASS.DRAGON, CLASS.NIGHTMARE, CLASS.BISHOP],
+    });
+  });
+});
