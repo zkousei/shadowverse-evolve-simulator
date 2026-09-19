@@ -2,7 +2,7 @@ import React from 'react';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import GameBoard from './GameBoard';
-import { useGameBoardLogic } from '../hooks/useGameBoardLogic';
+import { useGameBoardLogic } from '../hooks/gameBoard/useGameBoardLogic';
 import {
   SAVED_DECKS_KEY,
   serializeDeckState,
@@ -133,7 +133,7 @@ vi.mock('../components/CardArtwork', () => ({
   default: ({ alt }: { alt: string }) => <img alt={alt} />,
 }));
 
-vi.mock('../hooks/useGameBoardLogic', () => ({
+vi.mock('../hooks/gameBoard/useGameBoardLogic', () => ({
   useGameBoardLogic: vi.fn(),
 }));
 
@@ -141,8 +141,8 @@ vi.mock('../utils/cardCatalog', () => ({
   loadCardCatalog: vi.fn(),
 }));
 
-vi.mock('../utils/deckBuilderRules', async () => {
-  const actual = await vi.importActual<typeof import('../utils/deckBuilderRules')>('../utils/deckBuilderRules');
+vi.mock('../utils/deckBuilder/deckBuilderRules', async () => {
+  const actual = await vi.importActual<typeof import('../utils/deckBuilder/deckBuilderRules')>('../utils/deckBuilder/deckBuilderRules');
 
   return {
     ...actual,

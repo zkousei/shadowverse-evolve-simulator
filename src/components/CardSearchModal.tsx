@@ -4,7 +4,7 @@ import type { PlayerRole } from '../types/game';
 import { formatAbilityText, resolveSelectedCardFaceDetail, type CardDetailLookup, type CardFaceSide } from '../utils/cardDetails';
 import { normalizeBaseCardType, type RuntimeBaseCardType } from '../utils/cardType';
 import CardArtwork from './CardArtwork';
-import GameBoardCardFacePreview from './GameBoardCardFacePreview';
+import GameBoardCardFacePreview from './gameBoard/GameBoardCardFacePreview';
 import { useTranslation } from 'react-i18next';
 import { useGameBoardInputProfile } from '../contexts/gameBoardInputProfileContext';
 

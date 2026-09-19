@@ -21,7 +21,7 @@ DeckBuilder の枚数制限は、現在 3 層で決まります。
 - カード固有特例: [`../src/data/intrinsicDeckExceptions.ts`](../src/data/intrinsicDeckExceptions.ts)
 - 禁止 / 制限: [`../src/data/policyRestrictions.ts`](../src/data/policyRestrictions.ts)
 - 最終判定ロジック: [`../src/utils/deckRestrictionRules.ts`](../src/utils/deckRestrictionRules.ts)
-- DeckBuilder への適用: [`../src/utils/deckBuilderRules.ts`](../src/utils/deckBuilderRules.ts)
+- DeckBuilder への適用: [`../src/utils/deckBuilder/deckBuilderRules.ts`](../src/utils/deckBuilder/deckBuilderRules.ts)
 
 ## 判定キーの考え方
 
@@ -135,7 +135,7 @@ PY
 最低限、次を実行します。
 
 ```bash
-npm test -- --run src/utils/deckBuilderRules.test.ts src/pages/DeckBuilder.test.tsx src/models/deckBuilderCard.test.ts
+npm test -- --run src/utils/deckBuilder/deckBuilderRules.test.ts src/pages/DeckBuilder.test.tsx src/models/deckBuilderCard.test.ts
 npm run build
 ```
 

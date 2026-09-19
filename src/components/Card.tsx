@@ -7,7 +7,7 @@ import { isMainDeckSpellCard, type RuntimeBaseCardType } from '../utils/cardType
 import { resolveSelectedCardFaceDetail, type CardDetail, type CardFaceSide } from '../utils/cardDetails';
 import CardArtwork from './CardArtwork';
 import { useGameBoardBoardDensity, useGameBoardInputProfile } from '../contexts/gameBoardInputProfileContext';
-import { getCardSizeForInputProfile } from '../utils/gameBoardCardLayout';
+import { getCardSizeForInputProfile } from '../utils/gameBoard/gameBoardCardLayout';
 
 export interface CardInstance {
   id: string; // unique instance id

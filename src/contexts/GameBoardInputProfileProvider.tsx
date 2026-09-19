@@ -1,6 +1,6 @@
 import React from 'react';
-import type { GameBoardInputProfile } from '../utils/gameBoardInputProfile';
-import type { GameBoardBoardDensity } from '../utils/gameBoardBoardDensity';
+import type { GameBoardInputProfile } from '../utils/gameBoard/gameBoardInputProfile';
+import type { GameBoardBoardDensity } from '../utils/gameBoard/gameBoardBoardDensity';
 import GameBoardInputProfileContext from './gameBoardInputProfileContext';
 
 type GameBoardInputProfileProviderProps = {

@@ -4,52 +4,52 @@ import { useTranslation } from 'react-i18next';
 import Zone from '../components/Zone';
 import type { CardInstance } from '../components/Card';
 import CardSearchModal from '../components/CardSearchModal';
-import GameBoardBoardRow from '../components/GameBoardBoardRow';
-import GameBoardBottomHandSection from '../components/GameBoardBottomHandSection';
-import GameBoardCardInspectorSection from '../components/GameBoardCardInspectorSection';
-import GameBoardCountDialog from '../components/GameBoardCountDialog';
-import GameBoardDialogsHost from '../components/GameBoardDialogsHost';
-import GameBoardEndTurnSection from '../components/GameBoardEndTurnSection';
-import GameBoardGlobalOverlays from '../components/GameBoardGlobalOverlays';
-import GameBoardHeader from '../components/GameBoardHeader';
-import GameBoardHandRevealDialog from '../components/GameBoardHandRevealDialog';
-import GameBoardLeaderZoneSection from '../components/GameBoardLeaderZoneSection';
-import GameBoardMainDeckSection from '../components/GameBoardMainDeckSection';
-import GameBoardMulliganDialog from '../components/GameBoardMulliganDialog';
-import GameBoardPlayerControlsPanel from '../components/GameBoardPlayerControlsPanel';
-import GameBoardPreparationPanel from '../components/GameBoardPreparationPanel';
-import GameBoardRecentEventsPanel from '../components/GameBoardRecentEventsPanel';
-import GameBoardReadOnlyStatusSection from '../components/GameBoardReadOnlyStatusSection';
-import GameBoardReconnectAlert from '../components/GameBoardReconnectAlert';
-import GameBoardResetDialog from '../components/GameBoardResetDialog';
-import GameBoardSearchableStackSection from '../components/GameBoardSearchableStackSection';
-import GameBoardSavedSessionPrompt from '../components/GameBoardSavedSessionPrompt';
-import GameBoardTopHandSection from '../components/GameBoardTopHandSection';
-import GameBoardTopNDialog from '../components/GameBoardTopNDialog';
-import GameBoardTokenSpawnDialog from '../components/GameBoardTokenSpawnDialog';
-import GameBoardUndoTurnDialog from '../components/GameBoardUndoTurnDialog';
+import GameBoardBoardRow from '../components/gameBoard/GameBoardBoardRow';
+import GameBoardBottomHandSection from '../components/gameBoard/GameBoardBottomHandSection';
+import GameBoardCardInspectorSection from '../components/gameBoard/GameBoardCardInspectorSection';
+import GameBoardCountDialog from '../components/gameBoard/GameBoardCountDialog';
+import GameBoardDialogsHost from '../components/gameBoard/GameBoardDialogsHost';
+import GameBoardEndTurnSection from '../components/gameBoard/GameBoardEndTurnSection';
+import GameBoardGlobalOverlays from '../components/gameBoard/GameBoardGlobalOverlays';
+import GameBoardHeader from '../components/gameBoard/GameBoardHeader';
+import GameBoardHandRevealDialog from '../components/gameBoard/GameBoardHandRevealDialog';
+import GameBoardLeaderZoneSection from '../components/gameBoard/GameBoardLeaderZoneSection';
+import GameBoardMainDeckSection from '../components/gameBoard/GameBoardMainDeckSection';
+import GameBoardMulliganDialog from '../components/gameBoard/GameBoardMulliganDialog';
+import GameBoardPlayerControlsPanel from '../components/gameBoard/GameBoardPlayerControlsPanel';
+import GameBoardPreparationPanel from '../components/gameBoard/GameBoardPreparationPanel';
+import GameBoardRecentEventsPanel from '../components/gameBoard/GameBoardRecentEventsPanel';
+import GameBoardReadOnlyStatusSection from '../components/gameBoard/GameBoardReadOnlyStatusSection';
+import GameBoardReconnectAlert from '../components/gameBoard/GameBoardReconnectAlert';
+import GameBoardResetDialog from '../components/gameBoard/GameBoardResetDialog';
+import GameBoardSearchableStackSection from '../components/gameBoard/GameBoardSearchableStackSection';
+import GameBoardSavedSessionPrompt from '../components/gameBoard/GameBoardSavedSessionPrompt';
+import GameBoardTopHandSection from '../components/gameBoard/GameBoardTopHandSection';
+import GameBoardTopNDialog from '../components/gameBoard/GameBoardTopNDialog';
+import GameBoardTokenSpawnDialog from '../components/gameBoard/GameBoardTokenSpawnDialog';
+import GameBoardUndoTurnDialog from '../components/gameBoard/GameBoardUndoTurnDialog';
 import GameBoardInputProfileProvider from '../contexts/GameBoardInputProfileProvider';
 import {
   buildMainDeckZoneActions,
   buildRandomDiscardHandZoneActions,
   buildRevealHandZoneActions,
-} from '../components/gameBoardZoneActionViewModel';
+} from '../components/gameBoard/gameBoardZoneActionViewModel';
 import TopDeckModal from '../components/TopDeckModal';
-import { useGameBoardAttackUi } from '../hooks/useGameBoardAttackUi';
-import { useGameBoardLogic } from '../hooks/useGameBoardLogic';
-import { buildGameBoardViewModel } from '../hooks/gameBoardViewModel';
-import { useGameBoardDialogsUi } from '../hooks/useGameBoardDialogsUi';
-import { useGameBoardInspectorUi } from '../hooks/useGameBoardInspectorUi';
-import { useGameBoardSavedDeckPicker } from '../hooks/useGameBoardSavedDeckPicker';
+import { useGameBoardAttackUi } from '../hooks/gameBoard/useGameBoardAttackUi';
+import { useGameBoardLogic } from '../hooks/gameBoard/useGameBoardLogic';
+import { buildGameBoardViewModel } from '../hooks/gameBoard/gameBoardViewModel';
+import { useGameBoardDialogsUi } from '../hooks/gameBoard/useGameBoardDialogsUi';
+import { useGameBoardInspectorUi } from '../hooks/gameBoard/useGameBoardInspectorUi';
+import { useGameBoardSavedDeckPicker } from '../hooks/gameBoard/useGameBoardSavedDeckPicker';
 import type { PlayerRole } from '../types/game';
 import type { AttackTarget } from '../types/sync';
 import {
   formatSavedSessionTimestamp,
-} from '../utils/gameBoardPresentation';
-import { resolveBoardEnvironment } from '../utils/gameBoardEnvironment';
+} from '../utils/gameBoard/gameBoardPresentation';
+import { resolveBoardEnvironment } from '../utils/gameBoard/gameBoardEnvironment';
 import {
   shouldDismissModalOnBackdropClick,
-} from '../utils/gameBoardDismissals';
+} from '../utils/gameBoard/gameBoardDismissals';
 import {
   activeBoardSectionStyle,
   resolveBoardLayout,
@@ -58,8 +58,8 @@ import {
 } from './gameBoardLayout';
 import {
   getAttackTargetFromCard as resolveAttackTargetFromCard,
-} from '../utils/gameBoardCombat';
-import { canEditSearchedEvolveDeck } from '../utils/gameBoardEvolveFaceSelection';
+} from '../utils/gameBoard/gameBoardCombat';
+import { canEditSearchedEvolveDeck } from '../utils/gameBoard/gameBoardEvolveFaceSelection';
 
 const GameBoard: React.FC = () => {
   const [viewportWidth, setViewportWidth] = React.useState(() => (
