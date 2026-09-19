@@ -16,7 +16,7 @@ from tools.card_data.audit_cards import (
     collect_unknown_types,
     find_duplicate_ids,
 )
-from tools.official_cards.scrape_details import fetch_card_details
+from tools.official_cards.scrape_details import clean_text, fetch_card_details
 from tools.official_cards.scraper import CardIndexResult, fetch_all_cards
 
 
@@ -95,7 +95,6 @@ def stage_json(path: Path, cards: list[dict]) -> Path:
     try:
         with handle:
             json.dump(cards, handle, ensure_ascii=False, indent=2)
-            handle.write("\n")
         json.loads(staged_path.read_text(encoding="utf-8"))
         return staged_path
     except Exception:
@@ -184,7 +183,11 @@ async def run_incremental_sync(
             merged_details.append(fetched_new_by_id[card_id])
             continue
         existing = dict(existing_detail_by_id[card_id])
-        existing.update({key: summary[key] for key in ("id", "name", "image")})
+        existing.update({
+            "id": summary["id"],
+            "name": clean_text(summary["name"]),
+            "image": summary["image"],
+        })
         merged_details.append(existing)
 
     for card_id in local_only_ids:

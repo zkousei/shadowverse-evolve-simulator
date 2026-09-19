@@ -1,5 +1,74 @@
 [
   {
+    "id": "PCS02-001",
+    "name": "暴食のアナテマ・ララアンセム",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PCS02/pcs02-001.png",
+    "class": "ウィッチ",
+    "type": "フォロワー",
+    "subtype": "アナテマ・魔法使い",
+    "rarity": "UR",
+    "product_name": "プレミアムカードセット「サマーエディションvol.1」",
+    "cost": "4",
+    "atk": "4",
+    "hp": "4",
+    "ability_text": "[進化][コスト1]：これは進化する。 [ファンファーレ]相手の場のフォロワー1体を選ぶ。それに2ダメージ。 [起動]【土の秘術】：これは【指定攻撃】を持つ。",
+    "related_cards": [
+      {
+        "id": "BP16-039",
+        "name": "暴食のアナテマ・ララアンセム"
+      }
+    ],
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true
+  },
+  {
+    "id": "PCS02-002",
+    "name": "呪いの言霊・ジンジャー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PCS02/pcs02-002.png",
+    "class": "ウィッチ",
+    "type": "フォロワー",
+    "subtype": "魔法使い",
+    "rarity": "UR",
+    "product_name": "プレミアムカードセット「サマーエディションvol.1」",
+    "cost": "10",
+    "atk": "3",
+    "hp": "3",
+    "ability_text": "これをプレイする際、コストを-Xする。Xは「自分の消滅領域の枚数」である。 [ファンファーレ]『ジンジャーの言霊』1枚をEXエリアに置く。",
+    "related_cards": [
+      {
+        "id": "BP18-T04",
+        "name": "ジンジャーの言霊"
+      }
+    ],
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true
+  },
+  {
+    "id": "PCS02-003",
+    "name": "新たなる少女・エース",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PCS02/pcs02-003.png",
+    "class": "ニュートラル",
+    "type": "フォロワー",
+    "subtype": "超克",
+    "rarity": "UR",
+    "product_name": "プレミアムカードセット「サマーエディションvol.1」",
+    "cost": "2",
+    "atk": "2",
+    "hp": "3",
+    "ability_text": "【守護】 [ファンファーレ]1枚引く。自分のSEPが0なら、これは[攻撃力]+2/[体力]+2する。自分のリーダーは[体力]+2する。",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true
+  },
+  {
     "id": "BP21-001",
     "name": "新緑の新入生・カステル",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP21/bp21-001.png",
