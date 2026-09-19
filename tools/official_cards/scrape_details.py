@@ -272,36 +272,43 @@ async def fetch_card_detail(session: aiohttp.ClientSession, card: dict) -> dict:
     return parse_card_detail_html(card, html)
 
 
+async def fetch_card_details(cards: list[dict]) -> list[dict]:
+    updated_cards = [dict(card) for card in cards]
+    connector = aiohttp.TCPConnector(limit_per_host=10)
+    async with aiohttp.ClientSession(headers=HEADERS, connector=connector) as session:
+        for i in range(0, len(updated_cards), BATCH_SIZE):
+            batch = updated_cards[i:i + BATCH_SIZE]
+            updated_batch = await asyncio.gather(*(fetch_card_detail(session, card) for card in batch))
+            updated_cards[i:i + BATCH_SIZE] = updated_batch
+
+            if i % 500 == 0:
+                print(f"Processed {i}/{len(updated_cards)} cards...")
+
+            await asyncio.sleep(0.1)
+
+        for attempt in range(1, RECOVERY_PASSES + 1):
+            missing_indices = [
+                index for index, card in enumerate(updated_cards)
+                if not has_core_details(card)
+            ]
+            if not missing_indices:
+                break
+
+            print(f"Recovery pass {attempt}: retrying {len(missing_indices)} cards with missing core details...")
+            for index in missing_indices:
+                updated_cards[index] = await fetch_card_detail(session, updated_cards[index])
+            await asyncio.sleep(0.2)
+
+    return [order_card_fields(derive_card_metadata(card)) for card in updated_cards]
+
+
 async def main() -> None:
     print("Loading existing cards.json...")
     with open(INPUT_PATH, "r", encoding="utf-8") as f:
         cards = json.load(f)
 
     print(f"Loaded {len(cards)} cards. Starting async scrape. This will take a moment.")
-
-    connector = aiohttp.TCPConnector(limit_per_host=10)
-    async with aiohttp.ClientSession(headers=HEADERS, connector=connector) as session:
-        for i in range(0, len(cards), BATCH_SIZE):
-            batch = cards[i:i + BATCH_SIZE]
-            updated_batch = await asyncio.gather(*(fetch_card_detail(session, card) for card in batch))
-            cards[i:i + BATCH_SIZE] = updated_batch
-
-            if i % 500 == 0:
-                print(f"Processed {i}/{len(cards)} cards...")
-
-            await asyncio.sleep(0.1)
-
-        for attempt in range(1, RECOVERY_PASSES + 1):
-            missing_indices = [index for index, card in enumerate(cards) if not has_core_details(card)]
-            if not missing_indices:
-                break
-
-            print(f"Recovery pass {attempt}: retrying {len(missing_indices)} cards with missing core details...")
-            for index in missing_indices:
-                cards[index] = await fetch_card_detail(session, cards[index])
-            await asyncio.sleep(0.2)
-
-    cards = [order_card_fields(derive_card_metadata(card)) for card in cards]
+    cards = await fetch_card_details(cards)
 
     with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
         json.dump(cards, f, ensure_ascii=False, indent=2)
