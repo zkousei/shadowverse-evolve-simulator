@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createEmptyDeckState } from '../models/deckState';
-import type { DeckBuilderCardData } from '../models/deckBuilderCard';
-import type { DeckRuleConfig } from '../models/deckRule';
+import { createEmptyDeckState } from '../../models/deckState';
+import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
+import type { DeckRuleConfig } from '../../models/deckRule';
 import {
   areDeckSnapshotsEqual,
   clearDraft,

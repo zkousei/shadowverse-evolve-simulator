@@ -1,6 +1,6 @@
 import React from 'react';
 import type { PublicCardView } from '../../types/sync';
-import type { CardDetailLookup } from '../../utils/cardDetails';
+import type { CardDetailLookup } from '../../utils/card/cardDetails';
 import GameBoardAttackLineOverlay from './GameBoardAttackLineOverlay';
 import GameBoardCoinMessageOverlay from './GameBoardCoinMessageOverlay';
 import GameBoardDiceOverlay from './GameBoardDiceOverlay';

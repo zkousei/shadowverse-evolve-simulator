@@ -4,7 +4,7 @@ import { getDisplayDedupKey, type DeckBuilderCardData } from '../../models/deckB
 import type { RestrictionFormat, RestrictionSource } from '../../models/deckRestriction';
 import { createEmptyDeckState, type DeckState } from '../../models/deckState';
 import type { DeckRuleConfig } from '../../models/deckRule';
-import { DEFAULT_COPY_LIMIT_PER_CARD, getEffectiveDeckRestriction } from '../deckRestrictionRules';
+import { DEFAULT_COPY_LIMIT_PER_CARD, getEffectiveDeckRestriction } from '../deck/deckRestrictionRules';
 import { getGlobalIntrinsicLimit } from '../../data/intrinsicDeckExceptions';
 
 export type DeckTargetSection = 'main' | 'evolve' | 'leader' | 'token';

@@ -1,7 +1,7 @@
 import React from 'react';
 import Zone from './Zone';
 import type { CardInspectAnchor, CardInstance } from '../Card';
-import type { CardDetailLookup } from '../../utils/cardDetails';
+import type { CardDetailLookup } from '../../utils/card/cardDetails';
 import type { PlayerRole } from '../../types/game';
 
 type GameBoardLeaderZoneProps = {

@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
 import type { DeckRuleConfig } from '../../models/deckRule';
-import { createDeckSnapshot, clearDraft, getSavedDeckById, loadDraft, saveDeck, saveDraft } from '../deckStorage';
-import { DeckLogImportError, type DeckLogImportResult } from '../decklogImport';
+import { createDeckSnapshot, clearDraft, getSavedDeckById, loadDraft, saveDeck, saveDraft } from '../deck/deckStorage';
+import { DeckLogImportError, type DeckLogImportResult } from '../deck/decklogImport';
 import {
   buildClearedSavedDeckTrackingState,
   buildContinuedDraftRestoreSessionState,

@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ClassFilter } from '../../models/class';
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
-import type { CardDetail } from '../../utils/cardDetails';
+import type { CardDetail } from '../../utils/card/cardDetails';
 import type {
   DeckBuilderCardTypeFilter,
   DeckBuilderDeckSectionFilter,

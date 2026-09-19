@@ -1,6 +1,6 @@
-import type { DeckBuilderCardData } from '../models/deckBuilderCard';
-import type { DeckState } from '../models/deckState';
-import type { DeckFormat, DeckRuleConfig } from '../models/deckRule';
+import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
+import type { DeckState } from '../../models/deckState';
+import type { DeckFormat, DeckRuleConfig } from '../../models/deckRule';
 
 export type ExportableDeckCard = Omit<DeckBuilderCardData, 'related_cards' | 'faces' | 'catalog_status'>;
 

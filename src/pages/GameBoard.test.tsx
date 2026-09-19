@@ -7,13 +7,13 @@ import {
   SAVED_DECKS_KEY,
   serializeDeckState,
   type SavedDeckRecordV1,
-} from '../utils/deckStorage';
+} from '../utils/deck/deckStorage';
 import { initialState, type SyncState, type TokenOption } from '../types/game';
 import type { CardInspectAnchor, CardInstance } from '../components/Card';
 import type { DeckBuilderCardData } from '../models/deckBuilderCard';
 import type { DeckState } from '../models/deckState';
 import type { DeckRuleConfig } from '../models/deckRule';
-import { loadCardCatalog } from '../utils/cardCatalog';
+import { loadCardCatalog } from '../utils/card/cardCatalog';
 
 vi.mock('@dnd-kit/core', () => ({
   DndContext: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
@@ -137,7 +137,7 @@ vi.mock('../hooks/gameBoard/useGameBoardLogic', () => ({
   useGameBoardLogic: vi.fn(),
 }));
 
-vi.mock('../utils/cardCatalog', () => ({
+vi.mock('../utils/card/cardCatalog', () => ({
   loadCardCatalog: vi.fn(),
 }));
 

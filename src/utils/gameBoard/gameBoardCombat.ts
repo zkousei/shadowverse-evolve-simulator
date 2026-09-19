@@ -1,6 +1,6 @@
 import type { CardInstance } from '../../components/Card';
 import type { AttackTarget } from '../../types/sync';
-import type { CardStatLookup } from '../cardStats';
+import type { CardStatLookup } from '../card/cardStats';
 import { getZoneOwner } from './soloMode';
 
 const getOpponentRole = (owner: CardInstance['owner']): CardInstance['owner'] => (

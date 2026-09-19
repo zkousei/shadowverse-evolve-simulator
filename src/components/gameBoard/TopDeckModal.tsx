@@ -7,7 +7,7 @@ import {
   formatAbilityText,
   resolveSelectedCardFaceDetail,
   type CardDetailLookup,
-} from '../../utils/cardDetails';
+} from '../../utils/card/cardDetails';
 
 export type TopDeckAction = 'hand' | 'revealedHand' | 'field' | 'ex' | 'cemetery' | 'top' | 'bottom';
 

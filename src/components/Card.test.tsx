@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import Card, { type CardInstance } from './Card';
 import GameBoardInputProfileProvider from '../contexts/GameBoardInputProfileProvider';
-import type { CardDetail } from '../utils/cardDetails';
+import type { CardDetail } from '../utils/card/cardDetails';
 
 const dndState = {
   transform: null as null | { x: number; y: number },

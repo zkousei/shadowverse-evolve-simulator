@@ -1,8 +1,8 @@
 import React from 'react';
 import type { CardInspectAnchor, CardInstance } from '../../components/Card';
 import { canInspectCard, shouldClearInspectorSelection } from '../../utils/gameBoard/gameBoardCombat';
-import type { CardDetailLookup } from '../../utils/cardDetails';
-import { buildCardDetailPresentation, resolveSelectedCardFaceDetail } from '../../utils/cardDetails';
+import type { CardDetailLookup } from '../../utils/card/cardDetails';
+import { buildCardDetailPresentation, resolveSelectedCardFaceDetail } from '../../utils/card/cardDetails';
 import { getInspectorPopoverStyle } from '../../utils/gameBoard/gameBoardPresentation';
 import {
   shouldDismissInspectorOnPointerDown,

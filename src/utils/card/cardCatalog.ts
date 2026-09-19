@@ -1,4 +1,4 @@
-import type { DeckBuilderCardData } from '../models/deckBuilderCard';
+import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
 
 const RELEASED_CARD_CATALOG_PATH = '/cards_detailed.json';
 const PREVIEW_CARD_CATALOG_PATH = '/cards_preview.json';

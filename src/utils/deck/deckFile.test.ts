@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { DeckBuilderCardData } from '../models/deckBuilderCard';
-import type { DeckRuleConfig } from '../models/deckRule';
+import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
+import type { DeckRuleConfig } from '../../models/deckRule';
 import {
   buildExportableDeckPayload,
   downloadDeckJson,

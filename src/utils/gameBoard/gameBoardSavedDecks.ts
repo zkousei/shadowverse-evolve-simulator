@@ -1,11 +1,11 @@
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
 import { getDeckValidationMessages, sanitizeImportedDeckState } from '../deckBuilder/deckBuilderRules';
-import { restoreSavedDeckToSnapshot, type SavedDeckRecordV1 } from '../deckStorage';
+import { restoreSavedDeckToSnapshot, type SavedDeckRecordV1 } from '../deck/deckStorage';
 import {
   formatSavedDeckCountSummary,
   formatSavedDeckRuleSummary,
   type SavedDeckPresentationTranslator,
-} from '../savedDeckPresentation';
+} from '../deck/savedDeckPresentation';
 
 export type LegalSavedDeckOption = {
   deck: SavedDeckRecordV1;

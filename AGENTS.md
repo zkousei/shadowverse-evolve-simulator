@@ -40,7 +40,7 @@ automated test as soon as the behavior becomes clear.
 ## Where Tests Should Go
 
 - Pure card movement and zone rules:
-  - `src/utils/cardLogic.test.ts`
+  - `src/utils/card/cardLogic.test.ts`
 - Reducer event handling, guards, no-op behavior, undo/turn rules:
   - `src/utils/gameBoard/gameSyncReducer.test.ts`
 - Lower-level P2P, reconnect, snapshot, saved-session, and shared UI effect rules:
@@ -84,7 +84,7 @@ automated test as soon as the behavior becomes clear.
   - `tools/official_cards/*_test.py` — official card HTML parsing
   - `tools/svestats_preview/*_test.py` — external source, conversion, and synchronization
   - `tools/python_entrypoints_test.py` — module entry points, I/O paths, and exit codes
-  - `src/utils/cardMetadataParity.test.ts` — Python/application classification parity
+  - `src/utils/card/cardMetadataParity.test.ts` — Python/application classification parity
   - Run `npm run test:python`; keep package `__init__.py` files so discovery includes nested tests.
 
 Choose the lowest-level test that can fully express the behavior.

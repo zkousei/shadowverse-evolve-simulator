@@ -4,7 +4,7 @@ import GameBoardCardInspector from './GameBoardCardInspector';
 import type {
   CardDetail,
   CardDetailPresentation,
-} from '../../utils/cardDetails';
+} from '../../utils/card/cardDetails';
 
 type GameBoardCardInspectorSectionProps = {
   selectedInspectorCard: CardInstance | null;

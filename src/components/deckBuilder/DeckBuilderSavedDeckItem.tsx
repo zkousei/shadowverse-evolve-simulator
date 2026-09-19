@@ -1,8 +1,8 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatSavedDeckUpdatedAt } from '../../utils/deckBuilder/deckBuilderDisplay';
-import { formatSavedDeckCountSummary, formatSavedDeckRuleSummary } from '../../utils/savedDeckPresentation';
-import type { SavedDeckRecordV1 } from '../../utils/deckStorage';
+import { formatSavedDeckCountSummary, formatSavedDeckRuleSummary } from '../../utils/deck/savedDeckPresentation';
+import type { SavedDeckRecordV1 } from '../../utils/deck/deckStorage';
 
 type DeckBuilderSavedDeckItemProps = {
   savedDeck: SavedDeckRecordV1;

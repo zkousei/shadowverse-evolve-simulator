@@ -5,7 +5,7 @@ import DeckBuilderMyDecksToolbar from './DeckBuilderMyDecksToolbar';
 import DeckBuilderSavedDeckItem from './DeckBuilderSavedDeckItem';
 
 import type { FilteredSavedDeckEntry, SavedDeckSelectionUiState } from '../../utils/deckBuilder/deckBuilderSelections';
-import type { SavedDeckRecordV1 } from '../../utils/deckStorage';
+import type { SavedDeckRecordV1 } from '../../utils/deck/deckStorage';
 
 const sampleSavedDeck: SavedDeckRecordV1 = {
   schemaVersion: 1,

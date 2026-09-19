@@ -1,6 +1,6 @@
 import React from 'react';
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
-import type { SavedDeckRecordV1 } from '../../utils/deckStorage';
+import type { SavedDeckRecordV1 } from '../../utils/deck/deckStorage';
 import {
   type DeckBuilderMyDecksUiStatePatch,
   buildClearedSavedDeckSelectionUiState,

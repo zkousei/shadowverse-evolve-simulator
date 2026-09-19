@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import type { PlayerRole, SyncState } from '../../types/game';
 import type { SharedUiEffect } from '../../types/sync';
 import type { CardInstance } from '../../components/Card';
-import * as CardLogic from '../../utils/cardLogic';
+import * as CardLogic from '../../utils/card/cardLogic';
 import type { DispatchableGameSyncEvent } from './useGameBoardLogic';
 import { canLookAtTopDeck } from '../../utils/gameBoard/gameBoardInteraction';
 import { buildHandRevealEffect, buildSelectedHandRevealEffect } from '../../utils/gameBoard/cardReveal';

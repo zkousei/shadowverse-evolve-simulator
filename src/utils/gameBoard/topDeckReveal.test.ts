@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { CardInstance } from '../../components/Card';
 import { buildTopDeckRevealEffect } from './topDeckReveal';
-import type { TopDeckResult } from '../cardLogic';
+import type { TopDeckResult } from '../card/cardLogic';
 
 const createCard = (id: string): CardInstance => ({
   id,

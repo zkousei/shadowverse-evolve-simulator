@@ -20,7 +20,7 @@ DeckBuilder の枚数制限は、現在 3 層で決まります。
 
 - カード固有特例: [`../src/data/intrinsicDeckExceptions.ts`](../src/data/intrinsicDeckExceptions.ts)
 - 禁止 / 制限: [`../src/data/policyRestrictions.ts`](../src/data/policyRestrictions.ts)
-- 最終判定ロジック: [`../src/utils/deckRestrictionRules.ts`](../src/utils/deckRestrictionRules.ts)
+- 最終判定ロジック: [`../src/utils/deck/deckRestrictionRules.ts`](../src/utils/deck/deckRestrictionRules.ts)
 - DeckBuilder への適用: [`../src/utils/deckBuilder/deckBuilderRules.ts`](../src/utils/deckBuilder/deckBuilderRules.ts)
 
 ## 判定キーの考え方

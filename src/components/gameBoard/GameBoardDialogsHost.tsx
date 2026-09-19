@@ -3,7 +3,7 @@ import type { CardInstance } from '../Card';
 import GameBoardEvolveAutoAttachDialog from './GameBoardEvolveAutoAttachDialog';
 import GameBoardSearchShuffleConfirmDialog from './GameBoardSearchShuffleConfirmDialog';
 import GameBoardSavedDeckPickerDialog from './GameBoardSavedDeckPickerDialog';
-import type { CardDetailLookup } from '../../utils/cardDetails';
+import type { CardDetailLookup } from '../../utils/card/cardDetails';
 import type { LegalSavedDeckOption } from '../../utils/gameBoard/gameBoardSavedDecks';
 
 type EvolveAutoAttachSelection = {

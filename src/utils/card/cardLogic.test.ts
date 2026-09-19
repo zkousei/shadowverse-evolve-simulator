@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as CardLogic from './cardLogic';
-import type { CardInstance } from '../components/Card';
+import type { CardInstance } from '../../components/Card';
 
 const createMockCard = (id: string, zone: string, owner: 'host' | 'guest' = 'host'): CardInstance => ({
   id,

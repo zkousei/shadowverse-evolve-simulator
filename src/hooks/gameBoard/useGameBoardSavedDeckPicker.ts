@@ -2,8 +2,8 @@ import React from 'react';
 import type { ImportableDeckData } from '../../utils/gameBoard/gameBoardDeckActions';
 import { canImportDeck } from '../../utils/gameBoard/gameRules';
 import { buildLegalSavedDeckOptions, type LegalSavedDeckOption } from '../../utils/gameBoard/gameBoardSavedDecks';
-import { listSavedDecks } from '../../utils/deckStorage';
-import { loadCardCatalog } from '../../utils/cardCatalog';
+import { listSavedDecks } from '../../utils/deck/deckStorage';
+import { loadCardCatalog } from '../../utils/card/cardCatalog';
 import { buildSavedDeckPickerViewModel } from './gameBoardDialogViewModel';
 import type { PlayerRole, SyncState } from '../../types/game';
 

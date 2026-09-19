@@ -4,7 +4,7 @@ import { Plus } from 'lucide-react';
 import CardArtwork from '../CardArtwork';
 import { getBaseCardType } from '../../models/cardClassification';
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
-import type { CardDetail } from '../../utils/cardDetails';
+import type { CardDetail } from '../../utils/card/cardDetails';
 import type { DeckTargetSection } from '../../utils/deckBuilder/deckBuilderRules';
 
 const ADD_ACTIONS: Record<

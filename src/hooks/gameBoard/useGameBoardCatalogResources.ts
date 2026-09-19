@@ -1,9 +1,9 @@
 import React from 'react';
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
-import { loadCardCatalog } from '../../utils/cardCatalog';
+import { loadCardCatalog } from '../../utils/card/cardCatalog';
 import { buildGameBoardCatalogResources } from '../../utils/gameBoard/gameBoardCatalog';
-import type { CardStatLookup } from '../../utils/cardStats';
-import type { CardDetailLookup } from '../../utils/cardDetails';
+import type { CardStatLookup } from '../../utils/card/cardStats';
+import type { CardDetailLookup } from '../../utils/card/cardDetails';
 import type { EvolveAutoAttachResolver } from '../../utils/gameBoard/evolveAutoAttach';
 import type { FieldLinkAutoAttachResolver } from '../../utils/gameBoard/fieldLinkAutoAttach';
 

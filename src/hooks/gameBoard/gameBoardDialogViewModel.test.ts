@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { buildSavedDeckPickerViewModel, buildTokenSpawnViewModel } from './gameBoardDialogViewModel';
 import type { LegalSavedDeckOption } from '../../utils/gameBoard/gameBoardSavedDecks';
-import type { SavedDeckRecordV1 } from '../../utils/deckStorage';
+import type { SavedDeckRecordV1 } from '../../utils/deck/deckStorage';
 import type { TokenOption } from '../../types/game';
 
 vi.mock('../../utils/gameBoard/gameBoardPresentation', () => ({

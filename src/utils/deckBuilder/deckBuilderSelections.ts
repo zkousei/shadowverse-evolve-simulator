@@ -1,6 +1,6 @@
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
 import { getDeckValidationMessages, sanitizeImportedDeckState } from './deckBuilderRules';
-import { restoreSavedDeckToSnapshot, type SavedDeckRecordV1 } from '../deckStorage';
+import { restoreSavedDeckToSnapshot, type SavedDeckRecordV1 } from '../deck/deckStorage';
 
 export type FilteredSavedDeckEntry = {
   savedDeck: SavedDeckRecordV1;

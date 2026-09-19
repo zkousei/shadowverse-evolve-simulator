@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Eye, Play, PenTool, Sword, Users } from 'lucide-react';
-import { isDummyCardArtEnabled } from '../utils/cardArtMode';
+import { isDummyCardArtEnabled } from '../utils/card/cardArtMode';
 import { generateRoomCode } from '../utils/roomCode';
 
 const APP_VERSION = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '0.0.0';

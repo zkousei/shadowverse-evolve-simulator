@@ -7,7 +7,7 @@ import {
   buildCardDetailPresentation,
   formatAbilityText,
   type CardDetail,
-} from '../../utils/cardDetails';
+} from '../../utils/card/cardDetails';
 import { parseNullableStat } from '../../utils/deckBuilder/deckBuilderDisplay';
 
 type DeckBuilderPreviewModalProps = {

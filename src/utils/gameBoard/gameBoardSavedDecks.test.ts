@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
-import type { SavedDeckRecordV1 } from '../deckStorage';
+import type { SavedDeckRecordV1 } from '../deck/deckStorage';
 import { buildLegalSavedDeckOptions } from './gameBoardSavedDecks';
 
 const t = (key: string, params?: Record<string, string | number>): string => {

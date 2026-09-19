@@ -1,4 +1,4 @@
-import { getBaseCardType, type BaseCardType } from '../models/cardClassification';
+import { getBaseCardType, type BaseCardType } from '../../models/cardClassification';
 
 export type RuntimeBaseCardType = BaseCardType;
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import CardArtwork from '../CardArtwork';
-import type { CardDetailLookup } from '../../utils/cardDetails';
+import type { CardDetailLookup } from '../../utils/card/cardDetails';
 import type { PublicCardView } from '../../types/sync';
 
 type RevealedCardsOverlay = {

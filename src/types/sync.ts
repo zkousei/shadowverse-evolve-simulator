@@ -1,7 +1,7 @@
 import type { CardInstance } from '../components/Card';
 import type { PlayerRole, SyncState, TokenOption } from './game';
-import type { TopDeckResult } from '../utils/cardLogic';
-import type { CardFaceSide } from '../utils/cardDetails';
+import type { TopDeckResult } from '../utils/card/cardLogic';
+import type { CardFaceSide } from '../utils/card/cardDetails';
 
 export interface PublicCardView {
   cardId: string;

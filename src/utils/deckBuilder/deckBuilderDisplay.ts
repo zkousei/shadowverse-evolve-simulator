@@ -1,6 +1,6 @@
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
 import { BASE_CARD_TYPE_VALUES, getBaseCardType, type BaseCardType } from '../../models/cardClassification';
-import { DEFAULT_DECK_NAME } from '../deckStorage';
+import { DEFAULT_DECK_NAME } from '../deck/deckStorage';
 
 export const DECK_SORT_VALUES = ['added', 'cost', 'id'] as const;
 export type DeckSortMode = typeof DECK_SORT_VALUES[number];
