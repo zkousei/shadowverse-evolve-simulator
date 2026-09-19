@@ -1,1 +1,1848 @@
-[]
+[
+  {
+    "id": "BP22-001",
+    "name": "ブリリアントフェアリー",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-001.png",
+    "class": "エルフ",
+    "type": "フォロワー",
+    "subtype": "妖精",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "LG",
+    "ability_text": "これが場にいる限り、自分の場の妖精・トークン・フォロワーすべては【疾走】を持つ。\n【起動】コスト0：相手の場のフォロワー1体を選ぶ。それにXダメージ。Xは「このターン中に自分がプレイしたカードの枚数」である。この能力は1ターンに1回使える。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "3",
+    "atk": "3",
+    "hp": "4"
+  },
+  {
+    "id": "BP22-005",
+    "name": "フラワーフォックス",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-005.jpg",
+    "class": "エルフ",
+    "type": "フォロワー",
+    "subtype": "植物族・獣",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "GR",
+    "ability_text": "これをプレイする際、自分の場に『ブリリアントフェアリー』がいるなら、コストを-1する。\n【進化】コスト1：これは進化する。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "1",
+    "atk": "1",
+    "hp": "1",
+    "related_cards": [
+      {
+        "id": "BP22-006",
+        "name": "フラワーフォックス"
+      }
+    ]
+  },
+  {
+    "id": "BP22-006",
+    "name": "フラワーフォックス",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-006.jpg",
+    "class": "エルフ",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "植物族・獣",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "rarity": "GR",
+    "ability_text": "【進化時】『フェアリーウィスプ』1枚をEXエリアに置く。自分の場に『ブリリアントフェアリー』がいるなら、自分のEXエリアの妖精・トークン・フォロワーすべては攻撃力+1/体力+1する。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "-",
+    "atk": "2",
+    "hp": "2",
+    "related_cards": [
+      {
+        "id": "BP22-005",
+        "name": "フラワーフォックス"
+      }
+    ]
+  },
+  {
+    "id": "BP22-007",
+    "name": "アイヴィーキング",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-007.png",
+    "class": "エルフ",
+    "type": "フォロワー",
+    "subtype": "植物族",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "GR",
+    "ability_text": "これをプレイする際、コストを-Xする。Xは「自分のEXエリアの妖精・カードの枚数」である。\n【ファンファーレ】相手の場のフォロワー1体を選ぶ。それを破壊する。2枚引く。自分の手札1枚を捨てる。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "7",
+    "atk": "4",
+    "hp": "4"
+  },
+  {
+    "id": "BP22-008",
+    "name": "ブラストフェアリー",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-008.png",
+    "class": "エルフ",
+    "type": "フォロワー",
+    "subtype": "妖精・キラー",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "GR",
+    "ability_text": "【ファンファーレ】相手の場のフォロワー1体を選ぶ。それに「自分のEXエリアの妖精・カードの枚数」と同じダメージ。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "1",
+    "atk": "1",
+    "hp": "1"
+  },
+  {
+    "id": "BP22-009",
+    "name": "清き泉のエルフプリンセスメイジ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-009.jpg",
+    "class": "エルフ",
+    "type": "フォロワー",
+    "subtype": "エルフ族・プリンセス",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "SR",
+    "ability_text": "【進化】コスト1：これは進化する。\n【ファンファーレ】『フェアリー』2枚をEXエリアに置く。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "2",
+    "atk": "2",
+    "hp": "2",
+    "related_cards": [
+      {
+        "id": "BP01-T03",
+        "name": "フェアリー"
+      },
+      {
+        "id": "BP22-010",
+        "name": "清き泉のエルフプリンセスメイジ"
+      }
+    ]
+  },
+  {
+    "id": "BP22-010",
+    "name": "清き泉のエルフプリンセスメイジ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-010.jpg",
+    "class": "エルフ",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "エルフ族・プリンセス",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "rarity": "SR",
+    "ability_text": "【進化時】自分のデッキの上4枚を見る。その中から、妖精・カードかエルフ族・カード1枚を公開して手札に加えてよい。残りを好きな順にデッキの下に置く。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "-",
+    "atk": "3",
+    "hp": "3",
+    "related_cards": [
+      {
+        "id": "BP22-009",
+        "name": "清き泉のエルフプリンセスメイジ"
+      }
+    ]
+  },
+  {
+    "id": "BP22-011",
+    "name": "アクアフェアリー",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-011.jpg",
+    "class": "エルフ",
+    "type": "フォロワー",
+    "subtype": "妖精",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "SR",
+    "ability_text": "【ファンファーレ】『フェアリー』1枚をEXエリアに置く。自分のEXエリアの妖精・カードが5枚なら、自分のリーダーは体力+1する。1枚引く。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "2",
+    "atk": "2",
+    "hp": "1",
+    "related_cards": [
+      {
+        "id": "BP01-T03",
+        "name": "フェアリー"
+      }
+    ]
+  },
+  {
+    "id": "BP22-019",
+    "name": "ビクトリーブレイダー",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-019.jpg",
+    "class": "ロイヤル",
+    "type": "フォロワー",
+    "subtype": "指揮官",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "LG",
+    "ability_text": "【突進】【指定攻撃】\n自分のターンごとに10回、これが交戦ダメージを与えたとき、これをスタンドする。\n【攻撃時】これは体力+1する。自分のPPを1回復する。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "6",
+    "atk": "4",
+    "hp": "8"
+  },
+  {
+    "id": "BP22-021",
+    "name": "千金武装の大参謀・アルメリゼ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-021.png",
+    "class": "ロイヤル",
+    "type": "フォロワー",
+    "subtype": "指揮官・貴族",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "LG",
+    "ability_text": "【進化】コスト1：これは進化する。\n【ファンファーレ】『輝く金貨』1枚をEXエリアに置く。自分のリーダーは体力+2する。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "2",
+    "atk": "2",
+    "hp": "2",
+    "related_cards": [
+      {
+        "id": "BP14-T02",
+        "name": "輝く金貨"
+      },
+      {
+        "id": "BP22-022",
+        "name": "千金武装の大参謀・アルメリゼ"
+      }
+    ]
+  },
+  {
+    "id": "BP22-022",
+    "name": "千金武装の大参謀・アルメリゼ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-022.png",
+    "class": "ロイヤル",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "指揮官・貴族",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "rarity": "LG",
+    "ability_text": "【超進化時】これは「自分のEXエリアに『輝く金貨』が置かれたとき、相手のリーダーすべてと相手の場のフォロワーすべてに1ダメージ」を持つ。『輝く金貨』1枚をEXエリアに置く。\n【起動】EXエリアの『輝く金貨』2枚を消滅：下記から1つチョイスする。【1】相手の場のフォロワー1体を選ぶ。それに3ダメージ。【2】2枚引く。自分の手札1枚をデッキの下に置く。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "-",
+    "atk": "3",
+    "hp": "3",
+    "related_cards": [
+      {
+        "id": "BP14-T02",
+        "name": "輝く金貨"
+      },
+      {
+        "id": "BP22-021",
+        "name": "千金武装の大参謀・アルメリゼ"
+      }
+    ]
+  },
+  {
+    "id": "BP22-023",
+    "name": "アサルトナイト",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-023.jpg",
+    "class": "ロイヤル",
+    "type": "フォロワー",
+    "subtype": "兵士",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "GR",
+    "ability_text": "【進化】コスト2：これは進化する。\n【ファンファーレ】自分の場に『ビクトリーブレイダー』がいるなら、これは進化する。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "1",
+    "atk": "2",
+    "hp": "2",
+    "related_cards": [
+      {
+        "id": "BP22-019",
+        "name": "ビクトリーブレイダー"
+      },
+      {
+        "id": "BP22-024",
+        "name": "アサルトナイト"
+      }
+    ]
+  },
+  {
+    "id": "BP22-024",
+    "name": "アサルトナイト",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-024.jpg",
+    "class": "ロイヤル",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "兵士",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "rarity": "GR",
+    "ability_text": "【指定攻撃】\n【進化時】自分の場のフォロワー1体を選ぶ。それはこのターン、「これは交戦ダメージを受けない」を持つ。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "-",
+    "atk": "3",
+    "hp": "3",
+    "related_cards": [
+      {
+        "id": "BP22-023",
+        "name": "アサルトナイト"
+      }
+    ]
+  },
+  {
+    "id": "BP22-025",
+    "name": "ファングスレイヤー",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-025.jpg",
+    "class": "ロイヤル",
+    "type": "フォロワー",
+    "subtype": "兵士",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "GR",
+    "ability_text": "【突進】【指定攻撃】【必殺】\n自分のターン中、相手のフォロワーが場から墓場に置かれたとき、それのリーダーに「それの攻撃力」と同じダメージ。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "8",
+    "atk": "3",
+    "hp": "9"
+  },
+  {
+    "id": "BP22-027",
+    "name": "アックスパイレーツ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-027.jpg",
+    "class": "ロイヤル",
+    "type": "フォロワー",
+    "subtype": "盗賊",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "SR",
+    "ability_text": "【進化】コスト1：これは進化する。\n【ファンファーレ】自分の場に指揮官・盗賊・フォロワーがいるなら、これは進化する。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "3",
+    "atk": "2",
+    "hp": "3",
+    "related_cards": [
+      {
+        "id": "BP22-028",
+        "name": "アックスパイレーツ"
+      }
+    ]
+  },
+  {
+    "id": "BP22-028",
+    "name": "アックスパイレーツ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-028.jpg",
+    "class": "ロイヤル",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "盗賊",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "rarity": "SR",
+    "ability_text": "【進化時】『ヴァイキング』1体を場に出す。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "-",
+    "atk": "3",
+    "hp": "4",
+    "related_cards": [
+      {
+        "id": "BP01-T06",
+        "name": "ヴァイキング"
+      },
+      {
+        "id": "BP22-027",
+        "name": "アックスパイレーツ"
+      }
+    ]
+  },
+  {
+    "id": "BP22-030",
+    "name": "シールドフォーメーション",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-030.jpg",
+    "class": "ロイヤル",
+    "type": "スペル",
+    "subtype": "兵士",
+    "card_kind_normalized": "spell",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "SR",
+    "ability_text": "『スティールナイト』1枚と『シールドガーディアン』1枚と『ナイト』1枚をEXエリアに置く。自分のEXエリアのカードが5枚なら、このターン、次に自分がロイヤルトークン・フォロワーをプレイする際、コストを-2する。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "1",
+    "related_cards": [
+      {
+        "id": "BP01-T05",
+        "name": "ナイト"
+      },
+      {
+        "id": "BP01-T07",
+        "name": "スティールナイト"
+      },
+      {
+        "id": "BP02-T02",
+        "name": "シールドガーディアン"
+      }
+    ]
+  },
+  {
+    "id": "BP22-037",
+    "name": "クロノウィッチ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-037.webp",
+    "class": "ウィッチ",
+    "type": "フォロワー",
+    "subtype": "魔法使い",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "LG",
+    "ability_text": "【進化】コスト1：これは進化する。\n自分のターン中、自分の消滅領域にカードが置かれたとき、相手の場のフォロワー1体を選ぶ。それに1ダメージ。\n【ファンファーレ】自分の消滅領域が10枚以上なら、このターン、次に自分の場にウィッチ・フォロワーが1体以上出たとき、その中の1体は進化する。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "5",
+    "atk": "4",
+    "hp": "4",
+    "related_cards": [
+      {
+        "id": "BP22-038",
+        "name": "クロノウィッチ"
+      }
+    ]
+  },
+  {
+    "id": "BP22-038",
+    "name": "クロノウィッチ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-038.webp",
+    "class": "ウィッチ",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "魔法使い",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "rarity": "LG",
+    "ability_text": "自分のターン中、自分の消滅領域にカードが置かれたとき、相手の場のフォロワー1体を選ぶ。それに1ダメージ。\n【進化時】自分の消滅領域のウィッチ・フォロワーを元のコストの合計が4以下になるように2枚まで選ぶ。それをEXエリアに置く。このターン、それをプレイする際、コストを0にする。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "-",
+    "atk": "5",
+    "hp": "5",
+    "related_cards": [
+      {
+        "id": "BP22-037",
+        "name": "クロノウィッチ"
+      }
+    ]
+  },
+  {
+    "id": "BP22-039",
+    "name": "プレデターゴーレム",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-039.jpg",
+    "class": "ウィッチ",
+    "type": "フォロワー",
+    "subtype": "ゴーレム",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "LG",
+    "ability_text": "これをプレイする際、【土の秘術_9】：コストを1にする。\n【守護】\n【ファンファーレ】相手の場のフォロワー3体まで選ぶ。それを破壊する。相手のリーダーすべてに3ダメージ。自分のリーダーは体力+3する。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "9",
+    "atk": "6",
+    "hp": "6"
+  },
+  {
+    "id": "BP22-040",
+    "name": "巡りの大魔術師・レヴィ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-040.png",
+    "class": "ウィッチ",
+    "type": "フォロワー",
+    "subtype": "魔法使い",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "LG",
+    "ability_text": "【進化】コスト1：これは進化する。\n【ファンファーレ】【土の秘術】相手の場のフォロワー1体を選ぶ。それに5ダメージ。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "4",
+    "atk": "4",
+    "hp": "4",
+    "related_cards": [
+      {
+        "id": "BP22-041",
+        "name": "巡りの大魔術師・レヴィ"
+      }
+    ]
+  },
+  {
+    "id": "BP22-041",
+    "name": "巡りの大魔術師・レヴィ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-041.png",
+    "class": "ウィッチ",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "魔法使い",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "rarity": "LG",
+    "ability_text": "【進化時】相手のリーダー1人か相手の場のフォロワー1体を選ぶ。それに3ダメージ。\n【起動】コスト1【土の秘術】：相手のリーダー1人か相手の場のフォロワー1体を選ぶ。それに3ダメージ。この能力は1ターンに1回使える。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "-",
+    "atk": "5",
+    "hp": "5",
+    "related_cards": [
+      {
+        "id": "BP22-040",
+        "name": "巡りの大魔術師・レヴィ"
+      }
+    ]
+  },
+  {
+    "id": "BP22-042",
+    "name": "マジカルキャット",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-042.webp",
+    "class": "ウィッチ",
+    "type": "フォロワー",
+    "subtype": "魔法生物・獣",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "GR",
+    "ability_text": "【進化】コスト2：これは進化する。\n【ファンファーレ】墓場のウィッチ・カード2枚を消滅：これは進化する。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "2",
+    "atk": "2",
+    "hp": "1",
+    "related_cards": [
+      {
+        "id": "BP22-043",
+        "name": "マジカルキャット"
+      }
+    ]
+  },
+  {
+    "id": "BP22-043",
+    "name": "マジカルキャット",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-043.webp",
+    "class": "ウィッチ",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "魔法生物・獣",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "rarity": "GR",
+    "ability_text": "【指定攻撃】\n【進化時】1枚引く。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "-",
+    "atk": "3",
+    "hp": "2",
+    "related_cards": [
+      {
+        "id": "BP22-042",
+        "name": "マジカルキャット"
+      }
+    ]
+  },
+  {
+    "id": "BP22-044",
+    "name": "グレートマジシャン",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-044.jpg",
+    "class": "ウィッチ",
+    "type": "フォロワー",
+    "subtype": "魔法使い",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "GR",
+    "ability_text": "【ファンファーレ】自分の場の【スタック】を+1する。（自分の場に【スタック】を持つカードがないなら、『大地の魔片』1つを場に出し【スタック】を+する）\n【起動】これをアクト【土の秘術_3】：自分の場の【スタック】を+6する。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "2",
+    "atk": "2",
+    "hp": "3",
+    "related_cards": [
+      {
+        "id": "BP01-T10",
+        "name": "大地の魔片"
+      }
+    ]
+  },
+  {
+    "id": "BP22-045",
+    "name": "界門のホムンクルス・ラズリ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-045.jpg",
+    "class": "ウィッチ",
+    "type": "フォロワー",
+    "subtype": "超克",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "GR",
+    "ability_text": "【ファンファーレ】自分のデッキの上2枚を消滅させる。\n【起動】コスト2これをアクト：『エンシェントアーティファクト』1体と『レディアントアーティファクト』1体を場に出す。この能力は自分の消滅領域が10枚以上なら使える。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "2",
+    "atk": "2",
+    "hp": "3",
+    "related_cards": [
+      {
+        "id": "BP05-T04",
+        "name": "エンシェントアーティファクト"
+      },
+      {
+        "id": "BP22-T03",
+        "name": "レディアントアーティファクト"
+      }
+    ]
+  },
+  {
+    "id": "BP22-046",
+    "name": "フェイクウィング・エリーナ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-046.jpg",
+    "class": "ウィッチ",
+    "type": "フォロワー",
+    "subtype": "超克",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "SR",
+    "ability_text": "【進化】コスト1：これは進化する。\n【ファンファーレ】自分のデッキの上1枚を消滅させる。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "2",
+    "atk": "2",
+    "hp": "2",
+    "related_cards": [
+      {
+        "id": "BP22-047",
+        "name": "フェイクウィング・エリーナ"
+      }
+    ]
+  },
+  {
+    "id": "BP22-047",
+    "name": "フェイクウィング・エリーナ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-047.jpg",
+    "class": "ウィッチ",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "超克",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "rarity": "SR",
+    "ability_text": "【進化時】『エンシェントアーティファクト』1体を場に出す。自分の消滅領域が10枚以上なら、代わりに『エッジアーティファクト』1体を場に出す。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "-",
+    "atk": "3",
+    "hp": "3",
+    "related_cards": [
+      {
+        "id": "BP05-T04",
+        "name": "エンシェントアーティファクト"
+      },
+      {
+        "id": "BP13-T05",
+        "name": "エッジアーティファクト"
+      },
+      {
+        "id": "BP22-046",
+        "name": "フェイクウィング・エリーナ"
+      }
+    ]
+  },
+  {
+    "id": "BP22-049",
+    "name": "暗獄の遣い・ジャスパー",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-049.jpg",
+    "class": "ウィッチ",
+    "type": "フォロワー",
+    "subtype": "超克",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "SR",
+    "ability_text": "自分の場にゴーレム・フォロワーが出たとき、相手の場のフォロワー1体を選ぶ。それに2ダメージ。それのリーダーに1ダメージ。\n【ファンファーレ】『攻撃型ゴーレム』1枚をEXエリアに置く。\n【起動】コスト3：このターン、自分がEXエリアのゴーレム・カードをプレイする際、コストを-3する。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "3",
+    "atk": "1",
+    "hp": "5",
+    "related_cards": [
+      {
+        "id": "BP01-T08",
+        "name": "攻撃型ゴーレム"
+      }
+    ]
+  },
+  {
+    "id": "BP22-053",
+    "name": "氷結の魔獣",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-053.jpg",
+    "class": "ウィッチ",
+    "type": "フォロワー",
+    "subtype": "ゴーレム・魔法生物",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "BR",
+    "ability_text": "【突進】\n【攻撃時】『攻撃型ゴーレム』1体を場に出す。\n【ファンファーレ】相手の場のフォロワー2体まで選ぶ。それをアクトする。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "4",
+    "atk": "4",
+    "hp": "4",
+    "related_cards": [
+      {
+        "id": "BP01-T08",
+        "name": "攻撃型ゴーレム"
+      }
+    ]
+  },
+  {
+    "id": "BP22-055",
+    "name": "鏡像の召喚",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-055.jpg",
+    "class": "ウィッチ",
+    "type": "スペル",
+    "subtype": "錬金術師・ゴーレム",
+    "card_kind_normalized": "spell",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "BR",
+    "ability_text": "自分の場の元のコスト5以下のトークン・フォロワー1体を選ぶ。それと同名のトークン・フォロワー1体を場に出す。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "2"
+  },
+  {
+    "id": "BP22-056",
+    "name": "イグニスドラゴン",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-056.jpg",
+    "class": "ドラゴン",
+    "type": "フォロワー",
+    "subtype": "竜族",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "LG",
+    "ability_text": "これを自分の手札から捨てたとき、コスト2：自分のPP最大値を+1する。\n【進化】コスト1：これは進化する。\n【ファンファーレ】自分の手札が3枚以下なら、これは進化する。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "7",
+    "atk": "4",
+    "hp": "6",
+    "related_cards": [
+      {
+        "id": "BP22-057",
+        "name": "イグニスドラゴン"
+      }
+    ]
+  },
+  {
+    "id": "BP22-057",
+    "name": "イグニスドラゴン",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-057.jpg",
+    "class": "ドラゴン",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "竜族",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "rarity": "LG",
+    "ability_text": "【攻撃時】相手の場のフォロワーすべてに「これの攻撃力」と同じダメージ。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "-",
+    "atk": "5",
+    "hp": "7",
+    "related_cards": [
+      {
+        "id": "BP22-056",
+        "name": "イグニスドラゴン"
+      }
+    ]
+  },
+  {
+    "id": "BP22-059",
+    "name": "オーシャンスター・ジゼル",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-059.jpg",
+    "class": "ドラゴン",
+    "type": "フォロワー",
+    "subtype": "海洋",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "LG",
+    "ability_text": "自分の場に他の海洋・フォロワーが出たとき、それは攻撃力+1/体力+1する。\n【ファンファーレ】自分のデッキから「カード名に『ホエール』を含む海洋・フォロワー」1枚を探し、EXエリアに置く。このターン、それをプレイする際、コストを-5する。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "6",
+    "atk": "2",
+    "hp": "4"
+  },
+  {
+    "id": "BP22-060",
+    "name": "黒白の乱舞・ノール＆ブラン",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-060.jpg",
+    "class": "ドラゴン",
+    "type": "フォロワー",
+    "subtype": "ドラゴニュート",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "GR",
+    "ability_text": "【進化】コスト4：これは進化する。\n【進化】コスト1：これは進化する。この能力は自分の場に『金色の威信・リュミオール』がいるなら使える。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "1",
+    "atk": "2",
+    "hp": "2",
+    "related_cards": [
+      {
+        "id": "BP21-058",
+        "name": "金色の威信・リュミオール"
+      },
+      {
+        "id": "BP22-061",
+        "name": "黒白の乱舞・ノール＆ブラン"
+      }
+    ]
+  },
+  {
+    "id": "BP22-061",
+    "name": "黒白の乱舞・ノール＆ブラン",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-061.jpg",
+    "class": "ドラゴン",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "ドラゴニュート",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "rarity": "GR",
+    "ability_text": "【守護】\nこれがアクト状態である限り、これは能力ダメージを受けない。これは能力によって破壊されない。（交戦ダメージでは破壊される）",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "-",
+    "atk": "4",
+    "hp": "4",
+    "related_cards": [
+      {
+        "id": "BP22-060",
+        "name": "黒白の乱舞・ノール＆ブラン"
+      }
+    ]
+  },
+  {
+    "id": "BP22-062",
+    "name": "ジュエルドラゴン",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-062.png",
+    "class": "ドラゴン",
+    "type": "フォロワー",
+    "subtype": "竜族",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "GR",
+    "ability_text": "これが場にいる限り、自分の場の『イグニスドラゴン』すべては【指定攻撃】を持つ。\n【ファンファーレ】下記から2つまでチョイスする。【1】自分の墓場の『貫く咆哮』1枚を選ぶ。それをEXエリアに置く。【2】コスト5：自分の墓場の『イグニスドラゴン』1枚を選ぶ。それを場に出す。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "1",
+    "atk": "1",
+    "hp": "1",
+    "related_cards": [
+      {
+        "id": "BP22-056",
+        "name": "イグニスドラゴン"
+      },
+      {
+        "id": "BP22-067",
+        "name": "貫く咆哮"
+      }
+    ]
+  },
+  {
+    "id": "BP22-063",
+    "name": "紅炎の竜爪・エチカ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-063.jpg",
+    "class": "ドラゴン",
+    "type": "フォロワー",
+    "subtype": "ドラゴニュート",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "GR",
+    "ability_text": "【突進】\n【攻撃時】相手の場のフォロワー1体を選ぶ。それに「自分のEXエリアのドラゴニュート・カードの枚数」と同じダメージ。\n【ファンファーレ】自分のデッキの上2枚を見る。その中から、ドラゴニュート・フォロワー1枚をEXエリアに置いてよい。残りを好きな順にデッキの下に置く。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "2",
+    "atk": "2",
+    "hp": "2"
+  },
+  {
+    "id": "BP22-064",
+    "name": "珊瑚礁の精霊",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-064.jpg",
+    "class": "ドラゴン",
+    "type": "フォロワー",
+    "subtype": "海洋",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "SR",
+    "ability_text": "【進化】コスト1：これは進化する。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "3",
+    "atk": "3",
+    "hp": "3",
+    "related_cards": [
+      {
+        "id": "BP22-065",
+        "name": "珊瑚礁の精霊"
+      }
+    ]
+  },
+  {
+    "id": "BP22-065",
+    "name": "珊瑚礁の精霊",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-065.jpg",
+    "class": "ドラゴン",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "海洋",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "rarity": "SR",
+    "ability_text": "【進化時】手札の海洋・カード1枚をEXエリアに置く：相手の場のフォロワー1体を選ぶ。それに4ダメージ。自分のリーダーは体力+1する。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "-",
+    "atk": "4",
+    "hp": "4",
+    "related_cards": [
+      {
+        "id": "BP22-064",
+        "name": "珊瑚礁の精霊"
+      }
+    ]
+  },
+  {
+    "id": "BP22-067",
+    "name": "貫く咆哮",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-067.png",
+    "class": "ドラゴン",
+    "type": "スペル",
+    "subtype": "竜族",
+    "card_kind_normalized": "spell",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "SR",
+    "ability_text": "これをプレイする際、自分の場に『イグニスドラゴン』がいるなら、コストを-7する。\n相手のリーダーすべてに2ダメージ。2枚引く。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "7",
+    "related_cards": [
+      {
+        "id": "BP22-056",
+        "name": "イグニスドラゴン"
+      }
+    ]
+  },
+  {
+    "id": "BP22-074",
+    "name": "スケルトンレイダー",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-074.png",
+    "class": "ナイトメア",
+    "type": "フォロワー",
+    "subtype": "死者",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "LG",
+    "ability_text": "自分の墓場の元のコスト2のカードが9枚以下である限り、これは相手を攻撃できない。\n【ファンファーレ】自分の墓場の元のコスト2のカード10枚につき、下記から1つまでチョイスする。【1】相手の場のフォロワー1体を選ぶ。それを破壊する。相手のリーダーすべてと相手の場のフォロワーすべてに1ダメージ。【2】これは【疾走】を持つ。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "2",
+    "atk": "4",
+    "hp": "4"
+  },
+  {
+    "id": "BP22-075",
+    "name": "ダークエンペラー",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-075.jpg",
+    "class": "ナイトメア",
+    "type": "フォロワー",
+    "subtype": "魔界",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "LG",
+    "ability_text": "【進化】コスト1：これは進化する。\n【オーラ】\n【ファンファーレ】自分のリーダーの体力が10以下なら、これは進化する。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "7",
+    "atk": "4",
+    "hp": "6",
+    "related_cards": [
+      {
+        "id": "BP22-076",
+        "name": "ダークエンペラー"
+      }
+    ]
+  },
+  {
+    "id": "BP22-076",
+    "name": "ダークエンペラー",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-076.jpg",
+    "class": "ナイトメア",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "魔界",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "rarity": "LG",
+    "ability_text": "【オーラ】\n【進化時】相手の場のフォロワー2体まで選ぶ。それを破壊する。自分のリーダーは体力+5する。\n【ラストワード】相手のリーダーすべてに5ダメージ。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "-",
+    "atk": "5",
+    "hp": "7",
+    "related_cards": [
+      {
+        "id": "BP22-075",
+        "name": "ダークエンペラー"
+      }
+    ]
+  },
+  {
+    "id": "BP22-077",
+    "name": "ケルヌンノス",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-077.png",
+    "class": "ナイトメア",
+    "type": "フォロワー",
+    "subtype": "魔界",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "LG",
+    "ability_text": "【ファンファーレ】手札の元のコスト2のカード1枚を捨てる：1枚引く。\n【起動】コスト4これをアクト：自分の墓場の「これと同名を除く元のコスト2のナイトメアフォロワー」をカード名が異なるように2枚まで選ぶ。それを場に出す。この能力は自分の墓場の元のコスト2のカードが10枚以上なら使える。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "2",
+    "atk": "2",
+    "hp": "3"
+  },
+  {
+    "id": "BP22-078",
+    "name": "カースメーカー・スージー",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-078.jpg",
+    "class": "ナイトメア",
+    "type": "フォロワー",
+    "subtype": "魔界",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "GR",
+    "ability_text": "【進化】コスト1：これは進化する。この能力は自分の墓場の元のコスト2のカードが10枚以上なら使える。\n【ファンファーレ】自分のデッキの上2枚を墓場に置く。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "2",
+    "atk": "2",
+    "hp": "2",
+    "related_cards": [
+      {
+        "id": "BP22-079",
+        "name": "カースメーカー・スージー"
+      }
+    ]
+  },
+  {
+    "id": "BP22-079",
+    "name": "カースメーカー・スージー",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-079.jpg",
+    "class": "ナイトメア",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "魔界",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "rarity": "GR",
+    "ability_text": "【進化時】相手の場のフォロワー1体を選ぶ。それに6ダメージ。自分のリーダーは体力+2する。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "-",
+    "atk": "3",
+    "hp": "3",
+    "related_cards": [
+      {
+        "id": "BP22-078",
+        "name": "カースメーカー・スージー"
+      }
+    ]
+  },
+  {
+    "id": "BP22-080",
+    "name": "ゾンビドッグ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-080.jpg",
+    "class": "ナイトメア",
+    "type": "フォロワー",
+    "subtype": "死者・獣",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "GR",
+    "ability_text": "【突進】\n【攻撃時】自分の墓場の『ゾンビドッグ』が2枚なら、これは攻撃力+2/体力+2する。相手のリーダーすべてに2ダメージ。\n【ラストワード】自分のデッキから『ゾンビドッグ』1枚を探し、EXエリアに置く。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "2",
+    "atk": "3",
+    "hp": "2"
+  },
+  {
+    "id": "BP22-082",
+    "name": "スカーレットヴァンパイア",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-082.jpg",
+    "class": "ナイトメア",
+    "type": "フォロワー",
+    "subtype": "吸血鬼",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "SR",
+    "ability_text": "【進化】コスト1：これは進化する。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "5",
+    "atk": "3",
+    "hp": "4",
+    "related_cards": [
+      {
+        "id": "BP22-083",
+        "name": "スカーレットヴァンパイア"
+      }
+    ]
+  },
+  {
+    "id": "BP22-083",
+    "name": "スカーレットヴァンパイア",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-083.jpg",
+    "class": "ナイトメア",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "吸血鬼",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "rarity": "SR",
+    "ability_text": "【進化時】相手のリーダーすべてと相手の場のフォロワーすべてに2ダメージ。自分の墓場の吸血鬼・カードが5枚以上なら、代わりに4ダメージ。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "-",
+    "atk": "4",
+    "hp": "5",
+    "related_cards": [
+      {
+        "id": "BP22-082",
+        "name": "スカーレットヴァンパイア"
+      }
+    ]
+  },
+  {
+    "id": "BP22-084",
+    "name": "デスキャットリーパー",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-084.jpg",
+    "class": "ナイトメア",
+    "type": "フォロワー",
+    "subtype": "魔界・獣",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "SR",
+    "ability_text": "【ファンファーレ】場の他のフォロワー1体を墓場に置く：相手の場のフォロワー1体を選ぶ。それに5ダメージ。それのリーダーに1ダメージ。自分のリーダーは体力+1する。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "2",
+    "atk": "2",
+    "hp": "2"
+  },
+  {
+    "id": "BP22-085",
+    "name": "フギン＆ムニン",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-085.jpg",
+    "class": "ナイトメア",
+    "type": "フォロワー",
+    "subtype": "魔界",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "SR",
+    "ability_text": "【ファンファーレ】下記から1つチョイスする。【1】これは攻撃力+1する。【2】これは【疾走】を持つ。【3】コスト1：自分のデッキから『フギン＆ムニン』1枚を探し、場に出す。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "2",
+    "atk": "2",
+    "hp": "2"
+  },
+  {
+    "id": "BP22-096",
+    "name": "セイクリッドレオ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-096.jpg",
+    "class": "ビショップ",
+    "type": "フォロワー",
+    "subtype": "光輝・獣",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "GR",
+    "ability_text": "【進化】コスト1場のアミュレット1つを墓場に置く：これは進化する。\n【指定攻撃】【必殺】\nこれは交戦ダメージを受けない。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "5",
+    "atk": "0",
+    "hp": "5",
+    "related_cards": [
+      {
+        "id": "BP22-097",
+        "name": "セイクリッドレオ"
+      }
+    ]
+  },
+  {
+    "id": "BP22-097",
+    "name": "セイクリッドレオ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-097.jpg",
+    "class": "ビショップ",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "光輝・獣",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "rarity": "GR",
+    "ability_text": "【指定攻撃】【必殺】\nこれは交戦ダメージを受けない。\n【攻撃時】2枚引く。自分の手札1枚を捨てる。フォロワーを捨てたなら、相手のリーダーすべてに3ダメージ。アミュレットを捨てたなら、相手の場のフォロワーすべてに3ダメージ。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "-",
+    "atk": "0",
+    "hp": "5",
+    "related_cards": [
+      {
+        "id": "BP22-096",
+        "name": "セイクリッドレオ"
+      }
+    ]
+  },
+  {
+    "id": "BP22-099",
+    "name": "天空の守護者・ガルラ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-099.webp",
+    "class": "ビショップ",
+    "type": "フォロワー",
+    "subtype": "鳥族・光輝",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "GR",
+    "ability_text": "自分の場に他の鳥族・フォロワーが出たとき、相手の場のフォロワー1体を選ぶ。それに3ダメージ。\n【起動】コスト1：『ホーリーファルコン』1体を場に出す。この能力は1ターンに1回使える。\n―――――――――――――――\n『ホーリーファルコン』ビショップ鳥族・フォロワーコスト3攻撃力2/体力2【疾走】",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "3",
+    "atk": "3",
+    "hp": "4",
+    "related_cards": [
+      {
+        "id": "BP01-T16",
+        "name": "ホーリーファルコン"
+      }
+    ]
+  },
+  {
+    "id": "BP22-100",
+    "name": "ミラクルラフター・カルミア",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-100.jpg",
+    "class": "ビショップ",
+    "type": "フォロワー",
+    "subtype": "光輝",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "SR",
+    "ability_text": "【進化】コスト4：これは進化する。\n【ファンファーレ】自分の場のカードが5枚なら、これは進化する。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "2",
+    "atk": "2",
+    "hp": "2",
+    "related_cards": [
+      {
+        "id": "BP22-101",
+        "name": "ミラクルラフター・カルミア"
+      }
+    ]
+  },
+  {
+    "id": "BP22-101",
+    "name": "ミラクルラフター・カルミア",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-101.jpg",
+    "class": "ビショップ",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "光輝",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "rarity": "SR",
+    "ability_text": "【進化時】2枚引く。自分の手札1枚を捨てる。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "-",
+    "atk": "4",
+    "hp": "4",
+    "related_cards": [
+      {
+        "id": "BP22-100",
+        "name": "ミラクルラフター・カルミア"
+      }
+    ]
+  },
+  {
+    "id": "BP22-102",
+    "name": "天昇のプリズムプリースト",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-102.webp",
+    "class": "ビショップ",
+    "type": "フォロワー",
+    "subtype": "先導・鳥族",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "SR",
+    "ability_text": "【ファンファーレ】自分の手札の元のコスト2以下のアミュレット1枚を場に出してよい。\n【起動】場のアミュレット3つをアクト：これは攻撃力+1/体力+1する。自分のリーダーは体力+2する。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "2",
+    "atk": "2",
+    "hp": "3"
+  },
+  {
+    "id": "BP22-107",
+    "name": "温情のラビットヒーラー",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-107.jpg",
+    "class": "ビショップ",
+    "type": "フォロワー",
+    "subtype": "獣",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "BR",
+    "ability_text": "【ファンファーレ】自分の場の獣・フォロワー1体を選ぶ。それは攻撃力+1/体力+1する。\n【起動】コスト4：自分の場の獣・フォロワー1体を選ぶ。それは攻撃力+4/体力+4する。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "1",
+    "atk": "1",
+    "hp": "1"
+  },
+  {
+    "id": "BP22-110",
+    "name": "ゴブリンエンペラー",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-110.jpg",
+    "class": "ニュートラル",
+    "type": "フォロワー",
+    "subtype": "ゴブリン",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "LG",
+    "ability_text": "自分の場に他のゴブリン・フォロワーが出たとき、相手の場のフォロワー1体を選ぶ。それに2ダメージ。\n【ファンファーレ】自分のデッキの上5枚を見る。その中から、ゴブリン・カードを元のコストの合計が4以下になるように2枚までEXエリアに置いてよい。残りを好きな順にデッキの下に置く。このターン、それをプレイする際、コストを0にする。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "5",
+    "atk": "3",
+    "hp": "3"
+  },
+  {
+    "id": "BP22-111",
+    "name": "安寧の降臨",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-111.jpg",
+    "class": "ニュートラル",
+    "type": "スペル",
+    "subtype": "超克",
+    "card_kind_normalized": "spell",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "LG",
+    "ability_text": "相手の場のカード1枚を選ぶ。それを破壊する。自分のSEPが0なら、『シャドウジェネラル』1体を場に出す。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "3",
+    "related_cards": [
+      {
+        "id": "BP22-T02",
+        "name": "シャドウジェネラル"
+      }
+    ]
+  },
+  {
+    "id": "BP22-112",
+    "name": "メチャカワ傭兵・フィーナ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-112.jpg",
+    "class": "ニュートラル",
+    "type": "フォロワー",
+    "subtype": "傭兵",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "GR",
+    "ability_text": "【ファンファーレ】自分のデッキの上4枚を見る。その中から、ゴブリン・カード1枚を公開して手札に加えてよい。残りを好きな順にデッキの下に置く。自分の手札の元のコスト2以下のゴブリン・フォロワー1枚を場に出してよい。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "3",
+    "atk": "2",
+    "hp": "2"
+  },
+  {
+    "id": "BP22-113",
+    "name": "ゴブリンリーダー",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-113.jpg",
+    "class": "ニュートラル",
+    "type": "フォロワー",
+    "subtype": "ゴブリン",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "SR",
+    "ability_text": "【進化】コスト1：これは進化する。\n自分の場に他のゴブリン・フォロワーが出たとき、それは攻撃力+1する。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "2",
+    "atk": "1",
+    "hp": "1",
+    "related_cards": [
+      {
+        "id": "BP22-114",
+        "name": "ゴブリンリーダー"
+      }
+    ]
+  },
+  {
+    "id": "BP22-114",
+    "name": "ゴブリンリーダー",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-114.jpg",
+    "class": "ニュートラル",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "ゴブリン",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "rarity": "SR",
+    "ability_text": "自分の場に他のゴブリン・フォロワーが出たとき、それは攻撃力+1する。\n【進化時】自分のデッキの上4枚を見る。その中から、元のコスト2以下のゴブリン・カード1枚をEXエリアに置いてよい。残りを好きな順にデッキの下に置く。このターン、それをプレイする際、コストを-2する。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "-",
+    "atk": "2",
+    "hp": "2",
+    "related_cards": [
+      {
+        "id": "BP22-113",
+        "name": "ゴブリンリーダー"
+      }
+    ]
+  },
+  {
+    "id": "BP22-116",
+    "name": "〔勝利目指して〕ハルウララ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-116.png",
+    "class": "エルフ",
+    "type": "フォロワー",
+    "subtype": "ウマ娘",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "ウマ娘 プリティーダービー",
+    "rarity": "GR",
+    "ability_text": "自分のウマ娘・カードの能力によってこれを自分の手札から捨てたとき、1枚引く。\n【食事】コスト1：これは出走する。\n【ファンファーレ】自分の場の他のウマ娘・フォロワー1体を選ぶ。それは攻撃力+1/体力+1する。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "2",
+    "atk": "1",
+    "hp": "3"
+  },
+  {
+    "id": "BP22-117",
+    "name": "〔全力疾走〕オグリキャップ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-117.jpg",
+    "class": "ドラゴン",
+    "type": "フォロワー",
+    "subtype": "ウマ娘",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "ウマ娘 プリティーダービー",
+    "rarity": "LG",
+    "ability_text": "これをプレイする際、コストを-Xする。Xは「自分の場のウマ娘・カードの枚数の2倍」である。\n【進化】コスト1：これは進化する。\n【食事】コスト1：これは出走する。\n【疾走】",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "9",
+    "atk": "2",
+    "hp": "2",
+    "related_cards": [
+      {
+        "id": "BP22-118",
+        "name": "〔全力疾走〕オグリキャップ"
+      }
+    ]
+  },
+  {
+    "id": "BP22-118",
+    "name": "〔全力疾走〕オグリキャップ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-118.jpg",
+    "class": "ドラゴン",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "ウマ娘",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "title": "ウマ娘 プリティーダービー",
+    "rarity": "LG",
+    "ability_text": "【疾走】\n【進化時】相手の場のフォロワー1体を選ぶ。それに4ダメージ。\n【超進化時】場の他のウマ娘・カードX枚をアクト：これは攻撃力+X/体力+Xする。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "-",
+    "atk": "3",
+    "hp": "3",
+    "related_cards": [
+      {
+        "id": "BP22-117",
+        "name": "〔全力疾走〕オグリキャップ"
+      }
+    ]
+  },
+  {
+    "id": "BP22-T02",
+    "name": "シャドウジェネラル",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-T02.jpg",
+    "class": "ニュートラル",
+    "type": "フォロワー・トークン",
+    "subtype": "超克",
+    "card_kind_normalized": "token_follower",
+    "deck_section": "token",
+    "is_token": true,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "ability_text": "【必殺】【守護】",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "5",
+    "atk": "2",
+    "hp": "8"
+  },
+  {
+    "id": "BP22-T03",
+    "name": "レディアントアーティファクト",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-T03.jpg",
+    "class": "ニュートラル",
+    "type": "フォロワー・トークン",
+    "subtype": "超克",
+    "card_kind_normalized": "token_follower",
+    "deck_section": "token",
+    "is_token": true,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "ability_text": "【疾走】",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "5",
+    "atk": "4",
+    "hp": "3"
+  },
+  {
+    "id": "CP05-037",
+    "name": "魔弾の射手・エッセル",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-037.png",
+    "class": "ウィッチ",
+    "type": "フォロワー",
+    "subtype": "グラブル・十天衆・火属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "LG",
+    "ability_text": "これを自分の手札から公開したとき、相手の場のフォロワー1体を選ぶ。それに1ダメージ。\n【最終上限解放可能】\nこれが上限解放したとき、相手の場のフォロワー1体を選ぶ。それに4ダメージ。\nこれが最終上限解放したとき、自分の場の元のコスト3以下のフォロワー1体を選ぶ。それは【疾走】を持つ。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "3",
+    "atk": "2",
+    "hp": "4"
+  },
+  {
+    "id": "CP05-048",
+    "name": "アルケミック・フレア",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-048.png",
+    "class": "ウィッチ",
+    "type": "スペル",
+    "subtype": "グラブル・火属性",
+    "card_kind_normalized": "spell",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "SR",
+    "ability_text": "これを自分の手札から公開したとき、『火晶のエレメント』1枚をEXエリアに置く。\n相手の場のフォロワー1体を選ぶ。それに4ダメージ。『火晶のエレメント』1枚をEXエリアに置く。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "2",
+    "related_cards": [
+      {
+        "id": "CP05-T09",
+        "name": "火晶のエレメント"
+      }
+    ]
+  },
+  {
+    "id": "CP05-051",
+    "name": "炎獄の葬送者・エルモート",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-051.png",
+    "class": "ウィッチ",
+    "type": "フォロワー",
+    "subtype": "グラブル・火属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "BR",
+    "ability_text": "これが上限解放したとき、相手のリーダーすべてに1ダメージ。\n【ファンファーレ】手札の火属性・カード3枚を公開：相手の場のフォロワー1体を選ぶ。それに3ダメージ。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "2",
+    "atk": "2",
+    "hp": "2"
+  },
+  {
+    "id": "CP05-053",
+    "name": "アルス・グローリア",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-053.png",
+    "class": "ウィッチ",
+    "type": "スペル",
+    "subtype": "グラブル・土属性・光属性・闇属性",
+    "card_kind_normalized": "spell",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "BR",
+    "ability_text": "自分のデッキの上4枚を見る。その中から、土属性・カードか光属性・カードか闇属性・カード1枚を公開して手札に加えてよい。残りを好きな順にデッキの下に置く。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "1"
+  },
+  {
+    "id": "CP05-055",
+    "name": "大いなる調停者・ゾーイ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-055.png",
+    "class": "ドラゴン",
+    "type": "フォロワー",
+    "subtype": "グラブル・光属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "LG",
+    "ability_text": "【最終上限解放可能】\nこれが上限解放したとき、相手の場のフォロワー1体を選ぶ。それに5ダメージ。自分のPP最大値を+1する。\nこれが最終上限解放したとき、コスト1：自分の場の他の元のコスト5のグラブル・フォロワーすべては攻撃力+2/体力+2する。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "5",
+    "atk": "5",
+    "hp": "5"
+  },
+  {
+    "id": "CP05-056",
+    "name": "炎の理・ウィルナス",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-056.png",
+    "class": "ドラゴン",
+    "type": "フォロワー",
+    "subtype": "グラブル・六竜・火属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "LG",
+    "ability_text": "【進化】コスト1：これは進化する。\n【ファンファーレ】自分のデッキの上1枚を見る。その中から、火属性・カード1枚を公開して手札に加えてよい。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "4",
+    "atk": "4",
+    "hp": "4",
+    "related_cards": [
+      {
+        "id": "CP05-057",
+        "name": "炎の理・ウィルナス"
+      }
+    ]
+  },
+  {
+    "id": "CP05-057",
+    "name": "炎の理・ウィルナス",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-057.png",
+    "class": "ドラゴン",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "グラブル・六竜・火属性",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "LG",
+    "ability_text": "【進化時】手札の火属性・カードX枚を公開：相手の場のフォロワー2体まで選ぶ。それにXダメージを割りふる。\n【超進化時】手札の火属性・カードX枚を公開：相手の場のフォロワー1体を選ぶ。それとそれのリーダーにXダメージ。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "-",
+    "atk": "5",
+    "hp": "5",
+    "related_cards": [
+      {
+        "id": "CP05-056",
+        "name": "炎の理・ウィルナス"
+      }
+    ]
+  },
+  {
+    "id": "CP05-110",
+    "name": "蒼の少女・ルリア",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-110.png",
+    "class": "ニュートラル",
+    "type": "フォロワー",
+    "subtype": "グラブル・全属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "GR",
+    "ability_text": "【最終上限解放可能】\n【ファンファーレ】自分のデッキの上3枚を見る。その中から、グラブル・カード1枚を公開して手札に加えてよい。残りを好きな順にデッキの下に置く。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "1",
+    "atk": "1",
+    "hp": "1"
+  },
+  {
+    "id": "CP05-T09",
+    "name": "火晶のエレメント",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-T09.png",
+    "class": "ニュートラル",
+    "type": "トレジャー・トークン",
+    "subtype": "グラブル・火属性",
+    "card_kind_normalized": "token_treasure",
+    "deck_section": "token",
+    "is_token": true,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "ability_text": "【起動】コスト0：自分の場の火属性・フォロワー1体を選ぶ。それは上限解放する。それが【最終上限解放可能】を持ち、上限解放していたなら、代わりに最終上限解放する。（EXエリアのこれを、選んだフォロワーの下に置くことで、上限解放や最終上限解放できる。上限解放したフォロワーは攻撃力+1され、最終上限解放したフォロワーは攻撃力+1/体力+1される）",
+    "product_name": "コラボパック「グランブルーファンタジー」"
+  },
+  {
+    "id": "CP05-T15",
+    "name": "ヒヒイロカネ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-T15.png",
+    "class": "ニュートラル",
+    "type": "トレジャー・トークン",
+    "subtype": "グラブル",
+    "card_kind_normalized": "token_treasure",
+    "deck_section": "token",
+    "is_token": true,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "ability_text": "【起動】コスト0：自分の場のグラブル・フォロワー1体を選ぶ。それは上限解放する。それが【最終上限解放可能】を持つなら、さらにそれは最終上限解放する。（EXエリアのこれを、選んだフォロワーの下に置くことで、上限解放や最終上限解放できる。上限解放したフォロワーは攻撃力+1され、最終上限解放したフォロワーは攻撃力+1/体力+1される）",
+    "product_name": "コラボパック「グランブルーファンタジー」"
+  }
+]

@@ -14,6 +14,7 @@
     "test:python": "python3 -m unittest discover -p '*_test.py'",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
+    "cards:sync:preview": "python3 -m tools.svestats_preview.sync",
     "cards:audit": "python3 audit_cards.py",
     "cards:audit:preview": "python3 audit_preview_cards.py",
     "cards:audit:all": "npm run cards:audit && npm run cards:audit:preview"

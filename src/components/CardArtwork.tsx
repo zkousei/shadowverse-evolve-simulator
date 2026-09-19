@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { CardDetail } from '../utils/cardDetails';
 import { isDummyCardArtEnabled } from '../utils/cardArtMode';
@@ -118,13 +118,15 @@ const CardArtwork: React.FC<Props> = ({
   const { t } = useTranslation();
   // Network snapshots may omit official image URLs for size reasons, so prefer
   // the catalog-backed detail image whenever it is available locally.
+  const [failedImage, setFailedImage] = useState<string | null>(null);
   const resolvedImage = detail?.image || image;
   const hasResolvedImage = resolvedImage.trim().length > 0;
 
-  if (!isDummyCardArtEnabled() && (isBack || hasResolvedImage)) {
+  if (!isDummyCardArtEnabled() && (isBack || (hasResolvedImage && failedImage !== resolvedImage))) {
     return (
       <img
         src={isBack ? '/card_back.png' : resolvedImage}
+        onError={isBack ? undefined : () => setFailedImage(resolvedImage)}
         alt={isBack ? t('cardArtwork.back.alt') : alt}
         style={style}
         draggable={draggable}

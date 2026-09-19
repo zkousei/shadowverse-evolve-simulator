@@ -121,9 +121,7 @@ def print_samples(title: str, cards: list[dict]) -> None:
     print()
 
 
-def main() -> int:
-    released_cards = load_cards(RELEASED_CARD_DATA_PATH)
-    preview_cards = load_cards(PREVIEW_CARD_DATA_PATH)
+def validate_preview_cards(preview_cards: list[dict], released_cards: list[dict]) -> dict:
     released_ids = {card.get("id") for card in released_cards if card.get("id")}
     preview_ids = {card.get("id") for card in preview_cards if card.get("id")}
     released_display_keys = {
@@ -146,6 +144,31 @@ def main() -> int:
         preview_cards,
         released_ids | preview_ids,
     )
+
+    return {
+        "duplicate_ids": duplicate_preview_ids,
+        "released_id_collisions": released_id_collisions,
+        "display_collisions": display_collisions,
+        "missing_required": missing_required,
+        "numeric_issues": numeric_issues,
+        "unknown_types": unknown_types,
+        "inconsistent_classification": inconsistent_classification,
+        "missing_related_cards": missing_related_cards,
+    }
+
+
+def main() -> int:
+    released_cards = load_cards(RELEASED_CARD_DATA_PATH)
+    preview_cards = load_cards(PREVIEW_CARD_DATA_PATH)
+    issues = validate_preview_cards(preview_cards, released_cards)
+    duplicate_preview_ids = issues["duplicate_ids"]
+    released_id_collisions = issues["released_id_collisions"]
+    display_collisions = issues["display_collisions"]
+    missing_required = issues["missing_required"]
+    numeric_issues = issues["numeric_issues"]
+    unknown_types = issues["unknown_types"]
+    inconsistent_classification = issues["inconsistent_classification"]
+    missing_related_cards = issues["missing_related_cards"]
 
     print(f"Preview card data audit for {PREVIEW_CARD_DATA_PATH}")
     print(f"Released cards: {len(released_cards)}")
