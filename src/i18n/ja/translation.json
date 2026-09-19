@@ -183,6 +183,7 @@
       "current": "（編集中）",
       "actions": {
         "load": "読み込む",
+        "catalogLoadingTitle": "カードデータの読み込み完了までお待ちください",
         "delete": "削除",
         "duplicate": "複製",
         "duplicateTitle": "保存済みデッキを複製",
@@ -239,6 +240,7 @@
       "deckLogInvalidResponse": "DeckLogから予期しないデータが返されました。",
       "deckLogNotFound": "指定したDeckLogデッキが見つかりませんでした。",
       "deckLogUnsupportedGame": "Shadowverse EVOLVE のDeckLogデッキのみ対応しています。",
+      "cardCatalogLoading": "カード情報を読み込み中です。少し待ってからもう一度お試しください。",
       "deckLogCardsLoading": "カード情報を読み込み中です。少し待ってからDeckLog取り込みをお試しください。",
       "deckLogImportSuccess": "DeckLogから「{{name}}」を取り込みました。",
       "deckLogImportPartial": "DeckLogデッキは取り込みましたが、{{count}}枚のカードをローカルのカードデータで照合できませんでした。",

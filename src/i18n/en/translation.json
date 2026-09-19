@@ -57,6 +57,7 @@
       "deckLogInvalidResponse": "DeckLog returned an unexpected deck payload.",
       "deckLogNotFound": "That DeckLog deck could not be found.",
       "deckLogUnsupportedGame": "Only Shadowverse EVOLVE DeckLog decks are supported.",
+      "cardCatalogLoading": "The card database is still loading. Please try again in a moment.",
       "deckLogCardsLoading": "The card database is still loading. Please try DeckLog import again in a moment.",
       "deckLogImportSuccess": "Imported \"{{name}}\" from DeckLog.",
       "deckLogImportPartial": "Imported the DeckLog deck, but {{count}} cards could not be matched in the local card database.",
@@ -170,6 +171,7 @@
       "noDecks": "No saved decks yet. Build a deck and press Save to keep it in this browser.",
       "actions": {
         "load": "Load",
+        "catalogLoadingTitle": "Wait for card data to finish loading",
         "delete": "Delete",
         "duplicate": "Duplicate",
         "duplicateTitle": "Duplicate saved deck",

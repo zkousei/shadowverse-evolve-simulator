@@ -5,6 +5,7 @@ import DeckBuilderMyDecksToolbar from './DeckBuilderMyDecksToolbar';
 import DeckBuilderSavedDeckItem from './DeckBuilderSavedDeckItem';
 
 type DeckBuilderMyDecksModalProps = {
+  isCardCatalogReady: boolean;
   canCreateNewSavedDeck: boolean;
   hardSavedDeckLimit: number;
   isSavedDeckSelectMode: boolean;
@@ -28,6 +29,7 @@ type DeckBuilderMyDecksModalProps = {
 };
 
 const DeckBuilderMyDecksModal: React.FC<DeckBuilderMyDecksModalProps> = ({
+  isCardCatalogReady,
   canCreateNewSavedDeck,
   hardSavedDeckLimit,
   isSavedDeckSelectMode,
@@ -114,6 +116,7 @@ const DeckBuilderMyDecksModal: React.FC<DeckBuilderMyDecksModalProps> = ({
                 key={savedDeck.id}
                 savedDeck={savedDeck}
                 canExport={canExport}
+                isCardCatalogReady={isCardCatalogReady}
                 isSavedDeckSelectMode={isSavedDeckSelectMode}
                 isSelected={selectedSavedDeckIds.includes(savedDeck.id)}
                 isCurrent={savedDeck.id === selectedSavedDeckId}

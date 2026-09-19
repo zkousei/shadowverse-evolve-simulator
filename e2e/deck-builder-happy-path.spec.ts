@@ -22,7 +22,9 @@ test.describe('Deck Builder Happy Path', () => {
 
     await expect(page.getByRole('heading', { name: /Card Library/ })).toBeVisible();
 
-    await page.locator('input[type="file"]').setInputFiles(constructedSampleDeckPath);
+    const fileInput = page.locator('input[type="file"]');
+    await expect(fileInput).toBeEnabled();
+    await fileInput.setInputFiles(constructedSampleDeckPath);
 
     await expect(page.getByPlaceholder('Deck Name')).toHaveValue('Sample Constructed Royal');
     await expect(page.getByRole('heading', { name: /Main Deck/ })).toContainText('40/50');
@@ -38,7 +40,9 @@ test.describe('Deck Builder Happy Path', () => {
     const myDecksDialog = page.getByRole('dialog', { name: 'My Decks' });
     await expect(myDecksDialog).toBeVisible();
     await expect(myDecksDialog.getByText('Sample Constructed Royal')).toBeVisible();
-    await myDecksDialog.getByRole('button', { name: 'Load' }).click();
+    const loadButton = myDecksDialog.getByRole('button', { name: 'Load' });
+    await expect(loadButton).toBeEnabled();
+    await loadButton.click();
     await expect(myDecksDialog).toBeHidden();
 
     await page.evaluate(() => {
@@ -55,7 +59,9 @@ test.describe('Deck Builder Happy Path', () => {
     await page.getByRole('button', { name: 'My Decks' }).click();
     const reopenedMyDecksDialog = page.getByRole('dialog', { name: 'My Decks' });
     await expect(reopenedMyDecksDialog.getByText('Sample Constructed Royal')).toBeVisible();
-    await reopenedMyDecksDialog.getByRole('button', { name: 'Load' }).click();
+    const reloadedLoadButton = reopenedMyDecksDialog.getByRole('button', { name: 'Load' });
+    await expect(reloadedLoadButton).toBeEnabled();
+    await reloadedLoadButton.click();
 
     await expect(page.getByPlaceholder('Deck Name')).toHaveValue('Sample Constructed Royal');
     await expect(page.getByText('Saved', { exact: true })).toBeVisible();

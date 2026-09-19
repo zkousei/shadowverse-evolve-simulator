@@ -57,6 +57,7 @@ describe('DeckBuilder extracted UI components - deck', () => {
 
     const { container } = render(
       <DeckBuilderDeckHeader
+        isCardCatalogReady={true}
         deckName="Alpha Deck"
         canSaveCurrentDeck={true}
         canExportDeck={true}
@@ -285,6 +286,7 @@ describe('DeckBuilder extracted UI components - deck', () => {
 
     const { container } = render(
       <DeckBuilderDeckPane
+        isCardCatalogReady={true}
         deckName="Alpha Deck"
         canSaveCurrentDeck={true}
         canExportDeck={true}

@@ -137,10 +137,12 @@ const PAGE_SIZE = 50;
 const COST_FILTER_VALUES = ['All', '0', '1', '2', '3', '4', '5', '6', '7+'] as const;
 const DECK_SECTION_FILTER_VALUES: readonly DeckBuilderDeckSectionFilter[] = ['All', 'main', 'evolve', 'leader', 'token'];
 const CARD_TYPE_FILTER_VALUES: readonly DeckBuilderCardTypeFilter[] = ['All', 'follower', 'spell', 'amulet'];
+type CardCatalogStatus = 'loading' | 'ready' | 'error';
 
 const DeckBuilder: React.FC = () => {
   const { t } = useTranslation();
   const [cards, setCards] = useState<DeckBuilderCardData[]>([]);
+  const [cardCatalogStatus, setCardCatalogStatus] = useState<CardCatalogStatus>('loading');
   const [deckName, setDeckName] = useState('');
   const [deckRuleConfig, setDeckRuleConfig] = useState(createDefaultDeckRuleConfig());
   const [deckState, setDeckState] = useState<DeckState>(createEmptyDeckState());
@@ -241,8 +243,17 @@ const DeckBuilder: React.FC = () => {
 
   useEffect(() => {
     loadCardCatalog()
-      .then(data => setCards(data))
-      .catch(err => console.error("Could not load cards", err));
+      .then(data => {
+        if (data.length === 0) {
+          throw new Error('Card catalog is empty');
+        }
+        setCards(data);
+        setCardCatalogStatus('ready');
+      })
+      .catch(err => {
+        setCardCatalogStatus('error');
+        console.error("Could not load cards", err);
+      });
   }, []);
 
   // Extract unique expansions (prefix before hyphen)
@@ -253,6 +264,7 @@ const DeckBuilder: React.FC = () => {
   const productNames = getAvailableProductNames(filterOptionCards);
   const titles = getAvailableTitles(filterOptionCards);
   const cardDetailLookup = React.useMemo(() => buildCardDetailLookup(cards), [cards]);
+  const isCardCatalogReady = cardCatalogStatus === 'ready';
   const isRuleReady = isRuleConfigured(deckRuleConfig);
   const leaderLimit = getDeckLimit('leader', deckRuleConfig);
   const {
@@ -382,6 +394,15 @@ const DeckBuilder: React.FC = () => {
   };
 
   const handleImportDeck = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isCardCatalogReady) {
+      event.target.value = '';
+      setSaveFeedback({
+        kind: 'warning',
+        message: t('deckBuilder.alerts.cardCatalogLoading'),
+      });
+      return;
+    }
+
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -402,7 +423,7 @@ const DeckBuilder: React.FC = () => {
   };
 
   const handleImportDeckLog = async () => {
-    if (cards.length === 0) {
+    if (!isCardCatalogReady) {
       setSaveFeedback({
         kind: 'warning',
         message: t('deckBuilder.alerts.deckLogCardsLoading'),
@@ -473,6 +494,7 @@ const DeckBuilder: React.FC = () => {
   };
 
   const handleLoadSavedDeck = (deckId: string) => {
+    if (!isCardCatalogReady) return;
     const savedDeck = getSavedDeckById(deckId);
     if (!savedDeck) return;
 
@@ -547,6 +569,7 @@ const DeckBuilder: React.FC = () => {
   };
 
   const handleExportSavedDeck = (deckId: string) => {
+    if (!isCardCatalogReady) return;
     const savedDeck = getSavedDeckById(deckId);
     if (!savedDeck) return;
 
@@ -562,7 +585,7 @@ const DeckBuilder: React.FC = () => {
   };
 
   const libraryPaneProps = {
-    isLoading: cards.length === 0,
+    isLoading: cardCatalogStatus === 'loading',
     paginatedCards,
     cardDetailLookup,
     search,
@@ -624,6 +647,7 @@ const DeckBuilder: React.FC = () => {
   };
 
   const deckPaneProps = {
+    isCardCatalogReady,
     deckName,
     canSaveCurrentDeck,
     canExportDeck,
@@ -681,6 +705,7 @@ const DeckBuilder: React.FC = () => {
   };
 
   const myDecksModalProps = {
+    isCardCatalogReady,
     canCreateNewSavedDeck,
     hardSavedDeckLimit: HARD_SAVED_DECK_LIMIT,
     isSavedDeckSelectMode,
@@ -698,6 +723,7 @@ const DeckBuilder: React.FC = () => {
     onDeleteSelected: () => applyDeckBuilderMyDecksUiState(buildOpenedDeleteSelectedSavedDecksUiState()),
     onToggleSelection: toggleSavedDeckSelection,
     onLoad: (deckId: string) => {
+      if (!isCardCatalogReady) return;
       if (isDirty) {
         applyDeckBuilderMyDecksUiState(buildOpenedPendingSavedDeckLoadUiState(deckId));
         return;

@@ -7,6 +7,7 @@ import type { SavedDeckRecordV1 } from '../../utils/deck/deckStorage';
 type DeckBuilderSavedDeckItemProps = {
   savedDeck: SavedDeckRecordV1;
   canExport: boolean;
+  isCardCatalogReady: boolean;
   isSavedDeckSelectMode: boolean;
   isSelected: boolean;
   isCurrent: boolean;
@@ -22,6 +23,7 @@ type DeckBuilderSavedDeckItemProps = {
 const DeckBuilderSavedDeckItem: React.FC<DeckBuilderSavedDeckItemProps> = ({
   savedDeck,
   canExport,
+  isCardCatalogReady,
   isSavedDeckSelectMode,
   isSelected,
   isCurrent,
@@ -76,7 +78,7 @@ const DeckBuilderSavedDeckItem: React.FC<DeckBuilderSavedDeckItemProps> = ({
               {t('deckBuilder.myDecks.current')}
             </span>
           )}
-          {!canExport && (
+          {isCardCatalogReady && !canExport && (
             <span style={{ fontSize: '0.72rem', color: '#fca5a5', border: '1px solid rgba(248, 113, 113, 0.35)', borderRadius: '999px', padding: '0.12rem 0.45rem' }}>
               {t('deckBuilder.modals.loadDeck.illegalDeck')}
             </span>
@@ -91,7 +93,7 @@ const DeckBuilderSavedDeckItem: React.FC<DeckBuilderSavedDeckItemProps> = ({
         <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '0.15rem' }}>
           {t('deckBuilder.modals.loadDeck.updated', { at: formatSavedDeckUpdatedAt(savedDeck.updatedAt, i18n.language) })}
         </div>
-        {!canExport && (
+        {isCardCatalogReady && !canExport && (
           <div style={{ color: '#fca5a5', fontSize: '0.75rem', marginTop: '0.3rem', lineHeight: 1.5 }}>
             {t('deckBuilder.modals.loadDeck.resolveIssues')}
           </div>
@@ -108,14 +110,17 @@ const DeckBuilderSavedDeckItem: React.FC<DeckBuilderSavedDeckItemProps> = ({
             <button
               type="button"
               onClick={onLoad}
+              disabled={!isCardCatalogReady}
+              title={isCardCatalogReady ? undefined : t('deckBuilder.myDecks.actions.catalogLoadingTitle')}
               style={{
                 padding: '0.45rem 0.7rem',
                 borderRadius: 'var(--radius-md)',
                 border: '1px solid rgba(255,255,255,0.08)',
-                background: 'var(--accent-primary)',
-                color: '#fff',
+                background: isCardCatalogReady ? 'var(--accent-primary)' : 'var(--bg-surface-elevated)',
+                color: isCardCatalogReady ? '#fff' : 'var(--text-muted)',
                 fontWeight: 700,
-                cursor: 'pointer',
+                cursor: isCardCatalogReady ? 'pointer' : 'not-allowed',
+                opacity: isCardCatalogReady ? 1 : 0.7,
               }}
             >
               {t('deckBuilder.myDecks.actions.load')}
@@ -142,16 +147,20 @@ const DeckBuilderSavedDeckItem: React.FC<DeckBuilderSavedDeckItemProps> = ({
             <button
               type="button"
               onClick={onExport}
-              disabled={!canExport}
-              title={canExport ? t('deckBuilder.myDecks.actions.exportTitle') : t('deckBuilder.modals.loadDeck.resolveIssues')}
+              disabled={!isCardCatalogReady || !canExport}
+              title={!isCardCatalogReady
+                ? t('deckBuilder.myDecks.actions.catalogLoadingTitle')
+                : canExport
+                  ? t('deckBuilder.myDecks.actions.exportTitle')
+                  : t('deckBuilder.modals.loadDeck.resolveIssues')}
               style={{
                 padding: '0.45rem 0.7rem',
                 borderRadius: 'var(--radius-md)',
                 border: '1px solid var(--border-light)',
-                background: canExport ? 'var(--bg-overlay)' : 'var(--bg-surface-elevated)',
-                color: canExport ? 'var(--text-main)' : 'var(--text-muted)',
-                cursor: canExport ? 'pointer' : 'not-allowed',
-                opacity: canExport ? 1 : 0.7,
+                background: isCardCatalogReady && canExport ? 'var(--bg-overlay)' : 'var(--bg-surface-elevated)',
+                color: isCardCatalogReady && canExport ? 'var(--text-main)' : 'var(--text-muted)',
+                cursor: isCardCatalogReady && canExport ? 'pointer' : 'not-allowed',
+                opacity: isCardCatalogReady && canExport ? 1 : 0.7,
               }}
             >
               {t('deckBuilder.myDecks.actions.export')}
