@@ -3,7 +3,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Iterable
 
-from card_metadata import CARD_KIND_BY_TYPE, DECK_SECTION_BY_CARD_KIND, normalize_card_kind
+from tools.card_data.card_metadata import CARD_KIND_BY_TYPE, DECK_SECTION_BY_CARD_KIND, normalize_card_kind
 
 
 CARD_DATA_PATH = Path("public/cards_detailed.json")

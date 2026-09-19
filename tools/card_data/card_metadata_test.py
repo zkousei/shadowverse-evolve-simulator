@@ -1,6 +1,6 @@
 import unittest
 
-from card_metadata import derive_card_metadata
+from tools.card_data.card_metadata import derive_card_metadata
 
 
 class CardMetadataTest(unittest.TestCase):

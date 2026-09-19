@@ -1,6 +1,6 @@
 import unittest
-from audit_preview_cards import validate_preview_cards
-from card_metadata import derive_card_metadata
+from tools.card_data.audit_preview_cards import validate_preview_cards
+from tools.card_data.card_metadata import derive_card_metadata
 
 
 class PreviewAuditTest(unittest.TestCase):

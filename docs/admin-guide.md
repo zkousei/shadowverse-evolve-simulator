@@ -105,9 +105,13 @@ Vercel で公開する版をダミー画像表示にしたい場合は、Environ
 
 ## 6. カードデータ更新の基本手順
 
+リポジトリのルートで実行してください。
+取得ツールは [`tools/official_cards/`](../tools/official_cards/README.md)、
+共通の分類・監査は [`tools/card_data/`](../tools/card_data/README.md) に配置しています。
+
 ```bash
-python3 scraper.py
-python3 scrape_details.py
+npm run cards:fetch:official
+npm run cards:fetch:official:details
 npm run cards:audit
 ```
 
@@ -140,6 +144,16 @@ npm run cards:audit:preview
 詳細は [`./deck-restrictions-maintenance.md`](./deck-restrictions-maintenance.md) を参照してください。
 
 ## 8. 変更後の最低限の確認
+
+Pythonツール・分類・監査を変更した場合:
+
+```bash
+npm run test:python
+npm run cards:audit:all
+npx vitest run src/utils/cardMetadataParity.test.ts
+```
+
+アプリ側の変更を含む場合:
 
 ```bash
 npm test -- --run src/utils/deckBuilderRules.test.ts src/pages/DeckBuilder.test.tsx src/models/deckBuilderCard.test.ts

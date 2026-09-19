@@ -2,7 +2,7 @@
 import re
 from urllib.parse import quote
 
-from card_metadata import derive_card_metadata
+from tools.card_data.card_metadata import derive_card_metadata
 
 IMAGE_BASE = 'https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/'
 CLASSES = {'エルフ', 'ロイヤル', 'ウィッチ', 'ドラゴン', 'ナイトメア', 'ビショップ', 'ニュートラル'}

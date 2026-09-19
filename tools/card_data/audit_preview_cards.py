@@ -2,7 +2,7 @@ import json
 from collections import Counter
 from pathlib import Path
 
-from card_metadata import DECK_SECTION_BY_CARD_KIND, normalize_card_kind
+from tools.card_data.card_metadata import DECK_SECTION_BY_CARD_KIND, normalize_card_kind
 
 
 RELEASED_CARD_DATA_PATH = Path("public/cards_detailed.json")

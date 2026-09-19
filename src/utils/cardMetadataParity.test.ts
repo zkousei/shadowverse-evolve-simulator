@@ -12,7 +12,7 @@ const metadata: {
   sections: Record<CardKindNormalized, DeckSection>;
 } = JSON.parse(execFileSync('python3', ['-c', [
   'import json',
-  'from card_metadata import CARD_KIND_BY_TYPE, DECK_SECTION_BY_CARD_KIND',
+  'from tools.card_data.card_metadata import CARD_KIND_BY_TYPE, DECK_SECTION_BY_CARD_KIND',
   'print(json.dumps({"kinds": CARD_KIND_BY_TYPE, "sections": DECK_SECTION_BY_CARD_KIND}))',
 ].join('\n')], {
   cwd: fileURLToPath(new URL('../../', import.meta.url)),
