@@ -14,9 +14,11 @@
     "test:python": "python3 -m unittest discover -p '*_test.py'",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
+    "cards:fetch:official": "python3 -m tools.official_cards.scraper",
+    "cards:fetch:official:details": "python3 -m tools.official_cards.scrape_details",
     "cards:sync:preview": "python3 -m tools.svestats_preview.sync",
-    "cards:audit": "python3 audit_cards.py",
-    "cards:audit:preview": "python3 audit_preview_cards.py",
+    "cards:audit": "python3 -m tools.card_data.audit_cards",
+    "cards:audit:preview": "python3 -m tools.card_data.audit_preview_cards",
     "cards:audit:all": "npm run cards:audit && npm run cards:audit:preview"
   },
   "dependencies": {

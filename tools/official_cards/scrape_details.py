@@ -7,7 +7,7 @@ from typing import Optional
 
 import aiohttp
 from bs4 import BeautifulSoup
-from card_metadata import derive_card_metadata
+from tools.card_data.card_metadata import derive_card_metadata
 
 
 DETAIL_URL_TEMPLATE = "https://shadowverse-evolve.com/cardlist/?cardno={card_id}&view=text"

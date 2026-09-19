@@ -7,7 +7,7 @@ from pathlib import Path
 import sys
 import tempfile
 
-from audit_preview_cards import load_cards, validate_preview_cards
+from tools.card_data.audit_preview_cards import load_cards, validate_preview_cards
 from .converter import convert_card, required_text, string_list
 from .source import SOURCE_URL, fetch_cards
 

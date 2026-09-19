@@ -2,7 +2,7 @@ import unittest
 
 from bs4 import BeautifulSoup
 
-from scrape_details import extract_related_cards, parse_card_detail_html
+from tools.official_cards.scrape_details import extract_related_cards, parse_card_detail_html
 
 
 DETAIL_HTML_WITH_RELATIONS = """

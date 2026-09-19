@@ -13,7 +13,7 @@ npm run cards:audit:preview
 - 追加・変更・削除を反映します。生成JSONへの手動編集は次回上書きされます。
 - ローカルの `cards_detailed.json` とIDが一致するカード、`reprint_of` のある再録は除外します。
 - 発売日のみでは除外しません。通常カード取得後に再実行して正式移行を反映してください。
-- トレジャーを含む分類はルートの `card_metadata.py` を共有します。
+- トレジャーを含む分類は `tools/card_data/card_metadata.py` を共有します。
 - 商品名は `products.json` で補完します。未知の商品は警告し、商品名を省略します。
 - タイトルの空欄は推測しません。名前の部分一致による関連付けも行いません。
 - 明示された関連IDは正式カード・同期後previewから解決し、再録の参照は元カードへ向けます。
@@ -25,8 +25,8 @@ npm run cards:audit:preview
 
 | 呼び出し元 | 依存先 | 利用目的 |
 | --- | --- | --- |
-| `converter.py` | [`card_metadata.py`](../../card_metadata.py) の `derive_card_metadata()` | 種類から `card_kind_normalized`、`deck_section`、トークン・エボルヴ・構築可否のフラグを生成。トレジャーも共通定義で判定する |
-| `sync.py` | [`audit_preview_cards.py`](../../audit_preview_cards.py) の `load_cards()` | 正式カードと現在のpreviewをJSON配列として読み込む |
+| `converter.py` | [`card_metadata.py`](../card_data/card_metadata.py) の `derive_card_metadata()` | 種類から `card_kind_normalized`、`deck_section`、トークン・エボルヴ・構築可否のフラグを生成。トレジャーも共通定義で判定する |
+| `sync.py` | [`audit_preview_cards.py`](../card_data/audit_preview_cards.py) の `load_cards()` | 正式カードと現在のpreviewをJSON配列として読み込む |
 | `sync.py` | 同ファイルの `validate_preview_cards()` | 保存前にID重複、正式カードとのID・表示上の衝突、必須項目、数値形式、種類、分類整合性、関連カード参照を監査する |
 
 `validate_preview_cards()` は今回、既存の監査処理を関数として抽出したものです。
@@ -49,8 +49,8 @@ npm run cards:audit:preview
 「専用ツール → 生成JSON → アプリ」です。
 `src/` や共通処理から専用ツールをimportすることはありません。
 
-通常カード取得用の [`scraper.py`](../../scraper.py) と
-[`scrape_details.py`](../../scrape_details.py) は呼び出しません。
+通常カード取得用の [`scraper.py`](../official_cards/scraper.py) と
+[`scrape_details.py`](../official_cards/scrape_details.py) は呼び出しません。
 外部サイトからの取得、形式変換、差分計算、同期制御はこのフォルダが所有します。
 [`package.json`](../../package.json) の `cards:sync:preview` は明示的な起動入口で、
 通常のビルドやアプリ起動からは実行されません。
@@ -58,7 +58,7 @@ npm run cards:audit:preview
 ### 共通処理を変更するときの確認
 
 - 分類やJSON形式を変更した場合は、`converter_test.py` と `sync_test.py` で変換・同期への影響を確認する。
-- 監査ルールを変更した場合は、ルートの `audit_preview_cards_test.py` と `sync_test.py` を確認する。
+- 監査ルールを変更した場合は、`../card_data/audit_preview_cards_test.py` と `sync_test.py` を確認する。
 - カタログ統合や画像表示を変更した場合は、既存の `cardCatalog.test.ts` と `CardArtwork.test.tsx` を確認する。
 
 ## 失敗・空データ
@@ -96,7 +96,7 @@ npx vitest run src/components/CardArtwork.test.tsx src/utils/cardCatalog.test.ts
 ```
 
 取得はモック化し、fixtureは架空のカードです。実データ件数や外部接続に依存するテストはありません。
-取得・変換・同期のテストはこのフォルダ、共通監査は `audit_preview_cards_test.py` が所有します。
+取得・変換・同期のテストはこのフォルダ、共通監査は `../card_data/audit_preview_cards_test.py` が所有します。
 
 商品名の確認元:
 - https://shadowverse-evolve.com/products/bp22/

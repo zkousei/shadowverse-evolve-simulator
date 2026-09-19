@@ -79,6 +79,14 @@ automated test as soon as the behavior becomes clear.
 - End-to-End browser usage, drag/drop, and full UI flows:
   - `e2e/*.spec.ts`
 
+- Python card data tools:
+  - `tools/card_data/*_test.py` — shared classification and audit rules
+  - `tools/official_cards/*_test.py` — official card HTML parsing
+  - `tools/svestats_preview/*_test.py` — external source, conversion, and synchronization
+  - `tools/python_entrypoints_test.py` — module entry points, I/O paths, and exit codes
+  - `src/utils/cardMetadataParity.test.ts` — Python/application classification parity
+  - Run `npm run test:python`; keep package `__init__.py` files so discovery includes nested tests.
+
 Choose the lowest-level test that can fully express the behavior.
 
 ## Test-First Layering Rule
