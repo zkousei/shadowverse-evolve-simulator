@@ -2,7 +2,6 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import GameBoardPlayingControls from './GameBoardPlayingControls';
 import GameBoardPreparationControls from './GameBoardPreparationControls';
-import GameBoardRecentEventsPanel from './GameBoardRecentEventsPanel';
 import GameBoardRoomStatus from './GameBoardRoomStatus';
 import GameBoardTurnPanel from './GameBoardTurnPanel';
 import type { PlayerRole, SyncState } from '../../types/game';
@@ -79,7 +78,7 @@ const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
   const { t } = useTranslation();
   const inputProfile = useGameBoardInputProfile();
   const boardDensity = useGameBoardBoardDensity();
-  const [isEventsOpen, setIsEventsOpen] = React.useState(true);
+  const [isEventsOpen, setIsEventsOpen] = React.useState(false);
   const isCompactControls = inputProfile === 'coarse';
   const keepInlineCompactHeader = isCompactControls && isTabletLayout;
   const compactHeaderColumnGap = keepInlineCompactHeader ? '0.42rem' : '0.5rem';
@@ -163,16 +162,17 @@ const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
       ) : null}
 
       {gameState.gameStatus === 'playing' && eventHistory && eventHistory.length > 0 && (
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', minWidth: 0 }}>
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
           <button
             type="button"
-            onClick={() => setIsEventsOpen(prev => !prev)}
+            data-testid="gameboard-recent-events-trigger"
+            onClick={() => setIsEventsOpen((prev) => !prev)}
             title={t('gameBoard.alerts.recentEvents')}
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              padding: isCompactControls ? '0.2rem 0.4rem' : '0.24rem 0.55rem',
+              gap: '5px',
+              padding: isCompactControls ? '0.2rem 0.45rem' : '0.24rem 0.55rem',
               fontSize: isCompactControls ? '0.68rem' : '0.74rem',
               background: isEventsOpen ? 'rgba(59, 130, 246, 0.25)' : 'rgba(255, 255, 255, 0.06)',
               border: '1px solid',
@@ -184,26 +184,84 @@ const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
               transition: 'all 0.15s ease',
             }}
           >
-            <span style={{ fontSize: '0.76rem' }}>📜</span>
-            <span style={{ fontSize: '0.7rem', color: '#93c5fd', fontWeight: 700 }}>
+            <span style={{ fontSize: '0.8rem' }}>📜</span>
+            <span style={{ fontWeight: 700, color: '#93c5fd', background: 'rgba(59, 130, 246, 0.25)', borderRadius: '999px', padding: '1px 6px', fontSize: '0.68rem' }}>
               {eventHistory.length}
             </span>
-            <span style={{ fontSize: '0.6rem', color: '#94a3b8', marginLeft: '2px' }}>{isEventsOpen ? '▲' : '▼'}</span>
+            <span style={{ fontSize: '0.6rem', color: '#94a3b8', marginLeft: '1px' }}>
+              {isEventsOpen ? '▲' : '▼'}
+            </span>
           </button>
 
-          {isEventsOpen && (
-            <div
-              style={{
-                position: 'absolute',
-                top: 'calc(100% + 8px)',
-                left: 0,
-                zIndex: 60,
-                boxShadow: '0 12px 32px rgba(0,0,0,0.5)',
-              }}
-            >
-              <GameBoardRecentEventsPanel eventHistory={eventHistory} />
+          <div
+            data-testid="gameboard-recent-events"
+            style={{
+              position: 'absolute',
+              top: 'calc(100% + 6px)',
+              left: 0,
+              zIndex: 100,
+              width: isCompactControls ? 'min(280px, 90vw)' : '380px',
+              maxHeight: isEventsOpen ? '260px' : '0px',
+              opacity: isEventsOpen ? 1 : 0,
+              pointerEvents: isEventsOpen ? 'auto' : 'none',
+              overflowY: 'auto',
+              overflowX: 'hidden',
+              background: 'rgba(15, 23, 42, 0.96)',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
+              border: isEventsOpen ? '1px solid rgba(255, 255, 255, 0.15)' : 'none',
+              boxShadow: isEventsOpen ? '0 12px 32px rgba(0, 0, 0, 0.6)' : 'none',
+              borderRadius: '12px',
+              padding: isEventsOpen ? '0.6rem 0.75rem' : '0',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.4rem',
+              transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.35rem' }}>
+              <span style={{ fontWeight: 800, fontSize: '0.78rem', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span>📜</span>
+                <span>{t('gameBoard.alerts.recentEvents')}</span>
+                <span style={{ fontSize: '0.68rem', color: '#93c5fd', fontWeight: 600 }}>({eventHistory.length})</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsEventsOpen(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#94a3b8',
+                  cursor: 'pointer',
+                  fontSize: '0.8rem',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                }}
+              >
+                ✕
+              </button>
             </div>
-          )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', overflowY: 'auto', maxHeight: '200px' }}>
+              {eventHistory.map((entry, index) => (
+                <div
+                  key={`${entry}-${index}`}
+                  style={{
+                    fontSize: '0.72rem',
+                    color: index === 0 ? '#f8fafc' : '#cbd5e1',
+                    lineHeight: 1.35,
+                    padding: '0.25rem 0.4rem',
+                    background: index === 0 ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255, 255, 255, 0.03)',
+                    borderRadius: '6px',
+                    borderLeft: index === 0 ? '3px solid #60a5fa' : '3px solid transparent',
+                    overflowWrap: 'break-word',
+                    wordBreak: 'break-word',
+                  }}
+                >
+                  {entry}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
       </div>

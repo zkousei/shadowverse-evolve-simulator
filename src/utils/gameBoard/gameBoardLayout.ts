@@ -200,11 +200,11 @@ export const resolveBoardLayoutSpacing = (
       bottomBoardRowSecondaryMarginTop: '0',
       boardSectionDividerMargin: '0.12rem 0',
       boardRowGap: '0.5rem',
-      stackZoneMinHeight: '96px',
-      fieldZoneMinHeight: '106px',
-      handZoneMinHeight: '100px',
-      bottomHandZoneMinHeight: '106px',
-      leaderZoneMinHeight: '110px',
+      stackZoneMinHeight: '116px',
+      fieldZoneMinHeight: '116px',
+      handZoneMinHeight: '114px',
+      bottomHandZoneMinHeight: '116px',
+      leaderZoneMinHeight: '116px',
     };
   }
 

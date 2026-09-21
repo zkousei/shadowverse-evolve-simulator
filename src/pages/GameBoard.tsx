@@ -906,7 +906,7 @@ const GameBoard: React.FC = () => {
                       />
                   </GameBoardBoardRow>
                 </div>
-                <div style={{ width: `${sidePanelWidth}px`, display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
+                <div style={{ width: `${sidePanelWidth}px`, display: 'flex', justifyContent: 'center', alignItems: 'flex-end' }}>
                   {renderTopLeaderZoneSection()}
                 </div>
               </div>
@@ -991,7 +991,7 @@ const GameBoard: React.FC = () => {
                       />
                   </GameBoardBoardRow>
                 </div>
-                <div style={{ width: `${sidePanelWidth}px`, display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
+                <div style={{ width: `${sidePanelWidth}px`, display: 'flex', justifyContent: 'center', alignItems: 'flex-end' }}>
                   {renderTopLeaderZoneSection()}
                 </div>
               </div>

@@ -35,9 +35,9 @@ const GameBoardPlayerTracker: React.FC<GameBoardPlayerTrackerProps> = ({
   const trackerContainerStyle: React.CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
-    gap: compact ? '0.2rem' : '0.25rem',
-    marginTop: compact ? '0.18rem' : '0.35rem',
-    padding: compact ? '0.32rem' : '0.42rem 0.5rem',
+    gap: compact ? '0.2rem' : '0.16rem',
+    marginTop: compact ? '0.18rem' : '0.22rem',
+    padding: compact ? '0.32rem' : '0.32rem 0.42rem',
     background: 'rgba(15, 23, 42, 0.75)',
     borderRadius: '10px',
     border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -99,8 +99,8 @@ const GameBoardPlayerTracker: React.FC<GameBoardPlayerTrackerProps> = ({
   const ppSectionStyle: React.CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
-    gap: compact ? '0.18rem' : '0.22rem',
-    padding: compact ? '0.32rem' : '0.35rem 0.45rem',
+    gap: compact ? '0.18rem' : '0.16rem',
+    padding: compact ? '0.32rem' : '0.28rem 0.38rem',
     background: 'linear-gradient(135deg, rgba(30, 58, 138, 0.35), rgba(15, 23, 42, 0.6))',
     borderRadius: '8px',
     border: '1px solid rgba(59, 130, 246, 0.35)',

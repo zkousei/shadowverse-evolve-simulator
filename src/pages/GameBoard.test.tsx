@@ -3020,12 +3020,12 @@ describe('GameBoard', () => {
       expect(topGrid).toHaveStyle({ gridTemplateColumns: '176px 864px 176px' });
       expect(sectionDivider).not.toBeNull();
       expect(sectionDivider as HTMLElement).toHaveStyle({ margin: '0.12rem 0' });
-      expect(screen.getByTestId('zone-cemetery-guest')).toHaveStyle({ minHeight: '96px' });
-      expect(screen.getByTestId('zone-field-guest')).toHaveStyle({ minHeight: '106px' });
-      expect(screen.getByTestId('zone-hand-guest')).toHaveStyle({ minHeight: '100px' });
-      expect(screen.getByTestId('zone-hand-host')).toHaveStyle({ minHeight: '106px' });
-      expect(screen.getByTestId('zone-leader-guest')).toHaveStyle({ minHeight: '110px' });
-      expect(screen.getByTestId('zone-leader-host')).toHaveStyle({ minHeight: '110px' });
+      expect(screen.getByTestId('zone-cemetery-guest')).toHaveStyle({ minHeight: '116px' });
+      expect(screen.getByTestId('zone-field-guest')).toHaveStyle({ minHeight: '116px' });
+      expect(screen.getByTestId('zone-hand-guest')).toHaveStyle({ minHeight: '114px' });
+      expect(screen.getByTestId('zone-hand-host')).toHaveStyle({ minHeight: '116px' });
+      expect(screen.getByTestId('zone-leader-guest')).toHaveStyle({ minHeight: '116px' });
+      expect(screen.getByTestId('zone-leader-host')).toHaveStyle({ minHeight: '116px' });
       expect(screen.getByTestId('zone-cemetery-guest').parentElement).toHaveStyle({ gap: '0' });
       expect(screen.getByTestId('zone-mainDeck-host').parentElement).toHaveStyle({ gap: '0' });
       const hostControlsPanel = screen.getByTestId('player-tracker-host').parentElement as HTMLElement;

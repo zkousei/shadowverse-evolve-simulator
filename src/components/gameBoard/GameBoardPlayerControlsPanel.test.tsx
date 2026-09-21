@@ -170,7 +170,7 @@ describe('GameBoardPlayerControlsPanel', () => {
     );
 
     expect(screen.getByRole('button', { name: 'Draw' })).toHaveStyle({ fontSize: '0.64rem', minHeight: '30px' });
-    expect(screen.getByRole('button', { name: 'Draw' })).toHaveStyle({ whiteSpace: 'normal' });
+    expect(screen.getByRole('button', { name: 'Draw' })).toHaveStyle({ whiteSpace: 'nowrap' });
 
     unmount();
     renderWithInputProfile(
@@ -185,7 +185,7 @@ describe('GameBoardPlayerControlsPanel', () => {
     expect(screen.getByRole('button', { name: 'Load from My Decks' })).toHaveStyle({ gridColumn: '1 / -1' });
   });
 
-  it('keeps desktop overview controls stacked like the standard desktop panel', () => {
+  it('renders desktop overview primary actions in a compact two-column grid to fit board height', () => {
     renderWithInputProfile(
       'fine',
       <GameBoardPlayerControlsPanel
@@ -195,8 +195,8 @@ describe('GameBoardPlayerControlsPanel', () => {
     );
 
     expect(screen.getByTestId('player-controls-primary-actions')).toHaveStyle({
-      display: 'flex',
-      flexDirection: 'column',
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
     });
     expect(screen.getByText('Player 1 Controls')).toHaveStyle({ fontSize: '0.64rem' });
     expect(screen.getByRole('button', { name: 'Draw' })).toHaveStyle({ padding: '0.4rem' });
