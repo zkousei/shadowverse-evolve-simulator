@@ -14,6 +14,7 @@ type GameBoardPlayerTrackerProps = {
   compact?: boolean;
   onAdjustStat: (stat: TrackerStat, delta: number) => void;
   readOnly?: boolean;
+  containerStyle?: React.CSSProperties;
 };
 
 const GameBoardPlayerTracker: React.FC<GameBoardPlayerTrackerProps> = ({
@@ -27,6 +28,7 @@ const GameBoardPlayerTracker: React.FC<GameBoardPlayerTrackerProps> = ({
   compact = false,
   onAdjustStat,
   readOnly = false,
+  containerStyle,
 }) => {
   const { t } = useTranslation();
 
@@ -39,6 +41,7 @@ const GameBoardPlayerTracker: React.FC<GameBoardPlayerTrackerProps> = ({
     background: 'rgba(15, 23, 42, 0.75)',
     borderRadius: '10px',
     border: '1px solid rgba(255, 255, 255, 0.08)',
+    ...containerStyle,
   };
   const trackerHeaderStyle: React.CSSProperties = {
     fontSize: compact ? '0.66rem' : '0.74rem',

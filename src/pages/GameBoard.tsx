@@ -18,7 +18,6 @@ import GameBoardMainDeckSection from '../components/gameBoard/GameBoardMainDeckS
 import GameBoardMulliganDialog from '../components/gameBoard/GameBoardMulliganDialog';
 import GameBoardPlayerControlsPanel from '../components/gameBoard/GameBoardPlayerControlsPanel';
 import GameBoardPreparationPanel from '../components/gameBoard/GameBoardPreparationPanel';
-import GameBoardRecentEventsPanel from '../components/gameBoard/GameBoardRecentEventsPanel';
 import GameBoardReadOnlyStatusSection from '../components/gameBoard/GameBoardReadOnlyStatusSection';
 import GameBoardReconnectAlert from '../components/gameBoard/GameBoardReconnectAlert';
 import GameBoardResetDialog from '../components/gameBoard/GameBoardResetDialog';
@@ -737,7 +736,10 @@ const GameBoard: React.FC = () => {
           onTossCoin={handlePureCoinFlip}
           onRollDice={handleRollDice}
           onOpenUndo={() => setShowUndoConfirm(true)}
+          canResetGame={canResetGame}
+          onOpenReset={() => setShowResetConfirm(true)}
           onPhaseChange={setPhase}
+          eventHistory={eventHistory}
         />
 
         {isGuestConnectionBlocked && (
@@ -763,10 +765,6 @@ const GameBoard: React.FC = () => {
             revealHandsMode={gameState.revealHandsMode}
             onToggleRevealHandsMode={() => handleSetRevealHandsMode(!gameState.revealHandsMode)}
           />
-        )}
-
-        {gameState.gameStatus === 'playing' && eventHistory.length > 0 && (
-          <GameBoardRecentEventsPanel eventHistory={eventHistory} />
         )}
 
         {/* Board Playmat */}
@@ -798,7 +796,7 @@ const GameBoard: React.FC = () => {
             style={{ ...activeBoardSectionStyle(shouldHighlightTopBoard), padding: boardSectionPadding, gap: boardSectionGap, opacity: 0.9 }}
           >
             {isSoloMode ? (
-              <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: boardShellColumnGap, alignItems: 'flex-start', width: '100%', maxWidth: '1568px', justifyContent: 'center' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: boardShellColumnGap, alignItems: 'stretch', width: '100%', maxWidth: '1568px', justifyContent: 'center' }}>
                 <GameBoardPlayerControlsPanel
                   {...topControlsPanelProps}
                   middleControls={
@@ -913,7 +911,7 @@ const GameBoard: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: boardShellColumnGap, alignItems: 'flex-start', width: '100%', maxWidth: '1568px', justifyContent: 'center' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: boardShellColumnGap, alignItems: 'stretch', width: '100%', maxWidth: '1568px', justifyContent: 'center' }}>
                 <div style={{ width: `${topPanelWidth}px`, alignSelf: 'end' }}>
                   <GameBoardReadOnlyStatusSection
                     label={topLabel}
@@ -1008,7 +1006,7 @@ const GameBoard: React.FC = () => {
             data-turn-active={String(isBottomTurnActive)}
             style={{ ...activeBoardSectionStyle(isBottomTurnActive), padding: boardSectionPadding, gap: boardSectionGap }}
           >
-		            <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: boardShellColumnGap, alignItems: 'flex-start', width: '100%', maxWidth: '1568px', justifyContent: 'center' }}>
+		            <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: boardShellColumnGap, alignItems: 'stretch', width: '100%', maxWidth: '1568px', justifyContent: 'center' }}>
                 <div style={{ width: `${topPanelWidth}px`, display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
                   {renderBottomLeaderZoneSection()}
                 </div>
@@ -1156,11 +1154,7 @@ const GameBoard: React.FC = () => {
                       )}
                     </>
                   }
-                  afterSpawnControls={canResetGame ? (
-                    <button onClick={() => setShowResetConfirm(true)} className="glass-panel" style={{ padding: '0.28rem 0.45rem', minHeight: '26px', fontSize: '0.74rem', background: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', fontWeight: 'bold', borderRadius: '8px' }}>
-                      {t('gameBoard.controls.resetGame')}
-                    </button>
-                  ) : null}
+                  undoMoveButton={renderUndoMoveButton(bottomRole)}
                 />
               )}
             </div>

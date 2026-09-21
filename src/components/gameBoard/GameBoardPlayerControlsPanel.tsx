@@ -103,6 +103,8 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
         boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'column',
+        justifyContent: 'space-between',
+        height: '100%',
         gap: compactPanelGap,
         background: 'rgba(15, 23, 42, 0.88)',
         backdropFilter: 'blur(12px)',
@@ -269,6 +271,7 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
         onAdjustStat={onAdjustStat}
         compact={!forceExpandedTracker && (isCompactControls || isOverviewControls) && panelWidth <= 180}
         readOnly={readOnlyTracker}
+        containerStyle={{ marginTop: 'auto' }}
       />
     </div>
   );

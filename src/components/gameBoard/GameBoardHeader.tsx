@@ -1,6 +1,8 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import GameBoardPlayingControls from './GameBoardPlayingControls';
 import GameBoardPreparationControls from './GameBoardPreparationControls';
+import GameBoardRecentEventsPanel from './GameBoardRecentEventsPanel';
 import GameBoardRoomStatus from './GameBoardRoomStatus';
 import GameBoardTurnPanel from './GameBoardTurnPanel';
 import type { PlayerRole, SyncState } from '../../types/game';
@@ -26,6 +28,7 @@ type GameBoardHeaderProps = {
   currentTurnLabel: string;
   isBottomTurnActive: boolean;
   canShowUndoTurn: boolean;
+  canResetGame?: boolean;
   onCopyRoomId: () => void;
   onReconnect: () => void;
   onSetInitialTurnOrder: (role?: PlayerRole) => void;
@@ -35,7 +38,9 @@ type GameBoardHeaderProps = {
   onTossCoin: () => void;
   onRollDice: () => void;
   onOpenUndo: () => void;
+  onOpenReset?: () => void;
   onPhaseChange: (phase: SyncState['phase']) => void;
+  eventHistory?: string[];
 };
 
 const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
@@ -57,6 +62,7 @@ const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
   currentTurnLabel,
   isBottomTurnActive,
   canShowUndoTurn,
+  canResetGame,
   onCopyRoomId,
   onReconnect,
   onSetInitialTurnOrder,
@@ -66,10 +72,14 @@ const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
   onTossCoin,
   onRollDice,
   onOpenUndo,
+  onOpenReset,
   onPhaseChange,
+  eventHistory,
 }) => {
+  const { t } = useTranslation();
   const inputProfile = useGameBoardInputProfile();
   const boardDensity = useGameBoardBoardDensity();
+  const [isEventsOpen, setIsEventsOpen] = React.useState(true);
   const isCompactControls = inputProfile === 'coarse';
   const keepInlineCompactHeader = isCompactControls && isTabletLayout;
   const compactHeaderColumnGap = keepInlineCompactHeader ? '0.42rem' : '0.5rem';
@@ -81,6 +91,7 @@ const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
   return (
     <div
       style={{
+        position: 'relative',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: keepInlineCompactHeader ? 'center' : isCompactControls ? 'stretch' : 'center',
@@ -94,6 +105,7 @@ const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
         boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)',
         padding: isCompactControls ? compactHeaderPadding : isOverviewControls ? '0.42rem 0.75rem' : '0.55rem 0.85rem',
         borderRadius: '12px',
+        zIndex: 40,
       }}
     >
       <div
@@ -142,11 +154,58 @@ const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
       ) : !isSpectator ? (
         <GameBoardPlayingControls
           canShowUndoTurn={canShowUndoTurn}
+          canResetGame={canResetGame}
           onTossCoin={onTossCoin}
           onRollDice={onRollDice}
           onOpenUndo={onOpenUndo}
+          onOpenReset={onOpenReset}
         />
       ) : null}
+
+      {gameState.gameStatus === 'playing' && eventHistory && eventHistory.length > 0 && (
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', minWidth: 0 }}>
+          <button
+            type="button"
+            onClick={() => setIsEventsOpen(prev => !prev)}
+            title={t('gameBoard.alerts.recentEvents')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: isCompactControls ? '0.2rem 0.4rem' : '0.24rem 0.55rem',
+              fontSize: isCompactControls ? '0.68rem' : '0.74rem',
+              background: isEventsOpen ? 'rgba(59, 130, 246, 0.25)' : 'rgba(255, 255, 255, 0.06)',
+              border: '1px solid',
+              borderColor: isEventsOpen ? 'rgba(96, 165, 250, 0.5)' : 'rgba(255, 255, 255, 0.12)',
+              borderRadius: '8px',
+              color: '#f8fafc',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <span style={{ fontSize: '0.76rem' }}>📜</span>
+            <span style={{ fontSize: '0.7rem', color: '#93c5fd', fontWeight: 700 }}>
+              {eventHistory.length}
+            </span>
+            <span style={{ fontSize: '0.6rem', color: '#94a3b8', marginLeft: '2px' }}>{isEventsOpen ? '▲' : '▼'}</span>
+          </button>
+
+          {isEventsOpen && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 'calc(100% + 8px)',
+                left: 0,
+                zIndex: 60,
+                boxShadow: '0 12px 32px rgba(0,0,0,0.5)',
+              }}
+            >
+              <GameBoardRecentEventsPanel eventHistory={eventHistory} />
+            </div>
+          )}
+        </div>
+      )}
       </div>
 
       {gameState.gameStatus === 'playing' && (
