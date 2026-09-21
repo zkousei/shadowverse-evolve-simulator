@@ -246,13 +246,15 @@ describe('Card', () => {
       padding: '1px 3px',
     });
     expect(screen.getByText('+A')).toHaveStyle({
-      minWidth: '20px',
-      minHeight: '18px',
-      fontSize: '10px',
+      minWidth: '18px',
+      minHeight: '17px',
+      padding: '1px 2px',
+      fontSize: '9px',
     });
     expect(screen.getByText('+C')).toHaveStyle({
-      minHeight: '16px',
-      fontSize: '9px',
+      minHeight: '15px',
+      padding: '0px 2px',
+      fontSize: '8px',
     });
     expect(screen.getByText('REST')).toHaveStyle({
       minHeight: '18px',
