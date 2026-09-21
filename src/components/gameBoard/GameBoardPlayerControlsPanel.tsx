@@ -279,7 +279,7 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
         onAdjustStat={onAdjustStat}
         compact={!forceExpandedTracker && (isCompactControls || isOverviewControls) && panelWidth <= 180}
         readOnly={readOnlyTracker}
-        containerStyle={{ marginTop: 'auto' }}
+        containerStyle={{ marginTop: isOverviewControls ? '0.2rem' : 'auto' }}
       />
     </div>
   );

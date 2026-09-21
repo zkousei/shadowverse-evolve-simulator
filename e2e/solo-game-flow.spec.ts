@@ -61,7 +61,7 @@ test.describe('Solo Game Flow', () => {
     await expect(hostFieldCards).toHaveCount(0);
 
     await boardSection(page, 'bottom')
-      .getByRole('button', { name: /カードを引く|Draw/ })
+      .getByRole('button', { name: /ドロー|カードを引く|Draw/ })
       .click();
     await expect(hostHandCards).toHaveCount(5);
 

@@ -1120,37 +1120,37 @@ const GameBoard: React.FC = () => {
                           className="glass-panel"
                           disabled={!canInteract || endTurnBlockedByEndStop}
                           title={!canInteract || endTurnBlockedByEndStop ? endTurnDisabledTitle : undefined}
+                          aria-label={t('gameBoard.board.endTurnSelf')}
                           style={{
-                            padding: '0.35rem 0.5rem',
-                            minHeight: '28px',
+                            padding: endTurnBlockedByEndStop ? '0.28rem 0.45rem' : '0.35rem 0.5rem',
+                            minHeight: endTurnBlockedByEndStop ? '36px' : '28px',
                             fontSize: '0.76rem',
-                            background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-                            color: '#0f172a',
+                            background: endTurnBlockedByEndStop
+                              ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.35), rgba(185, 28, 28, 0.55))'
+                              : 'linear-gradient(135deg, #f59e0b, #d97706)',
+                            border: endTurnBlockedByEndStop ? '1px solid rgba(248, 113, 113, 0.5)' : undefined,
+                            color: endTurnBlockedByEndStop ? '#fecaca' : '#0f172a',
                             fontWeight: 800,
                             borderRadius: '8px',
-                            boxShadow: '0 2px 8px rgba(245, 158, 11, 0.35)',
-                            opacity: !canInteract || endTurnBlockedByEndStop ? 0.5 : 1,
+                            boxShadow: endTurnBlockedByEndStop ? 'none' : '0 2px 8px rgba(245, 158, 11, 0.35)',
+                            opacity: !canInteract ? 0.5 : 1,
                             cursor: !canInteract || endTurnBlockedByEndStop ? 'not-allowed' : 'pointer',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '2px',
+                            lineHeight: 1.15,
+                            transition: 'all 0.2s ease',
                           }}
                         >
-                          {t('gameBoard.board.endTurnSelf')}
+                          <span>{t('gameBoard.board.endTurnSelf')}</span>
+                          {endTurnBlockedByEndStop && (
+                            <span style={{ fontSize: '0.64rem', color: '#fca5a5', fontWeight: 600 }}>
+                              {t('gameBoard.board.endStopBlocked', { label: topLabel })}
+                            </span>
+                          )}
                         </button>
-                      )}
-                      {endTurnBlockedByEndStop && (
-                        <div
-                          className="glass-panel"
-                          style={{
-                            padding: '0.35rem 0.55rem',
-                            fontSize: '0.72rem',
-                            background: 'rgba(239, 68, 68, 0.16)',
-                            border: '1px solid rgba(248, 113, 113, 0.45)',
-                            color: '#fecaca',
-                            fontWeight: 600,
-                            borderRadius: '8px',
-                          }}
-                        >
-                          {t('gameBoard.board.endStopBlocked', { label: topLabel })}
-                        </div>
                       )}
                     </>
                   }
