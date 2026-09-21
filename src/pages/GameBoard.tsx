@@ -258,14 +258,18 @@ const GameBoard: React.FC = () => {
       onClick={handleUndoCardMove}
       className="glass-panel"
       style={{
-        padding: '0.5rem',
-        background: '#f59e0b',
-        color: 'black',
-        fontWeight: 'bold',
+        padding: '0.28rem 0.45rem',
+        minHeight: '26px',
+        fontSize: '0.74rem',
+        background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+        color: '#0f172a',
+        fontWeight: 800,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: '0.5rem'
+        gap: '0.35rem',
+        borderRadius: '8px',
+        boxShadow: '0 2px 8px rgba(245, 158, 11, 0.35)',
       }}
     >
       {t('gameBoard.turn.undoMove')}
@@ -761,17 +765,13 @@ const GameBoard: React.FC = () => {
           />
         )}
 
-        {/* Board Playmat Area */}
-        <div style={{ position: 'relative', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-          {gameState.gameStatus === 'playing' && eventHistory.length > 0 && (
-            <div style={{ position: 'absolute', top: 12, right: 12, zIndex: 35, pointerEvents: 'auto' }}>
-              <GameBoardRecentEventsPanel eventHistory={eventHistory} />
-            </div>
-          )}
+        {gameState.gameStatus === 'playing' && eventHistory.length > 0 && (
+          <GameBoardRecentEventsPanel eventHistory={eventHistory} />
+        )}
 
-          {/* Board Playmat */}
-          <div
-            data-testid="board-playmat"
+        {/* Board Playmat */}
+        <div
+          data-testid="board-playmat"
             data-attack-mode-active={String(Boolean(attackSourceCard))}
             data-attack-source-card-id={attackSourceCard?.id ?? ''}
             style={{
@@ -1090,9 +1090,12 @@ const GameBoard: React.FC = () => {
                           title={!canInteract ? interactionBlockedTitle ?? t('gameBoard.board.availableDuringGameOnly') : undefined}
                           aria-pressed={isOwnEndStopActive}
                           style={{
-                            padding: '0.5rem',
+                            padding: '0.28rem 0.45rem',
+                            minHeight: '26px',
+                            fontSize: '0.74rem',
                             background: isOwnEndStopActive ? '#ef4444' : '#1d4ed8',
                             fontWeight: 'bold',
+                            borderRadius: '8px',
                             opacity: canInteract ? 1 : 0.5,
                             cursor: canInteract ? 'pointer' : 'not-allowed',
                           }}
@@ -1120,10 +1123,14 @@ const GameBoard: React.FC = () => {
                           disabled={!canInteract || endTurnBlockedByEndStop}
                           title={!canInteract || endTurnBlockedByEndStop ? endTurnDisabledTitle : undefined}
                           style={{
-                            padding: '0.5rem',
-                            background: '#f59e0b',
-                            color: 'black',
-                            fontWeight: 'bold',
+                            padding: '0.35rem 0.5rem',
+                            minHeight: '28px',
+                            fontSize: '0.76rem',
+                            background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                            color: '#0f172a',
+                            fontWeight: 800,
+                            borderRadius: '8px',
+                            boxShadow: '0 2px 8px rgba(245, 158, 11, 0.35)',
                             opacity: !canInteract || endTurnBlockedByEndStop ? 0.5 : 1,
                             cursor: !canInteract || endTurnBlockedByEndStop ? 'not-allowed' : 'pointer',
                           }}
@@ -1135,11 +1142,13 @@ const GameBoard: React.FC = () => {
                         <div
                           className="glass-panel"
                           style={{
-                            padding: '0.5rem 0.75rem',
+                            padding: '0.35rem 0.55rem',
+                            fontSize: '0.72rem',
                             background: 'rgba(239, 68, 68, 0.16)',
                             border: '1px solid rgba(248, 113, 113, 0.45)',
                             color: '#fecaca',
                             fontWeight: 600,
+                            borderRadius: '8px',
                           }}
                         >
                           {t('gameBoard.board.endStopBlocked', { label: topLabel })}
@@ -1148,7 +1157,7 @@ const GameBoard: React.FC = () => {
                     </>
                   }
                   afterSpawnControls={canResetGame ? (
-                    <button onClick={() => setShowResetConfirm(true)} className="glass-panel" style={{ padding: '0.5rem', background: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', fontWeight: 'bold' }}>
+                    <button onClick={() => setShowResetConfirm(true)} className="glass-panel" style={{ padding: '0.28rem 0.45rem', minHeight: '26px', fontSize: '0.74rem', background: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', fontWeight: 'bold', borderRadius: '8px' }}>
                       {t('gameBoard.controls.resetGame')}
                     </button>
                   ) : null}
@@ -1159,7 +1168,6 @@ const GameBoard: React.FC = () => {
 
         </div>
       </div>
-    </div>
 
       <GameBoardMulliganDialog
         isOpen={isMulliganModalOpen}

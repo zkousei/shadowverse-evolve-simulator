@@ -76,30 +76,26 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
   const isOverviewControls = inputProfile === 'fine' && boardDensity === 'overview';
   const showSetupActions = gameStatus === 'preparing';
   const showPlayingActions = gameStatus === 'playing';
-  const compactPanelPadding = isCompactControls ? (isNarrowCompactPanel ? '0.48rem' : '0.55rem') : isOverviewControls ? '0.8rem' : '1rem';
-  const compactPanelGap = isCompactControls ? (isNarrowCompactPanel ? '0.26rem' : '0.32rem') : isOverviewControls ? '0.4rem' : '0.5rem';
-  const compactSectionGap = isCompactControls ? (isNarrowCompactPanel ? '0.24rem' : '0.3rem') : isOverviewControls ? '0.4rem' : '0.5rem';
-  const compactCellPadding = isCompactControls ? (isNarrowCompactPanel ? '0.32rem' : '0.36rem') : isOverviewControls ? '0.4rem' : '0.5rem';
-  const compactButtonBaseStyle: React.CSSProperties = isCompactControls || isOverviewControls
-    ? {
-        minHeight: isCompactControls ? '30px' : '24px',
-        fontSize: isCompactControls ? '0.64rem' : '0.7rem',
-        lineHeight: 1.1,
-        whiteSpace: 'normal',
-        overflowWrap: 'anywhere',
-        wordBreak: 'break-word',
-      }
-    : {};
-  const compactPrimaryActionLabelStyle: React.CSSProperties = isCompactControls || isOverviewControls
-    ? {
-        minHeight: isCompactControls ? '30px' : '24px',
-        fontSize: isCompactControls ? '0.66rem' : '0.7rem',
-        lineHeight: 1.1,
-        whiteSpace: 'normal',
-        overflowWrap: 'anywhere',
-        wordBreak: 'break-word',
-      }
-    : {};
+  const compactPanelPadding = isCompactControls ? (isNarrowCompactPanel ? '0.48rem' : '0.55rem') : isOverviewControls ? '0.8rem' : '0.65rem 0.75rem';
+  const compactPanelGap = isCompactControls ? (isNarrowCompactPanel ? '0.26rem' : '0.32rem') : isOverviewControls ? '0.35rem' : '0.35rem';
+  const compactSectionGap = isCompactControls ? (isNarrowCompactPanel ? '0.24rem' : '0.3rem') : isOverviewControls ? '0.3rem' : '0.3rem';
+  const compactCellPadding = isCompactControls ? (isNarrowCompactPanel ? '0.32rem' : '0.36rem') : isOverviewControls ? '0.4rem' : '0.35rem 0.5rem';
+  const compactButtonBaseStyle: React.CSSProperties = {
+    minHeight: isCompactControls ? '30px' : '25px',
+    fontSize: isCompactControls ? '0.64rem' : '0.72rem',
+    lineHeight: 1.1,
+    whiteSpace: 'normal',
+    overflowWrap: 'anywhere',
+    wordBreak: 'break-word',
+  };
+  const compactPrimaryActionLabelStyle: React.CSSProperties = {
+    minHeight: isCompactControls ? '30px' : '25px',
+    fontSize: isCompactControls ? '0.66rem' : '0.72rem',
+    lineHeight: 1.1,
+    whiteSpace: 'normal',
+    overflowWrap: 'anywhere',
+    wordBreak: 'break-word',
+  };
   return (
     <div
       style={{

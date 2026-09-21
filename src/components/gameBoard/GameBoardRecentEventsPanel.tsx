@@ -22,7 +22,7 @@ const GameBoardRecentEventsPanel: React.FC<GameBoardRecentEventsPanelProps> = ({
       data-testid="gameboard-recent-events"
       style={{
         alignSelf: 'flex-end',
-        width: isCompact ? 'min(240px, 100%)' : 'min(320px, 100%)',
+        width: isCompact ? 'min(240px, 100%)' : 'min(380px, 100%)',
         boxSizing: 'border-box',
         maxHeight: isCollapsed ? 'auto' : isCompact ? '76px' : '132px',
         overflowY: isCollapsed ? 'hidden' : 'auto',
@@ -33,10 +33,10 @@ const GameBoardRecentEventsPanel: React.FC<GameBoardRecentEventsPanelProps> = ({
         border: '1px solid rgba(255, 255, 255, 0.12)',
         boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
         borderRadius: '12px',
-        padding: isCompact ? '0.45rem 0.52rem' : '0.75rem 0.85rem',
+        padding: isCompact ? '0.45rem 0.52rem' : '0.5rem 0.75rem',
         display: 'flex',
         flexDirection: 'column',
-        gap: isCompact ? '0.3rem' : '0.45rem',
+        gap: isCompact ? '0.3rem' : '0.35rem',
         transition: 'all 0.2s ease',
       }}
     >
@@ -67,6 +67,8 @@ const GameBoardRecentEventsPanel: React.FC<GameBoardRecentEventsPanelProps> = ({
                 fontSize: isCompact ? '0.64rem' : '0.74rem',
                 opacity: index === 0 ? 1 : 0.8,
                 whiteSpace: 'pre-wrap',
+                overflowWrap: 'anywhere',
+                wordBreak: 'break-word',
                 lineHeight: isCompact ? 1.2 : 1.3,
               }}
             >
