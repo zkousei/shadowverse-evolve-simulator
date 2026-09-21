@@ -4,16 +4,20 @@ import { useGameBoardBoardDensity, useGameBoardInputProfile } from '../../contex
 
 type GameBoardPlayingControlsProps = {
   canShowUndoTurn: boolean;
+  canResetGame?: boolean;
   onTossCoin: () => void;
   onRollDice: () => void;
   onOpenUndo: () => void;
+  onOpenReset?: () => void;
 };
 
 const GameBoardPlayingControls: React.FC<GameBoardPlayingControlsProps> = ({
   canShowUndoTurn,
+  canResetGame = false,
   onTossCoin,
   onRollDice,
   onOpenUndo,
+  onOpenReset,
 }) => {
   const { t } = useTranslation();
   const inputProfile = useGameBoardInputProfile();
@@ -61,6 +65,23 @@ const GameBoardPlayingControls: React.FC<GameBoardPlayingControlsProps> = ({
           }}
         >
           {t('gameBoard.turn.undo')}
+        </button>
+      )}
+
+      {canResetGame && onOpenReset && (
+        <button
+          onClick={onOpenReset}
+          style={{
+            ...compactButtonStyle,
+            background: 'rgba(239, 68, 68, 0.25)',
+            border: '1px solid rgba(239, 68, 68, 0.6)',
+            color: '#fca5a5',
+            fontWeight: 'bold',
+            borderRadius: '4px',
+            cursor: 'pointer',
+          }}
+        >
+          {t('gameBoard.controls.resetGame')}
         </button>
       )}
     </div>

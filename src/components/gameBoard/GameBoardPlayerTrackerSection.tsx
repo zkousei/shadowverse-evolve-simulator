@@ -12,6 +12,7 @@ type GameBoardPlayerTrackerSectionProps = {
     delta: number
   ) => void;
   readOnly?: boolean;
+  containerStyle?: React.CSSProperties;
 };
 
 const GameBoardPlayerTrackerSection: React.FC<GameBoardPlayerTrackerSectionProps> = ({
@@ -21,6 +22,7 @@ const GameBoardPlayerTrackerSection: React.FC<GameBoardPlayerTrackerSectionProps
   compact = false,
   onAdjustStat,
   readOnly = false,
+  containerStyle,
 }) => (
   <GameBoardPlayerTracker
     testId={testId}
@@ -33,6 +35,7 @@ const GameBoardPlayerTrackerSection: React.FC<GameBoardPlayerTrackerSectionProps
     compact={compact}
     onAdjustStat={onAdjustStat}
     readOnly={readOnly}
+    containerStyle={containerStyle}
   />
 );
 

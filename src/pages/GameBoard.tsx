@@ -18,7 +18,6 @@ import GameBoardMainDeckSection from '../components/gameBoard/GameBoardMainDeckS
 import GameBoardMulliganDialog from '../components/gameBoard/GameBoardMulliganDialog';
 import GameBoardPlayerControlsPanel from '../components/gameBoard/GameBoardPlayerControlsPanel';
 import GameBoardPreparationPanel from '../components/gameBoard/GameBoardPreparationPanel';
-import GameBoardRecentEventsPanel from '../components/gameBoard/GameBoardRecentEventsPanel';
 import GameBoardReadOnlyStatusSection from '../components/gameBoard/GameBoardReadOnlyStatusSection';
 import GameBoardReconnectAlert from '../components/gameBoard/GameBoardReconnectAlert';
 import GameBoardResetDialog from '../components/gameBoard/GameBoardResetDialog';
@@ -252,25 +251,37 @@ const GameBoard: React.FC = () => {
     !isSpectator &&
     hasUndoableMove &&
     (isSoloMode ? undoMoveActor === playerRole : playerRole === role && gameState.turnPlayer === role);
-  const renderUndoMoveButton = (playerRole: PlayerRole) => canShowUndoMoveForRole(playerRole) ? (
-    <button
-      data-testid={`undo-move-${playerRole}`}
-      onClick={handleUndoCardMove}
-      className="glass-panel"
-      style={{
-        padding: '0.5rem',
-        background: '#f59e0b',
-        color: 'black',
-        fontWeight: 'bold',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '0.5rem'
-      }}
-    >
-      {t('gameBoard.turn.undoMove')}
-    </button>
-  ) : null;
+  const renderUndoMoveButton = (playerRole: PlayerRole) => {
+    const canUndo = canShowUndoMoveForRole(playerRole);
+    return (
+      <button
+        data-testid={`undo-move-${playerRole}`}
+        onClick={handleUndoCardMove}
+        disabled={!canUndo}
+        className="glass-panel"
+        style={{
+          padding: '0.28rem 0.45rem',
+          minHeight: '26px',
+          fontSize: '0.74rem',
+          background: canUndo
+            ? 'linear-gradient(135deg, #f59e0b, #d97706)'
+            : 'rgba(148, 163, 184, 0.18)',
+          color: canUndo ? '#0f172a' : 'rgba(148, 163, 184, 0.5)',
+          fontWeight: 800,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '0.35rem',
+          borderRadius: '8px',
+          boxShadow: canUndo ? '0 2px 8px rgba(245, 158, 11, 0.35)' : 'none',
+          cursor: canUndo ? 'pointer' : 'not-allowed',
+          opacity: canUndo ? 1 : 0.4,
+        }}
+      >
+        {t('gameBoard.turn.undoMove')}
+      </button>
+    );
+  };
   const savedSessionTimestamp = React.useMemo(() => {
     if (!savedSessionCandidate) return null;
 
@@ -641,6 +652,48 @@ const GameBoard: React.FC = () => {
     onClose: closeInspector,
   };
 
+  const renderTopLeaderZoneSection = () => (
+    <GameBoardLeaderZoneSection
+      playerRole={topRole}
+      label={topLabel}
+      zoneLabel={t('gameBoard.board.leaderLabel', { label: topLabel })}
+      side="right"
+      isInline={true}
+      zoneMinHeight={leaderZoneMinHeight}
+      leaderCards={getCards(`leader-${topRole}`)}
+      sideZoneWidth={sideZoneWidth}
+      cardDetailLookup={cardDetailLookup}
+      getHighlightTone={getAttackHighlightTone}
+      onInspectCard={handleInspectCard}
+      viewerRole={viewerRole}
+      attackSourceController={attackSourceController}
+      isDebug={isDebug}
+      searchLabel={t('gameBoard.board.search')}
+      onSearch={openSearchZone}
+    />
+  );
+
+  const renderBottomLeaderZoneSection = () => (
+    <GameBoardLeaderZoneSection
+      playerRole={bottomRole}
+      label={bottomLabel}
+      zoneLabel={t('gameBoard.board.leaderLabel', { label: bottomLabel })}
+      side="left"
+      isInline={true}
+      zoneMinHeight={leaderZoneMinHeight}
+      leaderCards={getCards(`leader-${bottomRole}`)}
+      sideZoneWidth={sideZoneWidth}
+      cardDetailLookup={cardDetailLookup}
+      getHighlightTone={getAttackHighlightTone}
+      onInspectCard={handleInspectCard}
+      viewerRole={viewerRole}
+      attackSourceController={attackSourceController}
+      isDebug={isDebug}
+      searchLabel={t('gameBoard.board.search')}
+      onSearch={openSearchZone}
+    />
+  );
+
   return (
     <DndContext onDragEnd={(event) => {
       if (!canInteract) return;
@@ -657,6 +710,7 @@ const GameBoard: React.FC = () => {
             flexDirection: 'column',
             width: '100%',
             height: '100%',
+            boxSizing: 'border-box',
             gap: boardShellGap,
             overflow: 'hidden',
           }}
@@ -690,7 +744,10 @@ const GameBoard: React.FC = () => {
           onTossCoin={handlePureCoinFlip}
           onRollDice={handleRollDice}
           onOpenUndo={() => setShowUndoConfirm(true)}
+          canResetGame={canResetGame}
+          onOpenReset={() => setShowResetConfirm(true)}
           onPhaseChange={setPhase}
+          eventHistory={eventHistory}
         />
 
         {isGuestConnectionBlocked && (
@@ -718,17 +775,27 @@ const GameBoard: React.FC = () => {
           />
         )}
 
-        {gameState.gameStatus === 'playing' && eventHistory.length > 0 && (
-          <GameBoardRecentEventsPanel eventHistory={eventHistory} />
-        )}
-
         {/* Board Playmat */}
         <div
           data-testid="board-playmat"
-          data-attack-mode-active={String(Boolean(attackSourceCard))}
-          data-attack-source-card-id={attackSourceCard?.id ?? ''}
-          style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: playmatGap, background: 'url("https://shadowverse-evolve.com/wordpress/wp-content/themes/shadowverse-evolve-release_v0/assets/images/common/bg.jpg")', backgroundSize: 'cover', backgroundPosition: 'center', borderRadius: 'var(--radius-lg)', padding: playmatPadding, overflowY: 'auto', overflowX: 'auto', alignItems: 'center' }}
-        >
+            data-attack-mode-active={String(Boolean(attackSourceCard))}
+            data-attack-source-card-id={attackSourceCard?.id ?? ''}
+            style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: playmatGap,
+              background: 'url("https://shadowverse-evolve.com/wordpress/wp-content/themes/shadowverse-evolve-release_v0/assets/images/common/bg.jpg")',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              borderRadius: 'var(--radius-lg)',
+              padding: playmatPadding,
+              overflowY: 'auto',
+              overflowX: 'hidden',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
 
           {/* OPPONENT BOARD */}
           <div
@@ -737,7 +804,7 @@ const GameBoard: React.FC = () => {
             style={{ ...activeBoardSectionStyle(shouldHighlightTopBoard), padding: boardSectionPadding, gap: boardSectionGap, opacity: 0.9 }}
           >
             {isSoloMode ? (
-              <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: boardShellColumnGap, alignItems: 'flex-start', width: '100%', maxWidth: '1568px', justifyContent: 'center' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: boardShellColumnGap, alignItems: 'stretch', width: '100%', maxWidth: '1568px', justifyContent: 'center' }}>
                 <GameBoardPlayerControlsPanel
                   {...topControlsPanelProps}
                   middleControls={
@@ -802,26 +869,6 @@ const GameBoard: React.FC = () => {
                     columns={boardColumns}
                     width={boardContentWidth}
                     rowGap={boardRowGap}
-                    overlay={
-                      <GameBoardLeaderZoneSection
-                        playerRole={topRole}
-                        label={topLabel}
-                        zoneLabel={t('gameBoard.board.leaderLabel', { label: topLabel })}
-                        side="right"
-                        extraOffset={20}
-                        zoneMinHeight={leaderZoneMinHeight}
-                        leaderCards={getCards(`leader-${topRole}`)}
-                        sideZoneWidth={sideZoneWidth}
-                        cardDetailLookup={cardDetailLookup}
-                        getHighlightTone={getAttackHighlightTone}
-                        onInspectCard={handleInspectCard}
-                        viewerRole={viewerRole}
-                        attackSourceController={attackSourceController}
-                        isDebug={isDebug}
-                        searchLabel={t('gameBoard.board.search')}
-                        onSearch={openSearchZone}
-                      />
-                    }
                   >
                       <GameBoardMainDeckSection
                         zoneProps={{ id: `mainDeck-${topRole}`, label: t('gameBoard.zones.mainDeck', { label: topLabel }), cards: getCards(`mainDeck-${topRole}`), cardDetailLookup, layout: 'stack', isProtected: true, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: stackZoneMinHeight }, isDebug }}
@@ -867,10 +914,12 @@ const GameBoard: React.FC = () => {
                       />
                   </GameBoardBoardRow>
                 </div>
-                <div />
+                <div style={{ width: `${sidePanelWidth}px`, display: 'flex', justifyContent: 'center', alignItems: 'flex-end' }}>
+                  {renderTopLeaderZoneSection()}
+                </div>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: boardShellColumnGap, alignItems: 'flex-start', width: '100%', maxWidth: '1568px', justifyContent: 'center' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: boardShellColumnGap, alignItems: 'stretch', width: '100%', maxWidth: '1568px', justifyContent: 'center' }}>
                 <div style={{ width: `${topPanelWidth}px`, alignSelf: 'end' }}>
                   <GameBoardReadOnlyStatusSection
                     label={topLabel}
@@ -913,26 +962,6 @@ const GameBoard: React.FC = () => {
                     columns={boardColumns}
                     width={boardContentWidth}
                     rowGap={boardRowGap}
-                    overlay={
-                      <GameBoardLeaderZoneSection
-                        playerRole={topRole}
-                        label={topLabel}
-                        zoneLabel={t('gameBoard.board.leaderLabel', { label: topLabel })}
-                        side="right"
-                        extraOffset={20}
-                        zoneMinHeight={leaderZoneMinHeight}
-                        leaderCards={getCards(`leader-${topRole}`)}
-                        sideZoneWidth={sideZoneWidth}
-                        cardDetailLookup={cardDetailLookup}
-                        getHighlightTone={getAttackHighlightTone}
-                        onInspectCard={handleInspectCard}
-                        viewerRole={viewerRole}
-                        attackSourceController={attackSourceController}
-                        isDebug={isDebug}
-                        searchLabel={t('gameBoard.board.search')}
-                        onSearch={openSearchZone}
-                      />
-                    }
                   >
                       <GameBoardMainDeckSection
                         zoneProps={{ id: `mainDeck-${topRole}`, label: t('gameBoard.zones.mainDeck', { label: topLabel }), cards: getCards(`mainDeck-${topRole}`), cardDetailLookup, layout: 'stack', isProtected: true, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: stackZoneMinHeight }, isDebug }}
@@ -970,7 +999,9 @@ const GameBoard: React.FC = () => {
                       />
                   </GameBoardBoardRow>
                 </div>
-                <div />
+                <div style={{ width: `${sidePanelWidth}px`, display: 'flex', justifyContent: 'center', alignItems: 'flex-end' }}>
+                  {renderTopLeaderZoneSection()}
+                </div>
               </div>
             )}
           </div>
@@ -983,32 +1014,15 @@ const GameBoard: React.FC = () => {
             data-turn-active={String(isBottomTurnActive)}
             style={{ ...activeBoardSectionStyle(isBottomTurnActive), padding: boardSectionPadding, gap: boardSectionGap }}
           >
-		            <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: boardShellColumnGap, alignItems: 'flex-start', width: '100%', maxWidth: '1568px', justifyContent: 'center' }}>
-                <div />
+		            <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: boardShellColumnGap, alignItems: 'stretch', width: '100%', maxWidth: '1568px', justifyContent: 'center' }}>
+                <div style={{ width: `${topPanelWidth}px`, display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
+                  {renderBottomLeaderZoneSection()}
+                </div>
 		              <div style={{ width: `${boardContentWidth}px`, minWidth: 0, display: 'flex', flexDirection: 'column', gap: boardColumnStackGap, alignItems: 'flex-start' }}>
 	                <GameBoardBoardRow
                     columns={boardColumns}
                     width={boardContentWidth}
                     rowGap={boardRowGap}
-                    overlay={
-                      <GameBoardLeaderZoneSection
-                        playerRole={bottomRole}
-                        label={bottomLabel}
-                        zoneLabel={t('gameBoard.board.leaderLabel', { label: bottomLabel })}
-                        side="left"
-                        zoneMinHeight={leaderZoneMinHeight}
-                        leaderCards={getCards(`leader-${bottomRole}`)}
-                        sideZoneWidth={sideZoneWidth}
-                        cardDetailLookup={cardDetailLookup}
-                        getHighlightTone={getAttackHighlightTone}
-                        onInspectCard={handleInspectCard}
-                        viewerRole={viewerRole}
-                        attackSourceController={attackSourceController}
-                        isDebug={isDebug}
-                        searchLabel={t('gameBoard.board.search')}
-                        onSearch={openSearchZone}
-                      />
-                    }
                   >
                   <GameBoardSearchableStackSection
                     zoneProps={{ id: `evolveDeck-${bottomRole}`, label: t('gameBoard.zones.evolveDeck', { label: bottomLabel }), cards: getCards(`evolveDeck-${bottomRole}`), cardDetailLookup, layout: 'stack', onInspectCard: handleInspectCard, isProtected: true, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: stackZoneMinHeight }, isDebug }}
@@ -1082,9 +1096,12 @@ const GameBoard: React.FC = () => {
                           title={!canInteract ? interactionBlockedTitle ?? t('gameBoard.board.availableDuringGameOnly') : undefined}
                           aria-pressed={isOwnEndStopActive}
                           style={{
-                            padding: '0.5rem',
+                            padding: '0.28rem 0.45rem',
+                            minHeight: '26px',
+                            fontSize: '0.74rem',
                             background: isOwnEndStopActive ? '#ef4444' : '#1d4ed8',
                             fontWeight: 'bold',
+                            borderRadius: '8px',
                             opacity: canInteract ? 1 : 0.5,
                             cursor: canInteract ? 'pointer' : 'not-allowed',
                           }}
@@ -1111,39 +1128,41 @@ const GameBoard: React.FC = () => {
                           className="glass-panel"
                           disabled={!canInteract || endTurnBlockedByEndStop}
                           title={!canInteract || endTurnBlockedByEndStop ? endTurnDisabledTitle : undefined}
+                          aria-label={t('gameBoard.board.endTurnSelf')}
                           style={{
-                            padding: '0.5rem',
-                            background: '#f59e0b',
-                            color: 'black',
-                            fontWeight: 'bold',
-                            opacity: !canInteract || endTurnBlockedByEndStop ? 0.5 : 1,
+                            padding: endTurnBlockedByEndStop ? '0.28rem 0.45rem' : '0.35rem 0.5rem',
+                            minHeight: endTurnBlockedByEndStop ? '36px' : '28px',
+                            fontSize: '0.76rem',
+                            background: endTurnBlockedByEndStop
+                              ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.35), rgba(185, 28, 28, 0.55))'
+                              : 'linear-gradient(135deg, #f59e0b, #d97706)',
+                            border: endTurnBlockedByEndStop ? '1px solid rgba(248, 113, 113, 0.5)' : undefined,
+                            color: endTurnBlockedByEndStop ? '#fecaca' : '#0f172a',
+                            fontWeight: 800,
+                            borderRadius: '8px',
+                            boxShadow: endTurnBlockedByEndStop ? 'none' : '0 2px 8px rgba(245, 158, 11, 0.35)',
+                            opacity: !canInteract ? 0.5 : 1,
                             cursor: !canInteract || endTurnBlockedByEndStop ? 'not-allowed' : 'pointer',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '2px',
+                            lineHeight: 1.15,
+                            transition: 'all 0.2s ease',
                           }}
                         >
-                          {t('gameBoard.board.endTurnSelf')}
+                          <span>{t('gameBoard.board.endTurnSelf')}</span>
+                          {endTurnBlockedByEndStop && (
+                            <span style={{ fontSize: '0.64rem', color: '#fca5a5', fontWeight: 600 }}>
+                              {t('gameBoard.board.endStopBlocked', { label: topLabel })}
+                            </span>
+                          )}
                         </button>
-                      )}
-                      {endTurnBlockedByEndStop && (
-                        <div
-                          className="glass-panel"
-                          style={{
-                            padding: '0.5rem 0.75rem',
-                            background: 'rgba(239, 68, 68, 0.16)',
-                            border: '1px solid rgba(248, 113, 113, 0.45)',
-                            color: '#fecaca',
-                            fontWeight: 600,
-                          }}
-                        >
-                          {t('gameBoard.board.endStopBlocked', { label: topLabel })}
-                        </div>
                       )}
                     </>
                   }
-                  afterSpawnControls={canResetGame ? (
-                    <button onClick={() => setShowResetConfirm(true)} className="glass-panel" style={{ padding: '0.5rem', background: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', fontWeight: 'bold' }}>
-                      {t('gameBoard.controls.resetGame')}
-                    </button>
-                  ) : null}
+                  undoMoveButton={renderUndoMoveButton(bottomRole)}
                 />
               )}
             </div>

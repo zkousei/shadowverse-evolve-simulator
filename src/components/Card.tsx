@@ -268,21 +268,21 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
     lineHeight: 1.2,
   };
   const counterAdjustButtonStyle: React.CSSProperties = {
-    padding: isOverviewQuickActions ? '2px 3px' : '3px 4px',
-    fontSize: isOverviewQuickActions ? '10px' : '11px',
+    padding: isOverviewQuickActions ? '1px 2px' : '3px 4px',
+    fontSize: isOverviewQuickActions ? '9px' : '11px',
     borderRadius: '4px',
     minWidth: isOverviewQuickActions ? '20px' : '24px',
-    minHeight: isOverviewQuickActions ? '18px' : '22px',
+    minHeight: isOverviewQuickActions ? '17px' : '22px',
     border: '1px solid rgba(255,255,255,0.55)',
     fontWeight: 'bold',
     lineHeight: 1,
   };
   const genericCounterButtonStyle: React.CSSProperties = {
-    padding: isOverviewQuickActions ? '1px 3px' : '1px 4px',
-    fontSize: isOverviewQuickActions ? '9px' : '10px',
+    padding: isOverviewQuickActions ? '0 2px' : '1px 4px',
+    fontSize: isOverviewQuickActions ? '8px' : '10px',
     borderRadius: '2px',
-    width: '100%',
-    minHeight: isOverviewQuickActions ? '16px' : '18px',
+    width: isOverviewQuickActions ? '18px' : '100%',
+    minHeight: isOverviewQuickActions ? '15px' : '18px',
     lineHeight: 1.05,
   };
   const combatActionButtonStyle: React.CSSProperties = {

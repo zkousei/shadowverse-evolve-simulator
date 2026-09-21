@@ -19,6 +19,7 @@ type GameBoardLeaderZoneSectionProps = {
   viewerRole: PlayerRole | 'all' | 'spectator';
   attackSourceController?: PlayerRole | null;
   isDebug?: boolean;
+  isInline?: boolean;
   searchLabel: string;
   onSearch: (leaderZoneId: string, zoneLabel: string) => void;
 };
@@ -38,6 +39,7 @@ const GameBoardLeaderZoneSection: React.FC<GameBoardLeaderZoneSectionProps> = ({
   viewerRole,
   attackSourceController = null,
   isDebug = false,
+  isInline = false,
   searchLabel,
   onSearch,
 }) => {
@@ -62,6 +64,7 @@ const GameBoardLeaderZoneSection: React.FC<GameBoardLeaderZoneSectionProps> = ({
       viewerRole={viewerRole}
       isAttackTargetLeader={isAttackTargetLeader}
       isDebug={isDebug}
+      isInline={isInline}
       searchLabel={searchLabel}
       onSearch={() => onSearch(leaderZoneId, zoneLabel)}
     />

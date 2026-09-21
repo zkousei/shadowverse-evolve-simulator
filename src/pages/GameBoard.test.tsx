@@ -2122,13 +2122,15 @@ describe('GameBoard', () => {
 
     render(<GameBoard />);
 
-    expect(screen.queryByTestId('undo-move-host')).not.toBeInTheDocument();
+    // Host undo button is always present but disabled when undo belongs to guest
+    expect(screen.getByTestId('undo-move-host')).toBeDisabled();
+    // Guest undo button is enabled and clickable
     fireEvent.click(screen.getByTestId('undo-move-guest'));
 
     expect(handleUndoCardMove).toHaveBeenCalledTimes(1);
   });
 
-  it('keeps move undo hidden during the opponent turn in p2p', () => {
+  it('keeps move undo disabled during the opponent turn in p2p', () => {
     mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
       mode: 'p2p',
       isSoloMode: false,
@@ -2144,7 +2146,8 @@ describe('GameBoard', () => {
 
     render(<GameBoard />);
 
-    expect(screen.queryByTestId('undo-move-host')).not.toBeInTheDocument();
+    // Undo button is always present but disabled during opponent's turn
+    expect(screen.getByTestId('undo-move-host')).toBeDisabled();
   });
 
   it('shows the reset game dialog and wires cancel/confirm actions', () => {
@@ -3020,12 +3023,12 @@ describe('GameBoard', () => {
       expect(topGrid).toHaveStyle({ gridTemplateColumns: '176px 864px 176px' });
       expect(sectionDivider).not.toBeNull();
       expect(sectionDivider as HTMLElement).toHaveStyle({ margin: '0.12rem 0' });
-      expect(screen.getByTestId('zone-cemetery-guest')).toHaveStyle({ minHeight: '96px' });
-      expect(screen.getByTestId('zone-field-guest')).toHaveStyle({ minHeight: '106px' });
-      expect(screen.getByTestId('zone-hand-guest')).toHaveStyle({ minHeight: '100px' });
-      expect(screen.getByTestId('zone-hand-host')).toHaveStyle({ minHeight: '106px' });
-      expect(screen.getByTestId('zone-leader-guest')).toHaveStyle({ minHeight: '110px' });
-      expect(screen.getByTestId('zone-leader-host')).toHaveStyle({ minHeight: '110px' });
+      expect(screen.getByTestId('zone-cemetery-guest')).toHaveStyle({ minHeight: '116px' });
+      expect(screen.getByTestId('zone-field-guest')).toHaveStyle({ minHeight: '116px' });
+      expect(screen.getByTestId('zone-hand-guest')).toHaveStyle({ minHeight: '114px' });
+      expect(screen.getByTestId('zone-hand-host')).toHaveStyle({ minHeight: '116px' });
+      expect(screen.getByTestId('zone-leader-guest')).toHaveStyle({ minHeight: '116px' });
+      expect(screen.getByTestId('zone-leader-host')).toHaveStyle({ minHeight: '116px' });
       expect(screen.getByTestId('zone-cemetery-guest').parentElement).toHaveStyle({ gap: '0' });
       expect(screen.getByTestId('zone-mainDeck-host').parentElement).toHaveStyle({ gap: '0' });
       const hostControlsPanel = screen.getByTestId('player-tracker-host').parentElement as HTMLElement;

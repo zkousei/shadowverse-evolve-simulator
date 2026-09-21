@@ -200,11 +200,11 @@ export const resolveBoardLayoutSpacing = (
       bottomBoardRowSecondaryMarginTop: '0',
       boardSectionDividerMargin: '0.12rem 0',
       boardRowGap: '0.5rem',
-      stackZoneMinHeight: '96px',
-      fieldZoneMinHeight: '106px',
-      handZoneMinHeight: '100px',
-      bottomHandZoneMinHeight: '106px',
-      leaderZoneMinHeight: '110px',
+      stackZoneMinHeight: '116px',
+      fieldZoneMinHeight: '116px',
+      handZoneMinHeight: '114px',
+      bottomHandZoneMinHeight: '116px',
+      leaderZoneMinHeight: '116px',
     };
   }
 
@@ -283,9 +283,9 @@ export const activeBoardSectionStyle = (isActive: boolean): CSSProperties => ({
   width: '100%',
   alignItems: 'center',
   padding: '0.55rem 0.6rem',
-  borderRadius: '16px',
-  border: isActive ? '1px solid rgba(34, 211, 238, 0.38)' : '1px solid transparent',
-  background: isActive ? 'linear-gradient(180deg, rgba(34, 211, 238, 0.08), rgba(15, 23, 42, 0.02))' : 'transparent',
-  boxShadow: isActive ? '0 0 0 1px rgba(34, 211, 238, 0.12), 0 0 28px rgba(34, 211, 238, 0.14)' : 'none',
-  transition: 'all 0.2s ease',
+  borderRadius: '20px',
+  border: isActive ? '1px solid rgba(56, 189, 248, 0.45)' : '1px solid rgba(255, 255, 255, 0.05)',
+  background: isActive ? 'linear-gradient(180deg, rgba(14, 165, 233, 0.1), rgba(15, 23, 42, 0.3))' : 'rgba(15, 23, 42, 0.2)',
+  boxShadow: isActive ? '0 0 0 1px rgba(56, 189, 248, 0.2), 0 8px 32px rgba(14, 165, 233, 0.15)' : 'none',
+  transition: 'all 0.25s ease',
 });
