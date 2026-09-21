@@ -251,29 +251,37 @@ const GameBoard: React.FC = () => {
     !isSpectator &&
     hasUndoableMove &&
     (isSoloMode ? undoMoveActor === playerRole : playerRole === role && gameState.turnPlayer === role);
-  const renderUndoMoveButton = (playerRole: PlayerRole) => canShowUndoMoveForRole(playerRole) ? (
-    <button
-      data-testid={`undo-move-${playerRole}`}
-      onClick={handleUndoCardMove}
-      className="glass-panel"
-      style={{
-        padding: '0.28rem 0.45rem',
-        minHeight: '26px',
-        fontSize: '0.74rem',
-        background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-        color: '#0f172a',
-        fontWeight: 800,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '0.35rem',
-        borderRadius: '8px',
-        boxShadow: '0 2px 8px rgba(245, 158, 11, 0.35)',
-      }}
-    >
-      {t('gameBoard.turn.undoMove')}
-    </button>
-  ) : null;
+  const renderUndoMoveButton = (playerRole: PlayerRole) => {
+    const canUndo = canShowUndoMoveForRole(playerRole);
+    return (
+      <button
+        data-testid={`undo-move-${playerRole}`}
+        onClick={handleUndoCardMove}
+        disabled={!canUndo}
+        className="glass-panel"
+        style={{
+          padding: '0.28rem 0.45rem',
+          minHeight: '26px',
+          fontSize: '0.74rem',
+          background: canUndo
+            ? 'linear-gradient(135deg, #f59e0b, #d97706)'
+            : 'rgba(148, 163, 184, 0.18)',
+          color: canUndo ? '#0f172a' : 'rgba(148, 163, 184, 0.5)',
+          fontWeight: 800,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '0.35rem',
+          borderRadius: '8px',
+          boxShadow: canUndo ? '0 2px 8px rgba(245, 158, 11, 0.35)' : 'none',
+          cursor: canUndo ? 'pointer' : 'not-allowed',
+          opacity: canUndo ? 1 : 0.4,
+        }}
+      >
+        {t('gameBoard.turn.undoMove')}
+      </button>
+    );
+  };
   const savedSessionTimestamp = React.useMemo(() => {
     if (!savedSessionCandidate) return null;
 

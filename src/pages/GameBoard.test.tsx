@@ -2122,13 +2122,15 @@ describe('GameBoard', () => {
 
     render(<GameBoard />);
 
-    expect(screen.queryByTestId('undo-move-host')).not.toBeInTheDocument();
+    // Host undo button is always present but disabled when undo belongs to guest
+    expect(screen.getByTestId('undo-move-host')).toBeDisabled();
+    // Guest undo button is enabled and clickable
     fireEvent.click(screen.getByTestId('undo-move-guest'));
 
     expect(handleUndoCardMove).toHaveBeenCalledTimes(1);
   });
 
-  it('keeps move undo hidden during the opponent turn in p2p', () => {
+  it('keeps move undo disabled during the opponent turn in p2p', () => {
     mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
       mode: 'p2p',
       isSoloMode: false,
@@ -2144,7 +2146,8 @@ describe('GameBoard', () => {
 
     render(<GameBoard />);
 
-    expect(screen.queryByTestId('undo-move-host')).not.toBeInTheDocument();
+    // Undo button is always present but disabled during opponent's turn
+    expect(screen.getByTestId('undo-move-host')).toBeDisabled();
   });
 
   it('shows the reset game dialog and wires cancel/confirm actions', () => {
