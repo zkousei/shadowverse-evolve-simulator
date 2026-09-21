@@ -51,6 +51,7 @@ import {
 } from '../utils/gameBoard/gameBoardDismissals';
 import {
   activeBoardSectionStyle,
+  resolveBoardDisplayScale,
   resolveBoardLayout,
   resolveBoardLayoutSpacing,
   soloMulliganButtonStyle,
@@ -131,6 +132,19 @@ const GameBoard: React.FC = () => {
     () => resolveBoardLayout(viewportWidth, inputProfile, boardDensity),
     [viewportWidth, inputProfile, boardDensity]
   );
+  const boardDisplayScale = resolveBoardDisplayScale(viewportWidth, inputProfile);
+  const isNarrowBoardPreview = boardDisplayScale < 1;
+  const boardShellNaturalWidth = topPanelWidth + boardContentWidth + sidePanelWidth + 32;
+  const boardGridPresentationStyle: React.CSSProperties = isNarrowBoardPreview
+    ? {
+        width: `${boardShellNaturalWidth}px`,
+        maxWidth: 'none',
+        zoom: boardDisplayScale,
+      }
+    : {
+        width: '100%',
+        maxWidth: '1568px',
+      };
   const { t } = useTranslation();
   const {
     room, isSoloMode, isHost, isSpectator, role, status, connectionState, spectatorCount, maxSpectatorConnections, canInteract, canView, attemptReconnect, gameState, savedSessionCandidate, resumeSavedSession, discardSavedSession, searchZone, setSearchZone,
@@ -804,7 +818,7 @@ const GameBoard: React.FC = () => {
             style={{ ...activeBoardSectionStyle(shouldHighlightTopBoard), padding: boardSectionPadding, gap: boardSectionGap, opacity: 0.9 }}
           >
             {isSoloMode ? (
-              <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: boardShellColumnGap, alignItems: 'stretch', width: '100%', maxWidth: '1568px', justifyContent: 'center' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: boardShellColumnGap, alignItems: 'stretch', justifyContent: 'center', ...boardGridPresentationStyle }}>
                 <GameBoardPlayerControlsPanel
                   {...topControlsPanelProps}
                   middleControls={
@@ -919,7 +933,7 @@ const GameBoard: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: boardShellColumnGap, alignItems: 'stretch', width: '100%', maxWidth: '1568px', justifyContent: 'center' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: boardShellColumnGap, alignItems: 'stretch', justifyContent: 'center', ...boardGridPresentationStyle }}>
                 <div style={{ width: `${topPanelWidth}px`, alignSelf: 'end' }}>
                   <GameBoardReadOnlyStatusSection
                     label={topLabel}
@@ -1014,7 +1028,7 @@ const GameBoard: React.FC = () => {
             data-turn-active={String(isBottomTurnActive)}
             style={{ ...activeBoardSectionStyle(isBottomTurnActive), padding: boardSectionPadding, gap: boardSectionGap }}
           >
-		            <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: boardShellColumnGap, alignItems: 'stretch', width: '100%', maxWidth: '1568px', justifyContent: 'center' }}>
+		            <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: boardShellColumnGap, alignItems: 'stretch', justifyContent: 'center', ...boardGridPresentationStyle }}>
                 <div style={{ width: `${topPanelWidth}px`, display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
                   {renderBottomLeaderZoneSection()}
                 </div>

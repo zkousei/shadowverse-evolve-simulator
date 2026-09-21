@@ -41,6 +41,9 @@ const BOARD_SHELL_COLUMN_GAP = 16;
 const TABLET_VIEWPORT_HORIZONTAL_RESERVED = 80;
 const TABLET_MIN_SHELL_WIDTH = 860;
 const TABLET_MAX_SHELL_WIDTH = 1120;
+const NARROW_DESKTOP_HORIZONTAL_RESERVED = 80;
+const NARROW_DESKTOP_BOARD_SHELL_WIDTH = 1552;
+const MIN_NARROW_DESKTOP_DISPLAY_SCALE = 0.25;
 
 const clamp = (value: number, min: number, max: number): number => (
   Math.min(Math.max(value, min), max)
@@ -143,6 +146,20 @@ export const resolveBoardLayout = (
   const profile = getLayoutProfileForViewportWidth(viewportWidth, inputProfile);
   if (profile === 'tablet') return resolveTabletLayout(viewportWidth);
   return boardDensity === 'overview' ? overviewDesktopGameBoardLayout : desktopGameBoardLayout;
+};
+
+export const resolveBoardDisplayScale = (
+  viewportWidth: number,
+  inputProfile: GameBoardLayoutInputProfile = 'coarse'
+): number => {
+  if (inputProfile !== 'fine' || viewportWidth >= DESKTOP_MIN_WIDTH) return 1;
+
+  const availableWidth = Math.max(0, viewportWidth - NARROW_DESKTOP_HORIZONTAL_RESERVED);
+  return Number(clamp(
+    availableWidth / NARROW_DESKTOP_BOARD_SHELL_WIDTH,
+    MIN_NARROW_DESKTOP_DISPLAY_SCALE,
+    1
+  ).toFixed(3));
 };
 
 export const getBoardDensityForViewportWidth = (

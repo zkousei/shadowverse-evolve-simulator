@@ -2873,6 +2873,7 @@ describe('GameBoard', () => {
       const topGrid = topSection.firstElementChild as HTMLElement;
 
       expect(topGrid).toHaveStyle({ gridTemplateColumns: '176px 864px 176px' });
+      expect(topGrid.style.zoom).toBe('');
     } finally {
       Object.defineProperty(window, 'innerWidth', {
         configurable: true,
@@ -2882,7 +2883,7 @@ describe('GameBoard', () => {
     }
   });
 
-  it('keeps desktop board shell columns when viewport width is 1024px on fine pointer', () => {
+  it('visually scales the fixed desktop board shell when viewport width is 1024px on fine pointer', () => {
     const originalInnerWidth = window.innerWidth;
     const originalMatchMedia = window.matchMedia;
     Object.defineProperty(window, 'innerWidth', {
@@ -2903,6 +2904,7 @@ describe('GameBoard', () => {
       const topGrid = topSection.firstElementChild as HTMLElement;
 
       expect(topGrid).toHaveStyle({ gridTemplateColumns: '220px 1080px 220px' });
+      expect(topGrid).toHaveStyle({ width: '1552px', maxWidth: 'none', zoom: '0.608' });
     } finally {
       Object.defineProperty(window, 'innerWidth', {
         configurable: true,

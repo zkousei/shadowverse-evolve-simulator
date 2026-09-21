@@ -6,6 +6,7 @@ import {
   centerZoneWidth,
   getBoardDensityForViewportWidth,
   getLayoutProfileForViewportWidth,
+  resolveBoardDisplayScale,
   resolveBoardLayoutSpacing,
   resolveBoardLayout,
   sidePanelWidth,
@@ -84,6 +85,13 @@ describe('gameBoardLayout', () => {
     expect(layout.profile).toBe('desktop');
     expect(layout.topPanelWidth).toBe(layout.sidePanelWidth);
     expect(layout.boardShellColumns).toBe('220px 1080px 220px');
+  });
+
+  it('scales only narrow fine-input board previews while leaving fullscreen and coarse layouts untouched', () => {
+    expect(resolveBoardDisplayScale(1440, 'fine')).toBe(1);
+    expect(resolveBoardDisplayScale(1280, 'fine')).toBe(1);
+    expect(resolveBoardDisplayScale(1024, 'fine')).toBe(0.608);
+    expect(resolveBoardDisplayScale(1024, 'coarse')).toBe(1);
   });
 
   it('uses overview density for PC desktop viewports while keeping tablet layouts standard', () => {

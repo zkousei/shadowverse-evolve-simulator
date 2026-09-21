@@ -27,6 +27,32 @@ test.describe('Solo Game Flow', () => {
     await expect(page.getByTestId('board-section-bottom')).toBeVisible();
   });
 
+  test('scales only the narrow desktop board preview and restores the fullscreen layout unchanged', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/game?mode=solo');
+
+    const topSection = boardSection(page, 'top');
+    const topGrid = topSection.locator(':scope > div').first();
+
+    await expect.poll(() => topGrid.evaluate(element => element.style.zoom)).toBe('');
+    await expect.poll(() => topGrid.evaluate(element => element.style.width)).toBe('100%');
+
+    await page.setViewportSize({ width: 1024, height: 900 });
+    await expect.poll(() => topGrid.evaluate(element => element.style.zoom)).toBe('0.608');
+
+    const [sectionBox, gridBox] = await Promise.all([
+      topSection.boundingBox(),
+      topGrid.boundingBox(),
+    ]);
+    expect(sectionBox).not.toBeNull();
+    expect(gridBox).not.toBeNull();
+    expect(gridBox!.width).toBeLessThanOrEqual(sectionBox!.width);
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await expect.poll(() => topGrid.evaluate(element => element.style.zoom)).toBe('');
+    await expect.poll(() => topGrid.evaluate(element => element.style.width)).toBe('100%');
+  });
+
   test('imports valid solo decks, starts a game, and moves a hand card onto the field', async ({ page }) => {
     await page.goto('/game?mode=solo');
     const preparationControls = page.getByTestId('preparation-controls');
