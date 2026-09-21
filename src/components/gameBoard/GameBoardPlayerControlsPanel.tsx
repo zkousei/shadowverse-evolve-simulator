@@ -108,9 +108,13 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
         display: 'flex',
         flexDirection: 'column',
         gap: compactPanelGap,
-        background: 'rgba(0,0,0,0.8)',
+        background: 'rgba(15, 23, 42, 0.88)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
         padding: compactPanelPadding,
-        borderRadius: 'var(--radius-md)',
+        borderRadius: '16px',
         ...containerStyle,
       }}
     >

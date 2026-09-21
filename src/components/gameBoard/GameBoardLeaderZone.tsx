@@ -19,6 +19,7 @@ type GameBoardLeaderZoneProps = {
   viewerRole?: PlayerRole | 'all' | 'spectator';
   isAttackTargetLeader: boolean;
   isDebug?: boolean;
+  isInline?: boolean;
   searchLabel: string;
   onSearch: () => void;
 };
@@ -38,6 +39,7 @@ const GameBoardLeaderZone: React.FC<GameBoardLeaderZoneProps> = ({
   viewerRole,
   isAttackTargetLeader,
   isDebug = false,
+  isInline = false,
   searchLabel,
   onSearch,
 }) => (
@@ -45,12 +47,17 @@ const GameBoardLeaderZone: React.FC<GameBoardLeaderZoneProps> = ({
     data-leader-zone={leaderZoneId}
     data-testid={`leader-zone-${leaderZoneId}`}
     style={{
-      position: 'absolute',
+      position: isInline ? 'relative' : 'absolute',
       top: 0,
-      ...(side === 'left'
-        ? { right: `calc(100% + ${12 + extraOffset}px)` }
-        : { left: `calc(100% + ${12 + extraOffset}px)` }),
-      width: `${sideZoneWidth}px`,
+      ...(isInline
+        ? {}
+        : side === 'left'
+          ? { right: `calc(100% + ${12 + extraOffset}px)` }
+          : { left: `calc(100% + ${12 + extraOffset}px)` }),
+      width: isInline ? '100%' : `${sideZoneWidth}px`,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
     }}
   >
     <Zone

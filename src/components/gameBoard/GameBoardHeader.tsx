@@ -87,9 +87,13 @@ const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
         flexWrap: keepInlineCompactHeader ? 'nowrap' : isCompactControls ? 'wrap' : 'nowrap',
         columnGap: isCompactControls ? compactHeaderColumnGap : isOverviewControls ? '0.8rem' : undefined,
         rowGap: isCompactControls ? compactHeaderRowGap : isOverviewControls ? '0.32rem' : undefined,
-        background: 'var(--bg-surface)',
-        padding: isCompactControls ? compactHeaderPadding : isOverviewControls ? '0.6rem 0.8rem' : '0.75rem 1rem',
-        borderRadius: 'var(--radius-md)',
+        background: 'rgba(15, 23, 42, 0.92)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        border: '1px solid rgba(255, 255, 255, 0.08)',
+        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)',
+        padding: isCompactControls ? compactHeaderPadding : isOverviewControls ? '0.42rem 0.75rem' : '0.55rem 0.85rem',
+        borderRadius: '12px',
       }}
     >
       <div

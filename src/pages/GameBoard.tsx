@@ -641,6 +641,48 @@ const GameBoard: React.FC = () => {
     onClose: closeInspector,
   };
 
+  const renderTopLeaderZoneSection = () => (
+    <GameBoardLeaderZoneSection
+      playerRole={topRole}
+      label={topLabel}
+      zoneLabel={t('gameBoard.board.leaderLabel', { label: topLabel })}
+      side="right"
+      isInline={true}
+      zoneMinHeight={leaderZoneMinHeight}
+      leaderCards={getCards(`leader-${topRole}`)}
+      sideZoneWidth={sideZoneWidth}
+      cardDetailLookup={cardDetailLookup}
+      getHighlightTone={getAttackHighlightTone}
+      onInspectCard={handleInspectCard}
+      viewerRole={viewerRole}
+      attackSourceController={attackSourceController}
+      isDebug={isDebug}
+      searchLabel={t('gameBoard.board.search')}
+      onSearch={openSearchZone}
+    />
+  );
+
+  const renderBottomLeaderZoneSection = () => (
+    <GameBoardLeaderZoneSection
+      playerRole={bottomRole}
+      label={bottomLabel}
+      zoneLabel={t('gameBoard.board.leaderLabel', { label: bottomLabel })}
+      side="left"
+      isInline={true}
+      zoneMinHeight={leaderZoneMinHeight}
+      leaderCards={getCards(`leader-${bottomRole}`)}
+      sideZoneWidth={sideZoneWidth}
+      cardDetailLookup={cardDetailLookup}
+      getHighlightTone={getAttackHighlightTone}
+      onInspectCard={handleInspectCard}
+      viewerRole={viewerRole}
+      attackSourceController={attackSourceController}
+      isDebug={isDebug}
+      searchLabel={t('gameBoard.board.search')}
+      onSearch={openSearchZone}
+    />
+  );
+
   return (
     <DndContext onDragEnd={(event) => {
       if (!canInteract) return;
@@ -657,6 +699,7 @@ const GameBoard: React.FC = () => {
             flexDirection: 'column',
             width: '100%',
             height: '100%',
+            boxSizing: 'border-box',
             gap: boardShellGap,
             overflow: 'hidden',
           }}
@@ -718,17 +761,35 @@ const GameBoard: React.FC = () => {
           />
         )}
 
-        {gameState.gameStatus === 'playing' && eventHistory.length > 0 && (
-          <GameBoardRecentEventsPanel eventHistory={eventHistory} />
-        )}
+        {/* Board Playmat Area */}
+        <div style={{ position: 'relative', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+          {gameState.gameStatus === 'playing' && eventHistory.length > 0 && (
+            <div style={{ position: 'absolute', top: 12, right: 12, zIndex: 35, pointerEvents: 'auto' }}>
+              <GameBoardRecentEventsPanel eventHistory={eventHistory} />
+            </div>
+          )}
 
-        {/* Board Playmat */}
-        <div
-          data-testid="board-playmat"
-          data-attack-mode-active={String(Boolean(attackSourceCard))}
-          data-attack-source-card-id={attackSourceCard?.id ?? ''}
-          style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: playmatGap, background: 'url("https://shadowverse-evolve.com/wordpress/wp-content/themes/shadowverse-evolve-release_v0/assets/images/common/bg.jpg")', backgroundSize: 'cover', backgroundPosition: 'center', borderRadius: 'var(--radius-lg)', padding: playmatPadding, overflowY: 'auto', overflowX: 'auto', alignItems: 'center' }}
-        >
+          {/* Board Playmat */}
+          <div
+            data-testid="board-playmat"
+            data-attack-mode-active={String(Boolean(attackSourceCard))}
+            data-attack-source-card-id={attackSourceCard?.id ?? ''}
+            style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: playmatGap,
+              background: 'url("https://shadowverse-evolve.com/wordpress/wp-content/themes/shadowverse-evolve-release_v0/assets/images/common/bg.jpg")',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              borderRadius: 'var(--radius-lg)',
+              padding: playmatPadding,
+              overflowY: 'auto',
+              overflowX: 'hidden',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
 
           {/* OPPONENT BOARD */}
           <div
@@ -802,26 +863,6 @@ const GameBoard: React.FC = () => {
                     columns={boardColumns}
                     width={boardContentWidth}
                     rowGap={boardRowGap}
-                    overlay={
-                      <GameBoardLeaderZoneSection
-                        playerRole={topRole}
-                        label={topLabel}
-                        zoneLabel={t('gameBoard.board.leaderLabel', { label: topLabel })}
-                        side="right"
-                        extraOffset={20}
-                        zoneMinHeight={leaderZoneMinHeight}
-                        leaderCards={getCards(`leader-${topRole}`)}
-                        sideZoneWidth={sideZoneWidth}
-                        cardDetailLookup={cardDetailLookup}
-                        getHighlightTone={getAttackHighlightTone}
-                        onInspectCard={handleInspectCard}
-                        viewerRole={viewerRole}
-                        attackSourceController={attackSourceController}
-                        isDebug={isDebug}
-                        searchLabel={t('gameBoard.board.search')}
-                        onSearch={openSearchZone}
-                      />
-                    }
                   >
                       <GameBoardMainDeckSection
                         zoneProps={{ id: `mainDeck-${topRole}`, label: t('gameBoard.zones.mainDeck', { label: topLabel }), cards: getCards(`mainDeck-${topRole}`), cardDetailLookup, layout: 'stack', isProtected: true, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: stackZoneMinHeight }, isDebug }}
@@ -867,7 +908,9 @@ const GameBoard: React.FC = () => {
                       />
                   </GameBoardBoardRow>
                 </div>
-                <div />
+                <div style={{ width: `${sidePanelWidth}px`, display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
+                  {renderTopLeaderZoneSection()}
+                </div>
               </div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: boardShellColumnGap, alignItems: 'flex-start', width: '100%', maxWidth: '1568px', justifyContent: 'center' }}>
@@ -913,26 +956,6 @@ const GameBoard: React.FC = () => {
                     columns={boardColumns}
                     width={boardContentWidth}
                     rowGap={boardRowGap}
-                    overlay={
-                      <GameBoardLeaderZoneSection
-                        playerRole={topRole}
-                        label={topLabel}
-                        zoneLabel={t('gameBoard.board.leaderLabel', { label: topLabel })}
-                        side="right"
-                        extraOffset={20}
-                        zoneMinHeight={leaderZoneMinHeight}
-                        leaderCards={getCards(`leader-${topRole}`)}
-                        sideZoneWidth={sideZoneWidth}
-                        cardDetailLookup={cardDetailLookup}
-                        getHighlightTone={getAttackHighlightTone}
-                        onInspectCard={handleInspectCard}
-                        viewerRole={viewerRole}
-                        attackSourceController={attackSourceController}
-                        isDebug={isDebug}
-                        searchLabel={t('gameBoard.board.search')}
-                        onSearch={openSearchZone}
-                      />
-                    }
                   >
                       <GameBoardMainDeckSection
                         zoneProps={{ id: `mainDeck-${topRole}`, label: t('gameBoard.zones.mainDeck', { label: topLabel }), cards: getCards(`mainDeck-${topRole}`), cardDetailLookup, layout: 'stack', isProtected: true, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: stackZoneMinHeight }, isDebug }}
@@ -970,7 +993,9 @@ const GameBoard: React.FC = () => {
                       />
                   </GameBoardBoardRow>
                 </div>
-                <div />
+                <div style={{ width: `${sidePanelWidth}px`, display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
+                  {renderTopLeaderZoneSection()}
+                </div>
               </div>
             )}
           </div>
@@ -984,31 +1009,14 @@ const GameBoard: React.FC = () => {
             style={{ ...activeBoardSectionStyle(isBottomTurnActive), padding: boardSectionPadding, gap: boardSectionGap }}
           >
 		            <div style={{ display: 'grid', gridTemplateColumns: boardShellColumns, columnGap: boardShellColumnGap, alignItems: 'flex-start', width: '100%', maxWidth: '1568px', justifyContent: 'center' }}>
-                <div />
+                <div style={{ width: `${topPanelWidth}px`, display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
+                  {renderBottomLeaderZoneSection()}
+                </div>
 		              <div style={{ width: `${boardContentWidth}px`, minWidth: 0, display: 'flex', flexDirection: 'column', gap: boardColumnStackGap, alignItems: 'flex-start' }}>
 	                <GameBoardBoardRow
                     columns={boardColumns}
                     width={boardContentWidth}
                     rowGap={boardRowGap}
-                    overlay={
-                      <GameBoardLeaderZoneSection
-                        playerRole={bottomRole}
-                        label={bottomLabel}
-                        zoneLabel={t('gameBoard.board.leaderLabel', { label: bottomLabel })}
-                        side="left"
-                        zoneMinHeight={leaderZoneMinHeight}
-                        leaderCards={getCards(`leader-${bottomRole}`)}
-                        sideZoneWidth={sideZoneWidth}
-                        cardDetailLookup={cardDetailLookup}
-                        getHighlightTone={getAttackHighlightTone}
-                        onInspectCard={handleInspectCard}
-                        viewerRole={viewerRole}
-                        attackSourceController={attackSourceController}
-                        isDebug={isDebug}
-                        searchLabel={t('gameBoard.board.search')}
-                        onSearch={openSearchZone}
-                      />
-                    }
                   >
                   <GameBoardSearchableStackSection
                     zoneProps={{ id: `evolveDeck-${bottomRole}`, label: t('gameBoard.zones.evolveDeck', { label: bottomLabel }), cards: getCards(`evolveDeck-${bottomRole}`), cardDetailLookup, layout: 'stack', onInspectCard: handleInspectCard, isProtected: true, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: stackZoneMinHeight }, isDebug }}
@@ -1151,6 +1159,7 @@ const GameBoard: React.FC = () => {
 
         </div>
       </div>
+    </div>
 
       <GameBoardMulliganDialog
         isOpen={isMulliganModalOpen}

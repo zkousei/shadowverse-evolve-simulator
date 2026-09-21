@@ -36,18 +36,19 @@ const GameBoardPlayerTracker: React.FC<GameBoardPlayerTrackerProps> = ({
     gap: compact ? '0.2rem' : '0.4rem',
     marginTop: compact ? '0.18rem' : '0.8rem',
     padding: compact ? '0.32rem' : '0.6rem',
-    background: 'rgba(255,255,255,0.04)',
-    borderRadius: 'var(--radius-md)',
-    border: '1px solid var(--border-light)',
+    background: 'rgba(15, 23, 42, 0.75)',
+    borderRadius: '12px',
+    border: '1px solid rgba(255, 255, 255, 0.08)',
   };
   const trackerHeaderStyle: React.CSSProperties = {
     fontSize: compact ? '0.66rem' : '0.8rem',
     fontWeight: 'bold',
-    color: 'white',
+    color: '#f8fafc',
     lineHeight: 1.1,
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
+    letterSpacing: '0.02em',
   };
   const trackerStatRowStyle: React.CSSProperties = {
     display: 'flex',
@@ -66,23 +67,26 @@ const GameBoardPlayerTracker: React.FC<GameBoardPlayerTrackerProps> = ({
     minWidth: compact ? '22px' : '26px',
     minHeight: compact ? '20px' : undefined,
     padding: compact ? '1px 5px' : '1px 7px',
-    borderRadius: '4px',
+    borderRadius: '6px',
     border: '1px solid',
     color: '#f8fafc',
     fontWeight: 'bold',
     fontSize: compact ? '0.68rem' : undefined,
     cursor: 'pointer',
     boxShadow: '0 2px 6px rgba(0,0,0,0.22)',
+    transition: 'all 0.15s ease',
   };
   const trackerIncreaseButtonStyle: React.CSSProperties = {
     ...trackerAdjustButtonBaseStyle,
-    background: '#1d4ed8',
-    borderColor: '#60a5fa',
+    background: 'rgba(37, 99, 235, 0.3)',
+    borderColor: 'rgba(96, 165, 250, 0.5)',
+    color: '#93c5fd',
   };
   const trackerDecreaseButtonStyle: React.CSSProperties = {
     ...trackerAdjustButtonBaseStyle,
-    background: '#7f1d1d',
-    borderColor: '#fca5a5',
+    background: 'rgba(225, 29, 72, 0.25)',
+    borderColor: 'rgba(244, 63, 94, 0.45)',
+    color: '#fda4af',
   };
   const trackerButtonRowStyle: React.CSSProperties = {
     display: 'flex',
@@ -94,9 +98,10 @@ const GameBoardPlayerTracker: React.FC<GameBoardPlayerTrackerProps> = ({
     flexDirection: 'column',
     gap: compact ? '0.18rem' : '0.4rem',
     padding: compact ? '0.32rem' : '0.6rem',
-    background: 'rgba(59, 130, 246, 0.15)',
-    borderRadius: 'var(--radius-md)',
-    border: '1px solid rgba(59, 130, 246, 0.3)',
+    background: 'linear-gradient(135deg, rgba(30, 58, 138, 0.35), rgba(15, 23, 42, 0.6))',
+    borderRadius: '10px',
+    border: '1px solid rgba(59, 130, 246, 0.35)',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
   };
 
   return (
