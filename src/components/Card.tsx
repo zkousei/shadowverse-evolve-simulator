@@ -271,7 +271,7 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
     padding: isOverviewQuickActions ? '1px 2px' : '3px 4px',
     fontSize: isOverviewQuickActions ? '9px' : '11px',
     borderRadius: '4px',
-    minWidth: isOverviewQuickActions ? '18px' : '24px',
+    minWidth: isOverviewQuickActions ? '20px' : '24px',
     minHeight: isOverviewQuickActions ? '17px' : '22px',
     border: '1px solid rgba(255,255,255,0.55)',
     fontWeight: 'bold',
@@ -281,7 +281,7 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
     padding: isOverviewQuickActions ? '0 2px' : '1px 4px',
     fontSize: isOverviewQuickActions ? '8px' : '10px',
     borderRadius: '2px',
-    width: '100%',
+    width: isOverviewQuickActions ? '18px' : '100%',
     minHeight: isOverviewQuickActions ? '15px' : '18px',
     lineHeight: 1.05,
   };
