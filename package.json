@@ -11,6 +11,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",
+    "test:changed": "vitest run --changed",
+    "test:all": "vitest run",
     "test:python": "python3 -m unittest discover -p '*_test.py'",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",

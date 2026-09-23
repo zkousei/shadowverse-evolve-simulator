@@ -45,6 +45,20 @@ npm run dev
 
 終了時は、起動したターミナルで `Ctrl + C` を押します。
 
+### 開発時のテスト
+
+実装途中は、変更の影響を受けるテストだけを高速に確認できます。
+
+```bash
+npm run test:changed
+```
+
+このコマンドは開発中の反復確認用です。変更完了前には、見落とした間接影響を検出するため、必ず全テストを実行してください。
+
+```bash
+npm run test:all
+```
+
 ### プレイヤーとして使う
 
 GameBoard の操作方法は [`./docs/gameboard-user-guide.md`](./docs/gameboard-user-guide.md) を参照してください。

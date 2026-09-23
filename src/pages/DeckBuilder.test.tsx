@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import DeckBuilder from './DeckBuilder';
 import {
   listSavedDecks,
@@ -270,11 +270,7 @@ const renderLoadedDeckBuilder = async (expectedCardName = 'Alpha Knight') => {
   return rendered;
 };
 
-describe('DeckBuilder', () => {
-  beforeAll(() => {
-    vi.setConfig({ testTimeout: 20000 });
-  });
-
+describe('DeckBuilder', { timeout: 20000 }, () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     window.localStorage.clear();
@@ -291,10 +287,6 @@ describe('DeckBuilder', () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
-  });
-
-  afterAll(() => {
-    vi.resetConfig();
   });
 
   it('loads cards, filters them, and updates deck counts through add/remove actions', async () => {
