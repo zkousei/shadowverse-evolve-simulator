@@ -69,6 +69,7 @@ export type DispatchableGameSyncEvent =
   | { type: 'DRAW_CARD'; actor?: PlayerRole }
   | { type: 'MILL_CARD'; actor?: PlayerRole }
   | { type: 'MOVE_TOP_CARD_TO_EX'; actor?: PlayerRole }
+  | { type: 'MOVE_TOP_CARD_TO_BANISH'; actor?: PlayerRole }
   | { type: 'TOGGLE_TAP'; actor?: PlayerRole; cardId: string }
   | { type: 'TOGGLE_FLIP'; actor?: PlayerRole; cardId: string }
   | { type: 'SET_CARD_FACE'; actor?: PlayerRole; cardId: string; faceSide: 'front' | 'back' }
@@ -735,6 +736,18 @@ export const useGameBoardLogic = () => {
         sendSharedUiEffect(effect);
       }
     }
+    if (event.type === 'MOVE_TOP_CARD_TO_BANISH') {
+      const movedCard = currentState.cards.find(card => card.zone === `mainDeck-${event.actor}`);
+      if (movedCard) {
+        const effect: SharedUiEffect = {
+          type: 'TOP_CARD_TO_BANISH_COMPLETED',
+          actor: event.actor,
+          cardName: movedCard.name,
+        };
+        playSharedUiEffect(effect);
+        sendSharedUiEffect(effect);
+      }
+    }
     if (event.type === 'DISCARD_RANDOM_HAND_CARDS') {
       const beforeCount = currentState.cards.filter(card => card.zone === `hand-${event.target}`).length;
       const afterCount = nextState.cards.filter(card => card.zone === `hand-${event.target}`).length;
@@ -1220,6 +1233,7 @@ export const useGameBoardLogic = () => {
     drawCard,
     millCard,
     moveTopCardToEx,
+    moveTopCardToBanish,
     discardRandomHandCards,
     revealHand,
     revealSelectedHandCards,
@@ -1319,7 +1333,7 @@ export const useGameBoardLogic = () => {
     handleBanish, handleBanishCards, handlePlayToField, handleSendToCemetery, handleSendCardsToCemetery, handleReturnEvolve, handleShuffleDeck, handleDeclareAttack,
     handleSetRevealHandsMode, handleSetEndStop,
     evolveAutoAttachSelection, confirmEvolveAutoAttachSelection, cancelEvolveAutoAttachSelection,
-    getCards, getTokenOptions, lastGameState: gameState.lastGameState, millCard, moveTopCardToEx, discardRandomHandCards, revealHand, revealSelectedHandCards,
+    getCards, getTokenOptions, lastGameState: gameState.lastGameState, millCard, moveTopCardToEx, moveTopCardToBanish, discardRandomHandCards, revealHand, revealSelectedHandCards,
     topDeckCards, topDeckTargetRole, setTopDeckTargetRole, handleLookAtTop, handleResolveTopDeck, setTopDeckCards,
     handleUndoCardMove, hasUndoableMove, canUndoTurn,
     isDebug

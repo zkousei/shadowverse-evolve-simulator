@@ -57,6 +57,12 @@ describe('useGameBoardCardActions (Pure Hook)', () => {
     expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledWith({ type: 'MOVE_TOP_CARD_TO_EX', actor: 'host' });
   });
 
+  it('moveTopCardToBanish dispatches MOVE_TOP_CARD_TO_BANISH', () => {
+    const { result } = renderHook(() => useGameBoardCardActions(defaultArgs));
+    result.current.moveTopCardToBanish('host');
+    expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledWith({ type: 'MOVE_TOP_CARD_TO_BANISH', actor: 'host' });
+  });
+
   it('discardRandomHandCards dispatches DISCARD_RANDOM_HAND_CARDS with positive integer', () => {
     const { result } = renderHook(() => useGameBoardCardActions(defaultArgs));
     result.current.discardRandomHandCards('guest', 2);

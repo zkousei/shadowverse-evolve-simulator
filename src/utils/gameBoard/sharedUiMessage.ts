@@ -146,6 +146,11 @@ export const formatSharedUiMessage = (
     return t('gameBoard.modals.shared.messages.topCardToEx', { actor: actorLabel, cardName: effect.cardName });
   }
 
+  if (effect.type === 'TOP_CARD_TO_BANISH_COMPLETED') {
+    const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    return t('gameBoard.modals.shared.messages.topCardToBanish', { actor: actorLabel, cardName: effect.cardName });
+  }
+
   if (effect.type === 'RANDOM_HAND_DISCARD_COMPLETED') {
     const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
     const targetLabel = getSharedActorLabel(effect.target, viewerRole, isSoloMode, t);

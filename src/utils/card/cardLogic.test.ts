@@ -330,6 +330,26 @@ describe('CardLogic utils', () => {
     });
   });
 
+  describe('moveTopCardToBanish', () => {
+    it('should move the top card face up to the banish area', () => {
+      const cards = [
+        createMockCard('top', 'mainDeck-host'),
+        createMockCard('bottom', 'mainDeck-host'),
+      ];
+
+      const result = CardLogic.moveTopCardToBanish(cards, 'host');
+      const top = result.find(c => c.id === 'top');
+
+      expect(top).toMatchObject({ zone: 'banish-host', isFlipped: false });
+      expect(result[0].id).toBe('top');
+    });
+
+    it('should do nothing if the deck is empty', () => {
+      const cards = [createMockCard('other', 'hand-host')];
+      expect(CardLogic.moveTopCardToBanish(cards, 'host')).toBe(cards);
+    });
+  });
+
   describe('getDeckZone', () => {
     it('should return evolveDeck for evolve cards', () => {
       const card = { ...createMockCard('e1', 'field-host'), isEvolveCard: true };

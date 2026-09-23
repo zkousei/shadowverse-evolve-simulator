@@ -396,6 +396,14 @@ export const applyGameSyncEvent = (
       return withCardMoveCheckpoint(state, event.actor, nextCards);
     }
 
+    case 'MOVE_TOP_CARD_TO_BANISH': {
+      if (!isActorRequester(requester, event.actor)) return state;
+      if (state.gameStatus !== 'playing') return state;
+      const nextCards = CardLogic.moveTopCardToBanish(state.cards, event.actor);
+      if (nextCards === state.cards) return state;
+      return withCardMoveCheckpoint(state, event.actor, nextCards);
+    }
+
     case 'TOGGLE_TAP': {
       const nextCards = CardLogic.toggleTapStack(state.cards, event.cardId);
       if (nextCards === state.cards) return state;

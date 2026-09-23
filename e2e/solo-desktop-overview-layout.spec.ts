@@ -21,6 +21,21 @@ test.describe('Solo Desktop Overview Layout', () => {
     await expect(page.getByTestId('player-controls-tracker-disclosure')).toHaveCount(0);
     await expect(page.getByTestId('player-tracker-host')).toBeVisible();
 
+    const hostSection = page.getByTestId('board-section-bottom');
+    const utilityActions = hostSection.getByTestId('playing-utility-actions');
+    const destinationActions = hostSection.getByTestId('top-deck-destination-actions');
+    await expect(utilityActions.getByRole('button')).toHaveCount(2);
+    await expect(destinationActions.getByRole('button')).toHaveCount(3);
+
+    const utilityActionsBox = await utilityActions.boundingBox();
+    const destinationActionsBox = await destinationActions.boundingBox();
+    expect(utilityActionsBox).not.toBeNull();
+    expect(destinationActionsBox).not.toBeNull();
+    if (utilityActionsBox && destinationActionsBox) {
+      expect(destinationActionsBox.y).toBeGreaterThan(utilityActionsBox.y);
+      expect(Math.abs(destinationActionsBox.width - utilityActionsBox.width)).toBeLessThanOrEqual(2);
+    }
+
     const playmatBox = await page.getByTestId('board-playmat').boundingBox();
     const bottomSectionBox = await page.getByTestId('board-section-bottom').boundingBox();
     expect(playmatBox).not.toBeNull();
