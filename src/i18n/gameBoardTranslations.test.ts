@@ -10,6 +10,7 @@ describe('game board translations', () => {
     expect(jaTranslations.gameBoard.zones.topDestinationCemetery).toBe('墓場');
     expect(jaTranslations.gameBoard.zones.topDestinationEx).toBe('EX');
     expect(jaTranslations.gameBoard.zones.topDestinationBanish).toBe('消滅');
+    expect(jaTranslations.gameBoard.zones.topDeckActions).toBe('デッキトップ');
     expect(jaTranslations.gameBoard.zones.spawnToken).toBe('トークン');
   });
 });

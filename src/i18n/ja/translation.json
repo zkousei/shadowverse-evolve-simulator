@@ -532,6 +532,7 @@
       "topDestinationCemetery": "墓場",
       "topDestinationEx": "EX",
       "topDestinationBanish": "消滅",
+      "topDeckActions": "デッキトップ",
       "spawnToken": "トークン",
       "hand": "{{label}} 手札",
       "cemetery": "{{label}} 墓場",

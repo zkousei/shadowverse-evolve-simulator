@@ -586,6 +586,7 @@
       "topDestinationCemetery": "Cem",
       "topDestinationEx": "EX",
       "topDestinationBanish": "Banish",
+      "topDeckActions": "Deck Top",
       "spawnToken": "Spawn {{label}} Token",
       "hand": "{{label}} Hand",
       "cemetery": "{{label}} Cemetery",

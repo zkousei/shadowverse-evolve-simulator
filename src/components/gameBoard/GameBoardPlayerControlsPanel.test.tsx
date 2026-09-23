@@ -16,6 +16,7 @@ vi.mock('react-i18next', () => ({
       if (key === 'gameBoard.zones.topDestinationCemetery') return 'Cem';
       if (key === 'gameBoard.zones.topDestinationEx') return 'EX';
       if (key === 'gameBoard.zones.topDestinationBanish') return 'Banish';
+      if (key === 'gameBoard.zones.topDeckActions') return 'Deck Top';
       if (key === 'gameBoard.zones.spawnToken') return 'Spawn Token';
       if (key === 'gameBoard.board.stats.hp') return 'HP';
       if (key === 'gameBoard.board.stats.playPoints') return 'PP';
@@ -115,8 +116,14 @@ describe('GameBoardPlayerControlsPanel', () => {
       'overview'
     );
 
+    expect(screen.getByText('Deck Top')).toHaveStyle({
+      fontSize: '0.58rem',
+    });
     expect(screen.getByTestId('top-deck-destination-actions')).toHaveStyle({
       gridColumn: '1 / -1',
+    });
+    expect(screen.getByTestId('top-deck-destination-buttons')).toHaveStyle({
+      display: 'grid',
       gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
     });
     fireEvent.click(screen.getByRole('button', { name: 'Banish Top' }));

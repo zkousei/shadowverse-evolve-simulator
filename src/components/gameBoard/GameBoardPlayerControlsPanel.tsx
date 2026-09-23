@@ -238,43 +238,65 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
             <div
               data-testid="top-deck-destination-actions"
               style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-                gap: playingActionGroupGap,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: isCompactControls || isOverviewControls ? '0.08rem' : '0.12rem',
                 gridColumn: (isCompactControls || isOverviewControls) ? '1 / -1' : undefined,
                 width: '100%',
               }}
             >
-              <button
-                onClick={onMill}
-                className="glass-panel"
-                disabled={!canUsePlayingActions}
-                aria-label={t('gameBoard.zones.mill', { label })}
-                title={!canUsePlayingActions ? playingActionsDisabledTitle : t('gameBoard.zones.mill', { label })}
-                style={{ ...groupedActionStyle, background: '#475569' }}
+              <span
+                style={{
+                  color: 'rgba(226, 232, 240, 0.72)',
+                  fontSize: isCompactControls ? '0.54rem' : '0.58rem',
+                  fontWeight: 600,
+                  lineHeight: 1,
+                  letterSpacing: '0.03em',
+                  paddingLeft: '0.08rem',
+                }}
               >
-                {t('gameBoard.zones.topDestinationCemetery')}
-              </button>
-              <button
-                onClick={onMoveTopCardToEx}
-                className="glass-panel"
-                disabled={!canUsePlayingActions}
-                aria-label={t('gameBoard.zones.topToEx', { label })}
-                title={!canUsePlayingActions ? playingActionsDisabledTitle : t('gameBoard.zones.topToEx', { label })}
-                style={{ ...groupedActionStyle, background: '#334155' }}
+                {t('gameBoard.zones.topDeckActions')}
+              </span>
+              <div
+                data-testid="top-deck-destination-buttons"
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+                  gap: playingActionGroupGap,
+                  width: '100%',
+                }}
               >
-                {t('gameBoard.zones.topDestinationEx')}
-              </button>
-              <button
-                onClick={onMoveTopCardToBanish}
-                className="glass-panel"
-                disabled={!canUsePlayingActions}
-                aria-label={t('gameBoard.zones.topToBanish', { label })}
-                title={!canUsePlayingActions ? playingActionsDisabledTitle : t('gameBoard.zones.topToBanish', { label })}
-                style={{ ...groupedActionStyle, background: '#7f1d1d' }}
-              >
-                {t('gameBoard.zones.topDestinationBanish')}
-              </button>
+                <button
+                  onClick={onMill}
+                  className="glass-panel"
+                  disabled={!canUsePlayingActions}
+                  aria-label={t('gameBoard.zones.mill', { label })}
+                  title={!canUsePlayingActions ? playingActionsDisabledTitle : t('gameBoard.zones.mill', { label })}
+                  style={{ ...groupedActionStyle, background: '#475569' }}
+                >
+                  {t('gameBoard.zones.topDestinationCemetery')}
+                </button>
+                <button
+                  onClick={onMoveTopCardToEx}
+                  className="glass-panel"
+                  disabled={!canUsePlayingActions}
+                  aria-label={t('gameBoard.zones.topToEx', { label })}
+                  title={!canUsePlayingActions ? playingActionsDisabledTitle : t('gameBoard.zones.topToEx', { label })}
+                  style={{ ...groupedActionStyle, background: '#334155' }}
+                >
+                  {t('gameBoard.zones.topDestinationEx')}
+                </button>
+                <button
+                  onClick={onMoveTopCardToBanish}
+                  className="glass-panel"
+                  disabled={!canUsePlayingActions}
+                  aria-label={t('gameBoard.zones.topToBanish', { label })}
+                  title={!canUsePlayingActions ? playingActionsDisabledTitle : t('gameBoard.zones.topToBanish', { label })}
+                  style={{ ...groupedActionStyle, background: '#7f1d1d' }}
+                >
+                  {t('gameBoard.zones.topDestinationBanish')}
+                </button>
+              </div>
             </div>
           </>
         )}
