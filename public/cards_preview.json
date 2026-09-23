@@ -771,6 +771,25 @@
     ]
   },
   {
+    "id": "BP22-048",
+    "name": "アンブレラウィッチ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-048.jpg",
+    "class": "ウィッチ",
+    "type": "フォロワー",
+    "subtype": "魔法使い",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "SR",
+    "ability_text": "【ファンファーレ】相手の場のフォロワー1体を選ぶ。自分の墓場にあるカードの元のコストの種類数が6種類以上なら、それに3ダメージ。自分のリーダーは体力+3する。自分のPPを3回復する。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "4",
+    "atk": "3",
+    "hp": "3"
+  },
+  {
     "id": "BP22-049",
     "name": "暗獄の遣い・ジャスパー",
     "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-049.jpg",
@@ -792,6 +811,56 @@
       {
         "id": "BP01-T08",
         "name": "攻撃型ゴーレム"
+      }
+    ]
+  },
+  {
+    "id": "BP22-050",
+    "name": "刃の魔術師",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-050.jpg",
+    "class": "ウィッチ",
+    "type": "フォロワー",
+    "subtype": "魔法使い",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "BR",
+    "ability_text": "これをプレイする際、自分の墓場にあるカードの元のコストの種類数が6種類以上なら、コストを-6する。\n【進化】コスト3：これは進化する。\n【ファンファーレ】相手の場のフォロワー1体を選ぶ。それに2ダメージ。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "6",
+    "atk": "2",
+    "hp": "2",
+    "related_cards": [
+      {
+        "id": "BP22-051",
+        "name": "刃の魔術師"
+      }
+    ]
+  },
+  {
+    "id": "BP22-051",
+    "name": "刃の魔術師",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-051.jpg",
+    "class": "ウィッチ",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "魔法使い",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "rarity": "BR",
+    "ability_text": "【疾走】",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "-",
+    "atk": "4",
+    "hp": "4",
+    "related_cards": [
+      {
+        "id": "BP22-050",
+        "name": "刃の魔術師"
       }
     ]
   },
