@@ -17,10 +17,12 @@ type GameBoardPreparationControlsProps = {
   guestInitialHandDrawn: boolean;
   hostReady: boolean;
   guestReady: boolean;
+  canResetGame?: boolean;
   onSetInitialTurnOrder: (role?: PlayerRole) => void;
   onDrawInitialHand: (role: PlayerRole) => void;
   onToggleReady: (role: PlayerRole) => void;
   onStartGame: () => void;
+  onOpenReset?: () => void;
 };
 
 const GameBoardPreparationControls: React.FC<GameBoardPreparationControlsProps> = ({
@@ -36,10 +38,12 @@ const GameBoardPreparationControls: React.FC<GameBoardPreparationControlsProps> 
   guestInitialHandDrawn,
   hostReady,
   guestReady,
+  canResetGame = false,
   onSetInitialTurnOrder,
   onDrawInitialHand,
   onToggleReady,
   onStartGame,
+  onOpenReset,
 }) => {
   const { t } = useTranslation();
   const inputProfile = useGameBoardInputProfile();
@@ -155,6 +159,25 @@ const GameBoardPreparationControls: React.FC<GameBoardPreparationControlsProps> 
       >
         {t('gameBoard.controls.startGame')}
       </button>
+
+      {canResetGame && onOpenReset && (
+        <button
+          type="button"
+          onClick={onOpenReset}
+          style={{
+            padding: primaryActionPadding,
+            background: 'rgba(239, 68, 68, 0.25)',
+            border: '1px solid rgba(239, 68, 68, 0.6)',
+            color: '#fca5a5',
+            fontWeight: 'bold',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: compactButtonFontSize,
+          }}
+        >
+          {t('gameBoard.controls.resetGame')}
+        </button>
+      )}
 
       <GameBoardPreparationReadyStatus
         isSoloMode={isSoloMode}

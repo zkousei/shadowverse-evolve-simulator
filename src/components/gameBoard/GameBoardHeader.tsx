@@ -145,10 +145,12 @@ const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
           guestInitialHandDrawn={gameState.guest.initialHandDrawn}
           hostReady={gameState.host.isReady}
           guestReady={gameState.guest.isReady}
+          canResetGame={canResetGame}
           onSetInitialTurnOrder={onSetInitialTurnOrder}
           onDrawInitialHand={onDrawInitialHand}
           onToggleReady={onToggleReady}
           onStartGame={onStartGame}
+          onOpenReset={onOpenReset}
         />
       ) : !isSpectator ? (
         <GameBoardPlayingControls
