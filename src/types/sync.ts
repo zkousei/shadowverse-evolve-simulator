@@ -32,6 +32,7 @@ export type GameSyncEvent =
   | { id: string; type: 'DRAW_CARD'; actor: PlayerRole }
   | { id: string; type: 'MILL_CARD'; actor: PlayerRole }
   | { id: string; type: 'MOVE_TOP_CARD_TO_EX'; actor: PlayerRole }
+  | { id: string; type: 'MOVE_TOP_CARD_TO_BANISH'; actor: PlayerRole }
   | { id: string; type: 'TOGGLE_TAP'; actor: PlayerRole; cardId: string }
   | { id: string; type: 'TOGGLE_FLIP'; actor: PlayerRole; cardId: string }
   | { id: string; type: 'SET_CARD_FACE'; actor: PlayerRole; cardId: string; faceSide: CardFaceSide }
@@ -75,6 +76,7 @@ export type SharedUiEffect =
   | { type: 'DRAW_CARD_COMPLETED'; actor: PlayerRole }
   | { type: 'MILL_CARD_COMPLETED'; actor: PlayerRole; cardName: string }
   | { type: 'TOP_CARD_TO_EX_COMPLETED'; actor: PlayerRole; cardName: string }
+  | { type: 'TOP_CARD_TO_BANISH_COMPLETED'; actor: PlayerRole; cardName: string }
   | { type: 'RANDOM_HAND_DISCARD_COMPLETED'; actor: PlayerRole; target: PlayerRole; count: number }
   | ({ type: 'SEARCHED_CARD_TO_HAND'; actor: PlayerRole; count?: number } & SharedUiOwnerContext)
   | ({ type: 'SEARCHED_CARD_PLACED'; actor: PlayerRole; destination: 'field' | 'ex'; cardName?: string; count?: number; isFaceDown?: boolean } & SharedUiOwnerContext)

@@ -12,6 +12,11 @@ vi.mock('react-i18next', () => ({
       if (key === 'gameBoard.zones.draw') return 'Draw';
       if (key === 'gameBoard.zones.mill') return 'Mill';
       if (key === 'gameBoard.zones.topToEx') return 'Top to EX';
+      if (key === 'gameBoard.zones.topToBanish') return 'Banish Top';
+      if (key === 'gameBoard.zones.topDestinationCemetery') return 'Cem';
+      if (key === 'gameBoard.zones.topDestinationEx') return 'EX';
+      if (key === 'gameBoard.zones.topDestinationBanish') return 'Banish';
+      if (key === 'gameBoard.zones.topDeckActions') return 'Deck Top';
       if (key === 'gameBoard.zones.spawnToken') return 'Spawn Token';
       if (key === 'gameBoard.board.stats.hp') return 'HP';
       if (key === 'gameBoard.board.stats.playPoints') return 'PP';
@@ -50,6 +55,7 @@ const createBaseProps = () => ({
   onDraw: vi.fn(),
   onMill: vi.fn(),
   onMoveTopCardToEx: vi.fn(),
+  onMoveTopCardToBanish: vi.fn(),
   drawButtonBackground: '#3b82f6',
   canOpenTokenSpawn: true,
   onOpenTokenSpawn: vi.fn(),
@@ -99,6 +105,29 @@ describe('GameBoardPlayerControlsPanel', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Draw' }));
     expect(props.onDraw).toHaveBeenCalledTimes(1);
+  });
+
+  it('groups the three top-deck destinations into one compact row', () => {
+    const props = createBaseProps();
+
+    renderWithInputProfile(
+      'fine',
+      <GameBoardPlayerControlsPanel {...props} />,
+      'overview'
+    );
+
+    expect(screen.getByText('Deck Top')).toHaveStyle({
+      fontSize: '0.58rem',
+    });
+    expect(screen.getByTestId('top-deck-destination-actions')).toHaveStyle({
+      gridColumn: '1 / -1',
+    });
+    expect(screen.getByTestId('top-deck-destination-buttons')).toHaveStyle({
+      display: 'grid',
+      gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Banish Top' }));
+    expect(props.onMoveTopCardToBanish).toHaveBeenCalledTimes(1);
   });
 
   it('uses readable text colors for primary action buttons', () => {

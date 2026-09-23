@@ -20,6 +20,7 @@ type GameBoardPlayerControlsPanelProps = {
   onDraw: () => void;
   onMill: () => void;
   onMoveTopCardToEx: () => void;
+  onMoveTopCardToBanish: () => void;
   drawButtonBackground: string;
   canOpenTokenSpawn: boolean;
   onOpenTokenSpawn: () => void;
@@ -54,6 +55,7 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
   onDraw,
   onMill,
   onMoveTopCardToEx,
+  onMoveTopCardToBanish,
   drawButtonBackground,
   canOpenTokenSpawn,
   onOpenTokenSpawn,
@@ -95,6 +97,17 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
+  };
+  const playingActionGroupGap = isCompactControls
+    ? (isNarrowCompactPanel ? '0.16rem' : '0.2rem')
+    : isOverviewControls ? '0.2rem' : '0.3rem';
+  const groupedActionStyle: React.CSSProperties = {
+    padding: isCompactControls || isOverviewControls ? '0.24rem 0.16rem' : compactCellPadding,
+    color: '#f8fafc',
+    fontWeight: 'bold',
+    opacity: canUsePlayingActions ? 1 : 0.5,
+    cursor: canUsePlayingActions ? 'pointer' : 'not-allowed',
+    ...compactButtonBaseStyle,
   };
   return (
     <div
@@ -188,74 +201,122 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
         )}
         {showPlayingActions && (
           <>
-            <button
-              onClick={onDraw}
-              className="glass-panel"
-              disabled={!canUsePlayingActions}
-              title={!canUsePlayingActions ? playingActionsDisabledTitle : undefined}
+            <div
+              data-testid="playing-utility-actions"
               style={{
-                padding: compactCellPadding,
-                background: drawButtonBackground,
-                color: '#f8fafc',
-                fontWeight: 'bold',
-                opacity: canUsePlayingActions ? 1 : 0.5,
-                cursor: canUsePlayingActions ? 'pointer' : 'not-allowed',
-                ...compactButtonBaseStyle,
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: playingActionGroupGap,
+                gridColumn: (isCompactControls || isOverviewControls) ? '1 / -1' : undefined,
+                width: '100%',
               }}
             >
-              {t('gameBoard.zones.draw', { label })}
-            </button>
-            <button
-              onClick={onMill}
-              className="glass-panel"
-              disabled={!canUsePlayingActions}
-              title={!canUsePlayingActions ? playingActionsDisabledTitle : undefined}
+              <button
+                onClick={onDraw}
+                className="glass-panel"
+                disabled={!canUsePlayingActions}
+                title={!canUsePlayingActions ? playingActionsDisabledTitle : undefined}
+                style={{ ...groupedActionStyle, padding: compactCellPadding, background: drawButtonBackground }}
+              >
+                {t('gameBoard.zones.draw', { label })}
+              </button>
+              <button
+                onClick={onOpenTokenSpawn}
+                className="glass-panel"
+                disabled={!canOpenTokenSpawn}
+                style={{
+                  ...groupedActionStyle,
+                  padding: compactCellPadding,
+                  background: spawnButtonBackground,
+                  opacity: canOpenTokenSpawn ? 1 : 0.5,
+                  cursor: canOpenTokenSpawn ? 'pointer' : 'not-allowed',
+                }}
+              >
+                {t('gameBoard.zones.spawnToken', { label })}
+              </button>
+            </div>
+            <div
+              data-testid="top-deck-destination-actions"
               style={{
-                padding: compactCellPadding,
-                background: '#475569',
-                color: '#f8fafc',
-                fontWeight: 'bold',
-                opacity: canUsePlayingActions ? 1 : 0.5,
-                cursor: canUsePlayingActions ? 'pointer' : 'not-allowed',
-                ...compactButtonBaseStyle,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: isCompactControls || isOverviewControls ? '0.08rem' : '0.12rem',
+                gridColumn: (isCompactControls || isOverviewControls) ? '1 / -1' : undefined,
+                width: '100%',
               }}
             >
-              {t('gameBoard.zones.mill', { label })}
-            </button>
-            <button
-              onClick={onMoveTopCardToEx}
-              className="glass-panel"
-              disabled={!canUsePlayingActions}
-              title={!canUsePlayingActions ? playingActionsDisabledTitle : undefined}
-              style={{
-                padding: compactCellPadding,
-                background: '#334155',
-                color: '#f8fafc',
-                fontWeight: 'bold',
-                opacity: canUsePlayingActions ? 1 : 0.5,
-                cursor: canUsePlayingActions ? 'pointer' : 'not-allowed',
-                ...compactButtonBaseStyle,
-              }}
-            >
-              {t('gameBoard.zones.topToEx', { label })}
-            </button>
+              <span
+                style={{
+                  color: 'rgba(226, 232, 240, 0.72)',
+                  fontSize: isCompactControls ? '0.54rem' : '0.58rem',
+                  fontWeight: 600,
+                  lineHeight: 1,
+                  letterSpacing: '0.03em',
+                  paddingLeft: '0.08rem',
+                }}
+              >
+                {t('gameBoard.zones.topDeckActions')}
+              </span>
+              <div
+                data-testid="top-deck-destination-buttons"
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+                  gap: playingActionGroupGap,
+                  width: '100%',
+                }}
+              >
+                <button
+                  onClick={onMill}
+                  className="glass-panel"
+                  disabled={!canUsePlayingActions}
+                  aria-label={t('gameBoard.zones.mill', { label })}
+                  title={!canUsePlayingActions ? playingActionsDisabledTitle : t('gameBoard.zones.mill', { label })}
+                  style={{ ...groupedActionStyle, background: '#475569' }}
+                >
+                  {t('gameBoard.zones.topDestinationCemetery')}
+                </button>
+                <button
+                  onClick={onMoveTopCardToEx}
+                  className="glass-panel"
+                  disabled={!canUsePlayingActions}
+                  aria-label={t('gameBoard.zones.topToEx', { label })}
+                  title={!canUsePlayingActions ? playingActionsDisabledTitle : t('gameBoard.zones.topToEx', { label })}
+                  style={{ ...groupedActionStyle, background: '#334155' }}
+                >
+                  {t('gameBoard.zones.topDestinationEx')}
+                </button>
+                <button
+                  onClick={onMoveTopCardToBanish}
+                  className="glass-panel"
+                  disabled={!canUsePlayingActions}
+                  aria-label={t('gameBoard.zones.topToBanish', { label })}
+                  title={!canUsePlayingActions ? playingActionsDisabledTitle : t('gameBoard.zones.topToBanish', { label })}
+                  style={{ ...groupedActionStyle, background: '#7f1d1d' }}
+                >
+                  {t('gameBoard.zones.topDestinationBanish')}
+                </button>
+              </div>
+            </div>
           </>
         )}
-        <button
-          onClick={onOpenTokenSpawn}
-          className="glass-panel"
-          disabled={!canOpenTokenSpawn}
-          style={{
-            padding: compactCellPadding,
-            background: spawnButtonBackground,
-            color: '#f8fafc',
-            opacity: canOpenTokenSpawn ? 1 : 0.5,
-            cursor: canOpenTokenSpawn ? 'pointer' : 'not-allowed',
-            ...compactButtonBaseStyle,
-          }}
-        >
-          {t('gameBoard.zones.spawnToken', { label })}
-        </button>
+        {!showPlayingActions && (
+          <button
+            onClick={onOpenTokenSpawn}
+            className="glass-panel"
+            disabled={!canOpenTokenSpawn}
+            style={{
+              padding: compactCellPadding,
+              background: spawnButtonBackground,
+              color: '#f8fafc',
+              opacity: canOpenTokenSpawn ? 1 : 0.5,
+              cursor: canOpenTokenSpawn ? 'pointer' : 'not-allowed',
+              ...compactButtonBaseStyle,
+            }}
+          >
+            {t('gameBoard.zones.spawnToken', { label })}
+          </button>
+        )}
       </div>
       {showPlayingActions && (
         <div

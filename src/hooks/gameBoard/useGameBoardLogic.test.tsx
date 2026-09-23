@@ -3855,6 +3855,17 @@ describe('useGameBoardLogic shared UI notifications', () => {
 
     expect(screen.getByTestId('card-play-message')).toHaveTextContent('Opponent moved Drive Point to EX Area');
     expect(screen.getByTestId('event-history')).toHaveTextContent('Opponent moved Drive Point to EX Area');
+
+    act(() => {
+      conn.emit('data', {
+        type: 'SHARED_UI_EFFECT',
+        effect: { type: 'TOP_CARD_TO_BANISH_COMPLETED', actor: 'host', cardName: 'Dark Angel' },
+      });
+      vi.advanceTimersByTime(0);
+    });
+
+    expect(screen.getByTestId('card-play-message')).toHaveTextContent('Opponent banished Dark Angel from the top of the deck');
+    expect(screen.getByTestId('event-history')).toHaveTextContent('Opponent banished Dark Angel from the top of the deck');
   });
 
   it('shows named cemetery and bottom batch notifications in dialog and recent events', () => {

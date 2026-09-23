@@ -60,6 +60,7 @@ vi.mock('react-i18next', () => ({
         'gameBoard.modals.shared.messages.drawCard': '{{actor}} drew a card',
         'gameBoard.modals.shared.messages.millCard': '{{actor}} milled {{cardName}}',
         'gameBoard.modals.shared.messages.topCardToEx': '{{actor}} moved {{cardName}} to EX Area',
+        'gameBoard.modals.shared.messages.topCardToBanish': '{{actor}} banished {{cardName}} from the top of the deck',
         'gameBoard.modals.shared.messages.searchToHand': '{{actor}} added a card from Search to hand',
         'gameBoard.modals.shared.messages.searchToHandMultiple': '{{actor}} added {{count}} cards from Search to hand',
         'gameBoard.modals.shared.messages.searchToHandMultipleOwned': '{{actor}} added {{count}} cards from {{sourceOwner}} Main Deck to {{destinationOwner}} hand',

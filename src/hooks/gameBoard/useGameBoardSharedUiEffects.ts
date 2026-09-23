@@ -299,6 +299,13 @@ export const useGameBoardSharedUiEffects = ({
       return;
     }
 
+    if (effect.type === 'TOP_CARD_TO_BANISH_COMPLETED') {
+      const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
+      showTimedCardPlayMessage(message, 2600);
+      pushEventHistory(message);
+      return;
+    }
+
     if (effect.type === 'RANDOM_HAND_DISCARD_COMPLETED') {
       const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
       showTimedCardPlayMessage(message, 2600);

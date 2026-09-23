@@ -6,6 +6,11 @@ describe('game board translations', () => {
     expect(jaTranslations.gameBoard.zones.draw).toBe('ドロー');
     expect(jaTranslations.gameBoard.zones.mill).toBe('トップ墓場');
     expect(jaTranslations.gameBoard.zones.topToEx).toBe('トップEX');
+    expect(jaTranslations.gameBoard.zones.topToBanish).toBe('トップ消滅');
+    expect(jaTranslations.gameBoard.zones.topDestinationCemetery).toBe('墓場');
+    expect(jaTranslations.gameBoard.zones.topDestinationEx).toBe('EX');
+    expect(jaTranslations.gameBoard.zones.topDestinationBanish).toBe('消滅');
+    expect(jaTranslations.gameBoard.zones.topDeckActions).toBe('デッキトップ');
     expect(jaTranslations.gameBoard.zones.spawnToken).toBe('トークン');
   });
 });

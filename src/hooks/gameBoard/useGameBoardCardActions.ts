@@ -52,6 +52,10 @@ export function useGameBoardCardActions({
         dispatchGameEvent({ type: 'MOVE_TOP_CARD_TO_EX', actor: targetRole });
     }, [dispatchGameEvent]);
 
+    const moveTopCardToBanish = useCallback((targetRole?: PlayerRole) => {
+        dispatchGameEvent({ type: 'MOVE_TOP_CARD_TO_BANISH', actor: targetRole });
+    }, [dispatchGameEvent]);
+
     const discardRandomHandCards = useCallback((targetRole: PlayerRole, count: number, actor: PlayerRole = role) => {
         if (!Number.isFinite(count)) return;
         const normalizedCount = Math.floor(count);
@@ -109,6 +113,7 @@ export function useGameBoardCardActions({
         drawCard,
         millCard,
         moveTopCardToEx,
+        moveTopCardToBanish,
         discardRandomHandCards,
         revealHand,
         revealSelectedHandCards,

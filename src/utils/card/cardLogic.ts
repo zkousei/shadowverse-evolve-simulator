@@ -535,6 +535,19 @@ export const moveTopCardToEx = (
 };
 
 /**
+ * Moves the top card of the main deck face up to the banish area.
+ */
+export const moveTopCardToBanish = (
+  cards: CardInstance[],
+  role: 'host' | 'guest'
+): CardInstance[] => {
+  const topCard = cards.find(c => c.zone === `mainDeck-${role}`);
+  if (!topCard) return cards;
+
+  return banishCard(cards, topCard.id);
+};
+
+/**
  * Returns the natural deck zone for a given card (Main vs Evolve).
  */
 export const getDeckZone = (card: CardInstance): string => {

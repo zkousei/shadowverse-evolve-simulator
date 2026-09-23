@@ -910,6 +910,32 @@ describe('gameSyncReducer', () => {
       actor: 'host',
     });
     expect(toppedToEx.cards.find(c => c.id === 'deck-3')?.zone).toBe('ex-host');
+
+    const toppedToBanish = applyGameSyncEvent(createState({
+      revision: 0,
+      gameStatus: 'playing',
+      cards: [
+        {
+          id: 'deck-4',
+          cardId: 'BP01-016',
+          name: 'Banish Target',
+          image: '',
+          zone: 'mainDeck-host',
+          owner: 'host',
+          isTapped: false,
+          isFlipped: true,
+          counters: { atk: 0, hp: 0 },
+        },
+      ],
+    }), {
+      id: 'evt-11',
+      type: 'MOVE_TOP_CARD_TO_BANISH',
+      actor: 'host',
+    });
+    expect(toppedToBanish.cards.find(c => c.id === 'deck-4')).toMatchObject({
+      zone: 'banish-host',
+      isFlipped: false,
+    });
   });
 
   it('applies top-deck resolution and appends imported cards with revision bumps', () => {

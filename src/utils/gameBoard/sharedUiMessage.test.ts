@@ -27,6 +27,7 @@ const t = ((key: string, options?: Record<string, unknown>) => {
     'gameBoard.modals.shared.messages.drawCard': '{{actor}} drew a card',
     'gameBoard.modals.shared.messages.millCard': '{{actor}} milled {{cardName}}',
     'gameBoard.modals.shared.messages.topCardToEx': '{{actor}} moved {{cardName}} to EX Area',
+    'gameBoard.modals.shared.messages.topCardToBanish': '{{actor}} banished {{cardName}} from the top of the deck',
     'gameBoard.modals.shared.messages.searchToHand': '{{actor}} added a card from Search to hand',
     'gameBoard.modals.shared.messages.searchToHandMultiple': '{{actor}} added {{count}} cards from Search to hand',
     'gameBoard.modals.shared.messages.searchToHandOwned': '{{actor}} added a card from {{sourceOwner}} Main Deck to {{destinationOwner}} hand',
@@ -165,6 +166,13 @@ describe('sharedUiMessage', () => {
       false,
       t
     )).toBe('Opponent moved Drive Point to EX Area');
+
+    expect(formatSharedUiMessage(
+      { type: 'TOP_CARD_TO_BANISH_COMPLETED', actor: 'host', cardName: 'Dark Angel' },
+      'guest',
+      false,
+      t
+    )).toBe('Opponent banished Dark Angel from the top of the deck');
 
     expect(formatSharedUiMessage(
       { type: 'SEARCHED_CARD_PLACED', actor: 'host', destination: 'ex', cardName: 'Drive Point' },

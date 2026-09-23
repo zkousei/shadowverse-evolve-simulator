@@ -8,6 +8,19 @@ import {
 test.use({ locale: 'en-US' });
 
 test.describe('Solo Zone Actions', () => {
+  test('banishes the top card from the compact player controls', async ({ page }) => {
+    await startSoloGame(page);
+
+    await expect(zoneCards(page, 'mainDeck-host')).toHaveCount(2);
+    await expect(zoneCards(page, 'banish-host')).toHaveCount(0);
+
+    const hostControls = page.getByTestId('board-section-bottom');
+    await hostControls.getByRole('button', { name: /Banish Top/ }).click();
+
+    await expect(zoneCards(page, 'mainDeck-host')).toHaveCount(1);
+    await expect(zoneCards(page, 'banish-host')).toHaveCount(1);
+  });
+
   test('searches the main deck and adds a card to hand', async ({ page }) => {
     await startSoloGame(page);
 
