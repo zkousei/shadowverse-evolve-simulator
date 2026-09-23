@@ -3,12 +3,37 @@ import {
   deckInput,
   importSoloDummyDecks,
   largeDummyDeckPath,
+  leaderZoneCards,
   zoneCards,
 } from './helpers/gameBoard';
 
 test.use({ locale: 'en-US' });
 
 test.describe('Solo Preparation Flow', () => {
+  test('lets the host reset imported decks before the game starts', async ({ page }) => {
+    await page.goto('/game?mode=solo');
+    const preparationControls = page.getByTestId('preparation-controls');
+
+    await importSoloDummyDecks(page);
+    await preparationControls.getByRole('button', { name: /Draw Hand \(4\)/ }).click();
+    await expect(zoneCards(page, 'hand-host')).toHaveCount(4);
+    await preparationControls.getByRole('button', { name: 'Reset Game' }).click();
+
+    const resetDialog = page.getByRole('dialog', { name: 'Reset Game' });
+    await expect(resetDialog).toBeVisible();
+    await resetDialog.getByRole('button', { name: 'Yes, Reset' }).click();
+
+    await expect(resetDialog).toBeHidden();
+    await expect(zoneCards(page, 'hand-host')).toHaveCount(0);
+    await expect(leaderZoneCards(page, 'host')).toHaveCount(1);
+    await expect(leaderZoneCards(page, 'guest')).toHaveCount(1);
+    await expect(deckInput(page, 'bottom')).toBeEnabled();
+    await expect(deckInput(page, 'top')).toBeEnabled();
+
+    await deckInput(page, 'bottom').setInputFiles(largeDummyDeckPath);
+    await expect(zoneCards(page, 'mainDeck-host')).toHaveCount(10);
+  });
+
   test('mulligans the initial hand and gates game start until both players are ready', async ({ page }) => {
     await page.goto('/game?mode=solo');
     const preparationControls = page.getByTestId('preparation-controls');

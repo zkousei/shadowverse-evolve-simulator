@@ -388,6 +388,22 @@ describe('GameBoard', () => {
     expect(screen.getByRole('button', { name: 'Copied' })).toBeInTheDocument();
   });
 
+  it('lets the host open the reset confirmation before the game starts', () => {
+    const setShowResetConfirm = vi.fn();
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      isHost: true,
+      role: 'host',
+      showResetConfirm: false,
+      setShowResetConfirm,
+      gameState: createGameState([], { gameStatus: 'preparing' }),
+    }));
+
+    render(<GameBoard />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset Game' }));
+    expect(setShowResetConfirm).toHaveBeenCalledWith(true);
+  });
+
   it('shows the previous host session prompt and wires resume/discard actions', () => {
     const resumeSavedSession = vi.fn();
     const discardSavedSession = vi.fn();
