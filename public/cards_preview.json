@@ -19,6 +19,56 @@
     "hp": "4"
   },
   {
+    "id": "BP22-003",
+    "name": "永久なる輝き・エリン",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-003.webp",
+    "class": "エルフ",
+    "type": "フォロワー",
+    "subtype": "クリスタリア",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "LG",
+    "ability_text": "【進化】コスト1：これは進化する。\n自分の場に「これと同名を除くクリスタリア・フォロワー」が出たとき、それは進化する。\n【ファンファーレ】自分のデッキの上4枚を見る。その中から、クリスタリア・カード1枚を公開して手札に加えてよい。残りを好きな順にデッキの下に置く。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "4",
+    "atk": "2",
+    "hp": "4",
+    "related_cards": [
+      {
+        "id": "BP22-004",
+        "name": "永久なる輝き・エリン"
+      }
+    ]
+  },
+  {
+    "id": "BP22-004",
+    "name": "永久なる輝き・エリン",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-004.webp",
+    "class": "エルフ",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "クリスタリア",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "rarity": "LG",
+    "ability_text": "自分の場に「これと同名を除くクリスタリア・フォロワー」が出たとき、それは進化する。\n【進化時】このターン、次に自分がクリスタリア・カードをプレイする際、コストを-3する。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "-",
+    "atk": "3",
+    "hp": "5",
+    "related_cards": [
+      {
+        "id": "BP22-003",
+        "name": "永久なる輝き・エリン"
+      }
+    ]
+  },
+  {
     "id": "BP22-005",
     "name": "フラワーフォックス",
     "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-005.jpg",
@@ -175,7 +225,7 @@
     "rarity": "SR",
     "ability_text": "【ファンファーレ】『フェアリー』1枚をEXエリアに置く。自分のEXエリアの妖精・カードが5枚なら、自分のリーダーは体力+1する。1枚引く。",
     "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
-    "cost": "2",
+    "cost": "1",
     "atk": "2",
     "hp": "1",
     "related_cards": [
@@ -184,6 +234,25 @@
         "name": "フェアリー"
       }
     ]
+  },
+  {
+    "id": "BP22-012",
+    "name": "水晶の指揮者・リリィ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-012.webp",
+    "class": "エルフ",
+    "type": "フォロワー",
+    "subtype": "クリスタリア",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "SR",
+    "ability_text": "【起動】これをアクト：自分の場の他のクリスタリア・フォロワー1体を選ぶ。それは【疾走】を持つ。この能力は自分の墓場のクリスタリア・カードが3枚以上なら使える。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "1",
+    "atk": "1",
+    "hp": "1"
   },
   {
     "id": "BP22-019",
@@ -819,6 +888,25 @@
     ]
   },
   {
+    "id": "BP22-058",
+    "name": "ブルータルドラゴニュート",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-058.jpg",
+    "class": "ドラゴン",
+    "type": "フォロワー",
+    "subtype": "ドラゴニュート",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "LG",
+    "ability_text": "【疾走】\n【ファンファーレ】自分のEXエリアのドラゴニュート・カードが2枚以上なら、自分のPPを2回復する。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "4",
+    "atk": "4",
+    "hp": "3"
+  },
+  {
     "id": "BP22-059",
     "name": "オーシャンスター・ジゼル",
     "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-059.jpg",
@@ -988,6 +1076,25 @@
         "name": "珊瑚礁の精霊"
       }
     ]
+  },
+  {
+    "id": "BP22-066",
+    "name": "シールドドラゴン",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-066.jpg",
+    "class": "ドラゴン",
+    "type": "フォロワー",
+    "subtype": "竜族",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "SR",
+    "ability_text": "【守護】\n自分のターンごとに1回、自分が手札を捨てたとき、相手の場のフォロワー1体を選ぶ。それに2ダメージ。\n【ファンファーレ】手札の元のコスト7以上のドラゴンカード1枚を捨てる：自分のPPを2回復する。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "3",
+    "atk": "1",
+    "hp": "3"
   },
   {
     "id": "BP22-067",
@@ -1170,6 +1277,25 @@
     "hp": "2"
   },
   {
+    "id": "BP22-081",
+    "name": "デスサイズゴブリン",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-081.jpg",
+    "class": "ナイトメア",
+    "type": "フォロワー",
+    "subtype": "魔界・ゴブリン",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "GR",
+    "ability_text": "【疾走】\n自分のターン中、自分のゴブリン・フォロワーが場から墓場に置かれたとき、相手のリーダーすべてに1ダメージ。自分のリーダーは体力+1する。\n【ファンファーレ】場の他のゴブリン・フォロワー1体を墓場に置く：相手の場のフォロワー1体を選ぶ。それを破壊する。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "4",
+    "atk": "4",
+    "hp": "3"
+  },
+  {
     "id": "BP22-082",
     "name": "スカーレットヴァンパイア",
     "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-082.jpg",
@@ -1256,6 +1382,44 @@
     "cost": "2",
     "atk": "2",
     "hp": "2"
+  },
+  {
+    "id": "BP22-089",
+    "name": "ゴブリンゾンビ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-089.jpg",
+    "class": "ナイトメア",
+    "type": "フォロワー",
+    "subtype": "死者・ゴブリン",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "BR",
+    "ability_text": "【ファンファーレ】手札のゴブリン・カード1枚を捨てる：1枚引く。自分の墓場のゴブリン・カードが3枚以上なら、これは攻撃力+1する。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "1",
+    "atk": "2",
+    "hp": "2"
+  },
+  {
+    "id": "BP22-095",
+    "name": "白翼の慈愛・アイテール",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-095.jpg",
+    "class": "ビショップ",
+    "type": "フォロワー",
+    "subtype": "信仰・先導・光輝",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "LG",
+    "ability_text": "【守護】\n【ファンファーレ】手札の【守護】を持つフォロワー1枚を捨てる：自分のデッキから元のコスト2の【守護】を持つフォロワー1枚と元のコスト1の【守護】を持つフォロワー1枚を探し、場に出す。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "4",
+    "atk": "2",
+    "hp": "3"
   },
   {
     "id": "BP22-096",
@@ -1396,6 +1560,25 @@
     "is_deck_build_legal": true,
     "rarity": "SR",
     "ability_text": "【ファンファーレ】自分の手札の元のコスト2以下のアミュレット1枚を場に出してよい。\n【起動】場のアミュレット3つをアクト：これは攻撃力+1/体力+1する。自分のリーダーは体力+2する。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "2",
+    "atk": "2",
+    "hp": "3"
+  },
+  {
+    "id": "BP22-103",
+    "name": "希望の守護者・ソニア",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-103.jpg",
+    "class": "ビショップ",
+    "type": "フォロワー",
+    "subtype": "信仰",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "SR",
+    "ability_text": "【守護】\n【ファンファーレ】自分のデッキの上3枚を見る。その中から、【守護】を持つフォロワー1枚を公開して手札に加えてよい。残りを好きな順にデッキの下に置く。",
     "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
     "cost": "2",
     "atk": "2",
