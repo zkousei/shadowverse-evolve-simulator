@@ -110,25 +110,25 @@ const onionArmyCard: DeckBuilderCardData = {
 };
 
 const bannedConstructedCard: DeckBuilderCardData = {
-  id: 'BP12-044',
-  name: '運命への反逆',
-  image: '/betrayal.png',
-  class: 'ウィッチ',
-  type: 'スペル',
-  card_kind_normalized: 'spell',
+  id: 'BP10-061',
+  name: 'リザードランナー アンドゥー',
+  image: '/lizard-runner-undo.png',
+  class: 'ドラゴン',
+  type: 'アミュレット',
+  card_kind_normalized: 'amulet',
   deck_section: 'main',
   is_token: false,
   is_evolve_card: false,
   is_deck_build_legal: true,
 };
 
-const limitedConstructedWitchCard: DeckBuilderCardData = {
-  id: 'BP03-048',
-  name: 'お菓子の家',
-  image: '/candy-house.png',
-  class: 'ウィッチ',
-  type: 'アミュレット',
-  card_kind_normalized: 'amulet',
+const limitedConstructedDragonCard: DeckBuilderCardData = {
+  id: 'BP15-066',
+  name: '烈絶の崇拝者',
+  image: '/worshipper-of-disdain.png',
+  class: 'ドラゴン',
+  type: 'フォロワー',
+  card_kind_normalized: 'follower',
   deck_section: 'main',
   is_token: false,
   is_evolve_card: false,
@@ -250,6 +250,14 @@ const witchLeaderCard: DeckBuilderCardData = {
   name: 'Witch Leader',
   image: '/leader-witch.png',
   class: 'ウィッチ',
+};
+
+const dragonLeaderCard: DeckBuilderCardData = {
+  ...royalLeaderCard,
+  id: 'LDR01-003',
+  name: 'Dragon Leader',
+  image: '/leader-dragon.png',
+  class: 'ドラゴン',
 };
 
 const titleCard: DeckBuilderCardData = {
@@ -476,10 +484,10 @@ const crossoverRule: DeckRuleConfig = {
   selectedClasses: [CLASS.ROYAL, CLASS.WITCH],
 };
 
-const constructedWitchRule: DeckRuleConfig = {
+const constructedDragonRule: DeckRuleConfig = {
   format: 'constructed',
   identityType: 'class',
-  selectedClass: CLASS.WITCH,
+  selectedClass: CLASS.DRAGON,
   selectedTitle: null,
   selectedClasses: [null, null],
 };
@@ -563,21 +571,21 @@ describe('deckBuilderRules', () => {
       evolveDeck: [],
       leaderCards: [royalLeaderCard],
       tokenDeck: [],
-    }, constructedWitchRule)).toBe(false);
+    }, constructedDragonRule)).toBe(false);
 
-    expect(canAddCardToDeckState(limitedConstructedWitchCard, 'main', {
+    expect(canAddCardToDeckState(limitedConstructedDragonCard, 'main', {
       mainDeck: [],
       evolveDeck: [],
-      leaderCards: [witchLeaderCard],
+      leaderCards: [dragonLeaderCard],
       tokenDeck: [],
-    }, constructedWitchRule)).toBe(true);
+    }, constructedDragonRule)).toBe(true);
 
-    expect(canAddCardToDeckState(limitedConstructedWitchCard, 'main', {
-      mainDeck: [limitedConstructedWitchCard],
+    expect(canAddCardToDeckState(limitedConstructedDragonCard, 'main', {
+      mainDeck: [limitedConstructedDragonCard],
       evolveDeck: [],
-      leaderCards: [witchLeaderCard],
+      leaderCards: [dragonLeaderCard],
       tokenDeck: [],
-    }, constructedWitchRule)).toBe(false);
+    }, constructedDragonRule)).toBe(false);
 
     expect(canAddCardToDeckState(limitedCrossoverMainCard, 'main', {
       mainDeck: [],
@@ -689,19 +697,19 @@ describe('deckBuilderRules', () => {
     const sanitizedMain = sanitizeImportedSection(
       [
         bannedConstructedCard,
-        limitedConstructedWitchCard,
-        { ...limitedConstructedWitchCard, id: 'PR-121' },
+        limitedConstructedDragonCard,
+        { ...limitedConstructedDragonCard, id: 'BP15-P14' },
       ],
       [
         bannedConstructedCard,
-        limitedConstructedWitchCard,
-        { ...limitedConstructedWitchCard, id: 'PR-121' },
+        limitedConstructedDragonCard,
+        { ...limitedConstructedDragonCard, id: 'BP15-P14' },
       ],
       'main',
-      constructedWitchRule
+      constructedDragonRule
     );
 
-    expect(sanitizedMain).toEqual([limitedConstructedWitchCard]);
+    expect(sanitizedMain).toEqual([limitedConstructedDragonCard]);
 
     const sanitizedCrossoverMain = sanitizeImportedSection(
       [bannedCrossoverMainCard, witchCard],
@@ -990,19 +998,19 @@ describe('deckBuilderRules', () => {
     const messages = getDeckValidationMessages({
       mainDeck: [
         bannedConstructedCard,
-        limitedConstructedWitchCard,
-        { ...limitedConstructedWitchCard, id: 'PR-121' },
+        limitedConstructedDragonCard,
+        { ...limitedConstructedDragonCard, id: 'BP15-P14' },
       ],
       evolveDeck: [],
-      leaderCards: [witchLeaderCard],
+      leaderCards: [dragonLeaderCard],
       tokenDeck: [],
-    }, constructedWitchRule);
+    }, constructedDragonRule);
 
     expect(messages).toEqual(
       expect.arrayContaining([
         { id: 'deckBuilder.validation.mainDeckTooSmall', params: { actual: 3, expected: 40 } },
-        { id: 'deckBuilder.validation.banned', params: { cardName: '運命への反逆', format: 'constructed' } },
-        { id: 'deckBuilder.validation.limited', params: { cardName: 'お菓子の家', format: 'constructed', actual: 2 } },
+        { id: 'deckBuilder.validation.banned', params: { cardName: 'リザードランナー アンドゥー', format: 'constructed' } },
+        { id: 'deckBuilder.validation.limited', params: { cardName: '烈絶の崇拝者', format: 'constructed', actual: 2 } },
       ])
     );
 
