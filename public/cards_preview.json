@@ -274,6 +274,31 @@
     "hp": "8"
   },
   {
+    "id": "BP22-020",
+    "name": "ゴールデンウォーリアー",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-020.jpg",
+    "class": "ロイヤル",
+    "type": "フォロワー",
+    "subtype": "兵士・貴族",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "LG",
+    "ability_text": "自分のEXエリアに『輝く金貨』が置かれたとき、相手の場のフォロワー1体を選ぶ。それに1ダメージ。\n【ファンファーレ】『輝く金貨』1枚をEXエリアに置く。自分のEXエリアの『輝く金貨』が4枚以上なら、自分のPPを3回復する。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "4",
+    "atk": "3",
+    "hp": "4",
+    "related_cards": [
+      {
+        "id": "BP14-T02",
+        "name": "輝く金貨"
+      }
+    ]
+  },
+  {
     "id": "BP22-021",
     "name": "千金武装の大参謀・アルメリゼ",
     "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-021.png",
@@ -405,6 +430,25 @@
     "hp": "9"
   },
   {
+    "id": "BP22-026",
+    "name": "クレイモアマスター",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-026.jpg",
+    "class": "ロイヤル",
+    "type": "フォロワー",
+    "subtype": "指揮官",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "GR",
+    "ability_text": "これをプレイする際、自分のエボルヴデッキの表向きのエボルヴフォロワーが5枚以上なら、コストを-3する。自分のエボルヴデッキの表向きのエボルヴフォロワーが10枚なら、代わりに-5する。\n【疾走】",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "5",
+    "atk": "4",
+    "hp": "4"
+  },
+  {
     "id": "BP22-027",
     "name": "アックスパイレーツ",
     "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-027.jpg",
@@ -486,6 +530,56 @@
       {
         "id": "BP02-T02",
         "name": "シールドガーディアン"
+      }
+    ]
+  },
+  {
+    "id": "BP22-033",
+    "name": "エレガントバンデッド",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-033.jpg",
+    "class": "ロイヤル",
+    "type": "フォロワー",
+    "subtype": "盗賊",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "BR",
+    "ability_text": "【ファンファーレ】【ラストワード】『輝く金貨』1枚をEXエリアに置く。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "1",
+    "atk": "2",
+    "hp": "2",
+    "related_cards": [
+      {
+        "id": "BP14-T02",
+        "name": "輝く金貨"
+      }
+    ]
+  },
+  {
+    "id": "BP22-034",
+    "name": "ブレードバンデッド",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-034.jpg",
+    "class": "ロイヤル",
+    "type": "フォロワー",
+    "subtype": "盗賊",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "BR",
+    "ability_text": "【疾走】\n【ファンファーレ】『輝く金貨』1枚をEXエリアに置く。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "3",
+    "atk": "3",
+    "hp": "3",
+    "related_cards": [
+      {
+        "id": "BP14-T02",
+        "name": "輝く金貨"
       }
     ]
   },
@@ -1472,6 +1566,60 @@
     "hp": "2"
   },
   {
+    "id": "BP22-093",
+    "name": "ホーリーセイバー",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-093.jpg",
+    "class": "ビショップ",
+    "type": "フォロワー",
+    "subtype": "先導",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "rarity": "LG",
+    "ability_text": "【進化】コスト1：これは進化する。\n【守護】\n【ファンファーレ】相手の場のフォロワー1体を選ぶ。自分の場の【守護】を持つフォロワーが3体以上なら、それに2ダメージ。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "2",
+    "atk": "2",
+    "hp": "2",
+    "related_cards": [
+      {
+        "id": "BP22-094",
+        "name": "ホーリーセイバー"
+      }
+    ]
+  },
+  {
+    "id": "BP22-094",
+    "name": "ホーリーセイバー",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-094.jpg",
+    "class": "ビショップ",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "先導",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "rarity": "LG",
+    "ability_text": "【守護】\n【進化時】相手の場のフォロワー1体を選ぶ。それに2ダメージ。\n【超進化時】『聖女の号令』1枚をEXエリアに置く。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "-",
+    "atk": "3",
+    "hp": "3",
+    "related_cards": [
+      {
+        "id": "BP22-093",
+        "name": "ホーリーセイバー"
+      },
+      {
+        "id": "BP22-T01",
+        "name": "聖女の号令"
+      }
+    ]
+  },
+  {
     "id": "BP22-095",
     "name": "白翼の慈愛・アイテール",
     "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-095.jpg",
@@ -1854,6 +2002,22 @@
         "name": "〔全力疾走〕オグリキャップ"
       }
     ]
+  },
+  {
+    "id": "BP22-T01",
+    "name": "聖女の号令",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/BP22-T01.jpg",
+    "class": "ビショップ",
+    "type": "スペル・トークン",
+    "subtype": "先導",
+    "card_kind_normalized": "token_spell",
+    "deck_section": "token",
+    "is_token": true,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "ability_text": "自分の場の【守護】を持つフォロワー2体まで選ぶ。それは【疾走】を持つ。",
+    "product_name": "ブースターパック「Over the Calamity/オーバー・ザ・カラミティ」",
+    "cost": "1"
   },
   {
     "id": "BP22-T02",
