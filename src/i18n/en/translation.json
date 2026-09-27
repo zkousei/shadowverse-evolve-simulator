@@ -428,7 +428,8 @@
       "connectionLostReconnecting": "Connection lost. Reconnecting...",
       "connectionErrorReconnecting": "Connection error. Reconnecting...",
       "peerConnectionLostReconnecting": "Peer connection lost. Reconnecting...",
-      "unableToReachHostReconnecting": "Unable to reach host. Reconnecting..."
+      "unableToReachHostReconnecting": "Unable to reach host. Reconnecting...",
+      "reconnectExhausted": "Automatic reconnection stopped. Use Reconnect to try again."
     },
     "room": {
       "host": "Host/P2P",

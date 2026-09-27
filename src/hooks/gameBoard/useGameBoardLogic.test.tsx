@@ -48,9 +48,84 @@ describe('useGameBoardLogic P2P reconnect', () => {
       peer.emit('open');
     });
 
-    expect(peer.connect).toHaveBeenCalledWith('sv-evolve-ROOM123');
+    expect(peer.connect).toHaveBeenCalledWith(
+      'sv-evolve-ROOM123',
+      expect.objectContaining({ metadata: expect.objectContaining({ connectionRole: 'guest' }) })
+    );
     expect(screen.getByTestId('connection-state')).toHaveTextContent('connecting');
     expect(screen.getByTestId('status')).toHaveTextContent('Connecting to host...');
+  });
+
+  it('recreates a guest peer when the signaling connection never opens', () => {
+    renderHarness('/game?host=false&room=ROOM123');
+
+    const firstPeer = mockPeerJs.peers[0];
+    act(() => vi.advanceTimersByTime(11000));
+
+    expect(firstPeer.destroy).toHaveBeenCalledTimes(1);
+    expect(mockPeerJs.peers).toHaveLength(2);
+  });
+
+  it('retries a host room id that is still temporarily unavailable', () => {
+    renderHarness('/game?host=true&room=ROOM123');
+
+    const firstPeer = mockPeerJs.peers[0];
+    act(() => {
+      firstPeer.emit('error', { type: 'unavailable-id' });
+      vi.advanceTimersByTime(1000);
+    });
+
+    expect(mockPeerJs.peers).toHaveLength(2);
+    expect(mockPeerJs.peers[1].id).toBe('sv-evolve-ROOM123');
+  });
+
+  it('keeps retrying a host room id when release takes longer than the general recovery limit', () => {
+    renderHarness('/game?host=true&room=ROOM123');
+
+    const retryDelays = [1000, 2000, 4000, 8000, 8000, 8000];
+    for (const retryDelay of retryDelays) {
+      const attempt = mockPeerJs.peers.length - 1;
+      const peer = mockPeerJs.peers[attempt];
+      act(() => {
+        peer.emit('error', { type: 'unavailable-id' });
+        vi.advanceTimersByTime(retryDelay);
+      });
+    }
+
+    expect(mockPeerJs.peers).toHaveLength(7);
+    expect(mockPeerJs.peers[5].destroy).toHaveBeenCalledTimes(1);
+    expect(mockPeerJs.peers[6].id).toBe('sv-evolve-ROOM123');
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('reconnecting');
+
+    act(() => {
+      mockPeerJs.peers[6].emit('open');
+    });
+
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('disconnected');
+  });
+
+  it('stops retrying a host room id after the extended release window expires', () => {
+    renderHarness('/game?host=true&room=ROOM123');
+
+    const retryDelays = [1000, 2000, 4000, 8000, 8000, 8000, 8000, 8000, 8000, 8000];
+    for (const retryDelay of retryDelays) {
+      const peer = mockPeerJs.peers[mockPeerJs.peers.length - 1];
+      act(() => {
+        peer.emit('error', { type: 'unavailable-id' });
+        vi.advanceTimersByTime(retryDelay);
+      });
+    }
+
+    expect(mockPeerJs.peers).toHaveLength(11);
+    const exhaustedPeer = mockPeerJs.peers[10];
+    act(() => {
+      exhaustedPeer.emit('error', { type: 'unavailable-id' });
+      vi.advanceTimersByTime(30000);
+    });
+
+    expect(mockPeerJs.peers).toHaveLength(11);
+    expect(exhaustedPeer.destroy).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('disconnected');
   });
 
   it('ignores incoming peer connections on the guest side', () => {
@@ -81,7 +156,10 @@ describe('useGameBoardLogic P2P reconnect', () => {
       peer.emit('open');
     });
 
-    expect(peer.connect).toHaveBeenCalledWith('sv-evolve-ROOM123');
+    expect(peer.connect).toHaveBeenCalledWith(
+      'sv-evolve-ROOM123',
+      expect.objectContaining({ metadata: expect.objectContaining({ connectionRole: 'guest' }) })
+    );
 
     const firstConn = peer.connections[0];
     act(() => {
@@ -94,6 +172,17 @@ describe('useGameBoardLogic P2P reconnect', () => {
       lastKnownRevision: 0,
       source: 'guest',
     }));
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('reconnecting');
+    expect(screen.getByTestId('can-interact')).toHaveTextContent('false');
+
+    act(() => {
+      firstConn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: buildSyncState({ revision: 1 }),
+      });
+    });
+
     expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
     expect(screen.getByTestId('can-interact')).toHaveTextContent('true');
 
@@ -118,10 +207,46 @@ describe('useGameBoardLogic P2P reconnect', () => {
 
     expect(secondConn.send).toHaveBeenCalledWith(expect.objectContaining({
       type: 'REQUEST_SNAPSHOT',
-      lastKnownRevision: 0,
+      lastKnownRevision: 1,
       source: 'guest',
     }));
-    expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('reconnecting');
+  });
+
+  it('recovers when the initial snapshot request throws during a close race', () => {
+    renderHarness('/game?host=false&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => peer.emit('open'));
+    const conn = peer.connections[0];
+    conn.send.mockImplementation(() => {
+      throw new Error('connection closed');
+    });
+
+    expect(() => {
+      act(() => {
+        conn.open = true;
+        conn.emit('open');
+      });
+    }).not.toThrow();
+    expect(conn.close).toHaveBeenCalled();
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('reconnecting');
+  });
+
+  it('retries when a data connection never reaches open', () => {
+    renderHarness('/game?host=false&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => {
+      peer.emit('open');
+      vi.advanceTimersByTime(10000);
+    });
+
+    expect(peer.connections[0].close).toHaveBeenCalled();
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('reconnecting');
+
+    act(() => vi.advanceTimersByTime(1000));
+    expect(peer.connect).toHaveBeenCalledTimes(2);
   });
 
   it('marks the host ready when a guest connection opens', () => {
@@ -151,9 +276,10 @@ describe('useGameBoardLogic P2P reconnect', () => {
       peer.emit('open');
     });
 
-    expect(peer.connect).toHaveBeenCalledWith('sv-evolve-ROOM123', {
-      metadata: { connectionRole: 'spectator' },
-    });
+    expect(peer.connect).toHaveBeenCalledWith(
+      'sv-evolve-ROOM123',
+      expect.objectContaining({ metadata: expect.objectContaining({ connectionRole: 'spectator' }) })
+    );
 
     const conn = peer.connections[0];
     act(() => {
@@ -168,7 +294,7 @@ describe('useGameBoardLogic P2P reconnect', () => {
     }));
     expect(screen.getByTestId('is-spectator')).toHaveTextContent('true');
     expect(screen.getByTestId('can-interact')).toHaveTextContent('false');
-    expect(screen.getByTestId('can-view')).toHaveTextContent('true');
+    expect(screen.getByTestId('can-view')).toHaveTextContent('false');
 
     act(() => {
       conn.emit('data', {
@@ -189,6 +315,8 @@ describe('useGameBoardLogic P2P reconnect', () => {
     });
 
     expect(screen.getByTestId('host-hp')).toHaveTextContent('12');
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
+    expect(screen.getByTestId('can-view')).toHaveTextContent('true');
   });
 
   it('treats spectator=true as solo mode when mode=solo is present', () => {
@@ -216,8 +344,8 @@ describe('useGameBoardLogic P2P reconnect', () => {
       firstConn.emit('open');
     });
 
-    expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
-    expect(screen.getByTestId('can-view')).toHaveTextContent('true');
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('reconnecting');
+    expect(screen.getByTestId('can-view')).toHaveTextContent('false');
     expect(screen.getByTestId('can-interact')).toHaveTextContent('false');
 
     act(() => {
@@ -233,9 +361,10 @@ describe('useGameBoardLogic P2P reconnect', () => {
     });
 
     expect(peer.connect).toHaveBeenCalledTimes(2);
-    expect(peer.connect).toHaveBeenLastCalledWith('sv-evolve-ROOM123', {
-      metadata: { connectionRole: 'spectator' },
-    });
+    expect(peer.connect).toHaveBeenLastCalledWith(
+      'sv-evolve-ROOM123',
+      expect.objectContaining({ metadata: expect.objectContaining({ connectionRole: 'spectator' }) })
+    );
 
     const secondConn = peer.connections[1];
     act(() => {
@@ -248,6 +377,17 @@ describe('useGameBoardLogic P2P reconnect', () => {
       lastKnownRevision: 0,
       source: 'guest',
     }));
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('reconnecting');
+    expect(screen.getByTestId('can-view')).toHaveTextContent('false');
+
+    act(() => {
+      secondConn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: buildSyncState({ revision: 1 }),
+      });
+    });
+
     expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
     expect(screen.getByTestId('can-view')).toHaveTextContent('true');
     expect(screen.getByTestId('can-interact')).toHaveTextContent('false');
@@ -599,8 +739,8 @@ describe('useGameBoardLogic P2P reconnect', () => {
 
     expect(peer.connect).toHaveBeenCalledTimes(2);
     expect(secondConn.send).toHaveBeenCalledTimes(secondConnSendCount + 1);
-    expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
-    expect(screen.getByTestId('can-view')).toHaveTextContent('true');
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('reconnecting');
+    expect(screen.getByTestId('can-view')).toHaveTextContent('false');
     expect(screen.getByTestId('can-interact')).toHaveTextContent('false');
   });
 
@@ -629,8 +769,8 @@ describe('useGameBoardLogic P2P reconnect', () => {
       secondConn.emit('open');
     });
 
-    expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
-    expect(screen.getByTestId('can-view')).toHaveTextContent('true');
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('reconnecting');
+    expect(screen.getByTestId('can-view')).toHaveTextContent('false');
     expect(screen.getByTestId('can-interact')).toHaveTextContent('false');
 
     act(() => {
@@ -638,8 +778,8 @@ describe('useGameBoardLogic P2P reconnect', () => {
     });
 
     expect(peer.connect).toHaveBeenCalledTimes(2);
-    expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
-    expect(screen.getByTestId('can-view')).toHaveTextContent('true');
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('reconnecting');
+    expect(screen.getByTestId('can-view')).toHaveTextContent('false');
     expect(screen.getByTestId('can-interact')).toHaveTextContent('false');
   });
 
@@ -1340,7 +1480,7 @@ describe('useGameBoardLogic P2P reconnect', () => {
     expect(screen.getByTestId('status')).toHaveTextContent('Connected to host! Game ready.');
   });
 
-  it('waits without reconnecting when the host reports a pending saved session', () => {
+  it('reconnects if a host waiting on session restore stops responding', () => {
     renderHarness('/game?host=false&room=ROOM123');
 
     const peer = mockPeerJs.peers[0];
@@ -1356,11 +1496,43 @@ describe('useGameBoardLogic P2P reconnect', () => {
         type: 'WAITING_FOR_HOST_SESSION',
         source: 'host',
       });
-      vi.advanceTimersByTime(7000);
+      vi.advanceTimersByTime(4000);
     });
 
     expect(screen.getByTestId('status')).toHaveTextContent('Host is choosing whether to resume the saved session. Waiting...');
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('reconnecting');
+    expect(screen.getByTestId('can-interact')).toHaveTextContent('false');
     expect(peer.connect).toHaveBeenCalledTimes(1);
+    expect(conn.send.mock.calls.filter(([message]) => message?.type === 'REQUEST_SNAPSHOT').length).toBeGreaterThan(1);
+
+    act(() => {
+      vi.advanceTimersByTime(3000);
+    });
+
+    expect(peer.connect).toHaveBeenCalledTimes(2);
+  });
+
+  it('continues waiting while the host keeps reporting a pending saved session', () => {
+    renderHarness('/game?host=false&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => peer.emit('open'));
+    const conn = peer.connections[0];
+    act(() => {
+      conn.open = true;
+      conn.emit('open');
+      conn.emit('data', { type: 'WAITING_FOR_HOST_SESSION', source: 'host' });
+    });
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      act(() => {
+        vi.advanceTimersByTime(1000);
+        conn.emit('data', { type: 'WAITING_FOR_HOST_SESSION', source: 'host' });
+      });
+    }
+
+    expect(peer.connect).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('reconnecting');
   });
 
   it('recovers from WAITING_FOR_HOST_SESSION when the host later sends a snapshot to the guest', () => {
@@ -1462,7 +1634,7 @@ describe('useGameBoardLogic P2P reconnect', () => {
     expect(screen.getByTestId('can-interact')).toHaveTextContent('true');
   });
 
-  it('waits without reconnecting when the host reports a pending saved session to a spectator', () => {
+  it('reconnects a spectator if a host waiting on session restore stops responding', () => {
     renderHarness('/game?spectator=true&room=ROOM123');
 
     const peer = mockPeerJs.peers[0];
@@ -1478,14 +1650,20 @@ describe('useGameBoardLogic P2P reconnect', () => {
         type: 'WAITING_FOR_HOST_SESSION',
         source: 'host',
       });
-      vi.advanceTimersByTime(7000);
+      vi.advanceTimersByTime(4000);
     });
 
     expect(screen.getByTestId('status')).toHaveTextContent('Host is choosing whether to resume the saved session. Waiting...');
-    expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
-    expect(screen.getByTestId('can-view')).toHaveTextContent('true');
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('reconnecting');
+    expect(screen.getByTestId('can-view')).toHaveTextContent('false');
     expect(screen.getByTestId('can-interact')).toHaveTextContent('false');
     expect(peer.connect).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      vi.advanceTimersByTime(3000);
+    });
+
+    expect(peer.connect).toHaveBeenCalledTimes(2);
   });
 
   it('recovers from WAITING_FOR_HOST_SESSION when the host later sends a snapshot to a spectator', () => {
@@ -1709,6 +1887,93 @@ describe('useGameBoardLogic P2P reconnect', () => {
     expect(screen.getByTestId('status')).toHaveTextContent('Connection error. Reconnecting...');
   });
 
+  it('stops automatic guest reconnection after the retry limit and allows a manual retry', () => {
+    renderHarness('/game?host=false&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => peer.emit('open'));
+
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      const conn = peer.connections[peer.connections.length - 1];
+      act(() => {
+        conn.emit('close');
+        vi.advanceTimersByTime(1000);
+      });
+    }
+
+    const exhaustedConn = peer.connections[peer.connections.length - 1];
+    act(() => {
+      exhaustedConn.emit('close');
+      vi.advanceTimersByTime(30_000);
+    });
+
+    expect(peer.connect).toHaveBeenCalledTimes(11);
+    expect(peer.destroy).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('disconnected');
+    expect(screen.getByTestId('status')).toHaveTextContent('Automatic reconnection stopped. Use Reconnect to try again.');
+
+    act(() => fireEvent.click(screen.getByRole('button', { name: 'Reconnect' })));
+
+    expect(mockPeerJs.peers).toHaveLength(2);
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('connecting');
+  });
+
+  it('stops repeated guest peer recreation even when signaling opens between failures', () => {
+    renderHarness('/game?host=false&room=ROOM123');
+
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      const peer = mockPeerJs.peers[mockPeerJs.peers.length - 1];
+      act(() => {
+        peer.emit('open');
+        peer.emit('error');
+        vi.advanceTimersByTime(1000);
+      });
+    }
+
+    const exhaustedPeer = mockPeerJs.peers[mockPeerJs.peers.length - 1];
+    act(() => {
+      exhaustedPeer.emit('open');
+      exhaustedPeer.emit('error');
+      vi.advanceTimersByTime(30_000);
+    });
+
+    expect(mockPeerJs.peers).toHaveLength(11);
+    expect(exhaustedPeer.destroy).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('disconnected');
+  });
+
+  it('resets the guest recovery limit only after receiving a valid host snapshot', () => {
+    renderHarness('/game?host=false&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => peer.emit('open'));
+
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      const conn = peer.connections[peer.connections.length - 1];
+      act(() => {
+        conn.emit('close');
+        vi.advanceTimersByTime(1000);
+      });
+    }
+
+    const recoveredConn = peer.connections[peer.connections.length - 1];
+    act(() => {
+      recoveredConn.open = true;
+      recoveredConn.emit('open');
+      recoveredConn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: buildSyncState({ revision: 1 }),
+      });
+      recoveredConn.emit('close');
+      vi.advanceTimersByTime(1000);
+    });
+
+    expect(peer.connect).toHaveBeenCalledTimes(12);
+    expect(peer.destroy).not.toHaveBeenCalled();
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('connecting');
+  });
+
   it('reconnects after a guest-side peer disconnect', () => {
     renderHarness('/game?host=false&room=ROOM123');
 
@@ -1720,6 +1985,324 @@ describe('useGameBoardLogic P2P reconnect', () => {
 
     expect(screen.getByTestId('connection-state')).toHaveTextContent('reconnecting');
     expect(screen.getByTestId('status')).toHaveTextContent('Peer connection lost. Reconnecting...');
+  });
+
+  it('recreates the guest peer after a signaling disconnect', () => {
+    renderHarness('/game?host=false&room=ROOM123');
+
+    const firstPeer = mockPeerJs.peers[0];
+    act(() => {
+      firstPeer.emit('open');
+      firstPeer.disconnected = true;
+      firstPeer.emit('disconnected');
+      vi.advanceTimersByTime(1000);
+    });
+
+    expect(firstPeer.destroy).toHaveBeenCalledTimes(1);
+    expect(mockPeerJs.peers).toHaveLength(2);
+
+    const secondPeer = mockPeerJs.peers[1];
+    act(() => secondPeer.emit('open'));
+    expect(secondPeer.connect).toHaveBeenCalledWith(
+      'sv-evolve-ROOM123',
+      expect.objectContaining({ metadata: expect.objectContaining({ connectionRole: 'guest' }) })
+    );
+  });
+
+  it('uses one recovery path when the data connection and peer fail together', () => {
+    renderHarness('/game?host=false&room=ROOM123');
+
+    const firstPeer = mockPeerJs.peers[0];
+    act(() => firstPeer.emit('open'));
+    const firstConn = firstPeer.connections[0];
+    act(() => {
+      firstConn.open = true;
+      firstConn.emit('open');
+      firstConn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: buildSyncState({ revision: 1 }),
+      });
+      firstConn.emit('close');
+      firstPeer.disconnected = true;
+      firstPeer.emit('disconnected');
+      vi.advanceTimersByTime(1000);
+    });
+
+    expect(mockPeerJs.peers).toHaveLength(2);
+    expect(firstPeer.connect).toHaveBeenCalledTimes(1);
+
+    const recoveredPeer = mockPeerJs.peers[1];
+    act(() => recoveredPeer.emit('open'));
+    expect(recoveredPeer.connect).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the active host connection until a newer attempt actually opens', () => {
+    renderHarness('/game?host=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => peer.emit('open'));
+    const activeConn = mockPeerJs.createConnection('guest-current', {
+      connectionRole: 'guest', clientSessionId: 'session-a', connectionAttempt: 1,
+    });
+    act(() => {
+      peer.emit('connection', activeConn);
+      activeConn.open = true;
+      activeConn.emit('open');
+    });
+
+    const replacementConn = mockPeerJs.createConnection('guest-new', {
+      connectionRole: 'guest', clientSessionId: 'session-a', connectionAttempt: 2,
+    });
+    act(() => peer.emit('connection', replacementConn));
+    expect(activeConn.close).not.toHaveBeenCalled();
+
+    act(() => {
+      replacementConn.open = true;
+      replacementConn.emit('open');
+    });
+    expect(activeConn.close).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects a stale guest connection attempt without replacing the active one', () => {
+    renderHarness('/game?host=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => peer.emit('open'));
+    const activeConn = mockPeerJs.createConnection('guest-current', {
+      connectionRole: 'guest', clientSessionId: 'session-a', connectionAttempt: 2,
+    });
+    act(() => {
+      peer.emit('connection', activeConn);
+      activeConn.open = true;
+      activeConn.emit('open');
+    });
+
+    const staleConn = mockPeerJs.createConnection('guest-stale', {
+      connectionRole: 'guest', clientSessionId: 'session-a', connectionAttempt: 1,
+    });
+    act(() => peer.emit('connection', staleConn));
+
+    expect(staleConn.close).toHaveBeenCalledTimes(1);
+    expect(activeConn.close).not.toHaveBeenCalled();
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
+  });
+
+  it('does not promote an older pending attempt that opens after a newer one', () => {
+    renderHarness('/game?host=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => peer.emit('open'));
+    const olderConn = mockPeerJs.createConnection('guest-older', {
+      connectionRole: 'guest', clientSessionId: 'session-a', connectionAttempt: 2,
+    });
+    const newerConn = mockPeerJs.createConnection('guest-newer', {
+      connectionRole: 'guest', clientSessionId: 'session-a', connectionAttempt: 3,
+    });
+    act(() => {
+      peer.emit('connection', olderConn);
+      peer.emit('connection', newerConn);
+      newerConn.open = true;
+      newerConn.emit('open');
+      olderConn.open = true;
+      olderConn.emit('open');
+    });
+
+    expect(olderConn.close).toHaveBeenCalledTimes(1);
+    expect(newerConn.close).not.toHaveBeenCalled();
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
+  });
+
+  it('keeps an open data channel while guest signaling reconnects', () => {
+    renderHarness('/game?host=false&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => peer.emit('open'));
+    const conn = peer.connections[0];
+    act(() => {
+      conn.open = true;
+      conn.emit('open');
+      conn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: buildSyncState({ revision: 1 }),
+      });
+      peer.disconnected = true;
+      peer.emit('disconnected');
+      vi.advanceTimersByTime(3000);
+      peer.emit('open');
+    });
+
+    expect(peer.reconnect).toHaveBeenCalledTimes(1);
+    expect(peer.connect).toHaveBeenCalledTimes(1);
+    expect(conn.close).not.toHaveBeenCalled();
+    expect(peer.destroy).not.toHaveBeenCalled();
+    expect(mockPeerJs.peers).toHaveLength(1);
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
+  });
+
+  it('keeps the guest locked if signaling reconnects before the initial snapshot arrives', () => {
+    renderHarness('/game?host=false&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => peer.emit('open'));
+    const conn = peer.connections[0];
+    act(() => {
+      conn.open = true;
+      conn.emit('open');
+      peer.disconnected = true;
+      peer.emit('disconnected');
+      peer.emit('open');
+    });
+
+    expect(peer.connect).toHaveBeenCalledTimes(1);
+    expect(conn.close).not.toHaveBeenCalled();
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('reconnecting');
+    expect(screen.getByTestId('can-interact')).toHaveTextContent('false');
+  });
+
+  it('keeps an open host data channel when signaling reconnects', () => {
+    renderHarness('/game?host=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => peer.emit('open'));
+    const conn = mockPeerJs.createConnection('guest');
+    act(() => {
+      peer.emit('connection', conn);
+      conn.open = true;
+      conn.emit('open');
+      peer.disconnected = true;
+      peer.emit('disconnected');
+      peer.emit('open');
+      vi.advanceTimersByTime(3000);
+    });
+
+    expect(peer.reconnect).toHaveBeenCalledTimes(1);
+    expect(peer.destroy).not.toHaveBeenCalled();
+    expect(conn.close).not.toHaveBeenCalled();
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
+  });
+
+  it('recreates the host peer with the same room id after signaling disconnects', () => {
+    renderHarness('/game?host=true&room=ROOM123');
+
+    const firstPeer = mockPeerJs.peers[0];
+    act(() => {
+      firstPeer.emit('open');
+      firstPeer.disconnected = true;
+      firstPeer.emit('disconnected');
+      vi.advanceTimersByTime(3000);
+    });
+
+    expect(firstPeer.destroy).toHaveBeenCalledTimes(1);
+    expect(mockPeerJs.peers).toHaveLength(2);
+    expect(mockPeerJs.peers[1].id).toBe('sv-evolve-ROOM123');
+  });
+
+  it('uses negotiated heartbeats to recover a half-open guest connection', () => {
+    renderHarness('/game?host=false&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => peer.emit('open'));
+    const conn = peer.connections[0];
+    act(() => {
+      conn.open = true;
+      conn.emit('open');
+      conn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: buildSyncState({ revision: 1 }),
+      });
+      conn.emit('data', { type: 'CONNECTION_CAPABILITIES', heartbeat: true });
+      vi.advanceTimersByTime(35000);
+    });
+
+    expect(conn.send).toHaveBeenCalledWith(expect.objectContaining({ type: 'CONNECTION_HEARTBEAT' }));
+    expect(conn.close).toHaveBeenCalled();
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('reconnecting');
+  });
+
+  it('keeps a negotiated connection open when heartbeat acknowledgements arrive', () => {
+    renderHarness('/game?host=false&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => peer.emit('open'));
+    const conn = peer.connections[0];
+    act(() => {
+      conn.open = true;
+      conn.emit('open');
+      conn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: buildSyncState({ revision: 1 }),
+      });
+      conn.emit('data', { type: 'CONNECTION_CAPABILITIES', heartbeat: true });
+      vi.advanceTimersByTime(5000);
+    });
+
+    const heartbeat = conn.send.mock.calls.find(([message]) => message?.type === 'CONNECTION_HEARTBEAT')?.[0];
+    act(() => {
+      conn.emit('data', { type: 'CONNECTION_HEARTBEAT_ACK', sentAt: heartbeat.sentAt });
+      vi.advanceTimersByTime(9000);
+    });
+
+    expect(conn.close).not.toHaveBeenCalled();
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
+  });
+
+  it('keeps backward-compatible connections open when heartbeat capability is not negotiated', () => {
+    renderHarness('/game?host=false&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => peer.emit('open'));
+    const conn = peer.connections[0];
+    act(() => {
+      conn.open = true;
+      conn.emit('open');
+      conn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: buildSyncState({ revision: 1 }),
+      });
+      vi.advanceTimersByTime(30000);
+    });
+
+    expect(conn.close).not.toHaveBeenCalled();
+  });
+
+  it('does not close a negotiated connection when a heartbeat timeout runs while hidden', () => {
+    const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
+    renderHarness('/game?host=false&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => peer.emit('open'));
+    const conn = peer.connections[0];
+    act(() => {
+      conn.open = true;
+      conn.emit('open');
+      conn.emit('data', {
+        type: 'STATE_SNAPSHOT',
+        source: 'host',
+        state: buildSyncState({ revision: 1 }),
+      });
+      conn.emit('data', { type: 'CONNECTION_CAPABILITIES', heartbeat: true });
+      vi.advanceTimersByTime(5000);
+    });
+
+    const heartbeatTimeout = [...setTimeoutSpy.mock.calls]
+      .reverse()
+      .find(([, delay]) => delay === 30000)?.[0];
+    expect(heartbeatTimeout).toBeTypeOf('function');
+    const visibilitySpy = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+
+    act(() => {
+      (heartbeatTimeout as () => void)();
+    });
+
+    expect(conn.close).not.toHaveBeenCalled();
+    visibilitySpy.mockRestore();
+    setTimeoutSpy.mockRestore();
+    vi.clearAllTimers();
   });
 
   it('reconnects after a guest-side peer error', () => {
@@ -1796,7 +2379,7 @@ describe('useGameBoardLogic P2P reconnect', () => {
       secondConn.emit('open');
     });
 
-    expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('reconnecting');
     expect(screen.getByTestId('status')).toHaveTextContent('Connected to host. Syncing latest game state...');
 
     act(() => {
@@ -1804,9 +2387,9 @@ describe('useGameBoardLogic P2P reconnect', () => {
     });
 
     expect(peer.connect).toHaveBeenCalledTimes(2);
-    expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('reconnecting');
     expect(screen.getByTestId('status')).toHaveTextContent('Connected to host. Syncing latest game state...');
-    expect(screen.getByTestId('can-interact')).toHaveTextContent('true');
+    expect(screen.getByTestId('can-interact')).toHaveTextContent('false');
   });
 
   it('ignores stale snapshots from the previous guest connection after reconnecting', () => {
@@ -2597,7 +3180,7 @@ describe('useGameBoardLogic P2P reconnect', () => {
     expect(screen.getByTestId('status')).toHaveTextContent('Connection error. Waiting for guest...');
   });
 
-  it('waits after a host-side peer disconnect', () => {
+  it('starts host recovery after a host-side peer disconnect', () => {
     renderHarness('/game?host=true&room=ROOM123');
 
     const peer = mockPeerJs.peers[0];
@@ -2606,11 +3189,11 @@ describe('useGameBoardLogic P2P reconnect', () => {
       peer.emit('disconnected');
     });
 
-    expect(screen.getByTestId('connection-state')).toHaveTextContent('disconnected');
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('reconnecting');
     expect(screen.getByTestId('status')).toHaveTextContent('Disconnected from Peer server. Reopen room if needed.');
   });
 
-  it('waits after a host-side peer error', () => {
+  it('starts host recovery after a host-side peer error', () => {
     renderHarness('/game?host=true&room=ROOM123');
 
     const peer = mockPeerJs.peers[0];
@@ -2619,7 +3202,7 @@ describe('useGameBoardLogic P2P reconnect', () => {
       peer.emit('error');
     });
 
-    expect(screen.getByTestId('connection-state')).toHaveTextContent('disconnected');
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('reconnecting');
     expect(screen.getByTestId('status')).toHaveTextContent('P2P error. Waiting for guest...');
   });
 
@@ -2663,6 +3246,32 @@ describe('useGameBoardLogic P2P reconnect', () => {
 
     expect(snapshotCalls).toHaveLength(1);
     expect(snapshotCalls[0].state.cards.filter((card) => card.zone === 'ex-host')).toHaveLength(4);
+  });
+
+  it('closes a connection when a deferred snapshot cannot flush before the deadline', () => {
+    renderHarness('/game?host=true&room=ROOM123');
+
+    const peer = mockPeerJs.peers[0];
+    act(() => peer.emit('open'));
+
+    const conn = mockPeerJs.createConnection('guest') as ReturnType<typeof mockPeerJs.createConnection> & {
+      bufferSize?: number;
+    };
+    act(() => {
+      peer.emit('connection', conn);
+      conn.open = true;
+      conn.emit('open');
+    });
+
+    conn.send.mockClear();
+    conn.bufferSize = 1;
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Spawn Token to EX' }));
+      vi.advanceTimersByTime(30_000);
+    });
+
+    expect(conn.send).not.toHaveBeenCalled();
+    expect(conn.close).toHaveBeenCalledTimes(1);
   });
 
   it('loads a saved host session candidate and restores it when requested', () => {
@@ -2831,7 +3440,24 @@ describe('useGameBoardLogic P2P reconnect', () => {
       type: 'WAITING_FOR_HOST_SESSION',
       source: 'host',
     });
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('reconnecting');
+    expect(screen.getByTestId('can-interact')).toHaveTextContent('false');
     expect(screen.getByTestId('status')).toHaveTextContent('Guest connected. Choose whether to resume the saved session.');
+
+    conn.send.mockClear();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Resume Saved Session' }));
+      conn.emit('data', {
+        type: 'REQUEST_SNAPSHOT',
+        lastKnownRevision: 0,
+        source: 'guest',
+      });
+    });
+
+    expect(conn.send).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'WAITING_FOR_HOST_SESSION' }));
+    expect(conn.send).toHaveBeenCalledWith(expect.objectContaining({ type: 'STATE_SNAPSHOT' }));
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
+    expect(screen.getByTestId('can-interact')).toHaveTextContent('true');
   });
 
   it('responds to spectator snapshot requests with a waiting message while a saved session is pending', () => {
@@ -3569,10 +4195,15 @@ describe('useGameBoardLogic P2P reconnect', () => {
     guestConn.send.mockClear();
     spectatorConn.send.mockClear();
 
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('reconnecting');
+    expect(screen.getByTestId('can-interact')).toHaveTextContent('false');
+
     act(() => {
       fireEvent.click(screen.getByRole('button', { name: 'Discard Saved Session' }));
     });
 
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
+    expect(screen.getByTestId('can-interact')).toHaveTextContent('true');
     expect(screen.getByTestId('host-hp')).toHaveTextContent('20');
     expect(guestConn.send).toHaveBeenCalledWith(expect.objectContaining({
       type: 'STATE_SNAPSHOT',

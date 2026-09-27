@@ -374,7 +374,8 @@
       "connectedJoiningRoom": "接続完了！ルームに入室しています...",
       "disconnectedFromPeer": "Peerサーバーから切断されました。必要に応じてルームを再作成してください。",
       "p2pErrorWaiting": "P2Pエラーが発生しました。ゲストを待機しています...",
-      "debugAutoStarted": "[DEBUG] ゲームを自動開始しました。両者のデッキが20枚ずつ注入されました。"
+      "debugAutoStarted": "[DEBUG] ゲームを自動開始しました。両者のデッキが20枚ずつ注入されました。",
+      "reconnectExhausted": "自動再接続を停止しました。再接続ボタンからもう一度お試しください。"
     },
     "room": {
       "host": "ホスト/P2P",

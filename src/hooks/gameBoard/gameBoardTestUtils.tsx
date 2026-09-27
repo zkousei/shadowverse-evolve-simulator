@@ -29,6 +29,7 @@ vi.mock('react-i18next', () => ({
         'gameBoard.status.connectionErrorReconnecting': 'Connection error. Reconnecting...',
         'gameBoard.status.peerConnectionLostReconnecting': 'Peer connection lost. Reconnecting...',
         'gameBoard.status.unableToReachHostReconnecting': 'Unable to reach host. Reconnecting...',
+        'gameBoard.status.reconnectExhausted': 'Automatic reconnection stopped. Use Reconnect to try again.',
         'gameBoard.status.sessionRestored': 'Saved host session restored.',
         'gameBoard.status.startingFresh': 'Starting a fresh host session.',
         'gameBoard.status.soloMode': 'Solo Mode',
@@ -178,12 +179,19 @@ vi.mock('peerjs', () => ({
 
     class MockPeer {
       id?: string;
+      disconnected = false;
+      destroyed = false;
       readonly connect = vi.fn((peerId: string, options?: { metadata?: unknown }) => {
         const conn = new MockConnection(peerId, options?.metadata);
         this.connections.push(conn);
         return conn;
       });
-      readonly destroy = vi.fn();
+      readonly reconnect = vi.fn(() => {
+        this.disconnected = false;
+      });
+      readonly destroy = vi.fn(() => {
+        this.destroyed = true;
+      });
       readonly connections: MockConnection[] = [];
 
       private handlers: Record<string, MockHandler[]> = {};
@@ -214,8 +222,12 @@ vi.mock('peerjs', () => ({
 export const mockPeerJs = (PeerJsModule as unknown as {
   __mockPeerJs: {
     peers: Array<{
+      id?: string;
       connect: ReturnType<typeof vi.fn>;
       destroy: ReturnType<typeof vi.fn>;
+      reconnect: ReturnType<typeof vi.fn>;
+      disconnected: boolean;
+      destroyed: boolean;
       connections: Array<{
         open: boolean;
         send: ReturnType<typeof vi.fn>;
@@ -254,6 +266,7 @@ export function HookHarness() {
     eventHistory,
     revealedCardsOverlay,
     savedSessionCandidate,
+    attemptReconnect,
     resumeSavedSession,
     discardSavedSession,
     mulliganOrder,
@@ -369,6 +382,7 @@ export function HookHarness() {
           <button onClick={discardSavedSession}>Discard Saved Session</button>
         </>
       )}
+      <button onClick={attemptReconnect}>Reconnect</button>
       <button onClick={() => handleStatChange('host', 'hp', -1)}>Damage Host</button>
       <button onClick={() => setPhase('End')}>Set Phase End</button>
       <button onClick={() => endTurn('host')}>Host End Turn</button>

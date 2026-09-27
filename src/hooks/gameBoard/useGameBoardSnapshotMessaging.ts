@@ -4,6 +4,7 @@ import type { SyncMessage } from '../../types/sync';
 import { mergeQueuedSnapshotMessage, shouldDeferSnapshotMessageSend } from '../../utils/gameBoard/snapshot/gameBoardSnapshotQueue';
 
 const SNAPSHOT_FLUSH_INTERVAL_MS = 50;
+const SNAPSHOT_FLUSH_TIMEOUT_MS = 30_000;
 
 type SnapshotMessage = Extract<SyncMessage, { type: 'STATE_SNAPSHOT' }>;
 
@@ -18,6 +19,7 @@ export const useGameBoardSnapshotMessaging = ({
 }: UseGameBoardSnapshotMessagingArgs) => {
   const snapshotFlushTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingSnapshotMessageRef = React.useRef<SnapshotMessage | null>(null);
+  const snapshotDeferredSinceRef = React.useRef<number | null>(null);
   const flushPendingSnapshotMessageRef = React.useRef<(() => void) | null>(null);
 
   const clearSnapshotFlushTimer = React.useCallback(() => {
@@ -29,12 +31,17 @@ export const useGameBoardSnapshotMessaging = ({
 
   const clearPendingSnapshotMessage = React.useCallback(() => {
     pendingSnapshotMessageRef.current = null;
+    snapshotDeferredSinceRef.current = null;
     clearSnapshotFlushTimer();
   }, [clearSnapshotFlushTimer]);
 
   const sendImmediate = React.useCallback((message: SyncMessage) => {
     if (!connRef.current?.open) return;
-    connRef.current.send(message);
+    try {
+      connRef.current.send(message);
+    } catch {
+      connRef.current.close();
+    }
   }, [connRef]);
 
   const sendSpectatorImmediate = React.useCallback((message: SyncMessage) => {
@@ -62,13 +69,25 @@ export const useGameBoardSnapshotMessaging = ({
     const conn = connRef.current;
     if (!conn?.open) {
       pendingSnapshotMessageRef.current = null;
+      snapshotDeferredSinceRef.current = null;
       return;
     }
 
     const pendingSnapshot = pendingSnapshotMessageRef.current;
-    if (!pendingSnapshot) return;
+    if (!pendingSnapshot) {
+      snapshotDeferredSinceRef.current = null;
+      return;
+    }
 
     if (shouldDeferSnapshotMessageSend(conn)) {
+      const deferredSince = snapshotDeferredSinceRef.current ?? Date.now();
+      snapshotDeferredSinceRef.current = deferredSince;
+      if (Date.now() - deferredSince >= SNAPSHOT_FLUSH_TIMEOUT_MS) {
+        pendingSnapshotMessageRef.current = null;
+        snapshotDeferredSinceRef.current = null;
+        conn.close();
+        return;
+      }
       scheduleSnapshotFlush(() => {
         flushPendingSnapshotMessageRef.current?.();
       });
@@ -76,6 +95,7 @@ export const useGameBoardSnapshotMessaging = ({
     }
 
     pendingSnapshotMessageRef.current = null;
+    snapshotDeferredSinceRef.current = null;
     sendImmediate(pendingSnapshot);
 
     if (pendingSnapshotMessageRef.current) {
@@ -107,6 +127,7 @@ export const useGameBoardSnapshotMessaging = ({
 
     if (shouldDeferSnapshotMessageSend(conn)) {
       pendingSnapshotMessageRef.current = message;
+      snapshotDeferredSinceRef.current = Date.now();
       scheduleSnapshotFlush(() => {
         flushPendingSnapshotMessageRef.current?.();
       });
