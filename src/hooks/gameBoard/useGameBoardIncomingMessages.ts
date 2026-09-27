@@ -21,10 +21,13 @@ type UseGameBoardIncomingMessagesArgs = {
   cardDetailLookupRef: React.RefObject<CardDetailLookup>;
   clearSnapshotRequestTimer: () => void;
   gameStateRef: React.RefObject<SyncState>;
+  hasCheckedSavedSessionRef: React.RefObject<boolean>;
   isActiveConnectionToken: (token: string) => boolean;
   isActiveSpectatorConnectionToken: (token: string) => boolean;
   isHost: boolean;
   maybeApplySnapshot: (incomingState: SyncState, source: PlayerRole) => boolean;
+  onHostSnapshotReady: () => void;
+  onWaitingForHostSession: () => void;
   playIncomingSharedUiEffects: (
     message: Extract<SyncMessage, { type: 'SHARED_UI_EFFECT' }> | SnapshotMessage
   ) => void;
@@ -40,24 +43,39 @@ export const useGameBoardIncomingMessages = ({
   cardDetailLookupRef,
   clearSnapshotRequestTimer,
   gameStateRef,
+  hasCheckedSavedSessionRef,
   isActiveConnectionToken,
   isActiveSpectatorConnectionToken,
   isHost,
   maybeApplySnapshot,
+  onHostSnapshotReady,
+  onWaitingForHostSession,
   playIncomingSharedUiEffects,
   reconcileOpenTopDeckCards,
   resetTransientUiState,
   savedSessionCandidateRef,
   setStatusKey,
 }: UseGameBoardIncomingMessagesArgs) => {
+  const sendToConnection = React.useCallback((conn: DataConnection, message: SyncMessage) => {
+    if (!conn.open) return false;
+    try {
+      conn.send(message);
+      return true;
+    } catch {
+      conn.close();
+      return false;
+    }
+  }, []);
+
   const handleIncomingWaitingForHostSession = React.useCallback(() => {
     clearSnapshotRequestTimer();
     const waitingDecision = getWaitingForHostSessionDecision({ isHost });
 
     if (waitingDecision.type === 'set-status') {
       setStatusKey(waitingDecision.statusKey);
+      onWaitingForHostSession();
     }
-  }, [clearSnapshotRequestTimer, isHost, setStatusKey]);
+  }, [clearSnapshotRequestTimer, isHost, onWaitingForHostSession, setStatusKey]);
 
   const handleIncomingEvent = React.useCallback((message: Extract<SyncMessage, { type: 'EVENT' }>) => {
     const incomingEventDecision = getIncomingEventDecision({ isHost });
@@ -73,19 +91,19 @@ export const useGameBoardIncomingMessages = ({
   ) => {
     const snapshotRequestDecision = getSnapshotRequestDecision({
       isHost,
-      hasSavedSessionCandidate: Boolean(savedSessionCandidateRef.current),
+      hasSavedSessionCandidate: !hasCheckedSavedSessionRef.current || Boolean(savedSessionCandidateRef.current),
     });
 
     if (snapshotRequestDecision.type === 'wait-for-host-session') {
       setStatusKey(snapshotRequestDecision.statusKey);
-      conn.send(buildWaitingForHostSessionMessage());
+      sendToConnection(conn, buildWaitingForHostSessionMessage());
       return;
     }
 
     if (snapshotRequestDecision.type === 'send-snapshot') {
-      conn.send(buildSnapshotSyncMessage(gameStateRef.current, 'host', cardDetailLookupRef.current));
+      sendToConnection(conn, buildSnapshotSyncMessage(gameStateRef.current, 'host', cardDetailLookupRef.current));
     }
-  }, [cardDetailLookupRef, gameStateRef, isHost, savedSessionCandidateRef, setStatusKey]);
+  }, [cardDetailLookupRef, gameStateRef, hasCheckedSavedSessionRef, isHost, savedSessionCandidateRef, sendToConnection, setStatusKey]);
 
   const handleIncomingSnapshot = React.useCallback((message: SnapshotMessage) => {
     const snapshotHandling = getIncomingSnapshotHandling({
@@ -100,6 +118,9 @@ export const useGameBoardIncomingMessages = ({
     playIncomingSharedUiEffects(message);
 
     if (snapshotHandling.postProcessing.type === 'guest-ready') {
+      if (didApplySnapshot) {
+        onHostSnapshotReady();
+      }
       if (snapshotHandling.postProcessing.shouldResetTransientUi) {
         resetTransientUiState(!snapshotHandling.postProcessing.preserveUndoState);
       } else if (didApplySnapshot) {
@@ -113,6 +134,7 @@ export const useGameBoardIncomingMessages = ({
     gameStateRef,
     isHost,
     maybeApplySnapshot,
+    onHostSnapshotReady,
     playIncomingSharedUiEffects,
     reconcileOpenTopDeckCards,
     resetTransientUiState,

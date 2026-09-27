@@ -38,6 +38,7 @@ export const useGameBoardSessionPersistence = ({
   const [savedSessionCandidate, setSavedSessionCandidate] = React.useState<SavedHostSession | null>(null);
   const [hasCheckedSavedSession, setHasCheckedSavedSession] = React.useState(false);
   const savedSessionCandidateRef = React.useRef<SavedHostSession | null>(null);
+  const hasCheckedSavedSessionRef = React.useRef(false);
 
   React.useEffect(() => {
     savedSessionCandidateRef.current = savedSessionCandidate;
@@ -45,12 +46,16 @@ export const useGameBoardSessionPersistence = ({
 
   React.useEffect(() => {
     if (typeof window === 'undefined') {
+      savedSessionCandidateRef.current = null;
+      hasCheckedSavedSessionRef.current = true;
       setHasCheckedSavedSession(true);
       setSavedSessionCandidate(null);
       return;
     }
 
     if (isSoloMode || !isHost || !room) {
+      savedSessionCandidateRef.current = null;
+      hasCheckedSavedSessionRef.current = true;
       setSavedSessionCandidate(null);
       setHasCheckedSavedSession(true);
       return;
@@ -61,11 +66,15 @@ export const useGameBoardSessionPersistence = ({
 
     if (!parsed || !hasMeaningfulGameSessionState(parsed.state)) {
       window.sessionStorage.removeItem(storageKey);
+      savedSessionCandidateRef.current = null;
+      hasCheckedSavedSessionRef.current = true;
       setSavedSessionCandidate(null);
       setHasCheckedSavedSession(true);
       return;
     }
 
+    savedSessionCandidateRef.current = parsed;
+    hasCheckedSavedSessionRef.current = true;
     setSavedSessionCandidate(parsed);
     setHasCheckedSavedSession(true);
   }, [appVersion, isHost, isSoloMode, room]);
@@ -101,6 +110,7 @@ export const useGameBoardSessionPersistence = ({
 
     applyLocalState(savedSessionCandidate.state);
     resetTransientUiState();
+    savedSessionCandidateRef.current = null;
     setSavedSessionCandidate(null);
     setStatusKey('gameBoard.status.sessionRestored');
     sendSnapshotToCurrentConnection(savedSessionCandidate.state, 'host');
@@ -117,6 +127,7 @@ export const useGameBoardSessionPersistence = ({
       window.sessionStorage.removeItem(getHostSessionStorageKey(room));
     }
 
+    savedSessionCandidateRef.current = null;
     setSavedSessionCandidate(null);
     setStatusKey('gameBoard.status.startingFresh');
     sendSnapshotToCurrentConnection(gameStateRef.current, 'host');
@@ -125,6 +136,8 @@ export const useGameBoardSessionPersistence = ({
   return {
     savedSessionCandidate,
     savedSessionCandidateRef,
+    hasCheckedSavedSession,
+    hasCheckedSavedSessionRef,
     resumeSavedSession,
     discardSavedSession,
   };

@@ -105,6 +105,15 @@ const APP_VERSION = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '0.0
 const SNAPSHOT_REQUEST_TIMEOUT_MS = 2000;
 const MAX_SNAPSHOT_REQUEST_RETRIES = 2;
 const RECONNECT_DELAY_MS = 1000;
+const PEER_OPEN_TIMEOUT_MS = 10_000;
+const HOST_PEER_RECOVERY_DELAY_MS = 3_000;
+const HOST_ROOM_RELEASE_RETRY_MS = 1_000;
+const HOST_ROOM_RELEASE_MAX_RETRY_MS = 8_000;
+const MAX_HOST_ROOM_RELEASE_ATTEMPTS = 10;
+const MAX_PEER_RECOVERY_ATTEMPTS = 5;
+const MAX_GUEST_RECOVERY_ATTEMPTS = 10;
+const CONNECTION_PROTOCOL_VERSION = 2;
+const CONNECTION_CAPABILITIES = ['heartbeat-v1'];
 
 type GameBoardStatusKey = `gameBoard.status.${string}`;
 export const useGameBoardLogic = () => {
@@ -125,7 +134,6 @@ export const useGameBoardLogic = () => {
   const status = t(statusKey);
   const [connectionState, setConnectionState] = useState<ConnectionState>('idle');
   const [spectatorCount, setSpectatorCount] = useState(0);
-  const canInteract = getCanInteractWithGameBoard({ isSoloMode, isHost, isSpectator, connectionState });
   const canView = getCanViewGameBoard({ isSoloMode, isHost, connectionState });
   const [gameState, setGameState] = useState<SyncState>(initialState);
   const [searchZone, setSearchZone] = useState<{ id: string, title: string } | null>(null);
@@ -146,6 +154,8 @@ export const useGameBoardLogic = () => {
 
   const peerRef = useRef<Peer | null>(null);
   const connRef = useRef<DataConnection | null>(null);
+  const clientSessionIdRef = useRef(uuid());
+  const connectionAttemptRef = useRef(0);
   const spectatorConnectionsRef = useRef<Map<string, DataConnection>>(new Map());
   const setupConnectionRef = useRef<(conn: DataConnection) => void>(() => undefined);
   const gameStateRef = useRef<SyncState>(initialState);
@@ -165,8 +175,13 @@ export const useGameBoardLogic = () => {
   const activeConnectionTokenRef = useRef<string | null>(null);
   const openedSpectatorConnectionTokensRef = useRef<Set<string>>(new Set());
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const peerRecoveryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const peerRecoveryAttemptsRef = useRef(0);
+  const guestRecoveryAttemptsRef = useRef(0);
+  const createPeerTransportRef = useRef<(() => Peer | null) | null>(null);
   const snapshotRequestTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const snapshotRetryCountRef = useRef(0);
+  const waitingForHostSessionRef = useRef(false);
   // Stores the game state immediately before the last card-move action so it
   // can be restored via the undo button.  Only one level of undo is supported.
   const processedEventDeduperRef = useRef(createEventDeduper());
@@ -221,13 +236,36 @@ export const useGameBoardLogic = () => {
     }
   }, []);
 
+  const clearPeerRecoveryTimer = useCallback(() => {
+    if (peerRecoveryTimeoutRef.current) {
+      clearTimeout(peerRecoveryTimeoutRef.current);
+      peerRecoveryTimeoutRef.current = null;
+    }
+  }, []);
+
   const clearSnapshotRequestTimer = useCallback(() => {
     if (snapshotRequestTimeoutRef.current) {
       clearTimeout(snapshotRequestTimeoutRef.current);
       snapshotRequestTimeoutRef.current = null;
     }
     snapshotRetryCountRef.current = 0;
+    waitingForHostSessionRef.current = false;
   }, []);
+
+  const stopAutomaticGuestRecovery = useCallback(() => {
+    clearReconnectTimer();
+    clearPeerRecoveryTimer();
+    clearSnapshotRequestTimer();
+    clearPendingSnapshotMessage();
+    activeConnectionTokenRef.current = null;
+    awaitingInitialSnapshotRef.current = false;
+    connRef.current = null;
+    const exhaustedPeer = peerRef.current;
+    peerRef.current = null;
+    exhaustedPeer?.destroy();
+    setConnectionState('disconnected');
+    setStatusKey('gameBoard.status.reconnectExhausted');
+  }, [clearPeerRecoveryTimer, clearPendingSnapshotMessage, clearReconnectTimer, clearSnapshotRequestTimer]);
 
   const resetTransientUiState = useCallback((includingUndo = true) => {
     setSearchZone(null);
@@ -288,6 +326,8 @@ export const useGameBoardLogic = () => {
   const {
     savedSessionCandidate,
     savedSessionCandidateRef,
+    hasCheckedSavedSession,
+    hasCheckedSavedSessionRef,
     resumeSavedSession,
     discardSavedSession,
   } = useGameBoardSessionPersistence({
@@ -302,6 +342,15 @@ export const useGameBoardLogic = () => {
     sendSnapshotToCurrentConnection,
     setStatusKey,
   });
+
+  const isHostSessionDecisionPending = isHost
+    && !isSoloMode
+    && (!hasCheckedSavedSession || savedSessionCandidate !== null);
+  const visibleConnectionState: ConnectionState = isHostSessionDecisionPending && connectionState === 'connected'
+    ? 'reconnecting'
+    : connectionState;
+  const canInteract = !isHostSessionDecisionPending
+    && getCanInteractWithGameBoard({ isSoloMode, isHost, isSpectator, connectionState });
 
   const sendSharedUiEffect = useCallback((effect: SharedUiEffect) => {
     sendMessage({ type: 'SHARED_UI_EFFECT', effect });
@@ -853,18 +902,30 @@ export const useGameBoardLogic = () => {
 
     setConnectionState(current => current === 'connected' ? 'reconnecting' : 'connecting');
     setStatusKey('gameBoard.status.connectingToHost');
-    const conn = isSpectator
-      ? peer.connect(`sv-evolve-${room}`, { metadata: { connectionRole: 'spectator' } })
-      : peer.connect(`sv-evolve-${room}`);
+    connectionAttemptRef.current += 1;
+    const conn = peer.connect(`sv-evolve-${room}`, {
+      metadata: {
+        connectionRole: isSpectator ? 'spectator' : 'guest',
+        protocolVersion: CONNECTION_PROTOCOL_VERSION,
+        capabilities: CONNECTION_CAPABILITIES,
+        clientSessionId: clientSessionIdRef.current,
+        connectionAttempt: connectionAttemptRef.current,
+      },
+    });
     setupConnectionRef.current(conn);
   }, [isHost, isSoloMode, isSpectator, room]);
 
   const scheduleReconnectAttempt = useCallback(() => {
+    if (guestRecoveryAttemptsRef.current >= MAX_GUEST_RECOVERY_ATTEMPTS) {
+      stopAutomaticGuestRecovery();
+      return;
+    }
     reconnectTimeoutRef.current = setTimeout(() => {
       reconnectTimeoutRef.current = null;
+      guestRecoveryAttemptsRef.current += 1;
       connectToHost();
     }, RECONNECT_DELAY_MS);
-  }, [connectToHost]);
+  }, [connectToHost, stopAutomaticGuestRecovery]);
 
   const scheduleReconnect = useCallback((messageKey: GameBoardStatusKey) => {
     if (isSoloMode || isHost) return;
@@ -872,14 +933,37 @@ export const useGameBoardLogic = () => {
     setConnectionState('reconnecting');
     setStatusKey(messageKey);
     resetTransientUiState();
-    scheduleReconnectAttempt();
+    if (!peerRecoveryTimeoutRef.current) {
+      scheduleReconnectAttempt();
+    }
   }, [clearReconnectTimer, isHost, isSoloMode, resetTransientUiState, scheduleReconnectAttempt]);
+
+  const attemptAutomaticReconnect = useCallback(() => {
+    if (isSoloMode || isHost) return;
+    clearReconnectTimer();
+    if (guestRecoveryAttemptsRef.current >= MAX_GUEST_RECOVERY_ATTEMPTS) {
+      stopAutomaticGuestRecovery();
+      return;
+    }
+    guestRecoveryAttemptsRef.current += 1;
+    connectToHost();
+  }, [clearReconnectTimer, connectToHost, isHost, isSoloMode, stopAutomaticGuestRecovery]);
 
   const attemptReconnect = useCallback(() => {
     if (isSoloMode || isHost) return;
+    guestRecoveryAttemptsRef.current = 0;
+    peerRecoveryAttemptsRef.current = 0;
     clearReconnectTimer();
+    clearPeerRecoveryTimer();
+    setConnectionState('connecting');
+    setStatusKey('gameBoard.status.connectingToHost');
+    const peer = peerRef.current;
+    if (!peer || peer.destroyed) {
+      createPeerTransportRef.current?.();
+      return;
+    }
     connectToHost();
-  }, [clearReconnectTimer, connectToHost, isHost, isSoloMode]);
+  }, [clearPeerRecoveryTimer, clearReconnectTimer, connectToHost, isHost, isSoloMode]);
 
   const isActiveConnectionToken = useCallback((token: string) => {
     return activeConnectionTokenRef.current === token;
@@ -909,23 +993,40 @@ export const useGameBoardLogic = () => {
       return;
     }
 
+    if (waitingForHostSessionRef.current) {
+      if (retryDecision === 'reconnect') {
+        clearSnapshotRequestTimer();
+        setStatusKey('gameBoard.status.syncTimedOut');
+        attemptAutomaticReconnect();
+        return;
+      }
+      snapshotRetryCountRef.current += 1;
+      retrySnapshotRequest(conn, token);
+      return;
+    }
+
     if (retryDecision === 'reconnect') {
       clearSnapshotRequestTimer();
       setStatusKey('gameBoard.status.syncTimedOut');
-      attemptReconnect();
+      attemptAutomaticReconnect();
       return;
     }
 
     snapshotRetryCountRef.current += 1;
     setStatusKey('gameBoard.status.waitingForRestore');
     retrySnapshotRequest(conn, token);
-  }, [attemptReconnect, clearSnapshotRequestTimer, isCurrentActiveConnection]);
+  }, [attemptAutomaticReconnect, clearSnapshotRequestTimer, isCurrentActiveConnection]);
 
   const requestSnapshotWithRetry = useCallback(function requestSnapshotWithRetry(conn: DataConnection, token: string) {
     if (isSoloMode || isHost) return;
     if (!isActiveConnectionToken(token) || !conn.open) return;
 
-    conn.send(buildSnapshotRequestMessage(gameStateRef.current.revision, isSpectator ? 'guest' : role));
+    try {
+      conn.send(buildSnapshotRequestMessage(gameStateRef.current.revision, isSpectator ? 'guest' : role));
+    } catch {
+      conn.close();
+      return;
+    }
 
     if (snapshotRequestTimeoutRef.current) {
       clearTimeout(snapshotRequestTimeoutRef.current);
@@ -936,6 +1037,22 @@ export const useGameBoardLogic = () => {
     }, SNAPSHOT_REQUEST_TIMEOUT_MS);
   }, [handleSnapshotRequestTimeout, isActiveConnectionToken, isHost, isSoloMode, isSpectator, role]);
 
+  const handleWaitingForHostSession = useCallback(() => {
+    waitingForHostSessionRef.current = true;
+    const conn = connRef.current;
+    const token = activeConnectionTokenRef.current;
+    if (!conn || !token) return;
+
+    snapshotRequestTimeoutRef.current = setTimeout(() => {
+      requestSnapshotWithRetry(conn, token);
+    }, RECONNECT_DELAY_MS);
+  }, [requestSnapshotWithRetry]);
+
+  const handleHostSnapshotReady = useCallback(() => {
+    guestRecoveryAttemptsRef.current = 0;
+    setConnectionState('connected');
+  }, []);
+
   const {
     handleIncomingConnectionData,
     handleIncomingSpectatorConnectionData,
@@ -945,10 +1062,13 @@ export const useGameBoardLogic = () => {
     cardDetailLookupRef,
     clearSnapshotRequestTimer,
     gameStateRef,
+    hasCheckedSavedSessionRef,
     isActiveConnectionToken,
     isActiveSpectatorConnectionToken,
     isHost,
     maybeApplySnapshot,
+    onHostSnapshotReady: handleHostSnapshotReady,
+    onWaitingForHostSession: handleWaitingForHostSession,
     playIncomingSharedUiEffects,
     reconcileOpenTopDeckCards,
     resetTransientUiState,
@@ -995,14 +1115,16 @@ export const useGameBoardLogic = () => {
 
   const handleConnectionOpen = useCallback((conn: DataConnection, token: string) => {
     if (!isActiveConnectionToken(token)) return;
-    setConnectionState('connected');
 
     const openDecision = getConnectionOpenDecision({ isHost });
     setStatusKey(openDecision.statusKey);
 
     if (openDecision.type === 'host') {
+      setConnectionState('connected');
       return;
     }
+
+    setConnectionState('reconnecting');
 
     if (openDecision.shouldAwaitInitialSnapshot) {
       awaitingInitialSnapshotRef.current = true;
@@ -1019,6 +1141,7 @@ export const useGameBoardLogic = () => {
   }, [handleConnectionTermination, isActiveConnectionToken]);
 
   const { setupConnection, handlePeerIncomingConnection } = useGameBoardConnectionSetup({
+    connRef,
     handleConnectionLifecycleEvent,
     handleConnectionOpen,
     handleIncomingConnectionData,
@@ -1056,6 +1179,17 @@ export const useGameBoardLogic = () => {
   }, [isSpectator]);
 
   const handlePeerOpen = useCallback(() => {
+    if (connRef.current?.open) {
+      if (!isHost && awaitingInitialSnapshotRef.current) {
+        setConnectionState('reconnecting');
+        setStatusKey('gameBoard.status.connectedHostSyncing');
+        return;
+      }
+      setConnectionState('connected');
+      setStatusKey(isHost ? 'gameBoard.status.guestConnectedReady' : 'gameBoard.status.connectedHostReady');
+      return;
+    }
+
     const openDecision = getPeerOpenDecision({ isHost });
     setStatusKey(openDecision.statusKey);
 
@@ -1075,13 +1209,36 @@ export const useGameBoardLogic = () => {
       kind,
     });
 
-    if (terminationDecision.type === 'host') {
-      setStatusKey(terminationDecision.statusKey);
+    setConnectionState('reconnecting');
+    setStatusKey(terminationDecision.statusKey);
+    resetTransientUiState();
+    clearReconnectTimer();
+
+    if (peerRecoveryTimeoutRef.current) return;
+    if (!isHost && guestRecoveryAttemptsRef.current >= MAX_GUEST_RECOVERY_ATTEMPTS) {
+      stopAutomaticGuestRecovery();
+      return;
+    }
+    if (peerRecoveryAttemptsRef.current >= MAX_PEER_RECOVERY_ATTEMPTS) {
+      if (!isHost) {
+        stopAutomaticGuestRecovery();
+        return;
+      }
+      setConnectionState('disconnected');
+      const exhaustedPeer = peerRef.current;
+      peerRef.current = null;
+      exhaustedPeer?.destroy();
       return;
     }
 
-    scheduleReconnect(terminationDecision.statusKey);
-  }, [isHost, scheduleReconnect]);
+    const delay = isHost ? HOST_PEER_RECOVERY_DELAY_MS : RECONNECT_DELAY_MS;
+    peerRecoveryTimeoutRef.current = setTimeout(() => {
+      peerRecoveryTimeoutRef.current = null;
+      peerRecoveryAttemptsRef.current += 1;
+      if (!isHost) guestRecoveryAttemptsRef.current += 1;
+      createPeerTransportRef.current?.();
+    }, delay);
+  }, [clearReconnectTimer, isHost, resetTransientUiState, stopAutomaticGuestRecovery]);
 
   const cleanupPeerLifecycle = useCallback((peer: Peer) => {
     clearReconnectTimer();
@@ -1089,6 +1246,96 @@ export const useGameBoardLogic = () => {
     clearSpectatorConnectionLifecycleState();
     peer.destroy();
   }, [clearActiveConnectionLifecycleState, clearReconnectTimer, clearSpectatorConnectionLifecycleState]);
+
+  const createPeerTransport = useCallback(() => {
+    if (isSoloMode || !room) return null;
+
+    clearReconnectTimer();
+
+    const previousPeer = peerRef.current;
+    if (previousPeer) {
+      peerRef.current = null;
+      clearActiveConnectionLifecycleState();
+      clearSpectatorConnectionLifecycleState();
+      previousPeer.destroy();
+    }
+
+    setConnectionState(peerRecoveryAttemptsRef.current > 0 ? 'reconnecting' : 'connecting');
+    const peerId = isHost ? `sv-evolve-${room}` : undefined;
+    const peer = peerId ? new Peer(peerId) : new Peer();
+    peerRef.current = peer;
+    let opened = false;
+
+    const openTimeout = setTimeout(() => {
+      if (peerRef.current !== peer || opened) return;
+      handlePeerTermination('error');
+    }, PEER_OPEN_TIMEOUT_MS);
+
+    peer.on('open', handlePeerOpen);
+    peer.on('open', () => {
+      if (peerRef.current !== peer) return;
+      opened = true;
+      clearTimeout(openTimeout);
+      clearPeerRecoveryTimer();
+      peerRecoveryAttemptsRef.current = 0;
+    });
+    peer.on('connection', handlePeerIncomingConnection);
+    peer.on('disconnected', () => {
+      if (peerRef.current !== peer) return;
+      clearTimeout(openTimeout);
+      if (!peer.destroyed && peer.disconnected) {
+        try {
+          peer.reconnect();
+        } catch {
+          if (!isHost) handlePeerTermination('disconnected');
+        }
+      }
+      if (!isHost && connRef.current?.open) {
+        return;
+      }
+      handlePeerTermination('disconnected');
+    });
+    peer.on('error', (error: { type?: string }) => {
+      if (peerRef.current !== peer) return;
+      clearTimeout(openTimeout);
+      if (isHost && error?.type === 'unavailable-id' && !peerRecoveryTimeoutRef.current) {
+        if (peerRecoveryAttemptsRef.current >= MAX_HOST_ROOM_RELEASE_ATTEMPTS) {
+          handlePeerTermination('error');
+          return;
+        }
+        setConnectionState('reconnecting');
+        setStatusKey('gameBoard.status.p2pErrorWaiting');
+        const retryDelay = Math.min(
+          HOST_ROOM_RELEASE_RETRY_MS * (2 ** Math.min(peerRecoveryAttemptsRef.current, 3)),
+          HOST_ROOM_RELEASE_MAX_RETRY_MS
+        );
+        peerRecoveryTimeoutRef.current = setTimeout(() => {
+          peerRecoveryTimeoutRef.current = null;
+          peerRecoveryAttemptsRef.current += 1;
+          createPeerTransportRef.current?.();
+        }, retryDelay);
+        return;
+      }
+      handlePeerTermination('error');
+    });
+
+    return peer;
+  }, [
+    clearActiveConnectionLifecycleState,
+    clearPeerRecoveryTimer,
+    clearReconnectTimer,
+    clearSpectatorConnectionLifecycleState,
+    handlePeerIncomingConnection,
+    handlePeerOpen,
+    handlePeerTermination,
+    isHost,
+    isSoloMode,
+    room,
+  ]);
+
+  useEffect(() => {
+    createPeerTransportRef.current = createPeerTransport;
+  }, [createPeerTransport]);
 
   useEffect(() => {
     if (isSoloMode) {
@@ -1099,24 +1346,16 @@ export const useGameBoardLogic = () => {
     }
     if (!room) return;
     processedEventDeduperRef.current.reset();
-    setConnectionState('connecting');
-    const peerId = isHost ? `sv-evolve-${room}` : undefined;
-    const peer = peerId ? new Peer(peerId) : new Peer();
-    peerRef.current = peer;
-
-    peer.on('open', handlePeerOpen);
-    peer.on('connection', handlePeerIncomingConnection);
-    peer.on('disconnected', () => {
-      handlePeerTermination('disconnected');
-    });
-    peer.on('error', () => {
-      handlePeerTermination('error');
-    });
+    const peer = createPeerTransport();
+    if (!peer) return;
 
     return () => {
-      cleanupPeerLifecycle(peer);
+      clearPeerRecoveryTimer();
+      const activePeer = peerRef.current;
+      peerRef.current = null;
+      if (activePeer) cleanupPeerLifecycle(activePeer);
     };
-  }, [cleanupPeerLifecycle, handlePeerIncomingConnection, handlePeerOpen, handlePeerTermination, room, isHost, isSoloMode]); // gameState を除外して接続ループを防ぐ
+  }, [cleanupPeerLifecycle, clearPeerRecoveryTimer, createPeerTransport, room, isSoloMode]); // gameState を除外して接続ループを防ぐ
 
   useEffect(() => {
     if (!isDebug) return;
@@ -1321,7 +1560,7 @@ export const useGameBoardLogic = () => {
   ];
 
   return {
-    room, mode, isSoloMode, isHost, isSpectator, role, status, connectionState, spectatorCount, maxSpectatorConnections: MAX_SPECTATOR_CONNECTIONS, canInteract, canView, attemptReconnect, gameState, savedSessionCandidate, resumeSavedSession, discardSavedSession, searchZone, setSearchZone,
+    room, mode, isSoloMode, isHost, isSpectator, role, status, connectionState: visibleConnectionState, spectatorCount, maxSpectatorConnections: MAX_SPECTATOR_CONNECTIONS, canInteract, canView, attemptReconnect, gameState, savedSessionCandidate, resumeSavedSession, discardSavedSession, searchZone, setSearchZone,
     showResetConfirm, setShowResetConfirm, coinMessage, turnMessage, cardPlayMessage, attackMessage, attackHistory, eventHistory, attackVisual, revealedCardsOverlay,
     cardStatLookup, cardDetailLookup,
     isRollingDice, diceValue, mulliganOrder, isMulliganModalOpen, setIsMulliganModalOpen,

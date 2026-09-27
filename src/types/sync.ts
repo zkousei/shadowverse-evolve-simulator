@@ -110,6 +110,9 @@ export type SharedUiEffect =
 
 export type SyncMessage =
   | { type: 'EVENT'; event: GameSyncEvent }
+  | { type: 'CONNECTION_CAPABILITIES'; heartbeat: true }
+  | { type: 'CONNECTION_HEARTBEAT'; sentAt: number }
+  | { type: 'CONNECTION_HEARTBEAT_ACK'; sentAt: number }
   | { type: 'REQUEST_SNAPSHOT'; lastKnownRevision: number; source: PlayerRole }
   | { type: 'SPECTATOR_LEAVE' }
   | { type: 'WAITING_FOR_HOST_SESSION'; source: PlayerRole }
