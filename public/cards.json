@@ -1,5 +1,1345 @@
 [
   {
+    "id": "BP22-001",
+    "name": "ブリリアントフェアリー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-001.png"
+  },
+  {
+    "id": "BP22-002",
+    "name": "デッドリーエルフ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-002.png"
+  },
+  {
+    "id": "BP22-003",
+    "name": "永久なる輝き・エリン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-003.png"
+  },
+  {
+    "id": "BP22-004",
+    "name": "永久なる輝き・エリン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-004.png"
+  },
+  {
+    "id": "BP22-005",
+    "name": "フラワーフォックス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-005.png"
+  },
+  {
+    "id": "BP22-006",
+    "name": "フラワーフォックス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-006.png"
+  },
+  {
+    "id": "BP22-007",
+    "name": "アイヴィーキング",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-007.png"
+  },
+  {
+    "id": "BP22-008",
+    "name": "ブラストフェアリー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-008.png"
+  },
+  {
+    "id": "BP22-009",
+    "name": "清き泉のエルフプリンセスメイジ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-009.png"
+  },
+  {
+    "id": "BP22-010",
+    "name": "清き泉のエルフプリンセスメイジ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-010.png"
+  },
+  {
+    "id": "BP22-011",
+    "name": "アクアフェアリー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-011.png"
+  },
+  {
+    "id": "BP22-012",
+    "name": "水晶の指揮者・リリィ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-012.png"
+  },
+  {
+    "id": "BP22-013",
+    "name": "冷徹のダークエルフ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-013.png"
+  },
+  {
+    "id": "BP22-014",
+    "name": "冷徹のダークエルフ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-014.png"
+  },
+  {
+    "id": "BP22-015",
+    "name": "フェアリーブリンガー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-015.png"
+  },
+  {
+    "id": "BP22-016",
+    "name": "悪戯の精霊",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-016.png"
+  },
+  {
+    "id": "BP22-017",
+    "name": "ダンジョンフェアリー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-017.png"
+  },
+  {
+    "id": "BP22-018",
+    "name": "シードショット",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-018.png"
+  },
+  {
+    "id": "BP22-019",
+    "name": "ビクトリーブレイダー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-019.png"
+  },
+  {
+    "id": "BP22-020",
+    "name": "ゴールデンウォーリアー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-020.png"
+  },
+  {
+    "id": "BP22-021",
+    "name": "千金武装の大参謀・アルメリゼ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-021.png"
+  },
+  {
+    "id": "BP22-022",
+    "name": "千金武装の大参謀・アルメリゼ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-022.png"
+  },
+  {
+    "id": "BP22-023",
+    "name": "アサルトナイト",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-023.png"
+  },
+  {
+    "id": "BP22-024",
+    "name": "アサルトナイト",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-024.png"
+  },
+  {
+    "id": "BP22-025",
+    "name": "ファングスレイヤー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-025.png"
+  },
+  {
+    "id": "BP22-026",
+    "name": "クレイモアマスター",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-026.png"
+  },
+  {
+    "id": "BP22-027",
+    "name": "アックスパイレーツ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-027.png"
+  },
+  {
+    "id": "BP22-028",
+    "name": "アックスパイレーツ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-028.png"
+  },
+  {
+    "id": "BP22-029",
+    "name": "アームドバトラー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-029.png"
+  },
+  {
+    "id": "BP22-030",
+    "name": "シールドフォーメーション",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-030.png"
+  },
+  {
+    "id": "BP22-031",
+    "name": "望遠の船長",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-031.png"
+  },
+  {
+    "id": "BP22-032",
+    "name": "望遠の船長",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-032.png"
+  },
+  {
+    "id": "BP22-033",
+    "name": "エレガントバンデッド",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-033.png"
+  },
+  {
+    "id": "BP22-034",
+    "name": "ブレードバンデッド",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-034.png"
+  },
+  {
+    "id": "BP22-035",
+    "name": "清白の騎士",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-035.png"
+  },
+  {
+    "id": "BP22-036",
+    "name": "放浪の騎士",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-036.png"
+  },
+  {
+    "id": "BP22-037",
+    "name": "クロノウィッチ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-037.png"
+  },
+  {
+    "id": "BP22-038",
+    "name": "クロノウィッチ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-038.png"
+  },
+  {
+    "id": "BP22-039",
+    "name": "プレデターゴーレム",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-039.png"
+  },
+  {
+    "id": "BP22-040",
+    "name": "巡りの大魔術師・レヴィ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-040.png"
+  },
+  {
+    "id": "BP22-041",
+    "name": "巡りの大魔術師・レヴィ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-041.png"
+  },
+  {
+    "id": "BP22-042",
+    "name": "マジカルキャット",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-042.png"
+  },
+  {
+    "id": "BP22-043",
+    "name": "マジカルキャット",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-043.png"
+  },
+  {
+    "id": "BP22-044",
+    "name": "グレートマジシャン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-044.png"
+  },
+  {
+    "id": "BP22-045",
+    "name": "界門のホムンクルス・ラズリ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-045.png"
+  },
+  {
+    "id": "BP22-046",
+    "name": "フェイクウィング・エリーナ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-046.png"
+  },
+  {
+    "id": "BP22-047",
+    "name": "フェイクウィング・エリーナ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-047.png"
+  },
+  {
+    "id": "BP22-048",
+    "name": "アンブレラウィッチ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-048.png"
+  },
+  {
+    "id": "BP22-049",
+    "name": "暗獄の遣い・ジャスパー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-049.png"
+  },
+  {
+    "id": "BP22-050",
+    "name": "刃の魔術師",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-050.png"
+  },
+  {
+    "id": "BP22-051",
+    "name": "刃の魔術師",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-051.png"
+  },
+  {
+    "id": "BP22-052",
+    "name": "氷塊のゴーレム",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-052.png"
+  },
+  {
+    "id": "BP22-053",
+    "name": "氷結の魔獣",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-053.png"
+  },
+  {
+    "id": "BP22-054",
+    "name": "ゴーレムアサルト",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-054.png"
+  },
+  {
+    "id": "BP22-055",
+    "name": "鏡像の召喚",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-055.png"
+  },
+  {
+    "id": "BP22-056",
+    "name": "イグニスドラゴン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-056.png"
+  },
+  {
+    "id": "BP22-057",
+    "name": "イグニスドラゴン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-057.png"
+  },
+  {
+    "id": "BP22-058",
+    "name": "ブルータルドラゴニュート",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-058.png"
+  },
+  {
+    "id": "BP22-059",
+    "name": "オーシャンスター・ジゼル",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-059.png"
+  },
+  {
+    "id": "BP22-060",
+    "name": "黒白の乱舞・ノール＆ブラン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-060.png"
+  },
+  {
+    "id": "BP22-061",
+    "name": "黒白の乱舞・ノール＆ブラン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-061.png"
+  },
+  {
+    "id": "BP22-062",
+    "name": "ジュエルドラゴン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-062.png"
+  },
+  {
+    "id": "BP22-063",
+    "name": "紅炎の竜爪・エチカ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-063.png"
+  },
+  {
+    "id": "BP22-064",
+    "name": "珊瑚礁の精霊",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-064.png"
+  },
+  {
+    "id": "BP22-065",
+    "name": "珊瑚礁の精霊",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-065.png"
+  },
+  {
+    "id": "BP22-066",
+    "name": "シールドドラゴン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-066.png"
+  },
+  {
+    "id": "BP22-067",
+    "name": "貫く咆哮",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-067.png"
+  },
+  {
+    "id": "BP22-068",
+    "name": "ヘイルドラゴン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-068.png"
+  },
+  {
+    "id": "BP22-069",
+    "name": "ヘイルドラゴン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-069.png"
+  },
+  {
+    "id": "BP22-070",
+    "name": "堅殻のドラゴスネーク",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-070.png"
+  },
+  {
+    "id": "BP22-071",
+    "name": "雷龍",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-071.png"
+  },
+  {
+    "id": "BP22-072",
+    "name": "サラマンダーブレス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-072.png"
+  },
+  {
+    "id": "BP22-073",
+    "name": "竜の峡谷",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-073.png"
+  },
+  {
+    "id": "BP22-074",
+    "name": "スケルトンレイダー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-074.png"
+  },
+  {
+    "id": "BP22-075",
+    "name": "ダークエンペラー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-075.png"
+  },
+  {
+    "id": "BP22-076",
+    "name": "ダークエンペラー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-076.png"
+  },
+  {
+    "id": "BP22-077",
+    "name": "ケルヌンノス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-077.png"
+  },
+  {
+    "id": "BP22-078",
+    "name": "カースメーカー・スージー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-078.png"
+  },
+  {
+    "id": "BP22-079",
+    "name": "カースメーカー・スージー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-079.png"
+  },
+  {
+    "id": "BP22-080",
+    "name": "ゾンビドッグ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-080.png"
+  },
+  {
+    "id": "BP22-081",
+    "name": "デスサイズゴブリン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-081.png"
+  },
+  {
+    "id": "BP22-082",
+    "name": "スカーレットヴァンパイア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-082.png"
+  },
+  {
+    "id": "BP22-083",
+    "name": "スカーレットヴァンパイア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-083.png"
+  },
+  {
+    "id": "BP22-084",
+    "name": "デスキャットリーパー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-084.png"
+  },
+  {
+    "id": "BP22-085",
+    "name": "フギン＆ムニン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-085.png"
+  },
+  {
+    "id": "BP22-086",
+    "name": "霹靂の悪魔",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-086.png"
+  },
+  {
+    "id": "BP22-087",
+    "name": "霹靂の悪魔",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-087.png"
+  },
+  {
+    "id": "BP22-088",
+    "name": "よろめく不死者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-088.png"
+  },
+  {
+    "id": "BP22-089",
+    "name": "ゴブリンゾンビ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-089.png"
+  },
+  {
+    "id": "BP22-090",
+    "name": "ゴシックリーパー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-090.png"
+  },
+  {
+    "id": "BP22-091",
+    "name": "デッドスタンピード",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-091.png"
+  },
+  {
+    "id": "BP22-092",
+    "name": "ゴッド・オブ・カース",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-092.png"
+  },
+  {
+    "id": "BP22-093",
+    "name": "ホーリーセイバー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-093.png"
+  },
+  {
+    "id": "BP22-094",
+    "name": "ホーリーセイバー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-094.png"
+  },
+  {
+    "id": "BP22-095",
+    "name": "白翼の慈愛・アイテール",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-095.png"
+  },
+  {
+    "id": "BP22-096",
+    "name": "セイクリッドレオ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-096.png"
+  },
+  {
+    "id": "BP22-097",
+    "name": "セイクリッドレオ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-097.png"
+  },
+  {
+    "id": "BP22-098",
+    "name": "カースメイデン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-098.png"
+  },
+  {
+    "id": "BP22-099",
+    "name": "天空の守護者・ガルラ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-099.png"
+  },
+  {
+    "id": "BP22-100",
+    "name": "ミラクルラフター・カルミア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-100.png"
+  },
+  {
+    "id": "BP22-101",
+    "name": "ミラクルラフター・カルミア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-101.png"
+  },
+  {
+    "id": "BP22-102",
+    "name": "天昇のプリズムプリースト",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-102.png"
+  },
+  {
+    "id": "BP22-103",
+    "name": "希望の守護者・ソニア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-103.png"
+  },
+  {
+    "id": "BP22-104",
+    "name": "ホーリーキャット",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-104.png"
+  },
+  {
+    "id": "BP22-105",
+    "name": "ホーリーキャット",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-105.png"
+  },
+  {
+    "id": "BP22-106",
+    "name": "砕氷の聖獣",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-106.png"
+  },
+  {
+    "id": "BP22-107",
+    "name": "温情のラビットヒーラー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-107.png"
+  },
+  {
+    "id": "BP22-108",
+    "name": "コンス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-108.png"
+  },
+  {
+    "id": "BP22-109",
+    "name": "禁じられた儀式",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-109.png"
+  },
+  {
+    "id": "BP22-110",
+    "name": "ゴブリンエンペラー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-110.png"
+  },
+  {
+    "id": "BP22-111",
+    "name": "安寧の降臨",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-111.png"
+  },
+  {
+    "id": "BP22-112",
+    "name": "メチャカワ傭兵・フィーナ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-112.png"
+  },
+  {
+    "id": "BP22-113",
+    "name": "ゴブリンリーダー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-113.png"
+  },
+  {
+    "id": "BP22-114",
+    "name": "ゴブリンリーダー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-114.png"
+  },
+  {
+    "id": "BP22-115",
+    "name": "ミニゴブリンメイジ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-115.png"
+  },
+  {
+    "id": "BP22-116",
+    "name": "〔勝利目指して〕ハルウララ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-116.png"
+  },
+  {
+    "id": "BP22-117",
+    "name": "〔全力疾走〕オグリキャップ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-117.png"
+  },
+  {
+    "id": "BP22-118",
+    "name": "〔全力疾走〕オグリキャップ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-118.png"
+  },
+  {
+    "id": "BP22-P01",
+    "name": "清き泉のエルフプリンセスメイジ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p01.png"
+  },
+  {
+    "id": "BP22-P02",
+    "name": "清き泉のエルフプリンセスメイジ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p02.png"
+  },
+  {
+    "id": "BP22-P03",
+    "name": "水晶の指揮者・リリィ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p03.png"
+  },
+  {
+    "id": "BP22-P04",
+    "name": "冷徹のダークエルフ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p04.png"
+  },
+  {
+    "id": "BP22-P05",
+    "name": "冷徹のダークエルフ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p05.png"
+  },
+  {
+    "id": "BP22-P06",
+    "name": "フェアリーブリンガー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p06.png"
+  },
+  {
+    "id": "BP22-P07",
+    "name": "悪戯の精霊",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p07.png"
+  },
+  {
+    "id": "BP22-P08",
+    "name": "ダンジョンフェアリー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p08.png"
+  },
+  {
+    "id": "BP22-P09",
+    "name": "シードショット",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p09.png"
+  },
+  {
+    "id": "BP22-P10",
+    "name": "ファングスレイヤー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p10.png"
+  },
+  {
+    "id": "BP22-P11",
+    "name": "クレイモアマスター",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p11.png"
+  },
+  {
+    "id": "BP22-P12",
+    "name": "アックスパイレーツ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p12.png"
+  },
+  {
+    "id": "BP22-P13",
+    "name": "アックスパイレーツ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p13.png"
+  },
+  {
+    "id": "BP22-P14",
+    "name": "アームドバトラー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p14.png"
+  },
+  {
+    "id": "BP22-P15",
+    "name": "シールドフォーメーション",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p15.png"
+  },
+  {
+    "id": "BP22-P16",
+    "name": "エレガントバンデッド",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p16.png"
+  },
+  {
+    "id": "BP22-P17",
+    "name": "ブレードバンデッド",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p17.png"
+  },
+  {
+    "id": "BP22-P18",
+    "name": "清白の騎士",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p18.png"
+  },
+  {
+    "id": "BP22-P19",
+    "name": "放浪の騎士",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p19.png"
+  },
+  {
+    "id": "BP22-P20",
+    "name": "マジカルキャット",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p20.png"
+  },
+  {
+    "id": "BP22-P21",
+    "name": "マジカルキャット",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p21.png"
+  },
+  {
+    "id": "BP22-P22",
+    "name": "グレートマジシャン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p22.png"
+  },
+  {
+    "id": "BP22-P23",
+    "name": "フェイクウィング・エリーナ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p23.png"
+  },
+  {
+    "id": "BP22-P24",
+    "name": "フェイクウィング・エリーナ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p24.png"
+  },
+  {
+    "id": "BP22-P25",
+    "name": "アンブレラウィッチ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p25.png"
+  },
+  {
+    "id": "BP22-P26",
+    "name": "暗獄の遣い・ジャスパー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p26.png"
+  },
+  {
+    "id": "BP22-P27",
+    "name": "刃の魔術師",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p27.png"
+  },
+  {
+    "id": "BP22-P28",
+    "name": "刃の魔術師",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p28.png"
+  },
+  {
+    "id": "BP22-P29",
+    "name": "氷塊のゴーレム",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p29.png"
+  },
+  {
+    "id": "BP22-P30",
+    "name": "ゴーレムアサルト",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p30.png"
+  },
+  {
+    "id": "BP22-P31",
+    "name": "鏡像の召喚",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p31.png"
+  },
+  {
+    "id": "BP22-P32",
+    "name": "ジュエルドラゴン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p32.png"
+  },
+  {
+    "id": "BP22-P33",
+    "name": "紅炎の竜爪・エチカ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p33.png"
+  },
+  {
+    "id": "BP22-P34",
+    "name": "珊瑚礁の精霊",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p34.png"
+  },
+  {
+    "id": "BP22-P35",
+    "name": "珊瑚礁の精霊",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p35.png"
+  },
+  {
+    "id": "BP22-P36",
+    "name": "シールドドラゴン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p36.png"
+  },
+  {
+    "id": "BP22-P37",
+    "name": "貫く咆哮",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p37.png"
+  },
+  {
+    "id": "BP22-P38",
+    "name": "堅殻のドラゴスネーク",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p38.png"
+  },
+  {
+    "id": "BP22-P39",
+    "name": "雷龍",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p39.png"
+  },
+  {
+    "id": "BP22-P40",
+    "name": "サラマンダーブレス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p40.png"
+  },
+  {
+    "id": "BP22-P41",
+    "name": "竜の峡谷",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p41.png"
+  },
+  {
+    "id": "BP22-P42",
+    "name": "ゾンビドッグ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p42.png"
+  },
+  {
+    "id": "BP22-P43",
+    "name": "デスサイズゴブリン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p43.png"
+  },
+  {
+    "id": "BP22-P44",
+    "name": "スカーレットヴァンパイア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p44.png"
+  },
+  {
+    "id": "BP22-P45",
+    "name": "スカーレットヴァンパイア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p45.png"
+  },
+  {
+    "id": "BP22-P46",
+    "name": "デスキャットリーパー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p46.png"
+  },
+  {
+    "id": "BP22-P47",
+    "name": "霹靂の悪魔",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p47.png"
+  },
+  {
+    "id": "BP22-P48",
+    "name": "霹靂の悪魔",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p48.png"
+  },
+  {
+    "id": "BP22-P49",
+    "name": "よろめく不死者",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p49.png"
+  },
+  {
+    "id": "BP22-P50",
+    "name": "ゴブリンゾンビ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p50.png"
+  },
+  {
+    "id": "BP22-P51",
+    "name": "ゴシックリーパー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p51.png"
+  },
+  {
+    "id": "BP22-P52",
+    "name": "デッドスタンピード",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p52.png"
+  },
+  {
+    "id": "BP22-P53",
+    "name": "カースメイデン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p53.png"
+  },
+  {
+    "id": "BP22-P54",
+    "name": "天空の守護者・ガルラ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p54.png"
+  },
+  {
+    "id": "BP22-P55",
+    "name": "ミラクルラフター・カルミア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p55.png"
+  },
+  {
+    "id": "BP22-P56",
+    "name": "ミラクルラフター・カルミア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p56.png"
+  },
+  {
+    "id": "BP22-P57",
+    "name": "天昇のプリズムプリースト",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p57.png"
+  },
+  {
+    "id": "BP22-P58",
+    "name": "ホーリーキャット",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p58.png"
+  },
+  {
+    "id": "BP22-P59",
+    "name": "ホーリーキャット",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p59.png"
+  },
+  {
+    "id": "BP22-P60",
+    "name": "砕氷の聖獣",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p60.png"
+  },
+  {
+    "id": "BP22-P61",
+    "name": "温情のラビットヒーラー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p61.png"
+  },
+  {
+    "id": "BP22-P62",
+    "name": "コンス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p62.png"
+  },
+  {
+    "id": "BP22-P63",
+    "name": "禁じられた儀式",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p63.png"
+  },
+  {
+    "id": "BP22-P64",
+    "name": "メチャカワ傭兵・フィーナ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p64.png"
+  },
+  {
+    "id": "BP22-P65",
+    "name": "ゴブリンリーダー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p65.png"
+  },
+  {
+    "id": "BP22-P66",
+    "name": "ゴブリンリーダー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p66.png"
+  },
+  {
+    "id": "BP22-P67",
+    "name": "ミニゴブリンメイジ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p67.png"
+  },
+  {
+    "id": "BP22-P68",
+    "name": "聖女の号令",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p68.png"
+  },
+  {
+    "id": "BP22-P69",
+    "name": "シャドウジェネラル",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p69.png"
+  },
+  {
+    "id": "BP22-P70",
+    "name": "レディアントアーティファクト",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-p70.png"
+  },
+  {
+    "id": "BP22-R01",
+    "name": "宿命の狐火・セッカ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-r01.png"
+  },
+  {
+    "id": "BP22-R02",
+    "name": "九火石炎・セッカ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-r02.png"
+  },
+  {
+    "id": "BP22-R03",
+    "name": "華の大将・タケツミ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-r03.png"
+  },
+  {
+    "id": "BP22-R04",
+    "name": "楽園の開闢・タケツミ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-r04.png"
+  },
+  {
+    "id": "BP22-R05",
+    "name": "永劫を求む者・ケリドウェン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-r05.png"
+  },
+  {
+    "id": "BP22-R06",
+    "name": "永劫を求む者・ケリドウェン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-r06.png"
+  },
+  {
+    "id": "BP22-R07",
+    "name": "天威のドラグーン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-r07.png"
+  },
+  {
+    "id": "BP22-R08",
+    "name": "天威のドラグーン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-r08.png"
+  },
+  {
+    "id": "BP22-R09",
+    "name": "竜喰らう禁忌",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-r09.png"
+  },
+  {
+    "id": "BP22-R10",
+    "name": "幽霊支配人・アーカス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-r10.png"
+  },
+  {
+    "id": "BP22-R11",
+    "name": "ブラッドロード・ユヅキ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-r11.png"
+  },
+  {
+    "id": "BP22-R12",
+    "name": "ブラッドロード・ユヅキ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-r12.png"
+  },
+  {
+    "id": "BP22-R13",
+    "name": "聖騎士・ヘクター",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-r13.png"
+  },
+  {
+    "id": "BP22-R14",
+    "name": "ルナールの聖騎士",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-r14.png"
+  },
+  {
+    "id": "BP22-R15",
+    "name": "ルナールの聖騎士",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-r15.png"
+  },
+  {
+    "id": "BP22-R16",
+    "name": "干絶の飢餓・ギルネリーゼ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-r16.png"
+  },
+  {
+    "id": "BP22-R17",
+    "name": "干絶の飢餓・ギルネリーゼ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-r17.png"
+  },
+  {
+    "id": "BP22-R18",
+    "name": "ジェンティルドンナ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-r18.png"
+  },
+  {
+    "id": "BP22-R19",
+    "name": "ジェンティルドンナ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-r19.png"
+  },
+  {
+    "id": "BP22-R20",
+    "name": "〔Escorte étoile〕シリウスシンボリ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-r20.png"
+  },
+  {
+    "id": "BP22-R21",
+    "name": "シュヴァルグラン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-r21.png"
+  },
+  {
+    "id": "BP22-R22",
+    "name": "シュヴァルグラン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-r22.png"
+  },
+  {
+    "id": "BP22-R23",
+    "name": "カツラギエース",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-r23.png"
+  },
+  {
+    "id": "BP22-R24",
+    "name": "ジャングルポケット",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-r24.png"
+  },
+  {
+    "id": "BP22-SL01",
+    "name": "ブリリアントフェアリー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl01.png"
+  },
+  {
+    "id": "BP22-SL02",
+    "name": "デッドリーエルフ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl02.png"
+  },
+  {
+    "id": "BP22-SL03",
+    "name": "永久なる輝き・エリン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl03.png"
+  },
+  {
+    "id": "BP22-SL04",
+    "name": "永久なる輝き・エリン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl04.png"
+  },
+  {
+    "id": "BP22-SL05",
+    "name": "ビクトリーブレイダー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl05.png"
+  },
+  {
+    "id": "BP22-SL06",
+    "name": "ゴールデンウォーリアー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl06.png"
+  },
+  {
+    "id": "BP22-SL07",
+    "name": "千金武装の大参謀・アルメリゼ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl07.png"
+  },
+  {
+    "id": "BP22-SL08",
+    "name": "千金武装の大参謀・アルメリゼ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl08.png"
+  },
+  {
+    "id": "BP22-SL09",
+    "name": "クロノウィッチ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl09.png"
+  },
+  {
+    "id": "BP22-SL10",
+    "name": "クロノウィッチ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl10.png"
+  },
+  {
+    "id": "BP22-SL11",
+    "name": "プレデターゴーレム",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl11.png"
+  },
+  {
+    "id": "BP22-SL12",
+    "name": "巡りの大魔術師・レヴィ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl12.png"
+  },
+  {
+    "id": "BP22-SL13",
+    "name": "巡りの大魔術師・レヴィ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl13.png"
+  },
+  {
+    "id": "BP22-SL14",
+    "name": "イグニスドラゴン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl14.png"
+  },
+  {
+    "id": "BP22-SL15",
+    "name": "イグニスドラゴン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl15.png"
+  },
+  {
+    "id": "BP22-SL16",
+    "name": "ブルータルドラゴニュート",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl16.png"
+  },
+  {
+    "id": "BP22-SL17",
+    "name": "オーシャンスター・ジゼル",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl17.png"
+  },
+  {
+    "id": "BP22-SL18",
+    "name": "スケルトンレイダー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl18.png"
+  },
+  {
+    "id": "BP22-SL19",
+    "name": "ダークエンペラー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl19.png"
+  },
+  {
+    "id": "BP22-SL20",
+    "name": "ダークエンペラー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl20.png"
+  },
+  {
+    "id": "BP22-SL21",
+    "name": "ケルヌンノス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl21.png"
+  },
+  {
+    "id": "BP22-SL22",
+    "name": "ゴッド・オブ・カース",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl22.png"
+  },
+  {
+    "id": "BP22-SL23",
+    "name": "ホーリーセイバー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl23.png"
+  },
+  {
+    "id": "BP22-SL24",
+    "name": "ホーリーセイバー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl24.png"
+  },
+  {
+    "id": "BP22-SL25",
+    "name": "白翼の慈愛・アイテール",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl25.png"
+  },
+  {
+    "id": "BP22-SL26",
+    "name": "ゴブリンエンペラー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl26.png"
+  },
+  {
+    "id": "BP22-SL27",
+    "name": "安寧の降臨",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl27.png"
+  },
+  {
+    "id": "BP22-SL28",
+    "name": "〔全力疾走〕オグリキャップ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl28.png"
+  },
+  {
+    "id": "BP22-SL29",
+    "name": "〔全力疾走〕オグリキャップ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl29.png"
+  },
+  {
+    "id": "BP22-SL30",
+    "name": "ジェンティルドンナ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl30.png"
+  },
+  {
+    "id": "BP22-SL31",
+    "name": "ジェンティルドンナ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl31.png"
+  },
+  {
+    "id": "BP22-SL32",
+    "name": "〔Escorte étoile〕シリウスシンボリ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl32.png"
+  },
+  {
+    "id": "BP22-SL33",
+    "name": "シュヴァルグラン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl33.png"
+  },
+  {
+    "id": "BP22-SL34",
+    "name": "シュヴァルグラン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl34.png"
+  },
+  {
+    "id": "BP22-SL35",
+    "name": "カツラギエース",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl35.png"
+  },
+  {
+    "id": "BP22-SL36",
+    "name": "ジャングルポケット",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sl36.png"
+  },
+  {
+    "id": "BP22-SP01",
+    "name": "ケルヌンノス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-sp01.png"
+  },
+  {
+    "id": "BP22-SSP01",
+    "name": "〔勝利目指して〕ハルウララ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-ssp01.png"
+  },
+  {
+    "id": "BP22-SSP02",
+    "name": "〔全力疾走〕オグリキャップ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-ssp02.png"
+  },
+  {
+    "id": "BP22-T01",
+    "name": "聖女の号令",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-t01.png"
+  },
+  {
+    "id": "BP22-T02",
+    "name": "シャドウジェネラル",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-t02.png"
+  },
+  {
+    "id": "BP22-T03",
+    "name": "レディアントアーティファクト",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-t03.png"
+  },
+  {
+    "id": "BP22-T04",
+    "name": "フェアリーウィスプ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-t04.png"
+  },
+  {
+    "id": "BP22-T05",
+    "name": "フェアリー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-t05.png"
+  },
+  {
+    "id": "BP22-T06",
+    "name": "ヴァイキング",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-t06.png"
+  },
+  {
+    "id": "BP22-T07",
+    "name": "輝く金貨",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-t07.png"
+  },
+  {
+    "id": "BP22-T08",
+    "name": "攻撃型ゴーレム",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-t08.png"
+  },
+  {
+    "id": "BP22-T09",
+    "name": "防御型ゴーレム",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-t09.png"
+  },
+  {
+    "id": "BP22-T10",
+    "name": "大地の魔片",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-t10.png"
+  },
+  {
+    "id": "BP22-U01",
+    "name": "ブリリアントフェアリー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-u01.png"
+  },
+  {
+    "id": "BP22-U02",
+    "name": "ビクトリーブレイダー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-u02.png"
+  },
+  {
+    "id": "BP22-U03",
+    "name": "巡りの大魔術師・レヴィ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-u03.png"
+  },
+  {
+    "id": "BP22-U04",
+    "name": "イグニスドラゴン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-u04.png"
+  },
+  {
+    "id": "BP22-U05",
+    "name": "ケルヌンノス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-u05.png"
+  },
+  {
+    "id": "BP22-U06",
+    "name": "ホーリーセイバー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-u06.png"
+  },
+  {
+    "id": "BP22-U07",
+    "name": "ゴブリンエンペラー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/BP22/bp22-u07.png"
+  },
+  {
     "id": "PCS02-001",
     "name": "暴食のアナテマ・ララアンセム",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PCS02/pcs02-001.png"
@@ -36840,8 +38180,193 @@
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-585.png"
   },
   {
+    "id": "PR-586",
+    "name": "粛清の器・メイシア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-586.png"
+  },
+  {
+    "id": "PR-587",
+    "name": "灼熱のアナテマ・バーンドナイト",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-587.png"
+  },
+  {
+    "id": "PR-588",
+    "name": "灼熱のアナテマ・バーンドナイト",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-588.png"
+  },
+  {
     "id": "PR-589",
     "name": "砕石竜",
     "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-589.png"
+  },
+  {
+    "id": "PR-590",
+    "name": "バイオレントスクリーム",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-590.png"
+  },
+  {
+    "id": "PR-591",
+    "name": "宿題やるですぅ！",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-591.png"
+  },
+  {
+    "id": "PR-592",
+    "name": "ブラストフェアリー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-592.png"
+  },
+  {
+    "id": "PR-593",
+    "name": "EP",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-593.png"
+  },
+  {
+    "id": "PR-594",
+    "name": "EP",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-594.png"
+  },
+  {
+    "id": "PR-595",
+    "name": "繚乱の庭",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-595.png"
+  },
+  {
+    "id": "PR-596",
+    "name": "アサルトナイト",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-596.png"
+  },
+  {
+    "id": "PR-597",
+    "name": "アサルトナイト",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-597.png"
+  },
+  {
+    "id": "PR-598",
+    "name": "界門のホムンクルス・ラズリ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-598.png"
+  },
+  {
+    "id": "PR-599",
+    "name": "竜の託宣",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-599.png"
+  },
+  {
+    "id": "PR-600",
+    "name": "鮮血の首飾り",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-600.png"
+  },
+  {
+    "id": "PR-601",
+    "name": "アイヴィーキング",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-601.png"
+  },
+  {
+    "id": "PR-602",
+    "name": "黒白の乱舞・ノール＆ブラン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-602.png"
+  },
+  {
+    "id": "PR-603",
+    "name": "黒白の乱舞・ノール＆ブラン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-603.png"
+  },
+  {
+    "id": "PR-604",
+    "name": "セイクリッドレオ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-604.png"
+  },
+  {
+    "id": "PR-605",
+    "name": "セイクリッドレオ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-605.png"
+  },
+  {
+    "id": "PR-606",
+    "name": "〔勝利目指して〕ハルウララ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-606.png"
+  },
+  {
+    "id": "PR-607",
+    "name": "結びの紅蓮・グレア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-607.png"
+  },
+  {
+    "id": "PR-608",
+    "name": "結びの紅蓮・グレア",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-608.png"
+  },
+  {
+    "id": "PR-609",
+    "name": "アクアフェアリー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-609.png"
+  },
+  {
+    "id": "PR-610",
+    "name": "フギン＆ムニン",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-610.png"
+  },
+  {
+    "id": "PR-611",
+    "name": "フラワーフォックス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-611.png"
+  },
+  {
+    "id": "PR-612",
+    "name": "フラワーフォックス",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-612.png"
+  },
+  {
+    "id": "PR-613",
+    "name": "アサルトバンデッド",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-613.png"
+  },
+  {
+    "id": "PR-614",
+    "name": "アーティストメイジ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-614.png"
+  },
+  {
+    "id": "PR-615",
+    "name": "アーティストメイジ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-615.png"
+  },
+  {
+    "id": "PR-616",
+    "name": "エターナルホエール",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-616.png"
+  },
+  {
+    "id": "PR-617",
+    "name": "オーブキャンサー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-617.png"
+  },
+  {
+    "id": "PR-618",
+    "name": "熟達の翼戦士",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-618.png"
+  },
+  {
+    "id": "PR-619",
+    "name": "天使の泉",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-619.png"
+  },
+  {
+    "id": "PR-620",
+    "name": "ブラックスワン・オディール",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-620.png"
+  },
+  {
+    "id": "PR-621",
+    "name": "ダークオファリング",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-621.png"
+  },
+  {
+    "id": "PR-624",
+    "name": "懇切の呪い・スージー",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-624.png"
+  },
+  {
+    "id": "PR-625",
+    "name": "千金武装の大参謀・アルメリゼ",
+    "image": "https://shadowverse-evolve.com/wordpress/wp-content/images/cardlist/PR/PR-625.png"
   }
 ]
