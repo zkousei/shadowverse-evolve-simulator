@@ -1451,6 +1451,7 @@ export const useGameBoardLogic = () => {
     canInteract,
     canUndoTurn,
     isRollingDice,
+    phaseActor: isSoloMode ? gameState.turnPlayer : undefined,
     showTimedTurnMessage,
     t,
     dispatchGameEvent,

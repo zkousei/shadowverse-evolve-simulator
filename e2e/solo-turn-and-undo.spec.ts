@@ -28,6 +28,9 @@ test.describe('Solo Turn and Undo Flow', () => {
     await expect(boardSection(page, 'top').getByRole('button', { name: 'End Player 2 Turn' })).toBeEnabled();
     await expect(zoneCards(page, 'hand-guest')).toHaveCount(5);
 
+    await phaseSelect.selectOption('Main');
+    await expect(phaseSelect).toHaveValue('Main');
+
     await page.getByRole('button', { name: /UNDO LAST END TURN/ }).click();
     const undoDialog = page.getByRole('dialog', { name: 'Undo Last End Turn' });
     await expect(undoDialog).toBeVisible();
