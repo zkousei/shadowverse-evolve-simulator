@@ -6,6 +6,7 @@ interface UseGameBoardSystemActionsArgs {
     canInteract: boolean;
     canUndoTurn: boolean;
     isRollingDice: boolean;
+    phaseActor?: PlayerRole;
     showTimedTurnMessage: (msg: string, durationMs: number) => void;
     t: (key: string) => string;
     dispatchGameEvent: (event: DispatchableGameSyncEvent) => void;
@@ -15,6 +16,7 @@ export function useGameBoardSystemActions({
     canInteract,
     canUndoTurn,
     isRollingDice,
+    phaseActor,
     showTimedTurnMessage,
     t,
     dispatchGameEvent,
@@ -24,8 +26,12 @@ export function useGameBoardSystemActions({
     }, [dispatchGameEvent]);
 
     const setPhase = useCallback((newPhase: 'Start' | 'Main' | 'End') => {
-        dispatchGameEvent({ type: 'SET_PHASE', phase: newPhase });
-    }, [dispatchGameEvent]);
+        dispatchGameEvent({
+            type: 'SET_PHASE',
+            ...(phaseActor ? { actor: phaseActor } : {}),
+            phase: newPhase,
+        });
+    }, [dispatchGameEvent, phaseActor]);
 
     const endTurn = useCallback((actor?: PlayerRole) => {
         dispatchGameEvent({ type: 'END_TURN', actor });

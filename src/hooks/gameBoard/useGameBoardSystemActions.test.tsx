@@ -38,6 +38,18 @@ describe('useGameBoardSystemActions (Pure Hook)', () => {
     });
   });
 
+  it('setPhase dispatches as the active solo player when provided', () => {
+    const args = { ...defaultArgs, phaseActor: 'guest' as const };
+    const { result } = renderHook(() => useGameBoardSystemActions(args));
+    result.current.setPhase('End');
+
+    expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledWith({
+      type: 'SET_PHASE',
+      actor: 'guest',
+      phase: 'End',
+    });
+  });
+
   it('endTurn dispatches END_TURN', () => {
     const { result } = renderHook(() => useGameBoardSystemActions(defaultArgs));
     result.current.endTurn('guest');
