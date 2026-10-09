@@ -32,10 +32,12 @@ export const POLICY_RESTRICTIONS: PolicyRestriction[] = [
   createPolicyRestriction('constructed', 'banned', '簒奪の絶傑・オクトリス', 'main', 'フォロワー', 'ロイヤル', 'Banned in constructed.'),
   createPolicyRestriction('constructed', 'limited', '竜巫女の儀式', 'main', 'アミュレット', 'ドラゴン', 'Limited to 1 copy in constructed.'),
   createPolicyRestriction('constructed', 'limited', '烈絶の崇拝者', 'main', 'フォロワー', 'ドラゴン', 'Limited to 1 copy in constructed.'),
+  createPolicyRestriction('constructed', 'limited', '清浄の領域', 'main', 'アミュレット', 'ビショップ', 'Limited to 1 copy in constructed.'),
   createPolicyRestriction('crossover', 'banned', '運命への反逆', 'main', 'スペル', 'ウィッチ', 'Banned in crossover.'),
   createPolicyRestriction('crossover', 'banned', 'セイントタイガー', 'main', 'フォロワー', 'ビショップ', 'Banned in crossover.'),
   createPolicyRestriction('crossover', 'limited', '天下の大泥棒・ジエモン', 'main', 'フォロワー', 'ロイヤル', 'Limited to 1 main-deck copy in crossover.'),
   createPolicyRestriction('crossover', 'banned', 'ブリキの兵隊', 'main', 'フォロワー', 'ビショップ', 'Banned in crossover.'),
+  createPolicyRestriction('crossover', 'limited', '清浄の領域', 'main', 'アミュレット', 'ビショップ', 'Limited to 1 main-deck copy in crossover.'),
 ];
 
 const POLICY_RESTRICTION_BY_FORMAT_AND_KEY = new Map(
