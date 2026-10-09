@@ -1,4 +1,5 @@
-import type { SyncState } from '../../types/game';
+import { CARD_MOVE_HISTORY_LIMIT, createGameStateCheckpoint, withCardMoveHistory } from './gameBoardUndoHistory';
+import type { CardMoveCheckpoint, SyncState } from '../../types/game';
 
 export type SavedHostSession = {
   room: string;
@@ -50,12 +51,53 @@ const isEndStopState = (value: unknown): value is SyncState['endStop'] => (
   typeof (value as SyncState['endStop']).guest === 'boolean'
 );
 
-const normalizeSyncState = (state: SyncState): SyncState => ({
-  ...state,
-  endStop: isEndStopState((state as SyncState & { endStop?: unknown }).endStop)
-    ? state.endStop
-    : { host: false, guest: false },
-});
+const isCheckpoint = (value: unknown): value is SyncState => (
+  isSyncState(value) &&
+  typeof value.revealHandsMode === 'boolean' &&
+  Number.isSafeInteger(value.revision) && value.revision >= 0 &&
+  value.cards.every(card => card &&
+    typeof card.id === 'string' && typeof card.cardId === 'string' &&
+    typeof card.name === 'string' && typeof card.image === 'string' &&
+    typeof card.zone === 'string' && ['host', 'guest'].includes(card.owner) &&
+    typeof card.isTapped === 'boolean' && typeof card.isFlipped === 'boolean' &&
+    card.counters && Number.isFinite(card.counters.atk) && Number.isFinite(card.counters.hp)) &&
+  [...value.tokenOptions.host, ...value.tokenOptions.guest].every(option => option &&
+    typeof option.cardId === 'string' && typeof option.name === 'string' && typeof option.image === 'string')
+);
+
+const normalizeSyncState = (state: SyncState): SyncState => {
+  const normalized = {
+    ...state,
+    endStop: isEndStopState(state.endStop) ? state.endStop : { host: false, guest: false },
+  };
+  // Only legacy sessions without the new field may fall back to the old head.
+  const rawHistory: unknown = state.cardMoveHistory === undefined
+    ? state.lastUndoableCardMoveState
+      ? [{ actor: state.lastUndoableCardMoveActor, state: state.lastUndoableCardMoveState }]
+      : []
+    : state.cardMoveHistory;
+  if (!Array.isArray(rawHistory) || !rawHistory.every(entry => entry &&
+      ['host', 'guest'].includes(entry.actor) && isCheckpoint(entry.state))) {
+    return { ...normalized, cardMoveHistory: [], lastUndoableCardMoveState: null,
+      lastUndoableCardMoveActor: null, networkHasUndoableCardMove: false };
+  }
+  const history: CardMoveCheckpoint[] = rawHistory.slice(-CARD_MOVE_HISTORY_LIMIT).map(entry => ({
+    actor: entry.actor,
+    state: createGameStateCheckpoint({
+      ...entry.state,
+      endStop: isEndStopState(entry.state.endStop) ? entry.state.endStop : { host: false, guest: false },
+    }),
+  }));
+  // Saved host sessions are P2P: never restore a history across an opponent move.
+  const actor = history.at(-1)?.actor;
+  const boundary = history.findLastIndex(entry => entry.actor !== actor);
+  const boundedHistory = history.slice(boundary + 1);
+  if (boundedHistory.length === 0) {
+    return { ...normalized, cardMoveHistory: [], lastUndoableCardMoveState: null,
+      lastUndoableCardMoveActor: null, networkHasUndoableCardMove: false };
+  }
+  return withCardMoveHistory(normalized, boundedHistory);
+};
 
 const isInitialPlayerHud = (hud: SyncState['host']): boolean => (
   hud.hp === 20 &&
@@ -177,4 +219,31 @@ export const hasMeaningfulGameSessionState = (state: SyncState): boolean => {
   if (!isInitialPlayerHud(state.host)) return true;
   if (!isInitialGuestHud(state.guest)) return true;
   return false;
+};
+
+// History can be much larger than the live board, especially with custom images.
+// A failed save must not interrupt the match or leave an obsolete resume point.
+export const persistSavedHostSession = (
+  storage: Pick<Storage, 'setItem' | 'removeItem'>,
+  storageKey: string,
+  payload: SavedHostSession,
+): 'saved' | 'saved-without-move-history' | 'failed' => {
+  try {
+    storage.setItem(storageKey, JSON.stringify(payload));
+    return 'saved';
+  } catch {
+    try {
+      storage.setItem(storageKey, JSON.stringify({
+        ...payload, state: withCardMoveHistory(payload.state, []),
+      }));
+      return 'saved-without-move-history';
+    } catch {
+      try {
+        storage.removeItem(storageKey);
+      } catch {
+        // Storage may itself be unavailable; the in-memory match still works.
+      }
+      return 'failed';
+    }
+  }
 };

@@ -34,11 +34,22 @@ export interface SyncState {
   revealHandsMode: boolean;
   endStop: Record<PlayerRole, boolean>;
   revision: number;
-  lastGameState?: Omit<SyncState, 'lastGameState' | 'lastUndoableCardMoveState' | 'lastUndoableCardMoveActor'> | null;
-  lastUndoableCardMoveState?: Omit<SyncState, 'lastGameState' | 'lastUndoableCardMoveState' | 'lastUndoableCardMoveActor'> | null;
+  lastGameState?: GameStateCheckpoint | null;
+  lastUndoableCardMoveState?: GameStateCheckpoint | null;
   lastUndoableCardMoveActor?: PlayerRole | null;
+  cardMoveHistory?: CardMoveCheckpoint[];
   networkHasUndoableTurn?: boolean;
   networkHasUndoableCardMove?: boolean;
+}
+
+// Checkpoints never contain other checkpoints or network availability metadata.
+export type GameStateCheckpoint = Omit<SyncState,
+  'lastGameState' | 'lastUndoableCardMoveState' | 'lastUndoableCardMoveActor' |
+  'cardMoveHistory' | 'networkHasUndoableTurn' | 'networkHasUndoableCardMove'>;
+
+export interface CardMoveCheckpoint {
+  actor: PlayerRole;
+  state: GameStateCheckpoint;
 }
 
 export const initialState: SyncState = {
@@ -59,6 +70,7 @@ export const initialState: SyncState = {
     guest: false,
   },
   revision: 0,
+  cardMoveHistory: [],
   lastGameState: null,
   lastUndoableCardMoveState: null,
   lastUndoableCardMoveActor: null,

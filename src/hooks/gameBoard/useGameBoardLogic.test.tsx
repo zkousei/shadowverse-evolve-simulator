@@ -28,6 +28,47 @@ describe('useGameBoardLogic P2P reconnect', () => {
     vi.useRealTimers();
   });
 
+  it('processes guest undo requests once each, retains history across reconnect, and never revives host history', () => {
+    const { peer, guestConn } = connectHostWithGuestAndSpectator();
+    fireEvent.click(screen.getByRole('button', { name: 'Spawn Token Batch to EX' }));
+    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('true');
+    const token = {
+      id: 'guest-token', cardId: 'token', name: 'Token', image: '',
+      zone: 'ex-guest', owner: 'guest' as const, isTapped: false,
+      isFlipped: false, counters: { atk: 0, hp: 0 }, isTokenCard: true,
+    };
+    act(() => {
+      guestConn.emit('data', { type: 'EVENT', event: { id: 'spawn-one', type: 'SPAWN_TOKEN', actor: 'guest', token } });
+      guestConn.emit('data', { type: 'EVENT', event: { id: 'spawn-two', type: 'SPAWN_TOKEN', actor: 'guest', token: { ...token, id: 'guest-token-2' } } });
+    });
+    expect(screen.getByTestId('guest-ex-count')).toHaveTextContent('2');
+    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('false');
+    const undoMessage = { type: 'EVENT', event: { id: 'undo-one', type: 'UNDO_CARD_MOVE', actor: 'guest' } };
+    act(() => {
+      guestConn.emit('data', undoMessage);
+      guestConn.emit('data', undoMessage);
+    });
+    expect(screen.getByTestId('guest-ex-count')).toHaveTextContent('1');
+    const reconnected = mockPeerJs.createConnection('guest');
+    act(() => {
+      peer.emit('connection', reconnected);
+      reconnected.open = true;
+      reconnected.emit('open');
+      reconnected.emit('data', { type: 'REQUEST_SNAPSHOT', lastKnownRevision: 0, source: 'guest' });
+    });
+    expect(reconnected.send).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'STATE_SNAPSHOT', state: expect.objectContaining({
+        cardMoveHistory: [], networkHasUndoableCardMove: true, lastUndoableCardMoveActor: 'guest',
+      }),
+    }));
+    act(() => {
+      reconnected.emit('data', { ...undoMessage, event: { ...undoMessage.event, id: 'undo-two' } });
+    });
+    expect(screen.getByTestId('guest-ex-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('host-ex-count')).toHaveTextContent('3');
+    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('false');
+  });
+
   it('enters waiting state when the host peer opens', () => {
     renderHarness('/game?host=true&room=ROOM123');
 
@@ -2886,6 +2927,7 @@ describe('useGameBoardLogic P2P reconnect', () => {
       ],
       lastGameState: buildSyncState({ revision: 41 }),
       lastUndoableCardMoveState: buildSyncState({ revision: 42 }),
+      lastUndoableCardMoveActor: 'host',
       revision: 7,
       gameStatus: 'playing',
       turnCount: 3,
@@ -2908,6 +2950,7 @@ describe('useGameBoardLogic P2P reconnect', () => {
       ],
       lastGameState: buildSyncState({ revision: 41 }),
       lastUndoableCardMoveState: buildSyncState({ revision: 42 }),
+      lastUndoableCardMoveActor: 'host',
       revision: 7,
       gameStatus: 'playing',
       turnCount: 3,
@@ -4962,6 +5005,19 @@ describe('useGameBoardLogic shared UI notifications', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Undo Move' }));
 
     expect(screen.getByTestId('host-ex-count')).toHaveTextContent('0');
+  });
+
+  it('undoes alternating solo actors one batch at a time', () => {
+    renderHarness('/game?mode=solo');
+    fireEvent.click(screen.getByRole('button', { name: 'Spawn Token Batch to EX' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Spawn Guest Token Batch to EX' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Undo Move' }));
+    expect(screen.getByTestId('guest-ex-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('host-ex-count')).toHaveTextContent('3');
+    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('true');
+    fireEvent.click(screen.getByRole('button', { name: 'Undo Move' }));
+    expect(screen.getByTestId('host-ex-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('false');
   });
 
   it('can undo a solo Player 2 token batch move', () => {

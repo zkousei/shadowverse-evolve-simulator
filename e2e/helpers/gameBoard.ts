@@ -61,22 +61,36 @@ export const dragFirstZoneCard = async (page: Page, sourceZoneId: string, target
   await sourceCard.dragTo(targetZone);
 };
 
-export const dragLocatorFromVisibleCornerToLocator = async (
+export const dragLocatorFromExposedCardPointToLocator = async (
   page: Page,
   source: Locator,
   target: Locator
 ) => {
   await source.scrollIntoViewIfNeeded();
   await target.scrollIntoViewIfNeeded();
-
-  const sourceBox = await source.boundingBox();
-  const targetBox = await target.boundingBox();
-  if (!sourceBox || !targetBox) {
-    throw new Error('Cannot drag because the source or target locator has no bounding box.');
-  }
-
-  await page.mouse.move(sourceBox.x + 5, sourceBox.y + 5);
+  const findExposedPoint = () => source.evaluate(element => {
+    const rect = element.getBoundingClientRect();
+    for (let y = rect.top + 2; y < rect.bottom - 2; y += 4) {
+      for (let x = rect.left + 2; x < rect.right - 2; x += 4) {
+        const hit = document.elementFromPoint(x, y);
+        if (hit?.closest('[data-card-id]') === element && !hit.closest('button')) return { x, y };
+      }
+    }
+    return null;
+  });
+  const hoverPoint = await findExposedPoint();
+  if (!hoverPoint) throw new Error('No exposed point on the source card.');
+  await page.mouse.move(hoverPoint.x, hoverPoint.y);
+  // Hover reveals quick-action buttons. Let them render before choosing the
+  // drag origin, so pointer-down cannot accidentally increment a counter.
+  await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+  const sourcePoint = await findExposedPoint();
+  if (!sourcePoint) throw new Error('No exposed point after card quick actions appeared.');
+  await page.mouse.move(sourcePoint.x, sourcePoint.y);
   await page.mouse.down();
+  await expect(source).toHaveAttribute('aria-pressed', 'true');
+  const targetBox = await target.boundingBox();
+  if (!targetBox) throw new Error('The drag target has no bounding box.');
   await page.mouse.move(
     targetBox.x + targetBox.width / 2,
     targetBox.y + targetBox.height / 2,

@@ -137,12 +137,12 @@ export function useGameBoardFieldActions({
     }, [dispatchGameEvent, role, uuid]);
 
     const handleModifyCounter = useCallback((cardId: string, stat: 'atk' | 'hp', delta: number, actor?: PlayerRole) => {
-        dispatchGameEvent({ type: 'MODIFY_COUNTER', actor, cardId, stat, delta });
-    }, [dispatchGameEvent]);
+        dispatchGameEvent({ type: 'MODIFY_COUNTER', actor: actor ?? getSoloCardMoveActor(cardId), cardId, stat, delta });
+    }, [dispatchGameEvent, getSoloCardMoveActor]);
 
     const handleModifyGenericCounter = useCallback((cardId: string, delta: number, actor?: PlayerRole) => {
-        dispatchGameEvent({ type: 'MODIFY_GENERIC_COUNTER', actor, cardId, delta });
-    }, [dispatchGameEvent]);
+        dispatchGameEvent({ type: 'MODIFY_GENERIC_COUNTER', actor: actor ?? getSoloCardMoveActor(cardId), cardId, delta });
+    }, [dispatchGameEvent, getSoloCardMoveActor]);
 
     const handleDragEnd = useCallback((event: DragEndEvent) => {
         const { active, over } = event;
@@ -220,8 +220,8 @@ export function useGameBoardFieldActions({
     }, [cardCatalogByIdRef, dispatchGameEvent, executeEvolveAutoAttach, fieldLinkCardIdsRef, gameStateRef, isSoloMode, queueEvolveAutoAttachSelection, resolveEvolveAutoAttachSelection, tokenManualLinkCardIdsRef]);
 
     const toggleTap = useCallback((cardId: string) => {
-        dispatchGameEvent({ type: 'TOGGLE_TAP', cardId });
-    }, [dispatchGameEvent]);
+        dispatchGameEvent({ type: 'TOGGLE_TAP', ...(isSoloMode ? { actor: getSoloCardMoveActor(cardId) } : {}), cardId });
+    }, [dispatchGameEvent, getSoloCardMoveActor, isSoloMode]);
 
     const handleFlipCard = useCallback((cardId: string, targetRole?: PlayerRole) => {
         dispatchGameEvent({ type: 'TOGGLE_FLIP', actor: targetRole, cardId });

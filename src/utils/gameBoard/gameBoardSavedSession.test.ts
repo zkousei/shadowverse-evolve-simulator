@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { applyGameSyncEvent } from './gameSyncReducer';
 import { initialState, type SyncState } from '../../types/game';
 import {
   buildSavedHostSessionPayload,
@@ -6,6 +7,7 @@ import {
   getSavedHostSessionPersistenceDecision,
   hasMeaningfulGameSessionState,
   parseSavedHostSession,
+  persistSavedHostSession,
 } from './gameBoardSavedSession';
 
 const buildState = (overrides: Partial<SyncState> = {}): SyncState => ({
@@ -170,5 +172,87 @@ describe('gameBoardSavedSession', () => {
         guest: false,
       },
     }))).toBe(true);
+  });
+});
+
+
+describe('saved undo history', () => {
+  const parse = (state: unknown) => parseSavedHostSession(JSON.stringify({
+    room: 'ROOM123', appVersion: '1.2.3', savedAt: 'today', state,
+  }), 'ROOM123', '1.2.3')?.state;
+
+  it('round-trips multiple checkpoints and can undo after resume', () => {
+    const oldest = buildState({ revision: 2, host: { ...initialState.host, hp: 18 } });
+    const latest = buildState({ revision: 3, host: { ...initialState.host, hp: 19 } });
+    const restored = parse(buildState({
+      revision: 4,
+      cardMoveHistory: [{ actor: 'host', state: oldest }, { actor: 'host', state: latest }],
+    }))!;
+    expect(restored.lastUndoableCardMoveState?.host.hp).toBe(19);
+    const first = applyGameSyncEvent(restored, { id: 'one', type: 'UNDO_CARD_MOVE', actor: 'host' });
+    const second = applyGameSyncEvent(first, { id: 'two', type: 'UNDO_CARD_MOVE', actor: 'host' });
+    expect(second.host.hp).toBe(18);
+    expect(second.revision).toBe(6);
+    expect(second.cardMoveHistory).toEqual([]);
+  });
+
+  it('migrates a legacy single checkpoint and removes nested backups', () => {
+    const state = parse(buildState({
+      cardMoveHistory: undefined,
+      lastUndoableCardMoveActor: 'guest',
+      lastUndoableCardMoveState: buildState({ lastGameState: buildState() }),
+    }))!;
+    expect(state.cardMoveHistory).toHaveLength(1);
+    expect(state.cardMoveHistory?.[0].state).not.toHaveProperty('lastGameState');
+    expect(state.cardMoveHistory?.[0].state).not.toHaveProperty('cardMoveHistory');
+  });
+
+  it.each([null, {}, [{ actor: 'invalid', state: buildState() }], [{ actor: 'host', state: {} }]])(
+    'discards malformed history without losing the current board: %j', (history) => {
+      const state = parse({ ...buildState({ revision: 7 }), cardMoveHistory: history })!;
+      expect(state.revision).toBe(7);
+      expect(state.cardMoveHistory).toEqual([]);
+      expect(state.lastUndoableCardMoveState).toBeNull();
+    },
+  );
+
+  it('bounds oversized histories and retains only the latest actor segment', () => {
+    const history = Array.from({ length: 25 }, (_, revision) => ({ actor: 'host', state: buildState({ revision }) }));
+    expect(parse({ ...buildState(), cardMoveHistory: history })?.cardMoveHistory).toHaveLength(20);
+    history.push({ actor: 'guest', state: buildState({ revision: 25 }) });
+    expect(parse({ ...buildState(), cardMoveHistory: history })?.cardMoveHistory).toHaveLength(1);
+  });
+});
+
+
+describe('undo history storage limits', () => {
+  const payload = buildSavedHostSessionPayload('ROOM', '1', buildState({
+    lastGameState: buildState({ revision: 1 }),
+    cardMoveHistory: [{ actor: 'host', state: buildState() }],
+    lastUndoableCardMoveState: buildState(), lastUndoableCardMoveActor: 'host',
+  }), 'today');
+
+  it('falls back to saving the current board and turn checkpoint when history exceeds quota', () => {
+    const storage = { setItem: vi.fn().mockImplementationOnce(() => { throw new Error('quota'); }), removeItem: vi.fn() };
+    expect(persistSavedHostSession(storage, 'key', payload)).toBe('saved-without-move-history');
+    const saved = JSON.parse(storage.setItem.mock.calls[1][1]);
+    expect(saved.state.cardMoveHistory).toEqual([]);
+    expect(saved.state.lastUndoableCardMoveState).toBeNull();
+    expect(saved.state.lastGameState).toEqual(payload.state.lastGameState);
+    expect(saved.state.cards).toEqual(payload.state.cards);
+    expect(payload.state.cardMoveHistory).toHaveLength(1);
+    expect(storage.removeItem).not.toHaveBeenCalled();
+  });
+
+  it('removes an obsolete save when both writes fail without throwing into the game', () => {
+    const storage = { setItem: vi.fn(() => { throw new Error('quota'); }), removeItem: vi.fn() };
+    expect(persistSavedHostSession(storage, 'key', payload)).toBe('failed');
+    expect(storage.removeItem).toHaveBeenCalledWith('key');
+  });
+
+  it('saves full history normally', () => {
+    const storage = { setItem: vi.fn(), removeItem: vi.fn() };
+    expect(persistSavedHostSession(storage, 'key', payload)).toBe('saved');
+    expect(storage.setItem).toHaveBeenCalledExactlyOnceWith('key', JSON.stringify(payload));
   });
 });

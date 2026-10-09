@@ -7,6 +7,7 @@ interface UseGameBoardSystemActionsArgs {
     canUndoTurn: boolean;
     isRollingDice: boolean;
     phaseActor?: PlayerRole;
+    isSoloMode?: boolean;
     showTimedTurnMessage: (msg: string, durationMs: number) => void;
     t: (key: string) => string;
     dispatchGameEvent: (event: DispatchableGameSyncEvent) => void;
@@ -17,13 +18,14 @@ export function useGameBoardSystemActions({
     canUndoTurn,
     isRollingDice,
     phaseActor,
+    isSoloMode = false,
     showTimedTurnMessage,
     t,
     dispatchGameEvent,
 }: UseGameBoardSystemActionsArgs) {
     const handleStatChange = useCallback((playerKey: 'host' | 'guest', stat: 'hp' | 'pp' | 'maxPp' | 'ep' | 'sep' | 'combo', delta: number) => {
-        dispatchGameEvent({ type: 'MODIFY_PLAYER_STAT', playerKey, stat, delta });
-    }, [dispatchGameEvent]);
+        dispatchGameEvent({ type: 'MODIFY_PLAYER_STAT', ...(isSoloMode ? { actor: playerKey } : {}), playerKey, stat, delta });
+    }, [dispatchGameEvent, isSoloMode]);
 
     const setPhase = useCallback((newPhase: 'Start' | 'Main' | 'End') => {
         dispatchGameEvent({

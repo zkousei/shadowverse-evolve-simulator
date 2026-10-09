@@ -927,6 +927,11 @@ describe('CardLogic utils', () => {
   });
 
   describe('modifyCardCounter', () => {
+    it('preserves the cards reference when the requested delta is zero', () => {
+      const cards = [createMockCard('field-1', 'field-host')];
+      expect(CardLogic.modifyCardCounter(cards, 'field-1', 'atk', 0)).toBe(cards);
+    });
+
     it('should change counters for cards outside the hand', () => {
       const fieldCard = createMockCard('field-1', 'field-host');
       const result = CardLogic.modifyCardCounter([fieldCard], 'field-1', 'atk', 2);
@@ -941,6 +946,16 @@ describe('CardLogic utils', () => {
   });
 
   describe('modifyGenericCounter', () => {
+    it.each([undefined, 0])('preserves the cards reference when decreasing a zero counter (%s)', genericCounter => {
+      const cards = [{ ...createMockCard('field-1', 'field-host'), genericCounter }];
+      expect(CardLogic.modifyGenericCounter(cards, 'field-1', -1)).toBe(cards);
+    });
+
+    it('preserves the cards reference when the requested delta is zero', () => {
+      const cards = [{ ...createMockCard('field-1', 'field-host'), genericCounter: 2 }];
+      expect(CardLogic.modifyGenericCounter(cards, 'field-1', 0)).toBe(cards);
+    });
+
     it('should change the generic counter for cards in the field or ex area', () => {
       const fieldCard = createMockCard('field-1', 'field-host');
       const result = CardLogic.modifyGenericCounter([fieldCard], 'field-1', 2);

@@ -697,6 +697,7 @@ export const modifyCardCounter = (
 ): CardInstance[] => {
   const targetCard = cards.find(c => c.id === cardId);
   if (!targetCard || targetCard.zone.startsWith('hand') || isLeaderCard(targetCard)) return cards;
+  if (delta === 0) return cards;
 
   return cards.map(c =>
     c.id === cardId ? { ...c, counters: { ...c.counters, [stat]: c.counters[stat] + delta } } : c
@@ -712,10 +713,12 @@ export const modifyGenericCounter = (
   if (!targetCard) return cards;
   if (isLeaderCard(targetCard)) return cards;
   if (!(targetCard.zone.startsWith('field-') || targetCard.zone.startsWith('ex-'))) return cards;
+  const nextCounter = Math.max(0, (targetCard.genericCounter ?? 0) + delta);
+  if (nextCounter === (targetCard.genericCounter ?? 0)) return cards;
 
   return cards.map(card =>
     card.id === cardId
-      ? { ...card, genericCounter: Math.max(0, (card.genericCounter ?? 0) + delta) }
+      ? { ...card, genericCounter: nextCounter }
       : card
   );
 };
