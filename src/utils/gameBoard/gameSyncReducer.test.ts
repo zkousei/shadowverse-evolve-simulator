@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { initialState, type SyncState } from '../../types/game';
+import type { GameSyncEvent } from '../../types/sync';
 import { applyGameSyncEvent } from './gameSyncReducer';
 import * as CardLogic from '../card/cardLogic';
 
@@ -2114,16 +2115,18 @@ describe('gameSyncReducer', () => {
     expect(imported.host.mulliganUsed).toBe(false);
     expect(imported.host.isReady).toBe(false);
 
+    const shuffleMock = vi.spyOn(CardLogic, 'shuffleDeck').mockImplementationOnce(cards => [...cards].reverse());
     const shuffled = applyGameSyncEvent(baseState, {
       id: 'evt-20b',
       type: 'SHUFFLE_DECK',
       actor: 'host',
     });
+    shuffleMock.mockRestore();
     expect(shuffled.revision).toBe(baseState.revision + 1);
     expect(shuffled.cards.filter(c => c.zone === 'mainDeck-host')).toHaveLength(5);
   });
 
-  it('clears the authoritative card-move checkpoint when shuffling the deck', () => {
+  it('keeps existing history when shuffling a single-card deck', () => {
     const checkpoint = createState({
       revision: 12,
       cards: [
@@ -2167,8 +2170,8 @@ describe('gameSyncReducer', () => {
       actor: 'host',
     });
 
-    expect(shuffled.lastUndoableCardMoveState).toBeNull();
-    expect(shuffled.lastUndoableCardMoveActor).toBeNull();
+    expect(shuffled).toBe(state);
+    expect(shuffled.lastUndoableCardMoveState).toBe(checkpoint);
   });
 
   it('ignores duplicate initial hand draw events for the same player', () => {
@@ -2795,5 +2798,253 @@ describe('gameSyncReducer', () => {
     }, 'guest');
 
     expect(denied).toBe(state);
+  });
+});
+
+
+describe('multi-step card move undo', () => {
+  const board = (): SyncState => createState({
+    gameStatus: 'playing',
+    cards: Array.from({ length: 25 }, (_, index) => ({
+      id: `undo-${index}`, cardId: 'BP01-001', name: 'Card', image: '',
+      zone: 'mainDeck-host', owner: 'host' as const, isTapped: false,
+      isFlipped: true, counters: { atk: 0, hp: 0 },
+    })),
+  });
+  const draw = (state: SyncState) => applyGameSyncEvent(state, {
+    id: `draw-${state.revision}`, type: 'DRAW_CARD', actor: 'host',
+  });
+  const undo = (state: SyncState, actor: 'host' | 'guest' = 'host') => applyGameSyncEvent(state, {
+    id: `undo-${state.revision}`, type: 'UNDO_CARD_MOVE', actor,
+  });
+
+  it('undoes three moves in reverse order, then becomes a no-op', () => {
+    const start = board();
+    const first = draw(start);
+    const second = draw(first);
+    const third = draw(second);
+    const backTwo = undo(third);
+    expect(backTwo.cards).toEqual(second.cards);
+    const backOne = undo(backTwo);
+    expect(backOne.cards).toEqual(first.cards);
+    const backStart = undo(backOne);
+    expect(backStart.cards).toEqual(start.cards);
+    expect(backStart.revision).toBe(6);
+    expect(undo(backStart)).toBe(backStart);
+  });
+
+  it('retains only the most recent twenty operations without nested histories', () => {
+    let state = board();
+    for (let i = 0; i < 23; i++) state = draw(state);
+    expect(state.cardMoveHistory).toHaveLength(20);
+    for (const entry of state.cardMoveHistory ?? []) {
+      expect(entry.state).not.toHaveProperty('cardMoveHistory');
+      expect(entry.state).not.toHaveProperty('lastGameState');
+      expect(entry.state).not.toHaveProperty('lastUndoableCardMoveState');
+    }
+    for (let i = 0; i < 20; i++) state = undo(state);
+    expect(state.cards.filter(card => card.zone === 'hand-host')).toHaveLength(3);
+    expect(undo(state)).toBe(state);
+  });
+
+  it('keeps remaining history when making a new move after undo', () => {
+    const start = board();
+    let state = undo(draw(draw(start)));
+    state = draw(state);
+    expect(undo(undo(state)).cards).toEqual(start.cards);
+  });
+
+  it('does not resurrect host history after the guest moves and undoes', () => {
+    const hostMoved = draw(draw(board()));
+    const guestMoved = applyGameSyncEvent(hostMoved, {
+      id: 'guest-move', type: 'MOVE_CARD', actor: 'guest', cardId: 'undo-0', overId: 'ex-host',
+    });
+    expect(undo(guestMoved, 'host')).toBe(guestMoved);
+    const guestUndone = undo(guestMoved, 'guest');
+    expect(guestUndone.cards).toEqual(hostMoved.cards);
+    expect(undo(guestUndone, 'host')).toBe(guestUndone);
+  });
+
+  it('retains both actors in solo mode and restores the next undo actor', () => {
+    const start = board();
+    const first = draw(start);
+    const second = applyGameSyncEvent(first, {
+      id: 'solo-guest-move', type: 'MOVE_CARD', actor: 'guest', cardId: 'undo-0', overId: 'ex-host',
+    }, 'guest', { isSoloMode: true });
+    const restored = undo(second, 'guest');
+    expect(restored.lastUndoableCardMoveActor).toBe('host');
+    expect(undo(restored).cards).toEqual(start.cards);
+  });
+
+  it('keeps turn undo independent across multiple card undos', () => {
+    const start = board();
+    const ended = applyGameSyncEvent(start, { id: 'end', type: 'END_TURN', actor: 'host' });
+    const restored = undo(undo(draw(draw(ended))));
+    expect(restored.lastGameState).toEqual(ended.lastGameState);
+    const turnUndone = applyGameSyncEvent(restored, { id: 'turn-undo', type: 'UNDO_LAST_TURN', actor: 'host' });
+    expect(turnUndone.cards).toEqual(start.cards);
+    expect(turnUndone.turnPlayer).toBe('host');
+    expect(turnUndone.cardMoveHistory).toEqual([]);
+    expect(turnUndone.lastGameState).toBeNull();
+    expect(undo(turnUndone)).toBe(turnUndone);
+  });
+
+  it('starts a new undo segment for an opponent stat change without clearing turn undo', () => {
+    const ended = applyGameSyncEvent(board(), { id: 'end', type: 'END_TURN', actor: 'host' });
+    const moved = draw(draw(ended));
+    const changed = applyGameSyncEvent(moved, {
+      id: 'hp', type: 'MODIFY_PLAYER_STAT', actor: 'guest', playerKey: 'guest', stat: 'hp', delta: -1,
+    });
+    expect(undo(changed)).toBe(changed);
+    expect(changed.guest.hp).toBe(19);
+    const guestUndone = undo(changed, 'guest');
+    expect(guestUndone.guest.hp).toBe(20);
+    expect(undo(guestUndone, 'host')).toBe(guestUndone);
+    expect(changed.lastGameState).toBe(ended.lastGameState);
+  });
+
+  it.each<GameSyncEvent>([
+    { id: 'phase', type: 'SET_PHASE', actor: 'host', phase: 'Main' },
+    { id: 'reset', type: 'RESET_GAME', actor: 'host' },
+    { id: 'end', type: 'END_TURN', actor: 'host' },
+  ])('clears every checkpoint for a $type boundary', event => {
+    const moved = applyGameSyncEvent(draw(draw(board())), {
+      id: 'field', type: 'MOVE_CARD', actor: 'host', cardId: 'undo-0', overId: 'field-host',
+    });
+    const changed = applyGameSyncEvent(moved, event);
+    expect(changed).not.toBe(moved);
+    expect(changed.cardMoveHistory).toEqual([]);
+    expect(undo(changed)).toBe(changed);
+    if (event.type === 'END_TURN') {
+      expect(changed.lastGameState).not.toHaveProperty('cardMoveHistory');
+      const back = applyGameSyncEvent(changed, { id: 'end-undo', type: 'UNDO_LAST_TURN', actor: 'host' });
+      expect(back.cards).toEqual(moved.cards);
+      expect(undo(back)).toBe(back);
+    }
+  });
+
+  it('keeps checkpoints detached from subsequent nested counter changes', () => {
+    const moved = draw(board());
+    const originalSnapshot = JSON.stringify(moved.cardMoveHistory);
+    const next = draw(moved);
+    next.cards[0].counters.atk = 99;
+    expect(JSON.stringify(moved.cardMoveHistory)).toBe(originalSnapshot);
+  });
+
+  it.each<GameSyncEvent>([
+    { id: 'same-phase', type: 'SET_PHASE', actor: 'host', phase: 'Start' },
+    { id: 'same-stat', type: 'MODIFY_PLAYER_STAT', actor: 'host', playerKey: 'host', stat: 'pp', delta: -1 },
+    { id: 'same-reveal', type: 'SET_REVEAL_HANDS_MODE', actor: 'host', enabled: false },
+  ])('retains history when $type leaves the value unchanged', event => {
+    const moved = draw(draw(board()));
+    expect(applyGameSyncEvent(moved, event)).toBe(moved);
+  });
+
+  it('can still undo multiple moves after decreasing a zero generic counter', () => {
+    const start = board();
+    const drawn = draw(start);
+    const moved = applyGameSyncEvent(drawn, {
+      id: 'place', type: 'MOVE_CARD', actor: 'host', cardId: 'undo-0', overId: 'field-host',
+    });
+    const unchanged = applyGameSyncEvent(moved, {
+      id: 'decrease-zero', type: 'MODIFY_GENERIC_COUNTER', actor: 'host', cardId: 'undo-0', delta: -1,
+    });
+    expect(unchanged).toBe(moved);
+    expect(undo(undo(unchanged)).cards).toEqual(start.cards);
+  });
+
+  it.each<GameSyncEvent>([
+    { id: 'hp', type: 'MODIFY_PLAYER_STAT', actor: 'host', playerKey: 'host', stat: 'hp', delta: -2 },
+    { id: 'counter', type: 'MODIFY_COUNTER', actor: 'host', cardId: 'undo-0', stat: 'atk', delta: 1 },
+    { id: 'generic', type: 'MODIFY_GENERIC_COUNTER', actor: 'host', cardId: 'undo-0', delta: 1 },
+    { id: 'tap', type: 'TOGGLE_TAP', actor: 'host', cardId: 'undo-0' },
+    { id: 'flip', type: 'TOGGLE_FLIP', actor: 'host', cardId: 'undo-evolve' },
+    { id: 'face', type: 'SET_CARD_FACE', actor: 'host', cardId: 'undo-evolve', faceSide: 'back' },
+    { id: 'attack', type: 'ATTACK_DECLARATION', actor: 'host', attackerCardId: 'undo-0', target: { type: 'leader', player: 'guest' } },
+  ])('undoes $type first, then the preceding card move', event => {
+    const start = board();
+    start.cards.push({ ...start.cards[0], id: 'undo-evolve', zone: 'evolveDeck-host', isEvolveCard: true });
+    const placed = applyGameSyncEvent(start, {
+      id: 'place', type: 'MOVE_CARD', actor: 'host', cardId: 'undo-0', overId: 'field-host',
+    });
+    const changed = applyGameSyncEvent(placed, event);
+    expect(changed).not.toBe(placed);
+    expect(changed.cardMoveHistory).toHaveLength(2);
+    const restored = undo(changed);
+    expect(restored.cards).toEqual(placed.cards);
+    expect(restored.host).toEqual(placed.host);
+    expect(undo(restored).cards).toEqual(start.cards);
+  });
+
+  it.each<GameSyncEvent>([
+    { id: 'hp', type: 'MODIFY_PLAYER_STAT', actor: 'host', playerKey: 'host', stat: 'hp', delta: -1 },
+    { id: 'counter', type: 'MODIFY_COUNTER', actor: 'host', cardId: 'undo-0', stat: 'atk', delta: 1 },
+    { id: 'tap', type: 'TOGGLE_TAP', actor: 'host', cardId: 'undo-0' },
+  ])('rejects $type with a forged undo actor', event => {
+    const state = applyGameSyncEvent(board(), {
+      id: 'place', type: 'MOVE_CARD', actor: 'host', cardId: 'undo-0', overId: 'field-host',
+    });
+    expect(applyGameSyncEvent(state, event, 'guest')).toBe(state);
+  });
+
+  it('does not consume history when selecting the already displayed default front face', () => {
+    const start = board();
+    start.cards.push({ ...start.cards[0], id: 'undo-evolve', zone: 'evolveDeck-host', isEvolveCard: true });
+    const moved = draw(start);
+    const unchanged = applyGameSyncEvent(moved, {
+      id: 'same-front', type: 'SET_CARD_FACE', actor: 'host', cardId: 'undo-evolve', faceSide: 'front',
+    });
+    expect(unchanged).toBe(moved);
+    expect(undo(unchanged).cards).toEqual(start.cards);
+  });
+
+  it('restores PP together with max PP as one numeric operation', () => {
+    const start = { ...board(), host: { ...initialState.host, pp: 5, maxPp: 5 } };
+    const changed = applyGameSyncEvent(start, {
+      id: 'pp', type: 'MODIFY_PLAYER_STAT', actor: 'host', playerKey: 'host', stat: 'maxPp', delta: -1,
+    });
+    expect(changed.host).toMatchObject({ pp: 4, maxPp: 4 });
+    expect(undo(changed).host).toEqual(start.host);
+  });
+
+  it('undoes draw, shuffle, and a stat change in order without rerunning randomness', () => {
+    const start = board();
+    const changed = applyGameSyncEvent(start, {
+      id: 'hp', type: 'MODIFY_PLAYER_STAT', actor: 'host', playerKey: 'host', stat: 'hp', delta: -1,
+    });
+    const shuffleMock = vi.spyOn(CardLogic, 'shuffleDeck').mockImplementation(cards => [...cards].reverse());
+    try {
+      const shuffled = applyGameSyncEvent(changed, { id: 'shuffle', type: 'SHUFFLE_DECK', actor: 'host' });
+      expect(shuffled.cards[0].id).toBe('undo-24');
+      const drawn = draw(shuffled);
+      expect(drawn.cards.find(card => card.zone === 'hand-host')?.id).toBe('undo-24');
+      const backShuffle = undo(drawn);
+      expect(backShuffle.cards).toEqual(shuffled.cards);
+      const backStat = undo(backShuffle);
+      expect(backStat.cards).toEqual(start.cards);
+      expect(backStat.host.hp).toBe(19);
+      expect(undo(backStat).host.hp).toBe(20);
+      expect(shuffleMock).toHaveBeenCalledTimes(1);
+    } finally {
+      shuffleMock.mockRestore();
+    }
+  });
+
+  it('does not consume an undo step when shuffle leaves the deck order unchanged', () => {
+    const moved = draw(board());
+    const shuffleMock = vi.spyOn(CardLogic, 'shuffleDeck').mockImplementation(cards => [...cards]);
+    try {
+      expect(applyGameSyncEvent(moved, { id: 'same-shuffle', type: 'SHUFFLE_DECK', actor: 'host' })).toBe(moved);
+    } finally {
+      shuffleMock.mockRestore();
+    }
+  });
+
+  it('preserves history for rejected and stateless events', () => {
+    const moved = draw(draw(board()));
+    const rejected = applyGameSyncEvent(moved, { id: 'bad-end', type: 'END_TURN', actor: 'guest' });
+    expect(rejected).toBe(moved);
+    expect(applyGameSyncEvent(moved, { id: 'coin', type: 'FLIP_SHARED_COIN', actor: 'guest' })).toBe(moved);
+    expect(undo(undo(rejected)).cards).toEqual(board().cards);
   });
 });

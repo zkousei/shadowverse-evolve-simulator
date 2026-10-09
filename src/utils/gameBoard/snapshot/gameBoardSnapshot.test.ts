@@ -100,3 +100,20 @@ describe('buildGameBoardNetworkSnapshotState', () => {
     expect(snapshot.networkHasUndoableCardMove).toBe(true);
   });
 });
+
+
+it('never transmits move history or grows the network snapshot with history depth', () => {
+  const checkpoint = buildState({ revision: 1 });
+  const state = buildState({
+    lastUndoableCardMoveState: checkpoint, lastUndoableCardMoveActor: 'guest',
+    cardMoveHistory: [{ actor: 'guest', state: checkpoint }],
+  });
+  const shallow = buildGameBoardNetworkSnapshotState(state, {});
+  const deep = buildGameBoardNetworkSnapshotState({
+    ...state, cardMoveHistory: Array.from({ length: 20 }, () => ({ actor: 'guest', state: checkpoint })),
+  }, {});
+  expect(deep.cardMoveHistory).toEqual([]);
+  expect(deep.lastUndoableCardMoveActor).toBe('guest');
+  expect(deep.networkHasUndoableCardMove).toBe(true);
+  expect(JSON.stringify(deep)).toBe(JSON.stringify(shallow));
+});

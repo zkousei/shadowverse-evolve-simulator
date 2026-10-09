@@ -431,7 +431,7 @@ export const useGameBoardLogic = () => {
     }
 
     const currentState = gameStateRef.current;
-    const nextState = applyGameSyncEvent(currentState, event, requester);
+    const nextState = applyGameSyncEvent(currentState, event, requester, { isSoloMode });
     if (nextState === currentState) return;
     applyLocalState(nextState);
     const pendingEffects: SharedUiEffect[] = [];
@@ -819,7 +819,7 @@ export const useGameBoardLogic = () => {
         sendSharedUiEffect(effect);
       }
     }
-  }, [applyLocalState, cardDetailLookupRef, playSharedUiEffect, role, sendSharedUiEffect, sendSnapshot]);
+  }, [applyLocalState, cardDetailLookupRef, isSoloMode, playSharedUiEffect, role, sendSharedUiEffect, sendSnapshot]);
 
   const dispatchGameEvent = useCallback((event: DispatchableGameSyncEvent) => {
     if (!canInteract) {
@@ -1452,6 +1452,7 @@ export const useGameBoardLogic = () => {
     canUndoTurn,
     isRollingDice,
     phaseActor: isSoloMode ? gameState.turnPlayer : undefined,
+    isSoloMode,
     showTimedTurnMessage,
     t,
     dispatchGameEvent,

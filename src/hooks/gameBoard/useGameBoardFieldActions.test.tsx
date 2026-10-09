@@ -173,6 +173,17 @@ describe('useGameBoardFieldActions (Pure Hook)', () => {
     });
   });
 
+  it('attributes solo counters and tap changes to the card owner for undo', () => {
+    const card = makeCard({ id: 'guest-card', zone: 'field-guest', owner: 'guest' });
+    const { result } = renderHook(() => useGameBoardFieldActions({
+      ...defaultArgs, isSoloMode: true, gameStateRef: { current: buildSyncState({ cards: [card] }) },
+    }));
+    result.current.handleModifyCounter(card.id, 'atk', 1);
+    result.current.handleModifyGenericCounter(card.id, 1);
+    result.current.toggleTap(card.id);
+    expect(defaultArgs.dispatchGameEvent.mock.calls.map(([event]) => event.actor)).toEqual(['guest', 'guest', 'guest']);
+  });
+
   // ─── 3. toggleTap ────────────────────────────────────────────────
   it('dispatches TOGGLE_TAP', () => {
     const { result } = renderHook(() => useGameBoardFieldActions(defaultArgs));

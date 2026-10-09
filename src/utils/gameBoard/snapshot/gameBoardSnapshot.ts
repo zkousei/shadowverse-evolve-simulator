@@ -16,6 +16,7 @@ export const buildGameBoardNetworkSnapshotState = (
       ? { ...card, image: '' }
       : { ...card };
   }),
+  cardMoveHistory: [],
   lastGameState: null,
   lastUndoableCardMoveState: null,
   networkHasUndoableTurn: !!state.lastGameState,

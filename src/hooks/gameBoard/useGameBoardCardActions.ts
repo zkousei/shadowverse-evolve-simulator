@@ -4,6 +4,7 @@ import type { SharedUiEffect } from '../../types/sync';
 import type { CardInstance } from '../../components/Card';
 import * as CardLogic from '../../utils/card/cardLogic';
 import type { DispatchableGameSyncEvent } from './useGameBoardLogic';
+import { getCanUndoMove } from '../../utils/gameBoard/gameBoardUndoAvailability';
 import { canLookAtTopDeck } from '../../utils/gameBoard/gameBoardInteraction';
 import { buildHandRevealEffect, buildSelectedHandRevealEffect } from '../../utils/gameBoard/cardReveal';
 
@@ -99,9 +100,10 @@ export function useGameBoardCardActions({
     }, [dispatchGameEvent, setTopDeckCards]);
 
     const handleUndoCardMove = useCallback(() => {
-        const canUndo = isSoloMode || isHost
-            ? !!lastUndoableCardMoveState
-            : !!(networkHasUndoableCardMove ?? lastUndoableCardMoveState);
+        const canUndo = getCanUndoMove({
+            isSoloMode, isHost, role,
+            state: { lastUndoableCardMoveState, lastUndoableCardMoveActor, networkHasUndoableCardMove },
+        });
         if (!canUndo) return;
         const undoActor = isSoloMode
             ? lastUndoableCardMoveActor ?? role

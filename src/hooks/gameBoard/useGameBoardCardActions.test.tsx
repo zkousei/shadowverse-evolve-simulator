@@ -147,10 +147,29 @@ describe('useGameBoardCardActions (Pure Hook)', () => {
   });
 
   it('handleUndoCardMove succeeds if state exists', () => {
-    const { result } = renderHook(() => useGameBoardCardActions({ ...defaultArgs, lastUndoableCardMoveState: {} as unknown as SyncState }));
+    const { result } = renderHook(() => useGameBoardCardActions({ ...defaultArgs, lastUndoableCardMoveActor: 'host', lastUndoableCardMoveState: {} as unknown as SyncState }));
     result.current.handleUndoCardMove();
 
     expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledWith({ type: 'UNDO_CARD_MOVE', actor: 'host' });
+  });
+
+  it('rejects P2P undo when the latest checkpoint belongs to the opponent', () => {
+    const { result } = renderHook(() => useGameBoardCardActions({
+      ...defaultArgs, lastUndoableCardMoveActor: 'guest', lastUndoableCardMoveState: {} as SyncState,
+    }));
+    result.current.handleUndoCardMove();
+    expect(defaultArgs.dispatchGameEvent).not.toHaveBeenCalled();
+  });
+
+  it('uses the current history actor for each solo undo', () => {
+    const { result, rerender } = renderHook(({ actor }: { actor: 'host' | 'guest' }) => useGameBoardCardActions({
+      ...defaultArgs, isSoloMode: true, lastUndoableCardMoveActor: actor, lastUndoableCardMoveState: {} as SyncState,
+    }), { initialProps: { actor: 'guest' } });
+    result.current.handleUndoCardMove();
+    expect(defaultArgs.dispatchGameEvent).toHaveBeenLastCalledWith({ type: 'UNDO_CARD_MOVE', actor: 'guest' });
+    rerender({ actor: 'host' });
+    result.current.handleUndoCardMove();
+    expect(defaultArgs.dispatchGameEvent).toHaveBeenLastCalledWith({ type: 'UNDO_CARD_MOVE', actor: 'host' });
   });
 
   it('handleUndoCardMove aborts if no state exists', () => {

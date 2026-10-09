@@ -3,6 +3,7 @@ import type { GameSyncEvent } from '../../types/sync';
 import * as CardLogic from '../card/cardLogic';
 import { canImportDeck, isHandCardMovementLocked } from './gameRules';
 import { canDeclareAttack } from './attackUi';
+import { createGameStateCheckpoint, getCardMoveHistory, withCardMoveHistory, CARD_MOVE_HISTORY_LIMIT } from './gameBoardUndoHistory';
 
 type EventRequester = GameSyncEvent['actor'];
 
@@ -10,32 +11,6 @@ const bumpRevision = (state: SyncState): SyncState => ({
   ...state,
   revision: state.revision + 1,
 });
-
-const createReducerStateSnapshot = (
-  state: SyncState
-): NonNullable<SyncState['lastGameState']> => {
-  return {
-    host: { ...state.host },
-    guest: { ...state.guest },
-    cards: state.cards.map(card => ({ ...card })),
-    turnPlayer: state.turnPlayer,
-    turnCount: state.turnCount,
-    phase: state.phase,
-    gameStatus: state.gameStatus,
-    tokenOptions: {
-      host: state.tokenOptions.host.map(option => ({ ...option })),
-      guest: state.tokenOptions.guest.map(option => ({ ...option })),
-    },
-    revealHandsMode: state.revealHandsMode,
-    endStop: { ...state.endStop },
-    revision: state.revision,
-    networkHasUndoableTurn: state.networkHasUndoableTurn,
-    networkHasUndoableCardMove: state.networkHasUndoableCardMove,
-    // Reducer-side checkpoints must stay flat. If we copy nested undo/turn
-    // backups into every snapshot, the authoritative STATE_SNAPSHOT balloons
-    // on card moves/look-top resolution and can overwhelm the WebRTC channel.
-  };
-};
 
 const withCardMoveCheckpoint = (
   state: SyncState,
@@ -46,7 +21,7 @@ const withCardMoveCheckpoint = (
   cards: nextCards,
   // Card-move undo is reducer-owned and actor-scoped. Clients only request an
   // undo; they never send back the state to restore.
-  lastUndoableCardMoveState: createReducerStateSnapshot(state),
+  lastUndoableCardMoveState: createGameStateCheckpoint(state),
   lastUndoableCardMoveActor: actor,
 });
 
@@ -164,7 +139,7 @@ const setSelectedCardFace = (
   let didChange = false;
   const nextCards = cards.map(card => {
     if (card.id !== cardId) return card;
-    if (card.selectedFaceSide === faceSide) return card;
+    if ((card.selectedFaceSide ?? 'front') === faceSide) return card;
     didChange = true;
     return { ...card, selectedFaceSide: faceSide };
   });
@@ -193,7 +168,7 @@ const isPreparingHandMovementBlocked = (
   return card?.zone.startsWith('hand-') ?? false;
 };
 
-export const applyGameSyncEvent = (
+const reduceGameSyncEvent = (
   state: SyncState,
   event: GameSyncEvent,
   requester: EventRequester = event.actor
@@ -217,6 +192,7 @@ export const applyGameSyncEvent = (
       if (!isActorRequester(requester, event.actor)) return state;
       if (state.gameStatus !== 'playing') return state;
       if (state.turnPlayer !== event.actor) return state;
+      if (state.phase === event.phase) return state;
       return bumpRevision({
         ...state,
         phase: event.phase,
@@ -224,6 +200,7 @@ export const applyGameSyncEvent = (
 
     case 'SET_REVEAL_HANDS_MODE':
       if (requester !== 'host') return state;
+      if (state.revealHandsMode === event.enabled) return state;
       return bumpRevision({
         ...state,
         revealHandsMode: event.enabled,
@@ -263,14 +240,8 @@ export const applyGameSyncEvent = (
 
       const finalCards = CardLogic.drawCard(untapCards, nextPlayer);
 
-      const stateBackup: SyncState = { 
-        ...state, 
-        lastGameState: null,
-        lastUndoableCardMoveState: null,
-        lastUndoableCardMoveActor: null,
-        cards: [...state.cards].map(c => ({ ...c })) // Deep copy cards at least
-      };
-      
+      const stateBackup = createGameStateCheckpoint(state);
+
       return bumpRevision({
         ...state,
         turnPlayer: nextPlayer,
@@ -531,8 +502,11 @@ export const applyGameSyncEvent = (
 
     case 'SHUFFLE_DECK': {
       if (!isActorRequester(requester, event.actor)) return state;
+      const deck = state.cards.filter(card => card.zone === `mainDeck-${event.actor}`);
+      if (deck.length < 2) return state;
       const nextCards = CardLogic.shuffleDeck(state.cards, event.actor);
-      if (nextCards === state.cards) return state;
+      const nextDeck = nextCards.filter(card => card.zone === `mainDeck-${event.actor}`);
+      if (deck.every((card, index) => card.id === nextDeck[index]?.id)) return state;
       return bumpRevision({
         ...state,
         cards: nextCards,
@@ -555,6 +529,9 @@ export const applyGameSyncEvent = (
         event.stat,
         event.delta
       );
+
+      if (nextValue === playerState[event.stat] &&
+          !(event.stat === 'maxPp' && playerState.pp > nextValue)) return state;
 
       return bumpRevision({
         ...state,
@@ -658,16 +635,18 @@ export const applyGameSyncEvent = (
       } as SyncState;
     }
 
-    case 'UNDO_CARD_MOVE':
+    case 'UNDO_CARD_MOVE': {
       if (!isActorRequester(requester, event.actor)) return state;
-      if (!state.lastUndoableCardMoveState) return state;
-      if (state.lastUndoableCardMoveActor !== event.actor) return state;
-      return {
-        ...state.lastUndoableCardMoveState,
+      const history = getCardMoveHistory(state);
+      const latest = history.at(-1);
+      if (!latest || latest.actor !== event.actor) return state;
+      return withCardMoveHistory({
+        ...latest.state,
+        // Turn undo is independent; restoring a move must not erase or revive it.
+        lastGameState: state.lastGameState,
         revision: state.revision + 1,
-        lastUndoableCardMoveState: null,
-        lastUndoableCardMoveActor: null,
-      };
+      }, history.slice(0, -1));
+    }
 
     case 'SPAWN_TOKEN': {
       if (!isActorRequester(requester, event.actor)) return state;
@@ -695,4 +674,40 @@ export const applyGameSyncEvent = (
       });
     }
   }
+};
+
+// These state changes each consume one undo step, just like a card move.
+// Phase/setup/turn boundaries remain separate from operation undo.
+const undoableStateChanges = new Set<GameSyncEvent['type']>([
+  'MODIFY_PLAYER_STAT', 'MODIFY_COUNTER', 'MODIFY_GENERIC_COUNTER',
+  'TOGGLE_TAP', 'TOGGLE_FLIP', 'SET_CARD_FACE', 'SHUFFLE_DECK',
+  'ATTACK_DECLARATION',
+]);
+
+export const applyGameSyncEvent = (
+  state: SyncState,
+  event: GameSyncEvent,
+  requester: EventRequester = event.actor,
+  { isSoloMode = false }: { isSoloMode?: boolean } = {},
+): SyncState => {
+  if (undoableStateChanges.has(event.type) && !isActorRequester(requester, event.actor)) return state;
+  const nextState = reduceGameSyncEvent(state, event, requester);
+  if (nextState === state || event.type === 'UNDO_CARD_MOVE') return nextState;
+
+  const checkpoint = undoableStateChanges.has(event.type)
+    ? createGameStateCheckpoint(state)
+    : nextState.lastUndoableCardMoveState !== state.lastUndoableCardMoveState
+      ? nextState.lastUndoableCardMoveState
+      : null;
+  // Rejected/stateless events above preserve history. Other accepted mutations
+  // are barriers by default, so new event types cannot silently cross history.
+  if (checkpoint) {
+    const previous = getCardMoveHistory(state);
+    const history = isSoloMode || previous.at(-1)?.actor === event.actor ? previous : [];
+    return withCardMoveHistory(nextState, [...history, {
+      actor: event.actor,
+      state: checkpoint,
+    }].slice(-CARD_MOVE_HISTORY_LIMIT));
+  }
+  return withCardMoveHistory(nextState, []);
 };

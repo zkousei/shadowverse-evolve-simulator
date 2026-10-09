@@ -5,6 +5,7 @@ import {
   getSavedHostSessionPersistenceDecision,
   hasMeaningfulGameSessionState,
   parseSavedHostSession,
+  persistSavedHostSession,
   type SavedHostSession,
 } from '../../utils/gameBoard/gameBoardSavedSession';
 
@@ -102,7 +103,7 @@ export const useGameBoardSessionPersistence = ({
       return;
     }
 
-    window.sessionStorage.setItem(decision.storageKey, JSON.stringify(decision.payload));
+    persistSavedHostSession(window.sessionStorage, decision.storageKey, decision.payload);
   }, [appVersion, gameState, hasCheckedSavedSession, isHost, isSoloMode, room, savedSessionCandidate]);
 
   const resumeSavedSession = React.useCallback(() => {

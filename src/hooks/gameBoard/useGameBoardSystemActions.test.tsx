@@ -99,6 +99,14 @@ describe('useGameBoardSystemActions (Pure Hook)', () => {
     expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledWith({ type: 'ROLL_SHARED_DIE' });
   });
 
+  it('attributes a solo stat change to the player being edited for undo', () => {
+    const { result } = renderHook(() => useGameBoardSystemActions({ ...defaultArgs, isSoloMode: true }));
+    result.current.handleStatChange('guest', 'hp', -1);
+    expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledWith({
+      type: 'MODIFY_PLAYER_STAT', actor: 'guest', playerKey: 'guest', stat: 'hp', delta: -1,
+    });
+  });
+
   it('handleStartGame dispatches START_GAME and shows timed message', () => {
     const { result } = renderHook(() => useGameBoardSystemActions(defaultArgs));
     result.current.handleStartGame();

@@ -1,7 +1,6 @@
 import { test, expect } from '@playwright/test';
 import {
-  dragFirstZoneCard,
-  dragLocatorFromVisibleCornerToLocator,
+  dragLocatorFromExposedCardPointToLocator,
   spawnDefaultToken,
   startSoloGame,
   zone,
@@ -21,16 +20,22 @@ test.describe('Solo Token and Stack Flows', () => {
 
     await expect(zoneCards(page, 'field-host')).toHaveCount(1);
 
-    await dragFirstZoneCard(page, 'field-host', 'cemetery-host');
+    await dragLocatorFromExposedCardPointToLocator(page, zoneCards(page, 'field-host').first(), zone(page, 'cemetery-host'));
 
     await expect(zoneCards(page, 'field-host')).toHaveCount(0);
     await expect(zoneCards(page, 'cemetery-host')).toHaveCount(0);
+
+    await page.getByTestId('undo-move-host').click();
+    await expect(zoneCards(page, 'field-host')).toHaveCount(1);
+    await page.getByTestId('undo-move-host').click();
+    await expect(zoneCards(page, 'field-host')).toHaveCount(0);
+    await expect(page.getByTestId('undo-move-host')).toBeDisabled();
   });
 
   test('stacks one field card onto another and moves the full stack together', async ({ page }) => {
     await startSoloGame(page);
 
-    await dragFirstZoneCard(page, 'hand-host', 'field-host');
+    await dragLocatorFromExposedCardPointToLocator(page, zoneCards(page, 'hand-host').first(), zone(page, 'field-host'));
     await expect(zoneCards(page, 'field-host')).toHaveCount(1);
 
     const rootCard = zoneCards(page, 'field-host').first();
@@ -39,12 +44,12 @@ test.describe('Solo Token and Stack Flows', () => {
       throw new Error('Expected the first field card to expose a data-card-id.');
     }
 
-    await zoneCards(page, 'hand-host').first().dragTo(rootCard);
+    await dragLocatorFromExposedCardPointToLocator(page, zoneCards(page, 'hand-host').first(), rootCard);
 
     await expect(zoneCards(page, 'hand-host')).toHaveCount(2);
     await expect(zoneCards(page, 'field-host')).toHaveCount(2);
 
-    await dragLocatorFromVisibleCornerToLocator(
+    await dragLocatorFromExposedCardPointToLocator(
       page,
       page.locator(`[data-card-id="${rootCardId}"]`),
       zone(page, 'cemetery-host')
@@ -52,5 +57,16 @@ test.describe('Solo Token and Stack Flows', () => {
 
     await expect(zoneCards(page, 'field-host')).toHaveCount(0);
     await expect(zoneCards(page, 'cemetery-host')).toHaveCount(2);
+
+    await page.getByTestId('undo-move-host').click();
+    await expect(zoneCards(page, 'cemetery-host')).toHaveCount(0);
+    await expect(zoneCards(page, 'field-host')).toHaveCount(2);
+    await page.getByTestId('undo-move-host').click();
+    await expect(zoneCards(page, 'field-host')).toHaveCount(1);
+    await expect(zoneCards(page, 'hand-host')).toHaveCount(3);
+    await page.getByTestId('undo-move-host').click();
+    await expect(zoneCards(page, 'field-host')).toHaveCount(0);
+    await expect(zoneCards(page, 'hand-host')).toHaveCount(4);
+    await expect(page.getByTestId('undo-move-host')).toBeDisabled();
   });
 });
