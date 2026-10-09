@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { getPolicyRestrictionForCard } from '../../data/policyRestrictions';
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
+import { createDefaultDeckRuleConfig } from '../../models/deckRule';
+import { getEffectiveDeckRestriction } from '../deck/deckRestrictionRules';
 
 const createCard = (
   name: string,
@@ -14,6 +16,18 @@ const createCard = (
   class: cardClass,
   type,
   deck_section: deckSection,
+});
+
+describe('清浄の領域 policy restrictions', () => {
+  it.each(['constructed', 'crossover'] as const)('limits 清浄の領域 to one copy in %s', format => {
+    const card = createCard('清浄の領域', 'ビショップ', 'アミュレット', 'main');
+
+    expect(getPolicyRestrictionForCard(card, format)?.status).toBe('limited');
+    expect(getEffectiveDeckRestriction(card, 'main', {
+      ...createDefaultDeckRuleConfig(),
+      format,
+    })).toMatchObject({ copyLimit: 1, source: 'policy-limited', format });
+  });
 });
 
 describe('constructed policy restrictions', () => {
