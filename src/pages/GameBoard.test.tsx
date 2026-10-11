@@ -265,6 +265,7 @@ const buildMockGameBoardLogic = (
   const gameState = overrides.gameState ?? createGameState([]);
 
   return {
+    dispatchGameEvent: vi.fn(),
     room: 'ROOM123',
     mode: 'p2p',
     isSoloMode: false,
@@ -2144,6 +2145,22 @@ describe('GameBoard', () => {
     fireEvent.click(screen.getByTestId('undo-move-guest'));
 
     expect(handleUndoCardMove).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps opponent-turn undo unavailable both before and during multi selection', () => {
+    const handleUndoCardMove = vi.fn();
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      hasUndoableMove: true, handleUndoCardMove,
+      gameState: createGameState([], { gameStatus: 'playing', turnPlayer: 'guest', lastUndoableCardMoveActor: 'host' }),
+    }));
+    render(<GameBoard />);
+    expect(screen.getByTestId('undo-move-host')).toBeDisabled();
+    const bar = screen.getByTestId('board-multi-selection-bar');
+    expect(within(bar).queryByRole('button', { name: '↩ Undo Move' })).not.toBeInTheDocument();
+    fireEvent.click(within(bar).getByRole('button', { name: 'Select multiple' }));
+    expect(within(screen.getByTestId('board-multi-selection-bar')).queryByRole('button', { name: '↩ Undo Move' })).not.toBeInTheDocument();
+    expect(screen.getByTestId('undo-move-host')).toBeDisabled();
+    expect(handleUndoCardMove).not.toHaveBeenCalled();
   });
 
   it('keeps move undo disabled during the opponent turn in p2p', () => {

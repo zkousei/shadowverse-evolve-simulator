@@ -81,6 +81,12 @@ export const formatSharedUiMessage = (
   isSoloMode: boolean,
   t: TFunction
 ): string => {
+  if (effect.type === 'BOARD_BATCH_COMPLETED') {
+    return t('gameBoard.multiSelect.message', {
+      actor: getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t),
+      action: t(`gameBoard.multiSelect.actions.${effect.action}`), count: effect.count,
+    });
+  }
   if (effect.type === 'LOOK_TOP_RESOLVED') {
     const actorLabel = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
     const detailLines: string[] = [];

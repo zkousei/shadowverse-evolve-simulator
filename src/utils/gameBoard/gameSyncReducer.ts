@@ -1,3 +1,4 @@
+import { applyBoardBatch } from './gameBoardMultiSelection';
 import { initialState, type SyncState } from '../../types/game';
 import type { GameSyncEvent } from '../../types/sync';
 import * as CardLogic from '../card/cardLogic';
@@ -174,6 +175,7 @@ const reduceGameSyncEvent = (
   requester: EventRequester = event.actor
 ): SyncState => {
   switch (event.type) {
+    case 'BOARD_BATCH': // Validated and applied atomically by applyGameSyncEvent.
     case 'FLIP_SHARED_COIN':
     case 'ROLL_SHARED_DIE':
       return state;
@@ -691,6 +693,20 @@ export const applyGameSyncEvent = (
   { isSoloMode = false }: { isSoloMode?: boolean } = {},
 ): SyncState => {
   if (undoableStateChanges.has(event.type) && !isActorRequester(requester, event.actor)) return state;
+  if (event.type === 'BOARD_BATCH') {
+    if (requester !== event.actor || state.gameStatus !== 'playing' ||
+      event.turnCount !== state.turnCount || event.turnPlayer !== state.turnPlayer ||
+      !Array.isArray(event.targets) || event.targets.some(target => !target || typeof target.rootId !== 'string' || typeof target.signature !== 'string') ||
+      event.targets.some(target => !state.cards.some(card => card.id === target.rootId &&
+        [`field-${event.actor}`, `ex-${event.actor}`].includes(card.zone)))) return state;
+    const nextCards = applyBoardBatch(state.cards, event.targets, event.action);
+    if (nextCards === state.cards) return state;
+    const previous = getCardMoveHistory(state);
+    const history = isSoloMode || previous.at(-1)?.actor === event.actor ? previous : [];
+    return withCardMoveHistory(bumpRevision({ ...state, cards: nextCards }), [...history, {
+      actor: event.actor, state: createGameStateCheckpoint(state),
+    }].slice(-CARD_MOVE_HISTORY_LIMIT));
+  }
   const nextState = reduceGameSyncEvent(state, event, requester);
   if (nextState === state || event.type === 'UNDO_CARD_MOVE') return nextState;
 

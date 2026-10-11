@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+import { useBoardMultiSelectionContext } from '../../contexts/gameBoardMultiSelectionContext';
 import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import Card, { type CardInspectAnchor, type CardInstance, type CardTapAnchor } from '../Card';
@@ -43,6 +45,8 @@ interface Props {
 }
 
 const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLookup, onInspectCard, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, onCardTapAction, onZoneTapAction, hideCards, layout = 'horizontal', isProtected, lockCards, disableQuickActionsForCard, getHighlightTone, viewerRole, containerStyle, isDebug }) => {
+  const { t } = useTranslation();
+  const selection = useBoardMultiSelectionContext();
   const zoneTapPointerStartRef = React.useRef<{ x: number; y: number } | null>(null);
   const [quickActionsHoveredCardId, setQuickActionsHoveredCardId] = React.useState<string | null>(null);
   const inputProfile = useGameBoardInputProfile();
@@ -239,6 +243,13 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
         >
           {displayLabel}
         </span>
+        {selection?.active && selection.canSelectZone(id) && <button type="button"
+          aria-label={t('gameBoard.multiSelect.all')}
+          onClick={() => selection.selectAll(id)}
+          style={{ pointerEvents: 'auto', minHeight: 32, padding: '3px 8px', borderRadius: 5, border: '1px solid #38bdf8', background: '#0f172a', color: '#7dd3fc', cursor: 'pointer', fontSize: '0.7rem' }}>
+          {t('gameBoard.multiSelect.all')}
+        </button>}
+
         <span
           style={{
             flex: '0 0 auto',
