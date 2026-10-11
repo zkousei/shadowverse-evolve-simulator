@@ -1,3 +1,4 @@
+import { GameBoardMultiSelectionContext } from '../../contexts/gameBoardMultiSelectionContext';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import Zone from './Zone';
@@ -474,4 +475,15 @@ describe('Zone', () => {
     });
     expect(screen.getByText('1')).toHaveStyle({ fontSize: '0.46rem' });
   });
+});
+
+it('makes zone select-all interactive even though its label chip is non-interactive', () => {
+  const selectAll = vi.fn();
+  render(<GameBoardMultiSelectionContext.Provider value={{ active: true, select: () => false, tone: () => undefined, selectAll, canSelectZone: () => true }}>
+    <Zone id="field-host" label="Field" cards={[]} />
+  </GameBoardMultiSelectionContext.Provider>);
+  const button = screen.getByRole('button', { name: 'gameBoard.multiSelect.all' });
+  expect(button).toHaveStyle({ pointerEvents: 'auto' });
+  fireEvent.click(button);
+  expect(selectAll).toHaveBeenCalledWith('field-host');
 });

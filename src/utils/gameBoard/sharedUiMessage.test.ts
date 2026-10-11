@@ -406,3 +406,11 @@ describe('sharedUiMessage', () => {
     )).toBe('Manually set: Opponent will go first!');
   });
 });
+
+it('formats a board batch as one localized summary without revealing card names', () => {
+  const t = ((key: string, options?: Record<string, unknown>) => `${key}:${JSON.stringify(options ?? {})}`) as TFunction;
+  const message = formatSharedUiMessage({ type: 'BOARD_BATCH_COMPLETED', actor: 'host', action: 'hp-', count: 2 }, 'guest', false, t);
+  expect(message).toContain('gameBoard.multiSelect.message');
+  expect(message).toContain('"count":2');
+  expect(message).toContain('gameBoard.multiSelect.actions.hp-');
+});

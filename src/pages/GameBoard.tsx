@@ -1,3 +1,6 @@
+import GameBoardMultiSelectionBar from '../components/gameBoard/GameBoardMultiSelectionBar';
+import { GameBoardMultiSelectionContext } from '../contexts/gameBoardMultiSelectionContext';
+import { useGameBoardMultiSelection } from '../hooks/gameBoard/useGameBoardMultiSelection';
 import React from 'react';
 import { DndContext } from '@dnd-kit/core';
 import { useTranslation } from 'react-i18next';
@@ -147,6 +150,7 @@ const GameBoard: React.FC = () => {
       };
   const { t } = useTranslation();
   const {
+    dispatchGameEvent,
     room, isSoloMode, isHost, isSpectator, role, status, connectionState, spectatorCount, maxSpectatorConnections, canInteract, canView, attemptReconnect, gameState, savedSessionCandidate, resumeSavedSession, discardSavedSession, searchZone, setSearchZone,
     showResetConfirm, setShowResetConfirm, coinMessage, turnMessage, cardPlayMessage, attackMessage, eventHistory, attackVisual, revealedCardsOverlay,
     cardStatLookup, cardDetailLookup,
@@ -270,7 +274,7 @@ const GameBoard: React.FC = () => {
     return (
       <button
         data-testid={`undo-move-${playerRole}`}
-        onClick={handleUndoCardMove}
+        onClick={() => { multiSelection.finish(); handleUndoCardMove(); }}
         disabled={!canUndo}
         className="glass-panel"
         style={{
@@ -386,6 +390,34 @@ const GameBoard: React.FC = () => {
     getAttackTargetFromCard,
     handleAttackTargetSelect,
   });
+  const multiSelection = useGameBoardMultiSelection({
+    gameState, role, isSoloMode,
+    available: canInteract && !isSpectator && (isSoloMode || connectionState === 'connected'),
+    blocked: Boolean(searchZone || topDeckCards.length || randomDiscardTargetRole || savedDeckImportTargetRole || showResetConfirm || showUndoConfirm || isMulliganModalOpen ||
+      isTopNInputOpen || isHandRevealDialogOpen || tokenSpawnTargetRole || evolveAutoAttachSelection || attackSourceCard),
+    dispatch: dispatchGameEvent,
+  });
+  const startMultiSelection = () => {
+    closeInspector();
+    clearAttackSource();
+    setActiveZoneActions(null);
+    multiSelection.start();
+  };
+  const selectionContext = {
+    active: multiSelection.active,
+    select: (card: CardInstance, shortcut: boolean) => {
+      const handled = multiSelection.select(card, shortcut);
+      if (handled) { closeInspector(); clearAttackSource(); setActiveZoneActions(null); }
+      return handled;
+    },
+    tone: multiSelection.tone,
+    selectAll: multiSelection.selectAll,
+    canSelectZone: (zone: string) => {
+      const side = zone.split('-')[1];
+      return (zone.startsWith('field-') || zone.startsWith('ex-')) &&
+        (isSoloMode || side === role) && (!multiSelection.side || side === multiSelection.side);
+    },
+  };
   const handleStartAttack = React.useCallback((cardId: string) => {
     closeInspector();
     startAttackMode(cardId);
@@ -712,9 +744,10 @@ const GameBoard: React.FC = () => {
 
   return (
     <DndContext onDragEnd={(event) => {
-      if (!canInteract) return;
+      if (!canInteract || multiSelection.active) return;
       handleDragEnd(event);
     }}>
+      <GameBoardMultiSelectionContext.Provider value={selectionContext}>
       <GameBoardInputProfileProvider value={inputProfile} boardDensity={boardDensity}>
         <div
           data-layout-profile={layoutProfile}
@@ -764,6 +797,12 @@ const GameBoard: React.FC = () => {
           onOpenReset={() => setShowResetConfirm(true)}
           onPhaseChange={setPhase}
           eventHistory={eventHistory}
+          selectionActive={multiSelection.active}
+          selectionControls={
+            <GameBoardMultiSelectionBar active={multiSelection.active} canStart={multiSelection.canStart}
+              count={multiSelection.targets.length} onStart={startMultiSelection} onClear={multiSelection.clear}
+              onFinish={multiSelection.finish} canRun={multiSelection.canRun} onRun={multiSelection.run} />
+          }
         />
 
         {isGuestConnectionBlocked && (
@@ -1350,6 +1389,7 @@ const GameBoard: React.FC = () => {
         />
         <GameBoardCardInspectorSection {...cardInspectorSectionProps} />
       </GameBoardInputProfileProvider>
+      </GameBoardMultiSelectionContext.Provider>
     </DndContext>
   );
 };

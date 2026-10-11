@@ -55,6 +55,7 @@ import { useGameBoardSystemActions } from './useGameBoardSystemActions';
 import { useGameBoardMulliganActions } from './useGameBoardMulliganActions';
 
 export type DispatchableGameSyncEvent =
+  | (Omit<Extract<GameSyncEvent, { type: 'BOARD_BATCH' }>, 'id' | 'actor'> & { actor?: PlayerRole })
   | { type: 'FLIP_SHARED_COIN'; actor?: PlayerRole }
   | { type: 'ROLL_SHARED_DIE'; actor?: PlayerRole }
   | { type: 'TOGGLE_READY'; actor?: PlayerRole }
@@ -440,6 +441,10 @@ export const useGameBoardLogic = () => {
       playSharedUiEffect(effect);
       pendingEffects.push(effect);
     };
+    if (event.type === 'BOARD_BATCH') {
+      queueSnapshotEffect({ type: 'BOARD_BATCH_COMPLETED', actor: event.actor, action: event.action,
+        count: new Set(event.targets.map(target => target.rootId)).size });
+    }
     const extractDestination =
       event.type === 'EXTRACT_CARD' || event.type === 'EXTRACT_CARDS_BATCH'
         ? event.destination
@@ -1562,6 +1567,7 @@ export const useGameBoardLogic = () => {
   ];
 
   return {
+    dispatchGameEvent,
     room, mode, isSoloMode, isHost, isSpectator, role, status, connectionState: visibleConnectionState, spectatorCount, maxSpectatorConnections: MAX_SPECTATOR_CONNECTIONS, canInteract, canView, attemptReconnect, gameState, savedSessionCandidate, resumeSavedSession, discardSavedSession, searchZone, setSearchZone,
     showResetConfirm, setShowResetConfirm, coinMessage, turnMessage, cardPlayMessage, attackMessage, attackHistory, eventHistory, attackVisual, revealedCardsOverlay,
     cardStatLookup, cardDetailLookup,

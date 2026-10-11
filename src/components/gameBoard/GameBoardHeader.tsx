@@ -40,6 +40,8 @@ type GameBoardHeaderProps = {
   onOpenReset?: () => void;
   onPhaseChange: (phase: SyncState['phase']) => void;
   eventHistory?: string[];
+  selectionControls?: React.ReactNode;
+  selectionActive?: boolean;
 };
 
 const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
@@ -74,6 +76,8 @@ const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
   onOpenReset,
   onPhaseChange,
   eventHistory,
+  selectionControls,
+  selectionActive = false,
 }) => {
   const { t } = useTranslation();
   const inputProfile = useGameBoardInputProfile();
@@ -89,6 +93,7 @@ const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
 
   return (
     <div
+      data-testid="gameboard-header"
       style={{
         position: 'relative',
         display: 'flex',
@@ -109,6 +114,7 @@ const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
     >
       <div
         style={{
+          visibility: selectionActive ? 'hidden' : undefined,
           display: 'flex',
           gap: isCompactControls ? compactLeftBlockGap : isOverviewControls ? '0.8rem' : '1rem',
           alignItems: 'center',
@@ -162,6 +168,8 @@ const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
           onOpenReset={onOpenReset}
         />
       ) : null}
+
+      {!selectionActive && selectionControls}
 
       {gameState.gameStatus === 'playing' && eventHistory && eventHistory.length > 0 && (
         <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
@@ -272,6 +280,7 @@ const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
         <div
           style={{
             display: 'flex',
+            visibility: selectionActive ? 'hidden' : undefined,
             flex: keepInlineCompactHeader ? undefined : isCompactControls ? '1 1 100%' : undefined,
             justifyContent: keepInlineCompactHeader ? 'flex-end' : isCompactControls ? 'flex-start' : 'flex-end',
             minWidth: 0,
@@ -289,6 +298,9 @@ const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
           />
         </div>
       )}
+      {selectionActive && <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', padding: '0 10px', borderRadius: 12, background: '#0f172a', border: '1px solid #38bdf8' }}>
+        {selectionControls}
+      </div>}
     </div>
   );
 };

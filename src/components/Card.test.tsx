@@ -1,3 +1,4 @@
+import { GameBoardMultiSelectionContext } from '../contexts/gameBoardMultiSelectionContext';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import Card, { type CardInstance } from './Card';
@@ -897,4 +898,119 @@ describe('Card', () => {
     expect(onQuickActionsHoverChange).toHaveBeenCalledWith('card-1', false);
   });
 
+});
+
+describe('board selection interaction', () => {
+  it('selects instead of inspecting or resting and shows related selection', () => {
+    const select = vi.fn(() => true);
+    const inspect = vi.fn();
+    const tap = vi.fn();
+    const { container } = render(<GameBoardMultiSelectionContext.Provider value={{ active: true, select, tone: () => 'related', selectAll: vi.fn(), canSelectZone: () => true }}>
+      <Card card={createCard()} onInspect={inspect} onTap={tap} />
+    </GameBoardMultiSelectionContext.Provider>);
+    const element = container.querySelector('[data-card-id]')!;
+    fireEvent.pointerDown(element, { button: 0, clientX: 10, clientY: 10 });
+    fireEvent.pointerUp(element, { button: 0, clientX: 10, clientY: 10 });
+    fireEvent.contextMenu(element);
+    expect(select).toHaveBeenCalledOnce();
+    expect(inspect).not.toHaveBeenCalled();
+    expect(tap).not.toHaveBeenCalled();
+    expect(element).toHaveAttribute('data-selection-tone', 'related');
+    expect(screen.queryByRole('button', { name: /Rest/ })).not.toBeInTheDocument();
+  });
+  it('passes the modifier shortcut to selection without interfering with normal taps', () => {
+    const select = vi.fn(() => true);
+    const { container } = render(<GameBoardMultiSelectionContext.Provider value={{ active: false, select, tone: () => undefined, selectAll: vi.fn(), canSelectZone: () => true }}>
+      <Card card={createCard()} />
+    </GameBoardMultiSelectionContext.Provider>);
+    const element = container.querySelector('[data-card-id]')!;
+    fireEvent.pointerDown(element, { button: 0, clientX: 10, clientY: 10, ctrlKey: true });
+    fireEvent.pointerUp(element, { button: 0, clientX: 10, clientY: 10, ctrlKey: true });
+    expect(select).toHaveBeenCalledWith(expect.objectContaining({ id: createCard().id }), true);
+  });
+});
+
+it('selects a card with the keyboard while selection mode is active', () => {
+  const select = vi.fn(() => true);
+  const { container } = render(<GameBoardMultiSelectionContext.Provider value={{ active: true, select, tone: () => undefined, selectAll: vi.fn(), canSelectZone: () => true }}>
+    <Card card={createCard()} />
+  </GameBoardMultiSelectionContext.Provider>);
+  fireEvent.keyDown(container.querySelector('[data-card-id]')!, { key: 'Enter' });
+  expect(select).toHaveBeenCalledWith(expect.objectContaining({ id: createCard().id }), false);
+});
+
+
+describe('multi-selection regressions', () => {
+  it.each(['ctrlKey', 'metaKey'])('preserves inspection and click propagation when %s selection is rejected', modifier => {
+    const onInspect = vi.fn();
+    const onClick = vi.fn();
+    const select = vi.fn(() => false);
+    const { container } = render(<div onClick={onClick}><GameBoardMultiSelectionContext.Provider value={{ active: false, select, tone: () => undefined, selectAll: vi.fn(), canSelectZone: () => true }}>
+      <Card card={createCard()} onInspect={onInspect} />
+    </GameBoardMultiSelectionContext.Provider></div>);
+    const element = container.querySelector('[data-card-id]')!;
+    const pointer = { button: 0, clientX: 10, clientY: 10, [modifier]: true };
+    fireEvent.pointerDown(element, pointer);
+    fireEvent.pointerUp(element, pointer);
+    fireEvent.click(element, { [modifier]: true });
+    expect(select).toHaveBeenCalled();
+    expect(onInspect).toHaveBeenCalledOnce();
+    expect(onClick).toHaveBeenCalledOnce();
+  });
+
+  it('preserves right-click rest when a Ctrl shortcut is rejected', () => {
+    const onTap = vi.fn();
+    const { container } = render(<GameBoardMultiSelectionContext.Provider value={{ active: false, select: () => false, tone: () => undefined, selectAll: vi.fn(), canSelectZone: () => true }}>
+      <Card card={createCard()} onTap={onTap} />
+    </GameBoardMultiSelectionContext.Provider>);
+    const element = container.querySelector('[data-card-id]')!;
+    fireEvent.pointerDown(element, { button: 0, ctrlKey: true });
+    fireEvent.contextMenu(element, { ctrlKey: true });
+    expect(onTap).toHaveBeenCalledWith('card-1');
+  });
+
+  it('consumes an accepted shortcut exactly once without inspecting, clicking or resting', () => {
+    const select = vi.fn(() => true);
+    const onInspect = vi.fn();
+    const onClick = vi.fn();
+    const onTap = vi.fn();
+    const { container } = render(<div onClick={onClick}><GameBoardMultiSelectionContext.Provider value={{ active: false, select, tone: () => undefined, selectAll: vi.fn(), canSelectZone: () => true }}>
+      <Card card={createCard()} onInspect={onInspect} onTap={onTap} />
+    </GameBoardMultiSelectionContext.Provider></div>);
+    const element = container.querySelector('[data-card-id]')!;
+    fireEvent.pointerDown(element, { button: 0, ctrlKey: true });
+    fireEvent.pointerUp(element, { button: 0, ctrlKey: true });
+    fireEvent.click(element, { ctrlKey: true });
+    fireEvent.contextMenu(element, { ctrlKey: true });
+    expect(select).toHaveBeenCalledOnce();
+    expect(onInspect).not.toHaveBeenCalled();
+    expect(onClick).not.toHaveBeenCalled();
+    expect(onTap).not.toHaveBeenCalled();
+    // A later keyboard click without a modifier must not inherit this shortcut.
+    fireEvent.click(element);
+    expect(onClick).toHaveBeenCalledOnce();
+  });
+
+  it('clears card and parent hover immediately when selection hides quick actions', () => {
+    const onQuickActionsHoverChange = vi.fn();
+    const context = { active: false, select: vi.fn(() => true), tone: () => undefined, selectAll: vi.fn(), canSelectZone: () => true };
+    const ui = (active: boolean) => <GameBoardMultiSelectionContext.Provider value={{ ...context, active }}>
+      <Card card={createCard()} onQuickActionsHoverChange={onQuickActionsHoverChange} />
+    </GameBoardMultiSelectionContext.Provider>;
+    const { container, rerender } = render(ui(false));
+    const element = container.querySelector('[data-card-id]')!;
+    fireEvent.pointerEnter(element);
+    expect(element).toHaveStyle({ zIndex: '140' });
+    expect(onQuickActionsHoverChange).toHaveBeenLastCalledWith('card-1', true);
+    rerender(ui(true));
+    expect(element).toHaveStyle({ zIndex: '1' });
+    expect(onQuickActionsHoverChange).toHaveBeenLastCalledWith('card-1', false);
+    fireEvent.pointerLeave(element);
+    rerender(ui(false));
+    expect(element).toHaveStyle({ zIndex: '1' });
+    fireEvent.pointerEnter(element);
+    expect(onQuickActionsHoverChange).toHaveBeenLastCalledWith('card-1', true);
+    fireEvent.pointerLeave(element);
+    expect(onQuickActionsHoverChange).toHaveBeenLastCalledWith('card-1', false);
+  });
 });

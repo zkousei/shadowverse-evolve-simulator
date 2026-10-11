@@ -397,6 +397,33 @@
     "mulligan_exchange": "Exchange (Mulligan)"
   },
   "gameBoard": {
+    "multiSelect": {
+      "help": "Selection help",
+      "stats": { "atk": "ATK", "hp": "HP", "counter": "Counter" },
+      "title": "Multiple card selection",
+      "start": "Select multiple",
+      "clear": "Clear selection",
+      "finish": "Exit selection",
+      "count": "{{count}} selected",
+      "all": "Select all",
+      "hiddenCard": "Face-down card",
+      "unavailable": "Select cards that all support this operation.",
+      "hint": "Select or deselect cards in one side’s Field / EX. Press Escape to exit.",
+      "relatedHint": "Evolution and linked cards count as one selection. Moving a selection also processes related cards using the existing rules.",
+      "message": "{{actor}} applied {{action}} to {{count}} selections",
+      "actions": {
+        "atk+": "Attack +1",
+        "atk-": "Attack -1",
+        "hp+": "Health +1",
+        "hp-": "Health -1",
+        "counter+": "Counter +1",
+        "counter-": "Counter -1",
+        "rest": "Rest",
+        "stand": "Stand",
+        "cemetery": "To cemetery",
+        "banish": "Banish"
+      }
+    },
     "deckRules": {
       "constructedTitle": "Constructed / Title: {{title}}",
       "constructedClass": "Constructed / Class: {{class}}",

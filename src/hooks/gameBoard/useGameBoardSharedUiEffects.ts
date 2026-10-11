@@ -170,6 +170,10 @@ export const useGameBoardSharedUiEffects = ({
     const translate = tRef.current;
     const usesPlayerLabels = isSoloMode || isSpectator;
 
+    if (effect.type === 'BOARD_BATCH_COMPLETED') {
+      pushEventHistory(formatSharedUiMessage(effect, role, usesPlayerLabels, translate));
+      return;
+    }
     if (effect.type === 'COIN_FLIP_RESULT') {
       showTimedCoinMessage(formatSharedUiMessage(effect, role, usesPlayerLabels, translate), 3000);
       return;

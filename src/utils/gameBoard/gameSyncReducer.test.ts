@@ -1,3 +1,4 @@
+import { getBoardUnits } from './gameBoardMultiSelection';
 import { describe, expect, it, vi } from 'vitest';
 import { initialState, type SyncState } from '../../types/game';
 import type { GameSyncEvent } from '../../types/sync';
@@ -3046,5 +3047,46 @@ describe('multi-step card move undo', () => {
     expect(rejected).toBe(moved);
     expect(applyGameSyncEvent(moved, { id: 'coin', type: 'FLIP_SHARED_COIN', actor: 'guest' })).toBe(moved);
     expect(undo(undo(rejected)).cards).toEqual(board().cards);
+  });
+});
+
+describe('atomic board batches', () => {
+  const card = (id: string, zone = 'field-host'): SyncState['cards'][number] => ({
+    id, cardId: id, name: id, image: '', zone, owner: 'host', baseCardType: 'follower',
+    isTapped: false, isFlipped: false, counters: { atk: 0, hp: 0 },
+  });
+  const state = () => createState({ gameStatus: 'playing', cards: [card('a'), card('b')] });
+  it('applies all cards in one revision and restores all cards with one undo', () => {
+    const before = state();
+    const event: GameSyncEvent = { id: 'batch', actor: 'host', type: 'BOARD_BATCH', turnCount: initialState.turnCount, turnPlayer: initialState.turnPlayer, targets: getBoardUnits(before.cards, 'host'), action: 'hp-' };
+    const next = applyGameSyncEvent(before, event);
+    expect(next.cards.map(c => c.counters.hp)).toEqual([-1, -1]);
+    expect(next.revision).toBe(before.revision + 1);
+    expect(next.cardMoveHistory).toHaveLength(1);
+    const undone = applyGameSyncEvent(next, { id: 'undo', actor: 'host', type: 'UNDO_CARD_MOVE' });
+    expect(undone.cards).toEqual(before.cards);
+  });
+  it('rejects unauthorized, stale and mixed side requests without partial changes', () => {
+    const before = state();
+    const targets = getBoardUnits(before.cards, 'host');
+    const event: GameSyncEvent = { id: 'batch', actor: 'host', type: 'BOARD_BATCH', turnCount: initialState.turnCount, turnPlayer: initialState.turnPlayer, targets, action: 'cemetery' };
+    expect(applyGameSyncEvent(before, event, 'guest')).toBe(before);
+    expect(applyGameSyncEvent(before, { ...event, actor: 'guest' })).toBe(before);
+    expect(applyGameSyncEvent(before, { ...event, targets: [targets[0], { rootId: 'missing', signature: '' }] })).toBe(before);
+    const preparing = { ...before, gameStatus: 'preparing' as const };
+    expect(applyGameSyncEvent(preparing, event)).toBe(preparing);
+    const moved = { ...before, cards: before.cards.map(c => c.id === 'b' ? { ...c, zone: 'ex-host' } : c) };
+    expect(applyGameSyncEvent(moved, event)).toBe(moved);
+  });
+  it('does not add undo history for a no-op and restores evolution/link topology on undo', () => {
+    const before = state();
+    const targets = getBoardUnits(before.cards, 'host');
+    expect(applyGameSyncEvent(before, { id: 'noop', type: 'BOARD_BATCH', turnCount: initialState.turnCount, turnPlayer: initialState.turnPlayer, actor: 'host', targets, action: 'counter-' })).toBe(before);
+    const evolved = { ...before, cards: [card('a'), { ...card('middle'), attachedTo: 'a' }, { ...card('e'), attachedTo: 'a', isEvolveCard: true }, { ...card('link'), linkedTo: 'a', isTokenCard: true }] };
+    const moved = applyGameSyncEvent(evolved, { id: 'move', type: 'BOARD_BATCH', turnCount: initialState.turnCount, turnPlayer: initialState.turnPlayer, actor: 'host', targets: getBoardUnits(evolved.cards, 'host'), action: 'banish' });
+    expect(moved.cards.find(c => c.id === 'e')?.zone).toBe('evolveDeck-host');
+    expect(moved.cards.find(c => c.id === 'link')).toBeUndefined();
+    expect(moved.cards.filter(c => c.zone === 'banish-host').map(c => c.id)).toEqual(['a', 'middle']);
+    expect(applyGameSyncEvent(moved, { id: 'undo', type: 'UNDO_CARD_MOVE', actor: 'host' }).cards).toEqual(evolved.cards);
   });
 });

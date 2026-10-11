@@ -1,3 +1,4 @@
+import type { BoardBatchAction, BoardUnitTarget } from '../utils/gameBoard/gameBoardMultiSelection';
 import type { CardInstance } from '../components/Card';
 import type { PlayerRole, SyncState, TokenOption } from './game';
 import type { TopDeckResult } from '../utils/card/cardLogic';
@@ -18,6 +19,7 @@ export type AttackTargetView =
   | { type: 'leader'; player: PlayerRole };
 
 export type GameSyncEvent =
+  | { id: string; type: 'BOARD_BATCH'; actor: PlayerRole; targets: BoardUnitTarget[]; action: BoardBatchAction; turnCount: number; turnPlayer: PlayerRole }
   | { id: string; type: 'FLIP_SHARED_COIN'; actor: PlayerRole }
   | { id: string; type: 'ROLL_SHARED_DIE'; actor: PlayerRole }
   | { id: string; type: 'TOGGLE_READY'; actor: PlayerRole }
@@ -68,6 +70,7 @@ type SharedUiOwnerContext = {
 };
 
 export type SharedUiEffect =
+  | { type: 'BOARD_BATCH_COMPLETED'; actor: PlayerRole; action: BoardBatchAction; count: number }
   | { type: 'COIN_FLIP_RESULT'; actor: PlayerRole; result: 'HEADS (表)' | 'TAILS (裏)' }
   | { type: 'DICE_ROLL_RESULT'; actor: PlayerRole; value: number }
   | { type: 'STARTER_DECIDED'; actor: PlayerRole; starter: PlayerRole; manual: boolean }

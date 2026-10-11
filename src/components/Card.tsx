@@ -1,3 +1,4 @@
+import { useBoardMultiSelectionContext } from '../contexts/gameBoardMultiSelectionContext';
 import React from 'react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { useTranslation } from 'react-i18next';
@@ -72,6 +73,9 @@ interface Props {
 
 const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideCurrentStats, highlightTone, onInspect, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, onCardTapAction, onQuickActionsHoverChange, isHidden, isLocked, quickActionsDisabled, disableCombatAndCounterControls, debugIndex }) => {
   const { t } = useTranslation();
+  const selection = useBoardMultiSelectionContext();
+  const selectionTone = selection?.tone(card.id);
+  const selectionShortcutHandledRef = React.useRef(false);
   const inspectPointerStartRef = React.useRef<{ x: number; y: number } | null>(null);
   const cardElementRef = React.useRef<HTMLElement | null>(null);
   const coarseActionSheetRef = React.useRef<HTMLDivElement | null>(null);
@@ -84,12 +88,12 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
   const isOverviewQuickActions = !isCoarseInput && boardDensity === 'overview';
   const cardSize = getCardSizeForInputProfile(inputProfile, boardDensity);
   const isInteractionLocked = isLocked || card.isLeaderCard || card.zone.startsWith('leader-');
-  const canShowQuickActionOverlay = !isHidden && !isInteractionLocked;
+  const canShowQuickActionOverlay = !isHidden && !isInteractionLocked && !selection?.active;
   const canToggleQuickActions = isCoarseInput && canShowQuickActionOverlay && !quickActionsDisabled;
   const { attributes, listeners, setNodeRef: setDraggableRef, transform } = useDraggable({
     id: card.id,
     data: { card },
-    disabled: isInteractionLocked
+    disabled: isInteractionLocked || Boolean(selection?.active)
   });
 
   const { isOver, setNodeRef: setDroppableRef } = useDroppable({
@@ -112,6 +116,13 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
       setIsQuickActionsOpen(false);
     }
   }, [canToggleQuickActions]);
+
+  React.useEffect(() => {
+    if (isDesktopQuickActionsHovered && !canShowQuickActionOverlay) {
+      setIsDesktopQuickActionsHovered(false);
+      onQuickActionsHoverChange?.(card.id, false);
+    }
+  }, [isDesktopQuickActionsHovered, canShowQuickActionOverlay, card.id, onQuickActionsHoverChange]);
 
   const updateCoarseSheetPlacement = React.useCallback(() => {
     if (!isCoarseInput || typeof window === 'undefined') return;
@@ -223,7 +234,7 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
     // Translate x/y for the drag
     transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
     zIndex: transform ? 999 : isDesktopQuickActionsHovered ? 140 : 1,
-    cursor: isInteractionLocked ? 'default' : 'grab',
+    cursor: selection?.active ? selection.canSelectZone(card.zone) ? 'pointer' : 'default' : isInteractionLocked ? 'default' : 'grab',
     touchAction: isCoarseInput ? 'none' : undefined,
     position: 'relative',
     width: `${cardSize.width}px`,
@@ -341,12 +352,38 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
     <div
       ref={setRefs}
       data-card-id={card.id}
+      data-selection-tone={selectionTone}
+      aria-label={selection?.active ? card.isFlipped || isHidden ? t('gameBoard.multiSelect.hiddenCard') : card.name : undefined}
+      aria-selected={selection?.active ? Boolean(selectionTone) : undefined}
       className="game-card"
-      style={{ ...style, border: isOver ? '2px solid var(--vivid-green-cyan)' : highlightStyle?.border ?? 'none', boxShadow: highlightStyle?.boxShadow, borderRadius: '4px' }}
+      style={{ ...style, border: selectionTone ? `2px solid ${selectionTone === 'selected' ? '#38bdf8' : '#7dd3fc'}` : isOver ? '2px solid var(--vivid-green-cyan)' : highlightStyle?.border ?? 'none', boxShadow: selectionTone ? '0 0 0 2px rgba(56,189,248,0.25)' : highlightStyle?.boxShadow, borderRadius: '4px' }}
       {...listeners}
       {...attributes}
+      aria-disabled={selection?.active ? !selection.canSelectZone(card.zone) : attributes['aria-disabled']}
+      role={selection?.active && selection.canSelectZone(card.zone) ? 'option' : attributes.role}
+      tabIndex={selection?.active && selection.canSelectZone(card.zone) ? 0 : attributes.tabIndex}
+      onClickCapture={(event) => {
+        if (selection?.active || (selectionShortcutHandledRef.current && (event.ctrlKey || event.metaKey))) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      }}
+      onKeyDown={(event) => {
+        if (selection?.active && (event.key === 'Enter' || event.key === ' ')) {
+          event.preventDefault();
+          selection.select(card, false);
+        } else listeners?.onKeyDown?.(event);
+      }}
       onPointerDownCapture={(event) => {
+        selectionShortcutHandledRef.current = false;
         if (event.button !== 0) return;
+        if (selection?.canSelectZone(card.zone) && (event.ctrlKey || event.metaKey) && selection.select(card, true)) {
+          selectionShortcutHandledRef.current = true;
+          inspectPointerStartRef.current = null;
+          event.stopPropagation();
+          return;
+        }
+
         if ((event.target as HTMLElement).closest('button')) return;
         inspectPointerStartRef.current = { x: event.clientX, y: event.clientY };
       }}
@@ -360,6 +397,9 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
         const deltaX = Math.abs(event.clientX - pointerStart.x);
         const deltaY = Math.abs(event.clientY - pointerStart.y);
         if (deltaX > 6 || deltaY > 6) return;
+
+        if (selection?.select(card, event.ctrlKey || event.metaKey)) return;
+        if (selection?.active) return;
 
         const tapActionHandled = onCardTapAction?.(card, {
           x: event.clientX,
@@ -391,6 +431,7 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
       }}
       onPointerCancel={() => {
         inspectPointerStartRef.current = null;
+        selectionShortcutHandledRef.current = false;
       }}
       onPointerEnter={() => {
         if (!isCoarseInput && canShowQuickActionOverlay) {
@@ -400,18 +441,19 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
       }}
       onPointerLeave={() => {
         setIsDesktopQuickActionsHovered(false);
-        if (!isCoarseInput && canShowQuickActionOverlay) {
+        if (!isCoarseInput && (canShowQuickActionOverlay || isDesktopQuickActionsHovered)) {
           onQuickActionsHoverChange?.(card.id, false);
         }
       }}
       onContextMenu={(e) => {
         e.preventDefault();
         inspectPointerStartRef.current = null;
-        if (isInteractionLocked) return;
+        if (isInteractionLocked || selection?.active || (selectionShortcutHandledRef.current && (e.ctrlKey || e.metaKey))) return;
         if (disableCombatAndCounterControls) return;
         onTap?.(card.id);
       }}
     >
+      {selectionTone && <span aria-hidden="true" style={{ position: 'absolute', top: 2, left: 2, zIndex: 150, background: selectionTone === 'selected' ? '#0284c7' : '#334155', color: 'white', borderRadius: 4, padding: '0 4px', pointerEvents: 'none' }}>✓</span>}
       {(isHidden || card.isFlipped) ? (
         <CardArtwork
           image={resolvedImage}

@@ -344,6 +344,33 @@
     }
   },
   "gameBoard": {
+    "multiSelect": {
+      "help": "複数選択の操作説明",
+      "stats": { "atk": "ATK", "hp": "HP", "counter": "カウンター" },
+      "title": "カードの複数選択",
+      "start": "複数選択",
+      "clear": "選択解除",
+      "finish": "終了",
+      "count": "{{count}}件選択中",
+      "all": "全選択",
+      "hiddenCard": "裏向きのカード",
+      "unavailable": "選択した全カードに適用できる操作のみ使用できます。",
+      "hint": "同じ側の場・EXのカードを押して選択／解除。Escで終了。",
+      "relatedHint": "進化・リンクは1件として選択します。移動時は関連カードも既存ルールに従って処理されます。",
+      "message": "{{actor}}が{{count}}件に「{{action}}」を実行",
+      "actions": {
+        "atk+": "攻撃力＋1",
+        "atk-": "攻撃力−1",
+        "hp+": "体力＋1",
+        "hp-": "体力−1",
+        "counter+": "カウンター＋1",
+        "counter-": "カウンター−1",
+        "rest": "レスト",
+        "stand": "スタンド",
+        "cemetery": "墓場へ",
+        "banish": "除外へ"
+      }
+    },
     "deckRules": {
       "constructedTitle": "構築戦 / タイトル: {{title}}",
       "constructedClass": "構築戦 / クラス: {{class}}",
