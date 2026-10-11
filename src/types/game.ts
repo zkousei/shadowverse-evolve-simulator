@@ -50,6 +50,7 @@ export type GameStateCheckpoint = Omit<SyncState,
 export interface CardMoveCheckpoint {
   actor: PlayerRole;
   state: GameStateCheckpoint;
+  numericGroup?: { key: string; lastRevision: number };
 }
 
 export const initialState: SyncState = {

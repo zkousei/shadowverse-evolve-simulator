@@ -124,3 +124,28 @@ test.describe('Solo Turn and Undo Flow', () => {
     await expect(phaseSelect).toHaveValue('End');
   });
 });
+
+
+test('undoes consecutive life adjustments together and preserves the preceding draw', async ({ page }) => {
+  await startSoloGame(page);
+  await boardSection(page, 'bottom').getByRole('button', { name: 'Draw Player 1', exact: true }).click();
+  const tracker = page.getByTestId('player-tracker-host');
+  const increase = page.getByTestId('player-tracker-host-hp-increase');
+  const decrease = page.getByTestId('player-tracker-host-hp-decrease');
+  await increase.click();
+  await increase.click();
+  await increase.click();
+  await decrease.click();
+  await expect(tracker.getByText('HP: 22', { exact: true })).toBeVisible();
+  await page.getByTestId('undo-move-host').click();
+  await expect(tracker.getByText('HP: 20', { exact: true })).toBeVisible();
+  await expect(zoneCards(page, 'hand-host')).toHaveCount(5);
+  await page.getByTestId('undo-move-host').click();
+  await expect(zoneCards(page, 'hand-host')).toHaveCount(4);
+  await expect(page.getByTestId('undo-move-host')).toBeDisabled();
+
+  await increase.click();
+  await decrease.click();
+  await expect(tracker.getByText('HP: 20', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('undo-move-host')).toBeDisabled();
+});

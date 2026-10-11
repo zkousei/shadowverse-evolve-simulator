@@ -1,10 +1,11 @@
-import { applyBoardBatch } from './gameBoardMultiSelection';
+import { closeNumericUndoGroup, handleNumericUndoNoop, recordUndoOperation } from './gameBoardNumericUndo';
+import { applyBoardBatch, canApplyBoardBatch } from './gameBoardMultiSelection';
 import { initialState, type SyncState } from '../../types/game';
 import type { GameSyncEvent } from '../../types/sync';
 import * as CardLogic from '../card/cardLogic';
 import { canImportDeck, isHandCardMovementLocked } from './gameRules';
 import { canDeclareAttack } from './attackUi';
-import { createGameStateCheckpoint, getCardMoveHistory, withCardMoveHistory, CARD_MOVE_HISTORY_LIMIT } from './gameBoardUndoHistory';
+import { createGameStateCheckpoint, getCardMoveHistory, withCardMoveHistory } from './gameBoardUndoHistory';
 
 type EventRequester = GameSyncEvent['actor'];
 
@@ -678,7 +679,7 @@ const reduceGameSyncEvent = (
   }
 };
 
-// These state changes each consume one undo step, just like a card move.
+// Numeric changes can share an undo step; other actions each consume one step.
 // Phase/setup/turn boundaries remain separate from operation undo.
 const undoableStateChanges = new Set<GameSyncEvent['type']>([
   'MODIFY_PLAYER_STAT', 'MODIFY_COUNTER', 'MODIFY_GENERIC_COUNTER',
@@ -692,6 +693,7 @@ export const applyGameSyncEvent = (
   requester: EventRequester = event.actor,
   { isSoloMode = false }: { isSoloMode?: boolean } = {},
 ): SyncState => {
+  if (event.type === 'FLIP_SHARED_COIN' || event.type === 'ROLL_SHARED_DIE') return closeNumericUndoGroup(state);
   if (undoableStateChanges.has(event.type) && !isActorRequester(requester, event.actor)) return state;
   if (event.type === 'BOARD_BATCH') {
     if (requester !== event.actor || state.gameStatus !== 'playing' ||
@@ -700,15 +702,13 @@ export const applyGameSyncEvent = (
       event.targets.some(target => !state.cards.some(card => card.id === target.rootId &&
         ['field-host', 'ex-host', 'field-guest', 'ex-guest'].includes(card.zone)))) return state;
     const nextCards = applyBoardBatch(state.cards, event.targets, event.action);
-    if (nextCards === state.cards) return state;
-    const previous = getCardMoveHistory(state);
-    const history = isSoloMode || previous.at(-1)?.actor === event.actor ? previous : [];
-    return withCardMoveHistory(bumpRevision({ ...state, cards: nextCards }), [...history, {
-      actor: event.actor, state: createGameStateCheckpoint(state),
-    }].slice(-CARD_MOVE_HISTORY_LIMIT));
+    if (nextCards === state.cards) return canApplyBoardBatch(state.cards, event.targets, event.action)
+      ? handleNumericUndoNoop(state, event) : state;
+    return recordUndoOperation(state, bumpRevision({ ...state, cards: nextCards }), event, createGameStateCheckpoint(state), isSoloMode);
   }
   const nextState = reduceGameSyncEvent(state, event, requester);
-  if (nextState === state || event.type === 'UNDO_CARD_MOVE') return nextState;
+  if (nextState === state) return handleNumericUndoNoop(state, event);
+  if (event.type === 'UNDO_CARD_MOVE') return nextState;
 
   const checkpoint = undoableStateChanges.has(event.type)
     ? createGameStateCheckpoint(state)
@@ -718,12 +718,7 @@ export const applyGameSyncEvent = (
   // Rejected/stateless events above preserve history. Other accepted mutations
   // are barriers by default, so new event types cannot silently cross history.
   if (checkpoint) {
-    const previous = getCardMoveHistory(state);
-    const history = isSoloMode || previous.at(-1)?.actor === event.actor ? previous : [];
-    return withCardMoveHistory(nextState, [...history, {
-      actor: event.actor,
-      state: checkpoint,
-    }].slice(-CARD_MOVE_HISTORY_LIMIT));
+    return recordUndoOperation(state, nextState, event, checkpoint, isSoloMode);
   }
   return withCardMoveHistory(nextState, []);
 };

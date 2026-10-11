@@ -196,6 +196,18 @@ describe('saved undo history', () => {
     expect(second.cardMoveHistory).toEqual([]);
   });
 
+  it('restores grouped history but starts a fresh numeric group after resume', () => {
+    const event = { id: 'stat', type: 'MODIFY_PLAYER_STAT' as const, actor: 'host' as const, playerKey: 'host' as const, stat: 'hp' as const, delta: -1 };
+    const start = buildState({ gameStatus: 'playing' });
+    const grouped = applyGameSyncEvent(applyGameSyncEvent(start, event), { ...event, id: 'second' });
+    expect(grouped.cardMoveHistory).toHaveLength(1);
+    const restored = parse(grouped)!;
+    const next = applyGameSyncEvent(restored, { ...event, id: 'after-resume' });
+    expect(next.cardMoveHistory).toHaveLength(2);
+    const undone = applyGameSyncEvent(next, { id: 'undo', type: 'UNDO_CARD_MOVE', actor: 'host' });
+    expect(undone.host.hp).toBe(grouped.host.hp);
+    expect(applyGameSyncEvent(undone, { id: 'undo-earlier', type: 'UNDO_CARD_MOVE', actor: 'host' }).host.hp).toBe(start.host.hp);
+  });
   it('migrates a legacy single checkpoint and removes nested backups', () => {
     const state = parse(buildState({
       cardMoveHistory: undefined,
