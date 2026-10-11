@@ -698,7 +698,7 @@ export const applyGameSyncEvent = (
       event.turnCount !== state.turnCount || event.turnPlayer !== state.turnPlayer ||
       !Array.isArray(event.targets) || event.targets.some(target => !target || typeof target.rootId !== 'string' || typeof target.signature !== 'string') ||
       event.targets.some(target => !state.cards.some(card => card.id === target.rootId &&
-        [`field-${event.actor}`, `ex-${event.actor}`].includes(card.zone)))) return state;
+        ['field-host', 'ex-host', 'field-guest', 'ex-guest'].includes(card.zone)))) return state;
     const nextCards = applyBoardBatch(state.cards, event.targets, event.action);
     if (nextCards === state.cards) return state;
     const previous = getCardMoveHistory(state);

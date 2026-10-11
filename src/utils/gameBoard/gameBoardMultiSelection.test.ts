@@ -92,3 +92,46 @@ describe('multiple attachments on one root', () => {
     expect(applyBoardBatch(reordered, units, 'cemetery')).toBe(reordered);
   });
 });
+
+
+it('moves mixed-side selections to each owner’s zones in source order', () => {
+  const cards = [boardCard('h1'), boardCard('g1', { owner: 'guest', zone: 'field-guest' }), boardCard('h2', { zone: 'ex-host' }), boardCard('g2', { owner: 'guest', zone: 'ex-guest' })];
+  const units = [...getBoardUnits(cards, 'guest'), ...getBoardUnits(cards, 'host')];
+  expect(applyBoardBatch(cards, units, 'rest').every(card => card.isTapped)).toBe(true);
+  expect(applyBoardBatch(cards, units, 'hp-').every(card => card.counters.hp === -1)).toBe(true);
+  for (const action of ['cemetery', 'banish'] as const) {
+    const moved = applyBoardBatch(cards, units, action);
+    expect(moved.filter(card => card.zone === `${action}-host`).map(card => card.id)).toEqual(['h1', 'h2']);
+    expect(moved.filter(card => card.zone === `${action}-guest`).map(card => card.id)).toEqual(['g1', 'g2']);
+  }
+  const changed = cards.map(card => card.id === 'g1' ? { ...card, isFlipped: true } : card);
+  const changedUnits = [...getBoardUnits(changed, 'host'), ...getBoardUnits(changed, 'guest')];
+  expect(applyBoardBatch(changed, changedUnits, 'hp-')).toBe(changed);
+  const stale = cards.map(card => card.id === 'g1' ? { ...card, zone: 'hand-guest' } : card);
+  expect(applyBoardBatch(stale, units, 'cemetery')).toBe(stale);
+});
+
+
+it('keeps both players’ evolved and linked units intact in a mixed batch', () => {
+  const host = evolved();
+  const guest = evolved().map(card => ({ ...card, id: `guest-${card.id}`, owner: 'guest' as const, zone: 'field-guest',
+    attachedTo: card.attachedTo ? `guest-${card.attachedTo}` : undefined,
+    linkedTo: card.linkedTo ? `guest-${card.linkedTo}` : undefined }));
+  const cards = [...host, ...guest];
+  const units = [...getBoardUnits(cards, 'host'), ...getBoardUnits(cards, 'guest')];
+  expect(units).toHaveLength(2);
+  const adjusted = applyBoardBatch(cards, units, 'hp-');
+  for (const group of [host, guest]) {
+    expect(adjusted.find(card => card.id === group[1].id)?.counters.hp).toBe(-1);
+    expect(adjusted.find(card => card.id === group[0].id)).toEqual(group[0]);
+    expect(adjusted.find(card => card.id === group[2].id)).toEqual(group[2]);
+  }
+  for (const action of ['cemetery', 'banish'] as const) {
+    const moved = applyBoardBatch(cards, units, action);
+    for (const group of [host, guest]) {
+      expect(moved.find(card => card.id === group[0].id)?.zone).toBe(`${action}-${group[0].owner}`);
+      expect(moved.find(card => card.id === group[1].id)?.zone).toBe(`evolveDeck-${group[1].owner}`);
+      expect(moved.find(card => card.id === group[2].id)?.zone).toBe(`${action}-${group[2].owner}`);
+    }
+  }
+});

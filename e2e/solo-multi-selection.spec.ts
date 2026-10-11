@@ -5,6 +5,36 @@ test.use({ locale: 'en-US' });
 for (const touch of [false, true]) {
   test.describe(touch ? 'Tablet multi selection' : 'Desktop multi selection', () => {
     test.use({ viewport: { width: touch ? 1024 : 1440, height: 900 }, hasTouch: touch });
+    test('selects both players’ cards and undoes their move together', async ({ page }) => {
+      await startSoloGame(page);
+      await spawnDefaultToken(page, 'bottom', 'field');
+      await spawnDefaultToken(page, 'bottom', 'ex');
+      await spawnDefaultToken(page, 'top', 'field');
+      const field = zoneCards(page, 'field-host').first();
+      const opponent = zoneCards(page, 'field-guest').first();
+      const bar = page.getByTestId('board-multi-selection-bar');
+      await bar.getByRole('button', { name: 'Select multiple', exact: true }).click();
+      if (touch) { await field.tap(); await opponent.tap(); }
+      else { await field.click(); await opponent.click(); }
+      await expect(bar.getByRole('status')).toHaveText('2 selected');
+      await zone(page, 'ex-host').getByRole('button', { name: 'Select all', exact: true }).click();
+      await expect(bar.getByRole('status')).toHaveText('3 selected');
+      await expect(opponent).toHaveAttribute('data-selection-tone', 'selected');
+      await bar.getByRole('button', { name: 'Health -1', exact: true }).click();
+      for (const zoneId of ['field-host', 'ex-host', 'field-guest']) {
+        await expect(zoneCards(page, zoneId).first().getByText('0', { exact: true })).toBeVisible();
+      }
+      await bar.getByRole('button', { name: 'To cemetery', exact: true }).click();
+      for (const zoneId of ['field-host', 'ex-host', 'field-guest']) {
+        await expect(zoneCards(page, zoneId)).toHaveCount(0);
+      }
+      await page.getByTestId('undo-move-host').click();
+      for (const zoneId of ['field-host', 'ex-host', 'field-guest']) {
+        await expect(zoneCards(page, zoneId)).toHaveCount(1);
+        await expect(zoneCards(page, zoneId).first().getByText('0', { exact: true })).toBeVisible();
+        await expect(zoneCards(page, zoneId).first()).not.toHaveAttribute('data-selection-tone');
+      }
+    });
     test('adjusts a selection across field and EX, moves it and undoes the entire move', async ({ page }, testInfo) => {
       await startSoloGame(page);
       await spawnDefaultToken(page, 'bottom', 'field');

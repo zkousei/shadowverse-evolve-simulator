@@ -20,7 +20,7 @@ export function useGameBoardMultiSelection({ gameState, role, isSoloMode, availa
   const active = selection.enabled && selection.boundary === boundary && canStart;
   const units = selection.targets.flatMap(target => {
     const unit = resolveBoardUnit(gameState.cards, target.rootId, 'host') ?? resolveBoardUnit(gameState.cards, target.rootId, 'guest');
-    return unit && unit.signature === target.signature && (isSoloMode || unit.side === role) ? [unit] : [];
+    return unit && unit.signature === target.signature ? [unit] : [];
   });
   // Adjust only this hook's state during render: stale selections disappear in
   // the same render, and cannot return when a dialog closes or undo restores cards.
@@ -30,7 +30,7 @@ export function useGameBoardMultiSelection({ gameState, role, isSoloMode, availa
     setSelection({ ...selection, targets: units.map(({ rootId, signature }) => ({ rootId, signature })) });
   }
   const targets = active ? units : [];
-  const side = targets[0]?.side;
+  const side = targets.length > 0 && targets.every(unit => unit.side === targets[0].side) ? targets[0].side : undefined;
   const finish = () => setSelection({ boundary, enabled: false, targets: [] });
   const setSelected = (update: BoardUnitTarget[] | ((previous: BoardUnitTarget[]) => BoardUnitTarget[])) => {
     setSelection(previous => ({ boundary, enabled: true, targets: typeof update === 'function' ? update(previous.targets) : update }));
@@ -47,7 +47,7 @@ export function useGameBoardMultiSelection({ gameState, role, isSoloMode, availa
   const select = (card: CardInstance, shortcut: boolean): boolean => {
     if (!canStart || (!active && !shortcut)) return false;
     const unit = resolveBoardUnit(gameState.cards, card.id, 'host') ?? resolveBoardUnit(gameState.cards, card.id, 'guest');
-    if (!unit || (!isSoloMode && unit.side !== role) || (side && side !== unit.side)) return active;
+    if (!unit) return active;
     setSelected(previous => previous.some(target => target.rootId === unit.rootId)
       ? previous.filter(target => target.rootId !== unit.rootId)
       : [...previous, { rootId: unit.rootId, signature: unit.signature }]);
@@ -56,14 +56,14 @@ export function useGameBoardMultiSelection({ gameState, role, isSoloMode, availa
   const selectAll = (zone: string) => {
     if (!active) return;
     const zoneSide = zone.split('-')[1];
-    if ((zoneSide !== 'host' && zoneSide !== 'guest') || (!isSoloMode && zoneSide !== role) || (side && side !== zoneSide)) return;
+    if (zoneSide !== 'host' && zoneSide !== 'guest') return;
     const additions = getBoardUnits(gameState.cards, zoneSide).filter(unit => gameState.cards.find(card => card.id === unit.rootId)?.zone === zone);
     setSelected([...new Map([...targets, ...additions].map(target => [target.rootId, { rootId: target.rootId, signature: target.signature }])).values()]);
   };
   const canRun = (action: BoardBatchAction) => active && canApplyBoardBatch(gameState.cards, targets, action);
   const run = (action: BoardBatchAction) => {
-    if (!canRun(action) || !side) return;
-    dispatch({ type: 'BOARD_BATCH', actor: side, targets: targets.map(({ rootId, signature }) => ({ rootId, signature })), action,
+    if (!canRun(action)) return;
+    dispatch({ type: 'BOARD_BATCH', actor: isSoloMode && side ? side : role, targets: targets.map(({ rootId, signature }) => ({ rootId, signature })), action,
       turnCount: gameState.turnCount, turnPlayer: gameState.turnPlayer });
     if (action === 'cemetery' || action === 'banish') finish();
   };

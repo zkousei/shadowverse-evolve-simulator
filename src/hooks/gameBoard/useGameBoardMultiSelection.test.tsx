@@ -7,17 +7,17 @@ const card = (id: string, overrides: Partial<CardInstance> = {}): CardInstance =
 const args = () => ({ gameState: { ...initialState, gameStatus: 'playing' as const, cards: [card('a'), card('b'), card('c', { zone: 'field-guest', owner: 'guest' })] }, role: 'host' as const, isSoloMode: true, available: true, blocked: false, dispatch: vi.fn() });
 
 describe('useGameBoardMultiSelection', () => {
-  it('keeps one side selected, supports zone selection and sends one event for all targets', () => {
+  it('supports mixed sides, zone selection and sends one event for all targets', () => {
     const props = args();
     const { result } = renderHook(() => useGameBoardMultiSelection(props));
     act(() => result.current.select(props.gameState.cards[0], true));
     act(() => result.current.selectAll('field-host'));
     act(() => result.current.select(props.gameState.cards[2], false));
-    expect(result.current.targets).toHaveLength(2);
+    expect(result.current.targets).toHaveLength(3);
     act(() => result.current.run('hp-'));
     expect(props.dispatch).toHaveBeenCalledOnce();
     expect(props.dispatch.mock.calls[0][0]).toMatchObject({ type: 'BOARD_BATCH', actor: 'host', action: 'hp-', targets: expect.any(Array) });
-    expect(result.current.targets).toHaveLength(2);
+    expect(result.current.targets).toHaveLength(3);
     act(() => result.current.run('cemetery'));
     expect(result.current.active).toBe(false);
   });
@@ -48,15 +48,52 @@ describe('useGameBoardMultiSelection', () => {
     rerender({ ...props, available: false });
     expect(result.current.active).toBe(false);
   });
-  it('rejects opponent selection in network play and distinguishes roots from related cards', () => {
+  it('selects both sides in network play and distinguishes roots from related cards', () => {
     const props = args();
     props.isSoloMode = false;
     props.gameState.cards.push(card('e', { attachedTo: 'a', isEvolveCard: true }));
     const { result } = renderHook(() => useGameBoardMultiSelection(props));
     act(() => result.current.select(props.gameState.cards[2], true));
-    expect(result.current.targets).toHaveLength(0);
+    expect(result.current.targets).toHaveLength(1);
+    act(() => result.current.clear());
     act(() => result.current.select(props.gameState.cards[3], true));
     expect(result.current.tone('a')).toBe('selected');
     expect(result.current.tone('e')).toBe('related');
   });
+});
+
+
+it.each(['host', 'guest'] as const)('allows %s to select the opponent field and EX but dispatches as the operator', role => {
+  const opponent = role === 'host' ? 'guest' : 'host';
+  const props = { ...args(), role, isSoloMode: false };
+  props.gameState.cards = [card('field', { zone: `field-${opponent}`, owner: opponent }), card('ex', { zone: `ex-${opponent}`, owner: opponent }), card('own', { zone: `field-${role}`, owner: role })];
+  const { result } = renderHook(() => useGameBoardMultiSelection(props));
+  act(() => result.current.select(props.gameState.cards[0], true));
+  act(() => result.current.selectAll(`ex-${opponent}`));
+  act(() => result.current.select(props.gameState.cards[2], false));
+  expect(result.current.targets.map(unit => unit.rootId)).toEqual(['field', 'ex', 'own']);
+  act(() => result.current.run('hp-'));
+  expect(props.dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: 'BOARD_BATCH', actor: role, action: 'hp-', targets: expect.arrayContaining([expect.objectContaining({ rootId: 'field' }), expect.objectContaining({ rootId: 'ex' })]) }));
+});
+
+
+it.each([true, false])('dispatches one mixed batch with the operator as actor (solo=%s)', isSoloMode => {
+  const props = { ...args(), isSoloMode, role: 'guest' as const };
+  const { result } = renderHook(() => useGameBoardMultiSelection(props));
+  act(() => result.current.start());
+  act(() => result.current.selectAll('field-host'));
+  act(() => result.current.selectAll('field-guest'));
+  expect(result.current.targets).toHaveLength(3);
+  act(() => result.current.run('cemetery'));
+  expect(props.dispatch).toHaveBeenCalledOnce();
+  expect(props.dispatch).toHaveBeenCalledWith(expect.objectContaining({ actor: 'guest', targets: expect.any(Array), action: 'cemetery' }));
+  expect(result.current.active).toBe(false);
+});
+
+it('keeps single-side solo operations attributed to that player', () => {
+  const props = args();
+  const { result } = renderHook(() => useGameBoardMultiSelection(props));
+  act(() => result.current.select(props.gameState.cards[2], true));
+  act(() => result.current.run('hp+'));
+  expect(props.dispatch).toHaveBeenCalledWith(expect.objectContaining({ actor: 'guest' }));
 });

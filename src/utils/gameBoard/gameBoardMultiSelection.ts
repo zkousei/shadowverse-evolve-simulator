@@ -59,7 +59,6 @@ const resolveTargets = (cards: CardInstance[], targets: BoardUnitTarget[]): Boar
     if (!unit || unit.rootId !== target.rootId || unit.signature !== target.signature) return null;
     units.set(unit.rootId, unit);
   }
-  if (new Set([...units.values()].map(unit => unit.side)).size !== 1) return null;
   return cards.flatMap(card => units.has(card.id) ? [units.get(card.id)!] : []);
 };
 
