@@ -3115,3 +3115,177 @@ it.each(['host', 'guest'] as const)('applies %s batches to opponent public zones
   expect(applyGameSyncEvent(next, { id: 'wrong-undo', type: 'UNDO_CARD_MOVE', actor: opponent }, opponent)).toBe(next);
   expect(applyGameSyncEvent(next, { id: 'undo', type: 'UNDO_CARD_MOVE', actor }, actor).cards).toEqual(cards);
 });
+
+
+describe('consecutive numeric undo groups', () => {
+  const board = () => createState({ gameStatus: 'playing', cards: ['a', 'b'].map(id => ({
+    id, cardId: id, name: id, image: '', zone: 'field-host', owner: 'host' as const,
+    baseCardType: 'follower' as const, isTapped: false, isFlipped: false, counters: { atk: 0, hp: 0 },
+  })) });
+  const change = (state: SyncState, delta: number, playerKey: 'host' | 'guest' = 'host', stat: 'hp' | 'maxPp' | 'pp' = 'hp') => applyGameSyncEvent(state, {
+    id: `stat-${state.revision}`, type: 'MODIFY_PLAYER_STAT', actor: 'host', playerKey, stat, delta,
+  });
+  const counter = (state: SyncState, delta: number, cardId = 'a', stat: 'atk' | 'hp' = 'atk') => applyGameSyncEvent(state, {
+    id: `card-${state.revision}`, type: 'MODIFY_COUNTER', actor: 'host', cardId, stat, delta,
+  });
+  const undo = (state: SyncState) => applyGameSyncEvent(state, { id: `undo-${state.revision}`, type: 'UNDO_CARD_MOVE', actor: 'host' });
+  const batch = (state: SyncState, action: 'atk+' | 'atk-' | 'hp+' | 'counter+' | 'counter-' | 'rest' | 'cemetery', ids = ['a', 'b']) => applyGameSyncEvent(state, {
+    id: `batch-${state.revision}`, type: 'BOARD_BATCH', actor: 'host', targets: getBoardUnits(state.cards, 'host').filter(unit => ids.includes(unit.rootId)).reverse(), action, turnCount: state.turnCount, turnPlayer: state.turnPlayer,
+  });
+
+  it('merges opposite directions while applying every revision immediately', () => {
+    const start = board();
+    const changed = change(change(change(start, 1), 2), -1);
+    expect(changed.host.hp).toBe(22);
+    expect(changed.revision).toBe(start.revision + 3);
+    expect(changed.cardMoveHistory).toHaveLength(1);
+    expect(undo(changed).host).toEqual(start.host);
+    expect(undo(changed).cardMoveHistory).toHaveLength(0);
+  });
+  it('keeps different players, cards and stats separate', () => {
+    let state = change(change(board(), 1), 1, 'guest');
+    state = counter(counter(counter(state, 1), 1, 'b'), 1, 'b', 'hp');
+    expect(state.cardMoveHistory).toHaveLength(5);
+    const last = undo(state);
+    expect(last.cards[1].counters).toEqual({ atk: 1, hp: 0 });
+  });
+  it('does not merge across card moves or undo back to an earlier group', () => {
+    let state = change(board(), -1);
+    state = applyGameSyncEvent(state, { id: 'move', type: 'MOVE_CARD', actor: 'host', cardId: 'a', overId: 'ex-host' });
+    state = change(state, -1);
+    expect(state.cardMoveHistory).toHaveLength(3);
+    state = undo(undo(state));
+    state = change(state, -1);
+    expect(state.cardMoveHistory).toHaveLength(2);
+    expect(undo(state).host.hp).toBe(19);
+    expect(undo(undo(state)).host.hp).toBe(20);
+  });
+  it('removes a fully cancelled numeric group while preserving previous moves', () => {
+    const moved = applyGameSyncEvent(board(), { id: 'move', type: 'MOVE_CARD', actor: 'host', cardId: 'a', overId: 'ex-host' });
+    const cancelled = change(change(moved, 3), -3);
+    expect(cancelled.cardMoveHistory).toHaveLength(1);
+    expect(undo(cancelled).cards).toEqual(board().cards);
+    const generic = (state: SyncState, delta: number) => applyGameSyncEvent(state, { id: `generic-${state.revision}`, type: 'MODIFY_GENERIC_COUNTER', actor: 'host', cardId: 'a', delta });
+    expect(generic(generic(moved, 1), -1).cardMoveHistory).toHaveLength(1);
+  });
+  it('restores limits and dependent PP without discarding a non-cancelled group', () => {
+    const start = { ...board(), host: { ...initialState.host, maxPp: 5, pp: 5 } };
+    const changed = change(change(start, -2, 'host', 'maxPp'), 2, 'host', 'maxPp');
+    expect(changed.host).toMatchObject({ maxPp: 5, pp: 3 });
+    expect(changed.cardMoveHistory).toHaveLength(1);
+    expect(undo(changed).host).toEqual(start.host);
+    const zero = { ...board(), host: { ...initialState.host, hp: 1 } };
+    const down = change(zero, -3);
+    const unchanged = change(down, -1);
+    expect(unchanged).toBe(down);
+    expect(undo(change(unchanged, 1)).host.hp).toBe(1);
+  });
+  it('groups batch numbers independently from single changes and non-numeric batches', () => {
+    const start = board();
+    let state = batch(batch(batch(start, 'atk+'), 'atk+'), 'atk-');
+    expect(state.cards.map(card => card.counters.atk)).toEqual([1, 1]);
+    expect(state.cardMoveHistory).toHaveLength(1);
+    expect(undo(state).cards).toEqual(start.cards);
+    state = batch(state, 'atk+', ['a']);
+    state = counter(state, 1);
+    state = batch(state, 'hp+');
+    state = batch(state, 'rest');
+    state = batch(state, 'atk+');
+    expect(state.cardMoveHistory).toHaveLength(6);
+  });
+  it('does not combine different actors in solo mode', () => {
+    const first = change(board(), -1);
+    const next = applyGameSyncEvent(first, { id: 'guest', type: 'MODIFY_PLAYER_STAT', actor: 'guest', playerKey: 'host', stat: 'hp', delta: -1 }, 'guest', { isSoloMode: true });
+    expect(next.cardMoveHistory).toHaveLength(2);
+  });
+  it('starts a new group after a shared roll without consuming an undo step', () => {
+    const first = change(board(), -1);
+    const rolled = applyGameSyncEvent(first, { id: 'roll', type: 'ROLL_SHARED_DIE', actor: 'host' });
+    expect(rolled.host.hp).toBe(19);
+    expect(rolled.cardMoveHistory).toHaveLength(1);
+    const next = change(rolled, -1);
+    expect(next.cardMoveHistory).toHaveLength(2);
+    expect(undo(next).host.hp).toBe(19);
+  });
+  it('restores repeated single-card numeric changes as one group', () => {
+    const start = board();
+    expect(undo(counter(counter(counter(start, 3), -1), 1)).cards).toEqual(start.cards);
+    const generic = (state: SyncState, delta: number) => applyGameSyncEvent(state, { id: `generic-${state.revision}`, type: 'MODIFY_GENERIC_COUNTER', actor: 'host', cardId: 'a', delta });
+    const changed = generic(generic(generic(start, 2), -1), 2);
+    expect(changed.cardMoveHistory).toHaveLength(1);
+    expect(undo(changed).cards).toEqual(start.cards);
+  });
+  it('does not reopen an older group after a newer group is cancelled', () => {
+    const first = counter(board(), 1);
+    const cancelled = change(change(first, 1), -1);
+    expect(cancelled.cardMoveHistory).toHaveLength(1);
+    expect(counter(cancelled, 1).cardMoveHistory).toHaveLength(2);
+  });
+  it('counts batch cancellation only when every target has returned to its original value', () => {
+    const start = board();
+    expect(batch(batch(start, 'atk+'), 'atk-').cardMoveHistory).toHaveLength(0);
+    const zero = batch(start, 'atk-');
+    expect(zero.cards.map(card => card.counters.atk)).toEqual([-1, -1]);
+    expect(batch(zero, 'atk+').cardMoveHistory).toHaveLength(0);
+  });
+  it('closes a group on a different capped number without adding an undo step', () => {
+    const first = change(board(), -1);
+    const unchangedPp = change(first, -1, 'host', 'pp');
+    expect(unchangedPp.host).toEqual(first.host);
+    expect(unchangedPp.cardMoveHistory).toHaveLength(1);
+    const next = change(unchangedPp, -1);
+    expect(next.cardMoveHistory).toHaveLength(2);
+    expect(undo(next).host.hp).toBe(19);
+  });
+  it('also closes a batch group on a different zero-valued counter', () => {
+    const first = batch(board(), 'atk+');
+    const zero = batch(first, 'counter-');
+    expect(zero.cards).toBe(first.cards);
+    expect(zero.cardMoveHistory).toHaveLength(1);
+    expect(batch(zero, 'atk+').cardMoveHistory).toHaveLength(2);
+  });
+  it('keeps A, B, A numeric operations as three independent undo steps', () => {
+    const start = board();
+    const first = counter(start, 1, 'a');
+    const second = counter(first, 1, 'b');
+    const third = counter(second, 1, 'a');
+    expect(third.cardMoveHistory).toHaveLength(3);
+    expect(undo(third).cards).toEqual(second.cards);
+    expect(undo(undo(third)).cards).toEqual(first.cards);
+    expect(undo(undo(undo(third))).cards).toEqual(start.cards);
+  });
+  it('groups identical batch target sets regardless of selection order', () => {
+    const start = board();
+    const first = batch(start, 'atk+');
+    const second = applyGameSyncEvent(first, {
+      id: 'reordered', type: 'BOARD_BATCH', actor: 'host', action: 'atk+',
+      targets: getBoardUnits(first.cards, 'host'), turnCount: first.turnCount, turnPlayer: first.turnPlayer,
+    });
+    expect(second.cards.map(card => card.counters.atk)).toEqual([2, 2]);
+    expect(second.cardMoveHistory).toHaveLength(1);
+    expect(undo(second).cards).toEqual(start.cards);
+  });
+  it('keeps a mixed bounded-counter batch when opposite deltas do not restore every value', () => {
+    const start = board();
+    start.cards[1] = { ...start.cards[1], genericCounter: 1 };
+    const changed = batch(batch(start, 'counter-'), 'counter+');
+    expect(changed.cards.map(card => card.genericCounter)).toEqual([1, 1]);
+    expect(changed.cardMoveHistory).toHaveLength(1);
+    expect(undo(changed).cards).toEqual(start.cards);
+  });
+  it('preserves a numeric group when a stale batch request is rejected', () => {
+    const first = batch(board(), 'atk+');
+    const rejected = applyGameSyncEvent(first, {
+      id: 'stale', type: 'BOARD_BATCH', actor: 'host', action: 'counter-',
+      targets: getBoardUnits(first.cards, 'host'), turnCount: first.turnCount + 1, turnPlayer: first.turnPlayer,
+    });
+    expect(rejected).toBe(first);
+    expect(batch(rejected, 'atk+').cardMoveHistory).toHaveLength(1);
+  });
+  it('ignores forged requests without closing a valid numeric group', () => {
+    const first = change(board(), -1);
+    const rejected = applyGameSyncEvent(first, { id: 'forged', type: 'MODIFY_COUNTER', actor: 'host', cardId: 'a', stat: 'atk', delta: 1 }, 'guest');
+    expect(rejected).toBe(first);
+    expect(change(rejected, -1).cardMoveHistory).toHaveLength(1);
+  });
+});

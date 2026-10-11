@@ -60,6 +60,81 @@ describe('useGameBoardLogic P2P reconnect', () => {
     expect(undone).toMatchObject({ state: { cards: [expect.objectContaining({ counters: { atk: 0, hp: 0 } }), expect.objectContaining({ counters: { atk: 0, hp: 0 } })] } });
   });
 
+  it.each(['continuous', 'reconnected', 'rolled', 'batch'] as const)('keeps numeric undo grouping authoritative for %s guest operations', scenario => {
+    const cards = ['a', 'b'].map((id, index) => ({ id, cardId: id, name: id, image: '', zone: index ? 'field-host' : 'field-guest', owner: index ? 'host' as const : 'guest' as const, isTapped: false, isFlipped: false, counters: { atk: 0, hp: 0 }, baseCardType: 'follower' as const }));
+    renderResumedHostHarness({ gameStatus: 'playing', turnPlayer: 'guest', cards });
+    const peer = mockPeerJs.peers[0];
+    let guest = mockPeerJs.createConnection('guest');
+    const spectator = mockPeerJs.createConnection('spectator', { connectionRole: 'spectator' });
+    act(() => {
+      peer.emit('open');
+      peer.emit('connection', guest); guest.open = true; guest.emit('open');
+      peer.emit('connection', spectator); spectator.open = true; spectator.emit('open');
+      guest.emit('data', { type: 'REQUEST_SNAPSHOT', lastKnownRevision: 0, source: 'guest' });
+    });
+    const initial = guest.send.mock.calls.map(([message]) => message as SyncMessage).findLast(message => message.type === 'STATE_SNAPSHOT');
+    if (initial?.type !== 'STATE_SNAPSHOT') throw new Error('Expected snapshot');
+    const event = scenario === 'batch'
+      ? { id: 'first', type: 'BOARD_BATCH', actor: 'guest', action: 'atk+', targets: [...getBoardUnits(initial.state.cards, 'host'), ...getBoardUnits(initial.state.cards, 'guest')], turnCount: initial.state.turnCount, turnPlayer: initial.state.turnPlayer }
+      : { id: 'first', type: 'MODIFY_PLAYER_STAT', actor: 'guest', playerKey: 'guest', stat: 'hp', delta: 2 };
+    act(() => guest.emit('data', { type: 'EVENT', event }));
+    if (scenario === 'reconnected') {
+      act(() => guest.emit('close'));
+      guest = mockPeerJs.createConnection('guest');
+      act(() => {
+        peer.emit('connection', guest); guest.open = true; guest.emit('open');
+        guest.emit('data', { type: 'REQUEST_SNAPSHOT', lastKnownRevision: 0, source: 'guest' });
+      });
+    }
+    if (scenario === 'rolled') act(() => guest.emit('data', { type: 'EVENT', event: { id: 'roll', type: 'ROLL_SHARED_DIE', actor: 'guest' } }));
+    spectator.send.mockClear();
+    const second = { ...event, id: 'second', ...(scenario === 'batch' ? { action: 'atk+' } : { delta: -1 }) };
+    const third = { ...event, id: 'third', ...(scenario === 'batch' ? { action: 'atk-' } : { delta: 2 }) };
+    act(() => {
+      guest.emit('data', { type: 'EVENT', event: second });
+      guest.emit('data', { type: 'EVENT', event: second });
+      guest.emit('data', { type: 'EVENT', event: third });
+    });
+    const updates = spectator.send.mock.calls.map(([message]) => message as SyncMessage).filter(message => message.type === 'STATE_SNAPSHOT');
+    expect(updates).toHaveLength(2);
+    expect(updates.at(-1)).toMatchObject({ state: { revision: initial.state.revision + 3, networkHasUndoableCardMove: true } });
+    act(() => guest.emit('data', { type: 'EVENT', event: { id: 'undo-group', type: 'UNDO_CARD_MOVE', actor: 'guest' } }));
+    const undone = spectator.send.mock.calls.map(([message]) => message as SyncMessage).findLast(message => message.type === 'STATE_SNAPSHOT');
+    const restoredHp = initial.state.guest.hp + (scenario === 'reconnected' || scenario === 'rolled' ? 2 : 0);
+    expect(undone).toMatchObject({ state: { guest: { hp: restoredHp }, cards: [expect.objectContaining({ counters: { atk: 0, hp: 0 } }), expect.objectContaining({ counters: { atk: 0, hp: 0 } })] } });
+  });
+
+  it.each(['single', 'batch'] as const)('does not send a completion or unchanged snapshot for a %s numeric boundary at zero', scenario => {
+    const cards = ['a', 'b'].map(id => ({ id, cardId: id, name: id, image: '', zone: 'field-host', owner: 'host' as const, isTapped: false, isFlipped: false, counters: { atk: 0, hp: 0 }, baseCardType: 'follower' as const }));
+    renderResumedHostHarness({ gameStatus: 'playing', turnPlayer: 'guest', cards });
+    const peer = mockPeerJs.peers[0];
+    const guest = mockPeerJs.createConnection('guest');
+    const spectator = mockPeerJs.createConnection('spectator', { connectionRole: 'spectator' });
+    act(() => {
+      peer.emit('open');
+      peer.emit('connection', guest); guest.open = true; guest.emit('open');
+      peer.emit('connection', spectator); spectator.open = true; spectator.emit('open');
+      guest.emit('data', { type: 'REQUEST_SNAPSHOT', lastKnownRevision: 0, source: 'guest' });
+    });
+    const snapshot = guest.send.mock.calls.map(([message]) => message as SyncMessage).findLast(message => message.type === 'STATE_SNAPSHOT');
+    if (snapshot?.type !== 'STATE_SNAPSHOT') throw new Error('Expected snapshot');
+    const first = scenario === 'batch'
+      ? { id: 'first', type: 'BOARD_BATCH', actor: 'guest', action: 'atk+', targets: getBoardUnits(snapshot.state.cards, 'host'), turnCount: snapshot.state.turnCount, turnPlayer: snapshot.state.turnPlayer }
+      : { id: 'first', type: 'MODIFY_PLAYER_STAT', actor: 'guest', playerKey: 'guest', stat: 'hp', delta: 1 };
+    act(() => guest.emit('data', { type: 'EVENT', event: first }));
+    guest.send.mockClear(); spectator.send.mockClear();
+    const noop = scenario === 'batch' ? { ...first, id: 'noop', action: 'counter-' } : { ...first, id: 'noop', stat: 'pp', delta: -1 };
+    act(() => guest.emit('data', { type: 'EVENT', event: noop }));
+    expect(guest.send).not.toHaveBeenCalled();
+    expect(spectator.send).not.toHaveBeenCalled();
+    act(() => {
+      guest.emit('data', { type: 'EVENT', event: { ...first, id: 'second' } });
+      guest.emit('data', { type: 'EVENT', event: { id: 'undo', type: 'UNDO_CARD_MOVE', actor: 'guest' } });
+    });
+    const undone = spectator.send.mock.calls.map(([message]) => message as SyncMessage).findLast(message => message.type === 'STATE_SNAPSHOT');
+    expect(undone).toMatchObject({ state: scenario === 'batch' ? { cards: [expect.objectContaining({ counters: { atk: 1, hp: 0 } }), expect.objectContaining({ counters: { atk: 1, hp: 0 } })] } : { guest: { hp: 21 } } });
+  });
+
   it('processes guest undo requests once each, retains history across reconnect, and never revives host history', () => {
     const { peer, guestConn } = connectHostWithGuestAndSpectator();
     fireEvent.click(screen.getByRole('button', { name: 'Spawn Token Batch to EX' }));

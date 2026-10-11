@@ -1,3 +1,4 @@
+import { closeNumericUndoGroup } from '../../utils/gameBoard/gameBoardNumericUndo';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -200,6 +201,12 @@ export const useGameBoardLogic = () => {
     setGameState(guardedState);
     gameStateRef.current = guardedState;
   }, []);
+
+  const finishNumericUndoGroup = useCallback(() => {
+    const current = gameStateRef.current;
+    const closed = closeNumericUndoGroup(current);
+    if (closed !== current) applyLocalState(closed);
+  }, [applyLocalState]);
 
   const setTopDeckCards = useCallback((cards: CardInstance[]) => {
     topDeckCardsRef.current = cards;
@@ -409,6 +416,7 @@ export const useGameBoardLogic = () => {
       return;
     }
 
+    if (event.type === 'FLIP_SHARED_COIN' || event.type === 'ROLL_SHARED_DIE') finishNumericUndoGroup();
     if (event.type === 'FLIP_SHARED_COIN') {
       const effect: SharedUiEffect = {
         type: 'COIN_FLIP_RESULT',
@@ -435,6 +443,9 @@ export const useGameBoardLogic = () => {
     const nextState = applyGameSyncEvent(currentState, event, requester, { isSoloMode });
     if (nextState === currentState) return;
     applyLocalState(nextState);
+    // A capped numeric operation may only close the local undo group.
+    // Its unchanged revision must not produce snapshots or completion effects.
+    if (nextState.revision === currentState.revision) return;
     const pendingEffects: SharedUiEffect[] = [];
     const queueSnapshotEffect = (effect: SharedUiEffect | null | undefined) => {
       if (!effect) return;
@@ -824,7 +835,7 @@ export const useGameBoardLogic = () => {
         sendSharedUiEffect(effect);
       }
     }
-  }, [applyLocalState, cardDetailLookupRef, isSoloMode, playSharedUiEffect, role, sendSharedUiEffect, sendSnapshot]);
+  }, [applyLocalState, cardDetailLookupRef, finishNumericUndoGroup, isSoloMode, playSharedUiEffect, role, sendSharedUiEffect, sendSnapshot]);
 
   const dispatchGameEvent = useCallback((event: DispatchableGameSyncEvent) => {
     if (!canInteract) {
@@ -1102,6 +1113,7 @@ export const useGameBoardLogic = () => {
   });
 
   const handleConnectionTermination = useCallback((kind: 'close' | 'error') => {
+    if (isHost) finishNumericUndoGroup();
     clearActiveConnectionLifecycleState();
 
     const terminationDecision = getConnectionTerminationDecision({
@@ -1116,10 +1128,11 @@ export const useGameBoardLogic = () => {
     }
 
     scheduleReconnect(terminationDecision.statusKey);
-  }, [clearActiveConnectionLifecycleState, isHost, scheduleReconnect]);
+  }, [clearActiveConnectionLifecycleState, finishNumericUndoGroup, isHost, scheduleReconnect]);
 
   const handleConnectionOpen = useCallback((conn: DataConnection, token: string) => {
     if (!isActiveConnectionToken(token)) return;
+    if (isHost) finishNumericUndoGroup();
 
     const openDecision = getConnectionOpenDecision({ isHost });
     setStatusKey(openDecision.statusKey);
@@ -1138,7 +1151,7 @@ export const useGameBoardLogic = () => {
     if (openDecision.shouldRequestSnapshot) {
       requestSnapshotWithRetry(conn, token);
     }
-  }, [isActiveConnectionToken, isHost, requestSnapshotWithRetry]);
+  }, [finishNumericUndoGroup, isActiveConnectionToken, isHost, requestSnapshotWithRetry]);
 
   const handleConnectionLifecycleEvent = useCallback((token: string, kind: 'close' | 'error') => {
     if (!isActiveConnectionToken(token)) return;
@@ -1209,6 +1222,7 @@ export const useGameBoardLogic = () => {
   }, [connectToHost, isHost]);
 
   const handlePeerTermination = useCallback((kind: 'disconnected' | 'error') => {
+    if (isHost) finishNumericUndoGroup();
     const terminationDecision = getPeerTerminationDecision({
       isHost,
       kind,
@@ -1243,7 +1257,7 @@ export const useGameBoardLogic = () => {
       if (!isHost) guestRecoveryAttemptsRef.current += 1;
       createPeerTransportRef.current?.();
     }, delay);
-  }, [clearReconnectTimer, isHost, resetTransientUiState, stopAutomaticGuestRecovery]);
+  }, [clearReconnectTimer, finishNumericUndoGroup, isHost, resetTransientUiState, stopAutomaticGuestRecovery]);
 
   const cleanupPeerLifecycle = useCallback((peer: Peer) => {
     clearReconnectTimer();

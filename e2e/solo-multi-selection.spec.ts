@@ -109,3 +109,27 @@ test('selects a three-card stack once and supports shortcut selection and zone s
   await expect(zoneCards(page, 'field-host')).toHaveCount(3);
   await expect(top.getByTestId('generic-counter-badge')).toHaveText('Counter1');
 });
+
+
+test('undoes repeated mixed-side numeric batches together', async ({ page }) => {
+  await startSoloGame(page);
+  await spawnDefaultToken(page, 'bottom', 'field');
+  await spawnDefaultToken(page, 'top', 'field');
+  const own = zoneCards(page, 'field-host').first();
+  const opponent = zoneCards(page, 'field-guest').first();
+  const bar = page.getByTestId('board-multi-selection-bar');
+  await bar.getByRole('button', { name: 'Select multiple', exact: true }).click();
+  await own.click();
+  await opponent.click();
+  await bar.getByRole('button', { name: 'Counter +1', exact: true }).click();
+  await bar.getByRole('button', { name: 'Counter +1', exact: true }).click();
+  await bar.getByRole('button', { name: 'Counter -1', exact: true }).click();
+  await expect(own.getByTestId('generic-counter-badge')).toHaveText('Counter1');
+  await expect(opponent.getByTestId('generic-counter-badge')).toHaveText('Counter1');
+  await page.getByTestId('undo-move-host').click();
+  await expect(own.getByTestId('generic-counter-badge')).toBeHidden();
+  await expect(opponent.getByTestId('generic-counter-badge')).toBeHidden();
+  await expect(zoneCards(page, 'field-host')).toHaveCount(1);
+  await expect(zoneCards(page, 'field-guest')).toHaveCount(1);
+  await expect(page.getByTestId('undo-move-guest')).toBeEnabled();
+});
