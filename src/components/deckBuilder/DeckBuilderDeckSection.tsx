@@ -1,4 +1,6 @@
 import React from 'react';
+import type { DeckRuleConfig } from '../../models/deckRule';
+import DeckBuilderRestrictionNotice from './DeckBuilderRestrictionNotice';
 import { Minus, Plus } from 'lucide-react';
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
 import type { DeckTargetSection } from '../../utils/deckBuilder/deckBuilderRules';
@@ -6,6 +8,7 @@ import type { DeckDisplayGroup } from '../../utils/deckBuilder/deckBuilderDispla
 
 type DeckBuilderDeckSectionProps = {
   title: string;
+  deckRuleConfig?: DeckRuleConfig;
   countLabel: React.ReactNode;
   countColor?: string;
   groupedCards: DeckDisplayGroup[];
@@ -31,6 +34,7 @@ type DeckBuilderDeckSectionProps = {
 
 const DeckBuilderDeckSection: React.FC<DeckBuilderDeckSectionProps> = ({
   title,
+  deckRuleConfig,
   countLabel,
   countColor = 'var(--text-muted)',
   groupedCards,
@@ -121,6 +125,7 @@ const DeckBuilderDeckSection: React.FC<DeckBuilderDeckSectionProps> = ({
                 >
                   {card.name}
                 </div>
+                <DeckBuilderRestrictionNotice card={card} section={targetSection} deckRuleConfig={deckRuleConfig} />
                 <div
                   style={{
                     fontSize: '0.7rem',

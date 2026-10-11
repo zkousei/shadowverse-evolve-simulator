@@ -1,11 +1,14 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus } from 'lucide-react';
+import type { DeckRuleConfig } from '../../models/deckRule';
+import type { DeckState } from '../../models/deckState';
+import DeckBuilderRestrictionNotice from './DeckBuilderRestrictionNotice';
 import CardArtwork from '../CardArtwork';
 import { getBaseCardType } from '../../models/cardClassification';
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
 import type { CardDetail } from '../../utils/card/cardDetails';
-import type { DeckTargetSection } from '../../utils/deckBuilder/deckBuilderRules';
+import { getCardAdditionProgress, type DeckTargetSection } from '../../utils/deckBuilder/deckBuilderRules';
 
 const ADD_ACTIONS: Record<
   DeckTargetSection,
@@ -45,6 +48,8 @@ const ADD_ACTIONS: Record<
 type DeckBuilderLibraryCardProps = {
   card: DeckBuilderCardData;
   detail?: CardDetail;
+  deckRuleConfig?: DeckRuleConfig;
+  deckState?: DeckState;
   allowedSections: DeckTargetSection[];
   canAddToSection: (section: DeckTargetSection) => boolean;
   onOpenPreview: (card: DeckBuilderCardData) => void;
@@ -54,12 +59,15 @@ type DeckBuilderLibraryCardProps = {
 const DeckBuilderLibraryCard: React.FC<DeckBuilderLibraryCardProps> = ({
   card,
   detail,
+  deckRuleConfig,
+  deckState,
   allowedSections,
   canAddToSection,
   onOpenPreview,
   onAddToSection,
 }) => {
   const { t } = useTranslation();
+  const restrictionSection = card.deck_section === 'evolve' ? 'evolve' : card.deck_section === 'main' ? 'main' : undefined;
 
   return (
     <div
@@ -91,6 +99,11 @@ const DeckBuilderLibraryCard: React.FC<DeckBuilderLibraryCardProps> = ({
           style={{ width: '100%', borderRadius: '4px' }}
           draggable={false}
         />
+        {restrictionSection && (
+          <span style={{ position: 'absolute', top: 6, right: 6 }}>
+            <DeckBuilderRestrictionNotice card={card} section={restrictionSection} deckRuleConfig={deckRuleConfig} />
+          </span>
+        )}
         {card.catalog_status === 'preview' && (
           <span
             style={{
@@ -130,6 +143,12 @@ const DeckBuilderLibraryCard: React.FC<DeckBuilderLibraryCardProps> = ({
         {allowedSections.map((section) => {
           const action = ADD_ACTIONS[section];
           const canAdd = canAddToSection(section);
+          const { count, limit } = getCardAdditionProgress(card, section, deckState, deckRuleConfig);
+          const progressLabel = limit === 0
+            ? t('deckBuilder.restriction.unavailable')
+            : limit === null
+              ? t('deckBuilder.restriction.unlimitedCount', { count })
+              : t('deckBuilder.restriction.progress', { count, limit });
 
           return (
             <button
@@ -151,10 +170,12 @@ const DeckBuilderLibraryCard: React.FC<DeckBuilderLibraryCardProps> = ({
                 cursor: canAdd ? 'pointer' : 'not-allowed',
               }}
               title={t(action.titleKey)}
+              aria-label={`${t(action.titleKey)}: ${progressLabel}`}
             >
               <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                {action.showPlus && <Plus size={16} color="#fff" />}
-                {action.label}
+                {action.showPlus && limit !== 0 && <Plus size={16} color="#fff" />}
+                {action.label && limit !== 0 && <span>{action.label}</span>}
+                <span>{progressLabel}</span>
               </span>
             </button>
           );

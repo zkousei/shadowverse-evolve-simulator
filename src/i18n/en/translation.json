@@ -1,5 +1,14 @@
 {
   "deckBuilder": {
+    "restriction": {
+      "limited": "Limited to {{limit}}",
+      "banned": "Banned",
+      "progress": "{{count}} / {{limit}}",
+      "unavailable": "Unavailable",
+      "unlimitedCount": "{{count}} copies",
+      "limitedDescription": "{{format}}: up to {{limit}} copy in {{section}}.",
+      "bannedDescription": "Banned in {{format}} ({{section}})."
+    },
     "deckArea": {
       "actions": {
         "exportDisabledTitle": "Resolve issues before exporting",
@@ -277,6 +286,7 @@
       "next": "Next"
     },
     "validation": {
+      "crossoverMainClassesInclude": "The Main Deck must include at least one card of each selected class: {{firstClass}} and {{secondClass}}.",
       "requireTitle": "Constructed decks require a selected title.",
       "requireClass": "Constructed decks require a selected class.",
       "requireCrossoverClasses": "Crossover decks require two different selected classes.",

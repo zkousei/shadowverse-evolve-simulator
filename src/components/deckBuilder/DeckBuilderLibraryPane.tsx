@@ -8,12 +8,16 @@ import type {
   DeckBuilderDeckSectionFilter,
 } from '../../utils/deckBuilder/deckBuilderFilters';
 import type { DeckTargetSection } from '../../utils/deckBuilder/deckBuilderRules';
+import type { DeckRuleConfig } from '../../models/deckRule';
+import type { DeckState } from '../../models/deckState';
 import DeckBuilderLibraryCard from './DeckBuilderLibraryCard';
 import DeckBuilderLibraryFilters from './DeckBuilderLibraryFilters';
 import DeckBuilderPaginationControls from './DeckBuilderPaginationControls';
 
 type DeckBuilderLibraryPaneProps = {
   isLoading: boolean;
+  deckRuleConfig?: DeckRuleConfig;
+  deckState?: DeckState;
   paginatedCards: DeckBuilderCardData[];
   cardDetailLookup: Record<string, CardDetail>;
   search: string;
@@ -64,6 +68,8 @@ type DeckBuilderLibraryPaneProps = {
 
 const DeckBuilderLibraryPane: React.FC<DeckBuilderLibraryPaneProps> = ({
   isLoading,
+  deckRuleConfig,
+  deckState,
   paginatedCards,
   cardDetailLookup,
   search,
@@ -171,6 +177,8 @@ const DeckBuilderLibraryPane: React.FC<DeckBuilderLibraryPaneProps> = ({
             <DeckBuilderLibraryCard
               key={card.id}
               card={card}
+              deckRuleConfig={deckRuleConfig}
+              deckState={deckState}
               detail={cardDetailLookup[card.id]}
               allowedSections={getAllowedSections(card)}
               canAddToSection={(section) => canAddToSection(card, section)}
