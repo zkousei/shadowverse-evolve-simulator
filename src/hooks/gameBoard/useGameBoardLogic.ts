@@ -1,3 +1,4 @@
+import { buildUndoLogEffect } from '../../utils/gameBoard/gameBoardUndoLog';
 import { closeNumericUndoGroup } from '../../utils/gameBoard/gameBoardNumericUndo';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -452,6 +453,8 @@ export const useGameBoardLogic = () => {
       playSharedUiEffect(effect);
       pendingEffects.push(effect);
     };
+    if (event.type === 'UNDO_CARD_MOVE') queueSnapshotEffect(buildUndoLogEffect(currentState, nextState, event.actor));
+    if (event.type === 'UNDO_LAST_TURN') queueSnapshotEffect({ type: 'UNDO_COMPLETED', actor: event.actor, summary: { kind: 'turn' } });
     if (event.type === 'BOARD_BATCH') {
       queueSnapshotEffect({ type: 'BOARD_BATCH_COMPLETED', actor: event.actor, action: event.action,
         count: new Set(event.targets.map(target => target.rootId)).size });

@@ -1,4 +1,5 @@
 import { type CardInstance } from '../components/Card';
+import type { UndoDescription } from '../utils/gameBoard/gameBoardUndoLog';
 import type { RuntimeBaseCardType } from '../utils/card/cardType';
 
 export type PlayerRole = 'host' | 'guest';
@@ -51,6 +52,7 @@ export interface CardMoveCheckpoint {
   actor: PlayerRole;
   state: GameStateCheckpoint;
   numericGroup?: { key: string; lastRevision: number };
+  description?: UndoDescription;
 }
 
 export const initialState: SyncState = {

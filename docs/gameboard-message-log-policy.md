@@ -2,6 +2,8 @@
 
 This document describes the current GameBoard policy for transient shared messages and Recent Events logs.
 
+For the current Undo specification, privacy rules, notification exceptions and verification limits, see [GameBoard Undoの現在仕様](gameboard-undo-current-spec.md). This includes the unmerged implementation on `codex/feature-public-undo-log`.
+
 It is intentionally separate from `public-private-info-guidelines.md`. The public/private guide answers "what information is safe to reveal"; this document answers "where should the resulting notification appear".
 
 ## Notification Surfaces
@@ -17,7 +19,9 @@ The GameBoard currently has two different notification surfaces:
 - Recent Events:
   - `eventHistory`
   - shown only while `gameStatus === 'playing'`
-  - capped at 5 entries
+  - capped at 100 entries (newest first; older entries are discarded)
+  - existing dropdown height stays bounded; older entries are reached by scrolling
+  - 100 is a practical bounded retention policy, not a measured maximum for every device
 
 ## General Policy
 
@@ -33,6 +37,8 @@ These actions show a transient message or overlay and also add a Recent Events e
 
 | Operation | Notes |
 | --- | --- |
+| Classified card movement Undo (including search, batch movement, and Look Top) | Successful restoration adds the same public-safe summary to Recent Events and a 3.2-second transient message. Private movements/Look use counts, without card names or deck order. Movement with no zone changes falls back to a generic log only; Look keeps its own classification. |
+| Shuffle Undo | Successful restoration adds a public-safe log and a 3.2-second transient message; no card names or deck order. |
 | Attack declaration | Shows attack message / visual, and logs the compact attack history entry. |
 | Reveal hand | Shows revealed-card overlay and logs revealed card names. |
 | Reveal searched cards to hand | Shows revealed-card overlay and logs revealed card names. |
@@ -50,6 +56,15 @@ These actions show a transient message or overlay and also add a Recent Events e
 | Banish to hand / field / EX | Logs card names because banish is public. |
 | Banish to bottom of deck | Logs card names because the source card was public. |
 | Evolve deck used/unused toggle during playing | Logs only during `playing`. Preparation-time toggles are message-only. |
+
+## Recent Events Only
+
+These actions add a log without showing a transient notification. Existing turn Undo confirmation remains unchanged.
+
+| Operation | Notes |
+| --- | --- |
+| Numeric / other operation / last turn Undo | Successful restoration adds a public-safe log only. Original logs remain. A card number detail is named only when both pre/post Undo states are public and face-up. Tap, face, token, attack and generic Undo also remain log-only. |
+| Legacy or unclassified movement Undo | Missing operation metadata, unknown zones, and movement with no zone changes (such as within-zone ordering or links) use a generic log without a transient notification. Restoration still occurs. |
 
 ## Message Only
 
@@ -81,8 +96,6 @@ These actions update state but do not currently create shared notification effec
 | Initial hand draw | Setup action; hand contents remain private. |
 | Mulligan | Setup action; hand/deck contents remain private. |
 | Deck import | Setup/deck state action. |
-| Undo last turn | State restoration action; no dedicated notification. |
-| Undo card move | State restoration action; no dedicated notification. |
 | Token spawn | Board state changes visually; no notification. |
 | Counter changes | Visible on the card. |
 | Tap / untap | Visible on the card. |

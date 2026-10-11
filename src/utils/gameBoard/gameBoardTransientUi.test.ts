@@ -6,10 +6,19 @@ import {
 } from './gameBoardTransientUi';
 
 describe('gameBoardTransientUi', () => {
-  it('prepends event history entries and caps them at five', () => {
-    expect(
-      prependEventHistoryEntry(['2', '3', '4', '5', '6'], '1')
-    ).toEqual(['1', '2', '3', '4', '5']);
+  it('retains the newest 100 event entries in order without changing previous history', () => {
+    const previous = Array.from({ length: 100 }, (_, index) => `Event ${100 - index}`);
+    const result = prependEventHistoryEntry(previous, 'Event 101');
+    expect(result).toHaveLength(100);
+    expect(result).toEqual(['Event 101', ...previous.slice(0, 99)]);
+    expect(previous).toHaveLength(100);
+    expect(previous.at(-1)).toBe('Event 1');
+  });
+
+  it('keeps entries beyond the old five-entry limit, including repeated text', () => {
+    let history: string[] = [];
+    for (let index = 0; index < 10; index += 1) history = prependEventHistoryEntry(history, 'Same event');
+    expect(history).toEqual(Array(10).fill('Same event'));
   });
 
   it('prepends attack history entries and caps them at three', () => {
