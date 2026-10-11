@@ -1,3 +1,4 @@
+import { buildUndoLogEffect } from './gameBoardUndoLog';
 import { describe, expect, it, vi } from 'vitest';
 import { applyGameSyncEvent } from './gameSyncReducer';
 import { initialState, type SyncState } from '../../types/game';
@@ -207,6 +208,19 @@ describe('saved undo history', () => {
     const undone = applyGameSyncEvent(next, { id: 'undo', type: 'UNDO_CARD_MOVE', actor: 'host' });
     expect(undone.host.hp).toBe(grouped.host.hp);
     expect(applyGameSyncEvent(undone, { id: 'undo-earlier', type: 'UNDO_CARD_MOVE', actor: 'host' }).host.hp).toBe(start.host.hp);
+  });
+  it('preserves only sanitized undo descriptions when resuming grouped history', () => {
+    const start = buildState({ gameStatus: 'playing' });
+    const event = { id: 'stat', type: 'MODIFY_PLAYER_STAT' as const, actor: 'host' as const, playerKey: 'host' as const, stat: 'hp' as const, delta: -1 };
+    const changed = applyGameSyncEvent(applyGameSyncEvent(start, event), { ...event, id: 'second' });
+    const restored = parse(changed)!;
+    const undone = applyGameSyncEvent(restored, { id: 'undo', type: 'UNDO_CARD_MOVE', actor: 'host' });
+    expect(buildUndoLogEffect(restored, undone, 'host')?.summary).toEqual({ kind: 'player-stat', player: 'host', changes: [{ stat: 'hp', from: 18, to: 20 }] });
+    const poisoned = parse({ ...changed, cardMoveHistory: [{ ...changed.cardMoveHistory![0], description: { kind: 'atk', cardId: 'private-id', name: 'Secret' } }] })!;
+    expect(poisoned.cardMoveHistory?.[0].description).toEqual({ kind: 'atk' });
+    const invalid = parse({ ...changed, cardMoveHistory: [{ ...changed.cardMoveHistory![0], description: { kind: 'look', counts: { hand: -1 } } }] })!;
+    expect(invalid.cardMoveHistory?.[0].description).toBeUndefined();
+    expect(invalid.cardMoveHistory).toHaveLength(1);
   });
   it('migrates a legacy single checkpoint and removes nested backups', () => {
     const state = parse(buildState({

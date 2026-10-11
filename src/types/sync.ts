@@ -1,3 +1,4 @@
+import type { PublicUndoSummary } from '../utils/gameBoard/gameBoardUndoLog';
 import type { BoardBatchAction, BoardUnitTarget } from '../utils/gameBoard/gameBoardMultiSelection';
 import type { CardInstance } from '../components/Card';
 import type { PlayerRole, SyncState, TokenOption } from './game';
@@ -70,6 +71,7 @@ type SharedUiOwnerContext = {
 };
 
 export type SharedUiEffect =
+  | { type: 'UNDO_COMPLETED'; actor: PlayerRole; summary: PublicUndoSummary }
   | { type: 'BOARD_BATCH_COMPLETED'; actor: PlayerRole; action: BoardBatchAction; count: number }
   | { type: 'COIN_FLIP_RESULT'; actor: PlayerRole; result: 'HEADS (表)' | 'TAILS (裏)' }
   | { type: 'DICE_ROLL_RESULT'; actor: PlayerRole; value: number }

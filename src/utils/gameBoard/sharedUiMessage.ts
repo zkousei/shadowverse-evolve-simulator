@@ -81,6 +81,31 @@ export const formatSharedUiMessage = (
   isSoloMode: boolean,
   t: TFunction
 ): string => {
+  if (effect.type === 'UNDO_COMPLETED') {
+    const actor = getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t);
+    const summary = effect.summary;
+    const statLabel = (stat: string) => t(`gameBoard.undoLog.stats.${stat}`);
+    const zoneLabel = (zone: string) => t(`gameBoard.undoLog.zones.${zone}`);
+    if (summary.kind === 'player-stat') return t('gameBoard.undoLog.playerStat', {
+      actor, owner: getSharedOwnerLabel(summary.player, viewerRole, isSoloMode, t),
+      changes: summary.changes.map(change => `${statLabel(change.stat)} ${change.from} → ${change.to}`).join(', '),
+    });
+    const cardStatLabel = (stat: string) => t(`gameBoard.undoLog.cardStats.${stat}`);
+    const modifierValue = (value: number) => summary.kind === 'card-stat' && summary.stat !== 'counter' && value > 0 ? `+${value}` : String(value);
+    if (summary.kind === 'card-stat') return summary.detail
+      ? t('gameBoard.undoLog.cardNamed', { actor, card: summary.detail.name, stat: cardStatLabel(summary.stat), from: modifierValue(summary.detail.from), to: modifierValue(summary.detail.to) })
+      : t('gameBoard.undoLog.cards', { actor, stat: cardStatLabel(summary.stat), count: summary.count });
+    if (summary.kind === 'look') {
+      const counts = Object.entries(summary.counts).filter(([, count]) => count > 0).map(([zone, count]) => `${zoneLabel(zone)}: ${count}`).join(', ');
+      return counts ? t('gameBoard.undoLog.look', { actor, counts }) : t('gameBoard.undoLog.lookPlain', { actor });
+    }
+    if (summary.kind === 'move') return t('gameBoard.undoLog.move', {
+      actor, moves: summary.moves.map(move => t(move.sourceOwner ? 'gameBoard.undoLog.moveDetailCross' : 'gameBoard.undoLog.moveDetail', {
+        owner: getSharedOwnerLabel(move.owner, viewerRole, isSoloMode, t), sourceOwner: getSharedOwnerLabel(move.sourceOwner ?? move.owner, viewerRole, isSoloMode, t), from: zoneLabel(move.from), to: zoneLabel(move.to), count: move.count,
+      })).join(', '),
+    });
+    return t(`gameBoard.undoLog.${summary.kind}`, { actor });
+  }
   if (effect.type === 'BOARD_BATCH_COMPLETED') {
     return t('gameBoard.multiSelect.message', {
       actor: getSharedActorLabel(effect.actor, viewerRole, isSoloMode, t),

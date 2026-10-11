@@ -9,6 +9,28 @@ import {
 
 test.use({ locale: 'en-US' });
 
+test('retains more than five logs in a scrollable dropdown without increasing header height', async ({ page }) => {
+  await startSoloGame(page);
+  for (let index = 0; index < 12; index += 1) {
+    await page.getByTestId('player-tracker-host-hp-increase').click();
+    await page.getByTestId('undo-move-host').click();
+  }
+  const trigger = page.getByTestId('gameboard-recent-events-trigger');
+  await expect(trigger).toContainText('12');
+  const header = page.getByTestId('gameboard-header');
+  const heightBefore = (await header.boundingBox())!.height;
+  await trigger.click();
+  const log = page.getByTestId('gameboard-recent-events');
+  const entries = log.getByText("Player 1 undid Player 1's stat adjustments (Life 21 → 20).", { exact: true });
+  await expect(entries).toHaveCount(12);
+  const scrollArea = entries.first().locator('..');
+  expect(await scrollArea.evaluate(element => element.scrollHeight > element.clientHeight)).toBe(true);
+  await entries.last().scrollIntoViewIfNeeded();
+  await expect(entries.last()).toBeInViewport();
+  expect(await scrollArea.evaluate(element => element.scrollTop)).toBeGreaterThan(0);
+  expect((await header.boundingBox())!.height).toBe(heightBefore);
+});
+
 test.describe('Solo Turn and Undo Flow', () => {
   test('undoes multiple moves across solo players and then still undoes the end turn', async ({ page }) => {
     await startSoloGame(page);
@@ -29,6 +51,10 @@ test.describe('Solo Turn and Undo Flow', () => {
     await page.getByRole('button', { name: /UNDO LAST END TURN/ }).click();
     await page.getByRole('dialog', { name: 'Undo Last End Turn' }).getByRole('button', { name: 'Yes, Undo' }).click();
     await expect(zoneCards(page, 'hand-guest')).toHaveCount(4);
+    await expect(page.getByRole('status').filter({ hasText: 'undid the end of turn' })).toHaveCount(0);
+    await page.getByTestId('gameboard-recent-events-trigger').click();
+    await expect(page.getByTestId('gameboard-recent-events')).toContainText('undid the end of turn');
+    await page.getByTestId('gameboard-recent-events-trigger').click();
     await expect(boardSection(page, 'bottom')).toHaveAttribute('data-turn-active', 'true');
     await expect(page.getByTestId('undo-move-host')).toBeDisabled();
     await expect(page.getByTestId('undo-move-guest')).toBeDisabled();
@@ -86,6 +112,15 @@ test.describe('Solo Turn and Undo Flow', () => {
     expect(await deck.evaluateAll(cards => cards.map(card => card.getAttribute('data-card-id')))).toEqual(shuffled);
     await page.getByTestId('undo-move-host').click();
     expect(await deck.evaluateAll(cards => cards.map(card => card.getAttribute('data-card-id')))).toEqual(before);
+    const notification = page.getByRole('status').filter({ hasText: 'undid a deck shuffle' });
+    await expect(notification).toHaveText('Player 1 undid a deck shuffle.');
+    await expect(notification.locator('img')).toHaveCount(0);
+    await expect(notification).not.toHaveAttribute('title');
+    await page.getByTestId('gameboard-recent-events-trigger').click();
+    const log = page.getByTestId('gameboard-recent-events');
+    await expect(log).toContainText('Player 1 undid a deck shuffle.');
+    await expect(notification).toBeHidden({ timeout: 5000 });
+    await expect(log).toContainText('Player 1 undid a deck shuffle.');
     await expect(page.getByTestId('undo-move-host')).toBeDisabled();
   });
 
@@ -139,9 +174,17 @@ test('undoes consecutive life adjustments together and preserves the preceding d
   await expect(tracker.getByText('HP: 22', { exact: true })).toBeVisible();
   await page.getByTestId('undo-move-host').click();
   await expect(tracker.getByText('HP: 20', { exact: true })).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: "Player 1 undid Player 1's stat adjustments (Life 22 → 20)." })).toHaveCount(0);
+  await page.getByTestId('gameboard-recent-events-trigger').click();
+  await expect(page.getByTestId('gameboard-recent-events')).toContainText('Life 22 → 20');
+  await page.getByTestId('gameboard-recent-events-trigger').click();
   await expect(zoneCards(page, 'hand-host')).toHaveCount(5);
   await page.getByTestId('undo-move-host').click();
   await expect(zoneCards(page, 'hand-host')).toHaveCount(4);
+  await expect(page.getByRole('status').filter({ hasText: 'Player 1 undid card movement' })).toContainText('Hand → Deck: 1');
+  await page.getByTestId('gameboard-recent-events-trigger').click();
+  await expect(page.getByTestId('gameboard-recent-events')).toContainText('Hand → Deck: 1');
+  await page.getByTestId('gameboard-recent-events-trigger').click();
   await expect(page.getByTestId('undo-move-host')).toBeDisabled();
 
   await increase.click();

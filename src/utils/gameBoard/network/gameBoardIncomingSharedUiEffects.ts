@@ -11,3 +11,15 @@ export const getIncomingSharedUiEffects = (message: SyncMessage): SharedUiEffect
 
   return [];
 };
+
+// Scope deduplication to the new undo logs; existing shared effects retain their behavior.
+export const createIncomingUndoLogFilter = () => {
+  let lastUndoRevision = -1;
+  return (message: SyncMessage): SharedUiEffect[] => {
+    const effects = getIncomingSharedUiEffects(message);
+    if (message.type !== 'STATE_SNAPSHOT' || !effects.some(effect => effect.type === 'UNDO_COMPLETED')) return effects;
+    if (message.state.revision <= lastUndoRevision) return effects.filter(effect => effect.type !== 'UNDO_COMPLETED');
+    lastUndoRevision = message.state.revision;
+    return effects;
+  };
+};

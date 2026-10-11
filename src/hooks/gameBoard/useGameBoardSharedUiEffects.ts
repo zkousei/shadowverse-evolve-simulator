@@ -5,7 +5,7 @@ import type { SharedUiEffect, SyncMessage, PublicCardView } from '../../types/sy
 import { formatSharedUiMessage, getSharedActorLabel } from '../../utils/gameBoard/sharedUiMessage';
 import { formatAttackEffect } from '../../utils/gameBoard/attackUi';
 import { formatCardPlayedEffect } from '../../utils/gameBoard/cardPlayUi';
-import { getIncomingSharedUiEffects } from '../../utils/gameBoard/network/gameBoardIncomingSharedUiEffects';
+import { createIncomingUndoLogFilter } from '../../utils/gameBoard/network/gameBoardIncomingSharedUiEffects';
 import {
   mergeLookTopSummaryIntoOverlay,
   prependAttackHistoryEntry,
@@ -53,6 +53,7 @@ export const useGameBoardSharedUiEffects = ({
   const cardPlayMessageTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const turnMessageTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingLookTopSummaryLinesRef = React.useRef<string[] | null>(null);
+  const incomingUndoLogFilterRef = React.useRef(createIncomingUndoLogFilter());
   const revealTopIsActiveRef = React.useRef(false);
 
   const clearCoinMessageTimer = React.useCallback(() => {
@@ -170,6 +171,14 @@ export const useGameBoardSharedUiEffects = ({
     const translate = tRef.current;
     const usesPlayerLabels = isSoloMode || isSpectator;
 
+    if (effect.type === 'UNDO_COMPLETED') {
+      const message = formatSharedUiMessage(effect, role, usesPlayerLabels, translate);
+      pushEventHistory(message);
+      if (effect.summary.kind === 'move' || effect.summary.kind === 'look' || effect.summary.kind === 'shuffle') {
+        showTimedCardPlayMessage(message, 3200);
+      }
+      return;
+    }
     if (effect.type === 'BOARD_BATCH_COMPLETED') {
       pushEventHistory(formatSharedUiMessage(effect, role, usesPlayerLabels, translate));
       return;
@@ -466,7 +475,7 @@ export const useGameBoardSharedUiEffects = ({
   const playIncomingSharedUiEffects = React.useCallback((
     message: Extract<SyncMessage, { type: 'SHARED_UI_EFFECT' }> | SnapshotMessage
   ) => {
-    for (const effect of getIncomingSharedUiEffects(message)) {
+    for (const effect of incomingUndoLogFilterRef.current(message)) {
       playSharedUiEffect(effect);
     }
   }, [playSharedUiEffect]);

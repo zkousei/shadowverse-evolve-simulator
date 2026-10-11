@@ -1,3 +1,4 @@
+import { describeUndoOperation } from './gameBoardUndoLog';
 import type { CardMoveCheckpoint, GameStateCheckpoint, SyncState } from '../../types/game';
 import type { GameSyncEvent } from '../../types/sync';
 import { resolveBoardUnit } from './gameBoardMultiSelection';
@@ -31,7 +32,7 @@ export const closeNumericUndoGroup = (state: SyncState): SyncState => {
   const history = getCardMoveHistory(state);
   if (!history.at(-1)?.numericGroup) return state;
   return withCardMoveHistory(state, history.map((entry, index) => index === history.length - 1
-    ? { actor: entry.actor, state: entry.state } : entry));
+    ? { ...entry, numericGroup: undefined } : entry));
 };
 
 export const handleNumericUndoNoop = (state: SyncState, event: GameSyncEvent): SyncState => {
@@ -53,6 +54,7 @@ export const recordUndoOperation = (
     latest.numericGroup?.key === key && latest.numericGroup.lastRevision === state.revision;
   const entry: CardMoveCheckpoint = {
     actor: event.actor, state: merge ? latest.state : checkpoint,
+    description: merge ? latest.description : describeUndoOperation(state, event),
     ...(key !== undefined ? { numericGroup: { key, lastRevision: nextState.revision } } : {}),
   };
   const prefix = merge ? history.slice(0, -1) : history;

@@ -344,6 +344,46 @@
     }
   },
   "gameBoard": {
+    "undoLog": {
+      "generic": "{{actor}} が直前の操作を取り消しました",
+      "playerStat": "{{actor}} が{{owner}}数値調整を取り消しました（{{changes}}）",
+      "cardNamed": "{{actor}} が「{{card}}」の{{stat}}調整を取り消しました（{{from}} → {{to}}）",
+      "cards": "{{actor}} がカード{{count}}枚の{{stat}}調整を取り消しました",
+      "look": "{{actor}} がルックの処理を取り消しました（{{counts}}）",
+      "lookPlain": "{{actor}} がルックの処理を取り消しました",
+      "move": "{{actor}} がカードの移動を取り消しました（{{moves}}）",
+      "moveDetailCross": "{{sourceOwner}}{{from}} → {{owner}}{{to}}: {{count}}枚",
+      "moveDetail": "{{owner}}{{from}} → {{to}}: {{count}}枚",
+      "orientation": "{{actor}} がレスト・スタンドの操作を取り消しました",
+      "face": "{{actor}} がカードの表裏変更を取り消しました",
+      "shuffle": "{{actor}} がシャッフルを取り消しました",
+      "token": "{{actor}} がトークンの作成を取り消しました",
+      "attack": "{{actor}} が攻撃を取り消しました",
+      "turn": "{{actor}} がターン終了を取り消しました",
+      "cardStats": {"atk": "ATK補正", "hp": "HP補正", "counter": "カウンター"},
+      "stats": {
+        "hp": "ライフ",
+        "pp": "PP",
+        "maxPp": "最大PP",
+        "ep": "EP",
+        "sep": "SEP",
+        "combo": "コンボ",
+        "atk": "ATK",
+        "counter": "カウンター"
+      },
+      "zones": {
+        "hand": "手札",
+        "deck": "山札",
+        "evolveDeck": "エボルヴデッキ",
+        "field": "場",
+        "ex": "EX",
+        "cemetery": "墓場",
+        "banish": "消滅",
+        "outside": "盤面外",
+        "top": "山札の上",
+        "bottom": "山札の下"
+      }
+    },
     "multiSelect": {
       "help": "複数選択の操作説明",
       "stats": { "atk": "ATK", "hp": "HP", "counter": "カウンター" },

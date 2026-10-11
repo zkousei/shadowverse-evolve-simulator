@@ -1,3 +1,4 @@
+import { undoBoard, undoFixtures, undoOperations } from '../../utils/gameBoard/testing/undoFixtures';
 import { getBoardUnits } from '../../utils/gameBoard/gameBoardMultiSelection';
 import { act, fireEvent, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -133,6 +134,134 @@ describe('useGameBoardLogic P2P reconnect', () => {
     });
     const undone = spectator.send.mock.calls.map(([message]) => message as SyncMessage).findLast(message => message.type === 'STATE_SNAPSHOT');
     expect(undone).toMatchObject({ state: scenario === 'batch' ? { cards: [expect.objectContaining({ counters: { atk: 1, hp: 0 } }), expect.objectContaining({ counters: { atk: 1, hp: 0 } })] } : { guest: { hp: 21 } } });
+  });
+
+  it.each(['numeric', 'draw', 'look'] as const)('logs a successful guest %s undo once using only public summary data', scenario => {
+    const cards = ['secret-a', 'secret-b'].map(id => ({ id, cardId: `catalog-${id}`, name: `Hidden-${id}`, image: `private-image-${id}`, zone: 'mainDeck-guest', owner: 'guest' as const, isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 }, baseCardType: 'follower' as const }));
+    renderResumedHostHarness({ gameStatus: 'playing', turnPlayer: 'guest', cards });
+    const peer = mockPeerJs.peers[0];
+    const guest = mockPeerJs.createConnection('guest');
+    const spectator = mockPeerJs.createConnection('spectator', { connectionRole: 'spectator' });
+    act(() => {
+      peer.emit('open');
+      peer.emit('connection', guest); guest.open = true; guest.emit('open');
+      peer.emit('connection', spectator); spectator.open = true; spectator.emit('open');
+      guest.emit('data', { type: 'REQUEST_SNAPSHOT', lastKnownRevision: 0, source: 'guest' });
+    });
+    act(() => {
+      const event = scenario === 'draw' ? { id: 'draw', type: 'DRAW_CARD', actor: 'guest' }
+        : scenario === 'look' ? { id: 'look', type: 'RESOLVE_TOP_DECK', actor: 'guest', results: [{ cardId: 'secret-a', action: 'hand' }, { cardId: 'secret-b', action: 'bottom' }] }
+        : { id: 'numeric', type: 'MODIFY_PLAYER_STAT', actor: 'guest', playerKey: 'guest', stat: 'hp', delta: 3 };
+      guest.emit('data', { type: 'EVENT', event });
+      if (scenario === 'numeric') guest.emit('data', { type: 'EVENT', event: { ...event, id: 'numeric-2', delta: -1 } });
+    });
+    const historyBefore = screen.getByTestId('event-history').textContent;
+    const notificationBefore = screen.getByTestId('card-play-message').textContent;
+    guest.send.mockClear(); spectator.send.mockClear();
+    const undo = { id: 'undo-visible', type: 'UNDO_CARD_MOVE', actor: 'guest' };
+    act(() => {
+      guest.emit('data', { type: 'EVENT', event: { ...undo, id: 'forged', actor: 'host' } });
+      guest.emit('data', { type: 'EVENT', event: undo });
+      guest.emit('data', { type: 'EVENT', event: undo });
+    });
+    const updates = spectator.send.mock.calls.map(([message]) => message as SyncMessage).filter(message => message.type === 'STATE_SNAPSHOT');
+    expect(updates).toHaveLength(1);
+    const effects = updates[0].pendingEffects;
+    expect(effects).toHaveLength(1);
+    expect(effects?.[0]).toMatchObject({ type: 'UNDO_COMPLETED', actor: 'guest', summary: { kind: scenario === 'numeric' ? 'player-stat' : scenario === 'look' ? 'look' : 'move' } });
+    expect(JSON.stringify(effects)).not.toMatch(/Hidden-|catalog-|private-image-|secret-a|secret-b|cardId|rootId|signature/);
+    expect(screen.getByTestId('event-history')).toHaveTextContent('gameBoard.undoLog');
+    expect(screen.getByTestId('event-history').textContent).not.toMatch(/Hidden-|catalog-|private-image-/);
+    if (scenario === 'numeric') {
+      expect(screen.getByTestId('card-play-message').textContent).toBe(notificationBefore);
+    } else {
+      expect(screen.getByTestId('card-play-message')).toHaveTextContent('gameBoard.undoLog');
+      expect(screen.getByTestId('card-play-message').textContent).not.toMatch(/Hidden-|catalog-|private-image-/);
+    }
+    if (historyBefore !== 'none') expect(screen.getByTestId('event-history').textContent).toContain(historyBefore!);
+    act(() => guest.emit('data', { type: 'EVENT', event: { ...undo, id: 'no-history' } }));
+    expect(spectator.send.mock.calls.filter(([message]) => (message as SyncMessage).type === 'STATE_SNAPSHOT')).toHaveLength(1);
+  });
+
+  it('logs turn undo only after a successful restoration and sends it once', () => {
+    renderResumedHostHarness({ gameStatus: 'playing', turnPlayer: 'guest' });
+    const peer = mockPeerJs.peers[0];
+    const guest = mockPeerJs.createConnection('guest');
+    act(() => { peer.emit('open'); peer.emit('connection', guest); guest.open = true; guest.emit('open'); });
+    const send = (id: string, type: 'END_TURN' | 'UNDO_LAST_TURN') => guest.emit('data', { type: 'EVENT', event: { id, type, actor: 'guest' } });
+    act(() => send('no-history', 'UNDO_LAST_TURN'));
+    expect(screen.getByTestId('event-history')).toHaveTextContent('none');
+    act(() => send('end', 'END_TURN'));
+    guest.send.mockClear();
+    act(() => { send('undo-turn', 'UNDO_LAST_TURN'); send('undo-turn', 'UNDO_LAST_TURN'); send('already-undone', 'UNDO_LAST_TURN'); });
+    expect(screen.getByTestId('turn-player')).toHaveTextContent('guest');
+    expect(screen.getByTestId('event-history')).toHaveTextContent('gameBoard.undoLog.turn');
+    expect(screen.getByTestId('card-play-message')).not.toHaveTextContent('gameBoard.undoLog');
+    const snapshots = guest.send.mock.calls.map(([message]) => message as SyncMessage).filter(message => message.type === 'STATE_SNAPSHOT');
+    expect(snapshots).toHaveLength(1);
+    expect(snapshots[0].pendingEffects).toEqual([{ type: 'UNDO_COMPLETED', actor: 'guest', summary: { kind: 'turn' } }]);
+  });
+
+  it.each(
+    ['/game?host=false&room=ROOM123', '/game?spectator=true&room=ROOM123'].flatMap(entry =>
+      undoOperations.map(operation => [entry, operation] as const)),
+  )('renders a received %s %s Undo once with notifications only for movement and shuffle', (entry, operation) => {
+    const { conn } = connectGuest(entry);
+    const { summary } = undoFixtures[operation](undoBoard('host'), 'host');
+    const message: SyncMessage = { type: 'STATE_SNAPSHOT', source: 'host', state: buildSyncState({ gameStatus: 'playing', revision: 2 }), pendingEffects: [{ type: 'UNDO_COMPLETED', actor: 'host', summary }] };
+    act(() => { conn.emit('data', message); conn.emit('data', message); });
+    expect(screen.getByTestId('event-history').textContent?.split(' || ')).toHaveLength(1);
+    if (summary.kind === 'move' || summary.kind === 'look' || summary.kind === 'shuffle') {
+      expect(screen.getByTestId('card-play-message')).toHaveTextContent('gameBoard.undoLog');
+      expect(screen.getByTestId('card-play-message').textContent).not.toMatch(/catalog-|private-image-/);
+    } else {
+      expect(screen.getByTestId('card-play-message')).toHaveTextContent('none');
+    }
+    expect(screen.getByTestId('revealed-overlay-title')).toHaveTextContent('none');
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
+  });
+
+  describe('every online operation Undo log', () => {
+    afterEach(() => vi.restoreAllMocks());
+    it.each(undoOperations)('synchronizes %s Undo once to both players and spectators', operation => {
+      vi.spyOn(Math, 'random').mockReturnValue(0);
+      const before = undoBoard('guest');
+      renderResumedHostHarness(before);
+      const peer = mockPeerJs.peers[0];
+      const guest = mockPeerJs.createConnection('guest');
+      const spectator = mockPeerJs.createConnection('spectator', { connectionRole: 'spectator' });
+      act(() => {
+        peer.emit('open');
+        peer.emit('connection', guest); guest.open = true; guest.emit('open');
+        peer.emit('connection', spectator); spectator.open = true; spectator.emit('open');
+        guest.emit('data', { type: 'REQUEST_SNAPSHOT', lastKnownRevision: 0, source: 'guest' });
+      });
+      const { event, summary } = undoFixtures[operation](before, 'guest');
+      act(() => guest.emit('data', { type: 'EVENT', event }));
+      guest.send.mockClear(); spectator.send.mockClear();
+      const request = { type: 'EVENT', event: { id: 'undo-every-kind', type: 'UNDO_CARD_MOVE', actor: 'guest' } };
+      act(() => {
+        guest.emit('data', { type: 'EVENT', event: { ...request.event, id: 'forged', actor: 'host' } });
+        guest.emit('data', request);
+        guest.emit('data', request);
+        guest.emit('data', { type: 'EVENT', event: { ...request.event, id: 'empty-history' } });
+      });
+      for (const connection of [guest, spectator]) {
+        const snapshots = connection.send.mock.calls.map(([message]) => message as SyncMessage).filter(message => message.type === 'STATE_SNAPSHOT');
+        expect(snapshots).toHaveLength(1);
+        expect(snapshots[0].state.cards).toEqual(before.cards);
+        expect(snapshots[0].state.host).toEqual(before.host);
+        expect(snapshots[0].state.guest).toEqual(before.guest);
+        expect(snapshots[0].pendingEffects).toEqual([{ type: 'UNDO_COMPLETED', actor: 'guest', summary }]);
+        expect(JSON.stringify(snapshots[0].pendingEffects)).not.toMatch(/catalog-|private-image-|cardId|rootId|signature|index|position/);
+      }
+      expect(screen.getByTestId('event-history').textContent?.match(/gameBoard\.undoLog/g)).toHaveLength(1);
+      if (summary.kind === 'move' || summary.kind === 'look' || summary.kind === 'shuffle') {
+        expect(screen.getByTestId('card-play-message')).toHaveTextContent('gameBoard.undoLog');
+      } else {
+        expect(screen.getByTestId('card-play-message')).not.toHaveTextContent('gameBoard.undoLog');
+      }
+    });
   });
 
   it('processes guest undo requests once each, retains history across reconnect, and never revives host history', () => {

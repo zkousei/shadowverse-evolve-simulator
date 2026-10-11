@@ -397,6 +397,46 @@
     "mulligan_exchange": "Exchange (Mulligan)"
   },
   "gameBoard": {
+    "undoLog": {
+      "generic": "{{actor}} undid the previous action.",
+      "playerStat": "{{actor}} undid {{owner}} stat adjustments ({{changes}}).",
+      "cardNamed": "{{actor}} undid {{card}}’s {{stat}} adjustment ({{from}} → {{to}}).",
+      "cards": "{{actor}} undid card {{stat}} adjustments (cards: {{count}}).",
+      "look": "{{actor}} undid Look Top ({{counts}}).",
+      "lookPlain": "{{actor}} undid Look Top.",
+      "move": "{{actor}} undid card movement ({{moves}}).",
+      "moveDetailCross": "{{sourceOwner}} {{from}} → {{owner}} {{to}}: {{count}}",
+      "moveDetail": "{{owner}} {{from}} → {{to}}: {{count}}",
+      "orientation": "{{actor}} undid a rest/stand operation.",
+      "face": "{{actor}} undid a card face change.",
+      "shuffle": "{{actor}} undid a deck shuffle.",
+      "token": "{{actor}} undid token creation.",
+      "attack": "{{actor}} undid an attack.",
+      "turn": "{{actor}} undid the end of turn.",
+      "cardStats": {"atk": "ATK modifier", "hp": "HP modifier", "counter": "Counter"},
+      "stats": {
+        "hp": "Life",
+        "pp": "PP",
+        "maxPp": "Max PP",
+        "ep": "EP",
+        "sep": "SEP",
+        "combo": "Combo",
+        "atk": "ATK",
+        "counter": "Counter"
+      },
+      "zones": {
+        "hand": "Hand",
+        "deck": "Deck",
+        "evolveDeck": "Evolve deck",
+        "field": "Field",
+        "ex": "EX",
+        "cemetery": "Cemetery",
+        "banish": "Banish",
+        "outside": "Off board",
+        "top": "Deck top",
+        "bottom": "Deck bottom"
+      }
+    },
     "multiSelect": {
       "help": "Selection help",
       "stats": { "atk": "ATK", "hp": "HP", "counter": "Counter" },

@@ -30,10 +30,12 @@ export const prependHistoryEntry = (
   limit: number
 ): string[] => [entry, ...previous].slice(0, limit);
 
+export const EVENT_HISTORY_LIMIT = 100;
+
 export const prependEventHistoryEntry = (
   previous: string[],
   entry: string
-): string[] => prependHistoryEntry(previous, entry, 5);
+): string[] => prependHistoryEntry(previous, entry, EVENT_HISTORY_LIMIT);
 
 export const prependAttackHistoryEntry = (
   previous: string[],

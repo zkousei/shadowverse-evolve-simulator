@@ -1,3 +1,4 @@
+import { sanitizeUndoDescription } from './gameBoardUndoLog';
 import { CARD_MOVE_HISTORY_LIMIT, createGameStateCheckpoint, withCardMoveHistory } from './gameBoardUndoHistory';
 import type { CardMoveCheckpoint, SyncState } from '../../types/game';
 
@@ -83,6 +84,7 @@ const normalizeSyncState = (state: SyncState): SyncState => {
   }
   const history: CardMoveCheckpoint[] = rawHistory.slice(-CARD_MOVE_HISTORY_LIMIT).map(entry => ({
     actor: entry.actor,
+    ...(sanitizeUndoDescription(entry.description) ? { description: sanitizeUndoDescription(entry.description) } : {}),
     state: createGameStateCheckpoint({
       ...entry.state,
       endStop: isEndStopState(entry.state.endStop) ? entry.state.endStop : { host: false, guest: false },
