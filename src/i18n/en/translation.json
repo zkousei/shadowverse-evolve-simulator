@@ -408,7 +408,7 @@
       "all": "Select all",
       "hiddenCard": "Face-down card",
       "unavailable": "Select cards that all support this operation.",
-      "hint": "Select or deselect cards in one side’s Field / EX. Press Escape to exit.",
+      "hint": "Select or deselect cards in both players’ Field / EX. Press Escape to exit.",
       "relatedHint": "Evolution and linked cards count as one selection. Moving a selection also processes related cards using the existing rules.",
       "message": "{{actor}} applied {{action}} to {{count}} selections",
       "actions": {

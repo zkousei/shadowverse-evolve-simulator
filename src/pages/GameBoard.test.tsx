@@ -1,3 +1,4 @@
+import { GameBoardMultiSelectionContext } from '../contexts/gameBoardMultiSelectionContext';
 import React from 'react';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -20,7 +21,7 @@ vi.mock('@dnd-kit/core', () => ({
 }));
 
 vi.mock('../components/gameBoard/Zone', () => ({
-  default: ({
+  default: function MockZone({
     id,
     label,
     cards,
@@ -38,9 +39,12 @@ vi.mock('../components/gameBoard/Zone', () => ({
     hideCards?: boolean;
     viewerRole?: string;
     containerStyle?: React.CSSProperties;
-  }) => (
+  }) {
+    const selection = React.useContext(GameBoardMultiSelectionContext);
+    return (
     <section
       data-testid={`zone-${id}`}
+      data-can-multi-select={String(Boolean(selection?.active && selection.canSelectZone(id)))}
       data-hide-cards={String(Boolean(hideCards))}
       data-viewer-role={viewerRole ?? ''}
       style={containerStyle}
@@ -72,7 +76,8 @@ vi.mock('../components/gameBoard/Zone', () => ({
         </div>
       ))}
     </section>
-  ),
+    );
+  },
 }));
 
 vi.mock('../components/gameBoard/CardSearchModal', () => ({
@@ -3335,4 +3340,14 @@ describe('GameBoard', () => {
       });
     }
   });
+});
+
+
+it.each(['host', 'guest'] as const)('exposes opponent Field and EX selection in online play as %s', role => {
+  const opponent = role === 'host' ? 'guest' : 'host';
+  mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({ mode: 'p2p', isSoloMode: false, isHost: role === 'host', role, connectionState: 'connected', canInteract: true, gameState: createGameState([], { gameStatus: 'playing', turnPlayer: role }) }));
+  render(<GameBoard />);
+  fireEvent.click(screen.getByRole('button', { name: 'Select multiple' }));
+  expect(screen.getByTestId(`zone-field-${opponent}`)).toHaveAttribute('data-can-multi-select', 'true');
+  expect(screen.getByTestId(`zone-ex-${opponent}`)).toHaveAttribute('data-can-multi-select', 'true');
 });

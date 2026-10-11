@@ -32,7 +32,7 @@ it('keeps instructions collapsed until help is opened', () => {
   render(<GameBoardMultiSelectionBar {...props()} />);
   const help = screen.getByRole('button', { name: 'Selection help' });
   expect(help).toHaveAttribute('aria-expanded', 'false');
-  expect(screen.queryByText('Select or deselect cards in one side’s Field / EX. Press Escape to exit.')).not.toBeInTheDocument();
+  expect(screen.queryByText('Select or deselect cards in both players’ Field / EX. Press Escape to exit.')).not.toBeInTheDocument();
   fireEvent.click(help);
   expect(help).toHaveAttribute('aria-expanded', 'true');
   expect(screen.getByTestId('multi-selection-help')).toBeVisible();

@@ -29,8 +29,8 @@ describe('useGameBoardLogic P2P reconnect', () => {
     vi.useRealTimers();
   });
 
-  it('synchronizes a guest board batch once, including its summary and atomic undo', () => {
-    const cards = ['a', 'b'].map(id => ({ id, cardId: id, name: id, image: '', zone: 'ex-guest', owner: 'guest' as const,
+  it.each(['guest', 'host', 'mixed'] as const)('synchronizes a guest batch on %s cards once, including its summary and atomic undo', targetSide => {
+    const cards = ['a', 'b'].map(id => ({ id, cardId: id, name: id, image: '', zone: `ex-${targetSide === 'mixed' ? id === 'a' ? 'guest' : 'host' : targetSide}`, owner: targetSide === 'mixed' ? id === 'a' ? 'guest' as const : 'host' as const : targetSide,
       baseCardType: 'follower' as const, isTapped: false, isFlipped: false, counters: { atk: 0, hp: 0 } }));
     renderResumedHostHarness({ gameStatus: 'playing', turnPlayer: 'guest', cards });
     const peer = mockPeerJs.peers[0];
@@ -45,7 +45,7 @@ describe('useGameBoardLogic P2P reconnect', () => {
     const snapshot = guest.send.mock.calls.map(([message]) => message as SyncMessage).findLast(message => message.type === 'STATE_SNAPSHOT');
     if (snapshot?.type !== 'STATE_SNAPSHOT') throw new Error('Expected initial snapshot');
     const event = { id: 'guest-batch', actor: 'guest', type: 'BOARD_BATCH', action: 'hp-',
-      targets: getBoardUnits(snapshot.state.cards, 'guest'), turnCount: snapshot.state.turnCount, turnPlayer: snapshot.state.turnPlayer };
+      targets: targetSide === 'mixed' ? [...getBoardUnits(snapshot.state.cards, 'host'), ...getBoardUnits(snapshot.state.cards, 'guest')] : getBoardUnits(snapshot.state.cards, targetSide), turnCount: snapshot.state.turnCount, turnPlayer: snapshot.state.turnPlayer };
     guest.send.mockClear(); spectator.send.mockClear();
     act(() => {
       guest.emit('data', { type: 'EVENT', event });

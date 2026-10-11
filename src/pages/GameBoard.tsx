@@ -415,7 +415,7 @@ const GameBoard: React.FC = () => {
     canSelectZone: (zone: string) => {
       const side = zone.split('-')[1];
       return (zone.startsWith('field-') || zone.startsWith('ex-')) &&
-        (isSoloMode || side === role) && (!multiSelection.side || side === multiSelection.side);
+        (side === 'host' || side === 'guest');
     },
   };
   const handleStartAttack = React.useCallback((cardId: string) => {
