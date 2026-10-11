@@ -178,6 +178,7 @@ const DeckBuilderDeckPane: React.FC<DeckBuilderDeckPaneProps> = ({
         />
 
         <DeckBuilderDeckSection
+          deckRuleConfig={deckRuleConfig}
           title={t('deckBuilder.deckArea.leader')}
           countLabel={`${leaderCount}/${leaderLimit}`}
           countColor={leaderCount >= leaderLimit ? 'var(--brand-accent)' : 'var(--text-muted)'}
@@ -195,6 +196,7 @@ const DeckBuilderDeckPane: React.FC<DeckBuilderDeckPaneProps> = ({
         />
 
         <DeckBuilderDeckSection
+          deckRuleConfig={deckRuleConfig}
           title={t('deckBuilder.deckArea.mainDeck')}
           countLabel={`${mainDeckCount}/${DECK_LIMITS.main}`}
           countColor={mainDeckCount >= 40 ? 'var(--vivid-green-cyan)' : 'var(--text-muted)'}
@@ -213,6 +215,7 @@ const DeckBuilderDeckPane: React.FC<DeckBuilderDeckPaneProps> = ({
         />
 
         <DeckBuilderDeckSection
+          deckRuleConfig={deckRuleConfig}
           title={t('deckBuilder.deckArea.evolveDeck')}
           countLabel={`${evolveDeckCount}/${DECK_LIMITS.evolve}`}
           groupedCards={groupedEvolveDeck}
@@ -228,6 +231,7 @@ const DeckBuilderDeckPane: React.FC<DeckBuilderDeckPaneProps> = ({
         />
 
         <DeckBuilderDeckSection
+          deckRuleConfig={deckRuleConfig}
           title={t('deckBuilder.deckArea.tokenDeck')}
           countLabel={tokenDeckCount}
           groupedCards={groupedTokenDeck}

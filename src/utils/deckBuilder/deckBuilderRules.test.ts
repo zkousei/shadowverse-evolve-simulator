@@ -7,6 +7,7 @@ import {
   canAddCardToDeckState,
   canAddCardToSection,
   getAllowedSections,
+  getCardAdditionProgress,
   getDeckLimit,
   getDeckValidationMessages,
   isCardAllowedByRule,
@@ -1089,5 +1090,63 @@ describe('deckBuilderRules', () => {
       // evolveCard should be limited to 1 in evolve
       expect(sanitized.evolveDeck.filter(c => getDisplayDedupKey(c) === getDisplayDedupKey(evolveCard))).toHaveLength(1);
     });
+  });
+});
+
+
+describe('card addition progress', () => {
+  const empty = { mainDeck: [], evolveDeck: [], leaderCards: [], tokenDeck: [] };
+  it('counts alternate printings with the same identity, separately in each section', () => {
+    expect(getCardAdditionProgress(mainCard, 'main', { ...empty, mainDeck: [mainCard, variantMainCard] })).toEqual({ count: 2, limit: 3 });
+    expect(getCardAdditionProgress(mainCard, 'evolve', { ...empty, mainDeck: [mainCard] })).toEqual({ count: 0, limit: 3 });
+  });
+  it('uses the same global and intrinsic limits as the add guard', () => {
+    const state = { ...empty, mainDeck: [{ ...mainCard, name: '機鋒の咎人・カットスロート' }, mainCard] };
+    expect(getCardAdditionProgress(mainCard, 'main', state)).toEqual({ count: 1, limit: 1 });
+    expect(canAddCardToDeckState(mainCard, 'main', state)).toBe(false);
+    expect(getCardAdditionProgress({ ...witchCard, name: 'ラピッドファイア', type: 'スペル' }, 'main', empty)).toEqual({ count: 0, limit: 6 });
+  });
+  it('uses leader slot capacity and does not invent a token copy limit', () => {
+    expect(getCardAdditionProgress(mainCard, 'leader', { ...empty, leaderCards: [mainCard] })).toEqual({ count: 1, limit: 1 });
+    expect(getCardAdditionProgress(mainCard, 'token', { ...empty, tokenDeck: [mainCard] })).toEqual({ count: 1, limit: null });
+  });
+});
+
+describe('restriction precedence and accepted import state', () => {
+  const empty = { mainDeck: [], evolveDeck: [], leaderCards: [], tokenDeck: [] };
+  it('keeps banned cards at zero with Cutthroat, including validation and import', () => {
+    const state = { ...empty, mainDeck: [cutthroatCard] };
+    expect(getCardAdditionProgress(bannedConstructedCard, 'main', state, constructedDragonRule)).toEqual({ count: 0, limit: 0 });
+    expect(canAddCardToDeckState(bannedConstructedCard, 'main', state, constructedDragonRule)).toBe(false);
+    const illegal = { ...state, mainDeck: [cutthroatCard, bannedConstructedCard] };
+    expect(validateDeckState(illegal, constructedDragonRule)).toContainEqual(expect.objectContaining({ code: 'too-many-copies', cardId: bannedConstructedCard.id, expected: 0, restrictionSource: 'policy-banned' }));
+    expect(sanitizeImportedDeckState(illegal, [cutthroatCard, bannedConstructedCard], constructedDragonRule).mainDeck).toEqual([cutthroatCard]);
+  });
+  it('does not apply a trigger removed by title rules', () => {
+    const card = { ...mainCard, title: 'Allowed title' };
+    const rule = { ...constructedRoyalRule, identityType: 'title' as const, selectedTitle: 'Allowed title' };
+    const state = { ...empty, mainDeck: [cutthroatCard, card, card] };
+    expect(sanitizeImportedDeckState(state, [cutthroatCard, card], rule).mainDeck).toEqual([card, card]);
+  });
+  it('does not apply a trigger discarded beyond the main deck capacity', () => {
+    const state = { ...empty, mainDeck: [...Array.from({ length: 50 }, (_, index) => ({ ...mainCard, id: `UNIQUE-${index}`, name: `Unique ${index}` })), cutthroatCard], evolveDeck: [evolveCard, evolveCard] };
+    const result = sanitizeImportedDeckState(state, [cutthroatCard, evolveCard]);
+    expect(result.mainDeck).toHaveLength(50);
+    expect(result.evolveDeck).toHaveLength(2);
+    expect(validateDeckState(result).filter(issue => issue.code === 'too-many-copies')).toEqual([]);
+  });
+  it.each(['main', 'evolve'] as const)('disables additions to a full %s deck even below the per-card limit', section => {
+    const card = section === 'main' ? mainCard : evolveCard;
+    const state = { ...empty, [section === 'main' ? 'mainDeck' : 'evolveDeck']: Array.from({ length: section === 'main' ? 50 : 10 }, (_, i) => ({ ...card, name: `Other ${i}` })) };
+    expect(canAddCardToDeckState(card, section, state)).toBe(false);
+  });
+});
+
+describe('crossover main-deck class requirements', () => {
+  it('rejects a main deck missing either selected class, even with both leaders present', () => {
+    const state = { mainDeck: Array.from({ length: 40 }, (_, index) => ({ ...(index === 0 ? neutralCard : mainCard), name: `Unique ${index}` })), evolveDeck: [{ ...evolveCard, class: CLASS.WITCH }], leaderCards: [royalLeaderCard, witchLeaderCard], tokenDeck: [] };
+    expect(validateDeckState(state, crossoverRule)).toContainEqual({ code: 'invalid-crossover-main-classes', deck: 'main' });
+    expect(getDeckValidationMessages(state, crossoverRule)).toContainEqual({ id: 'deckBuilder.validation.crossoverMainClassesInclude', params: { firstClass: 'ロイヤル', secondClass: 'ウィッチ' } });
+    expect(validateDeckState({ ...state, mainDeck: [...state.mainDeck, witchCard] }, crossoverRule).some(issue => issue.code === 'invalid-crossover-main-classes')).toBe(false);
   });
 });

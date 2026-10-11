@@ -613,6 +613,8 @@ const DeckBuilder: React.FC = () => {
     canGoPrev: page > 0,
     canGoNext: page < totalPages - 1,
     getAllowedSections,
+    deckRuleConfig,
+    deckState,
     canAddToSection: (card: DeckBuilderCardData, section: DeckTargetSection) => (
       canAddCardToDeckState(card, section, deckState, deckRuleConfig)
     ),

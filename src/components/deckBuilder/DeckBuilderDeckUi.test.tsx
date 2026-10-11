@@ -6,6 +6,7 @@ import DeckBuilderDeckPane from './DeckBuilderDeckPane';
 import DeckBuilderDeckSection from './DeckBuilderDeckSection';
 import DeckBuilderRulePanel from './DeckBuilderRulePanel';
 
+import { createDefaultDeckRuleConfig } from '../../models/deckRule';
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
 
 const sampleCard: DeckBuilderCardData = {
@@ -373,4 +374,22 @@ describe('DeckBuilder extracted UI components - deck', () => {
     expect(screen.getByText('Follower: 3 / Spell: 2 / Amulet: 1')).toBeInTheDocument();
     expect(screen.getAllByTestId('deck-section-summary')).toHaveLength(1);
   });
+});
+
+
+it('shows policy badges beside deck rows without duplicating the existing count', () => {
+  const card: DeckBuilderCardData = { ...sampleCard, name: '清浄の領域', class: 'ビショップ', type: 'アミュレット' };
+  const props = {
+    title: 'Main Deck', countLabel: '2/50', targetSection: 'main' as const,
+    groupedCards: [{ card, count: 1 }, { card: { ...card, id: 'alternate' }, count: 1 }],
+    removeTitle: 'Remove', addTitle: 'Add', canAddCard: () => false,
+    onRemove: vi.fn(), onAdd: vi.fn(), onCardMouseEnter: vi.fn(), onCardMouseMove: vi.fn(), onCardMouseLeave: vi.fn(),
+  };
+  const { rerender } = render(<DeckBuilderDeckSection {...props} deckRuleConfig={createDefaultDeckRuleConfig()} />);
+  expect(screen.getAllByText('Limited to 1')).toHaveLength(2);
+  expect(screen.queryByText(/Included:/)).not.toBeInTheDocument();
+  expect(screen.getAllByText('× 1')).toHaveLength(2);
+  expect(screen.getAllByTitle('Add').every(button => button.hasAttribute('disabled'))).toBe(true);
+  rerender(<DeckBuilderDeckSection {...props} deckRuleConfig={{ ...createDefaultDeckRuleConfig(), format: 'other' }} />);
+  expect(screen.queryByText('Limited to 1')).not.toBeInTheDocument();
 });

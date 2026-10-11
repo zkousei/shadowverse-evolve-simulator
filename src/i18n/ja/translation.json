@@ -1,5 +1,14 @@
 {
   "deckBuilder": {
+    "restriction": {
+      "limited": "{{limit}}枚制限",
+      "banned": "使用禁止",
+      "progress": "{{count}} / {{limit}}",
+      "unavailable": "追加不可",
+      "unlimitedCount": "{{count}}枚",
+      "limitedDescription": "{{format}}では、{{section}}に{{limit}}枚まで採用できます。",
+      "bannedDescription": "{{format}}では、{{section}}で使用禁止です。"
+    },
     "addActions": {
       "evolveLabel": "エボルヴデッキに追加",
       "mainLabel": "メインデッキに追加",
@@ -212,6 +221,7 @@
       "next": "次へ"
     },
     "validation": {
+      "crossoverMainClassesInclude": "メインデッキには、選択した2クラス（{{firstClass}}・{{secondClass}}）のカードをそれぞれ1枚以上入れてください。",
       "requireTitle": "構築戦ではタイトルの選択が必要です。",
       "requireClass": "構築戦ではクラスの選択が必要です。",
       "requireCrossoverClasses": "クロスオーバーでは異なる2つのクラス選択が必要です。",

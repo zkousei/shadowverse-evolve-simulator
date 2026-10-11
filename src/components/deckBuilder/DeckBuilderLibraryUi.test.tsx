@@ -6,6 +6,7 @@ import DeckBuilderLibraryPane from './DeckBuilderLibraryPane';
 import DeckBuilderPaginationControls from './DeckBuilderPaginationControls';
 
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
+import { createDefaultDeckRuleConfig } from '../../models/deckRule';
 import type { CardDetail } from '../../utils/card/cardDetails';
 
 const sampleCardDetail: CardDetail = {
@@ -273,4 +274,56 @@ describe('DeckBuilder extracted UI components - library', () => {
     expect(onOpenPreview).toHaveBeenCalledWith(sampleCard);
     expect(onAddToSection).toHaveBeenCalledWith(sampleCard, 'main');
   });
+});
+
+
+describe('library policy restriction display', () => {
+  const limitedCard: DeckBuilderCardData = { ...sampleCard, name: '清浄の領域', class: 'ビショップ', type: 'アミュレット', card_kind_normalized: 'amulet' as const };
+  const rule = createDefaultDeckRuleConfig();
+  const props = {
+    card: limitedCard,
+    allowedSections: ['main'] as const,
+    canAddToSection: () => false,
+    onOpenPreview: vi.fn(),
+    onAddToSection: vi.fn(),
+  };
+
+  it('shows the policy badge and counts other printings before and after switching format', () => {
+    const { rerender } = render(<DeckBuilderLibraryCard {...props} allowedSections={['main']}
+      deckRuleConfig={rule} deckState={{ mainDeck: [{ ...limitedCard, id: 'alternate' }], evolveDeck: [], leaderCards: [], tokenDeck: [] }} />);
+    expect(screen.getByText('Limited to 1')).toBeInTheDocument();
+    expect(screen.getByTitle('Add to Main Deck')).toHaveTextContent('1 / 1');
+    expect(screen.queryByText(/Included:/)).not.toBeInTheDocument();
+    expect(screen.getByTitle('Add to Main Deck')).toBeDisabled();
+    rerender(<DeckBuilderLibraryCard {...props} allowedSections={['main']} deckRuleConfig={{ ...rule, format: 'other' }} />);
+    expect(screen.queryByText('Limited to 1')).not.toBeInTheDocument();
+    expect(screen.getByTitle('Add to Main Deck')).toHaveTextContent('0 / 3');
+  });
+
+  it('shows a banned badge without a misleading zero-copy progress indicator', () => {
+    render(<DeckBuilderLibraryCard {...props} allowedSections={['main']} deckRuleConfig={rule}
+      card={{ ...sampleCard, name: 'ワールドブレイク', class: 'ニュートラル', type: 'スペル' }} />);
+    expect(screen.getByText('Banned')).toBeInTheDocument();
+    expect(screen.getByTitle('Add to Main Deck')).toHaveTextContent('Unavailable');
+    expect(screen.queryByText(/Included:/)).not.toBeInTheDocument();
+    expect(screen.getByTitle('Add to Main Deck')).toBeDisabled();
+  });
+
+  it('does not label ordinary cards or evolve counterparts as policy restricted', () => {
+    const { rerender } = render(<DeckBuilderLibraryCard {...props} allowedSections={['main']} card={sampleCard} deckRuleConfig={rule} />);
+    expect(screen.queryByText('Limited to 1')).not.toBeInTheDocument();
+    rerender(<DeckBuilderLibraryCard {...props} allowedSections={['evolve']} card={{ ...limitedCard, deck_section: 'evolve', is_evolve_card: true }} deckRuleConfig={rule} />);
+    expect(screen.queryByText('Limited to 1')).not.toBeInTheDocument();
+  });
+});
+
+
+it('shows ordinary and intrinsic copy limits inside the add button without an extra count row', () => {
+  const props = { card: sampleCard, allowedSections: ['main'] as ['main'], canAddToSection: () => true,
+    onOpenPreview: vi.fn(), onAddToSection: vi.fn(), deckRuleConfig: createDefaultDeckRuleConfig() };
+  const { rerender } = render(<DeckBuilderLibraryCard {...props} deckState={{ mainDeck: [sampleCard, { ...sampleCard, id: 'variant' }], evolveDeck: [], leaderCards: [], tokenDeck: [] }} />);
+  expect(screen.getByTitle('Add to Main Deck')).toHaveTextContent('2 / 3');
+  expect(screen.queryByText(/Included:/)).not.toBeInTheDocument();
+  rerender(<DeckBuilderLibraryCard {...props} card={{ ...sampleCard, name: 'ラピッドファイア', class: 'ウィッチ', type: 'スペル' }} />);
+  expect(screen.getByTitle('Add to Main Deck')).toHaveTextContent('0 / 6');
 });
