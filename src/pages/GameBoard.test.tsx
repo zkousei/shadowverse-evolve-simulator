@@ -2229,6 +2229,66 @@ describe('GameBoard', () => {
     expect(handleUndoCardMove).not.toHaveBeenCalled();
   });
 
+  it.each(['host', 'guest'] as const)('uses Ctrl+Z and Meta+Z for %s normal Undo on the opponent turn, never turn Undo', role => {
+    const handleUndoCardMove = vi.fn();
+    const handleUndoTurn = vi.fn();
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      role, isHost: role === 'host', isSoloMode: false,
+      handleUndoCardMove, handleUndoTurn, hasUndoableMove: true, canUndoTurn: true,
+      gameState: createGameState([], { gameStatus: 'playing', turnPlayer: role === 'host' ? 'guest' : 'host', lastUndoableCardMoveActor: role }),
+    }));
+    render(<GameBoard />);
+    fireEvent.keyDown(window, { key: 'z', ctrlKey: true });
+    fireEvent.keyDown(window, { key: 'z', metaKey: true });
+    expect(handleUndoCardMove).toHaveBeenCalledTimes(2);
+    expect(handleUndoTurn).not.toHaveBeenCalled();
+    expect(screen.queryByRole('dialog', { name: 'Undo Last End Turn' })).not.toBeInTheDocument();
+  });
+
+  it.each(['host', 'guest'] as const)('uses the latest %s operation for solo keyboard Undo and finishes multi selection', actor => {
+    const handleUndoCardMove = vi.fn();
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      isSoloMode: true, mode: 'solo', hasUndoableMove: true, handleUndoCardMove,
+      gameState: createGameState([], { gameStatus: 'playing', turnPlayer: 'guest', lastUndoableCardMoveActor: actor }),
+    }));
+    render(<GameBoard />);
+    fireEvent.click(within(screen.getByTestId('board-multi-selection-bar')).getByRole('button', { name: 'Select multiple' }));
+    fireEvent.keyDown(window, { key: 'z', ctrlKey: true });
+    expect(handleUndoCardMove).toHaveBeenCalledTimes(1);
+    expect(within(screen.getByTestId('board-multi-selection-bar')).getByRole('button', { name: 'Select multiple' })).toBeInTheDocument();
+  });
+
+  it.each(['no-history', 'other-actor', 'locked', 'spectator', 'preparing', 'reset', 'mulligan'] as const)('does not dispatch keyboard Undo for %s', reason => {
+    const handleUndoCardMove = vi.fn();
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      hasUndoableMove: reason !== 'no-history', handleUndoCardMove,
+      canInteract: reason !== 'locked', isSpectator: reason === 'spectator',
+      showResetConfirm: reason === 'reset', isMulliganModalOpen: reason === 'mulligan',
+      gameState: createGameState([], { gameStatus: reason === 'preparing' ? 'preparing' : 'playing', turnPlayer: 'guest', lastUndoableCardMoveActor: reason === 'other-actor' ? 'guest' : 'host' }),
+    }));
+    render(<GameBoard />);
+    fireEvent.keyDown(window, { key: 'z', ctrlKey: true });
+    fireEvent.keyDown(window, { key: 'z', metaKey: true });
+    expect(handleUndoCardMove).not.toHaveBeenCalled();
+  });
+
+  it('does not perform normal Undo or turn Undo behind the turn confirmation', () => {
+    const handleUndoCardMove = vi.fn();
+    const handleUndoTurn = vi.fn();
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      hasUndoableMove: true, canUndoTurn: true, handleUndoCardMove, handleUndoTurn,
+      gameState: createGameState([], { gameStatus: 'playing', turnPlayer: 'guest', lastUndoableCardMoveActor: 'host' }),
+    }));
+    render(<GameBoard />);
+    fireEvent.click(screen.getByRole('button', { name: '↺ UNDO LAST END TURN' }));
+    expect(screen.getByRole('dialog', { name: 'Undo Last End Turn' })).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: 'z', ctrlKey: true });
+    fireEvent.keyDown(window, { key: 'z', metaKey: true });
+    expect(handleUndoCardMove).not.toHaveBeenCalled();
+    expect(handleUndoTurn).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog', { name: 'Undo Last End Turn' })).toBeInTheDocument();
+  });
+
   it('shows the reset game dialog and wires cancel/confirm actions', () => {
     const setShowResetConfirm = vi.fn();
     const confirmResetGame = vi.fn();
