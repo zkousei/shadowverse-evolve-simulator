@@ -22,6 +22,23 @@ type UndoTurnState = Pick<
   | 'networkHasUndoableTurn'
 >;
 
+// Turn ownership does not restrict operation Undo. Authoritative history still
+// decides which actor may undo, and interaction locks must stay in effect.
+export const getCanShowUndoMoveForRole = ({
+  gameStatus, isSoloMode, isSpectator, canInteract, role, playerRole,
+  hasUndoableMove, undoMoveActor,
+}: {
+  gameStatus: SyncState['gameStatus'];
+  isSoloMode: boolean;
+  isSpectator: boolean;
+  canInteract: boolean;
+  role: PlayerRole;
+  playerRole: PlayerRole;
+  hasUndoableMove: boolean;
+  undoMoveActor: PlayerRole;
+}): boolean => gameStatus === 'playing' && !isSpectator && canInteract &&
+  hasUndoableMove && undoMoveActor === playerRole && (isSoloMode || playerRole === role);
+
 export const getCanUndoMove = ({
   isHost,
   isSoloMode,

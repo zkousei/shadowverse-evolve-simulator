@@ -221,11 +221,58 @@ describe('useGameBoardLogic P2P reconnect', () => {
     expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
   });
 
+  it('dispatches host Undo during the guest turn without advancing or rewinding the turn', () => {
+    renderResumedHostHarness({ gameStatus: 'playing', turnPlayer: 'guest' });
+    const peer = mockPeerJs.peers[0];
+    const guest = mockPeerJs.createConnection('guest');
+    act(() => { peer.emit('open'); peer.emit('connection', guest); guest.open = true; guest.emit('open'); });
+    fireEvent.click(screen.getByRole('button', { name: 'Damage Host' }));
+    expect(screen.getByTestId('host-hp')).toHaveTextContent('19');
+    guest.send.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: 'Undo Move' }));
+    expect(screen.getByTestId('host-hp')).toHaveTextContent('20');
+    expect(screen.getByTestId('turn-player')).toHaveTextContent('guest');
+    expect(screen.getByTestId('event-history')).toHaveTextContent('gameBoard.undoLog.playerStat');
+    const updates = guest.send.mock.calls.map(([message]) => message as SyncMessage).filter(message => message.type === 'STATE_SNAPSHOT');
+    expect(updates).toHaveLength(1);
+    expect(updates[0].pendingEffects).toEqual([{ type: 'UNDO_COMPLETED', actor: 'host', summary: { kind: 'player-stat', player: 'host', changes: [{ stat: 'hp', from: 19, to: 20 }] } }]);
+  });
+
+  it.each(['number', 'end-turn'] as const)('rejects a guest off-turn Undo arriving after the host’s %s operation without emitting completion', boundary => {
+    renderResumedHostHarness({ gameStatus: 'playing', turnPlayer: 'host' });
+    const peer = mockPeerJs.peers[0];
+    const guest = mockPeerJs.createConnection('guest');
+    act(() => {
+      peer.emit('open'); peer.emit('connection', guest); guest.open = true; guest.emit('open');
+      guest.emit('data', { type: 'EVENT', event: { id: 'guest-off-turn-stat', type: 'MODIFY_PLAYER_STAT', actor: 'guest', playerKey: 'guest', stat: 'hp', delta: -1 } });
+    });
+    fireEvent.click(screen.getByRole('button', { name: boundary === 'number' ? 'Damage Host' : 'Host End Turn' }));
+    const history = screen.getByTestId('event-history').textContent;
+    guest.send.mockClear();
+    act(() => guest.emit('data', { type: 'EVENT', event: { id: 'stale-undo', type: 'UNDO_CARD_MOVE', actor: 'guest' } }));
+    expect(guest.send).not.toHaveBeenCalled();
+    expect(screen.getByTestId('event-history').textContent).toBe(history);
+    expect(screen.getByTestId('turn-player')).toHaveTextContent(boundary === 'number' ? 'host' : 'guest');
+    expect(screen.getByTestId('host-hp')).toHaveTextContent(boundary === 'number' ? '19' : '20');
+  });
+
+  it('blocks guest off-turn Undo while disconnected despite a previously available remote history', () => {
+    const { conn } = connectGuest();
+    act(() => conn.emit('data', { type: 'STATE_SNAPSHOT', source: 'host', state: buildSyncState({ gameStatus: 'playing', turnPlayer: 'host', revision: 2, lastUndoableCardMoveActor: 'guest', networkHasUndoableCardMove: true }) }));
+    expect(screen.getByTestId('can-undo-move')).toHaveTextContent('true');
+    act(() => { conn.open = false; conn.emit('close'); });
+    conn.send.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: 'Undo Move' }));
+    expect(conn.send).not.toHaveBeenCalled();
+    expect(screen.getByTestId('event-history')).toHaveTextContent('none');
+  });
+
   describe('every online operation Undo log', () => {
     afterEach(() => vi.restoreAllMocks());
-    it.each(undoOperations)('synchronizes %s Undo once to both players and spectators', operation => {
+    it.each(undoOperations.flatMap(operation => [false, true].map(opponentTurn => [operation, opponentTurn] as const)))('synchronizes %s Undo once to both players and spectators, opponentTurn=%s', (operation, opponentTurn) => {
       vi.spyOn(Math, 'random').mockReturnValue(0);
       const before = undoBoard('guest');
+      if (opponentTurn) before.turnPlayer = 'host';
       renderResumedHostHarness(before);
       const peer = mockPeerJs.peers[0];
       const guest = mockPeerJs.createConnection('guest');
@@ -246,6 +293,12 @@ describe('useGameBoardLogic P2P reconnect', () => {
         guest.emit('data', request);
         guest.emit('data', { type: 'EVENT', event: { ...request.event, id: 'empty-history' } });
       });
+      if (opponentTurn && operation === 'ATTACK_DECLARATION') {
+        expect(guest.send).not.toHaveBeenCalled();
+        expect(spectator.send).not.toHaveBeenCalled();
+        expect(screen.getByTestId('event-history')).toHaveTextContent('none');
+        return;
+      }
       for (const connection of [guest, spectator]) {
         const snapshots = connection.send.mock.calls.map(([message]) => message as SyncMessage).filter(message => message.type === 'STATE_SNAPSHOT');
         expect(snapshots).toHaveLength(1);
