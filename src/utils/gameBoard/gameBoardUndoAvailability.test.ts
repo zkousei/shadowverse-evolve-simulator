@@ -4,9 +4,37 @@ import {
   getCanUndoMove,
   getCanUndoTurn,
   getGameBoardUndoAvailability,
+  getCanShowUndoMoveForRole,
 } from './gameBoardUndoAvailability';
 
 const undoCheckpoint = { ...initialState, revision: 3 };
+
+describe('getCanShowUndoMoveForRole', () => {
+  const available = {
+    gameStatus: 'playing' as const, isSoloMode: false, isSpectator: false,
+    canInteract: true, role: 'host' as const, hasUndoableMove: true,
+    undoMoveActor: 'host' as const,
+  };
+
+  it.each(['host', 'guest'] as const)('enables only the viewer’s own Undo button for %s', role => {
+    const args = { ...available, role, undoMoveActor: role };
+    expect(getCanShowUndoMoveForRole({ ...args, playerRole: role })).toBe(true);
+    expect(getCanShowUndoMoveForRole({ ...args, playerRole: role === 'host' ? 'guest' : 'host' })).toBe(false);
+  });
+
+  it.each([
+    { hasUndoableMove: false }, { canInteract: false }, { isSpectator: true },
+    { gameStatus: 'preparing' as const }, { undoMoveActor: 'guest' as const },
+  ])('blocks Undo for unavailable history or interaction: %j', override => {
+    expect(getCanShowUndoMoveForRole({ ...available, ...override, playerRole: 'host' })).toBe(false);
+  });
+
+  it.each(['host', 'guest'] as const)('preserves solo Undo on the latest actor’s side: %s', undoMoveActor => {
+    const args = { ...available, isSoloMode: true, undoMoveActor };
+    expect(getCanShowUndoMoveForRole({ ...args, playerRole: undoMoveActor })).toBe(true);
+    expect(getCanShowUndoMoveForRole({ ...args, playerRole: undoMoveActor === 'host' ? 'guest' : 'host' })).toBe(false);
+  });
+});
 
 describe('getGameBoardUndoAvailability', () => {
   it('uses local undo snapshots for host-side availability', () => {

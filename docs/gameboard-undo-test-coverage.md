@@ -31,6 +31,19 @@ sequence of operations.
 | Saved sessions | Metadata sanitization, legacy history, grouped checkpoint resume without reopening a numeric group | `gameBoardSavedSession.test.ts` |
 | Browser wiring | Numeric group log without toast, move log, turn Undo, public/private Look restoration, movement/search/Look/shuffle Undo notifications, numeric/turn Undo without notifications, and counts-only Recent Events preserving the original log; existing movement/stack/multi-selection flows | `e2e/solo-turn-and-undo.spec.ts`, `e2e/solo-zone-actions.spec.ts`, existing E2E suite |
 
+## Off-turn operation Undo
+
+`gameBoardUndoAvailability.test.ts` owns the display eligibility rule: playing,
+unlocked interaction, a valid history, correct actor/side and no spectator access.
+Turn ownership is not an eligibility condition. `GameBoard.test.tsx` verifies the
+host/guest buttons, selection mode, blocked states and history invalidation.
+`gameBoardUndoPatterns.test.ts` characterizes both turns for all 29 event kinds,
+including the continued rejection of off-turn attacks. `useGameBoardLogic.test.tsx`
+checks guest off-turn operations and host-local Undo, shared summaries, duplicate
+requests, invalidation races and disconnected guest dispatch. The off-turn tests
+in `gameSyncReducer.test.ts` protect opponent barriers and the unchanged turn
+Undo backup/restore behavior. No reducer or transport behavior is changed.
+
 ## Log retention and display
 
 Recent Events keeps the newest 100 entries. `gameBoardTransientUi.test.ts` owns
@@ -61,13 +74,14 @@ transport-level secrecy is a separate change.
 
 ## Verification status (2026-10-12)
 
-The latest full Vitest run passed all 2322 tests; lint, app type checking and build
-also passed. The latest targeted Undo/search/Look/log-scrolling E2E run passed 10 tests. A later
+The latest full Vitest run passed all 2495 tests; lint, app type checking and build
+also passed. The latest full Chromium E2E run passed all 33 tests. Off-turn online button
+behavior is owned by page tests, and P2P synchronization uses mocked connections. A later
 investigation reran the 1087 Undo-related Vitest tests successfully.
 
 Existing drag movement and inspector-close E2E cases have had mixed results
-across runs and failed in the latest investigation. Both failures also occurred
+across past runs and failed in the earlier investigation. Both failures also occurred
 against the pre-change HEAD in an isolated checkout. This establishes that they
 also occur without the new Undo logging; it does not establish whether the cause
 is a UI defect or test timing. They remain unresolved, and the current full E2E
-suite must not be described as consistently passing.
+suite passed this time but must not be described as consistently passing.

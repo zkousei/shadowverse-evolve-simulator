@@ -44,9 +44,10 @@ const expectSafeMessage = (effect: SharedUiEffect) => {
 
 describe.each(roles)('%s operation Undo contracts', actor => {
   describe.each(modes)('solo=%s', isSoloMode => {
-    it.each(undoOperations)('restores and publicly describes %s, preserving the preceding Undo', operation => {
+    it.each(undoOperations.flatMap(operation => [false, true].map(opponentTurn => [operation, opponentTurn] as const)))('restores and publicly describes %s, preserving the preceding Undo, opponentTurn=%s', (operation, opponentTurn) => {
       vi.spyOn(Math, 'random').mockReturnValue(0);
       const start = undoBoard(actor);
+      if (opponentTurn) start.turnPlayer = opposite(actor);
       // A different numeric target creates a preceding checkpoint without
       // changing the cards required by each operation's fixture.
       const before = applyGameSyncEvent(start, { id: 'prefix', type: 'MODIFY_PLAYER_STAT', actor, playerKey: opposite(actor), stat: 'ep', delta: 1 }, actor, { isSoloMode });
@@ -55,6 +56,12 @@ describe.each(roles)('%s operation Undo contracts', actor => {
       expect(event.type).toBe(operation);
       const changed = applyGameSyncEvent(before, event, actor, { isSoloMode });
       expect(JSON.stringify(before)).toBe(beforeJson);
+      if (opponentTurn && operation === 'ATTACK_DECLARATION') {
+        // Expanding Undo availability must not permit attacks outside the actor's turn.
+        expect(changed).toBe(before);
+        expectRestored(start, undo(changed, actor, isSoloMode), before.revision + 1);
+        return;
+      }
       expect(changed.revision).toBe(before.revision + 1);
       expect(changed.cardMoveHistory).toHaveLength(2);
       // Wrong actor/requester cannot consume or disclose the checkpoint.

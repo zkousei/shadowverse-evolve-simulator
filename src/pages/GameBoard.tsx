@@ -1,4 +1,5 @@
 import GameBoardMultiSelectionBar from '../components/gameBoard/GameBoardMultiSelectionBar';
+import { getCanShowUndoMoveForRole } from '../utils/gameBoard/gameBoardUndoAvailability';
 import { GameBoardMultiSelectionContext } from '../contexts/gameBoardMultiSelectionContext';
 import { useGameBoardMultiSelection } from '../hooks/gameBoard/useGameBoardMultiSelection';
 import React from 'react';
@@ -265,10 +266,10 @@ const GameBoard: React.FC = () => {
     searchZoneId: searchZone?.id ?? null,
     t,
   });
-  const canShowUndoMoveForRole = (playerRole: PlayerRole) => gameState.gameStatus === 'playing' &&
-    !isSpectator &&
-    hasUndoableMove &&
-    (isSoloMode ? undoMoveActor === playerRole : playerRole === role && gameState.turnPlayer === role);
+  const canShowUndoMoveForRole = (playerRole: PlayerRole) => getCanShowUndoMoveForRole({
+    gameStatus: gameState.gameStatus, isSoloMode, isSpectator, canInteract,
+    role, playerRole, hasUndoableMove, undoMoveActor,
+  });
   const renderUndoMoveButton = (playerRole: PlayerRole) => {
     const canUndo = canShowUndoMoveForRole(playerRole);
     return (

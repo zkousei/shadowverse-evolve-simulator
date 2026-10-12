@@ -2,7 +2,7 @@
 
 This document describes the current GameBoard policy for transient shared messages and Recent Events logs.
 
-For the current Undo specification, privacy rules, notification exceptions and verification limits, see [GameBoard Undoの現在仕様](gameboard-undo-current-spec.md). This includes the unmerged implementation on `codex/feature-public-undo-log`.
+For the current Undo specification, privacy rules, notification exceptions and verification limits, see [GameBoard Undoの現在仕様](gameboard-undo-current-spec.md). This includes the unmerged off-turn operation Undo implementation on `codex/fix-undo-outside-own-turn`.
 
 It is intentionally separate from `public-private-info-guidelines.md`. The public/private guide answers "what information is safe to reveal"; this document answers "where should the resulting notification appear".
 

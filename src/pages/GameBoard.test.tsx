@@ -2152,40 +2152,81 @@ describe('GameBoard', () => {
     expect(handleUndoCardMove).toHaveBeenCalledTimes(1);
   });
 
-  it('keeps opponent-turn undo unavailable both before and during multi selection', () => {
+  it('keeps own opponent-turn Undo available before and during multi selection', () => {
     const handleUndoCardMove = vi.fn();
     mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
       hasUndoableMove: true, handleUndoCardMove,
       gameState: createGameState([], { gameStatus: 'playing', turnPlayer: 'guest', lastUndoableCardMoveActor: 'host' }),
     }));
     render(<GameBoard />);
-    expect(screen.getByTestId('undo-move-host')).toBeDisabled();
+    expect(screen.getByTestId('undo-move-host')).toBeEnabled();
     const bar = screen.getByTestId('board-multi-selection-bar');
     expect(within(bar).queryByRole('button', { name: '↩ Undo Move' })).not.toBeInTheDocument();
     fireEvent.click(within(bar).getByRole('button', { name: 'Select multiple' }));
     expect(within(screen.getByTestId('board-multi-selection-bar')).queryByRole('button', { name: '↩ Undo Move' })).not.toBeInTheDocument();
-    expect(screen.getByTestId('undo-move-host')).toBeDisabled();
-    expect(handleUndoCardMove).not.toHaveBeenCalled();
+    expect(screen.getByTestId('undo-move-host')).toBeEnabled();
+    fireEvent.click(screen.getByTestId('undo-move-host'));
+    expect(handleUndoCardMove).toHaveBeenCalledTimes(1);
+    expect(within(screen.getByTestId('board-multi-selection-bar')).getByRole('button', { name: 'Select multiple' })).toBeInTheDocument();
   });
 
-  it('keeps move undo disabled during the opponent turn in p2p', () => {
+  it.each(['host', 'guest'] as const)('enables own move Undo during the opponent turn in p2p for %s', role => {
+    const handleUndoCardMove = vi.fn();
     mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
       mode: 'p2p',
       isSoloMode: false,
-      isHost: true,
-      role: 'host',
+      isHost: role === 'host',
+      role,
+      handleUndoCardMove,
       hasUndoableMove: true,
       gameState: createGameState([], {
         gameStatus: 'playing',
-        turnPlayer: 'guest',
-        lastUndoableCardMoveActor: 'host',
+        turnPlayer: role === 'host' ? 'guest' : 'host',
+        lastUndoableCardMoveActor: role,
       }),
     }));
 
     render(<GameBoard />);
 
-    // Undo button is always present but disabled during opponent's turn
+    expect(screen.getByTestId(`undo-move-${role}`)).toBeEnabled();
+    expect(screen.queryByTestId(`undo-move-${role === 'host' ? 'guest' : 'host'}`)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId(`undo-move-${role}`));
+    expect(handleUndoCardMove).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(['reconnecting', 'disconnected', 'spectator', 'no-history', 'other-actor'] as const)('blocks opponent-turn Undo for %s', reason => {
+    const handleUndoCardMove = vi.fn();
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      mode: 'p2p', isSoloMode: false, isHost: true, role: 'host',
+      handleUndoCardMove, hasUndoableMove: reason !== 'no-history',
+      canInteract: !['reconnecting', 'disconnected', 'spectator'].includes(reason),
+      connectionState: reason === 'reconnecting' || reason === 'disconnected' ? reason : 'connected',
+      isSpectator: reason === 'spectator',
+      gameState: createGameState([], { gameStatus: 'playing', turnPlayer: 'guest', lastUndoableCardMoveActor: reason === 'other-actor' ? 'guest' : 'host' }),
+    }));
+    render(<GameBoard />);
+    const button = screen.queryByTestId('undo-move-host');
+    if (button) {
+      expect(button).toBeDisabled();
+      fireEvent.click(button);
+    }
+    expect(handleUndoCardMove).not.toHaveBeenCalled();
+  });
+
+  it('disables opponent-turn Undo when the authoritative history is invalidated', () => {
+    const handleUndoCardMove = vi.fn();
+    const args = {
+      hasUndoableMove: true, handleUndoCardMove,
+      gameState: createGameState([], { gameStatus: 'playing', turnPlayer: 'guest', lastUndoableCardMoveActor: 'host' }),
+    };
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic(args));
+    const { rerender } = render(<GameBoard />);
+    expect(screen.getByTestId('undo-move-host')).toBeEnabled();
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({ ...args, hasUndoableMove: false }));
+    rerender(<GameBoard />);
     expect(screen.getByTestId('undo-move-host')).toBeDisabled();
+    fireEvent.click(screen.getByTestId('undo-move-host'));
+    expect(handleUndoCardMove).not.toHaveBeenCalled();
   });
 
   it('shows the reset game dialog and wires cancel/confirm actions', () => {

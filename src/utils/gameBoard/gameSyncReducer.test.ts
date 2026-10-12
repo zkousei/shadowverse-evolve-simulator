@@ -3050,6 +3050,61 @@ describe('multi-step card move undo', () => {
   });
 });
 
+describe.each(['host', 'guest'] as const)('%s operation Undo during the opponent turn', actor => {
+  const opponent = actor === 'host' ? 'guest' : 'host';
+  const start = () => createState({ gameStatus: 'playing', turnPlayer: opponent });
+  const change = (state: SyncState) => applyGameSyncEvent(state, {
+    id: 'own-stat', type: 'MODIFY_PLAYER_STAT', actor, playerKey: actor, stat: 'hp', delta: -1,
+  }, actor);
+  const undo = (state: SyncState) => applyGameSyncEvent(state, { id: 'undo-off-turn', type: 'UNDO_CARD_MOVE', actor }, actor);
+
+  it('restores an off-turn numeric group without changing the active turn', () => {
+    const before = start();
+    const first = change(before);
+    const second = applyGameSyncEvent(first, { id: 'second', type: 'MODIFY_PLAYER_STAT', actor, playerKey: actor, stat: 'hp', delta: 2 }, actor);
+    const restored = undo(second);
+    expect(restored[actor]).toEqual(before[actor]);
+    expect(restored[opponent]).toEqual(before[opponent]);
+    expect(restored.turnPlayer).toBe(opponent);
+    expect(restored.turnCount).toBe(before.turnCount);
+    expect(restored.cardMoveHistory).toEqual([]);
+  });
+
+  it('rejects a stale Undo after the opponent changes a number and never revives old history', () => {
+    const changed = change(start());
+    const opponentChanged = applyGameSyncEvent(changed, { id: 'op-stat', type: 'MODIFY_PLAYER_STAT', actor: opponent, playerKey: opponent, stat: 'hp', delta: -2 }, opponent);
+    expect(undo(opponentChanged)).toBe(opponentChanged);
+    const opponentUndone = applyGameSyncEvent(opponentChanged, { id: 'op-undo', type: 'UNDO_CARD_MOVE', actor: opponent }, opponent);
+    expect(opponentUndone[actor].hp).toBe(changed[actor].hp);
+    expect(undo(opponentUndone)).toBe(opponentUndone);
+  });
+
+  it('clears operation Undo at end turn while preserving existing turn Undo', () => {
+    const changed = change(start());
+    const ended = applyGameSyncEvent(changed, { id: 'end-op-turn', type: 'END_TURN', actor: opponent }, opponent);
+    expect(ended.turnPlayer).toBe(actor);
+    expect(undo(ended)).toBe(ended);
+    const turnUndone = applyGameSyncEvent(ended, { id: 'turn-back', type: 'UNDO_LAST_TURN', actor: opponent }, opponent);
+    expect(turnUndone.turnPlayer).toBe(opponent);
+    expect(turnUndone[actor]).toEqual(changed[actor]);
+    expect(turnUndone[opponent]).toEqual(changed[opponent]);
+    expect(turnUndone.cards).toEqual(changed.cards);
+    expect(undo(turnUndone)).toBe(turnUndone);
+  });
+
+  it('preserves turn Undo backup when undoing a new off-turn operation', () => {
+    const ownTurn = { ...start(), turnPlayer: actor };
+    const ended = applyGameSyncEvent(ownTurn, { id: 'own-end', type: 'END_TURN', actor }, actor);
+    const restored = undo(change(ended));
+    expect(restored.lastGameState).toBe(ended.lastGameState);
+    expect(restored.turnPlayer).toBe(opponent);
+    const turnUndone = applyGameSyncEvent(restored, { id: 'own-turn-back', type: 'UNDO_LAST_TURN', actor }, actor);
+    expect(turnUndone.turnPlayer).toBe(actor);
+    expect(turnUndone.cards).toEqual(ownTurn.cards);
+    expect(turnUndone.lastGameState).toBeNull();
+  });
+});
+
 describe('atomic board batches', () => {
   const card = (id: string, zone = 'field-host'): SyncState['cards'][number] => ({
     id, cardId: id, name: id, image: '', zone, owner: 'host', baseCardType: 'follower',
