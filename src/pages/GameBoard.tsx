@@ -1,5 +1,6 @@
 import GameBoardMultiSelectionBar from '../components/gameBoard/GameBoardMultiSelectionBar';
 import { getCanShowUndoMoveForRole } from '../utils/gameBoard/gameBoardUndoAvailability';
+import { useGameBoardUndoShortcut } from '../hooks/gameBoard/useGameBoardUndoShortcut';
 import { GameBoardMultiSelectionContext } from '../contexts/gameBoardMultiSelectionContext';
 import { useGameBoardMultiSelection } from '../hooks/gameBoard/useGameBoardMultiSelection';
 import React from 'react';
@@ -172,6 +173,7 @@ const GameBoard: React.FC = () => {
 
   const [mulliganTargetRole, setMulliganTargetRole] = React.useState<PlayerRole>('host');
   const [activeZoneActions, setActiveZoneActions] = React.useState<string | null>(null);
+  const draggingRef = React.useRef(false);
   const [searchShuffleTargetRole, setSearchShuffleTargetRole] = React.useState<PlayerRole | null>(null);
   const [isRoomCopied, setIsRoomCopied] = React.useState(false);
   const [isHandRevealDialogOpen, setIsHandRevealDialogOpen] = React.useState(false);
@@ -275,7 +277,8 @@ const GameBoard: React.FC = () => {
     return (
       <button
         data-testid={`undo-move-${playerRole}`}
-        onClick={() => { multiSelection.finish(); handleUndoCardMove(); }}
+        onClick={performUndoMove}
+        aria-keyshortcuts="Control+Z Meta+Z"
         disabled={!canUndo}
         className="glass-panel"
         style={{
@@ -404,6 +407,16 @@ const GameBoard: React.FC = () => {
     setActiveZoneActions(null);
     multiSelection.start();
   };
+  const performUndoMove = () => { multiSelection.finish(); handleUndoCardMove(); };
+  useGameBoardUndoShortcut({
+    canUndo: canShowUndoMoveForRole(isSoloMode ? undoMoveActor : role),
+    blocked: Boolean(searchZone || topDeckCards.length || randomDiscardTargetRole || savedDeckImportTargetRole ||
+      savedSessionCandidate || showResetConfirm || showUndoConfirm || isMulliganModalOpen || isTopNInputOpen ||
+      isHandRevealDialogOpen || tokenSpawnTargetRole || evolveAutoAttachSelection || searchShuffleTargetRole ||
+      activeZoneActions || attackSourceCard || selectedInspectorCard),
+    draggingRef,
+    onUndo: performUndoMove,
+  });
   const selectionContext = {
     active: multiSelection.active,
     select: (card: CardInstance, shortcut: boolean) => {
@@ -744,7 +757,8 @@ const GameBoard: React.FC = () => {
   );
 
   return (
-    <DndContext onDragEnd={(event) => {
+    <DndContext onDragStart={() => { draggingRef.current = true; }} onDragCancel={() => { draggingRef.current = false; }} onDragEnd={(event) => {
+      draggingRef.current = false;
       if (!canInteract || multiSelection.active) return;
       handleDragEnd(event);
     }}>

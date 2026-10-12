@@ -8,6 +8,7 @@
 
 | 操作 | Mac | Windows | 条件 |
 | --- | --- | --- | --- |
+| 通常の操作Undo | ⌘＋Z | Ctrl＋Z | 通常Undoボタンと同じ履歴・権限条件。入力中・ダイアログ等の表示中・ドラッグ中は無効 |
 | 複数選択を開始してカードを選択する | ⌘＋クリック | Ctrl＋クリック | 対戦中、複数選択が利用できる状態で、場・EXのカードをクリック |
 | 複数選択中に選択・解除する | カードをクリック | カードをクリック | 複数選択中。修飾キーを押し続ける必要はない |
 | 複数選択中にキーボードで選択・解除する | カードにフォーカスしてEnter／Space | カードにフォーカスしてEnter／Space | 複数選択中の場・EXのカード |
@@ -24,6 +25,18 @@
 複数選択の修飾キーは、実装上は`ctrlKey`と`metaKey`のどちらも受け付ける。MacではCtrl＋クリックも対象だが、OSの副クリックとの競合を避けるため、複数選択には⌘＋クリックを使う。
 
 通常のボタンにフォーカスしてEnter／Spaceで押す操作や、Tabによるフォーカス移動は、ブラウザやコンポーネントの通常操作であり、ゲーム専用のショートカットではない。
+
+## 通常Undoのショートカット
+
+- Macは⌘＋Z、WindowsはCtrl＋Zを使用する。実装はどちらの修飾キーも受け付けるが、同時押し・Shift／Altとの組み合わせは対象外。
+- 通常Undoボタンが有効な場合だけ、同じ処理を1回実行する。ターン終了Undoを実行したり、その確認を開いたりしない。
+- オンラインでは自分の有効な履歴が対象。相手ターン中もボタンと同じ条件で使える。ソロでは最新履歴の操作主体に従い、現在ターンのプレイヤーに固定しない。
+- 複数選択中も使用でき、ボタンと同様に選択モードを終了してから取り消す。
+- 入力欄・選択欄・編集可能領域では発火させず、ブラウザの文字編集Undoを維持する。日本語変換中・キー長押し・既に他の処理が消費したキーも対象外。
+- サーチ、ルック、確認、トークン生成、保存デッキなどのダイアログ、ゾーン操作メニュー、カード詳細、攻撃モード、タッチ操作メニュー、ナビゲーションメニューを表示中は発火させない。
+- ポインター／キーボードでカードをドラッグ中も発火させない。
+- 数値調整のまとめ方、状態の復元、相手操作後の履歴失効、公開・非公開情報、ログ・一時通知はボタン経由と同じ。
+- ボタンには`aria-keyshortcuts`を付ける。画面にボタンや行を追加しない。
 
 ## 複数選択の対象と制限
 
@@ -61,7 +74,6 @@ Escの処理は各機能が個別に登録している。上記のほか、画�
 
 | 操作 | Mac | Windows |
 | --- | --- | --- |
-| 通常の操作Undo | ⌘＋Zの割り当てなし | Ctrl＋Zの割り当てなし |
 | 全選択 | ⌘＋Aの割り当てなし | Ctrl＋Aの割り当てなし |
 | 複数選択モードの開始 | 専用キーなし | 専用キーなし |
 | ドロー・サーチ・ルック・シャッフル | 専用キーなし | 専用キーなし |
@@ -69,16 +81,24 @@ Escの処理は各機能が個別に登録している。上記のほか、画�
 | 選択カードの墓場送り・除外など | 専用キーなし | 専用キーなし |
 | ターン終了・ターン終了Undo | 専用キーなし | 専用キーなし |
 
-ブラウザや入力欄での⌘／Ctrl＋Z、⌘／Ctrl＋Aを、ゲーム操作として捕捉する実装はない。
+入力欄などでの⌘／Ctrl＋Zはゲーム操作として捕捉しない。⌘／Ctrl＋Aにもゲーム専用の割り当てはない。
 
 ## 実装・テストの参照先
 
 | 契約 | 実装 | 主なテスト |
 | --- | --- | --- |
+| 通常Undoキーの判定・入力保護・長押し・IME・オーバーレイ・ドラッグ | [useGameBoardUndoShortcut.ts](../src/hooks/gameBoard/useGameBoardUndoShortcut.ts) | [useGameBoardUndoShortcut.test.tsx](../src/hooks/gameBoard/useGameBoardUndoShortcut.test.tsx)、[GameBoard.test.tsx](../src/pages/GameBoard.test.tsx)、[solo-undo-shortcut.spec.ts](../e2e/solo-undo-shortcut.spec.ts) |
 | 修飾キークリック、Enter／Spaceでの選択、右クリック | [Card.tsx](../src/components/Card.tsx) | [Card.test.tsx](../src/components/Card.test.tsx) |
 | 複数選択の条件、対象、Esc終了 | [useGameBoardMultiSelection.ts](../src/hooks/gameBoard/useGameBoardMultiSelection.ts)、[GameBoard.tsx](../src/pages/GameBoard.tsx) | [useGameBoardMultiSelection.test.tsx](../src/hooks/gameBoard/useGameBoardMultiSelection.test.tsx)、[solo-multi-selection.spec.ts](../e2e/solo-multi-selection.spec.ts) |
 | 詳細・攻撃モードのEsc | [useGameBoardInspectorUi.ts](../src/hooks/gameBoard/useGameBoardInspectorUi.ts)、[useGameBoardAttackUi.ts](../src/hooks/gameBoard/useGameBoardAttackUi.ts) | [GameBoard.test.tsx](../src/pages/GameBoard.test.tsx)、[gameBoardDismissals.test.ts](../src/utils/gameBoard/gameBoardDismissals.test.ts) |
 | タッチ操作メニューのEsc | [GameBoardTouchActionSheet.tsx](../src/components/gameBoard/GameBoardTouchActionSheet.tsx) | 全OS・実機のキー操作を網羅する専用テストはなし |
+
+## 検証記録（通常Undoショートカット追加時）
+
+- Vitest全2,535件、lint、アプリ型チェック、ビルドは成功。
+- Chromium E2E全37件は成功。Ctrl／Metaキー、数値グループと移動の復元、長押し、ダイアログ／数値入力、キーボードドラッグ中と中止後の挙動を含む。
+- Mac／Windowsそれぞれの実キーボードとSafari、日本語IMEの実環境は未確認。IMEは合成イベントによるフックテストで確認している。
+- オンラインの操作権限は既存のUndo判定・処理を再利用する。ページテストではホスト・ゲストの相手ターン中のキー操作を確認し、実機間のWebRTC確認は今回行っていない。
 
 ## 関連文書
 
