@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import path from 'path';
+import { dragLocatorFromExposedCardPointToLocator } from './helpers/gameBoard';
 
 const dummyDeckPath = path.resolve(process.cwd(), 'e2e/fixtures/dummy-deck.json');
 
@@ -97,9 +98,7 @@ test.describe('Solo Game Flow', () => {
     const firstCardInHand = hostHandCards.first();
     const fieldZone = page.getByTestId('zone-field-host');
 
-    await firstCardInHand.scrollIntoViewIfNeeded();
-    await fieldZone.scrollIntoViewIfNeeded();
-    await firstCardInHand.dragTo(fieldZone);
+    await dragLocatorFromExposedCardPointToLocator(page, firstCardInHand, fieldZone);
 
     await expect(hostFieldCards).toHaveCount(1);
     await expect(hostHandCards).toHaveCount(4);

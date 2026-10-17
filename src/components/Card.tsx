@@ -90,7 +90,7 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
   const isInteractionLocked = isLocked || card.isLeaderCard || card.zone.startsWith('leader-');
   const canShowQuickActionOverlay = !isHidden && !isInteractionLocked && !selection?.active;
   const canToggleQuickActions = isCoarseInput && canShowQuickActionOverlay && !quickActionsDisabled;
-  const { attributes, listeners, setNodeRef: setDraggableRef, transform } = useDraggable({
+  const { attributes, listeners, setNodeRef: setDraggableRef, transform, isDragging } = useDraggable({
     id: card.id,
     data: { card },
     disabled: isInteractionLocked || Boolean(selection?.active)
@@ -100,6 +100,11 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
     id: card.id,
     data: { type: 'card', card }
   });
+
+  // Remember that this press became a drag even if it is later cancelled.
+  React.useEffect(() => {
+    if (isDragging) inspectPointerStartRef.current = null;
+  }, [isDragging]);
 
   const setRefs = (node: HTMLElement | null) => {
     cardElementRef.current = node;
@@ -369,6 +374,7 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
         }
       }}
       onKeyDown={(event) => {
+        if (event.key === 'Escape') inspectPointerStartRef.current = null;
         if (selection?.active && (event.key === 'Enter' || event.key === ' ')) {
           event.preventDefault();
           selection.select(card, false);
@@ -391,7 +397,7 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
         const pointerStart = inspectPointerStartRef.current;
         inspectPointerStartRef.current = null;
 
-        if (!pointerStart) return;
+        if (!pointerStart || isDragging) return;
         if ((event.target as HTMLElement).closest('button')) return;
 
         const deltaX = Math.abs(event.clientX - pointerStart.x);

@@ -56,24 +56,20 @@ export const dragFirstZoneCard = async (page: Page, sourceZoneId: string, target
   const sourceCard = zoneCards(page, sourceZoneId).first();
   const targetZone = zone(page, targetZoneId);
 
-  await sourceCard.scrollIntoViewIfNeeded();
-  await targetZone.scrollIntoViewIfNeeded();
-  await sourceCard.dragTo(targetZone);
+  await dragLocatorFromExposedCardPointToLocator(page, sourceCard, targetZone);
 };
 
-export const dragLocatorFromExposedCardPointToLocator = async (
-  page: Page,
-  source: Locator,
-  target: Locator
-) => {
+export const hoverExposedCardPoint = async (page: Page, source: Locator) => {
   await source.scrollIntoViewIfNeeded();
-  await target.scrollIntoViewIfNeeded();
   const findExposedPoint = () => source.evaluate(element => {
     const rect = element.getBoundingClientRect();
     for (let y = rect.top + 2; y < rect.bottom - 2; y += 4) {
       for (let x = rect.left + 2; x < rect.right - 2; x += 4) {
-        const hit = document.elementFromPoint(x, y);
-        if (hit?.closest('[data-card-id]') === element && !hit.closest('button')) return { x, y };
+        const exposed = [[0, 0], [2, 2]].every(([dx, dy]) => {
+          const hit = document.elementFromPoint(x + dx, y + dy);
+          return hit?.closest('[data-card-id]') === element && !hit.closest('button');
+        });
+        if (exposed) return { x, y };
       }
     }
     return null;
@@ -87,16 +83,58 @@ export const dragLocatorFromExposedCardPointToLocator = async (
   const sourcePoint = await findExposedPoint();
   if (!sourcePoint) throw new Error('No exposed point after card quick actions appeared.');
   await page.mouse.move(sourcePoint.x, sourcePoint.y);
+  return sourcePoint;
+};
+
+export const dragLocatorFromExposedCardPointToLocator = async (
+  page: Page,
+  source: Locator,
+  target: Locator
+) => {
+  await target.scrollIntoViewIfNeeded();
+  const sourcePoint = await hoverExposedCardPoint(page, source);
+  const sourceBox = await source.boundingBox();
+  if (!sourceBox) throw new Error('The source card has no bounding box.');
+  const sourceId = await source.getAttribute('data-card-id');
+  const targetCardId = await target.getAttribute('data-card-id');
+  const targetId = targetCardId ?? (await target.getAttribute('data-testid'))?.replace(/^zone-/, '');
+  if (!sourceId || !targetId) throw new Error('Expected card/zone identifiers for the drag.');
+  // A zone's cards are droppable too. The game resolves their zone on drop.
+  // Explicit card targets still require that exact card (important for stacks).
+  const targetIds = [targetId];
+  if (!targetCardId) {
+    targetIds.push(...await target.locator('[data-card-id]').evaluateAll(elements =>
+      elements.map(element => element.getAttribute('data-card-id')!).filter(Boolean)));
+  }
+  const escapePattern = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const announcement = (action: string) => new RegExp(
+    `Draggable item ${escapePattern(sourceId)} was ${action} droppable area (?:${targetIds.map(escapePattern).join('|')})(?:\\.|$)`,
+  );
   await page.mouse.down();
+  // Cross the pointer activation distance before waiting for DnD to activate.
+  await page.mouse.move(sourcePoint.x + 10, sourcePoint.y, { steps: 2 });
   await expect(source).toHaveAttribute('aria-pressed', 'true');
   const targetBox = await target.boundingBox();
   if (!targetBox) throw new Error('The drag target has no bounding box.');
   await page.mouse.move(
-    targetBox.x + targetBox.width / 2,
-    targetBox.y + targetBox.height / 2,
+    // Align card centers, accounting for the point where the card was grabbed.
+    // Moving a corner grab to the target center overlaps an attached card instead.
+    targetBox.x + targetBox.width / 2 - sourceBox.width / 2 + sourcePoint.x - sourceBox.x,
+    targetBox.y + targetBox.height / 2 - sourceBox.height / 2 + sourcePoint.y - sourceBox.y,
     { steps: 12 }
   );
+  // Releasing before collision detection has rendered can drop onto the old target.
+  await expect(page.getByRole('status').filter({
+    hasText: announcement('moved over'),
+  })).toHaveCount(1);
   await page.mouse.up();
+  await expect(page.getByRole('status').filter({
+    hasText: announcement('dropped over'),
+  })).toHaveCount(1);
+  // dnd-kit keeps its document click guard for 50ms after a real pointer drag
+  // (AbstractPointerSensor.detach). It has no DOM completion signal. Respect
+  // that guard before the caller clicks Undo or another control.
+  await page.waitForTimeout(50);
 };
 
 export const spawnDefaultToken = async (

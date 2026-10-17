@@ -8,6 +8,7 @@ import type { CardDetail } from '../utils/card/cardDetails';
 const dndState = {
   transform: null as null | { x: number; y: number },
   isOver: false,
+  isDragging: false,
 };
 
 vi.mock('@dnd-kit/core', () => ({
@@ -16,6 +17,7 @@ vi.mock('@dnd-kit/core', () => ({
     listeners: {},
     setNodeRef: vi.fn(),
     transform: dndState.transform,
+    isDragging: dndState.isDragging,
   }),
   useDroppable: () => ({
     isOver: dndState.isOver,
@@ -398,6 +400,57 @@ describe('Card', () => {
 
     fireEvent.pointerDown(screen.getByAltText('Card Back').closest('.game-card') as HTMLElement, { clientX: 10, clientY: 20, button: 0 });
     fireEvent.pointerUp(screen.getByAltText('Card Back').closest('.game-card') as HTMLElement, { clientX: 10, clientY: 20, button: 0 });
+    expect(onInspect).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not inspect a completed drag even when the pointer returns to its starting point', () => {
+    const onInspect = vi.fn();
+    dndState.isDragging = true;
+    try {
+      render(<Card card={createCard()} onInspect={onInspect} />);
+      const element = screen.getByAltText('Test Card').closest('.game-card') as HTMLElement;
+      fireEvent.pointerDown(element, { clientX: 10, clientY: 20, button: 0 });
+      fireEvent.pointerUp(element, { clientX: 10, clientY: 20, button: 0 });
+      expect(onInspect).not.toHaveBeenCalled();
+    } finally {
+      dndState.isDragging = false;
+    }
+  });
+
+  it('does not turn a cancelled drag into a tap when the pointer is released', () => {
+    const onInspect = vi.fn();
+    const onCardTapAction = vi.fn();
+    const ui = () => <Card card={createCard()} onInspect={onInspect} onCardTapAction={onCardTapAction} />;
+    const { rerender } = render(ui());
+    const element = screen.getByAltText('Test Card').closest('.game-card') as HTMLElement;
+    fireEvent.pointerDown(element, { clientX: 10, clientY: 20, button: 0 });
+    try {
+      dndState.isDragging = true;
+      rerender(ui());
+      dndState.isDragging = false;
+      rerender(ui());
+      fireEvent.pointerUp(element, { clientX: 10, clientY: 20, button: 0 });
+      expect(onCardTapAction).not.toHaveBeenCalled();
+      expect(onInspect).not.toHaveBeenCalled();
+      // Cancellation must not disable the next intentional tap.
+      fireEvent.pointerDown(element, { clientX: 10, clientY: 20, button: 0 });
+      fireEvent.pointerUp(element, { clientX: 10, clientY: 20, button: 0 });
+      expect(onInspect).toHaveBeenCalledTimes(1);
+    } finally {
+      dndState.isDragging = false;
+    }
+  });
+
+  it('cancels a pending tap on Escape without blocking the next tap', () => {
+    const onInspect = vi.fn();
+    render(<Card card={createCard()} onInspect={onInspect} />);
+    const element = screen.getByAltText('Test Card').closest('.game-card') as HTMLElement;
+    fireEvent.pointerDown(element, { clientX: 10, clientY: 20, button: 0 });
+    fireEvent.keyDown(element, { key: 'Escape' });
+    fireEvent.pointerUp(element, { clientX: 10, clientY: 20, button: 0 });
+    expect(onInspect).not.toHaveBeenCalled();
+    fireEvent.pointerDown(element, { clientX: 10, clientY: 20, button: 0 });
+    fireEvent.pointerUp(element, { clientX: 10, clientY: 20, button: 0 });
     expect(onInspect).toHaveBeenCalledTimes(1);
   });
 

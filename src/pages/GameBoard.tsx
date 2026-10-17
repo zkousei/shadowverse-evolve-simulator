@@ -4,7 +4,7 @@ import { useGameBoardUndoShortcut } from '../hooks/gameBoard/useGameBoardUndoSho
 import { GameBoardMultiSelectionContext } from '../contexts/gameBoardMultiSelectionContext';
 import { useGameBoardMultiSelection } from '../hooks/gameBoard/useGameBoardMultiSelection';
 import React from 'react';
-import { DndContext } from '@dnd-kit/core';
+import { DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { useTranslation } from 'react-i18next';
 import Zone from '../components/gameBoard/Zone';
 import type { CardInstance } from '../components/Card';
@@ -174,6 +174,11 @@ const GameBoard: React.FC = () => {
   const [mulliganTargetRole, setMulliganTargetRole] = React.useState<PlayerRole>('host');
   const [activeZoneActions, setActiveZoneActions] = React.useState<string | null>(null);
   const draggingRef = React.useRef(false);
+  const dragSensors = useSensors(
+    // A click/tap must not activate DnD or suppress the next button click.
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor),
+  );
   const [searchShuffleTargetRole, setSearchShuffleTargetRole] = React.useState<PlayerRole | null>(null);
   const [isRoomCopied, setIsRoomCopied] = React.useState(false);
   const [isHandRevealDialogOpen, setIsHandRevealDialogOpen] = React.useState(false);
@@ -757,7 +762,7 @@ const GameBoard: React.FC = () => {
   );
 
   return (
-    <DndContext onDragStart={() => { draggingRef.current = true; }} onDragCancel={() => { draggingRef.current = false; }} onDragEnd={(event) => {
+    <DndContext sensors={dragSensors} onDragStart={() => { draggingRef.current = true; }} onDragCancel={() => { draggingRef.current = false; }} onDragEnd={(event) => {
       draggingRef.current = false;
       if (!canInteract || multiSelection.active) return;
       handleDragEnd(event);
