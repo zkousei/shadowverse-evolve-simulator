@@ -1,7 +1,7 @@
 {
   "rewrites": [
     {
-      "source": "/((?!api/|card-catalog(?:/|$)).*)",
+      "source": "/((?!api/|assets(?:/|$)|card-catalog(?:/|$)).*)",
       "destination": "/index.html"
     }
   ],

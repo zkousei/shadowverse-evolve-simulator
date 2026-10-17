@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { cardCatalog } from './build/cardCatalog'
+import { deploymentAssetBase } from './build/deploymentAssetBase'
 
 const getPackageVersion = () => {
   try {
@@ -33,7 +34,8 @@ const getAppVersion = () => {
 }
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ command }) => ({
+  base: deploymentAssetBase(command, process.env),
   plugins: [react(), cardCatalog()],
   define: {
     __APP_VERSION__: JSON.stringify(getAppVersion()),
@@ -77,4 +79,4 @@ export default defineConfig({
       },
     },
   },
-})
+}))
