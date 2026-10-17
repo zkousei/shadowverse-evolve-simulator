@@ -64,18 +64,27 @@ test('preserves pending numeric Undo behind deck actions, a count input, and tur
   await expect(boardSection(page, 'top')).toHaveAttribute('data-turn-active', 'true');
 });
 
-test('blocks Undo during keyboard drag and restores it after drag cancellation', async ({ page }) => {
-  await startSoloGame(page);
-  await page.getByTestId('player-tracker-host-hp-increase').click();
-  const tracker = page.getByTestId('player-tracker-host');
-  const card = zoneCards(page, 'hand-host').first();
-  await card.focus();
-  await page.keyboard.press('Space');
-  await page.keyboard.press('Control+z');
-  await expect(tracker.getByText('HP: 21', { exact: true })).toBeVisible();
-  await expect(zoneCards(page, 'hand-host')).toHaveCount(4);
-  await page.keyboard.press('Escape');
-  await page.keyboard.press('Control+z');
-  await expect(tracker.getByText('HP: 20', { exact: true })).toBeVisible();
-  await expect(zoneCards(page, 'hand-host')).toHaveCount(4);
-});
+for (const modifier of ['Control', 'Meta']) {
+  test(`${modifier}+Z blocks Undo during keyboard drag and restores it after drag cancellation`, async ({ page }) => {
+    await startSoloGame(page);
+    await page.getByTestId('player-tracker-host-hp-increase').click();
+    const tracker = page.getByTestId('player-tracker-host');
+    await expect(tracker.getByText('HP: 21', { exact: true })).toBeVisible();
+    const card = zoneCards(page, 'hand-host').first();
+    await card.focus();
+    await page.keyboard.press('Space');
+    // Wait for DnD activation and measuring before sending more sensor keys.
+    await expect(card).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('status').filter({ hasText: 'was moved over droppable area' })).toHaveCount(1);
+    await page.keyboard.press(`${modifier}+z`);
+    await expect(tracker.getByText('HP: 21', { exact: true })).toBeVisible();
+    await expect(card).toHaveAttribute('aria-pressed', 'true');
+    await expect(zoneCards(page, 'hand-host')).toHaveCount(4);
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('status').filter({ hasText: 'Dragging was cancelled.' })).toHaveCount(1);
+    await expect(card).not.toHaveAttribute('aria-pressed', 'true');
+    await page.keyboard.press(`${modifier}+z`);
+    await expect(tracker.getByText('HP: 20', { exact: true })).toBeVisible();
+    await expect(zoneCards(page, 'hand-host')).toHaveCount(4);
+  });
+}

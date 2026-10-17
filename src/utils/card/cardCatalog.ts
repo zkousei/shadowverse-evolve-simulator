@@ -3,6 +3,8 @@ import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
 const RELEASED_CARD_CATALOG_PATH = '/cards_detailed.json';
 const PREVIEW_CARD_CATALOG_PATH = '/cards_preview.json';
 
+let inFlightCatalog: Promise<DeckBuilderCardData[]> | null = null;
+
 export const mergeCardCatalogs = (
   releasedCards: DeckBuilderCardData[],
   previewCards: DeckBuilderCardData[],
@@ -22,7 +24,7 @@ export const mergeCardCatalogs = (
   return [...releasedCatalog, ...previewCatalog];
 };
 
-export const loadCardCatalog = async (): Promise<DeckBuilderCardData[]> => {
+const fetchCardCatalog = async (): Promise<DeckBuilderCardData[]> => {
   const [releasedResponse, previewResponse] = await Promise.all([
     fetch(RELEASED_CARD_CATALOG_PATH),
     fetch(PREVIEW_CARD_CATALOG_PATH),
@@ -33,4 +35,16 @@ export const loadCardCatalog = async (): Promise<DeckBuilderCardData[]> => {
   ]);
 
   return mergeCardCatalogs(releasedCards, previewCards);
+};
+
+export const loadCardCatalog = (): Promise<DeckBuilderCardData[]> => {
+  if (!inFlightCatalog) {
+    // Share only pending work. Later calls can fetch updated data or retry a failure.
+    // Concurrent consumers must treat the shared catalog as read-only.
+    inFlightCatalog = fetchCardCatalog().finally(() => {
+      inFlightCatalog = null;
+    });
+  }
+
+  return inFlightCatalog;
 };
