@@ -101,3 +101,6 @@ npx vitest run src/components/CardArtwork.test.tsx src/utils/card/cardCatalog.te
 商品名の確認元:
 - https://shadowverse-evolve.com/products/bp22/
 - https://shadowverse-evolve.com/products/cp05/
+
+データ更新後の公開前には、正式・previewの更新をすべて終えてから配信履歴を記録してください。
+[管理ガイドの公開前手順](../../docs/admin-guide.md#公開前に配信バージョンを記録する) を参照してください。

@@ -25,13 +25,14 @@ export const cardCatalog = (): Plugin => {
       // previous deployments can silently supply stale data to this build.
       const temporary = mkdtempSync(join(tmpdir(), 'catalog-build-'));
       try {
-        const args = ['-m', 'tools.card_data.generate_catalog',
+        const args = ['-m', 'tools.card_data.catalog_history', 'stage',
           '--released', join(config.publicDir, 'cards_detailed.json'),
           '--preview', join(config.publicDir, 'cards_preview.json'),
+          '--history', join(config.root, 'card-catalog-history'),
           '--output', temporary];
         const run = (extra: string[] = []) => {
           try {
-            execFileSync('python3', [...args, ...extra], {
+            return execFileSync('python3', [...args, ...extra], {
               cwd: repository, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
             });
           } catch (error) {
@@ -40,17 +41,14 @@ export const cardCatalog = (): Plugin => {
           }
         };
         run();
-        run(['--check']);
-        const manifest = readFileSync(join(temporary, 'manifest.json'));
-        const data = JSON.parse(manifest.toString('utf8')) as {
-          index: { file: string }; details: Record<string, { file: string }>;
-        };
-        // Read every verified file before emitting any assets. Build failure
-        // aborts publication; the source JSON files are never written.
-        const files = [{ name: 'manifest.json', source: manifest },
-          ...[data.index, ...Object.values(data.details)].map(({ file }) => ({
-            name: file, source: readFileSync(join(temporary, file)),
-          }))];
+        const checked = JSON.parse(run(['--check'])) as { files: string[] };
+        // Read every verified current/retained file before emitting any assets.
+        const files = checked.files.map(name => {
+          if (!/^(?:manifest\.json|versions\/[a-f0-9]{64}\/(?:index\.json|details\/[A-Za-z0-9_]+\.json))$/.test(name)) {
+            throw new Error('Unsafe staged card catalog path');
+          }
+          return { name, source: readFileSync(join(temporary, name)) };
+        });
         for (const file of files) this.emitFile({
           type: 'asset', fileName: `card-catalog/${file.name}`, source: file.source,
         });

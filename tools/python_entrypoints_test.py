@@ -35,6 +35,22 @@ class PythonEntrypointsTest(unittest.TestCase):
             self.assertEqual(result.exception.code, 1)
             self.assertEqual({p: p.read_bytes() for p in output.rglob('*') if p.is_file()}, generated)
 
+    def test_catalog_history_retain_stage_check_and_failure_exit_codes(self):
+        with self.workspace():
+            Path('public/cards_detailed.json').write_text('[{"id":"TEST-001","name":"Test"}]')
+            Path('public/cards_preview.json').write_text('[]')
+            for args in [['retain'], ['stage', '--output', 'stage'],
+                         ['stage', '--output', 'stage', '--check']]:
+                with patch.object(sys, 'argv', ['catalog_history', *args]), self.assertRaises(SystemExit) as result:
+                    self.run_module('tools.card_data.catalog_history')
+                self.assertEqual(result.exception.code, 0)
+            before = {p: p.read_bytes() for p in Path('.').rglob('*') if p.is_file()}
+            for args in [['stage', '--output', 'stage'], ['stage'], ['retain', '--check']]:
+                with patch.object(sys, 'argv', ['catalog_history', *args]), contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as result:
+                    self.run_module('tools.card_data.catalog_history')
+                self.assertEqual(result.exception.code, 1)
+            self.assertEqual({p: p.read_bytes() for p in Path('.').rglob('*') if p.is_file()}, before)
+
     def run_module(self, name):
         # Discovery may already have imported this module via its parser tests.
         # Execute a fresh __main__ namespace, then restore the discovered modules.
