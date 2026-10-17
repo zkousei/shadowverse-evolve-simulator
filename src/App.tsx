@@ -3,13 +3,30 @@ import { Analytics } from '@vercel/analytics/react';
 import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Home from './pages/Home';
-import DeckBuilder from './pages/DeckBuilder';
-import GameBoard from './pages/GameBoard';
+import { createLazyPage } from './utils/lazyPage';
 import { generateRoomCode } from './utils/roomCode';
 import {
   redactVercelAnalyticsEvent,
   shouldEnableVercelAnalytics,
 } from './utils/vercelAnalytics';
+
+const DeckBuilder = createLazyPage(() => import('./pages/DeckBuilder'));
+const GameBoard = createLazyPage(() => import('./pages/GameBoard'));
+
+function PageLoading() {
+  const { t } = useTranslation();
+  return <p role="status" style={{ padding: '2rem' }}>{t('app.loadingPage')}</p>;
+}
+
+// Distinct, stable route components give each destination a fresh loading boundary
+// without remounting a loaded page on rerenders or query-string updates.
+function DeckBuilderPage() {
+  return <React.Suspense fallback={<PageLoading />}><DeckBuilder /></React.Suspense>;
+}
+
+function GameBoardPage() {
+  return <React.Suspense fallback={<PageLoading />}><GameBoard /></React.Suspense>;
+}
 
 const navLinkStyle: React.CSSProperties = {
   color: 'var(--text-main)',
@@ -343,8 +360,8 @@ function App() {
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/deck-builder" element={<DeckBuilder />} />
-          <Route path="/game" element={<GameBoard />} />
+          <Route path="/deck-builder" element={<DeckBuilderPage />} />
+          <Route path="/game" element={<GameBoardPage />} />
         </Routes>
       </main>
 

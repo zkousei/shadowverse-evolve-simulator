@@ -59,6 +59,16 @@ npm run test:changed
 npm run test:all
 ```
 
+ブラウザ操作の E2E と、本番ビルドの画面分割・読み込み失敗からの復旧は、別々に検証します。
+
+```bash
+npm run test:e2e -- --workers=2
+npm run test:e2e:production -- --workers=2
+```
+
+本番ビルド用のコマンドは manifest を生成してビルドし、ポート `4173` のプレビューサーバーで検証します。
+通常の E2E は開発サーバーを使用します。実機間の P2P 接続と Safari 固有の挙動は別途確認してください。
+
 ### プレイヤーとして使う
 
 GameBoard の操作方法は [`./docs/gameboard-user-guide.md`](./docs/gameboard-user-guide.md) を参照してください。
