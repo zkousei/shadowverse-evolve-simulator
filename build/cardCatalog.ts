@@ -45,6 +45,7 @@ export const cardCatalog = (): Plugin => {
         const data = JSON.parse(manifest.toString('utf8')) as {
           index: { file: string }; details: Record<string, { file: string }>;
         };
+        // Emit only files referenced by the current manifest; retain no history.
         // Read every verified file before emitting any assets. Build failure
         // aborts publication; the source JSON files are never written.
         const files = [{ name: 'manifest.json', source: manifest },
@@ -74,8 +75,8 @@ export const cardCatalog = (): Plugin => {
           res.end(req.method === 'HEAD' ? undefined : '{"error":"Catalog file not found"}');
           return;
         }
-        // Keep all catalog responses revalidated until hosting retention and
-        // missing-version cache behavior have been verified on Vercel.
+        // Revalidate catalog files on access. Old versions are not retained,
+        // and missing files must remain retryable after a page reload.
         res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
         next();
       });

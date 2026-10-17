@@ -1,6 +1,6 @@
 import { afterEach, expect, test } from 'vitest';
 import { build, resolveConfig } from 'vite';
-import { mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { cardCatalog } from './cardCatalog';
@@ -58,7 +58,7 @@ test('refuses a public catalog directory that could overwrite the verified outpu
   await expect(compile(root)).rejects.toThrow(/reserved/);
 });
 
-test('rebuilds from changed inputs with a new version and no stale files', async () => {
+test('rebuilds from changed inputs without recording history and emits only the current version', async () => {
   const root = fixture();
   const versions = [];
   for (const id of ['BP01-001', 'BP02-002']) {
@@ -92,4 +92,17 @@ test('does not activate for development but does activate for production preview
   expect(dev.plugins.some(plugin => plugin.name === 'verified-card-catalog')).toBe(false);
   const preview = await resolveConfig(options, 'serve', 'production', 'production', true);
   expect(preview.plugins.some(plugin => plugin.name === 'verified-card-catalog')).toBe(true);
+});
+
+test('a second disk build replaces the previous catalog instead of accumulating versions', async () => {
+  const root = fixture();
+  await compile(root, true);
+  const previous = JSON.parse(readFileSync(join(root, 'dist/card-catalog/manifest.json'), 'utf8'));
+  writeFileSync(join(root, 'public/cards_detailed.json'), JSON.stringify([{ id: 'BP02-001', name: 'New' }]));
+  await compile(root, true);
+  const current = JSON.parse(readFileSync(join(root, 'dist/card-catalog/manifest.json'), 'utf8'));
+  expect(current.catalogVersion).not.toBe(previous.catalogVersion);
+  expect(readdirSync(join(root, 'dist/card-catalog/versions'))).toEqual([current.catalogVersion]);
+  expect(JSON.parse(readFileSync(join(root, 'dist/card-catalog', current.details.BP02.file), 'utf8'))[0])
+    .toMatchObject({ id: 'BP02-001', name: 'New' });
 });
