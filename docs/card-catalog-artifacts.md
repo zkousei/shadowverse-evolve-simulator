@@ -1,8 +1,9 @@
 # カードカタログの生成・互換性検証
 
-この段階は、将来の読み込み分割に備えた生成・監査のみです。
+この段階は、将来の読み込み分割に備えた生成・監査・配信準備です。
 アプリは引き続き `public/cards_detailed.json` と `public/cards_preview.json` を読みます。
-生成物を利用するコード、保存形式、P2P通信形式、通常のビルド処理は変更していません。
+画面で生成物を利用するコード、保存形式、P2P通信形式は変更していません。
+通常のビルドでは、後述の手順で検証済み生成物を追加します。
 
 ## 実行方法
 
@@ -20,7 +21,8 @@ npm run cards:check:catalog
 生成・検証の正常終了は0、不正な入力やファイル操作の失敗は1です。
 
 出力先はGit管理対象外の `artifacts/card-catalog/` です。
-`public/` の外なので、通常のビルド・公開に生成ファイルが混ざりません。
+`public/` の外なので、この作業用ディレクトリ自体はビルド・公開に含めません。
+ビルド時はこのディレクトリを使わず、一時ディレクトリで独立に生成します。
 現在の読み込み量・速度を改善する変更ではありません。
 
 入力・出力はオプションで指定できます。
@@ -108,7 +110,7 @@ npx vitest run src/utils/card/generatedCardCatalogParity.test.ts
 ## 分割データ取得処理（画面への接続前）
 
 `src/utils/card/generatedCardCatalog.ts` に、生成物を読む独立した取得処理を追加しています。
-既存の `loadCardCatalog`、DeckBuilder、GameBoard、保存・通信形式、ビルド・配信処理は切り替えていません。
+既存の `loadCardCatalog`、DeckBuilder、GameBoard、保存・通信形式、画面の取得先は切り替えていません。
 この取得処理をアプリから呼び出すコードはまだありません。
 
 ```ts
@@ -121,7 +123,8 @@ const cards = await catalog.loadCards(['BP01-001']);
 const cardsAndRelated = await catalog.loadCardsWithRelated(['BP01-001']);
 ```
 
-上記パスは将来の配信先の例です。現在の `artifacts/card-catalog/` は公開されません。
+上記パスは本番ビルドの配信先です。`artifacts/card-catalog/` 自体は公開されません。
+開発サーバーでは生成・配信しません。配信確認には本番ビルドとpreviewを使います。
 取得には `fetch`・`TextEncoder`・`TextDecoder`・Web Crypto の SHA-256 が必要です。
 ブラウザーでは HTTPS または localhost など、Web Crypto が利用できる環境で使います。
 
@@ -149,7 +152,7 @@ const cardsAndRelated = await catalog.loadCardsWithRelated(['BP01-001']);
 ### 次段階で実装する範囲
 
 画面のローディング・再試行表示、連続操作時の古い結果の破棄、保存・復元前の詳細取得、
-既存方式への切り戻し、生成物のビルド・配信と旧バージョンの保持は、画面接続の段階で実装します。
+既存方式への切り戻し、旧バージョンの保持は、画面接続前に実装・検証する必要があります。
 この取得処理は既存方式への自動フォールバックを持ちません。呼び出し元が検証済みの成功結果だけを採用する設計です。
 
 主なテスト所有先は `src/utils/card/generatedCardCatalog.test.ts` です。
@@ -159,3 +162,74 @@ const cardsAndRelated = await catalog.loadCardsWithRelated(['BP01-001']);
 ```sh
 npx vitest run src/utils/card/generatedCardCatalog.test.ts src/utils/card/generatedCardCatalogParity.test.ts
 ```
+
+## ビルド時の配信準備
+
+`build/cardCatalog.ts` のViteプラグインは `npm run build` と `npm run build:dummy`
+で動作します。**ビルド環境にPython 3が必要**です。追加のPythonライブラリ・外部通信は不要です。
+通常の `npm run dev` / `dev:dummy` にはPythonの起動や生成処理を追加しません。
+生成・検証の分だけビルド時間は増えます。負荷次第でプラグインの所要時間警告が出る場合があります。
+
+1. ビルドごとに空の一時ディレクトリを作り、既存の正本JSONから生成します。
+2. 独立した `--check` で、生成物と入力が一致することを再確認します。
+3. manifestと参照ファイルを全て読み取り、Viteのアセットとして `dist/card-catalog/` に追加します。
+4. 成功・失敗のどちらでも一時ディレクトリを削除します。
+
+生成・検証・読取の失敗はビルドを失敗させます。以前の生成物への代替はしません。
+`public/card-catalog` は生成物と競合するため、存在した場合はビルドを拒否します。
+元のJSON・作業用artifacts・保存データは書き換えません。
+公開システムはビルドが正常終了した場合だけ成果物を公開する必要があります。
+
+配信するのはmanifestと、そのmanifestが参照する**今回の1バージョンだけ**です。
+全詳細も配信物に追加するので、デプロイ全体のファイル量は増えます。
+アプリは要求しないため、今回の変更だけでは画面の通信量や表示速度は変わりません。
+
+`vercel.json` ではカタログの名前空間をSPA向けrewriteから外します。
+既存ファイルは静的ファイルとして配信され、欠損ファイルは404になります。
+現段階はmanifest・バージョン別ファイルの両方を毎回再検証する設定です。
+存在しないバージョンの404まで長期キャッシュされるリスクを避けるため、
+旧版保持とVercel実環境の応答確認が済むまでimmutable・長いmax-ageは付けません。
+API・既存画面のrewriteは維持します。
+Vite previewにもカタログ限定のヘッダーと欠損時404を追加しますが、
+これはVercelの実装を再現するものではありません。Vercelの404本文はpreviewと異なります。
+
+### 本番へのマージ前の必須条件
+
+ローカルで成功していても、ビルド環境へのPython依存と配信設定を追加するため、
+この変更を本番へマージする前に以下をVercelプレビューで確認します。
+
+- VercelプレビューでPython 3を含む通常ビルドの成功を確認する。
+- manifest・一覧・詳細のHTTPステータス、Content-Type、実際のCache-Controlとハッシュを確認する。
+- 欠損ファイルがHTMLの200にならず、404になることを確認する。
+  存在しないバージョンへの応答が長期キャッシュされないことも確認する。
+- 既存画面への直接アクセス、保存デッキの復元、API経路を確認する。
+
+### 画面接続前の追加必須条件
+
+- **旧バージョンを公開更新後も取得できる配信方式を導入する。**
+  ローカルの生成ツールが古いディレクトリを残すことや、ハッシュ付きURL・immutable指定は、
+  Vercelの別デプロイに古いファイルを保持する保証ではありません。
+  現状のビルドでは旧版は残らず、旧画面が遅れて詳細を取得すると404になり得ます。
+  永続的なバージョン保管先と保持・削除方針を確定し、更新前に開いた画面から
+  更新後に未取得の旧詳細を読めるテストを通すまで、画面には接続しません。
+  暗黙の最新バージョンへの切替・部分的な新旧混在で回避しません。
+
+今回のローカルテストはVercelへの公開・実環境検証の代替にはなりません。
+この段階でアプリの取得先を変更することは対象外です。
+
+### 配信準備のテスト所有先
+
+- `build/cardCatalog.test.ts`: 実際のViteビルドを使い、生成物・全項目保持・入力保護・不正入力・欠損・競合・再生成を検証。
+- `build/catalogHosting.test.ts`: カタログのみを除外するrewriteとキャッシュ設定。
+- `e2e/production/catalog-delivery.spec.ts`: 本番ビルドのHTTP配信・ハッシュ・欠損404と、既存画面が従来データだけを要求すること。
+- 既存の生成・取得・互換性テストも継続する。
+
+```sh
+npm run build
+npm run preview -- --host 127.0.0.1 --port 4173
+# 別プロセスでの全自動検証（buildとpreviewを含む）
+npm run test:e2e:production -- --workers=2
+```
+
+Vercel設定の参照: [静的設定](https://vercel.com/docs/project-configuration/vercel-json)、
+[キャッシュヘッダー](https://vercel.com/docs/caching/cache-control-headers)。

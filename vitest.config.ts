@@ -23,6 +23,7 @@ export default defineConfig({
           name: 'logic',
           environment: 'node',
           include: [
+            'build/**/*.test.ts',
             'src/utils/**/*.test.ts',
             'src/models/**/*.test.ts',
             'src/i18n/**/*.test.ts',
