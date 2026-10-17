@@ -1,0 +1,52 @@
+import { expect, test } from '@playwright/test';
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import type { APIRequestContext } from '@playwright/test';
+
+type Descriptor = { file: string; bytes: number; sha256: string; count: number };
+const fetchVerified = async (request: APIRequestContext, descriptor: Descriptor) => {
+  const response = await request.get(`/card-catalog/${descriptor.file}`);
+  expect(response.status()).toBe(200);
+  expect(response.headers()['content-type']).toContain('application/json');
+  expect(response.headers()['cache-control']).toBe('public, max-age=0, must-revalidate');
+  const body = await response.body();
+  expect(body.length).toBe(descriptor.bytes);
+  expect(createHash('sha256').update(body).digest('hex')).toBe(descriptor.sha256);
+  const records = JSON.parse(body.toString());
+  expect(records).toHaveLength(descriptor.count);
+  return records;
+};
+
+test('serves verified summaries and complete details from the production build', async ({ request }) => {
+  const response = await request.get('/card-catalog/manifest.json');
+  expect(response.status()).toBe(200);
+  expect(response.headers()['content-type']).toContain('application/json');
+  expect(response.headers()['cache-control']).toBe('public, max-age=0, must-revalidate');
+  const manifest = await response.json();
+  const summaries = await fetchVerified(request, manifest.index);
+  const details = await fetchVerified(request, manifest.details[summaries[0].detail_group]);
+  const original = JSON.parse(readFileSync('public/cards_detailed.json', 'utf8'));
+  expect(details.find((card: { id: string }) => card.id === original[0].id))
+    .toEqual({ ...original[0], catalog_status: 'released' });
+});
+
+test('returns 404 instead of the SPA document for missing catalog files', async ({ request }) => {
+  for (const path of ['/card-catalog', '/card-catalog/missing.json',
+    `/card-catalog/versions/${'0'.repeat(64)}/details/BP01.json`]) {
+    const response = await request.get(path, { headers: { Accept: 'text/html' } });
+    expect(response.status(), path).toBe(404);
+    expect(response.headers()['content-type']).toContain('application/json');
+    expect(response.headers()['cache-control']).toBe('no-store');
+    expect(await response.json()).toEqual({ error: 'Catalog file not found' });
+  }
+});
+
+test('existing deck builder continues using the original catalog only', async ({ page }) => {
+  const requested = new Set<string>();
+  page.on('request', request => requested.add(new URL(request.url()).pathname));
+  await page.goto('/deck-builder');
+  await expect(page.locator('input[type="file"]')).toBeEnabled();
+  expect(requested.has('/cards_detailed.json')).toBe(true);
+  expect(requested.has('/cards_preview.json')).toBe(true);
+  expect([...requested].some(path => path.startsWith('/card-catalog/'))).toBe(false);
+});

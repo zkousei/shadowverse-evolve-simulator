@@ -35,5 +35,5 @@ playwright-report/
 __pycache__/
 *.py[cod]
 
-# Offline catalog artifacts (generated on demand; not served by the app yet)
+# Local catalog artifacts (builds generate their own verified copy)
 /artifacts/card-catalog/

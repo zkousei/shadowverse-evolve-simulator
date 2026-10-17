@@ -1,8 +1,28 @@
 {
   "rewrites": [
     {
-      "source": "/((?!api/).*)",
+      "source": "/((?!api/|card-catalog(?:/|$)).*)",
       "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/card-catalog/manifest.json",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/card-catalog/versions/:version/:path*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
     }
   ]
 }
