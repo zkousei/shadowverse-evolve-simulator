@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 
@@ -51,9 +51,15 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-vi.mock('./pages/GameBoard', () => ({
-  default: () => <div>Mock Game Board</div>,
-}));
+vi.mock('./pages/GameBoard', async () => {
+  const { useState } = await import('react');
+  return {
+    default: function MockGameBoard() {
+      const [count, setCount] = useState(0);
+      return <div>Mock Game Board<button onClick={() => setCount(count + 1)}>Adjustments {count}</button></div>;
+    },
+  };
+});
 
 describe('App', () => {
   beforeEach(() => {
@@ -72,14 +78,14 @@ describe('App', () => {
     expect(screen.getByText('Mock Home Page')).toBeInTheDocument();
   });
 
-  it('renders the deck builder route', () => {
+  it('renders the deck builder route', async () => {
     window.history.pushState({}, '', '/deck-builder');
     render(<App />);
 
-    expect(screen.getByText('Mock Deck Builder')).toBeInTheDocument();
+    expect(await screen.findByText('Mock Deck Builder')).toBeInTheDocument();
   });
 
-  it('navigates to solo mode from the play menu', () => {
+  it('navigates to solo mode from the play menu', async () => {
     window.history.pushState({}, '', '/deck-builder');
     render(<App />);
 
@@ -88,10 +94,10 @@ describe('App', () => {
 
     expect(window.location.pathname).toBe('/game');
     expect(window.location.search).toBe('?mode=solo');
-    expect(screen.getByText('Mock Game Board')).toBeInTheDocument();
+    expect(await screen.findByText('Mock Game Board')).toBeInTheDocument();
   });
 
-  it('creates a host room from the play menu', () => {
+  it('creates a host room from the play menu', async () => {
     vi.spyOn(Math, 'random').mockReturnValueOnce(0.123456789);
     window.history.pushState({}, '', '/');
     render(<App />);
@@ -101,10 +107,10 @@ describe('App', () => {
 
     expect(window.location.pathname).toBe('/game');
     expect(window.location.search).toBe('?host=true&room=4FZZZX');
-    expect(screen.getByText('Mock Game Board')).toBeInTheDocument();
+    expect(await screen.findByText('Mock Game Board')).toBeInTheDocument();
   });
 
-  it('joins a room from the play menu', () => {
+  it('joins a room from the play menu', async () => {
     window.history.pushState({}, '', '/');
     render(<App />);
 
@@ -114,14 +120,14 @@ describe('App', () => {
 
     expect(window.location.pathname).toBe('/game');
     expect(window.location.search).toBe('?host=false&room=ROOM42');
-    expect(screen.getByText('Mock Game Board')).toBeInTheDocument();
+    expect(await screen.findByText('Mock Game Board')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Play' }));
     expect(screen.getByLabelText('Join Game')).toHaveValue('');
     expect(screen.getByLabelText('Spectate Game')).toHaveValue('');
   });
 
-  it('spectates a room from the play menu', () => {
+  it('spectates a room from the play menu', async () => {
     window.history.pushState({}, '', '/');
     render(<App />);
 
@@ -135,7 +141,22 @@ describe('App', () => {
     fireEvent.click(spectateButton);
     expect(window.location.pathname).toBe('/game');
     expect(window.location.search).toBe('?spectator=true&room=ROOM77');
-    expect(screen.getByText('Mock Game Board')).toBeInTheDocument();
+    expect(await screen.findByText('Mock Game Board')).toBeInTheDocument();
+  });
+
+  it('preserves game page state on parent rerenders and query-only navigation', async () => {
+    window.history.pushState({}, '', '/game?mode=solo');
+    const { rerender } = render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Adjustments 0' }));
+    rerender(<App />);
+    expect(screen.getByRole('button', { name: 'Adjustments 1' })).toBeInTheDocument();
+    expect(window.location.search).toBe('?mode=solo');
+    await act(async () => {
+      window.history.pushState({}, '', '/game?mode=solo&room=ROOM42');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+    expect(screen.getByRole('button', { name: 'Adjustments 1' })).toBeInTheDocument();
+    expect(window.location.search).toBe('?mode=solo&room=ROOM42');
   });
 
   it('keeps join disabled for blank room ids and trims room codes before navigating', () => {

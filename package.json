@@ -16,6 +16,7 @@
     "test:python": "python3 -m unittest discover -p '*_test.py'",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
+    "test:e2e:production": "npm run build -- --manifest && playwright test --config playwright.production.config.ts",
     "cards:fetch:official": "python3 -m tools.official_cards.scraper",
     "cards:fetch:official:details": "python3 -m tools.official_cards.scrape_details",
     "cards:fetch:official:incremental": "python3 -m tools.official_cards.sync_incremental",

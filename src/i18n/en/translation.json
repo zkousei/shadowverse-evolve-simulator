@@ -1,4 +1,12 @@
 {
+  "app": {
+    "loadingPage": "Loading page…",
+    "pageLoadError": {
+      "title": "Unable to load this page",
+      "message": "Check your connection, then reload this page to get the latest version.",
+      "reload": "Reload this page"
+    }
+  },
   "deckBuilder": {
     "restriction": {
       "limited": "Limited to {{limit}}",

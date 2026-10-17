@@ -1,4 +1,12 @@
 {
+  "app": {
+    "loadingPage": "画面を読み込んでいます…",
+    "pageLoadError": {
+      "title": "画面を読み込めませんでした",
+      "message": "通信状況を確認してから、このページを再読み込みして最新の画面を取得してください。",
+      "reload": "このページを再読み込み"
+    }
+  },
   "deckBuilder": {
     "restriction": {
       "limited": "{{limit}}枚制限",
