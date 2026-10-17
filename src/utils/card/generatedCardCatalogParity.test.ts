@@ -4,7 +4,7 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { CardInstance } from '../../components/Card';
 import {
   getAvailableExpansions, getAvailableProductNames, getAvailableRarities,
@@ -14,6 +14,7 @@ import { CLASS } from '../../models/class';
 import { createDefaultDeckRuleConfig, getImportedDeckRuleConfig } from '../../models/deckRule';
 import type { DeckState } from '../../models/deckState';
 import { mergeCardCatalogs } from './cardCatalog';
+import { openGeneratedCardCatalog } from './generatedCardCatalog';
 import { buildDeckBuilderCatalogView, type DeckBuilderCatalogFilters } from '../deckBuilder/deckBuilderCatalog';
 import { getDeckValidationMessages, sanitizeImportedDeckState } from '../deckBuilder/deckBuilderRules';
 import {
@@ -52,6 +53,29 @@ describe('generated card catalog compatibility', () => {
   let index: IndexCard[];
   let originalResources: ReturnType<typeof buildGameBoardCatalogResources>;
   let restoredResources: ReturnType<typeof buildGameBoardCatalogResources>;
+
+  it('reads actual generated artifacts through the versioned reader without changing any card data', async () => {
+    const request = vi.spyOn(globalThis, 'fetch').mockImplementation(async input => {
+      const path = String(input);
+      if (!path.startsWith('/catalog/')) throw new Error(`Unexpected request: ${path}`);
+      return new Response(readFileSync(join(output!, path.slice('/catalog/'.length)), 'utf8'));
+    });
+    try {
+      const catalog = await openGeneratedCardCatalog('/catalog');
+      expect(catalog.index).toEqual(index);
+      expect(request).toHaveBeenCalledTimes(2);
+      const details = await catalog.loadCards(original.map(card => card.id));
+      expect(details).toEqual(original);
+      expect(request).toHaveBeenCalledTimes(2 + new Set(index.map(entry => entry.detail_group)).size);
+      const source = original.find(card => card.related_cards?.length);
+      expect(source).toBeDefined();
+      const related = await catalog.loadCardsWithRelated([source!.id]);
+      expect(related.length).toBeGreaterThan(1);
+      for (const entry of related) expect(entry).toEqual(original.find(card => card.id === entry.id));
+    } finally {
+      request.mockRestore();
+    }
+  });
 
   beforeAll(() => {
     output = mkdtempSync(join(tmpdir(), 'card-catalog-parity-'));

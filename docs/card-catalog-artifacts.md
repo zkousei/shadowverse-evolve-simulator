@@ -104,3 +104,58 @@ npx vitest run src/utils/card/generatedCardCatalogParity.test.ts
 ```
 
 互換性テストは自分専用の一時ディレクトリを生成・削除するため、ローカルの生成物の有無に依存しません。
+
+## 分割データ取得処理（画面への接続前）
+
+`src/utils/card/generatedCardCatalog.ts` に、生成物を読む独立した取得処理を追加しています。
+既存の `loadCardCatalog`、DeckBuilder、GameBoard、保存・通信形式、ビルド・配信処理は切り替えていません。
+この取得処理をアプリから呼び出すコードはまだありません。
+
+```ts
+const catalog = await openGeneratedCardCatalog('/card-catalog');
+// ここでは manifest と軽量一覧だけを取得する。
+const summaries = catalog.index;
+// 指定IDの順序・重複を維持して完全な詳細を返す。
+const cards = await catalog.loadCards(['BP01-001']);
+// 関連カードを再帰的に含める場合は明示的にこちらを使う。
+const cardsAndRelated = await catalog.loadCardsWithRelated(['BP01-001']);
+```
+
+上記パスは将来の配信先の例です。現在の `artifacts/card-catalog/` は公開されません。
+取得には `fetch`・`TextEncoder`・`TextDecoder`・Web Crypto の SHA-256 が必要です。
+ブラウザーでは HTTPS または localhost など、Web Crypto が利用できる環境で使います。
+
+### 保証する範囲
+
+- manifest は再検証を要求して取得し、開いたインスタンスはそのバージョンに固定します。
+  別バージョンに更新するには、新しいインスタンスを開きます。
+- ファイル参照は指定ディレクトリ配下の当該バージョンの固定パスだけを許可します。
+  未対応スキーマ・不整合な件数・ファイルハッシュと一致しないバージョンを拒否します。
+- 一覧・詳細はバイト数と SHA-256 を確認してから解析します。
+  一覧の重複ID・参照切れ・詳細グループの不整合、詳細の不足・余分なID・一覧との値の不一致も拒否します。
+- アプリの既存型に合わない既知フィールドや両面情報は拒否し、値を変換・補完しません。
+  未知の拡張項目は詳細に保持します。画像が入力にない場合も補完しないため、返却型でも省略可能です。
+- 同じインスタンスの同じ詳細グループは、取得中の処理と検証済み結果を共有します。
+  失敗したグループはキャッシュから外し、次の呼び出しで再試行できます。
+  インスタンスをまたぐグローバルなキャッシュや永続キャッシュは作りません。
+- 一覧と検証済みの詳細は型でも区別し、一覧を完全な詳細として渡すと型検査で失敗します。
+  型の識別のためにJSON・保存データへ項目を追加することはありません。
+- 返却データはネストした項目も凍結し、共有データの書き換えを防ぎます。
+- `loadCards` は指定されたIDだけを、呼び出し時の順序・重複を維持して返します。
+  `loadCardsWithRelated` は指定IDを重複除去した後、関連参照を順に辿って追加し、循環参照でも停止します。
+- 複数グループの一部が失敗すると呼び出し全体を失敗とし、部分的な配列を返しません。
+  その際、既に検証できたグループは再利用できます。デッキ状態への反映は行いません。
+
+### 次段階で実装する範囲
+
+画面のローディング・再試行表示、連続操作時の古い結果の破棄、保存・復元前の詳細取得、
+既存方式への切り戻し、生成物のビルド・配信と旧バージョンの保持は、画面接続の段階で実装します。
+この取得処理は既存方式への自動フォールバックを持ちません。呼び出し元が検証済みの成功結果だけを採用する設計です。
+
+主なテスト所有先は `src/utils/card/generatedCardCatalog.test.ts` です。
+`src/utils/card/generatedCardCatalogParity.test.ts` では、実際の生成物を取得処理で読み戻し、
+全カードの全項目・順序が既存の統合結果と一致することと、必要になるまで詳細を取得しないことを検証します。
+
+```sh
+npx vitest run src/utils/card/generatedCardCatalog.test.ts src/utils/card/generatedCardCatalogParity.test.ts
+```
