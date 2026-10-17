@@ -2,7 +2,7 @@ import React from 'react';
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
 import type { DeckRuleConfig } from '../../models/deckRule';
 import type { DeckState } from '../../models/deckState';
-import { clearDraft, getSavedDeckById, loadDraft, type DeckBuilderSnapshot } from '../../utils/deck/deckStorage';
+import { clearDraft, getSavedDeckById, loadDraft, type DeckBuilderSnapshot, type DeckBuilderDraftV1, type SavedDeckRecordV1 } from '../../utils/deck/deckStorage';
 import {
   buildContinuedDraftRestoreSessionState,
   buildPendingDraftRestoreState,
@@ -14,6 +14,7 @@ import {
 
 type UseDeckBuilderSessionTrackingArgs = {
   cards: DeckBuilderCardData[];
+  resolveDraftCards?: (draft: DeckBuilderDraftV1, saved: SavedDeckRecordV1 | null) => Promise<DeckBuilderCardData[]>;
   setDeckName: React.Dispatch<React.SetStateAction<string>>;
   setDeckRuleConfig: React.Dispatch<React.SetStateAction<DeckRuleConfig>>;
   setDeckState: React.Dispatch<React.SetStateAction<DeckState>>;
@@ -24,12 +25,16 @@ export const useDeckBuilderSessionTracking = ({
   setDeckName,
   setDeckRuleConfig,
   setDeckState,
+  resolveDraftCards,
 }: UseDeckBuilderSessionTrackingArgs) => {
   const [selectedSavedDeckId, setSelectedSavedDeckId] = React.useState<string | null>(null);
   const [savedBaselineSnapshot, setSavedBaselineSnapshot] = React.useState<DeckBuilderSnapshot | null>(null);
   const [draftRestored, setDraftRestored] = React.useState(false);
   const [hasInitializedDraft, setHasInitializedDraft] = React.useState(false);
   const [pendingDraftRestore, setPendingDraftRestore] = React.useState<PendingDraftRestoreState | null>(null);
+
+  const restoreEpoch = React.useRef(0);
+  const [draftRestoreFailure, setDraftRestoreFailure] = React.useState<{ error: unknown } | null>(null);
 
   React.useEffect(() => {
     if (cards.length === 0 || hasInitializedDraft) return;
@@ -41,9 +46,26 @@ export const useDeckBuilderSessionTracking = ({
     }
 
     const savedDeck = draft.selectedDeckId ? getSavedDeckById(draft.selectedDeckId) : null;
-    setPendingDraftRestore(buildPendingDraftRestoreState(draft, cards, savedDeck));
-    setHasInitializedDraft(true);
-  }, [cards, hasInitializedDraft]);
+    if (!resolveDraftCards) {
+      setPendingDraftRestore(buildPendingDraftRestoreState(draft, cards, savedDeck));
+      setHasInitializedDraft(true);
+      return;
+    }
+    let active = true;
+    const epoch = restoreEpoch.current;
+    void resolveDraftCards(draft, savedDeck).then(fullCards => {
+      if (!active || epoch !== restoreEpoch.current) return;
+      const currentSaved = draft.selectedDeckId ? getSavedDeckById(draft.selectedDeckId) : null;
+      if (JSON.stringify(loadDraft()) !== JSON.stringify(draft) || JSON.stringify(currentSaved) !== JSON.stringify(savedDeck)) {
+        throw new Error('Draft or saved baseline changed while loading; reload to restore the current data');
+      }
+      setPendingDraftRestore(buildPendingDraftRestoreState(draft, fullCards, savedDeck));
+      setHasInitializedDraft(true);
+    }).catch(error => {
+      if (active && epoch === restoreEpoch.current) setDraftRestoreFailure({ error });
+    });
+    return () => { active = false; };
+  }, [cards, hasInitializedDraft, resolveDraftCards]);
 
   const applyDeckBuilderTrackingState = React.useCallback((state: DeckBuilderTrackingStatePatch) => {
     if (state.selectedSavedDeckId !== undefined) {
@@ -71,6 +93,9 @@ export const useDeckBuilderSessionTracking = ({
   }, [applyDeckBuilderTrackingState, setDeckName, setDeckRuleConfig, setDeckState]);
 
   const resetBuilderState = React.useCallback(() => {
+    restoreEpoch.current++;
+    setDraftRestoreFailure(null);
+    setHasInitializedDraft(true);
     applyDeckBuilderSessionState(buildResetDeckBuilderSessionState());
   }, [applyDeckBuilderSessionState]);
 
@@ -86,6 +111,7 @@ export const useDeckBuilderSessionTracking = ({
   }, [applyDeckBuilderSessionState, pendingDraftRestore]);
 
   return {
+    draftRestoreFailure,
     selectedSavedDeckId,
     savedBaselineSnapshot,
     draftRestored,

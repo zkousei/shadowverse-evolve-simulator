@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { useDeckBuilderSessionTracking } from './useDeckBuilderSessionTracking';
 import * as DeckStorage from '../../utils/deck/deckStorage';
@@ -102,4 +102,79 @@ describe('useDeckBuilderSessionTracking', () => {
     expect(result.current.draftRestored).toBe(true);
     expect(result.current.pendingDraftRestore).toBeNull();
   });
+});
+
+
+describe('asynchronous generated-catalog draft restoration', () => {
+  const draft = { schemaVersion: 1 as const, selectedDeckId: null, lastEditedAt: 'now', name: 'Draft',
+    ruleConfig: createDefaultDeckRuleConfig(), sections: { main: [], evolve: [], leader: [], token: [] } };
+  const summaries = [{ id: 'A', name: 'Summary', image: '' }];
+  const full = [{ id: 'A', name: 'Full', image: '', ability_text: 'Ability' }];
+  const setters = { setDeckName: vi.fn(), setDeckRuleConfig: vi.fn(), setDeckState: vi.fn() };
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(DeckStorage.loadDraft).mockReturnValue(draft);
+  });
+
+  it('waits for all full details before initializing or building the restore dialog', async () => {
+    let resolve!: (cards: DeckBuilderCardData[]) => void;
+    const resolveDraftCards = vi.fn(() => new Promise<DeckBuilderCardData[]>(yes => { resolve = yes; }));
+    const { result } = renderHook(() => useDeckBuilderSessionTracking({ cards: summaries, ...setters, resolveDraftCards }));
+    expect(result.current.hasInitializedDraft).toBe(false);
+    expect(DeckStorage.restoreDraftToSnapshot).not.toHaveBeenCalled();
+    await act(async () => resolve(full));
+    expect(result.current.hasInitializedDraft).toBe(true);
+    expect(DeckStorage.restoreDraftToSnapshot).toHaveBeenCalledWith(draft, full);
+    expect(result.current.pendingDraftRestore).not.toBeNull();
+  });
+
+  it('keeps the original draft and initialization guard when detail acquisition fails', async () => {
+    const error = new Error('404');
+    const resolveDraftCards = vi.fn().mockRejectedValue(error);
+    const { result } = renderHook(() => useDeckBuilderSessionTracking({ cards: summaries, ...setters, resolveDraftCards }));
+    await waitFor(() => expect(result.current.draftRestoreFailure).toEqual({ error }));
+    expect(result.current.hasInitializedDraft).toBe(false);
+    expect(result.current.pendingDraftRestore).toBeNull();
+    expect(DeckStorage.clearDraft).not.toHaveBeenCalled();
+    expect(DeckStorage.restoreDraftToSnapshot).not.toHaveBeenCalled();
+    act(() => result.current.resetBuilderState());
+    expect(result.current.draftRestoreFailure).toBeNull();
+  });
+
+  it('does not apply draft details after unmounting', async () => {
+    let resolve!: (cards: DeckBuilderCardData[]) => void;
+    const resolveDraftCards = () => new Promise<DeckBuilderCardData[]>(yes => { resolve = yes; });
+    const { unmount } = renderHook(() => useDeckBuilderSessionTracking({ cards: summaries, ...setters, resolveDraftCards }));
+    unmount();
+    await act(async () => resolve(full));
+    expect(DeckStorage.restoreDraftToSnapshot).not.toHaveBeenCalled();
+  });
+
+  it('resetting the builder invalidates a pending draft hydration', async () => {
+    let resolve!: (cards: DeckBuilderCardData[]) => void;
+    const resolveDraftCards = () => new Promise<DeckBuilderCardData[]>(yes => { resolve = yes; });
+    const { result } = renderHook(() => useDeckBuilderSessionTracking({ cards: summaries, ...setters, resolveDraftCards }));
+    act(() => result.current.resetBuilderState());
+    await act(async () => resolve(full));
+    expect(result.current.pendingDraftRestore).toBeNull();
+    expect(DeckStorage.restoreDraftToSnapshot).not.toHaveBeenCalled();
+  });
+
+
+  it.each(['saved record deleted', 'draft changed'])('does not restore a stale snapshot when %s while details load', async scenario => {
+    const selectedDraft = { ...draft, selectedDeckId: 'saved' };
+    vi.mocked(DeckStorage.loadDraft).mockReturnValue(selectedDraft);
+    vi.mocked(DeckStorage.getSavedDeckById).mockReturnValue({ schemaVersion: 1, id: 'saved', name: 'Saved',
+      createdAt: 'now', updatedAt: 'now', ruleConfig: draft.ruleConfig, sections: draft.sections });
+    let resolve!: (cards: DeckBuilderCardData[]) => void;
+    const resolveDraftCards = () => new Promise<DeckBuilderCardData[]>(yes => { resolve = yes; });
+    const { result } = renderHook(() => useDeckBuilderSessionTracking({ cards: summaries, ...setters, resolveDraftCards }));
+    if (scenario === 'saved record deleted') vi.mocked(DeckStorage.getSavedDeckById).mockReturnValue(null);
+    else vi.mocked(DeckStorage.loadDraft).mockReturnValue({ ...selectedDraft, name: 'Another tab edit' });
+    await act(async () => resolve(full));
+    expect(result.current.draftRestoreFailure).not.toBeNull();
+    expect(result.current.hasInitializedDraft).toBe(false);
+    expect(result.current.pendingDraftRestore).toBeNull();
+  });
+
 });

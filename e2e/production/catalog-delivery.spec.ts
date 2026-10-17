@@ -41,12 +41,17 @@ test('returns 404 instead of the SPA document for missing catalog files', async 
   }
 });
 
-test('existing deck builder continues using the original catalog only', async ({ page }) => {
+test('deck builder uses generated catalogs and only requests part of the detail groups', async ({ page }) => {
   const requested = new Set<string>();
   page.on('request', request => requested.add(new URL(request.url()).pathname));
   await page.goto('/deck-builder');
   await expect(page.locator('input[type="file"]')).toBeEnabled();
-  expect(requested.has('/cards_detailed.json')).toBe(true);
-  expect(requested.has('/cards_preview.json')).toBe(true);
-  expect([...requested].some(path => path.startsWith('/card-catalog/'))).toBe(false);
+  expect(requested.has('/cards_detailed.json')).toBe(false);
+  expect(requested.has('/cards_preview.json')).toBe(false);
+  expect(requested.has('/card-catalog/manifest.json')).toBe(true);
+  await expect(page.getByRole('button', { name: /プレビュー|Preview / }).first()).toBeVisible();
+  const manifest = JSON.parse(readFileSync('dist/card-catalog/manifest.json', 'utf8'));
+  const groups = [...requested].filter(path => path.includes('/details/'));
+  expect(groups.length).toBeGreaterThan(0);
+  expect(groups.length).toBeLessThan(Object.keys(manifest.details).length);
 });
