@@ -163,6 +163,44 @@ const cardsAndRelated = await catalog.loadCardsWithRelated(['BP01-001']);
 npx vitest run src/utils/card/generatedCardCatalog.test.ts src/utils/card/generatedCardCatalogParity.test.ts
 ```
 
+## 取得状態を扱うHook（画面への接続前）
+
+`useDeckBuilderGeneratedCatalog` はmanifestと一覧の取得状態を扱い、
+`useDeckBuilderGeneratedCardDetails` は1つの選択に必要な完全な詳細の取得状態を扱います。
+これらを呼び出すアプリ画面はまだありません。既存の取得・保存・下書き・対戦処理は変更しません。
+
+```ts
+const resource = useDeckBuilderGeneratedCatalog();
+const catalog = resource.status === 'ready' ? resource.catalog : null;
+const details = useDeckBuilderGeneratedCardDetails(catalog, selectedIds);
+// 一覧: resource.status === 'ready' のとき resource.catalog.index
+// 完全な詳細: details.status === 'ready' のときだけ details.cards
+```
+
+- 一覧取得は `loading / ready / error`、詳細取得は `idle / loading / ready / error` を返します。
+  `ready` 以外では以前のカタログ・カード配列を成功結果として公開しません。
+  詳細が `ready` の場合だけ、検証済みの完全な詳細とカタログのバージョンを返します。
+- 詳細は指定IDだけを取得します。関連カードも必要な場合は第3引数を明示的に `true` にします。
+  同じ内容のID配列は再描画だけでは再取得せず、指定順序と重複は既存の取得処理に従います。
+- 選択の変更・解除、カタログ切り替え、再試行、アンマウント後の古い成功・失敗は反映しません。
+  AからBを経てAへ戻る場合も新しいリクエストとして扱い、最初の結果を復活させません。
+  他の利用箇所と共有する詳細取得の通信自体は中断しません。
+- 取得失敗では部分配列を返さず、エラーを返します。自動再試行や画面の自動再読み込みは行いません。
+  `details.retry()` は同じカタログ・同じ選択での再試行であり、最新版へ自動で切り替えません。
+  `resource.retry()` はmanifestから開き直す明示操作なので、最新版へ変わる可能性があります。
+- これらのHookはデッキの追加・保存・復元・下書き書き込みを実行しません。
+  詳細Hookは最新の選択だけを表示する用途です。連続クリックでカードを追加する操作のキューとして
+  使用すると操作を落とし得るため、その用途では利用せず、画面接続時に別の処理とテストを用意します。
+
+画面接続時には、保存・インポート・復元に必要な全詳細が揃ってから状態を反映し、
+失敗時の案内と再読み込み前の編集中データ保護を実装・検証する必要があります。
+この段階では再読み込みの案内や下書きの保護を実装済みとは扱いません。
+
+主なテスト所有先は `src/hooks/deckBuilder/useDeckBuilderGeneratedCatalog.test.ts` と
+`src/hooks/deckBuilder/useDeckBuilderGeneratedCardDetails.test.ts` です。
+応答順の逆転、選択解除、再選択、カタログ切り替え、明示再試行、Strict Modeの再実行を検証します。
+既存の生成物・取得・実データ互換性テストは引き続き取得内容の整合性を検証します。
+
 ## ローカル開発での分割データ検証
 
 `npm run dev` と `npm run dev:dummy` でも `/card-catalog/manifest.json` と、
