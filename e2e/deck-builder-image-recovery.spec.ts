@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
+import { buildGeneratedCatalogFixture, routeGeneratedCatalogFixture } from './helpers/generatedCatalog';
 
 test.use({ locale: 'en-US' });
 
@@ -13,8 +14,7 @@ for (const lastCard of [51, 151]) {
       card_kind_normalized: 'follower',
       deck_section: 'main',
     }));
-    await page.route('**/cards_detailed.json', route => route.fulfill({ json: cards }));
-    await page.route('**/cards_preview.json', route => route.fulfill({ json: [] }));
+    await routeGeneratedCatalogFixture(page, buildGeneratedCatalogFixture(cards));
     const artwork = readFileSync(path.resolve(process.cwd(), 'public/card_back.png'));
     let nextPageImageRequests = 0;
     await page.route('**/e2e-card-art/*.png', async route => {

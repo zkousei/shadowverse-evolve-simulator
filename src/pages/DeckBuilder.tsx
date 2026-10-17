@@ -125,7 +125,11 @@ import {
   sortDeckCardsForDisplay,
   type DeckSortMode,
 } from '../utils/deckBuilder/deckBuilderDisplay';
-import { loadCardCatalog } from '../utils/card/cardCatalog';
+import { useDeckBuilderGeneratedCatalog } from '../hooks/deckBuilder/useDeckBuilderGeneratedCatalog';
+import { useDeckBuilderGeneratedCardDetails } from '../hooks/deckBuilder/useDeckBuilderGeneratedCardDetails';
+import { useDeckBuilderCatalogAction } from '../hooks/deckBuilder/useDeckBuilderCatalogAction';
+import { createGeneratedDeckBuilderCatalog, getImportedCatalogIds, getSavedCatalogIds } from '../utils/deckBuilder/generatedDeckBuilderCatalog';
+import { reloadDeckBuilderPreservingDraft } from '../utils/deckBuilder/reloadDeckBuilder';
 import { fetchDeckLogImport } from '../utils/deck/decklogImport';
 import { useDeckBuilderPreviewUi } from '../hooks/deckBuilder/useDeckBuilderPreviewUi';
 import { useDeckBuilderModalUi } from '../hooks/deckBuilder/useDeckBuilderModalUi';
@@ -133,6 +137,7 @@ import { useDeckBuilderSavedDeckUi } from '../hooks/deckBuilder/useDeckBuilderSa
 import { useDeckBuilderLibraryFilters } from '../hooks/deckBuilder/useDeckBuilderLibraryFilters';
 import { useDeckBuilderSessionTracking } from '../hooks/deckBuilder/useDeckBuilderSessionTracking';
 
+const EMPTY_CARDS: DeckBuilderCardData[] = [];
 const PAGE_SIZE = 50;
 const COST_FILTER_VALUES = ['All', '0', '1', '2', '3', '4', '5', '6', '7+'] as const;
 const DECK_SECTION_FILTER_VALUES: readonly DeckBuilderDeckSectionFilter[] = ['All', 'main', 'evolve', 'leader', 'token'];
@@ -141,23 +146,34 @@ type CardCatalogStatus = 'loading' | 'ready' | 'error';
 
 const DeckBuilder: React.FC = () => {
   const { t } = useTranslation();
-  const [cards, setCards] = useState<DeckBuilderCardData[]>([]);
-  const [cardCatalogStatus, setCardCatalogStatus] = useState<CardCatalogStatus>('loading');
+  const resource = useDeckBuilderGeneratedCatalog();
+  const source = resource.status === 'ready' ? resource.catalog : null;
+  const catalog = React.useMemo(() => source ? createGeneratedDeckBuilderCatalog(source) : null, [source]);
+  const catalogSummaries = catalog?.summaries ?? EMPTY_CARDS;
+  const actions = useDeckBuilderCatalogAction();
+  const cardCatalogStatus: CardCatalogStatus = resource.status === 'ready' && catalogSummaries.length === 0 ? 'error' : resource.status;
+  const [reloadFailed, setReloadFailed] = useState(false);
+  const draftSaveTimer = React.useRef<number | null>(null);
+  const resolveDraftCards = React.useCallback((draft: Parameters<typeof getSavedCatalogIds>[number], saved: Parameters<typeof getSavedCatalogIds>[number]) => {
+    if (!catalog) return Promise.reject(new Error('Catalog is not ready'));
+    return catalog.loadAvailable(getSavedCatalogIds(draft, saved));
+  }, [catalog]);
   const [deckName, setDeckName] = useState('');
   const [deckRuleConfig, setDeckRuleConfig] = useState(createDefaultDeckRuleConfig());
   const [deckState, setDeckState] = useState<DeckState>(createEmptyDeckState());
   const [deckSortMode, setDeckSortMode] = useState<DeckSortMode>('added');
   const [savedDecks, setSavedDecks] = useState<SavedDeckRecordV1[]>(() => listSavedDecks());
-  const subtypeTags = getAvailableSubtypeTags(cards);
+  const subtypeTags = getAvailableSubtypeTags(catalogSummaries);
   const releasedCards = React.useMemo(
-    () => cards.filter(card => card.catalog_status !== 'preview'),
-    [cards]
+    () => catalogSummaries.filter(card => card.catalog_status !== 'preview'),
+    [catalogSummaries]
   );
   const releasedSubtypeTags = React.useMemo(
     () => getAvailableSubtypeTags(releasedCards),
     [releasedCards]
   );
   const {
+    draftRestoreFailure,
     selectedSavedDeckId,
     savedBaselineSnapshot,
     draftRestored,
@@ -169,7 +185,8 @@ const DeckBuilder: React.FC = () => {
     handleStartFresh,
     handleContinueDraftRestore,
   } = useDeckBuilderSessionTracking({
-    cards,
+    cards: catalogSummaries,
+    resolveDraftCards,
     setDeckName,
     setDeckRuleConfig,
     setDeckState,
@@ -238,39 +255,23 @@ const DeckBuilder: React.FC = () => {
     handleSavedDeckSearchChange,
   } = useDeckBuilderSavedDeckUi({
     savedDecks,
-    cards,
+    cards: catalogSummaries,
   });
 
-  useEffect(() => {
-    loadCardCatalog()
-      .then(data => {
-        if (data.length === 0) {
-          throw new Error('Card catalog is empty');
-        }
-        setCards(data);
-        setCardCatalogStatus('ready');
-      })
-      .catch(err => {
-        setCardCatalogStatus('error');
-        console.error("Could not load cards", err);
-      });
-  }, []);
-
   // Extract unique expansions (prefix before hyphen)
-  const filterOptionCards = showPreviewCards ? cards : releasedCards;
+  const filterOptionCards = showPreviewCards ? catalogSummaries : releasedCards;
   const activeSubtypeTags = showPreviewCards ? subtypeTags : releasedSubtypeTags;
   const expansions = getAvailableExpansions(filterOptionCards);
   const rarities = getAvailableRarities(filterOptionCards);
   const productNames = getAvailableProductNames(filterOptionCards);
   const titles = getAvailableTitles(filterOptionCards);
-  const cardDetailLookup = React.useMemo(() => buildCardDetailLookup(cards), [cards]);
-  const isCardCatalogReady = cardCatalogStatus === 'ready';
+  const isCardCatalogReady = cardCatalogStatus === 'ready' && hasInitializedDraft && pendingDraftRestore === null && !actions.pending;
   const isRuleReady = isRuleConfigured(deckRuleConfig);
   const leaderLimit = getDeckLimit('leader', deckRuleConfig);
   const {
-    paginatedCards,
+    paginatedCards: pageSummaries,
     totalPages,
-  } = buildDeckBuilderCatalogView(cards, deckRuleConfig, {
+  } = buildDeckBuilderCatalogView(catalogSummaries, deckRuleConfig, {
     search,
     costFilter,
     expansionFilter,
@@ -285,6 +286,15 @@ const DeckBuilder: React.FC = () => {
     page,
     pageSize: PAGE_SIZE,
   });
+  const pageDetails = useDeckBuilderGeneratedCardDetails(catalog?.catalog ?? null, pageSummaries.map(card => card.id), true);
+  const knownCards = catalog?.knownCards() ?? EMPTY_CARDS;
+  const fullById = React.useMemo(() => new Map(knownCards.map(card => [card.id, card])), [knownCards]);
+  const pageAvailable = catalog?.hasAvailable(pageSummaries.map(card => card.id)) ?? false;
+  const paginatedCards = pageAvailable
+    ? pageSummaries.map(card => fullById.get(card.id)!) : EMPTY_CARDS;
+  const cardDetailLookup = React.useMemo(() => buildCardDetailLookup([
+    ...knownCards, ...deckState.mainDeck, ...deckState.evolveDeck, ...deckState.leaderCards, ...deckState.tokenDeck,
+  ]), [knownCards, deckState]);
   const { mainDeck, evolveDeck, leaderCards, tokenDeck } = deckState;
   const deckIssueMessages = getDeckValidationMessages(deckState, deckRuleConfig);
   const sortedLeaderCards = sortDeckCardsForDisplay(leaderCards, deckSortMode);
@@ -320,7 +330,7 @@ const DeckBuilder: React.FC = () => {
   );
   useEffect(() => {
     const draftPersistenceAction = getDraftPersistenceAction(
-      cards.length,
+      catalogSummaries.length,
       hasInitializedDraft,
       pendingDraftRestore !== null,
       hasBuilderState
@@ -333,19 +343,30 @@ const DeckBuilder: React.FC = () => {
     }
 
     const timeoutId = window.setTimeout(() => {
+      draftSaveTimer.current = null;
       saveDraft(buildDraftPersistencePayload(selectedSavedDeckId, deckName, deckRuleConfig, deckState));
     }, 400);
 
-    return () => window.clearTimeout(timeoutId);
-  }, [cards.length, deckName, deckRuleConfig, deckState, hasBuilderState, hasInitializedDraft, pendingDraftRestore, selectedSavedDeckId]);
+    draftSaveTimer.current = timeoutId;
+    return () => {
+      window.clearTimeout(timeoutId);
+      if (draftSaveTimer.current === timeoutId) draftSaveTimer.current = null;
+    };
+  }, [catalogSummaries.length, deckName, deckRuleConfig, deckState, hasBuilderState, hasInitializedDraft, pendingDraftRestore, selectedSavedDeckId]);
 
   const refreshSavedDecks = () => {
     setSavedDecks(listSavedDecks());
   };
 
+  const cancelCatalogAction = () => {
+    actions.cancel();
+    applyDeckBuilderModalUiState(buildFinishedDeckLogImportUiState());
+  };
+
   const updateDeckRuleConfig = (
     updater: (current: DeckRuleConfig) => DeckRuleConfig
   ) => {
+    cancelCatalogAction();
     setDeckRuleConfig(current => updater(current));
   };
 
@@ -359,34 +380,41 @@ const DeckBuilder: React.FC = () => {
     : null;
 
   const addToDeck = (card: DeckBuilderCardData, targetSection: DeckTargetSection) => {
-    if (!canAddCardToDeckState(card, targetSection, deckState, deckRuleConfig)) return;
+    if (!hasInitializedDraft || actions.isPending()) return;
+    actions.cancel();
 
     setDeckState(current => {
+      if (!canAddCardToDeckState(card, targetSection, current, deckRuleConfig)) return current;
       const nextDeckState = addCardToDeckState(current, card, targetSection, {
         deckRuleConfig,
         leaderLimit,
       });
 
-      return appendRelatedTokensToDeckState(nextDeckState, cards, deckRuleConfig);
+      return appendRelatedTokensToDeckState(nextDeckState, catalog?.knownCards() ?? EMPTY_CARDS, deckRuleConfig);
     });
   };
 
   const removeFromDeck = (targetSection: DeckTargetSection, cardId?: string) => {
+    cancelCatalogAction();
     setDeckState(current => removeCardFromDeckState(current, targetSection, cardId));
   };
 
   const resetDeckContents = () => {
+    if (!hasInitializedDraft) return;
+    cancelCatalogAction();
     setDeckState(createEmptyDeckState());
     applyDeckBuilderModalUiState(buildDismissedResetDeckDialogUiState());
   };
 
   const resetBuilder = () => {
+    cancelCatalogAction();
     clearDraft();
     resetBuilderState();
     applyDeckBuilderModalUiState(buildDismissedResetBuilderDialogUiState());
   };
 
   const exportDeck = () => {
+    if (actions.isPending()) return;
     downloadDeckJson(
       resolveDeckName(deckName),
       buildExportableDeckPayload(resolveDeckName(deckName), deckRuleConfig, deckState)
@@ -406,18 +434,18 @@ const DeckBuilder: React.FC = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = JSON.parse(e.target?.result as string) as Record<string, unknown>;
-        applyDeckBuilderSessionState(
-          buildImportedDeckSessionState(buildJsonImportedDeckState(data, file.name, cards))
-        );
-      } catch {
-        alert(t('deckBuilder.alerts.importFailed'));
-      }
-    };
-    reader.readAsText(file);
+    if (!catalog || actions.isPending()) return;
+    actions.run(async () => {
+      const data = await new Promise<unknown>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => { try { resolve(JSON.parse(e.target?.result as string)); } catch (error) { reject(error); } };
+        reader.onerror = () => reject(new Error('Could not read deck file'));
+        reader.readAsText(file);
+      });
+      const full = await catalog.loadAvailable(getImportedCatalogIds(data));
+      return buildJsonImportedDeckState(data as Record<string, unknown>, file.name, full);
+    }, imported => applyDeckBuilderSessionState(buildImportedDeckSessionState(imported)),
+    () => alert(t('deckBuilder.alerts.importFailed')));
     // Reset input so the same file can be uploaded again if needed
     event.target.value = '';
   };
@@ -431,26 +459,25 @@ const DeckBuilder: React.FC = () => {
       return;
     }
 
+    if (!catalog || actions.isPending()) return;
     applyDeckBuilderModalUiState(buildStartedDeckLogImportUiState());
-
-    try {
-      const importedDeck = await fetchDeckLogImport(deckLogInput, cards);
-      applyDeckBuilderSessionState(
-        buildImportedDeckSessionState(buildDeckLogImportedDeckState(importedDeck, cards))
-      );
+    actions.run(async () => {
+      const imported = await fetchDeckLogImport(deckLogInput, catalogSummaries);
+      const full = await catalog.loadAvailable(getImportedCatalogIds(imported.deckState));
+      return { imported, state: buildDeckLogImportedDeckState(imported, full) };
+    }, ({ imported, state }) => {
+      applyDeckBuilderSessionState(buildImportedDeckSessionState(state));
       applyDeckBuilderModalUiState(buildDismissedDeckLogImportUiState());
-      setSaveFeedback(buildDeckLogImportFeedback(importedDeck, t));
-    } catch (error) {
-      setSaveFeedback({
-        kind: 'warning',
-        message: getDeckLogImportMessage(error, t),
-      });
-    } finally {
       applyDeckBuilderModalUiState(buildFinishedDeckLogImportUiState());
-    }
+      setSaveFeedback(buildDeckLogImportFeedback(imported, t));
+    }, error => {
+      applyDeckBuilderModalUiState(buildFinishedDeckLogImportUiState());
+      setSaveFeedback({ kind: 'warning', message: getDeckLogImportMessage(error, t) });
+    });
   };
 
   const handleSaveDeck = (saveAsNew = false) => {
+    if (actions.isPending() || !hasInitializedDraft) return;
     // An entirely empty builder is treated as "nothing to save" to avoid
     // cluttering My Decks with placeholder entries that carry no deck content.
     if (!hasBuilderState) {
@@ -484,6 +511,7 @@ const DeckBuilder: React.FC = () => {
   };
 
   const handleMakeUnsavedCopy = () => {
+    cancelCatalogAction();
     // Keep the current builder exactly as-is, but stop tracking it against the
     // loaded My Decks record so subsequent saves create/update a new baseline.
     applyDeckBuilderTrackingState(buildDetachedDeckBuilderTrackingState());
@@ -498,13 +526,22 @@ const DeckBuilder: React.FC = () => {
     const savedDeck = getSavedDeckById(deckId);
     if (!savedDeck) return;
 
-    applyDeckBuilderSessionState(
-      buildLoadedSavedDeckSessionState(buildSavedDeckLoadState(savedDeck, cards))
-    );
-    applyDeckBuilderMyDecksUiState(buildCompletedSavedDeckLoadUiState());
+    if (!catalog || actions.isPending()) return;
+    actions.run(async () => {
+      const full = await catalog.loadAvailable(getSavedCatalogIds(savedDeck));
+      return buildSavedDeckLoadState(savedDeck, full);
+    }, restored => {
+      // A record deleted while loading must not become the active saved deck.
+      if (JSON.stringify(getSavedDeckById(deckId)) !== JSON.stringify(savedDeck)) {
+        throw new Error('Saved deck changed while loading; retry');
+      }
+      applyDeckBuilderSessionState(buildLoadedSavedDeckSessionState(restored));
+      applyDeckBuilderMyDecksUiState(buildCompletedSavedDeckLoadUiState());
+    });
   };
 
   const handleDeleteSavedDeck = (deckId: string) => {
+    cancelCatalogAction();
     const savedDeck = getSavedDeckById(deckId);
     if (!savedDeck) return;
     deleteSavedDeck(deckId);
@@ -516,6 +553,7 @@ const DeckBuilder: React.FC = () => {
   };
 
   const handleDeleteAllSavedDecks = () => {
+    cancelCatalogAction();
     deleteAllSavedDecks();
     // Deleting saved records never wipes the current builder. It only removes
     // My Decks entries and drops tracking if the loaded baseline was deleted.
@@ -527,6 +565,7 @@ const DeckBuilder: React.FC = () => {
   };
 
   const handleDeleteSelectedSavedDecks = () => {
+    cancelCatalogAction();
     if (selectedSavedDeckIds.length === 0) return;
 
     deleteSavedDecks(selectedSavedDeckIds);
@@ -573,19 +612,31 @@ const DeckBuilder: React.FC = () => {
     const savedDeck = getSavedDeckById(deckId);
     if (!savedDeck) return;
 
-    const restoredDeck = restoreSavedDeckToSnapshot(savedDeck, cards);
-    downloadDeckJson(
-      restoredDeck.snapshot.name,
-      buildExportableDeckPayload(
-        restoredDeck.snapshot.name,
-        restoredDeck.snapshot.ruleConfig,
-        restoredDeck.snapshot.deckState,
-      ),
-    );
+    if (!catalog || actions.isPending()) return;
+    actions.run(async () => {
+      const full = await catalog.loadAvailable(getSavedCatalogIds(savedDeck));
+      return restoreSavedDeckToSnapshot(savedDeck, full);
+    }, restored => downloadDeckJson(restored.snapshot.name,
+      buildExportableDeckPayload(restored.snapshot.name, restored.snapshot.ruleConfig, restored.snapshot.deckState)));
+  };
+
+  const catalogFailed = cardCatalogStatus === 'error' || pageDetails.status === 'error' ||
+    draftRestoreFailure !== null || actions.failure !== null;
+  const reloadCatalog = () => {
+    cancelCatalogAction();
+    // The explicit flush must be the last write before navigation.
+    if (draftSaveTimer.current !== null) window.clearTimeout(draftSaveTimer.current);
+    draftSaveTimer.current = null;
+    try {
+      reloadDeckBuilderPreservingDraft({ initialized: hasInitializedDraft,
+        pendingRestore: pendingDraftRestore !== null, hasBuilderState,
+        payload: buildDraftPersistencePayload(selectedSavedDeckId, deckName, deckRuleConfig, deckState),
+      }, () => window.location.reload());
+    } catch { setReloadFailed(true); }
   };
 
   const libraryPaneProps = {
-    isLoading: cardCatalogStatus === 'loading',
+    isLoading: cardCatalogStatus === 'loading' || (!pageAvailable && pageDetails.status === 'loading') || (!hasInitializedDraft && !draftRestoreFailure),
     paginatedCards,
     cardDetailLookup,
     search,
@@ -616,7 +667,7 @@ const DeckBuilder: React.FC = () => {
     deckRuleConfig,
     deckState,
     canAddToSection: (card: DeckBuilderCardData, section: DeckTargetSection) => (
-      canAddCardToDeckState(card, section, deckState, deckRuleConfig)
+      !actions.pending && hasInitializedDraft && canAddCardToDeckState(card, section, deckState, deckRuleConfig)
     ),
     onSearchChange: (value: string) => updateLibraryFiltersWithPageReset({ search: value }),
     onHideSameNameVariantsChange: (checked: boolean) => (
@@ -651,8 +702,8 @@ const DeckBuilder: React.FC = () => {
   const deckPaneProps = {
     isCardCatalogReady,
     deckName,
-    canSaveCurrentDeck,
-    canExportDeck,
+    canSaveCurrentDeck: canSaveCurrentDeck && hasInitializedDraft && !actions.pending,
+    canExportDeck: canExportDeck && !actions.pending,
     selectedSavedDeckId,
     saveStateMessage,
     draftRestored,
@@ -676,7 +727,7 @@ const DeckBuilder: React.FC = () => {
     groupedEvolveDeck,
     tokenDeckCount: tokenDeck.length,
     groupedTokenDeck,
-    onDeckNameChange: setDeckName,
+    onDeckNameChange: (value: string) => { cancelCatalogAction(); setDeckName(value); },
     onSave: () => handleSaveDeck(false),
     onMakeUnsavedCopy: handleMakeUnsavedCopy,
     onOpenMyDecks: () => applyDeckBuilderMyDecksUiState(buildOpenedMyDecksUiState()),
@@ -691,9 +742,9 @@ const DeckBuilder: React.FC = () => {
     onDeckSortModeChange: setDeckSortMode,
     onOpenResetDeckDialog: () => applyDeckBuilderModalUiState(buildOpenedResetDeckDialogUiState()),
     onOpenResetBuilderDialog: () => applyDeckBuilderModalUiState(buildOpenedResetBuilderDialogUiState()),
-    canAddMainCard: (card: DeckBuilderCardData) => canAddCardToDeckState(card, 'main', deckState, deckRuleConfig),
-    canAddEvolveCard: (card: DeckBuilderCardData) => canAddCardToDeckState(card, 'evolve', deckState, deckRuleConfig),
-    canAddTokenCard: (card: DeckBuilderCardData) => canAddCardToDeckState(card, 'token', deckState, deckRuleConfig),
+    canAddMainCard: (card: DeckBuilderCardData) => !actions.pending && hasInitializedDraft && canAddCardToDeckState(card, 'main', deckState, deckRuleConfig),
+    canAddEvolveCard: (card: DeckBuilderCardData) => !actions.pending && hasInitializedDraft && canAddCardToDeckState(card, 'evolve', deckState, deckRuleConfig),
+    canAddTokenCard: (card: DeckBuilderCardData) => !actions.pending && hasInitializedDraft && canAddCardToDeckState(card, 'token', deckState, deckRuleConfig),
     onRemoveLeader: (cardId: string) => removeFromDeck('leader', cardId),
     onRemoveMain: (cardId: string) => removeFromDeck('main', cardId),
     onAddMain: (card: DeckBuilderCardData) => addToDeck(card, 'main'),
@@ -805,7 +856,15 @@ const DeckBuilder: React.FC = () => {
   } : null;
 
   return (
-    <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', height: '100%', overflow: 'hidden', position: 'relative' }}>
+      {(catalogFailed || reloadFailed || actions.pending) && (
+        <div role={catalogFailed || reloadFailed ? 'alert' : 'status'} style={{ position: 'absolute', top: 8, left: '20%', right: '20%', zIndex: 500, padding: '1rem', background: 'var(--bg-surface)', border: '1px solid var(--border-light)', borderRadius: 8 }}>
+          <p>{t(reloadFailed ? 'deckBuilder.catalog.storageFailed' : catalogFailed ? 'deckBuilder.catalog.failed' : 'deckBuilder.catalog.processing')}</p>
+          {(catalogFailed || reloadFailed) && <button type="button" onClick={reloadCatalog}>{t('deckBuilder.catalog.reload')}</button>}
+          {pageDetails.status === 'error' && !reloadFailed && <button type="button" onClick={pageDetails.retry}>{t('deckBuilder.catalog.retry')}</button>}
+          {resource.status === 'error' && !reloadFailed && <button type="button" onClick={resource.retry}>{t('deckBuilder.catalog.retry')}</button>}
+        </div>
+      )}
       {saveFeedback && (
         <DeckBuilderSaveFeedback
           kind={saveFeedback.kind}
