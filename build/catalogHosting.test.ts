@@ -3,12 +3,12 @@ import { readFileSync } from 'node:fs';
 
 const config = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'));
 
-test('excludes only the catalog namespace and existing API namespace from SPA fallback', () => {
+test('excludes asset, catalog and API requests from SPA fallback', () => {
   const fallback = new RegExp(`^${config.rewrites[0].source}$`);
-  for (const path of ['/card-catalog', '/card-catalog/', '/card-catalog/missing.json', '/api/decklog/view/123']) {
+  for (const path of ['/card-catalog', '/card-catalog/', '/card-catalog/missing.json', '/assets', '/assets/missing.js', '/api/decklog/view/123']) {
     expect(fallback.test(path), path).toBe(false);
   }
-  for (const path of ['/', '/deck-builder', '/game', '/card-catalogue', '/other-page']) {
+  for (const path of ['/', '/deck-builder', '/game', '/card-catalogue', '/assets-guide', '/other-page']) {
     expect(fallback.test(path), path).toBe(true);
   }
   expect(config.rewrites[0].destination).toBe('/index.html');
