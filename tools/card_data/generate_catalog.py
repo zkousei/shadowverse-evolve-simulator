@@ -175,7 +175,7 @@ def read_inputs(released_path: Path, preview_path: Path):
 
 
 def verify_version(folder: Path, bundle: CatalogArtifacts) -> None:
-    actual = {str(path.relative_to(folder)) for path in folder.rglob('*') if path.is_file()}
+    actual = {path.relative_to(folder).as_posix() for path in folder.rglob('*') if path.is_file()}
     if actual != set(bundle.files):
         raise ValueError('Generated version contains missing or unexpected files')
     for name, expected in bundle.files.items():

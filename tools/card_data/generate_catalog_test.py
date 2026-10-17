@@ -1,13 +1,13 @@
 import copy
 import hashlib
 import json
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from tools.card_data.generate_catalog import (
-    build_catalog, check_catalog, generate_catalog, reassemble_catalog,
+    build_catalog, check_catalog, generate_catalog, reassemble_catalog, verify_version,
 )
 
 
@@ -137,6 +137,25 @@ class GenerateCatalogTest(unittest.TestCase):
         generate_catalog(self.released_path, self.preview_path, self.output)
         self.assertEqual(self.snapshot(self.inputs), before)
         self.assertEqual(self.snapshot(self.output), generated)
+
+    def test_version_verification_uses_portable_manifest_paths(self):
+        bundle = build_catalog(self.released, self.preview)
+        folder = MagicMock()
+        entries = []
+        for name in bundle.files:
+            entry = MagicMock()
+            entry.is_file.return_value = True
+            entry.relative_to.return_value = PureWindowsPath(name)
+            entries.append(entry)
+        folder.rglob.return_value = entries
+
+        def child(name):
+            path = MagicMock()
+            path.read_bytes.return_value = bundle.files[name]
+            return path
+
+        folder.__truediv__.side_effect = child
+        verify_version(folder, bundle)
 
     def test_check_detects_corruption_and_stale_inputs_without_writing(self):
         bundle = generate_catalog(self.released_path, self.preview_path, self.output)
