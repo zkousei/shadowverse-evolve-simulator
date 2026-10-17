@@ -12,6 +12,29 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 
 class PythonEntrypointsTest(unittest.TestCase):
+    def test_generated_catalog_module_and_read_only_check(self):
+        card = {'id': 'TEST-001', 'name': 'Test', 'image': '', 'ability_text': 'Details'}
+        with self.workspace():
+            Path('public/cards_detailed.json').write_text(json.dumps([card]))
+            Path('public/cards_preview.json').write_text('[]')
+            inputs = {p: p.read_bytes() for p in Path('public').iterdir()}
+            with patch.object(sys, 'argv', ['generate_catalog']), self.assertRaises(SystemExit) as result:
+                self.run_module('tools.card_data.generate_catalog')
+            self.assertEqual(result.exception.code, 0)
+            output = Path('artifacts/card-catalog')
+            self.assertTrue((output / 'manifest.json').is_file())
+            generated = {p: p.read_bytes() for p in output.rglob('*') if p.is_file()}
+            with patch.object(sys, 'argv', ['generate_catalog', '--check']), self.assertRaises(SystemExit) as result:
+                self.run_module('tools.card_data.generate_catalog')
+            self.assertEqual(result.exception.code, 0)
+            self.assertEqual({p: p.read_bytes() for p in output.rglob('*') if p.is_file()}, generated)
+            self.assertEqual({p: p.read_bytes() for p in Path('public').iterdir()}, inputs)
+            Path('public/cards_preview.json').write_text('not JSON')
+            with patch.object(sys, 'argv', ['generate_catalog']), contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as result:
+                self.run_module('tools.card_data.generate_catalog')
+            self.assertEqual(result.exception.code, 1)
+            self.assertEqual({p: p.read_bytes() for p in output.rglob('*') if p.is_file()}, generated)
+
     def run_module(self, name):
         # Discovery may already have imported this module via its parser tests.
         # Execute a fresh __main__ namespace, then restore the discovered modules.

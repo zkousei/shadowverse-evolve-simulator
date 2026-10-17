@@ -5,6 +5,9 @@
 - `card_metadata.py`: 種類から分類・デッキ区分・各フラグを生成します。
 - `audit_cards.py`: 正式カードの整合性を監査します。
 - `audit_preview_cards.py`: previewを監査します。同期ツールは `load_cards()` と `validate_preview_cards()` を利用します。
+- `generate_catalog.py`: 軽量一覧・詳細グループ・manifestをオフラインで生成・検証します。
+  現段階ではアプリの読み込み先を変更しません。形式と安全策は
+  [`../../docs/card-catalog-artifacts.md`](../../docs/card-catalog-artifacts.md) を参照してください。
 
 リポジトリのルートで実行してください。
 
