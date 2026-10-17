@@ -96,8 +96,11 @@ const DeckBuilderLibraryCard: React.FC<DeckBuilderLibraryCardProps> = ({
           isLeaderCard={card.deck_section === 'leader'}
           isTokenCard={card.deck_section === 'token' || card.is_token}
           isEvolveCard={card.is_evolve_card}
-          style={{ width: '100%', borderRadius: '4px' }}
+          style={{ width: '100%', aspectRatio: '5 / 7', objectFit: 'contain', borderRadius: '4px' }}
           draggable={false}
+          retryOnError
+          loading="lazy"
+          decoding="async"
         />
         {restrictionSection && (
           <span style={{ position: 'absolute', top: 6, right: 6 }}>

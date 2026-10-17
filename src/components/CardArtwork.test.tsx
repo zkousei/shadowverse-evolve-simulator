@@ -1,5 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import CardArtwork from './CardArtwork';
 
 let dummyArtEnabled = true;
@@ -9,6 +9,100 @@ vi.mock('../utils/card/cardArtMode', () => ({
 }));
 
 describe('CardArtwork', () => {
+  afterEach(() => {
+    cleanup();
+    vi.useRealTimers();
+    dummyArtEnabled = true;
+  });
+
+  it('retries an opted-in image after a transient failure without navigating away', () => {
+    dummyArtEnabled = false;
+    vi.useFakeTimers();
+    render(<CardArtwork image="/transient.png" alt="Retry Card" retryOnError />);
+    fireEvent.error(screen.getByAltText('Retry Card'));
+    expect(screen.queryByAltText('Retry Card')).not.toBeInTheDocument();
+    act(() => vi.advanceTimersByTime(999));
+    expect(screen.queryByAltText('Retry Card')).not.toBeInTheDocument();
+    act(() => vi.advanceTimersByTime(1));
+    const image = screen.getByAltText('Retry Card');
+    expect(image).toHaveAttribute('src', '/transient.png');
+    fireEvent.load(image);
+    act(() => vi.advanceTimersByTime(60_000));
+    expect(screen.getByAltText('Retry Card')).toBe(image);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('stops after two delayed retries for an unavailable image', () => {
+    dummyArtEnabled = false;
+    vi.useFakeTimers();
+    render(<CardArtwork image="/missing.png" alt="Missing Card" retryOnError />);
+    for (const delay of [1000, 3000]) {
+      fireEvent.error(screen.getByAltText('Missing Card'));
+      act(() => vi.advanceTimersByTime(delay));
+      expect(screen.getByAltText('Missing Card')).toHaveAttribute('src', '/missing.png');
+    }
+    fireEvent.error(screen.getByAltText('Missing Card'));
+    act(() => vi.advanceTimersByTime(60_000));
+    expect(screen.queryByAltText('Missing Card')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Missing Card')).toBeInTheDocument();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('resets retry attempts on URL changes and cancels work for the previous image', () => {
+    dummyArtEnabled = false;
+    vi.useFakeTimers();
+    const { rerender } = render(<CardArtwork image="/first.png" alt="Preview" retryOnError />);
+    fireEvent.error(screen.getByAltText('Preview'));
+    act(() => vi.advanceTimersByTime(500));
+    rerender(<CardArtwork image="/second.png" alt="Preview" retryOnError />);
+    fireEvent.error(screen.getByAltText('Preview'));
+    act(() => vi.advanceTimersByTime(500));
+    expect(screen.queryByAltText('Preview')).not.toBeInTheDocument();
+    act(() => vi.advanceTimersByTime(500));
+    expect(screen.getByAltText('Preview')).toHaveAttribute('src', '/second.png');
+    rerender(<CardArtwork image="/first.png" alt="Preview" retryOnError />);
+    expect(screen.getByAltText('Preview')).toHaveAttribute('src', '/first.png');
+  });
+
+  it('cancels a scheduled retry when unmounted', () => {
+    dummyArtEnabled = false;
+    vi.useFakeTimers();
+    const { unmount } = render(<CardArtwork image="/retry.png" alt="Preview" retryOnError />);
+    fireEvent.error(screen.getByAltText('Preview'));
+    expect(vi.getTimerCount()).toBe(1);
+    unmount();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('keeps retrying opt-in and forwards image loading hints', () => {
+    dummyArtEnabled = false;
+    vi.useFakeTimers();
+    render(<CardArtwork image="/ordinary.png" alt="Ordinary" loading="lazy" decoding="async" />);
+    const image = screen.getByAltText('Ordinary');
+    expect(image).toHaveAttribute('loading', 'lazy');
+    expect(image).toHaveAttribute('decoding', 'async');
+    fireEvent.error(image);
+    act(() => vi.advanceTimersByTime(60_000));
+    expect(screen.queryByAltText('Ordinary')).not.toBeInTheDocument();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('cancels retries when switching to the card back or dummy artwork', () => {
+    dummyArtEnabled = false;
+    vi.useFakeTimers();
+    const { rerender } = render(<CardArtwork image="/retry.png" alt="Preview" retryOnError />);
+    fireEvent.error(screen.getByAltText('Preview'));
+    rerender(<CardArtwork image="/retry.png" alt="Preview" retryOnError isBack />);
+    expect(vi.getTimerCount()).toBe(0);
+    expect(screen.getByAltText('Card Back')).toHaveAttribute('src', '/card_back.png');
+    rerender(<CardArtwork image="/new.png" alt="Preview" retryOnError />);
+    fireEvent.error(screen.getByAltText('Preview'));
+    dummyArtEnabled = true;
+    rerender(<CardArtwork image="/new.png" alt="Preview" retryOnError />);
+    expect(vi.getTimerCount()).toBe(0);
+    expect(screen.queryByAltText('Preview')).not.toBeInTheDocument();
+  });
+
   it('shows a placeholder after an image error and loads a changed image', () => {
     dummyArtEnabled = false;
     const { rerender } = render(<CardArtwork image="/failed.png" alt="Preview" />);
