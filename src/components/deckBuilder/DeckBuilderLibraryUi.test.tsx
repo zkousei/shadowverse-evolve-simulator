@@ -277,6 +277,15 @@ describe('DeckBuilder extracted UI components - library', () => {
 });
 
 
+it('reserves thumbnail space and defers offscreen library images', () => {
+  render(<DeckBuilderLibraryCard card={sampleCard} allowedSections={['main']}
+    canAddToSection={() => true} onOpenPreview={vi.fn()} onAddToSection={vi.fn()} />);
+  const image = screen.getByRole('img', { name: sampleCard.name });
+  expect(image).toHaveAttribute('loading', 'lazy');
+  expect(image).toHaveAttribute('decoding', 'async');
+  expect(image).toHaveStyle({ aspectRatio: '5 / 7', objectFit: 'contain' });
+});
+
 describe('library policy restriction display', () => {
   const limitedCard: DeckBuilderCardData = { ...sampleCard, name: '清浄の領域', class: 'ビショップ', type: 'アミュレット', card_kind_normalized: 'amulet' as const };
   const rule = createDefaultDeckRuleConfig();

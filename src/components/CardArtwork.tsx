@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { CardDetail } from '../utils/card/cardDetails';
 import { isDummyCardArtEnabled } from '../utils/card/cardArtMode';
@@ -21,7 +21,12 @@ interface Props {
   isEvolveCard?: boolean;
   style?: React.CSSProperties;
   draggable?: boolean;
+  retryOnError?: boolean;
+  loading?: 'eager' | 'lazy';
+  decoding?: 'async' | 'sync' | 'auto';
 }
+
+const IMAGE_RETRY_DELAYS = [1000, 3000];
 
 const CARD_KIND_STYLES: Record<DummyKind, { background: string; border: string; badge: string }> = {
   follower: {
@@ -114,22 +119,48 @@ const CardArtwork: React.FC<Props> = ({
   isEvolveCard,
   style,
   draggable,
+  retryOnError = false,
+  loading,
+  decoding,
 }) => {
   const { t } = useTranslation();
   // Network snapshots may omit official image URLs for size reasons, so prefer
   // the catalog-backed detail image whenever it is available locally.
-  const [failedImage, setFailedImage] = useState<string | null>(null);
   const resolvedImage = detail?.image || image;
   const hasResolvedImage = resolvedImage.trim().length > 0;
+  const officialArtEnabled = !isDummyCardArtEnabled();
+  const [imageState, setImageState] = useState({ src: resolvedImage, attempt: 0, failed: false });
 
-  if (!isDummyCardArtEnabled() && (isBack || (hasResolvedImage && failedImage !== resolvedImage))) {
+  // Each URL gets its own retry budget; changing pages must not retain old failures.
+  if (imageState.src !== resolvedImage) {
+    setImageState({ src: resolvedImage, attempt: 0, failed: false });
+  }
+
+  useEffect(() => {
+    if (!retryOnError || !officialArtEnabled || isBack || !imageState.failed ||
+      imageState.src !== resolvedImage || imageState.attempt >= IMAGE_RETRY_DELAYS.length) return;
+
+    const timer = window.setTimeout(() => {
+      setImageState(current => current.src === resolvedImage && current.failed && current.attempt === imageState.attempt
+        ? { ...current, attempt: current.attempt + 1, failed: false }
+        : current);
+    }, IMAGE_RETRY_DELAYS[imageState.attempt]);
+
+    return () => window.clearTimeout(timer);
+  }, [imageState, resolvedImage, retryOnError, officialArtEnabled, isBack]);
+
+  if (officialArtEnabled && (isBack || (hasResolvedImage && !imageState.failed))) {
     return (
       <img
         src={isBack ? '/card_back.png' : resolvedImage}
-        onError={isBack ? undefined : () => setFailedImage(resolvedImage)}
+        onError={isBack ? undefined : () => setImageState(current => current.src === resolvedImage && !current.failed
+          ? { ...current, failed: true }
+          : current)}
         alt={isBack ? t('cardArtwork.back.alt') : alt}
         style={style}
         draggable={draggable}
+        loading={loading}
+        decoding={decoding}
       />
     );
   }
