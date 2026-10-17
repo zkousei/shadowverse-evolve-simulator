@@ -85,11 +85,11 @@ test('a failed catalog build leaves the previous output untouched', async () => 
   expect(readFileSync(join(root, 'dist/index.html'), 'utf8')).toBe('previous complete deployment');
 });
 
-test('does not activate for development but does activate for production preview', async () => {
+test('activates for development and production preview', async () => {
   const root = fixture();
   const options = { configFile: false as const, root, plugins: [cardCatalog()], logLevel: 'silent' as const };
   const dev = await resolveConfig(options, 'serve');
-  expect(dev.plugins.some(plugin => plugin.name === 'verified-card-catalog')).toBe(false);
+  expect(dev.plugins.some(plugin => plugin.name === 'verified-card-catalog')).toBe(true);
   const preview = await resolveConfig(options, 'serve', 'production', 'production', true);
   expect(preview.plugins.some(plugin => plugin.name === 'verified-card-catalog')).toBe(true);
 });

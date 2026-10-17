@@ -124,7 +124,7 @@ const cardsAndRelated = await catalog.loadCardsWithRelated(['BP01-001']);
 ```
 
 上記パスは本番ビルドの配信先です。`artifacts/card-catalog/` 自体は公開されません。
-開発サーバーでは生成・配信しません。配信確認には本番ビルドとpreviewを使います。
+開発サーバーでも同じパスで生成・配信します（後述）。公開時の配信確認には本番ビルドとpreviewも使います。
 取得には `fetch`・`TextEncoder`・`TextDecoder`・Web Crypto の SHA-256 が必要です。
 ブラウザーでは HTTPS または localhost など、Web Crypto が利用できる環境で使います。
 
@@ -163,11 +163,41 @@ const cardsAndRelated = await catalog.loadCardsWithRelated(['BP01-001']);
 npx vitest run src/utils/card/generatedCardCatalog.test.ts src/utils/card/generatedCardCatalogParity.test.ts
 ```
 
+## ローカル開発での分割データ検証
+
+`npm run dev` と `npm run dev:dummy` でも `/card-catalog/manifest.json` と、
+そのmanifestが参照する一覧・詳細を取得できます。画面の読み込み方式は従来のままです。
+開発サーバーの起動時には生成せず、この名前空間の有効なGET/HEADへの初回アクセスで生成します。
+
+- 本番ビルドと共通の生成処理を使い、空の一時ディレクトリで生成して独立した `--check` を通します。
+  全ファイルを読み取り、一時ディレクトリを削除してから検証済みの結果をメモリ上に保持します。
+  `public/`、`dist/`、作業用artifactsやGit管理ファイルには生成物を書きません。
+- 正本2件の内容ハッシュをアクセス時に確認します。ファイルのサイズ・更新日時が同じ編集も検出し、
+  内容が変われば再生成します。同時アクセスは生成中の処理を共有します。
+- 生成後に入力が変わった場合、不正JSON、参照切れ、入力の欠損、Python起動失敗、
+  `public/card-catalog` との競合では503と `Cache-Control: no-store` を返します。
+  以前のデータやSPAのHTMLへ代替せず、原因を修正した後のリクエストで再試行できます。
+- 配信するのは最新版のみです。正本変更後の旧版URLや不正パスは404になります。
+  正本が不正な状態では、有効な形式のURLにも生成失敗の503を返します。
+  成功したJSONは本番同様 `public, max-age=0, must-revalidate` を指定します。
+- この名前空間のGET/HEAD以外は405です。既存画面・従来JSON・APIの処理は変更しません。
+
+開発サーバーは正本の編集をそのまま再生成へ反映するため、取得中の正本変更はエラーになり得ます。
+ファイルの保存を完了してから再試行してください。Vercelのようなデプロイ単位の固定配信とはこの点が異なります。
+開発用のオンデマンド生成時間を、本番の静的配信時間と比較しないでください。
+
+主なテスト所有先は `build/cardCatalogDev.test.ts` です。
+実HTTPで本番ビルドとのバイト一致、正本更新、失敗後の再試行、同時取得、生成中の正本変更、
+HEAD、既存経路の維持を検証します。
+`e2e/generated-card-catalog.spec.ts` は実ブラウザーで既存の取得処理を呼び出し、
+一覧と必要な詳細グループだけを取得することを確認します。
+
 ## ビルド時の配信準備
 
 `build/cardCatalog.ts` のViteプラグインは `npm run build` と `npm run build:dummy`
 で動作します。**ビルド環境にPython 3が必要**です。追加のPythonライブラリ・外部通信は不要です。
-通常の `npm run dev` / `dev:dummy` にはPythonの起動や生成処理を追加しません。
+`npm run dev` / `dev:dummy` の起動時や既存画面の操作だけでは生成しません。
+開発中はカタログへの初回アクセス時と正本変更後のアクセス時にPython 3を使います。
 生成・検証の分だけビルド時間は増えます。負荷次第でプラグインの所要時間警告が出る場合があります。
 
 1. ビルドごとに空の一時ディレクトリを作り、既存の正本JSONから生成します。
