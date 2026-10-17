@@ -9,10 +9,6 @@
   現段階ではアプリの読み込み先を変更しません。形式と安全策は
   [`../../docs/card-catalog-artifacts.md`](../../docs/card-catalog-artifacts.md) を参照してください。
 
-- `catalog_history.py`: 公開版を圧縮履歴と台帳に記録し、現在・旧版をビルド用に検証・展開します。
-  データ更新後の公開前に `npm run cards:retain:catalog` を実行し、正本と履歴を一緒にコミットします。
-  詳細は [配信履歴](../../card-catalog-history/README.md) を参照してください。
-
 リポジトリのルートで実行してください。
 
 ```sh

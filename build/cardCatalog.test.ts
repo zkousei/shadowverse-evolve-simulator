@@ -1,20 +1,12 @@
 import { afterEach, expect, test } from 'vitest';
 import { build, resolveConfig } from 'vite';
-import { execFileSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
-import { mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { cardCatalog } from './cardCatalog';
 
 const roots: string[] = [];
 afterEach(() => roots.splice(0).forEach(root => rmSync(root, { recursive: true, force: true })));
-const retain = (root: string) => JSON.parse(execFileSync('python3', [
-  '-m', 'tools.card_data.catalog_history', 'retain',
-  '--released', join(root, 'public/cards_detailed.json'),
-  '--preview', join(root, 'public/cards_preview.json'),
-  '--history', join(root, 'card-catalog-history'),
-], { cwd: fileURLToPath(new URL('../', import.meta.url)), encoding: 'utf8' })).catalogVersion as string;
 const fixture = () => {
   const root = realpathSync(mkdtempSync(join(tmpdir(), 'catalog-build-test-')));
   roots.push(root);
@@ -24,7 +16,6 @@ const fixture = () => {
     { id: 'BP01-001', name: 'Test', ability_text: 'Full details', future: { value: 0 } },
   ]));
   writeFileSync(join(root, 'public/cards_preview.json'), '[]');
-  retain(root);
   return root;
 };
 const compile = (root: string, write = false) => build({
@@ -67,12 +58,11 @@ test('refuses a public catalog directory that could overwrite the verified outpu
   await expect(compile(root)).rejects.toThrow(/reserved/);
 });
 
-test('rebuilds from changed inputs and includes exactly the recorded versions', async () => {
+test('rebuilds from changed inputs without recording history and emits only the current version', async () => {
   const root = fixture();
   const versions = [];
   for (const id of ['BP01-001', 'BP02-002']) {
     writeFileSync(join(root, 'public/cards_detailed.json'), JSON.stringify([{ id, name: 'Test' }]));
-    retain(root);
     const result = await compile(root);
     if (Array.isArray(result) || !('output' in result)) throw new Error('Expected output bundle');
     const manifest = result.output.find(file => file.fileName === 'card-catalog/manifest.json');
@@ -80,7 +70,7 @@ test('rebuilds from changed inputs and includes exactly the recorded versions', 
     const parsed = JSON.parse(String(manifest.source));
     versions.push(parsed.catalogVersion);
     expect(Object.keys(parsed.details)).toEqual([id.split('-')[0]]);
-    expect(result.output.filter(file => file.fileName.startsWith('card-catalog/'))).toHaveLength(3 + 2 * versions.length);
+    expect(result.output.filter(file => file.fileName.startsWith('card-catalog/'))).toHaveLength(3);
   }
   expect(versions[0]).not.toBe(versions[1]);
 });
@@ -104,18 +94,15 @@ test('does not activate for development but does activate for production preview
   expect(preview.plugins.some(plugin => plugin.name === 'verified-card-catalog')).toBe(true);
 });
 
-
-test('publishes old versions after a data update and refuses an unrecorded current version', async () => {
+test('a second disk build replaces the previous catalog instead of accumulating versions', async () => {
   const root = fixture();
-  const oldVersion = retain(root);
+  await compile(root, true);
+  const previous = JSON.parse(readFileSync(join(root, 'dist/card-catalog/manifest.json'), 'utf8'));
   writeFileSync(join(root, 'public/cards_detailed.json'), JSON.stringify([{ id: 'BP02-001', name: 'New' }]));
-  await expect(compile(root)).rejects.toThrow(/not retained/);
-  const currentVersion = retain(root);
-  const result = await compile(root);
-  if (Array.isArray(result) || !('output' in result)) throw new Error('Expected bundle');
-  const assets = new Map(result.output.filter(file => file.type === 'asset').map(file => [file.fileName, String(file.source)]));
-  expect(JSON.parse(assets.get('card-catalog/manifest.json')!).catalogVersion).toBe(currentVersion);
-  expect(JSON.parse(assets.get(`card-catalog/versions/${oldVersion}/details/BP01.json`)!)[0])
-    .toMatchObject({ name: 'Test', ability_text: 'Full details', future: { value: 0 } });
-  expect(JSON.parse(assets.get(`card-catalog/versions/${currentVersion}/details/BP02.json`)!)[0]).toMatchObject({ name: 'New' });
+  await compile(root, true);
+  const current = JSON.parse(readFileSync(join(root, 'dist/card-catalog/manifest.json'), 'utf8'));
+  expect(current.catalogVersion).not.toBe(previous.catalogVersion);
+  expect(readdirSync(join(root, 'dist/card-catalog/versions'))).toEqual([current.catalogVersion]);
+  expect(JSON.parse(readFileSync(join(root, 'dist/card-catalog', current.details.BP02.file), 'utf8'))[0])
+    .toMatchObject({ id: 'BP02-001', name: 'New' });
 });

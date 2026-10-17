@@ -1,5 +1,4 @@
 import { expect, test } from '@playwright/test';
-import { execFileSync } from 'node:child_process';
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -8,7 +7,7 @@ import { cardCatalog } from '../../build/cardCatalog';
 
 // Two actual builds, served through a switched static origin. Application card
 // sources and the normal dist/ directory are never modified by this fixture.
-test('an open catalog can fetch previously unfetched old details after a deployment update', async ({ page }) => {
+test('a removed catalog version rejects without mixing data and a page reload loads the current version', async ({ page }) => {
   const root = realpathSync(mkdtempSync(join(tmpdir(), 'catalog-update-')));
   const prefix = '/catalog-update-fixture/';
   try {
@@ -27,10 +26,6 @@ test('an open catalog can fetch previously unfetched old details after a deploym
       writeFileSync(join(root, 'public/cards_detailed.json'), JSON.stringify([
         { id: 'BP01-001', name, ability_text: `${name} details`, cost: '1' },
       ]));
-      execFileSync('python3', ['-m', 'tools.card_data.catalog_history', 'retain',
-        '--released', join(root, 'public/cards_detailed.json'),
-        '--preview', join(root, 'public/cards_preview.json'),
-        '--history', join(root, 'card-catalog-history')], { stdio: 'pipe' });
       const outDir = join(root, `build-${outputs.length}`);
       await build({ configFile: false, root, base: prefix, logLevel: 'silent',
         plugins: [cardCatalog()], build: { outDir, minify: false } });
@@ -54,11 +49,22 @@ test('an open catalog can fetch previously unfetched old details after a deploym
     expect(await page.evaluate(() => Reflect.get(window, 'catalog').version)).toBe(versions[0]);
     expect(detailsRequested).toEqual([]);
     deployed = outputs[1];
-    const oldCards = await page.evaluate(() => Reflect.get(window, 'catalog').loadCards(['BP01-001']));
-    expect(oldCards).toEqual([{ id: 'BP01-001', name: 'Old card', ability_text: 'Old card details', cost: '1', catalog_status: 'released' }]);
+    const failed = await page.evaluate(async () => {
+      try {
+        await Reflect.get(window, 'catalog').loadCards(['BP01-001']);
+        return { rejected: false, message: '' };
+      } catch (error) {
+        return { rejected: true, message: String(error) };
+      }
+    });
+    expect(failed.rejected).toBe(true);
+    expect(failed.message).toContain('404');
+    expect(await page.evaluate(() => Reflect.get(window, 'catalog').version)).toBe(versions[0]);
     expect(detailsRequested).toEqual([`card-catalog/versions/${versions[0]}/details/BP01.json`]);
+    await page.reload();
+    await page.waitForFunction(() => Reflect.get(window, 'catalog') !== undefined);
     const updated = await page.evaluate(async () => {
-      const catalog = await Reflect.get(window, 'openCatalog')();
+      const catalog = Reflect.get(window, 'catalog');
       return { version: catalog.version, cards: await catalog.loadCards(['BP01-001']) };
     });
     expect(updated.version).toBe(versions[1]);

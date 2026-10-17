@@ -63,6 +63,3 @@ python3 -m tools.official_cards.sync_incremental
 `sync_incremental_test.py` が差分同期、`../python_entrypoints_test.py` がモジュール起動と
 従来の入出力先への読み書きを検証します。起動テストは外部通信をモック化し、一時ディレクトリを使用します。
 実際のカードデータ取得はビルド・テストから実行しません。
-
-データ更新後の公開前には、正式・previewの更新をすべて終えてから配信履歴を記録してください。
-[管理ガイドの公開前手順](../../docs/admin-guide.md#公開前に配信バージョンを記録する) を参照してください。

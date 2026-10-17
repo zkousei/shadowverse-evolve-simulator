@@ -135,23 +135,6 @@ npm run cards:audit:preview
 [専用ツールのREADME](../tools/svestats_preview/README.md) を参照してください。
 入力形式の例は [サンプル](./preview-card-data-sample.json) にあります。
 
-### 公開前に配信バージョンを記録する
-
-正式・previewの更新をすべて終えたら、コミット前に実行します。
-途中の更新結果ごとに記録する必要はありません。
-
-```bash
-npm run cards:audit:all
-npm run cards:retain:catalog
-npm run build
-```
-
-正本JSON・新しく追加された `card-catalog-history/*.json.gz`・
-`card-catalog-history/versions.json` を一緒にコミットしてください。
-未記録のデータや旧版の欠損・破損は、公開時のビルドを停止させます。
-取得・同期ツール自体は履歴を自動記録しません。既存の履歴は削除しません。
-詳しくは [配信履歴](../card-catalog-history/README.md) を参照してください。
-
 ## 7. デッキ制限ルール更新の基本手順
 
 更新対象:
