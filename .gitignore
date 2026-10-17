@@ -34,3 +34,6 @@ playwright-report/
 # Python bytecode
 __pycache__/
 *.py[cod]
+
+# Offline catalog artifacts (generated on demand; not served by the app yet)
+/artifacts/card-catalog/

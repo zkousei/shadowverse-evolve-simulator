@@ -16,7 +16,8 @@ import type { DeckState } from '../models/deckState';
 import type { DeckRuleConfig } from '../models/deckRule';
 import { loadCardCatalog } from '../utils/card/cardCatalog';
 
-vi.mock('@dnd-kit/core', () => ({
+vi.mock('@dnd-kit/core', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@dnd-kit/core')>(),
   DndContext: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
 }));
 
