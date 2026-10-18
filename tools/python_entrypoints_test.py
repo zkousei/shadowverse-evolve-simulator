@@ -116,6 +116,38 @@ class PythonEntrypointsTest(unittest.TestCase):
             self.assertEqual(candidate['selections']['probe:largest-group-single']['fetchedCards'], 2)
             self.assertEqual({str(p): p.read_bytes() for p in Path('.').rglob('*') if p.is_file()}, before)
 
+    def test_selective_partition_cli_preserves_files_and_can_combine_with_regular_policies(self):
+        from tools.card_data.generate_catalog import generate_catalog, json_bytes
+
+        with self.workspace():
+            cards = [{'id': f'A-{i:03}', 'name': 'Card'} for i in range(6)]
+            cards += [{'id': f'B-{i:03}', 'name': 'Card'} for i in range(3)]
+            Path('public/cards_detailed.json').write_text(json.dumps(cards))
+            Path('public/cards_preview.json').write_text('[]')
+            Path('deck.json').write_text('{"mainDeck":[{"id":"A-000"},{"id":"B-000"}]}')
+            bundle = generate_catalog(Path('public/cards_detailed.json'), Path('public/cards_preview.json'), Path('real-build'))
+            first_group = json.loads(bundle.files['details/A.json'])
+            target = len(json_bytes(first_group[:2]))
+            threshold = len(json_bytes(first_group[:4]))
+            for extra, count in (([], 2), (['--max-bytes', str(target)], 3)):
+                before = {str(p): p.read_bytes() for p in Path('.').rglob('*') if p.is_file()}
+                output = io.StringIO()
+                argv = ['compare_partitions', '--check-output', 'real-build', '--deck', 'deck.json',
+                        '--selective-bytes', f'{threshold}:{target}', *extra]
+                with self.subTest(extra=extra), contextlib.redirect_stdout(output), patch.object(sys, 'argv', argv), self.assertRaises(SystemExit) as result:
+                    self.run_module('tools.card_data.compare_partitions')
+                self.assertEqual(result.exception.code, 0)
+                report = json.loads(output.getvalue())
+                self.assertTrue(report['comparisonOnly'])
+                self.assertEqual(len(report['policies']), count)
+                selective = report['policies'][-1]
+                self.assertEqual(selective['eligibleSourceGroups'], ['A'])
+                self.assertEqual(selective['splitSourceGroups'], ['A'])
+                self.assertEqual(selective['groupsAboveTargetBytes'], 1)
+                self.assertEqual(selective['oversizedSingleCardGroups'], 0)
+                self.assertEqual(selective['selections']['deck.json']['fetchedCards'], 5)
+                self.assertEqual({str(p): p.read_bytes() for p in Path('.').rglob('*') if p.is_file()}, before)
+
     def test_partition_comparison_errors_do_not_print_partial_json_or_write_files(self):
         with self.workspace():
             Path('public/cards_detailed.json').write_text(json.dumps([{'id': 'A-001', 'name': 'Card'}]))
@@ -123,7 +155,10 @@ class PythonEntrypointsTest(unittest.TestCase):
             Path('valid.json').write_text('{"mainDeck":[{"id":"A-001"}]}')
             Path('unknown.json').write_text('{"mainDeck":[{"id":"MISSING"}]}')
             Path('invalid.json').write_text('{')
-            for options in (['--max-cards', '0'], ['--max-bytes', '-1'], ['--deck', 'unknown.json'],
+            for options in (['--max-cards', '0'], ['--max-bytes', '-1'],
+                            ['--selective-bytes', 'invalid'], ['--selective-bytes', '100:0'],
+                            ['--selective-bytes', '1:2'], ['--selective-bytes', 'True:1'],
+                            ['--selective-bytes', '1:2:3'], ['--deck', 'unknown.json'],
                             ['--deck', 'invalid.json'], ['--deck', 'valid.json', '--deck', 'valid.json'],
                             ['--check-output', 'missing-build']):
                 before = {str(p): p.read_bytes() for p in Path('.').rglob('*') if p.is_file()}

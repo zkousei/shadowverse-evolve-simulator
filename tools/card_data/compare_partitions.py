@@ -18,7 +18,17 @@ def _positive_integer(value):
     return value
 
 
-def model_partition(bundle: CatalogArtifacts, *, max_cards=None, max_bytes=None) -> CatalogArtifacts:
+def _selective_limit(pair):
+    if not isinstance(pair, (list, tuple)) or len(pair) != 2:
+        raise ValueError('Selective limits require a split threshold and a target byte size')
+    threshold, target = (_positive_integer(value) for value in pair)
+    if threshold < target:
+        raise ValueError('Split threshold must be at least the target byte size')
+    return threshold, target
+
+
+def model_partition(bundle: CatalogArtifacts, *, max_cards=None, max_bytes=None,
+                    split_above_bytes=None) -> CatalogArtifacts:
     """In-memory size model only: current readers cannot load split group IDs.
 
     Keep current manifest/index structure to include mapping and descriptor costs.
@@ -27,10 +37,18 @@ def model_partition(bundle: CatalogArtifacts, *, max_cards=None, max_bytes=None)
     if (max_cards is None) == (max_bytes is None):
         raise ValueError('Select exactly one of max_cards or max_bytes')
     _positive_integer(max_cards if max_cards is not None else max_bytes)
+    if split_above_bytes is not None:
+        if max_bytes is None:
+            raise ValueError('Selective thresholds require max_bytes')
+        _selective_limit((split_above_bytes, max_bytes))
     groups = {}
     split = False
     for group in sorted(bundle.manifest['details']):
-        cards = json.loads(bundle.files[f'details/{group}.json'])
+        data = bundle.files[f'details/{group}.json']
+        cards = json.loads(data)
+        if split_above_bytes is not None and len(data) <= split_above_bytes:
+            groups[group] = cards
+            continue
         pieces = []
         part = []
         part_bytes = 3  # Array brackets plus json_bytes' final newline.
@@ -81,7 +99,8 @@ def model_partition(bundle: CatalogArtifacts, *, max_cards=None, max_bytes=None)
     return CatalogArtifacts(files, manifest)
 
 
-def compare_partitions(bundle: CatalogArtifacts, scenarios: dict, card_limits=(), byte_limits=()) -> dict:
+def compare_partitions(bundle: CatalogArtifacts, scenarios: dict, card_limits=(), byte_limits=(),
+                       selective_byte_limits=()) -> dict:
     selections = {name: list(ids) for name, ids in scenarios.items()}
     policies = [('current', {}, bundle)]
     for key, limits in (('maxCards', card_limits), ('maxBytes', byte_limits)):
@@ -89,11 +108,15 @@ def compare_partitions(bundle: CatalogArtifacts, scenarios: dict, card_limits=()
         for limit in checked:
             kwargs = {'max_cards' if key == 'maxCards' else 'max_bytes': limit}
             policies.append((f'{key}-{limit}', {key: limit}, model_partition(bundle, **kwargs)))
+    for threshold, target in dict.fromkeys(_selective_limit(pair) for pair in selective_byte_limits):
+        limits = {'maxBytes': target, 'splitAboveBytes': threshold}
+        policies.append((f'selectiveBytes-{threshold}-{target}', limits,
+                         model_partition(bundle, max_bytes=target, split_above_bytes=threshold)))
     rows = []
     for name, limits, candidate in policies:
         measured = measure_catalog(candidate)
         descriptors = candidate.manifest['details'].values()
-        rows.append({
+        row = {
             'name': name, 'limits': limits, 'detailGroups': len(candidate.manifest['details']),
             'maxGroupCards': max((row['count'] for row in descriptors), default=0),
             'maxGroupBytes': max((row['bytes'] for row in descriptors), default=0),
@@ -102,7 +125,21 @@ def compare_partitions(bundle: CatalogArtifacts, scenarios: dict, card_limits=()
             'initial': measured['scenarios']['initial'], 'all': measured['scenarios']['all'],
             'selections': {key: measure_catalog(candidate, ids)['scenarios']['selected']
                            for key, ids in selections.items()},
-        })
+        }
+        if 'splitAboveBytes' in limits:
+            eligible = [group for group in sorted(bundle.manifest['details'])
+                        if len(bundle.files[f'details/{group}.json']) > limits['splitAboveBytes']]
+            row['eligibleSourceGroups'] = eligible
+            row['splitSourceGroups'] = [group for group in eligible if group not in candidate.manifest['details']]
+            row['groupsAboveTargetBytes'] = sum(desc['bytes'] > limits['maxBytes'] for desc in descriptors)
+            # Untargeted groups may intentionally exceed the chunk target. Count
+            # only targeted single-card exceptions as oversized cards.
+            row['oversizedSingleCardGroups'] = sum(
+                desc['count'] == 1 and desc['bytes'] > limits['maxBytes']
+                for group, desc in candidate.manifest['details'].items()
+                if group.split('@', 1)[0] in eligible
+            )
+        rows.append(row)
     return {'reportVersion': 1, 'comparisonOnly': True,
             'sourceCatalogVersion': bundle.manifest['catalogVersion'],
             'counts': dict(bundle.manifest['counts']), 'policies': rows}
@@ -129,6 +166,8 @@ def main(argv=None) -> int:
     parser.add_argument('--check-output', type=Path, help='Verify the current real build, never write candidate artifacts')
     parser.add_argument('--max-cards', type=int, nargs='+', help='Candidate card caps (default: 64 128 256)')
     parser.add_argument('--max-bytes', type=int, nargs='+', help='Candidate UTF-8 byte caps (default: 65536 131072 262144)')
+    parser.add_argument('--selective-bytes', nargs='+', metavar='THRESHOLD:TARGET',
+                        help='Split only source groups strictly above the threshold (UTF-8 bytes)')
     args = parser.parse_args(argv)
     try:
         if args.check_output:
@@ -144,9 +183,15 @@ def main(argv=None) -> int:
             scenarios[key] = exported_deck_ids(value)
         cards = args.max_cards or []
         byte_caps = args.max_bytes or []
-        if args.max_cards is None and args.max_bytes is None:
+        selective = []
+        for value in args.selective_bytes or []:
+            parts = value.split(':')
+            if len(parts) != 2:
+                raise ValueError('Selective limits use THRESHOLD:TARGET in UTF-8 bytes')
+            selective.append(tuple(int(part) for part in parts))
+        if args.max_cards is None and args.max_bytes is None and args.selective_bytes is None:
             cards, byte_caps = [64, 128, 256], [65536, 131072, 262144]
-        result = compare_partitions(bundle, scenarios, cards, byte_caps)
+        result = compare_partitions(bundle, scenarios, cards, byte_caps, selective)
     except (ValueError, OSError, UnicodeError) as error:
         print(f'Card catalog partition comparison failed: {error}', file=sys.stderr)
         return 1

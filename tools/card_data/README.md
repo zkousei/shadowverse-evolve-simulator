@@ -13,6 +13,7 @@
   正本・生成物を書き換えず、標準出力へJSONを返します。`--check-output`で既存生成物の一致も検証できます。
 
 - `compare_partitions.py`: 枚数・UTF-8サイズ上限による詳細分割をメモリー内で比較します。配信用artifactは作りません。
+  `--selective-bytes THRESHOLD:TARGET`で、大きな元グループだけを対象にする比較も可能です。
   [比較条件と結果](../../docs/card-catalog-partition-comparison.md)を参照してください。
 
 リポジトリのルートで実行してください。

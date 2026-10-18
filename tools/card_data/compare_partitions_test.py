@@ -118,6 +118,80 @@ class ComparePartitionsTest(unittest.TestCase):
         self.assertEqual(set(empty), set(probes))
         self.assertTrue(all(not selection for selection in empty.values()))
 
+    def test_selective_threshold_leaves_equal_or_smaller_groups_byte_identical(self):
+        original = fixture()
+        threshold = original.manifest['details']['A']['bytes']
+        candidate = model_partition(original, max_bytes=1, split_above_bytes=threshold)
+        self.assertEqual(candidate, original)
+        row = compare_partitions(original, {'deck': ['A-001']},
+                                 selective_byte_limits=[(threshold, 1)])['policies'][1]
+        self.assertEqual(row['eligibleSourceGroups'], [])
+        self.assertEqual(row['splitSourceGroups'], [])
+        self.assertEqual(row['oversizedSingleCardGroups'], 0)
+        self.assertEqual(row['groupsAboveTargetBytes'], 2)
+
+    def test_selective_split_preserves_untargeted_groups_and_reports_deliberate_cap_exceptions(self):
+        small = [{'id': f'A-{i:03}', 'name': 'Small'} for i in range(6)]
+        initial = build_catalog(small, [])
+        records = details(initial)['A']
+        target = len(json_bytes(records[:2]))
+        threshold = len(json_bytes(records[:4]))
+        cards = small + [{'id': f'B-{i:03}', 'name': 'Small'} for i in range(3)]
+        cards += [{'id': 'C-001', 'name': 'Huge', 'ability_text': 'x' * 2000},
+                  {'id': 'D-001', 'name': 'Medium', 'ability_text': 'x' * target}]
+        original = build_catalog(cards, [])
+        self.assertGreater(original.manifest['details']['D']['bytes'], target)
+        self.assertLessEqual(original.manifest['details']['D']['bytes'], threshold)
+        candidate = model_partition(original, max_bytes=target, split_above_bytes=threshold)
+        self.assertEqual([len(chunk) for key, chunk in details(candidate).items() if key.startswith('A@')], [2, 2, 2])
+        for group in ('B', 'C', 'D'):
+            self.assertEqual(candidate.files[f'details/{group}.json'], original.files[f'details/{group}.json'])
+        self.assertEqual(json_bytes([card for chunk in details(candidate).values() for card in chunk]),
+                         json_bytes([card for chunk in details(original).values() for card in chunk]))
+        row = compare_partitions(original, {'deck': ['A-000', 'D-001']},
+                                 selective_byte_limits=[(threshold, target)])['policies'][1]
+        self.assertEqual(row['eligibleSourceGroups'], ['A', 'C'])
+        self.assertEqual(row['splitSourceGroups'], ['A'])
+        self.assertEqual(row['oversizedSingleCardGroups'], 1)
+        self.assertEqual(row['groupsAboveTargetBytes'], 3)
+        self.assertEqual(row['limits'], {'maxBytes': target, 'splitAboveBytes': threshold})
+
+    def test_selective_threshold_equal_to_target_matches_existing_byte_cap(self):
+        original = fixture()
+        self.assertEqual(model_partition(original, max_bytes=200),
+                         model_partition(original, max_bytes=200, split_above_bytes=200))
+        scenarios = {'deck': ['A-001', 'A-001']}
+        old = compare_partitions(original, scenarios, card_limits=[2], byte_limits=[200])
+        new = compare_partitions(original, scenarios, card_limits=[2], byte_limits=[200],
+                                 selective_byte_limits=[(500, 200), (500, 200)])
+        self.assertEqual(new['policies'][:-1], old['policies'])
+
+    def test_growth_only_starts_splitting_after_the_original_group_crosses_the_threshold(self):
+        cards = [{'id': f'A-{i:03}', 'name': 'Card'} for i in range(6)]
+        original = build_catalog(cards[:4], [])
+        target = len(json_bytes(details(original)['A'][:2]))
+        threshold = original.manifest['details']['A']['bytes']
+        self.assertEqual(model_partition(original, max_bytes=target, split_above_bytes=threshold), original)
+        grown = build_catalog(cards, [])
+        before = copy.deepcopy(grown)
+        row = compare_partitions(grown, {'first': ['A-000']},
+                                 selective_byte_limits=[(threshold, target)])['policies'][1]
+        self.assertEqual(row['selections']['first']['fetchedCards'], 2)
+        self.assertEqual(row['splitSourceGroups'], ['A'])
+        self.assertEqual(grown, before)
+
+    def test_invalid_selective_thresholds_are_rejected(self):
+        for kwargs in ({'max_cards': 2, 'split_above_bytes': 100},
+                       {'max_bytes': 200, 'split_above_bytes': 100},
+                       {'max_bytes': 1, 'split_above_bytes': 0},
+                       {'max_bytes': 1, 'split_above_bytes': True},
+                       {'max_bytes': 1, 'split_above_bytes': 2.5}):
+            with self.subTest(kwargs=kwargs), self.assertRaises(ValueError):
+                model_partition(fixture(), **kwargs)
+        for pair in ((), (100,), (100, 200), (100, 50, 25), ('invalid', 50)):
+            with self.subTest(pair=pair), self.assertRaises(ValueError):
+                compare_partitions(fixture(), {}, selective_byte_limits=[pair])
+
     def test_invalid_limits_and_unknown_ids_do_not_produce_partial_comparisons(self):
         for kwargs in ({}, {'max_cards': 0}, {'max_cards': True}, {'max_cards': 1.5},
                        {'max_bytes': -1}, {'max_cards': 1, 'max_bytes': 100}):
