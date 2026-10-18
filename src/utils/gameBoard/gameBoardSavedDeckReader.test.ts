@@ -34,6 +34,7 @@ describe('createGameBoardSavedDeckReader', () => {
     const exact = vi.spyOn(source, 'loadCards');
     const reader = createGameBoardSavedDeckReader(source);
     expect(reader.version).toBe(source.version);
+    expect(reader.summaries).toBe(source.index);
     expect(related).not.toHaveBeenCalled();
     const selected = record({ main: [{ cardId: main.id, count: 3 }, { cardId: main.id, count: 1 }],
       evolve: [{ cardId: evolve.id, count: 2 }], leader: [{ cardId: leader.id, count: 1 }],

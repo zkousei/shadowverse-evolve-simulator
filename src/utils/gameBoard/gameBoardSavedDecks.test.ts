@@ -2,7 +2,7 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
 import type { GeneratedCardIndexEntry } from '../card/generatedCardCatalog';
 import type { SavedDeckRecordV1 } from '../deck/deckStorage';
-import { buildLegalSavedDeckOptions, buildSavedDeckPickerOptions } from './gameBoardSavedDecks';
+import { buildLegalSavedDeckOptions, buildSavedDeckPickerOptions, buildSavedDeckImportSignature, getSavedDeckSectionSignature } from './gameBoardSavedDecks';
 
 const t = (key: string, params?: Record<string, string | number>): string => {
   const messages: Record<string, string> = {
@@ -208,6 +208,31 @@ describe('saved deck picker options', () => {
     void image; void ability_text; void faces;
     return Object.freeze({ ...metadata, detail_group: card.id.split('-')[0] });
   }));
+
+  it('plans an import with section IDs, sanitized counts and related tokens from metadata without exposing cards', () => {
+    const token: DeckBuilderCardData = { id: 'TOKEN-1', name: 'Token', image: '', deck_section: 'token', ability_text: 'Token details' };
+    const relatedMain = { ...mainCard, related_cards: [{ id: token.id, name: token.name }] };
+    const full = [relatedMain, leaderCard, token];
+    const metadata = Object.freeze(full.map(({ image, ability_text, faces, ...card }) => {
+      void image; void ability_text; void faces; return Object.freeze(card);
+    }));
+    const signature = buildSavedDeckImportSignature(createDeck(), metadata, t);
+    expect(signature).toBe(JSON.stringify([[mainCard.id, mainCard.id, mainCard.id], [], [leaderCard.id], [token.id]]));
+    expect(signature).toBe(getSavedDeckSectionSignature(buildLegalSavedDeckOptions([createDeck()], full, t)[0].deckData));
+    expect(signature).not.toContain('Token details');
+    expectTypeOf(signature).toEqualTypeOf<string | null>();
+  });
+
+  it.each(['main', 'evolve', 'leader', 'token'] as const)('rejects missing %s IDs before planning an import', section => {
+    const deck = createDeck();
+    expect(buildSavedDeckImportSignature({ ...deck, sections: { ...deck.sections, [section]: [{ cardId: 'MISSING', count: 1 }] } }, metadataCatalog(), t)).toBeNull();
+  });
+
+  it('distinguishes an invalid deck from an allowed empty other-format import', () => {
+    const deck = createDeck();
+    expect(buildSavedDeckImportSignature({ ...deck, ruleConfig: { ...deck.ruleConfig, format: 'constructed', selectedClass: 'ロイヤル' } }, metadataCatalog(), t)).toBeNull();
+    expect(buildSavedDeckImportSignature({ ...deck, sections: { main: [], evolve: [], leader: [], token: [] } }, metadataCatalog(), t)).toBe('[[],[],[],[]]');
+  });
 
   it('accepts a frozen generated index without converting summaries to complete import cards', () => {
     const cards = metadataCatalog();

@@ -26,6 +26,7 @@ export const createGameBoardSavedDeckReader = (source: GeneratedCardCatalog) => 
   const knownIds = new Set(source.index.map(card => card.id));
   return Object.freeze({
     version: source.version,
+    summaries: source.index,
     async loadCards(deck: { sections: SavedDeckSections }): Promise<DeckBuilderCardData[]> {
       // Snapshot IDs before awaiting. Counts/order are restored by the existing
       // saved-deck restorer, not expanded into duplicate detail requests here.
@@ -40,3 +41,5 @@ export const createGameBoardSavedDeckReader = (source: GeneratedCardCatalog) => 
     },
   });
 };
+
+export type GameBoardSavedDeckReader = ReturnType<typeof createGameBoardSavedDeckReader>;

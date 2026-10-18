@@ -1,7 +1,8 @@
 import React from 'react';
 import type { ImportableDeckData } from '../../utils/gameBoard/gameBoardDeckActions';
 import { canImportDeck } from '../../utils/gameBoard/gameRules';
-import { buildLegalSavedDeckOptions, buildSavedDeckPickerOptions, type SavedDeckPickerOption, type LegalSavedDeckOption } from '../../utils/gameBoard/gameBoardSavedDecks';
+import { buildLegalSavedDeckOptions, buildSavedDeckPickerOptions, buildSavedDeckImportSignature, getSavedDeckSectionSignature, type SavedDeckPickerOption } from '../../utils/gameBoard/gameBoardSavedDecks';
+import type { GameBoardSavedDeckReader } from '../../utils/gameBoard/gameBoardSavedDeckReader';
 import { getSavedDeckById, listSavedDecks } from '../../utils/deck/deckStorage';
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
 import { buildSavedDeckPickerViewModel } from './gameBoardDialogViewModel';
@@ -13,30 +14,38 @@ type TranslationFn = (key: string, options?: Record<string, unknown>) => string;
 
 type UseGameBoardSavedDeckPickerArgs = {
   beginDeckImport: (target: PlayerRole) => PendingDeckImport | null;
-  resolveSavedDeckCards?: (deck: SavedDeckRecordV1) => Promise<DeckBuilderCardData[]>;
-  catalogCards: DeckBuilderCardData[];
   gameState: SyncState;
   importDeckData: (deckData: ImportableDeckData, targetRole?: PlayerRole) => void;
   isSoloMode: boolean;
   role: PlayerRole;
   t: TranslationFn;
-};
+} & ({
+  catalogCards: DeckBuilderCardData[];
+  resolveSavedDeckCards?: (deck: SavedDeckRecordV1) => Promise<DeckBuilderCardData[]>;
+  generatedCatalog?: never;
+} | {
+  /** Keep the reader instance stable for one pinned catalog lifetime. */
+  generatedCatalog: GameBoardSavedDeckReader;
+  catalogCards?: never;
+  resolveSavedDeckCards?: never;
+});
 
-export const useGameBoardSavedDeckPicker = ({
-  beginDeckImport,
-  resolveSavedDeckCards,
-  catalogCards,
-  gameState,
-  importDeckData,
-  isSoloMode,
-  role,
-  t,
-}: UseGameBoardSavedDeckPickerArgs) => {
+export const useGameBoardSavedDeckPicker = (args: UseGameBoardSavedDeckPickerArgs) => {
+  const { beginDeckImport, gameState, importDeckData, isSoloMode, role, t } = args;
+  const catalog = React.useMemo(() => {
+    if (args.generatedCatalog) return {
+      cards: args.generatedCatalog.summaries,
+      loadCards: args.generatedCatalog.loadCards,
+    };
+    const cards = args.catalogCards;
+    return { cards, loadCards: args.resolveSavedDeckCards ?? (() => Promise.resolve(cards)) };
+  }, [args.generatedCatalog, args.catalogCards, args.resolveSavedDeckCards]);
+  const catalogCards = catalog.cards;
   const allCardsLength = catalogCards.length;
   const [isSavedDeckLoading, setIsSavedDeckLoading] = React.useState(false);
   const [savedDeckLoadFailed, setSavedDeckLoadFailed] = React.useState(false);
   const mounted = React.useRef(false);
-  const pending = React.useRef<{ ticket: PendingDeckImport; catalog: DeckBuilderCardData[]; role: PlayerRole; target: PlayerRole; resolver: typeof resolveSavedDeckCards } | null>(null);
+  const pending = React.useRef<{ ticket: PendingDeckImport; catalog: typeof catalog; role: PlayerRole; target: PlayerRole } | null>(null);
   const cancelPendingLoad = React.useCallback(() => {
     pending.current?.ticket.cancel();
     pending.current = null;
@@ -49,9 +58,9 @@ export const useGameBoardSavedDeckPicker = ({
   }, []);
   React.useLayoutEffect(() => {
     const request = pending.current;
-    if (request && (request.catalog !== catalogCards || request.role !== role || request.resolver !== resolveSavedDeckCards ||
+    if (request && (request.catalog !== catalog || request.role !== role ||
         !canImportDeck(gameState, request.target) || !request.ticket.isCurrent())) cancelPendingLoad();
-  }, [catalogCards, gameState, role, resolveSavedDeckCards, cancelPendingLoad]);
+  }, [catalog, gameState, role, cancelPendingLoad]);
   const [savedDeckOptions, setSavedDeckOptions] = React.useState<SavedDeckPickerOption[]>([]);
   const [savedDeckSearch, setSavedDeckSearch] = React.useState('');
   const [savedDeckImportTargetRole, setSavedDeckImportTargetRole] = React.useState<PlayerRole | null>(null);
@@ -89,23 +98,22 @@ export const useGameBoardSavedDeckPicker = ({
       refreshSavedDeckOptions();
       return;
     }
-    const [expected] = buildLegalSavedDeckOptions([currentDeck], catalogCards, t);
-    if (!expected) { refreshSavedDeckOptions(); return; }
+    const expectedIds = buildSavedDeckImportSignature(currentDeck, catalogCards, t);
+    if (expectedIds === null) { refreshSavedDeckOptions(); return; }
     // Keep the existing sanitized section order/counts and automatic tokens.
     // A partial response must not silently omit a known related token.
-    const expectedIds = getSectionIds(expected.deckData);
     const recordKey = JSON.stringify(currentDeck);
     const ticket = beginDeckImport(target);
     if (!ticket) return;
-    const request = { ticket, catalog: catalogCards, role, target, resolver: resolveSavedDeckCards };
+    const request = { ticket, catalog, role, target };
     pending.current = request;
     setIsSavedDeckLoading(true);
     const isCurrent = () => mounted.current && pending.current === request && ticket.isCurrent();
     let commitStarted = false;
     try {
-      // The current source is complete in memory. A pinned detail reader can
-      // replace this resolver later without changing the commit/cancel rules.
-      const cards = await (resolveSavedDeckCards?.(currentDeck) ?? Promise.resolve(catalogCards));
+      // Generated summaries stay in validation. Only the reader's complete
+      // details may be restored and committed as a game payload.
+      const cards = await catalog.loadCards(currentDeck);
       if (!isCurrent()) return;
       const latestDeck = getSavedDeckById(currentDeck.id);
       if (!latestDeck || JSON.stringify(latestDeck) !== recordKey) {
@@ -113,7 +121,7 @@ export const useGameBoardSavedDeckPicker = ({
         return;
       }
       const [resolved] = buildLegalSavedDeckOptions([latestDeck], cards, t);
-      if (!resolved || getSectionIds(resolved.deckData) !== expectedIds) {
+      if (!resolved || getSavedDeckSectionSignature(resolved.deckData) !== expectedIds) {
         setSavedDeckLoadFailed(true);
         return;
       }
@@ -131,7 +139,7 @@ export const useGameBoardSavedDeckPicker = ({
         if (mounted.current) setIsSavedDeckLoading(false);
       }
     }
-  }, [beginDeckImport, cancelPendingLoad, catalogCards, closeSavedDeckPicker, gameState, importDeckData, refreshSavedDeckOptions, resolveSavedDeckCards, role, savedDeckImportTargetRole, t]);
+  }, [beginDeckImport, cancelPendingLoad, catalog, catalogCards, closeSavedDeckPicker, gameState, importDeckData, refreshSavedDeckOptions, role, savedDeckImportTargetRole, t]);
 
   const { filteredSavedDeckOptions, savedDeckPickerTargetLabel } = buildSavedDeckPickerViewModel({
     savedDeckOptions,
@@ -155,6 +163,3 @@ export const useGameBoardSavedDeckPicker = ({
     handleSavedDeckImport,
   };
 };
-
-const getSectionIds = (data: LegalSavedDeckOption['deckData']): string =>
-  JSON.stringify([data.mainDeck, data.evolveDeck, data.leaderCards, data.tokenDeck].map(cards => cards.map(card => card.id)));
