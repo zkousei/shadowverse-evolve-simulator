@@ -156,7 +156,8 @@ const GameBoard: React.FC = () => {
     dispatchGameEvent,
     room, isSoloMode, isHost, isSpectator, role, status, connectionState, spectatorCount, maxSpectatorConnections, canInteract, canView, attemptReconnect, gameState, savedSessionCandidate, resumeSavedSession, discardSavedSession, searchZone, setSearchZone,
     showResetConfirm, setShowResetConfirm, coinMessage, turnMessage, cardPlayMessage, attackMessage, eventHistory, attackVisual, revealedCardsOverlay,
-    cardStatLookup, cardDetailLookup, catalogCards, catalogStatus, retryCatalog,
+    cardStatLookup, cardDetailLookup, generatedCatalog, catalogStatus, retryCatalog,
+    displayCards, getDetailStatus, retryDetails, isRefreshingCatalog, catalogRefreshFailed,
     isRollingDice, diceValue, mulliganOrder, isMulliganModalOpen, setIsMulliganModalOpen,
     handleStatChange, setPhase, endTurn, handleUndoTurn, handleSetInitialTurnOrder,
     handlePureCoinFlip, handleRollDice, handleStartGame, handleToggleReady,
@@ -196,7 +197,7 @@ const GameBoard: React.FC = () => {
     handleSavedDeckImport,
   } = useGameBoardSavedDeckPicker({
     beginDeckImport,
-    catalogCards,
+    generatedCatalog,
     gameState,
     importDeckData,
     isSoloMode,
@@ -397,7 +398,7 @@ const GameBoard: React.FC = () => {
     handleInspectCard,
     closeInspector,
   } = useGameBoardInspectorUi({
-    cards: gameState.cards,
+    cards: displayCards,
     cardDetailLookup,
     getAttackTargetFromCard,
     handleAttackTargetSelect,
@@ -680,6 +681,7 @@ const GameBoard: React.FC = () => {
   const savedDeckPickerDialogProps = savedDeckImportTargetRole && savedDeckPickerTargetLabel
     ? {
         isLoading: isSavedDeckLoading, loadFailed: savedDeckLoadFailed,
+        onRefreshCatalog: retryCatalog, isRefreshingCatalog,
         targetLabel: savedDeckPickerTargetLabel,
         savedDeckSearch,
         filteredSavedDeckOptions,
@@ -716,6 +718,8 @@ const GameBoard: React.FC = () => {
     : null;
   const cardInspectorSectionProps = {
     catalogStatus,
+    detailStatus: selectedInspectorCard ? getDetailStatus(selectedInspectorCard.cardId) : undefined,
+    onRetryDetails: retryDetails, onRefreshCatalog: retryCatalog, isRefreshingCatalog, catalogRefreshFailed,
     ref: inspectorRef,
     selectedInspectorCard,
     selectedInspectorDetail,

@@ -66,7 +66,7 @@ export const useGameBoardGeneratedCatalogResources = (ids: readonly string[], ba
     return () => { active = false; };
   }, [request]);
 
-  const status = settled?.request === request ? settled.status : 'loading';
+  const status: 'ready' | 'error' | 'loading' = settled?.request === request ? settled.status : 'loading';
   useLayoutEffect(() => {
     gate.current = { request, resources, allowed: status !== 'loading', queued: false };
     return () => { gate.current = null; };

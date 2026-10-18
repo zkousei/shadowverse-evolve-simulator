@@ -1,3 +1,4 @@
+import { generatedCatalogFixture } from '../../test/generatedCatalogFixture';
 import { undoBoard, undoFixtures, undoOperations } from '../../utils/gameBoard/testing/undoFixtures';
 import { getBoardUnits } from '../../utils/gameBoard/gameBoardMultiSelection';
 import { act, fireEvent, screen } from '@testing-library/react';
@@ -30,6 +31,34 @@ describe('useGameBoardLogic P2P reconnect', () => {
       vi.runOnlyPendingTimers();
     });
     vi.useRealTimers();
+  });
+
+  it('applies local and incoming events while generated details are pending or fail, without reverting the live board', async () => {
+    const card = createCatalogCard({ id: 'WAIT-001', ability_text: 'Verified' });
+    const catalog = generatedCatalogFixture([card]);
+    let reject!: (error: Error) => void;
+    const load = vi.spyOn(catalog, 'loadCards').mockReturnValue(new Promise((_resolve, no) => { reject = no; }));
+    installMockCatalogFetch([card]).mockResolvedValue(catalog);
+    const base = { cardId: card.id, name: card.name, image: '/custom.png', isTapped: false, isFlipped: true, counters: { atk: 0, hp: 0 } };
+    renderResumedHostHarness({ gameStatus: 'playing', phase: 'Main', cards: [
+      { ...base, id: 'host-deck', zone: 'mainDeck-host', owner: 'host' },
+      { ...base, id: 'guest-deck', zone: 'mainDeck-guest', owner: 'guest' },
+    ] });
+    const peer = mockPeerJs.peers[0];
+    const guest = mockPeerJs.createConnection('guest');
+    act(() => { peer.emit('open'); peer.emit('connection', guest); guest.open = true; guest.emit('open'); });
+    await flushCatalogEffects();
+    expect(load).toHaveBeenCalledExactlyOnceWith([card.id]);
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Host Draw' }));
+      guest.emit('data', { type: 'EVENT', event: { id: 'pending-detail-move', type: 'MOVE_TOP_CARD_TO_EX', actor: 'guest' } });
+    });
+    expect(screen.getByTestId('host-hand-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('guest-ex-count')).toHaveTextContent('1');
+    await act(async () => reject(new Error('old detail group removed')));
+    expect(screen.getByTestId('host-hand-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('guest-ex-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('game-status')).toHaveTextContent('playing');
   });
 
   it('rejects a guest upload finishing in the same task as a host reset snapshot, then allows a fresh upload across stale/duplicate snapshots', () => {

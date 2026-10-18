@@ -1,3 +1,5 @@
+import { generatedCatalogFixture } from '../test/generatedCatalogFixture';
+import { createGameBoardSavedDeckReader } from '../utils/gameBoard/gameBoardSavedDeckReader';
 import { GameBoardMultiSelectionContext } from '../contexts/gameBoardMultiSelectionContext';
 import React from 'react';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
@@ -135,7 +137,7 @@ vi.mock('../components/gameBoard/TopDeckModal', () => ({
 }));
 
 vi.mock('../components/CardArtwork', () => ({
-  default: ({ alt }: { alt: string }) => <img alt={alt} />,
+  default: ({ alt, image }: { alt: string; image: string }) => <img alt={alt} src={image} />,
 }));
 
 vi.mock('../hooks/gameBoard/useGameBoardLogic', () => ({
@@ -294,7 +296,8 @@ const buildMockGameBoardLogic = (
     eventHistory: [],
     attackVisual: null,
     revealedCardsOverlay: null,
-    catalogCards: [], catalogStatus: 'ready', retryCatalog: vi.fn(),
+    generatedCatalog: createGameBoardSavedDeckReader(generatedCatalogFixture([])), catalogStatus: 'ready', retryCatalog: vi.fn(),
+    displayCards: gameState.cards, getDetailStatus: () => 'ready', retryDetails: vi.fn(), isRefreshingCatalog: false, catalogRefreshFailed: false,
     cardStatLookup: {},
     cardDetailLookup: {},
     isRollingDice: false,
@@ -2331,7 +2334,7 @@ describe('GameBoard', () => {
 
     const importDeckData = vi.fn();
     mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
-      catalogCards,
+      generatedCatalog: createGameBoardSavedDeckReader(generatedCatalogFixture(catalogCards)),
       importDeckData,
     }));
 
@@ -2371,7 +2374,7 @@ describe('GameBoard', () => {
       },
     }]);
 
-    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({ catalogCards }));
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({ generatedCatalog: createGameBoardSavedDeckReader(generatedCatalogFixture(catalogCards)) }));
 
     render(<GameBoard />);
 
@@ -2400,7 +2403,7 @@ describe('GameBoard', () => {
       },
     }]);
 
-    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({ catalogCards }));
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({ generatedCatalog: createGameBoardSavedDeckReader(generatedCatalogFixture(catalogCards)) }));
 
     render(<GameBoard />);
 
@@ -2438,7 +2441,7 @@ describe('GameBoard', () => {
       },
     ]);
 
-    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({ catalogCards }));
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({ generatedCatalog: createGameBoardSavedDeckReader(generatedCatalogFixture(catalogCards)) }));
 
     render(<GameBoard />);
 
@@ -3444,4 +3447,30 @@ it.each(['host', 'guest'] as const)('exposes opponent Field and EX selection in 
   fireEvent.click(screen.getByRole('button', { name: 'Select multiple' }));
   expect(screen.getByTestId(`zone-field-${opponent}`)).toHaveAttribute('data-can-multi-select', 'true');
   expect(screen.getByTestId(`zone-ex-${opponent}`)).toHaveAttribute('data-can-multi-select', 'true');
+});
+
+
+describe('GameBoard generated detail recovery wiring', () => {
+  it('retries details and refreshes the catalog without replacing the board, with unknown artwork retained', async () => {
+    const card = createGameState([]);
+    const custom: CardInstance = { id: 'outside', cardId: 'CUSTOM', name: 'External', image: '/outside.png', zone: 'field-host', owner: 'host', isTapped: false, isFlipped: false, counters: { atk: 0, hp: 0 } };
+    card.cards = [custom];
+    const retryDetails = vi.fn();
+    const retryCatalog = vi.fn();
+    const logic = buildMockGameBoardLogic({ gameState: card, retryCatalog, retryDetails, getDetailStatus: () => 'error' });
+    mockUseGameBoardLogic.mockReturnValue(logic);
+    const { rerender } = render(<GameBoard />);
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect External' }));
+    const inspector = screen.getByTestId('card-inspector');
+    fireEvent.click(within(inspector).getByRole('button', { name: 'Retry card information' }));
+    expect(retryDetails).toHaveBeenCalledTimes(1);
+    fireEvent.click(within(inspector).getByRole('button', { name: 'Refresh card catalog' }));
+    expect(retryCatalog).toHaveBeenCalledTimes(1);
+    expect(logic.importDeckData).not.toHaveBeenCalled();
+    mockUseGameBoardLogic.mockReturnValue({ ...logic, getDetailStatus: () => 'unknown' });
+    rerender(<GameBoard />);
+    expect(inspector).toHaveTextContent('This card is not in the current card catalog.');
+    expect(within(inspector).getByRole('img')).toHaveAttribute('src', '/outside.png');
+    expect(card.cards).toEqual([custom]);
+  });
 });

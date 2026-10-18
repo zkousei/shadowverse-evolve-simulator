@@ -7,7 +7,8 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, vi } from 'vitest';
 import type { SyncState } from '../../types/game';
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
-import { loadCardCatalog } from '../../utils/card/cardCatalog';
+import { openGeneratedCardCatalog } from '../../utils/card/generatedCardCatalog';
+import { generatedCatalogFixture } from '../../test/generatedCatalogFixture';
 import { useGameBoardLogic } from './useGameBoardLogic';
 
 vi.mock('react-i18next', () => ({
@@ -126,8 +127,8 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-vi.mock('../../utils/card/cardCatalog', () => ({
-  loadCardCatalog: vi.fn(),
+vi.mock('../../utils/card/generatedCardCatalog', async original => ({
+  ...await original<typeof import('../../utils/card/generatedCardCatalog')>(), openGeneratedCardCatalog: vi.fn(),
 }));
 
 export const dragEvent = (activeId: string, overId: string): DragEndEvent => (
@@ -247,7 +248,7 @@ export const mockPeerJs = (PeerJsModule as unknown as {
     reset: () => void;
   };
 }).__mockPeerJs;
-export const mockLoadCardCatalog = vi.mocked(loadCardCatalog);
+const mockOpenCatalog = vi.mocked(openGeneratedCardCatalog);
 
 export function HookHarness() {
   const {
@@ -623,8 +624,8 @@ export const installMockFileReader = (result: string) => {
 };
 
 export const installMockCatalogFetch = (cards: DeckBuilderCardData[]) => {
-  mockLoadCardCatalog.mockResolvedValue(cards as Awaited<ReturnType<typeof loadCardCatalog>>);
-  return mockLoadCardCatalog;
+  mockOpenCatalog.mockResolvedValue(generatedCatalogFixture(cards));
+  return mockOpenCatalog;
 };
 
 export const flushCatalogEffects = async () => {
@@ -698,6 +699,6 @@ export const connectHostWithGuestAndSpectator = (entry = '/game?host=true&room=R
 };
 
 beforeEach(() => {
-  mockLoadCardCatalog.mockReset();
-  mockLoadCardCatalog.mockReturnValue(new Promise(() => { }) as ReturnType<typeof loadCardCatalog>);
+  mockOpenCatalog.mockReset();
+  mockOpenCatalog.mockReturnValue(new Promise(() => {}));
 });
