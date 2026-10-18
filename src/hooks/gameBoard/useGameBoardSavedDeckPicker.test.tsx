@@ -1,5 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
+import type { GeneratedCardIndexEntry } from '../../utils/card/generatedCardCatalog';
 import { useGameBoardSetupActions, type PendingDeckImport } from './useGameBoardSetupActions';
 import type { PlayerRole } from '../../types/game';
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
@@ -393,5 +394,138 @@ describe('pending saved-deck details', () => {
     act(() => { if (action === 'reset') result.current.setup.confirmResetGame(); else result.current.setup.importDeckData({ mainDeck: [] }, 'host'); });
     await act(async () => { pending.resolve([main, token]); await finished; });
     expect(options.importDeckData).not.toHaveBeenCalled();
+  });
+});
+
+// The generated mode has no complete in-memory catalog to fall back to.
+const generatedArgs = (source = generatedCatalogFixture([main, token])) => ({
+  ...args(), catalogCards: undefined, resolveSavedDeckCards: undefined,
+  generatedCatalog: createGameBoardSavedDeckReader(source),
+});
+const openGenerated = (options = generatedArgs()) => {
+  const hook = renderHook(props => useGameBoardSavedDeckPicker(props), { initialProps: options });
+  act(() => hook.result.current.openSavedDeckPicker('host'));
+  return { ...hook, options };
+};
+const delayGenerated = () => {
+  const source = generatedCatalogFixture([main, token]);
+  const read = source.loadCardsWithRelated;
+  let resolve!: () => void;
+  let reject!: (error: Error) => void;
+  const gate = new Promise<void>((yes, no) => { resolve = yes; reject = no; });
+  vi.spyOn(source, 'loadCardsWithRelated').mockImplementationOnce(async ids => { await gate; return read(ids); });
+  return { source, resolve, reject };
+};
+
+describe('saved-deck picker with a generated catalog', () => {
+  it('requires a generated reader for summaries and prevents mixing generated and legacy sources', () => {
+    type Input = Parameters<typeof useGameBoardSavedDeckPicker>[0];
+    type SummariesWithoutReader = Omit<ReturnType<typeof args>, 'catalogCards' | 'resolveSavedDeckCards'> & { catalogCards: readonly GeneratedCardIndexEntry[] };
+    type MixedSources = ReturnType<typeof args> & { generatedCatalog: ReturnType<typeof createGameBoardSavedDeckReader> };
+    expectTypeOf<SummariesWithoutReader>().not.toExtend<Input>();
+    expectTypeOf<MixedSources>().not.toExtend<Input>();
+  });
+
+  it('retains the shared live reset guard with a generated-only source', async () => {
+    const delayed = delayGenerated();
+    const options = generatedArgs(delayed.source);
+    const stateRef = { current: options.gameState };
+    const { result } = renderHook(() => {
+      const setup = useGameBoardSetupActions({ canInteract: true, gameState: options.gameState, gameStateRef: stateRef,
+        role: options.role, uuid: () => 'test-id', dispatchGameEvent: vi.fn(), setShowResetConfirm: vi.fn(), t: options.t });
+      return useGameBoardSavedDeckPicker({ ...options, beginDeckImport: setup.beginDeckImport });
+    });
+    act(() => result.current.openSavedDeckPicker('host'));
+    let pending!: Promise<void>;
+    act(() => { pending = result.current.handleSavedDeckImport(result.current.filteredSavedDeckOptions[0]); });
+    stateRef.current = applyGameSyncEvent(stateRef.current, { id: 'reset-while-loading', type: 'RESET_GAME', actor: 'host' });
+    await act(async () => { delayed.resolve(); await pending; });
+    expect(options.importDeckData).not.toHaveBeenCalled();
+    expect(result.current.savedDeckLoadFailed).toBe(false);
+    await act(async () => { await result.current.handleSavedDeckImport(result.current.filteredSavedDeckOptions[0]); });
+    expect(options.importDeckData).toHaveBeenCalledTimes(1);
+  });
+
+  it('lists from summaries without fetching details, then restores only the selected complete deck and related tokens', async () => {
+    const source = generatedCatalogFixture([main, token]);
+    const load = vi.spyOn(source, 'loadCardsWithRelated');
+    const { result, options } = openGenerated(generatedArgs(source));
+    expect(result.current.allCardsLength).toBe(2);
+    expect(result.current.filteredSavedDeckOptions).toHaveLength(1);
+    expect(result.current.filteredSavedDeckOptions[0]).not.toHaveProperty('deckData');
+    expect(load).not.toHaveBeenCalled();
+    await act(async () => { await result.current.handleSavedDeckImport(result.current.filteredSavedDeckOptions[0]); });
+    expect(load).toHaveBeenCalledExactlyOnceWith([main.id]);
+    expect(options.importDeckData).toHaveBeenCalledExactlyOnceWith({ mainDeck: [main], evolveDeck: [], leaderCards: [], tokenDeck: [token] }, 'host');
+    expect(result.current.savedDeckImportTargetRole).toBeNull();
+  });
+
+  it('rejects a partial related-token result without falling back to summaries, then allows retry', async () => {
+    const source = generatedCatalogFixture([main, token]);
+    const load = vi.spyOn(source, 'loadCardsWithRelated').mockImplementationOnce(ids => source.loadCards(ids));
+    const { result, options } = openGenerated(generatedArgs(source));
+    const selected = result.current.filteredSavedDeckOptions[0];
+    await act(async () => { await result.current.handleSavedDeckImport(selected); });
+    expect(options.importDeckData).not.toHaveBeenCalled();
+    expect(result.current.savedDeckLoadFailed).toBe(true);
+    expect(result.current.savedDeckImportTargetRole).toBe('host');
+    await act(async () => { await result.current.handleSavedDeckImport(selected); });
+    expect(load).toHaveBeenCalledTimes(2);
+    expect(options.importDeckData).toHaveBeenCalledExactlyOnceWith({ mainDeck: [main], evolveDeck: [], leaderCards: [], tokenDeck: [token] }, 'host');
+  });
+
+  it.each(['success', 'failure'] as const)('ignores old %s after switching reader instances even when their version strings match', async outcome => {
+    const delayed = delayGenerated();
+    const { result, options, rerender } = openGenerated(generatedArgs(delayed.source));
+    let pending!: Promise<void>;
+    act(() => { pending = result.current.handleSavedDeckImport(result.current.filteredSavedDeckOptions[0]); });
+    const next = createGameBoardSavedDeckReader(generatedCatalogFixture([main, token]));
+    expect(next.version).toBe(options.generatedCatalog.version);
+    rerender({ ...options, generatedCatalog: next });
+    expect(result.current.isSavedDeckLoading).toBe(false);
+    await act(async () => {
+      if (outcome === 'success') delayed.resolve(); else delayed.reject(new Error('Old catalog failed'));
+      await pending;
+    });
+    expect(options.importDeckData).not.toHaveBeenCalled();
+    expect(result.current.savedDeckLoadFailed).toBe(false);
+    await act(async () => { await result.current.handleSavedDeckImport(result.current.filteredSavedDeckOptions[0]); });
+    expect(options.importDeckData).toHaveBeenCalledTimes(1);
+  });
+
+  it('rechecks a record edited during a generated read and requires selection of the updated record', async () => {
+    const delayed = delayGenerated();
+    const { result, options } = openGenerated(generatedArgs(delayed.source));
+    let pending!: Promise<void>;
+    act(() => { pending = result.current.handleSavedDeckImport(result.current.filteredSavedDeckOptions[0]); });
+    store([{ ...record, name: 'Updated during fetch' }]);
+    await act(async () => { delayed.resolve(); await pending; });
+    expect(options.importDeckData).not.toHaveBeenCalled();
+    expect(result.current.filteredSavedDeckOptions[0].deck.name).toBe('Updated during fetch');
+    await act(async () => { await result.current.handleSavedDeckImport(result.current.filteredSavedDeckOptions[0]); });
+    expect(options.importDeckData).toHaveBeenCalledTimes(1);
+  });
+
+  it('discards generated data completing after close and allows the next open to load normally', async () => {
+    const delayed = delayGenerated();
+    const { result, options } = openGenerated(generatedArgs(delayed.source));
+    let pending!: Promise<void>;
+    act(() => { pending = result.current.handleSavedDeckImport(result.current.filteredSavedDeckOptions[0]); });
+    act(() => result.current.closeSavedDeckPicker());
+    await act(async () => { delayed.resolve(); await pending; });
+    expect(options.importDeckData).not.toHaveBeenCalled();
+    expect(result.current.savedDeckLoadFailed).toBe(false);
+    act(() => result.current.openSavedDeckPicker('guest'));
+    await act(async () => { await result.current.handleSavedDeckImport(result.current.filteredSavedDeckOptions[0]); });
+    expect(options.importDeckData).toHaveBeenCalledExactlyOnceWith({ mainDeck: [main], evolveDeck: [], leaderCards: [], tokenDeck: [token] }, 'guest');
+  });
+
+  it('does not offer unknown saved IDs or an empty catalog and never fetches them', () => {
+    const source = generatedCatalogFixture([]);
+    const load = vi.spyOn(source, 'loadCardsWithRelated');
+    const { result } = openGenerated(generatedArgs(source));
+    expect(result.current.savedDeckImportTargetRole).toBeNull();
+    expect(result.current.filteredSavedDeckOptions).toEqual([]);
+    expect(load).not.toHaveBeenCalled();
   });
 });

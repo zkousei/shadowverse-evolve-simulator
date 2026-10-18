@@ -24,7 +24,7 @@ import {
 import { buildGameBoardCatalogMetadata, buildGameBoardCatalogResources } from '../gameBoard/gameBoardCatalog';
 import { createGameBoardCatalogDetails } from '../gameBoard/gameBoardCatalogDetails';
 import { createGameBoardSavedDeckReader, UnknownSavedDeckCardsError } from '../gameBoard/gameBoardSavedDeckReader';
-import { buildLegalSavedDeckOptions, buildSavedDeckPickerOptions } from '../gameBoard/gameBoardSavedDecks';
+import { buildLegalSavedDeckOptions, buildSavedDeckPickerOptions, buildSavedDeckImportSignature, getSavedDeckSectionSignature } from '../gameBoard/gameBoardSavedDecks';
 
 type IndexCard = DeckBuilderCardData & { detail_group: string };
 type Manifest = {
@@ -379,6 +379,7 @@ describe('generated card catalog compatibility', () => {
       const cards = await reader.loadCards(sampleRecord);
       const [expected] = buildLegalSavedDeckOptions([sampleRecord], original, key => key);
       expect(expected).toBeDefined();
+      expect(buildSavedDeckImportSignature(sampleRecord, reader.summaries, key => key)).toBe(getSavedDeckSectionSignature(expected.deckData));
       expect(buildLegalSavedDeckOptions([sampleRecord], cards, key => key)).toEqual([expected]);
       expect(expected.deckData.mainDeck).toHaveLength(40);
       expect(expected.deckData.evolveDeck).toHaveLength(10);
@@ -387,6 +388,7 @@ describe('generated card catalog compatibility', () => {
       const fullCards = await reader.loadCards(extraRecord);
       const [fullExpected] = buildLegalSavedDeckOptions([extraRecord], original, key => key);
       expect(fullExpected).toBeDefined();
+      expect(buildSavedDeckImportSignature(extraRecord, reader.summaries, key => key)).toBe(getSavedDeckSectionSignature(fullExpected.deckData));
       expect(fullExpected.deckData.tokenDeck.length).toBeGreaterThan(0);
       expect(buildLegalSavedDeckOptions([extraRecord], fullCards, key => key)).toEqual([fullExpected]);
       expect(fullCards.find(card => card.id === faced.id)?.faces).toEqual(faced.faces);

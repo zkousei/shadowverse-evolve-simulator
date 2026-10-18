@@ -26,7 +26,7 @@ export type LegalSavedDeckOption = SavedDeckPickerOption & {
   };
 };
 
-const mapLegalSavedDeckOptions = <Card extends DeckRuleCard, T extends SavedDeckPickerOption>(
+const mapLegalSavedDeckOptions = <Card extends DeckRuleCard, T extends object>(
   savedDecks: SavedDeckRecordV1[],
   allCards: readonly Card[],
   t: SavedDeckPresentationTranslator,
@@ -77,3 +77,17 @@ export const buildSavedDeckPickerOptions = (
 ): SavedDeckPickerOption[] => mapLegalSavedDeckOptions(savedDecks, allCards, t,
   ({ deck, summary, counts }) => ({ deck, summary, counts })
 );
+
+/** IDs/order/counts only, never a partial card payload for the game. */
+export const getSavedDeckSectionSignature = (data: DeckState<Pick<DeckRuleCard, 'id'>>): string =>
+  JSON.stringify([data.mainDeck, data.evolveDeck, data.leaderCards, data.tokenDeck].map(cards => cards.map(card => card.id)));
+
+export const buildSavedDeckImportSignature = (
+  deck: SavedDeckRecordV1,
+  allCards: readonly DeckRuleCard[],
+  t: SavedDeckPresentationTranslator
+): string | null => {
+  const [result] = mapLegalSavedDeckOptions([deck], allCards, t,
+    option => ({ signature: getSavedDeckSectionSignature(option.deckData) }));
+  return result?.signature ?? null;
+};
