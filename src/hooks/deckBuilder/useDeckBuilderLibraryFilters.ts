@@ -87,6 +87,12 @@ export const useDeckBuilderLibraryFilters = ({
     applyDeckBuilderLibraryFilterState(buildDefaultDeckBuilderLibraryFilterState());
   }, [applyDeckBuilderLibraryFilterState]);
 
+  // Async deck replacements may finish after filters have changed. Update only
+  // pagination so a callback captured before loading cannot restore old filters.
+  const resetLibraryPage = React.useCallback(() => {
+    setPage(0);
+  }, []);
+
   const updateLibraryFilters = React.useCallback((
     patch: Partial<DeckBuilderLibraryFilterState>
   ) => {
@@ -144,6 +150,7 @@ export const useDeckBuilderLibraryFilters = ({
     page,
     filteredSubtypeOptions,
     resetLibraryFilters,
+    resetLibraryPage,
     updateLibraryFilters,
     updateLibraryFiltersWithPageReset,
     addSubtypeTag,

@@ -1038,6 +1038,173 @@ describe('DeckBuilder', { timeout: 20000 }, () => {
     });
   });
 
+  describe('library pagination after deck changes', () => {
+    const cards = [
+      ...mockCards,
+      ...[mockCards[0], mockCards[2], mockCards[3]].flatMap(card =>
+        createUniqueCards({ ...card, name: `Library ${card.class}` }, 55, { cost: '1', related_cards: [] })),
+    ];
+    const changeSelect = (name: string, value: string) =>
+      fireEvent.change(screen.getByRole('combobox', { name }), { target: { value } });
+    const expectPage = (page: number) => expect(screen.getByText(new RegExp(`^${page} / \\d+$`))).toBeInTheDocument();
+    const expectFilters = () => {
+      expect(screen.getByPlaceholderText('Search cards by name...')).toHaveValue('Library');
+      expect(within(screen.getByRole('group', { name: 'Cost filter' })).getByRole('button', { name: '1' }))
+        .toHaveAttribute('aria-pressed', 'true');
+    };
+    const setup = async (configure = () => {}) => {
+      const [saved] = seedSavedDecks(1, () => ({ mainDeck: [mockCards[2]], evolveDeck: [], leaderCards: [], tokenDeck: [] }));
+      saved.ruleConfig = { ...otherRuleConfig, format: 'constructed', selectedClass: 'ウィッチ' };
+      window.localStorage.setItem(SAVED_DECKS_KEY, JSON.stringify({ schemaVersion: 1, decks: [saved] }));
+      const reader = generatedCatalogFixture(cards);
+      mockOpenCatalog.mockResolvedValueOnce(reader);
+      await renderLoadedDeckBuilder('Library ロイヤル 1');
+      changeSelect('Constructed class', 'ロイヤル');
+      configure();
+      fireEvent.change(screen.getByPlaceholderText('Search cards by name...'), { target: { value: 'Library' } });
+      fireEvent.click(within(screen.getByRole('group', { name: 'Cost filter' })).getByRole('button', { name: '1' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+      await flushDeckBuilderCatalogLoad();
+      expectPage(2);
+      return reader;
+    };
+    const beginReplacement = (source: 'MyDeck' | 'JSON' | 'DeckLog') => {
+      if (source === 'MyDeck') {
+        fireEvent.click(screen.getByRole('button', { name: 'My Decks' }));
+        fireEvent.click(within(screen.getByRole('dialog', { name: 'My Decks' })).getByRole('button', { name: 'Load' }));
+        // The configured current deck has unsaved rule changes.
+        fireEvent.click(within(screen.getByRole('dialog', { name: 'Load saved deck confirmation' })).getByRole('button', { name: 'Load' }));
+      } else if (source === 'JSON') {
+        importedDeckPayload = { deckName: 'Imported Witch', rule: 'constructed', selectedClass: 'ウィッチ', mainDeck: [mockCards[2]] };
+        stubFileReaderWithImportedDeck();
+        fireEvent.change(document.querySelector('input[type="file"]')!, { target: { files: [new File(['{}'], 'deck.json')] } });
+      } else {
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({
+          id: 1, title: 'Imported Witch', game_title_id: 6, deck_param1: 'N', deck_param2: 'ウィッチ',
+          list: [{ card_number: mockCards[2].id, num: 1, card_kind: '・スペル・', name: mockCards[2].name,
+            img: 'BP02/bp02_007.png', custom_param: { class_name: 'ウィッチ' } }], sub_list: [], p_list: [],
+        }) }));
+        fireEvent.click(screen.getByRole('button', { name: /Import from DeckLog/i }));
+        fireEvent.change(screen.getByPlaceholderText('e.g. a DeckLog code or a public DeckLog URL'), { target: { value: '7H9K2' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Import' }));
+      }
+    };
+
+    it.each(['MyDeck', 'JSON', 'DeckLog'] as const)('resets only the page after %s replacement succeeds, preserving filters', async source => {
+      const reader = await setup();
+      const full = await reader.loadCardsWithRelated([mockCards[2].id]);
+      let resolve!: (value: typeof full) => void;
+      vi.spyOn(reader, 'loadCardsWithRelated').mockReturnValueOnce(new Promise(yes => { resolve = yes; }));
+      beginReplacement(source);
+      await screen.findByText(enTranslations.deckBuilder.catalog.processing);
+      expectPage(2);
+      await act(async () => resolve(full));
+      await waitFor(() => expect(screen.getByRole('combobox', { name: 'Constructed class' })).toHaveValue('ウィッチ'));
+      expectPage(1);
+      expect(screen.getByRole('button', { name: 'Prev' })).toBeDisabled();
+      expect(await screen.findByText('Library ウィッチ 1')).toBeInTheDocument();
+      expectFilters();
+    });
+
+    it('resets the page after a successful replacement even when the class stays the same', async () => {
+      await setup();
+      importedDeckPayload = { deckName: 'Another Royal', rule: 'constructed', selectedClass: 'ロイヤル', mainDeck: [mockCards[0]] };
+      stubFileReaderWithImportedDeck();
+      fireEvent.change(document.querySelector('input[type="file"]')!, { target: { files: [new File(['{}'], 'royal.json')] } });
+      await screen.findByDisplayValue('Another Royal');
+      expectPage(1);
+      expect(screen.getByRole('combobox', { name: 'Constructed class' })).toHaveValue('ロイヤル');
+      expectFilters();
+    });
+
+    it.each(['MyDeck', 'JSON', 'DeckLog'] as const)('preserves the page and current deck when %s replacement fails', async source => {
+      const reader = await setup();
+      vi.spyOn(reader, 'loadCardsWithRelated').mockRejectedValueOnce(new Error('detail unavailable'));
+      vi.spyOn(window, 'alert').mockImplementation(() => {});
+      beginReplacement(source);
+      await screen.findByText(enTranslations.deckBuilder.catalog.failed);
+      expectPage(2);
+      expect(screen.getByRole('combobox', { name: 'Constructed class' })).toHaveValue('ロイヤル');
+      expectFilters();
+    });
+
+    it.each([
+      ['constructed class', () => {}, () => changeSelect('Constructed class', 'ウィッチ')],
+      ['identity type', () => {}, () => fireEvent.click(screen.getByRole('button', { name: 'Title' }))],
+      ['constructed title', () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Title' }));
+        changeSelect('Constructed title', 'Hero Tale');
+      }, () => changeSelect('Constructed title', 'Mage Tale')],
+      ['format', () => {}, () => changeSelect('Deck format', 'other')],
+      ['crossover class A', () => {
+        changeSelect('Deck format', 'crossover'); changeSelect('Crossover class B', 'ウィッチ');
+      }, () => changeSelect('Crossover class A', 'ドラゴン')],
+      ['crossover class B', () => {
+        changeSelect('Deck format', 'crossover'); changeSelect('Crossover class B', 'ウィッチ');
+      }, () => changeSelect('Crossover class B', 'ドラゴン')],
+    ] as const)('resets only the page on a manual %s change', async (_name, configure, change) => {
+      await setup(configure);
+      change();
+      await flushDeckBuilderCatalogLoad();
+      expectPage(1);
+      expectFilters();
+    });
+
+    it('preserves pagination during edits, saves, card changes and canceled saved-deck loading', async () => {
+      await setup();
+      fireEvent.change(screen.getByPlaceholderText('Deck Name'), { target: { value: 'Working deck' } });
+      expectPage(2);
+      const card = await screen.findByRole('button', { name: 'Preview Library ロイヤル 51' });
+      fireEvent.click(within(card.closest('.glass-panel') as HTMLElement).getByTitle('Add to Main Deck'));
+      expectPage(2);
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+      expectPage(2);
+      const section = screen.getByRole('heading', { name: /^Main Deck/ }).nextElementSibling as HTMLElement;
+      fireEvent.click(within(section).getByTitle('Remove one copy from Main Deck'));
+      expectPage(2);
+      fireEvent.click(screen.getByRole('button', { name: 'My Decks' }));
+      const savedRow = screen.getByText('Saved Deck 1').closest('div[style*="justify-content: space-between"]') as HTMLElement;
+      fireEvent.click(within(savedRow).getByRole('button', { name: 'Load' }));
+      fireEvent.click(within(screen.getByRole('dialog', { name: 'Load saved deck confirmation' })).getByRole('button', { name: 'Cancel' }));
+      expectPage(2);
+      fireEvent.click(within(screen.getByRole('dialog', { name: 'My Decks' })).getByRole('button', { name: 'Close' }));
+      fireEvent.click(screen.getByRole('button', { name: /Import from DeckLog/i }));
+      fireEvent.click(within(screen.getByRole('dialog', { name: 'Import from DeckLog dialog' })).getByRole('button', { name: 'Cancel' }));
+      expectPage(2);
+      fireEvent.change(document.querySelector('input[type="file"]')!, { target: { files: [] } });
+      expectPage(2);
+      expectFilters();
+    });
+
+    it('preserves newer filter edits made while a replacement is loading', async () => {
+      const reader = await setup();
+      const full = await reader.loadCardsWithRelated([mockCards[2].id]);
+      let resolve!: (value: typeof full) => void;
+      vi.spyOn(reader, 'loadCardsWithRelated').mockReturnValueOnce(new Promise(yes => { resolve = yes; }));
+      beginReplacement('JSON');
+      await screen.findByText(enTranslations.deckBuilder.catalog.processing);
+      fireEvent.change(screen.getByPlaceholderText('Search cards by name...'), { target: { value: 'Library ウィッチ' } });
+      await act(async () => resolve(full));
+      expect(screen.getByPlaceholderText('Search cards by name...')).toHaveValue('Library ウィッチ');
+      expectPage(1);
+      expect(await screen.findByText('Library ウィッチ 1')).toBeInTheDocument();
+    });
+
+    it('does not reset the page when a canceled import finishes after a newer edit', async () => {
+      const reader = await setup();
+      const full = await reader.loadCardsWithRelated([mockCards[2].id]);
+      let resolve!: (value: typeof full) => void;
+      vi.spyOn(reader, 'loadCardsWithRelated').mockReturnValueOnce(new Promise(yes => { resolve = yes; }));
+      beginReplacement('JSON');
+      await screen.findByText(enTranslations.deckBuilder.catalog.processing);
+      fireEvent.change(screen.getByPlaceholderText('Deck Name'), { target: { value: 'Newer edit' } });
+      await act(async () => resolve(full));
+      expectPage(2);
+      expect(screen.getByPlaceholderText('Deck Name')).toHaveValue('Newer edit');
+      expect(screen.getByRole('combobox', { name: 'Constructed class' })).toHaveValue('ロイヤル');
+    });
+  });
+
   it('updates pagination controls between the first and last library pages', async () => {
     mockCatalogCards.mockResolvedValue(createUniqueCards(mockCards[0], 55));
 
