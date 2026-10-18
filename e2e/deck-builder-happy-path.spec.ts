@@ -27,7 +27,7 @@ test.describe('Deck Builder Happy Path', () => {
     await expect(fileInput).toBeEnabled();
     await fileInput.setInputFiles(constructedSampleDeckPath);
 
-    await expect(page.getByPlaceholder('Deck Name')).toHaveValue('Sample Constructed Royal');
+    await expect(page.getByPlaceholder('Deck Name', { exact: true })).toHaveValue('Sample Constructed Royal');
     await expect(page.getByRole('heading', { name: /Main Deck/ })).toContainText('40/50');
     await expect(page.getByRole('heading', { name: /Evolve Deck/ })).toContainText('10/10');
     await expect(page.getByRole('heading', { name: /Leader/ })).toContainText('1/1');
@@ -64,7 +64,7 @@ test.describe('Deck Builder Happy Path', () => {
     await expect(reloadedLoadButton).toBeEnabled();
     await reloadedLoadButton.click();
 
-    await expect(page.getByPlaceholder('Deck Name')).toHaveValue('Sample Constructed Royal');
+    await expect(page.getByPlaceholder('Deck Name', { exact: true })).toHaveValue('Sample Constructed Royal');
     await expect(page.getByText('Saved', { exact: true })).toBeVisible();
 
     const downloadPromise = page.waitForEvent('download');

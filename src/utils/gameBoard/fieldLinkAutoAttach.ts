@@ -1,5 +1,5 @@
 import type { CardInstance } from '../../components/Card';
-import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
+import type { GameBoardCatalogRuleCard } from './gameBoardCatalogTypes';
 import { getFieldLinkGroupId } from './fieldLinkRules';
 
 const isAdvanceKind = (cardKindNormalized?: string): boolean => (
@@ -15,7 +15,7 @@ const getRootFieldCards = (boardCards: CardInstance[], owner: CardInstance['owne
 
 const isValidFieldLinkTarget = (
   card: CardInstance,
-  cardsById: Record<string, DeckBuilderCardData>
+  cardsById: Record<string, GameBoardCatalogRuleCard>
 ): boolean => {
   if (card.isLeaderCard || card.isEvolveCard || card.isTokenCard) return false;
 
@@ -31,9 +31,9 @@ export interface FieldLinkAutoAttachResolver {
 }
 
 export const buildFieldLinkAutoAttachResolver = (
-  cards: DeckBuilderCardData[]
+  cards: readonly GameBoardCatalogRuleCard[]
 ): FieldLinkAutoAttachResolver => {
-  const cardsById = cards.reduce<Record<string, DeckBuilderCardData>>((lookup, card) => {
+  const cardsById = cards.reduce<Record<string, GameBoardCatalogRuleCard>>((lookup, card) => {
     lookup[card.id] = card;
     return lookup;
   }, {});

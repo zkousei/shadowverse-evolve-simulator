@@ -21,7 +21,7 @@ import { getDeckValidationMessages, sanitizeImportedDeckState } from '../deckBui
 import {
   restoreDraftToSnapshot, restoreSavedDeckToSnapshot, serializeDeckState, type SavedDeckRecordV1,
 } from '../deck/deckStorage';
-import { buildGameBoardCatalogResources } from '../gameBoard/gameBoardCatalog';
+import { buildGameBoardCatalogMetadata, buildGameBoardCatalogResources } from '../gameBoard/gameBoardCatalog';
 import { buildLegalSavedDeckOptions } from '../gameBoard/gameBoardSavedDecks';
 
 type IndexCard = DeckBuilderCardData & { detail_group: string };
@@ -153,6 +153,55 @@ describe('generated card catalog compatibility', () => {
     for (const key of ['catalogById', 'statLookup', 'detailLookup', 'fieldLinkCardIds', 'tokenManualLinkCardIds'] as const) {
       expect(restoredResources[key]).toEqual(originalResources[key]);
     }
+  });
+
+  it('builds identical stats and rule sets from the actual generated index without full details', () => {
+    const metadata = buildGameBoardCatalogMetadata(index);
+    expect(metadata.statLookup).toEqual(originalResources.statLookup);
+    expect(metadata.fieldLinkCardIds).toEqual(originalResources.fieldLinkCardIds);
+    expect(metadata.tokenManualLinkCardIds).toEqual(originalResources.tokenManualLinkCardIds);
+    expect(metadata).not.toHaveProperty('detailLookup');
+  });
+
+  it('preserves eligibility for every actual card and candidates across all eligible sources using the index', () => {
+    const metadata = buildGameBoardCatalogMetadata(index);
+    const mainByName = new Map<string, CardInstance[]>();
+    const relatedNamesByName = new Map<string, Set<string>>();
+    for (const card of original) {
+      if (card.deck_section === 'main') {
+        const members = mainByName.get(card.name) ?? [];
+        members.push(instance(card));
+        mainByName.set(card.name, members);
+      }
+      // Include all same-name variants' references, even when the selected
+      // source has none. Resolvers still decide title/kind/family validity.
+      const names = relatedNamesByName.get(card.name) ?? new Set([card.name]);
+      for (const ref of card.related_cards ?? []) names.add(ref.name);
+      relatedNamesByName.set(card.name, names);
+    }
+    const fullBoard = [...mainByName.values()].flat();
+    let evolveMatches = 0;
+    let linkMatches = 0;
+    for (const card of original) {
+      const source = instance(card, 'evolveDeck-host');
+      const eligible = originalResources.evolveAutoAttachResolver.isEligibleSource(source);
+      expect(metadata.evolveAutoAttachResolver.isEligibleSource(source), card.id).toBe(eligible);
+      const linkEligible = originalResources.fieldLinkAutoAttachResolver.isEligibleSource(source);
+      expect(metadata.fieldLinkAutoAttachResolver.isEligibleSource(source), card.id).toBe(linkEligible);
+      if (eligible) {
+        const board = [...relatedNamesByName.get(card.name)!].flatMap(name => mainByName.get(name) ?? []);
+        const expected = originalResources.evolveAutoAttachResolver.resolveCandidates(source, board);
+        evolveMatches += expected.length;
+        expect(metadata.evolveAutoAttachResolver.resolveCandidates(source, board), card.id).toEqual(expected);
+      }
+      if (linkEligible) {
+        const expected = originalResources.fieldLinkAutoAttachResolver.resolveCandidates(source, fullBoard);
+        linkMatches += expected.length;
+        expect(metadata.fieldLinkAutoAttachResolver.resolveCandidates(source, fullBoard), card.id).toEqual(expected);
+      }
+    }
+    expect(evolveMatches).toBeGreaterThan(0);
+    expect(linkMatches).toBeGreaterThan(0);
   });
 
   it('preserves evolve and field-link candidates using actual related-card families', () => {

@@ -21,7 +21,7 @@ const parseNumericStat = (value?: string): number | null => {
   return Number.isNaN(parsed) ? null : parsed;
 };
 
-export const buildCardStatLookup = (cards: CardStatsSource[]): CardStatLookup => (
+export const buildCardStatLookup = (cards: readonly CardStatsSource[]): CardStatLookup => (
   cards.reduce<CardStatLookup>((lookup, card) => {
     const atk = parseNumericStat(card.atk);
     const hp = parseNumericStat(card.hp);
