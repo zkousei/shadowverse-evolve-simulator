@@ -3,30 +3,41 @@ import { dragLocatorFromExposedCardPointToLocator, spawnDefaultToken, startKeybo
 
 test.use({ locale: 'en-US' });
 
-test('pointer drag follows its target when the viewport scrolls during movement', async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 500 });
-  await startSoloGame(page);
-  await spawnDefaultToken(page, 'bottom');
-  await page.evaluate(() => {
-    let origin: { x: number; y: number } | undefined;
-    const scrollDuringDrag = (event: PointerEvent) => {
-      if (!event.buttons || !document.querySelector('[data-card-id][aria-pressed="true"]')) return;
-      if (!origin) { origin = { x: event.clientX, y: event.clientY }; return; }
-      if (Math.hypot(event.clientX - origin.x, event.clientY - origin.y) < 40) return;
-      const before = window.scrollY;
-      window.scrollBy(0, -180);
-      document.documentElement.dataset.dragScroll = String(before - window.scrollY);
-      document.removeEventListener('pointermove', scrollDuringDrag);
-    };
-    document.addEventListener('pointermove', scrollDuringDrag);
+for (const delayedPointerEvents of [false, true]) {
+  test(`pointer drag follows its target when the viewport scrolls during movement${delayedPointerEvents ? ' with delayed pointer events' : ''}`, async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 500 });
+    await startSoloGame(page);
+    await spawnDefaultToken(page, 'bottom');
+    await page.evaluate(delayed => {
+      if (delayed) {
+        // A busy browser makes each interpolated input event expensive. Keep
+        // real sensor/collision handling and scroll rather than mocking the drop.
+        document.addEventListener('pointermove', event => {
+          if (!event.buttons || !document.querySelector('[data-card-id][aria-pressed="true"]')) return;
+          const until = performance.now() + 300;
+          while (performance.now() < until) { /* simulate main-thread work */ }
+        });
+      }
+      let origin: { x: number; y: number } | undefined;
+      const scrollDuringDrag = (event: PointerEvent) => {
+        if (!event.buttons || !document.querySelector('[data-card-id][aria-pressed="true"]')) return;
+        if (!origin) { origin = { x: event.clientX, y: event.clientY }; return; }
+        if (Math.hypot(event.clientX - origin.x, event.clientY - origin.y) < 40) return;
+        const before = window.scrollY;
+        window.scrollBy(0, -180);
+        document.documentElement.dataset.dragScroll = String(before - window.scrollY);
+        document.removeEventListener('pointermove', scrollDuringDrag);
+      };
+      document.addEventListener('pointermove', scrollDuringDrag);
+    }, delayedPointerEvents);
+    await dragLocatorFromExposedCardPointToLocator(page, zoneCards(page, 'field-host').first(), zone(page, 'cemetery-host'));
+    await expect(page.locator('html')).toHaveAttribute('data-drag-scroll', '180');
+    await expect(zoneCards(page, 'field-host')).toHaveCount(0);
+    await expect(zoneCards(page, 'cemetery-host')).toHaveCount(0);
+    await page.getByTestId('undo-move-host').click();
+    await expect(zoneCards(page, 'field-host')).toHaveCount(1);
   });
-  await dragLocatorFromExposedCardPointToLocator(page, zoneCards(page, 'field-host').first(), zone(page, 'cemetery-host'));
-  await expect(page.locator('html')).toHaveAttribute('data-drag-scroll', '180');
-  await expect(zoneCards(page, 'field-host')).toHaveCount(0);
-  await expect(zoneCards(page, 'cemetery-host')).toHaveCount(0);
-  await page.getByTestId('undo-move-host').click();
-  await expect(zoneCards(page, 'field-host')).toHaveCount(1);
-});
+}
 
 test('keyboard drag waits for delayed document key handling before testing Undo and cancellation', async ({ page }) => {
   await startSoloGame(page);
