@@ -442,3 +442,5 @@ UTF-8/型/欠落、不明ID、入力非変更）と `tools/python_entrypoints_te
 
 分割候補の比較は[`card-catalog-partition-comparison.md`](card-catalog-partition-comparison.md)を参照。
 `npm run cards:compare:partitions`は配信を変更せず、候補の初回増加・通信回数・取得量を比較する。
+
+開発サーバー初回の生成待ちとE2Eの開始条件は[初回読み込みの調査記録](card-catalog-startup.md)を参照。
