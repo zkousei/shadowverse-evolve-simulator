@@ -385,3 +385,54 @@ Gitには正本JSON・生成コード・テスト・文書を保持します。
 - `DeckBuilder.test.tsx`: 既存の画面仕様と、取得失敗・リセット・ページ再試行の統合。
 - `e2e/deck-builder-catalog-update.spec.ts`: 旧詳細404後に実際に再読み込みし、直前の編集を新版で復元。
 - `e2e/production/catalog-delivery.spec.ts`: 本番配信で従来JSONを要求せず、一部の詳細だけを取得。
+
+
+## カード増加時の取得量と一覧項目の計測
+
+`npm run cards:measure:catalog` はビルドと同じ生成処理をメモリー内で実行し、計測結果のJSONを標準出力へ返す。
+正本・生成物・保存デッキ・アプリ設定を書き換えず、出力ファイルも作らない。Python標準ライブラリだけを使う。
+過去のレポートや生成バイナリをGitへ追加する必要はない。
+
+```sh
+# 現在の正本から計測する（artifactの事前生成は不要）
+npm run cards:measure:catalog
+
+# ビルドの生成物が正本と一致することも検証し、サンプルの必要グループを計測する
+npm run build
+npm run --silent cards:measure:catalog -- --check-output dist/card-catalog --deck public/sample-decks/constructed-royal-sample.json > /tmp/catalog-size-report.json
+```
+
+- `initial`: 空のキャッシュからmanifestとindexを読む場合。
+- `selected`: エクスポートしたJSONのmainDeck/evolveDeck/leaderCards/tokenDeckのIDと、再帰的な関連参照を読む場合。
+  重複・関連循環は一度だけ取得し、manifest/indexに必要な詳細グループを足す。`--deck`省略時はinitialと同量となる。
+  不正な区分・不明IDを無視して小さく見積もることはせず、終了コード1で失敗する。内部保存用の枚数付き形式は対象外。
+- `all`: manifest/indexと全詳細グループを読む場合。
+- `requests`: キャッシュなしで必要なファイル数。リトライ・画像・JS/CSS・対戦通信は含めない。
+- `bytes` / `gzipBytes`: 実際に生成する各ファイルのUTF-8サイズと、ファイルごとのgzipサイズの合計。
+  Vercelの実測転送量、Brotli、HTTPヘッダー、キャッシュ、所要時間、JavaScriptヒープ量は示さない。
+- `fetchedCards`: 詳細グループに含まれる全カード数。必要なID以外のカードも同じグループなら取得するため、
+  `uniqueRequestedCards + relatedCards`より大きくなり得る。一覧のカード数は含めない。
+- `indexFields`: 項目ごとの存在件数・JSON値の種類数・値だけのUTF-8合計。値の型・false・0・空文字・欠落を区別する。
+  行マスク・共通ヘッダー・区切りは除くため、`valueBytes`を足してもindex全体のサイズにはならない。
+  同じ値が多いことだけで、圧縮後にも同じ割合で削減できるとは判断しない。
+
+現データ7,684枚、58グループでの再現結果は次のとおり。
+
+| シナリオ | ファイル数 | 詳細として取得する枚数 | bytes | gzip bytes |
+| --- | ---: | ---: | ---: | ---: |
+| initial | 2 | 0 | 3,000,040 | 239,645 |
+| 構築済みロイヤルサンプル（selected） | 9 | 1,087 | 3,932,221 | 319,187 |
+| all | 60 | 7,684 | 9,374,394 | 794,734 |
+
+サンプルは56種類の入力IDと21種類の関連カードに対して7グループを読む。
+これは初回の空キャッシュからの比較であり、既に読み込んだグループの再利用は含めない。
+全詳細を読むとindexとの重複分も含むため、全件一括JSONより必ず小さくなる方式ではない。
+
+一覧の値の大きい項目はimage（669,353 bytes / 7,684種類）、product_name（451,920 bytes / 57種類）、
+related_cards（371,385 bytes / 3,554種類）。これらは値だけの非圧縮サイズであり、削除してよい項目を示すものではない。
+次の削減候補は詳細グループの細分化や、必要な項目を維持した重複表現の圧縮とし、実装前後を同じコマンドで比較する。
+この計測追加では配信スキーマ・分割単位・キャッシュ・ルール判定を変更しない。
+
+所有テストは `tools/card_data/measure_catalog_test.py`（ファイル単位のサイズ、関連循環、重複、グループに含まれる全件、
+UTF-8/型/欠落、不明ID、入力非変更）と `tools/python_entrypoints_test.py`（モジュール起動、標準出力、終了コード、
+既存生成物の検証、不正入力・破損時にもファイルを変更しないこと）。実行は `npm run test:python`。
