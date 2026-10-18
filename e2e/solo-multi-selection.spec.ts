@@ -36,6 +36,9 @@ for (const touch of [false, true]) {
       }
     });
     test('adjusts a selection across field and EX, moves it and undoes the entire move', async ({ page }, testInfo) => {
+      // This diagnostic screenshot must not block the interaction assertions
+      // on an external font server. Use the existing system-font fallbacks.
+      await page.route('https://fonts.googleapis.com/**', route => route.fulfill({ contentType: 'text/css', body: '' }));
       await startSoloGame(page);
       await spawnDefaultToken(page, 'bottom', 'field');
       await spawnDefaultToken(page, 'bottom', 'ex');
