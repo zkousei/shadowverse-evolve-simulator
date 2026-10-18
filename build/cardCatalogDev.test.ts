@@ -94,6 +94,31 @@ test('source edits invalidate the snapshot even with unchanged file size and mti
   expect((await (await get(`/card-catalog/${current.details.BP01.file}`)).json())[0].name).toBe('New');
 });
 
+test('development serves canonical split paths for GET and HEAD with verified bytes', async () => {
+  const root = fixture();
+  writeFileSync(join(root, 'public/cards_detailed.json'), JSON.stringify(
+    Array.from({ length: 5 }, (_, i) => ({ id: `A-${i}`, name: `Card ${i}`, ability_text: 'x'.repeat(100000) })),
+  ));
+  const get = await start(root);
+  const manifest = await (await get('/card-catalog/manifest.json')).json();
+  expect(Object.keys(manifest.details)).toEqual(['A@0001', 'A@0002', 'A@0003', 'A@0004', 'A@0005']);
+  for (const descriptor of Object.values(manifest.details) as Array<{ file: string; sha256: string; bytes: number }>) {
+    const path = `/card-catalog/${descriptor.file}`;
+    const response = await get(path);
+    expect(response.status).toBe(200);
+    const bytes = Buffer.from(await response.arrayBuffer());
+    expect(bytes.length).toBe(descriptor.bytes);
+    expect(createHash('sha256').update(bytes).digest('hex')).toBe(descriptor.sha256);
+    const head = await get(path, 'HEAD');
+    expect(head.status).toBe(200);
+    expect(head.headers.get('content-length')).toBe(String(bytes.length));
+    expect(await head.text()).toBe('');
+  }
+  for (const name of ['A', 'A@0000', 'A@1', 'A@00001', 'A@9999', 'A@@0001']) {
+    await expectFailure(await get(`/card-catalog/versions/${manifest.catalogVersion}/details/${name}.json`), 404);
+  }
+});
+
 test('invalid or missing sources return 503 instead of stale data, and a corrected source can retry', async () => {
   const root = fixture();
   const get = await start(root);

@@ -55,3 +55,6 @@ Pythonの再結合検証も、商品プレフィックス・グループの正�
 
 分割の主契約は`tools/card_data/generate_catalog_test.py`、Vite接続は`build/cardCatalog.test.ts`が所有します。
 実データ・ブラウザーの結果と転送量は[比較記録](card-catalog-partition-comparison.md#実生成の検証)を参照してください。
+
+開発・ローカルpreviewの配信パス判定も分割名に対応します。`build/cardCatalogDev.test.ts`で実分割ファイルのGET・HEAD・ハッシュと、不正・欠落パスの404を保護します。
+生成器やViteプラグインを更新した後の検証では開発サーバーを新しく起動し、以前の生成物を保持したプロセスを再利用しないでください。

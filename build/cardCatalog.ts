@@ -6,7 +6,7 @@ import type { Plugin, ResolvedConfig } from 'vite';
 import { catalogSourcePaths, generateCardCatalogAssets } from './cardCatalogArtifacts';
 
 const prefix = '/card-catalog';
-const versionFile = /^\/card-catalog\/versions\/[a-f0-9]{64}\/(?:index\.json|details\/[A-Za-z0-9_]+\.json)$/;
+const versionFile = /^\/card-catalog\/versions\/[a-f0-9]{64}\/(?:index\.json|details\/[A-Za-z0-9_]+(?:@(?:[0-9]{4}|[1-9][0-9]{4,}))?\.json)$/;
 
 /** Verified assets: generated outside public/; existing app consumers stay unchanged. */
 export const cardCatalog = (): Plugin => {
