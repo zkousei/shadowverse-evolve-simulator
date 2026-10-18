@@ -89,6 +89,51 @@ class PythonEntrypointsTest(unittest.TestCase):
             self.assertEqual(output.getvalue(), '')
             self.assertEqual({str(p): p.read_bytes() for p in Path('.').rglob('*') if p.is_file()}, before)
 
+    def test_partition_comparison_module_checks_real_artifacts_and_never_writes_models(self):
+        from tools.card_data.generate_catalog import generate_catalog
+
+        with self.workspace():
+            cards = [{'id': f'A-{i:03}', 'name': f'Card {i}'} for i in range(3)]
+            Path('public/cards_detailed.json').write_text(json.dumps(cards))
+            Path('public/cards_preview.json').write_text('[]')
+            Path('first.json').write_text(json.dumps({'mainDeck': [cards[0]]}))
+            Path('second.json').write_text(json.dumps({'leaderCards': [cards[2]]}))
+            bundle = generate_catalog(Path('public/cards_detailed.json'), Path('public/cards_preview.json'), Path('real-build'))
+            before = {str(p): p.read_bytes() for p in Path('.').rglob('*') if p.is_file()}
+            output = io.StringIO()
+            argv = ['compare_partitions', '--include-probes', '--check-output', 'real-build', '--deck', 'first.json', '--deck', 'second.json', '--max-cards', '2']
+            with contextlib.redirect_stdout(output), patch.object(sys, 'argv', argv), self.assertRaises(SystemExit) as result:
+                self.run_module('tools.card_data.compare_partitions')
+            self.assertEqual(result.exception.code, 0)
+            report = json.loads(output.getvalue())
+            self.assertTrue(report['comparisonOnly'])
+            self.assertEqual(report['sourceCatalogVersion'], bundle.manifest['catalogVersion'])
+            current, candidate = report['policies']
+            self.assertEqual(current['selections']['first.json']['fetchedCards'], 3)
+            self.assertEqual(candidate['selections']['first.json']['fetchedCards'], 2)
+            self.assertEqual(candidate['selections']['second.json']['fetchedCards'], 1)
+            self.assertEqual(len(candidate['selections']), 6)
+            self.assertEqual(candidate['selections']['probe:largest-group-single']['fetchedCards'], 2)
+            self.assertEqual({str(p): p.read_bytes() for p in Path('.').rglob('*') if p.is_file()}, before)
+
+    def test_partition_comparison_errors_do_not_print_partial_json_or_write_files(self):
+        with self.workspace():
+            Path('public/cards_detailed.json').write_text(json.dumps([{'id': 'A-001', 'name': 'Card'}]))
+            Path('public/cards_preview.json').write_text('[]')
+            Path('valid.json').write_text('{"mainDeck":[{"id":"A-001"}]}')
+            Path('unknown.json').write_text('{"mainDeck":[{"id":"MISSING"}]}')
+            Path('invalid.json').write_text('{')
+            for options in (['--max-cards', '0'], ['--max-bytes', '-1'], ['--deck', 'unknown.json'],
+                            ['--deck', 'invalid.json'], ['--deck', 'valid.json', '--deck', 'valid.json'],
+                            ['--check-output', 'missing-build']):
+                before = {str(p): p.read_bytes() for p in Path('.').rglob('*') if p.is_file()}
+                output = io.StringIO()
+                with self.subTest(options=options), contextlib.redirect_stdout(output), contextlib.redirect_stderr(io.StringIO()), patch.object(sys, 'argv', ['compare_partitions', *options]), self.assertRaises(SystemExit) as result:
+                    self.run_module('tools.card_data.compare_partitions')
+                self.assertEqual(result.exception.code, 1)
+                self.assertEqual(output.getvalue(), '')
+                self.assertEqual({str(p): p.read_bytes() for p in Path('.').rglob('*') if p.is_file()}, before)
+
     def run_module(self, name):
         # Discovery may already have imported this module via its parser tests.
         # Execute a fresh __main__ namespace, then restore the discovered modules.
