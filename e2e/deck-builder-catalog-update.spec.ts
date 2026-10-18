@@ -29,14 +29,14 @@ test('a missing old detail group preserves edits and an explicit reload restores
   await expect(page.getByRole('alert')).toContainText('Card information could not be loaded');
   await expect(page.getByText('1/50', { exact: true })).toBeVisible();
   // Edit immediately before reload: the 400 ms draft timer must not be required.
-  await page.getByPlaceholder('Deck Name').fill('Latest edit before reload');
+  await page.getByPlaceholder('Deck Name', { exact: true }).fill('Latest edit before reload');
   deployed = updated;
   missing = false;
   await page.getByRole('button', { name: 'Save draft and reload', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Resume previous session' });
   await expect(dialog).toBeVisible();
   await dialog.getByRole('button', { name: 'Continue', exact: true }).click();
-  await expect(page.getByPlaceholder('Deck Name')).toHaveValue('Latest edit before reload');
+  await expect(page.getByPlaceholder('Deck Name', { exact: true })).toHaveValue('Latest edit before reload');
   await expect(page.getByText('1/50', { exact: true })).toBeVisible();
   expect(new Set(versions).size).toBe(2);
   expect(versions[0]).not.toBe(versions.at(-1));
