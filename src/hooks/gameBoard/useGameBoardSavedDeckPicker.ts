@@ -3,13 +3,14 @@ import type { ImportableDeckData } from '../../utils/gameBoard/gameBoardDeckActi
 import { canImportDeck } from '../../utils/gameBoard/gameRules';
 import { buildLegalSavedDeckOptions, type LegalSavedDeckOption } from '../../utils/gameBoard/gameBoardSavedDecks';
 import { getSavedDeckById, listSavedDecks } from '../../utils/deck/deckStorage';
-import { loadCardCatalog } from '../../utils/card/cardCatalog';
+import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
 import { buildSavedDeckPickerViewModel } from './gameBoardDialogViewModel';
 import type { PlayerRole, SyncState } from '../../types/game';
 
 type TranslationFn = (key: string, options?: Record<string, unknown>) => string;
 
 type UseGameBoardSavedDeckPickerArgs = {
+  catalogCards: DeckBuilderCardData[];
   gameState: SyncState;
   importDeckData: (deckData: ImportableDeckData, targetRole?: PlayerRole) => void;
   isSoloMode: boolean;
@@ -18,44 +19,34 @@ type UseGameBoardSavedDeckPickerArgs = {
 };
 
 export const useGameBoardSavedDeckPicker = ({
+  catalogCards,
   gameState,
   importDeckData,
   isSoloMode,
   role,
   t,
 }: UseGameBoardSavedDeckPickerArgs) => {
-  const [allCardsLength, setAllCardsLength] = React.useState(0);
+  const allCardsLength = catalogCards.length;
   const [savedDeckOptions, setSavedDeckOptions] = React.useState<LegalSavedDeckOption[]>([]);
   const [savedDeckSearch, setSavedDeckSearch] = React.useState('');
   const [savedDeckImportTargetRole, setSavedDeckImportTargetRole] = React.useState<PlayerRole | null>(null);
-  const allCardsRef = React.useRef<Awaited<ReturnType<typeof loadCardCatalog>>>([]);
-
-  React.useEffect(() => {
-    loadCardCatalog()
-      .then((data) => {
-        allCardsRef.current = data;
-        setAllCardsLength(data.length);
-      })
-      .catch((err) => console.error('Could not load card details', err));
-  }, []);
-
   const refreshSavedDeckOptions = React.useCallback(() => {
-    if (allCardsRef.current.length === 0) {
+    if (catalogCards.length === 0) {
       setSavedDeckOptions([]);
       return;
     }
 
-    setSavedDeckOptions(buildLegalSavedDeckOptions(listSavedDecks(), allCardsRef.current, t));
-  }, [t]);
+    setSavedDeckOptions(buildLegalSavedDeckOptions(listSavedDecks(), catalogCards, t));
+  }, [catalogCards, t]);
 
   const openSavedDeckPicker = React.useCallback((targetRole: PlayerRole) => {
-    if (allCardsRef.current.length === 0) return;
+    if (catalogCards.length === 0) return;
     if (!canImportDeck(gameState, targetRole)) return;
 
     refreshSavedDeckOptions();
     setSavedDeckSearch('');
     setSavedDeckImportTargetRole(targetRole);
-  }, [gameState, refreshSavedDeckOptions]);
+  }, [catalogCards, gameState, refreshSavedDeckOptions]);
 
   const closeSavedDeckPicker = React.useCallback(() => {
     setSavedDeckImportTargetRole(null);
@@ -74,7 +65,7 @@ export const useGameBoardSavedDeckPicker = ({
       return;
     }
 
-    const [currentOption] = buildLegalSavedDeckOptions([currentDeck], allCardsRef.current, t);
+    const [currentOption] = buildLegalSavedDeckOptions([currentDeck], catalogCards, t);
     if (!currentOption) {
       refreshSavedDeckOptions();
       return;
@@ -82,7 +73,7 @@ export const useGameBoardSavedDeckPicker = ({
 
     importDeckData(currentOption.deckData, savedDeckImportTargetRole);
     closeSavedDeckPicker();
-  }, [closeSavedDeckPicker, gameState, importDeckData, refreshSavedDeckOptions, savedDeckImportTargetRole, t]);
+  }, [catalogCards, closeSavedDeckPicker, gameState, importDeckData, refreshSavedDeckOptions, savedDeckImportTargetRole, t]);
 
   const { filteredSavedDeckOptions, savedDeckPickerTargetLabel } = buildSavedDeckPickerViewModel({
     savedDeckOptions,

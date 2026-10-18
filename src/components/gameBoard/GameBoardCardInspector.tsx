@@ -1,3 +1,4 @@
+import type { GameBoardCatalogStatus } from '../../hooks/gameBoard/useGameBoardCatalogResources';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { CardInstance } from '../Card';
@@ -10,6 +11,7 @@ import {
 } from '../../utils/card/cardDetails';
 
 type GameBoardCardInspectorProps = {
+  catalogStatus?: GameBoardCatalogStatus;
   selectedInspectorCard: CardInstance;
   selectedInspectorDetail?: CardDetail | null;
   inspectorPresentation: CardDetailPresentation;
@@ -19,6 +21,7 @@ type GameBoardCardInspectorProps = {
 
 const GameBoardCardInspector = React.forwardRef<HTMLDivElement, GameBoardCardInspectorProps>(
   ({
+    catalogStatus = 'ready',
     selectedInspectorCard,
     selectedInspectorDetail,
     inspectorPresentation,
@@ -125,7 +128,9 @@ const GameBoardCardInspector = React.forwardRef<HTMLDivElement, GameBoardCardIns
             }}>
               {selectedInspectorDetail?.abilityText
                 ? formatAbilityText(selectedInspectorDetail.abilityText)
-                : t('gameBoard.inspector.noAbilityText')}
+                : !selectedInspectorDetail && catalogStatus !== 'ready'
+                  ? t(`gameBoard.catalog.${catalogStatus === 'loading' ? 'loading' : 'error'}`)
+                  : t('gameBoard.inspector.noAbilityText')}
             </div>
           </div>
         </>

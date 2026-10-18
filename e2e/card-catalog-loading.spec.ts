@@ -5,7 +5,7 @@ import { leaderZoneCards, zoneCards } from './helpers/gameBoard';
 
 test.use({ locale: 'en-US' });
 
-test('DeckBuilder uses generated data and GameBoard shares pending legacy requests when restoring a saved deck', async ({ page }) => {
+test('DeckBuilder uses generated data and GameBoard shares one complete catalog with saved deck restoration', async ({ page }) => {
   const requests = { '/cards_detailed.json': 0, '/cards_preview.json': 0 };
   let holdResponses = false;
   let releaseResponses!: () => void;

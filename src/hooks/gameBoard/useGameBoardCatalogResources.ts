@@ -7,7 +7,19 @@ import type { CardDetailLookup } from '../../utils/card/cardDetails';
 import type { EvolveAutoAttachResolver } from '../../utils/gameBoard/evolveAutoAttach';
 import type { FieldLinkAutoAttachResolver } from '../../utils/gameBoard/fieldLinkAutoAttach';
 
+export type GameBoardCatalogStatus = 'loading' | 'ready' | 'error';
+
 export const useGameBoardCatalogResources = () => {
+  const [catalogStatus, setCatalogStatus] = React.useState<GameBoardCatalogStatus>('loading');
+  const [catalogCards, setCatalogCards] = React.useState<DeckBuilderCardData[]>([]);
+  const [attempt, setAttempt] = React.useState(0);
+  const retryQueued = React.useRef(false);
+  const retryCatalog = React.useCallback(() => {
+    if (catalogStatus !== 'error' || retryQueued.current) return;
+    retryQueued.current = true;
+    setCatalogStatus('loading');
+    setAttempt(value => value + 1);
+  }, [catalogStatus]);
   const [cardStatLookup, setCardStatLookup] = React.useState<CardStatLookup>({});
   const [cardDetailLookup, setCardDetailLookup] = React.useState<CardDetailLookup>({});
   const cardDetailLookupRef = React.useRef<CardDetailLookup>({});
@@ -26,13 +38,6 @@ export const useGameBoardCatalogResources = () => {
 
         const resources = buildGameBoardCatalogResources(data);
         cardCatalogByIdRef.current = resources.catalogById;
-        console.log(
-          '[DEBUG] Card lookups built:',
-          Object.keys(resources.statLookup).length,
-          'stats,',
-          Object.keys(resources.detailLookup).length,
-          'details'
-        );
         setCardStatLookup(resources.statLookup);
         setCardDetailLookup(resources.detailLookup);
         cardDetailLookupRef.current = resources.detailLookup;
@@ -40,20 +45,30 @@ export const useGameBoardCatalogResources = () => {
         fieldLinkAutoAttachResolverRef.current = resources.fieldLinkAutoAttachResolver;
         fieldLinkCardIdsRef.current = resources.fieldLinkCardIds;
         tokenManualLinkCardIdsRef.current = resources.tokenManualLinkCardIds;
+        setCatalogCards(data);
+        retryQueued.current = false;
+        setCatalogStatus('ready');
       })
-      .catch(err => console.error('Could not load card stats', err));
+      .catch(err => {
+        if (!isActive) return;
+        console.error('Could not load card stats', err);
+        retryQueued.current = false;
+        setCatalogStatus('error');
+      });
 
     return () => {
       isActive = false;
       cardCatalogByIdRef.current = {};
+      cardDetailLookupRef.current = {};
       evolveAutoAttachResolverRef.current = null;
       fieldLinkAutoAttachResolverRef.current = null;
       fieldLinkCardIdsRef.current = new Set();
       tokenManualLinkCardIdsRef.current = new Set();
     };
-  }, []);
+  }, [attempt]);
 
   return {
+    catalogCards, catalogStatus, retryCatalog,
     cardStatLookup,
     cardDetailLookup,
     cardDetailLookupRef,
