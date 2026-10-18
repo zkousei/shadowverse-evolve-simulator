@@ -25,7 +25,7 @@ test('serves verified summaries and complete details from the production build',
   expect(response.headers()['content-type']).toContain('application/json');
   expect(response.headers()['cache-control']).toBe('public, max-age=0, must-revalidate');
   const manifest = await response.json();
-  expect(manifest.schemaVersion).toBe(2);
+  expect(manifest.schemaVersion).toBe(3);
   const summaries = await fetchVerified(request, manifest.index, manifest.schemaVersion);
   const details = await fetchVerified(request, manifest.details[summaries[0].detail_group]);
   const original = JSON.parse(readFileSync('public/cards_detailed.json', 'utf8'));
@@ -41,6 +41,24 @@ test('returns 404 instead of the SPA document for missing catalog files', async 
     expect(response.headers()['content-type']).toContain('application/json');
     expect(response.headers()['cache-control']).toBe('no-store');
     expect(await response.json()).toEqual({ error: 'Catalog file not found' });
+  }
+});
+
+test('serves real selective shards with complete records and exact summary membership', async ({ request }) => {
+  const manifest = await (await request.get('/card-catalog/manifest.json')).json();
+  const summaries = await fetchVerified(request, manifest.index, manifest.schemaVersion) as Array<{ id: string; detail_group: string }>;
+  const released = JSON.parse(readFileSync('public/cards_detailed.json', 'utf8')) as Array<{ id: string }>;
+  const preview = JSON.parse(readFileSync('public/cards_preview.json', 'utf8')) as Array<{ id: string }>;
+  const originals = new Map<string, { id: string; catalog_status: string }>([...preview.map(card => [card.id, { ...card, catalog_status: 'preview' }] as const),
+    ...released.map(card => [card.id, { ...card, catalog_status: 'released' }] as const)]);
+  const groups = Object.keys(manifest.details).filter(group => group.includes('@'));
+  expect(groups.length).toBeGreaterThan(1);
+  for (const group of groups) {
+    expect(manifest.details[group.split('@')[0]]).toBeUndefined();
+    const details = await fetchVerified(request, manifest.details[group]) as Array<{ id: string }>;
+    expect(details.map(card => card.id)).toEqual(summaries.filter(card => card.detail_group === group).map(card => card.id));
+    for (const card of details) expect(card).toEqual(originals.get(card.id));
+    if (details.length > 1) expect(manifest.details[group].bytes).toBeLessThanOrEqual(131072);
   }
 });
 

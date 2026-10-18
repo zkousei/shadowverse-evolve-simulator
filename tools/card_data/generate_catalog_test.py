@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from tools.card_data.generate_catalog import (
-    build_catalog, check_catalog, decode_index, encode_index, generate_catalog, reassemble_catalog, verify_version,
+    build_catalog, check_catalog, decode_index, encode_index, generate_catalog, reassemble_catalog, verify_version, json_bytes,
 )
 
 
@@ -59,6 +59,100 @@ class GenerateCatalogTest(unittest.TestCase):
     def snapshot(self, root):
         return {str(p.relative_to(root)): p.read_bytes() for p in root.rglob('*') if p.is_file()}
 
+    def test_selective_split_preserves_interleaved_order_fields_and_exact_assignment(self):
+        cards = [{'id': f'A-{i:03}', 'name': '日本語', 'ability_text': '文' * 22000,
+                  'future': {'flag': False, 'empty': '', 'zero': 0},
+                  'related_cards': [{'id': f'A-{(i + 1) % 7:03}'}]}
+                 for i in range(7)]
+        cards.insert(2, {'id': 'B-001', 'name': 'Small', 'faces': [{'name': 'Back'}]})
+        before = copy.deepcopy(cards)
+        bundle = build_catalog(cards[:-1], [cards[-1]])
+        index, groups = unpack(bundle)
+        self.assertEqual(bundle.manifest['schemaVersion'], 3)
+        shards = sorted(group for group in groups if group.startswith('A@'))
+        self.assertEqual(shards, [f'A@{i:04}' for i in range(1, len(shards) + 1)])
+        self.assertGreater(len(shards), 1)
+        self.assertNotIn('A', groups)
+        self.assertIn('B', groups)
+        self.assertEqual([entry['id'] for entry in index], [card['id'] for card in cards])
+        for entry in index:
+            self.assertIn(entry['id'], [card['id'] for card in groups[entry['detail_group']]])
+        for group in shards:
+            self.assertLessEqual(len(bundle.files[f'details/{group}.json']), 131072)
+        expected = [{**card, 'catalog_status': 'released' if i < len(cards) - 1 else 'preview'}
+                    for i, card in enumerate(cards)]
+        self.assertEqual(reassemble_catalog(index, groups), expected)
+        self.assertEqual(cards, before)
+        self.assertEqual(build_catalog(cards[:-1], [cards[-1]]), bundle)
+
+    def test_threshold_and_target_count_exact_utf8_bytes_brackets_commas_and_newline(self):
+        cards = [{'id': f'A-{i}', 'name': '日本語'} for i in range(4)]
+        records = [{**card, 'catalog_status': 'released'} for card in cards]
+        threshold = len(json_bytes(records))
+        target = len(json_bytes(records[:2]))
+        with patch('tools.card_data.generate_catalog.DETAIL_SPLIT_THRESHOLD_BYTES', threshold, create=True), \
+             patch('tools.card_data.generate_catalog.DETAIL_TARGET_BYTES', target, create=True):
+            exact = build_catalog(cards, [])
+            self.assertEqual(set(exact.manifest['details']), {'A'})
+            grown = copy.deepcopy(cards)
+            grown[-1]['name'] += 'x'
+            bundle = build_catalog(grown, [])
+            _index, groups = unpack(bundle)
+            self.assertEqual([len(group) for group in groups.values()], [2, 1, 1])
+            self.assertEqual(len(bundle.files['details/A@0001.json']), target)
+            for group in groups:
+                self.assertLessEqual(len(bundle.files[f'details/{group}.json']), target)
+
+    def test_single_oversized_card_remains_whole_without_empty_shards(self):
+        huge = {'id': 'A-001', 'name': 'Large', 'ability_text': 'x' * 400000}
+        single = build_catalog([huge], [])
+        self.assertEqual(set(single.manifest['details']), {'A'})
+        cards = [{'id': 'A-000', 'name': 'Before'}, huge, {'id': 'A-002', 'name': 'After'}]
+        bundle = build_catalog(cards, [])
+        index, groups = unpack(bundle)
+        self.assertEqual([len(group) for group in groups.values()], [1, 1, 1])
+        self.assertEqual(groups['A@0002'][0]['ability_text'], huge['ability_text'])
+        self.assertEqual([card['id'] for card in reassemble_catalog(index, groups)], [card['id'] for card in cards])
+
+    def test_reassembly_rejects_wrong_sibling_assignment_mixed_groups_gaps_and_unsafe_names(self):
+        cards = [{'id': f'A-{i}', 'name': 'Card', 'ability_text': 'x' * 100000} for i in range(5)]
+        index, groups = unpack(build_catalog(cards, []))
+        self.assertIn('A@0001', groups)
+        for wrong in ['A@0002', 'B@0001', 'A', 'A@0000', 'A@1', 'A@00001', '../A']:
+            altered = copy.deepcopy(index)
+            altered[0]['detail_group'] = wrong
+            with self.subTest(wrong=wrong), self.assertRaises(ValueError):
+                reassemble_catalog(altered, groups)
+        for rename in ['A', 'A@9999', 'A@00001', '../A']:
+            altered = copy.deepcopy(groups)
+            altered[rename] = altered.pop('A@0001')
+            with self.subTest(rename=rename), self.assertRaises(ValueError):
+                reassemble_catalog(index, altered)
+
+    def test_check_detects_corrupt_missing_and_extra_shard_files_without_writing(self):
+        self.released = [{'id': f'A-{i}', 'name': 'Card', 'ability_text': 'x' * 100000} for i in range(5)]
+        self.preview = []
+        self.write_inputs()
+        bundle = generate_catalog(self.released_path, self.preview_path, self.output)
+        self.assertIn('A@0001', bundle.manifest['details'])
+        check_catalog(self.released_path, self.preview_path, self.output)
+        shard = self.output / bundle.manifest['details']['A@0001']['file']
+        original = shard.read_bytes()
+        for action in ['corrupt', 'missing', 'extra']:
+            shard.write_bytes(original)
+            extra = shard.parent / 'A@9999.json'
+            if action == 'corrupt':
+                shard.write_bytes(b'[]')
+            elif action == 'missing':
+                shard.unlink()
+            else:
+                extra.write_bytes(b'[]')
+            before = self.snapshot(self.output)
+            with self.subTest(action=action), self.assertRaises(ValueError):
+                check_catalog(self.released_path, self.preview_path, self.output)
+            self.assertEqual(self.snapshot(self.output), before)
+            extra.unlink(missing_ok=True)
+
     def test_round_trip_keeps_order_release_precedence_and_every_source_field(self):
         original = copy.deepcopy((self.released, self.preview))
         bundle = build_catalog(self.released, self.preview)
@@ -79,7 +173,7 @@ class GenerateCatalogTest(unittest.TestCase):
 
     def test_build_uses_versioned_compact_rows_without_losing_missing_or_false_values(self):
         bundle = build_catalog(self.released, self.preview)
-        self.assertEqual(bundle.manifest['schemaVersion'], 2)
+        self.assertEqual(bundle.manifest['schemaVersion'], 3)
         wire = json.loads(bundle.files['index.json'])
         self.assertEqual(wire['encoding'], 'rows-v1')
         self.assertEqual(len(wire['rows']), 3)
@@ -125,30 +219,32 @@ class GenerateCatalogTest(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 decode_index(value)
 
-    def test_generating_after_a_schema_one_manifest_keeps_old_files_and_installs_schema_two(self):
-        from tools.card_data.generate_catalog import json_bytes, sha256, sizes
-        current = build_catalog(self.released, self.preview)
-        index, _details = unpack(current)
-        old_files = {**current.files, 'index.json': json_bytes(index)}
-        old_version = sha256(json_bytes({'schemaVersion': 1,
-                                        'files': {name: sha256(data) for name, data in old_files.items()}}))
-        manifest = copy.deepcopy(current.manifest)
-        manifest.update(schemaVersion=1, catalogVersion=old_version)
-        for entry in [manifest['index'], *manifest['details'].values()]:
-            name = entry['file'].split('/', 2)[2]
-            entry.update(file=f'versions/{old_version}/{name}', sha256=sha256(old_files[name]), **sizes(old_files[name]))
-        for name, data in old_files.items():
-            target = self.output / 'versions' / old_version / name
-            target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_bytes(data)
-        (self.output / 'manifest.json').write_bytes(json_bytes(manifest))
-        updated = generate_catalog(self.released_path, self.preview_path, self.output)
-        self.assertEqual(updated.manifest['schemaVersion'], 2)
-        self.assertNotEqual(updated.manifest['catalogVersion'], old_version)
-        self.assertEqual(json.loads((self.output / 'manifest.json').read_bytes()), updated.manifest)
-        for name, data in old_files.items():
-            self.assertEqual((self.output / 'versions' / old_version / name).read_bytes(), data)
-        check_catalog(self.released_path, self.preview_path, self.output)
+    def test_generating_after_a_legacy_manifest_keeps_old_files_and_installs_schema_three(self):
+        for schema in (1, 2):
+            output = self.output / str(schema)
+            from tools.card_data.generate_catalog import json_bytes, sha256, sizes
+            current = build_catalog(self.released, self.preview)
+            index, _details = unpack(current)
+            old_files = {**current.files, 'index.json': json_bytes(index) if schema == 1 else current.files['index.json']}
+            old_version = sha256(json_bytes({'schemaVersion': schema,
+                                            'files': {name: sha256(data) for name, data in old_files.items()}}))
+            manifest = copy.deepcopy(current.manifest)
+            manifest.update(schemaVersion=schema, catalogVersion=old_version)
+            for entry in [manifest['index'], *manifest['details'].values()]:
+                name = entry['file'].split('/', 2)[2]
+                entry.update(file=f'versions/{old_version}/{name}', sha256=sha256(old_files[name]), **sizes(old_files[name]))
+            for name, data in old_files.items():
+                target = output / 'versions' / old_version / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(data)
+            (output / 'manifest.json').write_bytes(json_bytes(manifest))
+            updated = generate_catalog(self.released_path, self.preview_path, output)
+            self.assertEqual(updated.manifest['schemaVersion'], 3)
+            self.assertNotEqual(updated.manifest['catalogVersion'], old_version)
+            self.assertEqual(json.loads((output / 'manifest.json').read_bytes()), updated.manifest)
+            for name, data in old_files.items():
+                self.assertEqual((output / 'versions' / old_version / name).read_bytes(), data)
+            check_catalog(self.released_path, self.preview_path, output)
 
     def test_output_is_deterministic_and_version_changes_with_data_or_order(self):
         first = build_catalog(self.released, self.preview)

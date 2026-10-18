@@ -32,7 +32,7 @@ test('emits freshly verified manifest, index and full details without modifying 
   const assets = new Map(result.output.filter(file => file.type === 'asset').map(file => [file.fileName, String(file.source)]));
   const manifest = JSON.parse(assets.get('card-catalog/manifest.json')!);
   expect(manifest.counts.total).toBe(1);
-  expect(manifest.schemaVersion).toBe(2);
+  expect(manifest.schemaVersion).toBe(3);
   const index = decodeGeneratedCardIndex(JSON.parse(assets.get(`card-catalog/${manifest.index.file}`)!), manifest.schemaVersion) as Record<string, unknown>[];
   expect(index[0].ability_text).toBeUndefined();
   expect(index[0]).toMatchObject({ id: 'BP01-001', name: 'Test', detail_group: 'BP01' });
@@ -47,6 +47,26 @@ test('fails the build on invalid source data instead of publishing an incomplete
   const root = fixture();
   writeFileSync(join(root, 'public/cards_preview.json'), '[{"id":"PV01-001","name":"Preview","related_cards":[{"id":"MISSING-1"}]}]');
   await expect(compile(root)).rejects.toThrow(/unresolved related card/);
+});
+
+test('emits selective shards with exact index assignments while keeping small products whole', async () => {
+  const root = fixture();
+  const cards = Array.from({ length: 5 }, (_, i) => ({ id: `A-${i}`, name: `Card ${i}`, ability_text: 'x'.repeat(100000) }));
+  writeFileSync(join(root, 'public/cards_detailed.json'), JSON.stringify([...cards, { id: 'B-1', name: 'Small' }]));
+  const result = await compile(root);
+  if (Array.isArray(result) || !('output' in result)) throw new Error('Expected one output bundle');
+  const assets = new Map(result.output.filter(file => file.type === 'asset').map(file => [file.fileName, String(file.source)]));
+  const manifest = JSON.parse(assets.get('card-catalog/manifest.json')!);
+  expect(manifest.schemaVersion).toBe(3);
+  expect(Object.keys(manifest.details)).toEqual(['A@0001', 'A@0002', 'A@0003', 'A@0004', 'A@0005', 'B']);
+  const index = decodeGeneratedCardIndex(JSON.parse(assets.get(`card-catalog/${manifest.index.file}`)!), 3) as Array<{ id: string; detail_group: string }>;
+  expect(index.map(card => card.id)).toEqual([...cards.map(card => card.id), 'B-1']);
+  for (const card of index) {
+    const detail = JSON.parse(assets.get(`card-catalog/${manifest.details[card.detail_group].file}`)!);
+    expect(detail).toHaveLength(1);
+    expect(detail[0].id).toBe(card.id);
+    expect(manifest.details[card.detail_group].bytes).toBeLessThanOrEqual(131072);
+  }
 });
 
 test('fails the build on missing input rather than reusing previous artifacts', async () => {

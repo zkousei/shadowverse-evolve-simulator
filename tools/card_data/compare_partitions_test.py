@@ -24,6 +24,25 @@ def details(bundle):
 
 
 class ComparePartitionsTest(unittest.TestCase):
+    def test_existing_schema_three_shards_are_regrouped_by_product_without_nested_names(self):
+        cards = [{'id': f'A-{i}', 'name': 'Card', 'ability_text': 'x' * 100000} for i in range(5)]
+        original = build_catalog(cards, [])
+        self.assertIn('A@0001', original.manifest['details'])
+        snapshot = copy.deepcopy(original)
+        candidate = model_partition(original, max_cards=2)
+        self.assertEqual(list(candidate.manifest['details']), ['A@0001', 'A@0002', 'A@0003'])
+        self.assertEqual([len(chunk) for chunk in details(candidate).values()], [2, 2, 1])
+        self.assertEqual([card['id'] for chunk in details(candidate).values() for card in chunk],
+                         [card['id'] for card in cards])
+        combined = model_partition(original, max_cards=999)
+        self.assertEqual(list(combined.manifest['details']), ['A'])
+        same = model_partition(original, max_bytes=131072, split_above_bytes=393216)
+        self.assertEqual(same, original)
+        row = compare_partitions(original, {'first': ['A-0']}, selective_byte_limits=[(393216, 131072)])['policies'][1]
+        self.assertEqual(row['eligibleSourceGroups'], ['A'])
+        self.assertEqual(row['splitSourceGroups'], ['A'])
+        self.assertEqual(original, snapshot)
+
     def test_card_caps_preserve_every_record_order_index_value_and_reference(self):
         original = fixture()
         candidate = model_partition(original, max_cards=2)

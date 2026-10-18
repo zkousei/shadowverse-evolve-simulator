@@ -7,7 +7,7 @@ import sys
 
 from .generate_catalog import (
     CatalogArtifacts, DEFAULT_PREVIEW, DEFAULT_RELEASED, check_catalog, decode_index,
-    encode_index, json_bytes, read_inputs, reject_constant, sha256, sizes, unique_object,
+    encode_index, json_bytes, partition_cards, read_inputs, reject_constant, sha256, sizes, unique_object,
 )
 from .measure_catalog import exported_deck_ids, measure_catalog
 
@@ -27,13 +27,18 @@ def _selective_limit(pair):
     return threshold, target
 
 
+def _product_details(bundle):
+    by_id = {card['id']: card for name, data in bundle.files.items()
+             if name.startswith('details/') for card in json.loads(data)}
+    products = {}
+    for entry in decode_index(json.loads(bundle.files['index.json'])):
+        products.setdefault(entry['id'].split('-', 1)[0], []).append(by_id[entry['id']])
+    return products
+
+
 def model_partition(bundle: CatalogArtifacts, *, max_cards=None, max_bytes=None,
                     split_above_bytes=None) -> CatalogArtifacts:
-    """In-memory size model only: current readers cannot load split group IDs.
-
-    Keep current manifest/index structure to include mapping and descriptor costs.
-    The eventual production protocol and its validation are a separate change.
-    """
+    """In-memory size model only; always evaluate whole products, not old shards."""
     if (max_cards is None) == (max_bytes is None):
         raise ValueError('Select exactly one of max_cards or max_bytes')
     _positive_integer(max_cards if max_cards is not None else max_bytes)
@@ -42,43 +47,24 @@ def model_partition(bundle: CatalogArtifacts, *, max_cards=None, max_bytes=None,
             raise ValueError('Selective thresholds require max_bytes')
         _selective_limit((split_above_bytes, max_bytes))
     groups = {}
-    split = False
-    for group in sorted(bundle.manifest['details']):
-        data = bundle.files[f'details/{group}.json']
-        cards = json.loads(data)
-        if split_above_bytes is not None and len(data) <= split_above_bytes:
+    for group, cards in sorted(_product_details(bundle).items()):
+        if split_above_bytes is not None and len(json_bytes(cards)) <= split_above_bytes:
             groups[group] = cards
             continue
-        pieces = []
-        part = []
-        part_bytes = 3  # Array brackets plus json_bytes' final newline.
-        for card in cards:
-            card_bytes = len(json_bytes(card)) - 1
-            exceeds_count = max_cards is not None and len(part) >= max_cards
-            exceeds_bytes = max_bytes is not None and part_bytes + card_bytes + bool(part) > max_bytes
-            if part and (exceeds_count or exceeds_bytes):
-                pieces.append(part)
-                part = []
-                part_bytes = 3
-            part_bytes += card_bytes + bool(part)
-            part.append(card)
-        if part:
-            pieces.append(part)
+        pieces = partition_cards(cards, max_cards=max_cards, max_bytes=max_bytes)
         if len(pieces) == 1:
             groups[group] = pieces[0]
         else:
-            split = True
-            # '@' cannot occur in original product prefixes, avoiding collisions.
             for number, piece in enumerate(pieces, 1):
                 groups[f'{group}@{number:04}'] = piece
-    if not split:
-        return copy.deepcopy(bundle)
 
     by_id = {card['id']: group for group, cards in groups.items() for card in cards}
     index = [{**card, 'detail_group': by_id[card['id']]}
              for card in decode_index(json.loads(bundle.files['index.json']))]
     files = {'index.json': json_bytes(encode_index(index))}
     files.update({f'details/{group}.json': json_bytes(cards) for group, cards in sorted(groups.items())})
+    if files == bundle.files:
+        return copy.deepcopy(bundle)
     version = sha256(json_bytes({'schemaVersion': bundle.manifest['schemaVersion'],
                                 'files': {name: sha256(data) for name, data in files.items()}}))
 
@@ -127,8 +113,8 @@ def compare_partitions(bundle: CatalogArtifacts, scenarios: dict, card_limits=()
                            for key, ids in selections.items()},
         }
         if 'splitAboveBytes' in limits:
-            eligible = [group for group in sorted(bundle.manifest['details'])
-                        if len(bundle.files[f'details/{group}.json']) > limits['splitAboveBytes']]
+            eligible = [group for group, cards in sorted(_product_details(bundle).items())
+                        if len(json_bytes(cards)) > limits['splitAboveBytes']]
             row['eligibleSourceGroups'] = eligible
             row['splitSourceGroups'] = [group for group in eligible if group not in candidate.manifest['details']]
             row['groupsAboveTargetBytes'] = sum(desc['bytes'] > limits['maxBytes'] for desc in descriptors)

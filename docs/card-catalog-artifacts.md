@@ -41,9 +41,9 @@ python3 -m tools.card_data.generate_catalog --output /tmp/card-catalog-review --
 入力ファイルを含むディレクトリは出力先に指定できません。
 別用途・不正・未対応スキーマのmanifestがある出力先も、上書きせず拒否します。
 
-Readerは[再分割形式（schema 3）](card-catalog-schema3.md)にも対応しています。通常の生成形式は引き続きschema 2です。
+生成・検証・Readerは[再分割形式（schema 3）](card-catalog-schema3.md)に対応しています。旧schema 1・2のReader互換性も維持します。
 
-## ファイル形式（schemaVersion: 2）
+## ファイル形式（schemaVersion: 3）
 
 ```text
 artifacts/card-catalog/
@@ -58,9 +58,10 @@ artifacts/card-catalog/
 - `manifest.json`: スキーマ・カタログのバージョン、件数、ファイル参照、SHA-256、サイズを記録します。
 - `index.json`: 統合後の並び順を維持した圧縮表現の一覧です。読み込み時に従来と同じオブジェクト一覧へ展開し、各行の `detail_group` からmanifestの詳細参照を引きます。
 - `details/*.json`: 各カードの全項目を保持したJSON配列です。現在の弾フィルターと同じIDの先頭部分でグループ化します。
-  ファイル名に使えるグループは英数字とアンダースコアのみです。不正な値は明示的に拒否します。
+  384 KiBを超える商品のみ128 KiB目標で再分割し、`PR@0001`のような連番を付けます。小さい商品は従来の名前を維持します。
+  プレフィックスは英数字とアンダースコアのみです。所属・連番・混在禁止も検証します。
 
-schema 2のindexは、`encoding: "rows-v1"`、`fields`、`rows`の3項目を持ちます。
+schema 2・3のindexは、`encoding: "rows-v1"`、`fields`、`rows`の3項目を持ちます。
 `fields`は下表の19項目と末尾の`detail_group`を並べた固定ヘッダーです。
 各行は存在する項目のビットマスクと、そのヘッダー順に並ぶ値を保持します。
 項目名の繰り返しだけを取り除き、項目の欠落・空文字・false・0・関連参照・順序を区別して保存します。
@@ -69,11 +70,11 @@ schema 2のindexは、`encoding: "rows-v1"`、`fields`、`rows`の3項目を持�
 展開後も既存の件数・型・関連参照・詳細との投影一致・凍結の検証を行います。
 一覧を完全な詳細として扱うAPIや、保存・P2Pデータの形式は変更しません。
 
-新しいReaderはschema 1のオブジェクト配列も読み込みます。schema 2でschema 1の配列を推測して読むことはありません。
-生成ツールは既存のschema 1 manifestがある作業ディレクトリも受け付け、新しいバージョンを検証してからmanifestを切り替えます。
+Readerはschema 1のオブジェクト配列とschema 2のcompact indexも読み込みます。schema 2・3でschema 1の配列を推測して読むことはありません。
+生成ツールは既存のschema 1・2 manifestがある作業ディレクトリも受け付け、新しいバージョンを検証してからmanifestを切り替えます。
 旧バージョンのファイルは上書きしません。ビルドでは従来どおり現在版だけを配信します。
-**schema 1しか読めない更新前のアプリ画面は、新manifestを取得すると再読み込みが必要です。**
-新しいアプリでは、保持しているschema 1カタログからschema 2への明示的な復旧も可能です。
+**schema 3に未対応の更新前のアプリ画面は、新manifestを取得すると再読み込みが必要です。**
+新しいアプリでは、保持しているschema 1・2カタログからschema 3への明示的な復旧も可能です。
 
 軽量一覧には次の項目を、入力に存在する場合だけ保持します。
 
@@ -418,7 +419,7 @@ npm run --silent cards:measure:catalog -- --check-output dist/card-catalog --dec
   行マスク・共通ヘッダー・区切りは除くため、`valueBytes`を足してもindex全体のサイズにはならない。
   同じ値が多いことだけで、圧縮後にも同じ割合で削減できるとは判断しない。
 
-現データ7,684枚、58グループでの再現結果は次のとおり。
+以下はschema 2時点の7,684枚・58グループの計測記録です。schema 3の実生成との比較は[再分割の検証記録](card-catalog-partition-comparison.md#実生成の検証)を参照してください。
 
 | シナリオ | ファイル数 | 詳細として取得する枚数 | bytes | gzip bytes |
 | --- | ---: | ---: | ---: | ---: |

@@ -12,7 +12,9 @@ import shutil
 import sys
 import tempfile
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
+DETAIL_SPLIT_THRESHOLD_BYTES = 384 * 1024
+DETAIL_TARGET_BYTES = 128 * 1024
 # Preserve rule/identity inputs conservatively. Only display details and unknown
 # extension fields are omitted here; complete records remain in detail files.
 INDEX_FIELDS = (
@@ -72,9 +74,9 @@ def validate_cards(cards, label: str) -> None:
             raise ValueError(f'{card["id"]}: invalid faces')
 
 
-def index_card(card: dict) -> dict:
+def index_card(card: dict, group=None) -> dict:
     return {**{key: copy.deepcopy(card[key]) for key in INDEX_FIELDS if key in card},
-            'detail_group': group_for(card['id'])}
+            'detail_group': group_for(card['id']) if group is None else group}
 
 
 INDEX_COLUMNS = (*INDEX_FIELDS, 'detail_group')
@@ -110,13 +112,49 @@ def decode_index(value) -> list[dict]:
     return result
 
 
+def partition_cards(cards, *, max_bytes=None, max_cards=None):
+    """Keep whole records in stable order; include JSON delimiters and newline."""
+    pieces, part = [], []
+    part_bytes = 3
+    for card in cards:
+        card_bytes = len(json_bytes(card)) - 1
+        if part and ((max_cards is not None and len(part) >= max_cards)
+                     or (max_bytes is not None and part_bytes + card_bytes + bool(part) > max_bytes)):
+            pieces.append(part)
+            part, part_bytes = [], 3
+        part_bytes += card_bytes + bool(part)
+        part.append(card)
+    if part:
+        pieces.append(part)
+    return pieces
+
+
 def reassemble_catalog(index: list[dict], details: dict[str, list[dict]]) -> list[dict]:
     validate_cards(index, 'index')
+    assigned = {}
+    products = {}
+    for group in details:
+        match = re.fullmatch(r'([A-Za-z0-9_]+)(?:@([0-9]{4}|[1-9][0-9]{4,}))?', group)
+        if not match or match[2] == '0000':
+            raise ValueError(f'Unsafe detail group: {group}')
+        products.setdefault(match[1], set()).add(group)
+    for product, groups in products.items():
+        expected = {product} if product in groups else {f'{product}@{part:04}' for part in range(1, len(groups) + 1)}
+        if groups != expected:
+            raise ValueError('Mixed or noncontiguous detail groups')
+    for entry in index:
+        group = entry.get('detail_group')
+        if (not isinstance(group, str) or group not in details
+                or group.split('@', 1)[0] != group_for(entry['id'])):
+            raise ValueError('Invalid index detail assignment')
+        assigned[entry['id']] = group
     by_id = {}
     for group, cards in details.items():
+        if not cards:
+            raise ValueError('Empty detail group')
         validate_cards(cards, f'detail group {group}')
         for card in cards:
-            if group_for(card['id']) != group or card['id'] in by_id:
+            if assigned.get(card['id']) != group or card['id'] in by_id:
                 raise ValueError(f'Duplicate or misplaced detail ID: {card["id"]}')
             by_id[card['id']] = card
     if set(by_id) != {card['id'] for card in index}:
@@ -124,7 +162,7 @@ def reassemble_catalog(index: list[dict], details: dict[str, list[dict]]) -> lis
     result = []
     for entry in index:
         card = by_id[entry['id']]
-        if json_bytes(index_card(card)) != json_bytes(entry):
+        if json_bytes(index_card(card, assigned[entry['id']])) != json_bytes(entry):
             raise ValueError(f'Index and detail values differ: {entry["id"]}')
         result.append(copy.deepcopy(card))
     return result
@@ -152,10 +190,17 @@ def build_catalog(released, preview) -> CatalogArtifacts:
         for related in card.get('related_cards', []):
             if related['id'] not in ids:
                 raise ValueError(f'{card["id"]}: unresolved related card {related["id"]}')
-    index = [index_card(card) for card in merged]
-    details = {}
+    products = {}
     for card in merged:
-        details.setdefault(group_for(card['id']), []).append(card)
+        products.setdefault(group_for(card['id']), []).append(card)
+    details = {}
+    for product, cards in products.items():
+        pieces = partition_cards(cards, max_bytes=DETAIL_TARGET_BYTES) if len(json_bytes(cards)) > DETAIL_SPLIT_THRESHOLD_BYTES else [cards]
+        for part, piece in enumerate(pieces, 1):
+            group = product if len(pieces) == 1 else f'{product}@{part:04}'
+            details[group] = piece
+    assigned = {card['id']: group for group, cards in details.items() for card in cards}
+    index = [index_card(card, assigned[card['id']]) for card in merged]
     if json_bytes(reassemble_catalog(index, details)) != json_bytes(merged):
         raise ValueError('Catalog round-trip verification failed')
     compact_index = encode_index(index)
@@ -241,7 +286,7 @@ def validate_output_manifest(root: Path) -> None:
         raise ValueError('Output contains an unrelated manifest')
     version = value.get('catalogVersion')
     index = value.get('index')
-    if (value.get('schemaVersion') not in (1, SCHEMA_VERSION)
+    if (value.get('schemaVersion') not in (1, 2, SCHEMA_VERSION)
             or not isinstance(version, str) or not re.fullmatch(r'[a-f0-9]{64}', version)
             or not isinstance(index, dict) or index.get('file') != f'versions/{version}/index.json'
             or not isinstance(value.get('details'), dict) or not isinstance(value.get('counts'), dict)):

@@ -1,6 +1,6 @@
 import { expect, test } from './helpers/test';
 import { readFileSync } from 'node:fs';
-import { asSchemaOneCatalogFixture, asSplitCatalogFixture, buildGeneratedCatalogFixture } from './helpers/generatedCatalog';
+import { asSchemaOneCatalogFixture, asSchemaTwoCatalogFixture, asSplitCatalogFixture, buildGeneratedCatalogFixture } from './helpers/generatedCatalog';
 import { startSoloGame, spawnDefaultToken, zoneCards } from './helpers/gameBoard';
 
 test.use({ locale: 'en-US' });
@@ -12,7 +12,7 @@ for (const schema of [2, 3]) {
       .map(card => ({ ...card, ability_text: 'Verified original ability' }));
     let deployed = asSchemaOneCatalogFixture(buildGeneratedCatalogFixture(cards));
     const fresh = buildGeneratedCatalogFixture(cards.map(card => ({ ...card, ability_text: 'Verified updated ability' })));
-    const updated = schema === 3 ? asSplitCatalogFixture(fresh) : fresh;
+    const updated = schema === 3 ? asSplitCatalogFixture(fresh) : asSchemaTwoCatalogFixture(fresh);
     let release!: () => void;
     const pending = new Promise<void>(resolve => { release = resolve; });
     let missing = true;

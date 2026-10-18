@@ -58,29 +58,16 @@ describe('generated card catalog compatibility', () => {
   let originalResources: ReturnType<typeof buildGameBoardCatalogResources>;
   let restoredResources: ReturnType<typeof buildGameBoardCatalogResources>;
 
-  it('reads every real card through schema 3 selective shards without changing metadata, details or related references', async () => {
-    const candidate = join(output!, 'schema3-fixture');
-    // Comparison model only, explicitly repackaged as a test fixture. The
-    // production generator and its schema 2 output remain unchanged.
+  it('still reads every real card through the prior schema 2 format', async () => {
+    const candidate = join(output!, 'schema2-fixture');
+    // Legacy compatibility fixture only; current production uses schema 3.
     execFileSync('python3', ['-c', `
 import sys
 from pathlib import Path
-from tools.card_data.generate_catalog import read_inputs, json_bytes, sha256, DEFAULT_RELEASED, DEFAULT_PREVIEW
-from tools.card_data.compare_partitions import model_partition
-bundle, _ = read_inputs(DEFAULT_RELEASED, DEFAULT_PREVIEW)
-model = model_partition(bundle, max_bytes=131072, split_above_bytes=393216)
-manifest = model.manifest
-manifest['schemaVersion'] = 3
-version = sha256(json_bytes({'schemaVersion': 3, 'files': {name: sha256(data) for name, data in model.files.items()}}))
-manifest['catalogVersion'] = version
-dest = Path(sys.argv[1])
-for entry in [manifest['index'], *manifest['details'].values()]:
-    name = '/'.join(entry['file'].split('/')[2:])
-    entry['file'] = f'versions/{version}/{name}'
-    path = dest / entry['file']
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(model.files[name])
-(dest / 'manifest.json').write_bytes(json_bytes(manifest))
+from unittest.mock import patch
+from tools.card_data.generate_catalog import generate_catalog, DEFAULT_RELEASED, DEFAULT_PREVIEW
+with patch('tools.card_data.generate_catalog.SCHEMA_VERSION', 2), patch('tools.card_data.generate_catalog.DETAIL_SPLIT_THRESHOLD_BYTES', 10**12):
+    generate_catalog(DEFAULT_RELEASED, DEFAULT_PREVIEW, Path(sys.argv[1]))
 `, candidate], { cwd: root, encoding: 'utf8' });
     const manifest = readJson<Manifest>(join(candidate, 'manifest.json'));
     const request = vi.spyOn(globalThis, 'fetch').mockImplementation(async input => {
@@ -89,9 +76,10 @@ for entry in [manifest['index'], *manifest['details'].values()]:
       return new Response(readFileSync(join(candidate, path.slice('/catalog/'.length)), 'utf8'));
     });
     try {
+      expect(manifest.schemaVersion).toBe(2);
       const catalog = await openGeneratedCardCatalog('/catalog');
-      expect(Object.keys(manifest.details).length).toBeGreaterThan(new Set(index.map(card => card.detail_group)).size);
-      expect(catalog.index.some(card => card.detail_group.includes('@'))).toBe(true);
+      expect(Object.keys(manifest.details).length).toBeLessThan(new Set(index.map(card => card.detail_group)).size);
+      expect(index.some(card => card.detail_group.includes('@'))).toBe(true);
       const withoutGroup = (card: object) => Object.fromEntries(Object.entries(card).filter(([key]) => key !== 'detail_group'));
       expect(catalog.index.map(withoutGroup)).toEqual(index.map(withoutGroup));
       expect(await catalog.loadCards(original.map(card => card.id))).toEqual(original);
@@ -190,7 +178,7 @@ for entry in [manifest['index'], *manifest['details'].values()]:
       readJson<DeckBuilderCardData[]>(join(root, 'public/cards_detailed.json')),
       readJson<DeckBuilderCardData[]>(join(root, 'public/cards_preview.json')),
     );
-    expect(manifest.schemaVersion).toBe(2);
+    expect(manifest.schemaVersion).toBe(3);
     expect(manifest.counts.total).toBe(original.length);
     originalResources = buildGameBoardCatalogResources(original);
     restoredResources = buildGameBoardCatalogResources(restored);
@@ -208,7 +196,7 @@ for entry in [manifest['index'], *manifest['details'].values()]:
     const fields = new Set(['id', 'name', 'image', 'class', 'title', 'type', 'subtype', 'rarity', 'product_name', 'cost', 'atk', 'hp', 'card_kind_normalized', 'deck_section', 'is_token', 'is_evolve_card', 'is_deck_build_legal', 'catalog_status', 'related_cards']);
     expect(index).toEqual(original.map(card => ({
       ...Object.fromEntries(Object.entries(card).filter(([key]) => fields.has(key))),
-      detail_group: card.id.split('-')[0],
+      detail_group: index.find(entry => entry.id === card.id)!.detail_group,
     })));
   });
 

@@ -35,22 +35,23 @@ export const routeGeneratedCatalogFixture = async (page: Page, fixture: ReturnTy
 };
 
 
-/** Prior schema fixture for exercising an open v1 source recovering into a newer format. */
-export const asSchemaOneCatalogFixture = (fixture: ReturnType<typeof buildGeneratedCatalogFixture>) => {
+/** Legacy fixtures keep old-format browser coverage after the generator advances. */
+const asLegacyCatalogFixture = (fixture: ReturnType<typeof buildGeneratedCatalogFixture>, schemaVersion: 1 | 2) => {
   const manifest = structuredClone(fixture.manifest);
+  if (Object.keys(manifest.details).some(group => group.includes('@'))) throw new Error('Legacy fixture requires unsplit product groups');
   const files = new Map<string, Buffer>();
   const descriptors = [manifest.index, ...Object.values(manifest.details)] as Array<{ file: string; bytes: number; gzipBytes: number; sha256: string }>;
   const hash = (bytes: Buffer) => createHash('sha256').update(bytes).digest('hex');
   for (const entry of descriptors) {
     const name = entry.file.split('/').slice(2).join('/');
     let bytes = fixture.files.get(`/card-catalog/${entry.file}`)!;
-    if (name === 'index.json') bytes = Buffer.from(JSON.stringify(decodeGeneratedCardIndex(JSON.parse(bytes.toString()), manifest.schemaVersion)) + '\n');
+    if (schemaVersion === 1 && name === 'index.json') bytes = Buffer.from(JSON.stringify(decodeGeneratedCardIndex(JSON.parse(bytes.toString()), manifest.schemaVersion)) + '\n');
     files.set(name, bytes);
     Object.assign(entry, { bytes: bytes.length, gzipBytes: gzipSync(bytes).length, sha256: hash(bytes) });
   }
-  manifest.schemaVersion = 1;
+  manifest.schemaVersion = schemaVersion;
   manifest.catalogVersion = hash(Buffer.from(JSON.stringify({
-    files: Object.fromEntries([...files].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0).map(([name, bytes]) => [name, hash(bytes)])), schemaVersion: 1,
+    files: Object.fromEntries([...files].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0).map(([name, bytes]) => [name, hash(bytes)])), schemaVersion,
   }) + '\n'));
   for (const entry of descriptors) entry.file = `versions/${manifest.catalogVersion}/${entry.file.split('/').slice(2).join('/')}`;
   const routes = new Map([...files].map(([name, bytes]) => [`/card-catalog/versions/${manifest.catalogVersion}/${name}`, bytes]));
@@ -58,7 +59,10 @@ export const asSchemaOneCatalogFixture = (fixture: ReturnType<typeof buildGenera
   return { manifest, files: routes };
 };
 
-/** Test-only schema 3 data; production generation stays on schema 2. */
+export const asSchemaOneCatalogFixture = (fixture: ReturnType<typeof buildGeneratedCatalogFixture>) => asLegacyCatalogFixture(fixture, 1);
+export const asSchemaTwoCatalogFixture = (fixture: ReturnType<typeof buildGeneratedCatalogFixture>) => asLegacyCatalogFixture(fixture, 2);
+
+/** Test-only forced shard sizes, independent of the production byte threshold. */
 export const asSplitCatalogFixture = (source: ReturnType<typeof buildGeneratedCatalogFixture>, maxCards = 1) => {
   if (!Number.isSafeInteger(maxCards) || maxCards < 1) throw new Error('Invalid fixture chunk size');
   const sourceIndex = JSON.parse(source.files.get(`/card-catalog/${source.manifest.index.file}`)!.toString());

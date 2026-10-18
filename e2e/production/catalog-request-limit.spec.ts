@@ -1,5 +1,5 @@
 import { expect, test } from '../helpers/test';
-import { asSplitCatalogFixture, buildGeneratedCatalogFixture } from '../helpers/generatedCatalog';
+import { asSchemaTwoCatalogFixture, asSplitCatalogFixture, buildGeneratedCatalogFixture } from '../helpers/generatedCatalog';
 
 test.use({ locale: 'en-US' });
 
@@ -11,7 +11,7 @@ for (const split of [false, true]) {
       card_kind_normalized: 'follower', is_deck_build_legal: true,
     }));
     const source = buildGeneratedCatalogFixture(cards);
-    const fixture = split ? asSplitCatalogFixture(source) : source;
+    const fixture = split ? asSplitCatalogFixture(source) : asSchemaTwoCatalogFixture(source);
     const expectedGroups = cards.map((_card, i) => split ? `BP01@${String(i + 1).padStart(4, '0')}` : `G${i}`);
     const releases = new Map<string, () => void>();
     const gates = new Map(expectedGroups.map(group => [group, new Promise<void>(resolve => releases.set(group, resolve))]));
