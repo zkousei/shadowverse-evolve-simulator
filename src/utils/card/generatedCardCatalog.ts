@@ -1,6 +1,7 @@
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
 import { CARD_KIND_NORMALIZED_VALUES, DECK_SECTION_VALUES } from '../../models/cardClassification';
 import { CLASS_VALUES } from '../../models/class';
+import { createCatalogDetailQueue } from './catalogDetailQueue';
 import { CARD_INDEX_FIELDS as INDEX_FIELDS, decodeGeneratedCardIndex } from './generatedCardIndex';
 
 type Immutable<T> = T extends object ? { readonly [K in keyof T]: Immutable<T[K]> } : T;
@@ -57,8 +58,9 @@ const freeze = <T,>(value: T): T => {
   }
   return value;
 };
-const fetchResponse = async (path: string, fresh = false) => {
-  const response = fresh ? await fetch(path, { cache: 'no-cache' }) : await fetch(path);
+const fetchResponse = async (path: string, fresh = false, signal?: AbortSignal) => {
+  const options: RequestInit | undefined = fresh ? { cache: 'no-cache', ...(signal ? { signal } : {}) } : signal ? { signal } : undefined;
+  const response = options ? await fetch(path, options) : await fetch(path);
   if (!response.ok) throw new Error(`Card catalog request failed (${response.status}): ${path}`);
   return response;
 };
@@ -86,8 +88,8 @@ const parseManifest = async (value: unknown): Promise<Manifest> => {
   if (version !== raw.catalogVersion) return fail('version does not match file hashes');
   return { schemaVersion: raw.schemaVersion, catalogVersion: version, index, details, counts };
 };
-const readFile = async (base: string, entry: Descriptor): Promise<unknown> => {
-  const response = await fetchResponse(`${base}/${entry.file}`);
+const readFile = async (base: string, entry: Descriptor, signal?: AbortSignal): Promise<unknown> => {
+  const response = await fetchResponse(`${base}/${entry.file}`, false, signal);
   const bytes = await response.arrayBuffer();
   if (bytes.byteLength !== entry.bytes || await digest(bytes) !== entry.sha256) return fail('file size or checksum mismatch');
   return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
@@ -162,11 +164,12 @@ export const openGeneratedCardCatalog = async (basePath: string): Promise<Genera
     if (!entry.count || groupEntries.get(group)?.length !== entry.count) return fail('group count mismatch');
   }
   const groups = new Map<string, Promise<ReadonlyMap<string, GeneratedCardDetails>>>();
+  const enqueueDetail = createCatalogDetailQueue();
   const loadGroup = (group: string): Promise<ReadonlyMap<string, GeneratedCardDetails>> => {
     const existing = groups.get(group);
     if (existing) return existing;
-    const pending = (async () => {
-      const raw = await readFile(base, manifest.details[group]);
+    const pending = enqueueDetail(async signal => {
+      const raw = await readFile(base, manifest.details[group], signal);
       const expected = groupEntries.get(group)!;
       if (!Array.isArray(raw) || raw.length !== expected.length) return fail('detail count mismatch');
       const result = new Map<string, GeneratedCardDetails>();
@@ -178,7 +181,7 @@ export const openGeneratedCardCatalog = async (basePath: string): Promise<Genera
       }
       if (expected.some(entry => !result.has(entry.id))) return fail('missing detail card');
       return result;
-    })().catch(error => {
+    }).catch(error => {
       groups.delete(group); // Failed and unvalidated data never enters the completed cache.
       throw error;
     });

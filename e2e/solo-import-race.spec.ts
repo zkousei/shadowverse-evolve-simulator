@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './helpers/test';
 import { deckInput, importSoloDummyDecks, zoneCards } from './helpers/gameBoard';
 
 type DelayedReadsWindow = Window & { __pendingDeckReads: Array<() => Promise<void>> };
@@ -6,7 +6,8 @@ test.use({ locale: 'en-US' });
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
-    const reads = (window as DelayedReadsWindow).__pendingDeckReads = [];
+    const reads: DelayedReadsWindow['__pendingDeckReads'] = [];
+    (window as unknown as DelayedReadsWindow).__pendingDeckReads = reads;
     const read = FileReader.prototype.readAsText;
     FileReader.prototype.readAsText = function (this: FileReader, blob: Blob, encoding?: string) {
       if (blob instanceof File && blob.name === 'delayed-deck.json') {
@@ -28,7 +29,7 @@ const delayUpload = async (page: Page, name: string) => deckInput(page, 'bottom'
   buffer: Buffer.from(JSON.stringify({ mainDeck: [{ id: name, name, image: '', deck_section: 'main' }] })),
 });
 const release = (page: Page, index: number) => page.evaluate(async selected => {
-  await (window as DelayedReadsWindow).__pendingDeckReads[selected]();
+  await (window as unknown as DelayedReadsWindow).__pendingDeckReads[selected]();
 }, index);
 
 test('an upload finishing after reset does not replace the reset deck', async ({ page }) => {

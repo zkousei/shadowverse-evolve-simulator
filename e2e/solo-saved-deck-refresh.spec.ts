@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/test';
 import path from 'node:path';
 import { zoneCards, leaderZoneCards } from './helpers/gameBoard';
 

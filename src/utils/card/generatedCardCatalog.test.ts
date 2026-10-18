@@ -39,7 +39,8 @@ const fixture = (cards = fullCards(), transformIndex = (index: Record<string, un
   };
   const routes = new Map([...files].map(([name, text]) => [`/catalog/versions/${version}/${name}`, text]));
   routes.set('/catalog/manifest.json', encode(manifest));
-  const fetchMock = vi.fn(async (path: string) => {
+  const fetchMock = vi.fn(async (path: string, options?: RequestInit) => {
+    void options;
     const text = routes.get(path);
     return new Response(text ?? 'Missing', { status: text === undefined ? 404 : 200 });
   });
@@ -261,4 +262,83 @@ it('reads schema 2 compact rows as the exact same frozen summaries and complete 
   expect(fetchMock).toHaveBeenCalledTimes(2);
   expect(await catalog.loadCardsWithRelated(['BP01-001'])).toEqual([fullCards()[0], fullCards()[2]]);
   expect(fetchMock).toHaveBeenCalledTimes(4);
+});
+
+
+it('limits detail work across overlapping loadCards calls, preserving caller order, duplicates and queued sharing', async () => {
+  const cards = Array.from({ length: 8 }, (_, i) => card(`G${i}-001`));
+  const { fetchMock, routes, manifest } = fixture(cards);
+  const catalog = await openGeneratedCardCatalog('/catalog');
+  const gates = Object.fromEntries(cards.map((_card, i) => [`G${i}`, deferred()]));
+  const started: string[] = [];
+  fetchMock.mockImplementation(async path => {
+    const group = path.split('/').pop()!.replace('.json', '');
+    started.push(group);
+    return gates[group].promise;
+  });
+  const first = catalog.loadCards([cards[0].id, cards[4].id, cards[1].id, cards[0].id]);
+  const second = catalog.loadCards([cards[2].id, cards[3].id, cards[4].id, cards[5].id, cards[6].id, cards[7].id]);
+  expect(started).toEqual(['G0', 'G4', 'G1', 'G2']);
+  const finish = (group: string) => gates[group].resolve(new Response(routes.get(`/catalog/${manifest.details[group].file}`)));
+  finish('G1');
+  await vi.waitFor(() => expect(started).toEqual(['G0', 'G4', 'G1', 'G2', 'G3']));
+  Object.keys(gates).forEach(finish);
+  expect(await first).toEqual([cards[0], cards[4], cards[1], cards[0]]);
+  expect(await second).toEqual([cards[2], cards[3], cards[4], cards[5], cards[6], cards[7]]);
+  expect(started).toEqual(['G0', 'G4', 'G1', 'G2', 'G3', 'G5', 'G6', 'G7']);
+  await catalog.loadCards(cards.map(card => card.id));
+  expect(fetchMock).toHaveBeenCalledTimes(10); // manifest/index + eight unique groups
+});
+
+it('keeps successful queued groups after one failure and retries only the failed group without partial results', async () => {
+  const cards = Array.from({ length: 6 }, (_, i) => card(`G${i}-001`));
+  const { fetchMock, routes, manifest } = fixture(cards);
+  const catalog = await openGeneratedCardCatalog('/catalog');
+  const gates = Object.fromEntries(cards.map((_card, i) => [`G${i}`, deferred()]));
+  const started: string[] = [];
+  fetchMock.mockImplementation(async path => {
+    const group = path.split('/').pop()!.replace('.json', '');
+    const repeated = started.includes(group);
+    started.push(group);
+    return repeated ? new Response(routes.get(path)) : gates[group].promise;
+  });
+  const outcome = catalog.loadCards(cards.map(card => card.id)).then(() => 'unexpected success', error => error);
+  expect(started).toEqual(['G0', 'G1', 'G2', 'G3']);
+  for (const group of ['G0', 'G1', 'G2', 'G3']) gates[group].resolve(new Response(routes.get(`/catalog/${manifest.details[group].file}`)));
+  await vi.waitFor(() => expect(started).toHaveLength(6));
+  gates.G4.resolve(new Response('missing', { status: 404 }));
+  expect((await outcome).message).toContain('404');
+  gates.G5.resolve(new Response(routes.get(`/catalog/${manifest.details.G5.file}`)));
+  await catalog.loadCards([cards[5].id]);
+  expect(await catalog.loadCards(cards.map(card => card.id))).toEqual(cards);
+  expect(started).toEqual(['G0', 'G1', 'G2', 'G3', 'G4', 'G5', 'G4']);
+});
+
+it('aborts a stalled detail response body after its deadline and permits a same-version retry', async () => {
+  const { fetchMock, routes } = fixture();
+  const catalog = await openGeneratedCardCatalog('/catalog');
+  vi.useFakeTimers();
+  try {
+    let attempts = 0;
+    let stalledSignal: AbortSignal | undefined;
+    fetchMock.mockImplementation(async (path, options) => {
+      if (path.endsWith('/BP01.json') && attempts++ === 0) {
+        stalledSignal = options?.signal ?? undefined;
+        return new Response(new ReadableStream<Uint8Array>({ start(controller) {
+          options?.signal?.addEventListener('abort', () => controller.error(new Error('aborted response body')), { once: true });
+        } }));
+      }
+      return new Response(routes.get(path));
+    });
+    const outcome = catalog.loadCards(['BP01-001']).then(() => 'unexpected success', error => error);
+    expect(await catalog.loadCards(['TK01-001'])).toEqual([fullCards()[2]]);
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(stalledSignal?.aborted).toBe(true);
+    expect((await outcome).message).toMatch(/timed out/);
+    expect(await catalog.loadCards(['BP01-001'])).toEqual([fullCards()[0]]);
+    await catalog.loadCards(['BP01-001', 'TK01-001']);
+    expect(fetchMock).toHaveBeenCalledTimes(5); // manifest/index, stalled group, successful group, retry
+    await vi.advanceTimersByTimeAsync(0);
+    expect(vi.getTimerCount()).toBe(0);
+  } finally { vi.useRealTimers(); }
 });

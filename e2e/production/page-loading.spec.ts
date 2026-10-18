@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from '../helpers/test';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { leaderZoneCards, startSoloGame, zoneCards } from '../helpers/gameBoard';
