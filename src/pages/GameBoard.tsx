@@ -11,6 +11,7 @@ import type { CardInstance } from '../components/Card';
 import CardSearchModal from '../components/gameBoard/CardSearchModal';
 import GameBoardBoardRow from '../components/gameBoard/GameBoardBoardRow';
 import GameBoardBottomHandSection from '../components/gameBoard/GameBoardBottomHandSection';
+import GameBoardCatalogStatus from '../components/gameBoard/GameBoardCatalogStatus';
 import GameBoardCardInspectorSection from '../components/gameBoard/GameBoardCardInspectorSection';
 import GameBoardCountDialog from '../components/gameBoard/GameBoardCountDialog';
 import GameBoardDialogsHost from '../components/gameBoard/GameBoardDialogsHost';
@@ -155,7 +156,7 @@ const GameBoard: React.FC = () => {
     dispatchGameEvent,
     room, isSoloMode, isHost, isSpectator, role, status, connectionState, spectatorCount, maxSpectatorConnections, canInteract, canView, attemptReconnect, gameState, savedSessionCandidate, resumeSavedSession, discardSavedSession, searchZone, setSearchZone,
     showResetConfirm, setShowResetConfirm, coinMessage, turnMessage, cardPlayMessage, attackMessage, eventHistory, attackVisual, revealedCardsOverlay,
-    cardStatLookup, cardDetailLookup,
+    cardStatLookup, cardDetailLookup, catalogCards, catalogStatus, retryCatalog,
     isRollingDice, diceValue, mulliganOrder, isMulliganModalOpen, setIsMulliganModalOpen,
     handleStatChange, setPhase, endTurn, handleUndoTurn, handleSetInitialTurnOrder,
     handlePureCoinFlip, handleRollDice, handleStartGame, handleToggleReady,
@@ -194,6 +195,7 @@ const GameBoard: React.FC = () => {
     closeSavedDeckPicker,
     handleSavedDeckImport,
   } = useGameBoardSavedDeckPicker({
+    catalogCards,
     gameState,
     importDeckData,
     isSoloMode,
@@ -711,6 +713,7 @@ const GameBoard: React.FC = () => {
       }
     : null;
   const cardInspectorSectionProps = {
+    catalogStatus,
     ref: inspectorRef,
     selectedInspectorCard,
     selectedInspectorDetail,
@@ -785,6 +788,7 @@ const GameBoard: React.FC = () => {
           }}
         >
 
+        <GameBoardCatalogStatus status={catalogStatus} onRetry={retryCatalog} />
         <GameBoardHeader
           isTabletLayout={isTabletLayout}
           room={room}

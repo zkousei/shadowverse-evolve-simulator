@@ -2,7 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
 import { SAVED_DECKS_KEY, type SavedDeckRecordV1 } from '../../utils/deck/deckStorage';
-import { buildSyncState, mockLoadCardCatalog } from './gameBoardTestUtils';
+import { buildSyncState } from './gameBoardTestUtils';
 import { useGameBoardSavedDeckPicker } from './useGameBoardSavedDeckPicker';
 
 
@@ -24,7 +24,7 @@ const record: SavedDeckRecordV1 = {
 };
 const store = (decks: SavedDeckRecordV1[]) => localStorage.setItem(SAVED_DECKS_KEY, JSON.stringify({ schemaVersion: 1, decks }));
 const args = () => ({
-  gameState: buildSyncState(), importDeckData: vi.fn(), isSoloMode: true,
+  catalogCards: [main, token], gameState: buildSyncState(), importDeckData: vi.fn(), isSoloMode: true,
   role: 'host' as const, t: (key: string) => key,
 });
 const open = async (options = args(), target: 'host' | 'guest' = 'host') => {
@@ -39,10 +39,22 @@ beforeEach(() => {
   vi.clearAllMocks();
   localStorage.clear();
   store([record]);
-  mockLoadCardCatalog.mockResolvedValue([main, token]);
 });
 
 describe('useGameBoardSavedDeckPicker', () => {
+  it('uses the shared catalog when it becomes available after a retry', () => {
+    const options = args();
+    options.catalogCards = [];
+    const { result, rerender } = renderHook(props => useGameBoardSavedDeckPicker(props), { initialProps: options });
+    act(() => result.current.openSavedDeckPicker('host'));
+    expect(result.current.savedDeckImportTargetRole).toBeNull();
+    expect(result.current.allCardsLength).toBe(0);
+    rerender({ ...options, catalogCards: [main, token] });
+    act(() => result.current.openSavedDeckPicker('host'));
+    expect(result.current.allCardsLength).toBe(2);
+    expect(result.current.filteredSavedDeckOptions).toHaveLength(1);
+  });
+
   it.each(['host', 'guest'] as const)('imports complete current details and related tokens for %s, then closes', async target => {
     const { result, options, selected } = await open(args(), target);
     act(() => result.current.handleSavedDeckImport(selected));

@@ -6,9 +6,9 @@
 
 ## 現在の取得と利用箇所
 
-`useGameBoardCatalogResources` と `useGameBoardSavedDeckPicker` が
-`loadCardCatalog` を呼ぶ。従来の発売済み・先行公開JSONの取得はこのローダーで共有される。
-Hookが2つあること自体を二重ダウンロードと見なさない。
+`useGameBoardCatalogResources` が `loadCardCatalog` を呼び、完全なカタログを
+`useGameBoardSavedDeckPicker` へ渡す。保存デッキ側では独立した取得を行わない。
+従来の発売済み・先行公開JSONを利用し、現段階では分割データへ切り替えない。
 
 | 利用箇所 | 必要な情報・維持する動作 |
 | --- | --- |
@@ -181,6 +181,24 @@ GameBoardの既存Hookへの接続はまだ行わない。
 `e2e/solo-saved-deck-refresh.spec.ts` は別タブによる名前変更・削除を検証し、
 変更時に盤面を保持することと、再選択後の40/10/1枚の読込を確認する。
 これは分割取得接続前の入口保護であり、GameBoardの取得量はまだ減らない。
+
+## カタログ取得失敗からの復旧
+
+分割取得接続の前提として、現行カタログにも `loading / ready / error` と明示的な再試行を接続する。
+
+- 失敗時は盤面・対戦セッション・受信イベントを消さず、画面上部のボタンで再取得できる。
+  再試行は失敗後だけ許可し、連打・取得中・成功後の呼出しで追加取得しない。自動リロードも行わない。
+- 成功時は全体のルール用データと完全な詳細を既存の構築処理で作り、保存デッキにも同じ完全なデータを渡す。
+  保存デッキ側だけ失敗したままになる独立した取得は廃止する。
+- Inspectorは詳細がない場合の取得中・取得失敗を、不明IDや能力文がないカードと区別する。
+  既にある詳細は表示し続け、成功後の未知カードは従来の表示を維持する。
+- アンマウント・Strict Modeで破棄された取得の成功や失敗を反映しない。
+  同期処理・Reducerへデータの待機やリセットを挟まない。
+
+主な所有テストは `useGameBoardCatalogResources.test.tsx`、表示は `GameBoardCatalogStatus.test.tsx`。
+`useGameBoardSavedDeckPicker.test.tsx` は共有結果の到着後に保存デッキを開ける契約を持つ。
+`e2e/game-board-catalog-retry.spec.ts` は通信失敗中に開始したソロ対戦を保持したまま再取得する。
+これは現行JSONの再試行であり、分割データの版固定・旧版削除時の復旧を実装したものではない。
 
 ## 次の実装を始める条件と順序
 

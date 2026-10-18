@@ -1,3 +1,4 @@
+import type { GameBoardCatalogStatus } from '../../hooks/gameBoard/useGameBoardCatalogResources';
 import React from 'react';
 import type { CardInstance } from '../Card';
 import GameBoardCardInspector from './GameBoardCardInspector';
@@ -7,6 +8,7 @@ import type {
 } from '../../utils/card/cardDetails';
 
 type GameBoardCardInspectorSectionProps = {
+  catalogStatus?: GameBoardCatalogStatus;
   selectedInspectorCard: CardInstance | null;
   selectedInspectorDetail?: CardDetail | null;
   inspectorPresentation: CardDetailPresentation;
@@ -19,6 +21,7 @@ const GameBoardCardInspectorSection = React.forwardRef<
   GameBoardCardInspectorSectionProps
 >(
   ({
+    catalogStatus = 'ready',
     selectedInspectorCard,
     selectedInspectorDetail,
     inspectorPresentation,
@@ -30,6 +33,7 @@ const GameBoardCardInspectorSection = React.forwardRef<
     return (
       <GameBoardCardInspector
         ref={ref}
+        catalogStatus={catalogStatus}
         selectedInspectorCard={selectedInspectorCard}
         selectedInspectorDetail={selectedInspectorDetail}
         inspectorPresentation={inspectorPresentation}

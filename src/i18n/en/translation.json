@@ -553,6 +553,11 @@
       "endStopBlocked": "{{label}} has End Stop enabled.",
       "availableDuringGameOnly": "Available during the game only."
     },
+    "catalog": {
+      "loading": "Loading card information…",
+      "error": "Could not load card information. You can retry without reloading the game.",
+      "retry": "Retry card information"
+    },
     "inspector": {
       "close": "Close",
       "id": "ID",

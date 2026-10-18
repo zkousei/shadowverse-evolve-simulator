@@ -14,7 +14,6 @@ import type { CardInspectAnchor, CardInstance } from '../components/Card';
 import type { DeckBuilderCardData } from '../models/deckBuilderCard';
 import type { DeckState } from '../models/deckState';
 import type { DeckRuleConfig } from '../models/deckRule';
-import { loadCardCatalog } from '../utils/card/cardCatalog';
 
 vi.mock('@dnd-kit/core', async (importOriginal) => ({
   ...await importOriginal<typeof import('@dnd-kit/core')>(),
@@ -143,9 +142,6 @@ vi.mock('../hooks/gameBoard/useGameBoardLogic', () => ({
   useGameBoardLogic: vi.fn(),
 }));
 
-vi.mock('../utils/card/cardCatalog', () => ({
-  loadCardCatalog: vi.fn(),
-}));
 
 vi.mock('../utils/deckBuilder/deckBuilderRules', async () => {
   const actual = await vi.importActual<typeof import('../utils/deckBuilder/deckBuilderRules')>('../utils/deckBuilder/deckBuilderRules');
@@ -158,7 +154,6 @@ vi.mock('../utils/deckBuilder/deckBuilderRules', async () => {
 });
 
 const mockUseGameBoardLogic = vi.mocked(useGameBoardLogic);
-const mockLoadCardCatalog = vi.mocked(loadCardCatalog);
 
 const ruleConfig: DeckRuleConfig = {
   format: 'other',
@@ -299,6 +294,7 @@ const buildMockGameBoardLogic = (
     eventHistory: [],
     attackVisual: null,
     revealedCardsOverlay: null,
+    catalogCards: [], catalogStatus: 'ready', retryCatalog: vi.fn(),
     cardStatLookup: {},
     cardDetailLookup: {},
     isRollingDice: false,
@@ -369,8 +365,6 @@ describe('GameBoard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     window.localStorage.clear();
-    mockLoadCardCatalog.mockReset();
-    mockLoadCardCatalog.mockReturnValue(new Promise(() => {}) as ReturnType<typeof loadCardCatalog>);
 
     const clipboardWriteText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(window.navigator, 'clipboard', {
@@ -2311,7 +2305,6 @@ describe('GameBoard', () => {
   });
 
   it('opens the saved deck picker, filters saved decks, and imports the selected deck', async () => {
-    mockLoadCardCatalog.mockResolvedValue(catalogCards);
     seedSavedDecks([
       {
         id: 'saved-alpha',
@@ -2337,6 +2330,7 @@ describe('GameBoard', () => {
 
     const importDeckData = vi.fn();
     mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      catalogCards,
       importDeckData,
     }));
 
@@ -2365,7 +2359,6 @@ describe('GameBoard', () => {
   });
 
   it('closes the saved deck picker when the backdrop is clicked', async () => {
-    mockLoadCardCatalog.mockResolvedValue(catalogCards);
     seedSavedDecks([{
       id: 'saved-alpha',
       name: 'Alpha Deck',
@@ -2377,7 +2370,7 @@ describe('GameBoard', () => {
       },
     }]);
 
-    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic());
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({ catalogCards }));
 
     render(<GameBoard />);
 
@@ -2395,7 +2388,6 @@ describe('GameBoard', () => {
   });
 
   it('closes the saved deck picker from the close button', async () => {
-    mockLoadCardCatalog.mockResolvedValue(catalogCards);
     seedSavedDecks([{
       id: 'saved-alpha',
       name: 'Alpha Deck',
@@ -2407,7 +2399,7 @@ describe('GameBoard', () => {
       },
     }]);
 
-    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic());
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({ catalogCards }));
 
     render(<GameBoard />);
 
@@ -2422,7 +2414,6 @@ describe('GameBoard', () => {
   });
 
   it('resets the saved deck picker search when reopening the dialog', async () => {
-    mockLoadCardCatalog.mockResolvedValue(catalogCards);
     seedSavedDecks([
       {
         id: 'saved-alpha',
@@ -2446,7 +2437,7 @@ describe('GameBoard', () => {
       },
     ]);
 
-    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic());
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({ catalogCards }));
 
     render(<GameBoard />);
 

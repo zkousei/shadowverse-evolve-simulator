@@ -163,6 +163,7 @@ export const useGameBoardLogic = () => {
   const setupConnectionRef = useRef<(conn: DataConnection) => void>(() => undefined);
   const gameStateRef = useRef<SyncState>(initialState);
   const {
+    catalogCards, catalogStatus, retryCatalog,
     cardStatLookup,
     cardDetailLookup,
     cardDetailLookupRef,
@@ -1588,7 +1589,7 @@ export const useGameBoardLogic = () => {
     dispatchGameEvent,
     room, mode, isSoloMode, isHost, isSpectator, role, status, connectionState: visibleConnectionState, spectatorCount, maxSpectatorConnections: MAX_SPECTATOR_CONNECTIONS, canInteract, canView, attemptReconnect, gameState, savedSessionCandidate, resumeSavedSession, discardSavedSession, searchZone, setSearchZone,
     showResetConfirm, setShowResetConfirm, coinMessage, turnMessage, cardPlayMessage, attackMessage, attackHistory, eventHistory, attackVisual, revealedCardsOverlay,
-    cardStatLookup, cardDetailLookup,
+    cardStatLookup, cardDetailLookup, catalogCards, catalogStatus, retryCatalog,
     isRollingDice, diceValue, mulliganOrder, isMulliganModalOpen, setIsMulliganModalOpen,
     handleStatChange, setPhase, endTurn, handleUndoTurn, handleSetInitialTurnOrder,
     handlePureCoinFlip, handleRollDice, handleStartGame, handleToggleReady,
