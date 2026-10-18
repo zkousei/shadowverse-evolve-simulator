@@ -155,3 +155,8 @@ npm run --silent cards:compare:partitions -- --check-output dist/card-catalog --
 今回の新しい契約の所有先も`compare_partitions_test.py`と`python_entrypoints_test.py`。
 閾値の直前・等値・超過、非対象グループの内容保持、単一カード例外と意図的なTARGET超過の区別、将来の増加、
 不正な閾値、従来候補との併用、成功/失敗時のファイル非変更を検証する。
+
+## Reader対応の進捗
+
+schema 3の[配信形式とReader契約](card-catalog-schema3.md)を定義しました。Readerのみ対応し、通常生成はschema 2を維持します。
+次の変更で生成器・検証器を対応させ、選択的分割の実生成と配信確認へ進みます。比較CLIは引き続き比較専用です。

@@ -41,6 +41,8 @@ python3 -m tools.card_data.generate_catalog --output /tmp/card-catalog-review --
 入力ファイルを含むディレクトリは出力先に指定できません。
 別用途・不正・未対応スキーマのmanifestがある出力先も、上書きせず拒否します。
 
+Readerは[再分割形式（schema 3）](card-catalog-schema3.md)にも対応しています。通常の生成形式は引き続きschema 2です。
+
 ## ファイル形式（schemaVersion: 2）
 
 ```text

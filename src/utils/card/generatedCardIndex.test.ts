@@ -15,6 +15,11 @@ describe('generated compact index decoding', () => {
     expect(decodeGeneratedCardIndex(input, 2)).toEqual([{ id: 'A-1', name: '日本語', image: '', is_token: false, related_cards: [{ id: 'A-1', name: 'self', future: { zero: 0 } }], detail_group: 'A' }]);
     expect(JSON.stringify(input)).toBe(before);
   });
+  it('uses the same compact rows for schema 3 without accepting schema 1 arrays', () => {
+    expect(decodeGeneratedCardIndex(wire(), 3)).toEqual(decodeGeneratedCardIndex(wire(), 2));
+    expect(decodeGeneratedCardIndex({ ...wire(), rows: [] }, 3)).toEqual([]);
+    expect(() => decodeGeneratedCardIndex([], 3)).toThrow(/compact index/);
+  });
   it('accepts an empty compact catalog', () => {
     expect(decodeGeneratedCardIndex({ ...wire(), rows: [] }, 2)).toEqual([]);
   });
@@ -23,7 +28,7 @@ describe('generated compact index decoding', () => {
     expect(decodeGeneratedCardIndex(entries, 1)).toBe(entries);
     expect(() => decodeGeneratedCardIndex(entries, 2)).toThrow();
     expect(() => decodeGeneratedCardIndex(wire(), 1)).toThrow();
-    expect(() => decodeGeneratedCardIndex(wire(), 3)).toThrow();
+    expect(() => decodeGeneratedCardIndex(wire(), 4)).toThrow();
   });
   it.each([
     ['wrong encoding', () => ({ ...wire(), encoding: 'unknown' })],
@@ -44,6 +49,6 @@ describe('generated compact index decoding', () => {
     ['missing value', () => ({ ...wire(), rows: [[required, 'A-1', 'A']] })],
     ['extra value', () => ({ ...wire(), rows: [[required, 'A-1', 'A', 'A', 'extra']] })],
   ])('rejects %s rather than interpreting shifted or partial data', (_label, make) => {
-    expect(() => decodeGeneratedCardIndex(make(), 2)).toThrow(/compact index/);
+    for (const schema of [2, 3]) expect(() => decodeGeneratedCardIndex(make(), schema)).toThrow(/compact index/);
   });
 });
