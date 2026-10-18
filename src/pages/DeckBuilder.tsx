@@ -111,6 +111,7 @@ import {
   getDraftPersistenceAction,
   getDeckLogImportMessage,
   shouldDetachSavedDeckTracking,
+  type DeckBuilderSessionState,
 } from '../utils/deckBuilder/deckBuilderPersistence';
 import {
   canAddSubtypeTag,
@@ -207,6 +208,7 @@ const DeckBuilder: React.FC = () => {
     page,
     filteredSubtypeOptions,
     resetLibraryFilters,
+    resetLibraryPage,
     updateLibraryFilters,
     updateLibraryFiltersWithPageReset,
     addSubtypeTag,
@@ -368,6 +370,14 @@ const DeckBuilder: React.FC = () => {
   ) => {
     cancelCatalogAction();
     setDeckRuleConfig(current => updater(current));
+    resetLibraryPage();
+  };
+
+  // Only committed deck replacements reset pagination. Saving/tracking, failed
+  // loads and canceled async actions keep the current library position.
+  const applyReplacementDeckSession = (state: DeckBuilderSessionState) => {
+    applyDeckBuilderSessionState(state);
+    resetLibraryPage();
   };
 
   const previewDetail = previewCard ? cardDetailLookup[previewCard.id] ?? null : null;
@@ -444,7 +454,7 @@ const DeckBuilder: React.FC = () => {
       });
       const full = await catalog.loadAvailable(getImportedCatalogIds(data));
       return buildJsonImportedDeckState(data as Record<string, unknown>, file.name, full);
-    }, imported => applyDeckBuilderSessionState(buildImportedDeckSessionState(imported)),
+    }, imported => applyReplacementDeckSession(buildImportedDeckSessionState(imported)),
     () => alert(t('deckBuilder.alerts.importFailed')));
     // Reset input so the same file can be uploaded again if needed
     event.target.value = '';
@@ -466,7 +476,7 @@ const DeckBuilder: React.FC = () => {
       const full = await catalog.loadAvailable(getImportedCatalogIds(imported.deckState));
       return { imported, state: buildDeckLogImportedDeckState(imported, full) };
     }, ({ imported, state }) => {
-      applyDeckBuilderSessionState(buildImportedDeckSessionState(state));
+      applyReplacementDeckSession(buildImportedDeckSessionState(state));
       applyDeckBuilderModalUiState(buildDismissedDeckLogImportUiState());
       applyDeckBuilderModalUiState(buildFinishedDeckLogImportUiState());
       setSaveFeedback(buildDeckLogImportFeedback(imported, t));
@@ -535,7 +545,7 @@ const DeckBuilder: React.FC = () => {
       if (JSON.stringify(getSavedDeckById(deckId)) !== JSON.stringify(savedDeck)) {
         throw new Error('Saved deck changed while loading; retry');
       }
-      applyDeckBuilderSessionState(buildLoadedSavedDeckSessionState(restored));
+      applyReplacementDeckSession(buildLoadedSavedDeckSessionState(restored));
       applyDeckBuilderMyDecksUiState(buildCompletedSavedDeckLoadUiState());
     });
   };

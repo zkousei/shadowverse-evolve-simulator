@@ -28,6 +28,21 @@ describe('useDeckBuilderLibraryFilters', () => {
     expect(result.current.page).toBe(2);
   });
 
+  it('resets only pagination using a stable callback without restoring stale filters', () => {
+    const { result } = renderHook(() => useDeckBuilderLibraryFilters({ subtypeTags }));
+    const resetPage = result.current.resetLibraryPage;
+    act(() => {
+      result.current.updateLibraryFilters({ search: 'Latest', costFilter: '1', classFilter: 'ロイヤル',
+        selectedSubtypeTags: ['Human'], showPreviewCards: true, page: 3 });
+    });
+    const readState = () => Object.fromEntries(Object.entries(result.current)
+      .filter(([, value]) => typeof value !== 'function'));
+    const before = readState();
+    act(() => resetPage());
+    expect(result.current.resetLibraryPage).toBe(resetPage);
+    expect(readState()).toEqual({ ...before, page: 0 });
+  });
+
   it('resets page when using updateLibraryFiltersWithPageReset', () => {
     const { result } = renderHook(() => useDeckBuilderLibraryFilters({ subtypeTags }));
 
