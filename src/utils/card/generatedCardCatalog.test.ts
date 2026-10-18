@@ -1,3 +1,6 @@
+import { execFileSync } from 'node:child_process';
+import { CLASS_VALUES } from '../../models/class';
+import { CARD_KIND_NORMALIZED_VALUES, DECK_SECTION_VALUES } from '../../models/cardClassification';
 import { createHash } from 'node:crypto';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { openGeneratedCardCatalog, type GeneratedCardDetails, type GeneratedCardIndexEntry } from './generatedCardCatalog';
@@ -347,4 +350,53 @@ it('aborts a stalled detail response body after its deadline and permits a same-
     await vi.advanceTimersByTimeAsync(0);
     expect(vi.getTimerCount()).toBe(0);
   } finally { vi.useRealTimers(); }
+});
+
+// Compare the actual validators to catch differences in known fields, enum
+// values, optional values and recursive faces before artifacts are published.
+it('keeps Python source validation aligned with the Reader field contract', async () => {
+  const fields: Record<string, unknown>[] = [
+    {}, { extension: { zero: 0, flag: false, missing: null } },
+    ...['image', 'title', 'type', 'subtype', 'rarity', 'product_name', 'cost', 'atk', 'hp', 'ability_text']
+      .flatMap(key => ['', '0', 1, null, false, [], {}].map(value => ({ [key]: value }))),
+    ...['is_token', 'is_evolve_card', 'is_deck_build_legal']
+      .flatMap(key => [true, false, 0, 1, 'false', null].map(value => ({ [key]: value }))),
+    ...Object.entries({ class: [...CLASS_VALUES, '-'], card_kind_normalized: CARD_KIND_NORMALIZED_VALUES,
+      deck_section: DECK_SECTION_VALUES, catalog_status: ['released'] })
+      .flatMap(([key, allowed]) => [...allowed, 'unknown', null, [], {}].map(value => ({ [key]: value }))),
+    { related_cards: [] }, { related_cards: [{ id: 'A-1', name: '' }] },
+    { related_cards: [{ id: 'A-1' }] }, { related_cards: [{ id: 'A-1', name: 1 }] },
+    { related_cards: null }, { faces: [] }, { faces: null }, { faces: [null] },
+    { faces: [{ name: 'Back' }] }, { faces: [{ side: 1 }] },
+    { faces: [{ side: '', id: null }] }, { faces: [{ side: 'back', name: null }] },
+    ...[{ cost: 1 }, { ability_text: 123 }, { is_token: 0 }, { class: 'unknown' },
+      { catalog_status: 'preview' }, { related_cards: [{ id: 'A-1' }] },
+      { faces: [{ side: 'front', hp: 1 }] }].map(extra => ({ faces: [{ side: 'back', ...extra }] })),
+  ];
+  const cards = fields.map(extra => card('A-1', extra));
+  const accepted: boolean[] = JSON.parse(execFileSync('python3', ['-c', [
+    'import json, sys',
+    'from tools.card_data.generate_catalog import validate_cards',
+    'results = []',
+    'for card in json.load(sys.stdin):',
+    '    try:',
+    '        validate_cards([card], "parity")',
+    '        results.append(True)',
+    '    except ValueError:',
+    '        results.append(False)',
+    'print(json.dumps(results))',
+  ].join('\n')], { input: JSON.stringify(cards), encoding: 'utf8' }));
+  expect(accepted).toHaveLength(cards.length);
+  for (const [position, entry] of cards.entries()) {
+    fixture([entry]);
+    let readerAccepted = false;
+    try {
+      const catalog = await openGeneratedCardCatalog('/catalog');
+      await catalog.loadCards(['A-1']);
+      readerAccepted = true;
+    } catch (error) {
+      expect(String(error)).toContain('Invalid generated card catalog:');
+    }
+    expect(accepted[position], JSON.stringify(fields[position])).toBe(readerAccepted);
+  }
 });

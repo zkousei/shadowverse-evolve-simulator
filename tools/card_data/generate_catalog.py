@@ -12,6 +12,8 @@ import shutil
 import sys
 import tempfile
 
+from tools.card_data.card_metadata import CARD_KIND_BY_TYPE, DECK_SECTION_BY_CARD_KIND
+
 SCHEMA_VERSION = 2
 # Preserve rule/identity inputs conservatively. Only display details and unknown
 # extension fields are omitted here; complete records remain in detail files.
@@ -45,31 +47,66 @@ def group_for(card_id: str) -> str:
     return group
 
 
+# Keep this contract aligned with generatedCardCatalog.ts validateCard. The
+# cross-language validation test exercises the actual generator and Reader.
+STRING_FIELDS = (
+    'image', 'title', 'type', 'subtype', 'rarity', 'product_name',
+    'cost', 'atk', 'hp', 'ability_text',
+)
+BOOLEAN_FIELDS = ('is_token', 'is_evolve_card', 'is_deck_build_legal')
+ENUM_FIELDS = {
+    'class': ('エルフ', 'ロイヤル', 'ウィッチ', 'ドラゴン', 'ナイトメア', 'ビショップ', 'ニュートラル', '-'),
+    'card_kind_normalized': tuple(CARD_KIND_BY_TYPE.values()),
+    'deck_section': tuple(dict.fromkeys(DECK_SECTION_BY_CARD_KIND.values())),
+    'catalog_status': ('released', 'preview'),
+}
+
+
+def validate_card(card, label: str) -> None:
+    if not isinstance(card, dict):
+        raise ValueError(f'{label} contains a non-object card')
+    for field in ('id', 'name'):
+        if not isinstance(card.get(field), str) or not card[field].strip():
+            raise ValueError(f'{card.get("id", label)}: {label} contains a missing or invalid {field}')
+    group_for(card['id'])
+    context = f'{card["id"]}: {label}'
+    for field in STRING_FIELDS:
+        if field in card and not isinstance(card[field], str):
+            raise ValueError(f'{context}: {field} must be a string')
+    for field in BOOLEAN_FIELDS:
+        if field in card and not isinstance(card[field], bool):
+            raise ValueError(f'{context}: {field} must be a boolean')
+    for field, allowed in ENUM_FIELDS.items():
+        if field in card and card[field] not in allowed:
+            raise ValueError(f'{context}: invalid {field}')
+    related = card.get('related_cards', [])
+    if not isinstance(related, list) or any(
+        not isinstance(ref, dict) or not isinstance(ref.get('id'), str) or not ref['id']
+        or not isinstance(ref.get('name'), str)
+        for ref in related
+    ):
+        raise ValueError(f'{context}: invalid related_cards')
+    faces = card.get('faces', [])
+    if not isinstance(faces, list):
+        raise ValueError(f'{context}: invalid faces')
+    for position, face in enumerate(faces):
+        if not isinstance(face, dict) or not isinstance(face.get('side'), str):
+            raise ValueError(f'{context}: invalid face side at faces[{position}]')
+        # The Reader inherits the parent's identity, but a present face name
+        # must itself be valid. Never coerce or modify the original record.
+        validate_card({**face, 'id': card['id'], 'name': face.get('name', card['name'])},
+                      f'{label}.faces[{position}]')
+
+
 def validate_cards(cards, label: str) -> None:
     if not isinstance(cards, list):
         raise ValueError(f'{label} must be an array of card objects')
     ids = set()
     for card in cards:
-        if not isinstance(card, dict):
-            raise ValueError(f'{label} contains a non-object card')
-        for field in ('id', 'name'):
-            if not isinstance(card.get(field), str) or not card[field].strip():
-                raise ValueError(f'{label} contains a missing or invalid {field}')
+        validate_card(card, label)
         if card['id'] in ids:
             raise ValueError(f'{label} contains duplicate ID: {card["id"]}')
         ids.add(card['id'])
-        group_for(card['id'])
-        if 'image' in card and not isinstance(card['image'], str):
-            raise ValueError(f'{card["id"]}: image must be a string')
-        related = card.get('related_cards', [])
-        if not isinstance(related, list) or any(
-            not isinstance(ref, dict) or not isinstance(ref.get('id'), str) or not ref['id']
-            for ref in related
-        ):
-            raise ValueError(f'{card["id"]}: invalid related_cards')
-        faces = card.get('faces', [])
-        if not isinstance(faces, list) or any(not isinstance(face, dict) for face in faces):
-            raise ValueError(f'{card["id"]}: invalid faces')
 
 
 def index_card(card: dict) -> dict:

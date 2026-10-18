@@ -15,7 +15,7 @@ def fixtures():
     released = [
         {
             'id': 'BP02-002', 'name': '日本語のカード', 'image': '/card.png',
-            'cost': '0', 'atk': 0, 'hp': '-', 'is_token': False,
+            'cost': '0', 'atk': '0', 'hp': '-', 'is_token': False,
             'ability_text': '能力\n二行目',
             'related_cards': [{'id': 'PV01-001', 'name': 'Preview'}],
             'faces': [{'side': 'front', 'name': '表面', 'future': {'value': None}}],
@@ -86,7 +86,7 @@ class GenerateCatalogTest(unittest.TestCase):
         first = wire['rows'][0]
         restored = dict(zip([key for bit, key in enumerate(wire['fields'])
                              if first[0] & (1 << bit)], first[1:]))
-        self.assertEqual(restored['atk'], 0)
+        self.assertEqual(restored['atk'], '0')
         self.assertIs(restored['is_token'], False)
         self.assertEqual(restored['related_cards'], self.released[0]['related_cards'])
         self.assertNotIn('faces', restored)
@@ -176,6 +176,60 @@ class GenerateCatalogTest(unittest.TestCase):
                 build_catalog(released, [])
         with self.assertRaises(ValueError):
             build_catalog([], [self.preview[1], self.preview[1]])
+
+    def test_rejects_fields_the_reader_cannot_accept_before_generation_or_check(self):
+        generate_catalog(self.released_path, self.preview_path, self.output)
+        before = self.snapshot(self.output)
+        invalid = [
+            *[{key: value} for key in (
+                'image', 'title', 'type', 'subtype', 'rarity', 'product_name',
+                'cost', 'atk', 'hp', 'ability_text',
+            ) for value in (1, None, False, [], {})],
+            *[{key: value} for key in ('is_token', 'is_evolve_card', 'is_deck_build_legal')
+              for value in (0, 1, 'false', None)],
+            *[{key: value} for key in ('class', 'card_kind_normalized', 'deck_section', 'catalog_status')
+              for value in ('unknown', None, [], {})],
+            {'related_cards': [{'id': 'A-1'}]},
+            {'related_cards': [{'id': 'A-1', 'name': 1}]},
+            {'faces': [{'name': 'Back'}]},
+            {'faces': [{'side': None}]},
+            {'faces': [{'side': 'back', 'name': None}]},
+            {'faces': [{'side': 'back', 'cost': 1}]},
+            {'faces': [{'side': 'back', 'ability_text': 123}]},
+            {'faces': [{'side': 'back', 'is_token': 0}]},
+            {'faces': [{'side': 'back', 'class': 'unknown'}]},
+            {'faces': [{'side': 'back', 'related_cards': [{'id': 'A-1'}]}]},
+            {'faces': [{'side': 'back', 'faces': [{'side': 'front', 'hp': 1}]}]},
+        ]
+        for patch_fields in invalid:
+            for source in ('released', 'preview'):
+                with self.subTest(fields=patch_fields, source=source):
+                    card = {'id': 'A-1', 'name': 'A', **patch_fields}
+                    self.released = [card] if source == 'released' else []
+                    self.preview = [card] if source == 'preview' else []
+                    self.write_inputs()
+                    for operation in (generate_catalog, check_catalog):
+                        with self.assertRaisesRegex(ValueError, 'A-1:'):
+                            operation(self.released_path, self.preview_path, self.output)
+                    self.assertEqual(self.snapshot(self.output), before)
+
+    def test_accepts_optional_fields_false_values_and_recursive_faces_without_coercion(self):
+        card = {
+            'id': 'A-1', 'name': 'A', 'cost': '0', 'atk': '-', 'ability_text': '',
+            'class': '-', 'is_token': False, 'is_evolve_card': False,
+            'is_deck_build_legal': False, 'catalog_status': 'preview',
+            'card_kind_normalized': 'follower', 'deck_section': 'main',
+            'related_cards': [{'id': 'A-1', 'name': ''}],
+            'faces': [{'side': '', 'id': None, 'cost': '1',
+                       'faces': [{'side': 'back', 'name': 'Back', 'ability_text': 'Text'}]}],
+            'extension': {'number': 1, 'null': None},
+        }
+        original = copy.deepcopy(card)
+        index, details = unpack(build_catalog([card, {'id': 'B-1', 'name': 'Minimal'}], []))
+        self.assertEqual(reassemble_catalog(index, details), [
+            {**card, 'catalog_status': 'released'}, {'id': 'B-1', 'name': 'Minimal', 'catalog_status': 'released'},
+        ])
+        self.assertEqual(card, original)
 
     def test_empty_catalogs_have_a_valid_empty_index(self):
         bundle = build_catalog([], [])
