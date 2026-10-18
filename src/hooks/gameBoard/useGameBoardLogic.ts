@@ -1568,6 +1568,7 @@ export const useGameBoardLogic = () => {
   } = useGameBoardSetupActions({
     canInteract,
     gameState,
+    gameStateRef,
     role,
     uuid,
     dispatchGameEvent,
