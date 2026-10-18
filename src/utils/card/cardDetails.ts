@@ -51,7 +51,7 @@ interface CardDetailSource {
   atk?: string;
   hp?: string;
   ability_text?: string;
-  faces?: CardFaceSource[];
+  faces?: readonly CardFaceSource[];
 }
 
 interface CardFaceSource {
@@ -79,7 +79,7 @@ const parseNumericStat = (value?: string): number | null => {
   return Number.isNaN(parsed) ? null : parsed;
 };
 
-export const buildCardDetailLookup = (cards: CardDetailSource[]): CardDetailLookup => (
+export const buildCardDetailLookup = (cards: readonly CardDetailSource[]): CardDetailLookup => (
   cards.reduce<CardDetailLookup>((lookup, card) => {
     const faces = (card.faces ?? [])
       .filter((face): face is CardFaceSource & { side: CardFaceSide } => face.side === 'front' || face.side === 'back')
