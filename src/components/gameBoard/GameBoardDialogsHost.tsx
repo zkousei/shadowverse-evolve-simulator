@@ -15,6 +15,8 @@ type GameBoardDialogsHostProps = {
   savedDeckPicker: {
     isLoading?: boolean;
     loadFailed?: boolean;
+    onRefreshCatalog?: () => void;
+    isRefreshingCatalog?: boolean;
     targetLabel: string;
     savedDeckSearch: string;
     filteredSavedDeckOptions: SavedDeckPickerOption[];
@@ -47,6 +49,8 @@ const GameBoardDialogsHost: React.FC<GameBoardDialogsHostProps> = ({
       <GameBoardSavedDeckPickerDialog
         isLoading={savedDeckPicker.isLoading}
         loadFailed={savedDeckPicker.loadFailed}
+        onRefreshCatalog={savedDeckPicker.onRefreshCatalog}
+        isRefreshingCatalog={savedDeckPicker.isRefreshingCatalog}
         targetLabel={savedDeckPicker.targetLabel}
         savedDeckSearch={savedDeckPicker.savedDeckSearch}
         filteredSavedDeckOptions={savedDeckPicker.filteredSavedDeckOptions}

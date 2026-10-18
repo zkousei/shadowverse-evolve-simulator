@@ -24,7 +24,8 @@ GameBoardは `useGameBoardActiveCatalogResources` から生成カタログを利
   アンマウントで解除する。通信のメッセージや保存形式・ゲームルールは変更しない。
 
 主な所有テストは `useGameBoardActiveCatalogResources.test.ts`（対象ID・全体メタデータ・画像補完・ref）、
-`GameBoard.test.tsx`（Inspector配線）、`useGameBoardLogic.test.tsx`（取得待ち/失敗中の操作と受信）。
+`GameBoard.test.tsx`（Inspector配線）、`GameBoardDialogUi.test.tsx`（保存デッキ復旧の親部品経由の配線）、
+`useGameBoardLogic.test.tsx`（取得待ち/失敗中の操作と受信）。
 保存デッキ・版固定・復旧の契約は既存の専用Hook/utilityテストが引き続き担う。
 ブラウザーでは `card-catalog-loading.spec.ts`、`game-board-catalog-retry.spec.ts`、
 `game-board-generated-recovery.spec.ts`、本番用 `production/game-board-catalog.spec.ts` が接続を検証する。
