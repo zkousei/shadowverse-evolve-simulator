@@ -506,3 +506,18 @@ describe('GameBoard extracted UI components - dialogs', () => {
     expect(onConfirm).toHaveBeenCalledWith('candidate-1');
   });
 });
+
+it('passes saved-deck catalog recovery and refresh state through the dialog host', () => {
+  const onRefreshCatalog = vi.fn();
+  const savedDeckPicker = { targetLabel: 'Player 1', savedDeckSearch: '', filteredSavedDeckOptions: [],
+    onBackdropClick: vi.fn(), onClose: vi.fn(), onSearchChange: vi.fn(), onLoadDeck: vi.fn(),
+    loadFailed: true, onRefreshCatalog };
+  const { rerender } = render(<GameBoardDialogsHost savedDeckPicker={savedDeckPicker} evolveAutoAttach={null} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Refresh card catalog' }));
+  expect(onRefreshCatalog).toHaveBeenCalledTimes(1);
+  rerender(<GameBoardDialogsHost savedDeckPicker={{ ...savedDeckPicker, isRefreshingCatalog: true }} evolveAutoAttach={null} />);
+  expect(screen.getByRole('button', { name: 'Refresh card catalog' })).toBeDisabled();
+  expect(screen.getByRole('status')).toHaveTextContent('Refreshing card catalog');
+  fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+  expect(savedDeckPicker.onClose).toHaveBeenCalledTimes(1);
+});

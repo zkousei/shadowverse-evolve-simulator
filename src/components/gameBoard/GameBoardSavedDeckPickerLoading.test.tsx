@@ -29,3 +29,18 @@ describe('saved deck loading presentation', () => {
     expect(callbacks.onLoadDeck).toHaveBeenCalledWith(callbacks.filteredSavedDeckOptions[0]);
   });
 });
+
+it('offers catalog recovery after a failed saved-deck load and keeps Close usable while refreshing', () => {
+  const callbacks = props();
+  const onRefreshCatalog = vi.fn();
+  const { rerender } = render(<GameBoardSavedDeckPickerDialog {...callbacks} loadFailed onRefreshCatalog={onRefreshCatalog} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Refresh card catalog' }));
+  expect(onRefreshCatalog).toHaveBeenCalledTimes(1);
+  expect(callbacks.onLoadDeck).not.toHaveBeenCalled();
+  rerender(<GameBoardSavedDeckPickerDialog {...callbacks} loadFailed onRefreshCatalog={onRefreshCatalog} isRefreshingCatalog />);
+  expect(screen.getByRole('status')).toHaveTextContent('Refreshing card catalog');
+  expect(screen.getByRole('button', { name: 'Refresh card catalog' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Load' })).toBeDisabled();
+  fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+  expect(callbacks.onClose).toHaveBeenCalledTimes(1);
+});

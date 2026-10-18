@@ -43,7 +43,7 @@ import {
   type PendingGameBoardEvolveAutoAttachSelection,
 } from '../../utils/gameBoard/gameBoardEvolveAutoAttachSelection';
 
-import { useGameBoardCatalogResources } from './useGameBoardCatalogResources';
+import { useGameBoardActiveCatalogResources } from './useGameBoardActiveCatalogResources';
 import { useGameBoardConnectionSetup } from './useGameBoardConnectionSetup';
 import { useGameBoardConnectionLifecycleState } from './useGameBoardConnectionLifecycleState';
 import { useGameBoardIncomingMessages } from './useGameBoardIncomingMessages';
@@ -163,7 +163,8 @@ export const useGameBoardLogic = () => {
   const setupConnectionRef = useRef<(conn: DataConnection) => void>(() => undefined);
   const gameStateRef = useRef<SyncState>(initialState);
   const {
-    catalogCards, catalogStatus, retryCatalog,
+    generatedCatalog, catalogStatus, retryCatalog,
+    displayCards, getDetailStatus, retryDetails, isRefreshingCatalog, catalogRefreshFailed,
     cardStatLookup,
     cardDetailLookup,
     cardDetailLookupRef,
@@ -172,7 +173,7 @@ export const useGameBoardLogic = () => {
     fieldLinkAutoAttachResolverRef,
     fieldLinkCardIdsRef,
     tokenManualLinkCardIdsRef,
-  } = useGameBoardCatalogResources();
+  } = useGameBoardActiveCatalogResources(gameState, topDeckCards);
   const topDeckCardsRef = useRef<CardInstance[]>([]);
   const topDeckTargetRoleRef = useRef<PlayerRole>(role);
   const awaitingInitialSnapshotRef = useRef(false);
@@ -1580,7 +1581,7 @@ export const useGameBoardLogic = () => {
 
 
 
-  const getCards = (zone: string) => gameState.cards.filter(c => c.zone === zone);
+  const getCards = (zone: string) => displayCards.filter(c => c.zone === zone);
   const getTokenOptions = (targetRole: PlayerRole) => [
     defaultTokenOption.current,
     ...gameState.tokenOptions[targetRole],
@@ -1590,7 +1591,8 @@ export const useGameBoardLogic = () => {
     dispatchGameEvent,
     room, mode, isSoloMode, isHost, isSpectator, role, status, connectionState: visibleConnectionState, spectatorCount, maxSpectatorConnections: MAX_SPECTATOR_CONNECTIONS, canInteract, canView, attemptReconnect, gameState, savedSessionCandidate, resumeSavedSession, discardSavedSession, searchZone, setSearchZone,
     showResetConfirm, setShowResetConfirm, coinMessage, turnMessage, cardPlayMessage, attackMessage, attackHistory, eventHistory, attackVisual, revealedCardsOverlay,
-    cardStatLookup, cardDetailLookup, catalogCards, catalogStatus, retryCatalog,
+    cardStatLookup, cardDetailLookup, generatedCatalog, catalogStatus, retryCatalog,
+    displayCards, getDetailStatus, retryDetails, isRefreshingCatalog, catalogRefreshFailed,
     isRollingDice, diceValue, mulliganOrder, isMulliganModalOpen, setIsMulliganModalOpen,
     handleStatChange, setPhase, endTurn, handleUndoTurn, handleSetInitialTurnOrder,
     handlePureCoinFlip, handleRollDice, handleStartGame, handleToggleReady,

@@ -5,6 +5,8 @@ import type { SavedDeckPickerOption } from '../../utils/gameBoard/gameBoardSaved
 type GameBoardSavedDeckPickerDialogProps = {
   isLoading?: boolean;
   loadFailed?: boolean;
+  onRefreshCatalog?: () => void;
+  isRefreshingCatalog?: boolean;
   targetLabel: string;
   savedDeckSearch: string;
   filteredSavedDeckOptions: SavedDeckPickerOption[];
@@ -17,6 +19,8 @@ type GameBoardSavedDeckPickerDialogProps = {
 const GameBoardSavedDeckPickerDialog: React.FC<GameBoardSavedDeckPickerDialogProps> = ({
   isLoading = false,
   loadFailed = false,
+  onRefreshCatalog,
+  isRefreshingCatalog = false,
   targetLabel,
   savedDeckSearch,
   filteredSavedDeckOptions,
@@ -26,6 +30,7 @@ const GameBoardSavedDeckPickerDialog: React.FC<GameBoardSavedDeckPickerDialogPro
   onLoadDeck,
 }) => {
   const { t } = useTranslation();
+  const busy = isLoading || isRefreshingCatalog;
 
   return (
     <div
@@ -46,7 +51,7 @@ const GameBoardSavedDeckPickerDialog: React.FC<GameBoardSavedDeckPickerDialogPro
       <div
         role="dialog"
         aria-modal="true"
-        aria-busy={isLoading}
+        aria-busy={busy}
         aria-label={t('gameBoard.deckPicker.title')}
         onClick={(event) => event.stopPropagation()}
         className="glass-panel"
@@ -106,8 +111,9 @@ const GameBoardSavedDeckPickerDialog: React.FC<GameBoardSavedDeckPickerDialogPro
           </span>
         </div>
 
-        {isLoading && <div role="status">{t('gameBoard.deckPicker.loading')}</div>}
-        {loadFailed && !isLoading && <div role="alert">{t('gameBoard.deckPicker.loadFailed')}</div>}
+        {isRefreshingCatalog ? <div role="status">{t('gameBoard.catalog.refreshing')}</div> : isLoading && <div role="status">{t('gameBoard.deckPicker.loading')}</div>}
+        {loadFailed && !busy && <div role="alert">{t('gameBoard.deckPicker.loadFailed')}</div>}
+        {loadFailed && onRefreshCatalog && <button type="button" disabled={busy} onClick={onRefreshCatalog}>{t('gameBoard.catalog.refresh')}</button>}
 
         <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingRight: '0.25rem' }}>
           {filteredSavedDeckOptions.length === 0 ? (
@@ -136,7 +142,7 @@ const GameBoardSavedDeckPickerDialog: React.FC<GameBoardSavedDeckPickerDialogPro
                 </div>
                 <button
                   type="button"
-                  disabled={isLoading}
+                  disabled={busy}
                   onClick={() => onLoadDeck(option)}
                   style={{
                     padding: '0.45rem 0.7rem',
