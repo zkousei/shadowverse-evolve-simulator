@@ -6,6 +6,8 @@ import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
 import { SAVED_DECKS_KEY, type SavedDeckRecordV1 } from '../../utils/deck/deckStorage';
 import { buildSyncState } from './gameBoardTestUtils';
 import { useGameBoardSavedDeckPicker } from './useGameBoardSavedDeckPicker';
+import { generatedCatalogFixture } from '../../test/generatedCatalogFixture';
+import { createGameBoardSavedDeckReader } from '../../utils/gameBoard/gameBoardSavedDeckReader';
 
 
 const token: DeckBuilderCardData = {
@@ -163,6 +165,54 @@ const deferredCards = () => {
 };
 
 describe('pending saved-deck details', () => {
+  it('accepts the pinned saved-deck reader as a resolver and retries a failure before importing complete data', async () => {
+    const source = generatedCatalogFixture([main, token]);
+    const related = vi.spyOn(source, 'loadCardsWithRelated').mockRejectedValueOnce(new Error('HTTP 404'));
+    const reader = createGameBoardSavedDeckReader(source);
+    const options = args();
+    options.resolveSavedDeckCards = reader.loadCards;
+    const { result, selected } = await open(options);
+    expect(related).not.toHaveBeenCalled();
+    await act(async () => { await result.current.handleSavedDeckImport(selected); });
+    expect(options.importDeckData).not.toHaveBeenCalled();
+    expect(result.current.savedDeckLoadFailed).toBe(true);
+    expect(result.current.savedDeckImportTargetRole).toBe('host');
+    expect(related).toHaveBeenCalledTimes(1);
+    await act(async () => { await result.current.handleSavedDeckImport(selected); });
+    expect(related).toHaveBeenCalledTimes(2);
+    expect(options.importDeckData).toHaveBeenCalledExactlyOnceWith({
+      mainDeck: [main], evolveDeck: [], leaderCards: [], tokenDeck: [token],
+    }, 'host');
+    expect(result.current.savedDeckLoadFailed).toBe(false);
+    expect(result.current.savedDeckImportTargetRole).toBeNull();
+  });
+
+  it('does not commit a pinned reader response after the picker closes, and permits a later load', async () => {
+    const source = generatedCatalogFixture([main, token]);
+    let finish!: () => void;
+    const gate = new Promise<void>(resolve => { finish = resolve; });
+    const read = source.loadCardsWithRelated;
+    vi.spyOn(source, 'loadCardsWithRelated').mockImplementationOnce(async ids => {
+      await gate;
+      return read(ids);
+    });
+    const options = args();
+    options.resolveSavedDeckCards = createGameBoardSavedDeckReader(source).loadCards;
+    const { result, selected } = await open(options);
+    let pending!: Promise<void>;
+    act(() => { pending = result.current.handleSavedDeckImport(selected); });
+    expect(result.current.isSavedDeckLoading).toBe(true);
+    act(() => result.current.closeSavedDeckPicker());
+    await act(async () => { finish(); await pending; });
+    expect(options.importDeckData).not.toHaveBeenCalled();
+    expect(result.current.savedDeckLoadFailed).toBe(false);
+    act(() => result.current.openSavedDeckPicker('guest'));
+    await act(async () => { await result.current.handleSavedDeckImport(result.current.filteredSavedDeckOptions[0]); });
+    expect(options.importDeckData).toHaveBeenCalledExactlyOnceWith({
+      mainDeck: [main], evolveDeck: [], leaderCards: [], tokenDeck: [token],
+    }, 'guest');
+  });
+
   it('does not start resolving when the shared guard refuses the import', async () => {
     const options = args(); options.beginDeckImport.mockReturnValue(null);
     options.resolveSavedDeckCards = vi.fn().mockResolvedValue([main, token]);
