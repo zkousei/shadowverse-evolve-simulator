@@ -17,14 +17,14 @@ import { mergeCardCatalogs } from './cardCatalog';
 import { openGeneratedCardCatalog } from './generatedCardCatalog';
 import { createGeneratedDeckBuilderCatalog } from '../deckBuilder/generatedDeckBuilderCatalog';
 import { buildDeckBuilderCatalogView, type DeckBuilderCatalogFilters } from '../deckBuilder/deckBuilderCatalog';
-import { getDeckValidationMessages, sanitizeImportedDeckState } from '../deckBuilder/deckBuilderRules';
+import { getDeckValidationMessages, inferDeckSection, sanitizeImportedDeckState } from '../deckBuilder/deckBuilderRules';
 import {
   restoreDraftToSnapshot, restoreSavedDeckToSnapshot, serializeDeckState, type SavedDeckRecordV1,
 } from '../deck/deckStorage';
 import { buildGameBoardCatalogMetadata, buildGameBoardCatalogResources } from '../gameBoard/gameBoardCatalog';
 import { createGameBoardCatalogDetails } from '../gameBoard/gameBoardCatalogDetails';
 import { createGameBoardSavedDeckReader, UnknownSavedDeckCardsError } from '../gameBoard/gameBoardSavedDeckReader';
-import { buildLegalSavedDeckOptions } from '../gameBoard/gameBoardSavedDecks';
+import { buildLegalSavedDeckOptions, buildSavedDeckPickerOptions } from '../gameBoard/gameBoardSavedDecks';
 
 type IndexCard = DeckBuilderCardData & { detail_group: string };
 type Manifest = {
@@ -298,6 +298,46 @@ describe('generated card catalog compatibility', () => {
     const restoredMissing = restoreSavedDeckToSnapshot(missing, restored);
     expect(restoredMissing).toEqual(restoreSavedDeckToSnapshot(missing, original));
     expect(restoredMissing.missingCardIds).toContain('MISSING-001');
+  });
+
+  it('builds identical saved-deck picker options directly from a frozen real index without requesting any details', async () => {
+    const sample = readJson<Record<string, unknown> & DeckState>(join(root, 'public/sample-decks/constructed-royal-sample.json'));
+    const sampleRecord: SavedDeckRecordV1 = {
+      schemaVersion: 1, id: 'sample-index-picker', name: 'Sample', createdAt: '', updatedAt: '',
+      ruleConfig: getImportedDeckRuleConfig(sample), sections: serializeDeckState({ ...sample, tokenDeck: sample.tokenDeck ?? [] }),
+    };
+    // Exercise classification, copy limits and related-token expansion for every
+    // actual card, along with configured-rule and missing-ID selections.
+    const perCard: SavedDeckRecordV1[] = original.map(card => {
+      const section = inferDeckSection(card);
+      return { ...sampleRecord, id: card.id, name: card.name,
+        ruleConfig: { ...createDefaultDeckRuleConfig(), format: 'other' },
+        sections: { main: [], evolve: [], leader: [], token: [],
+          [section && section !== 'neither' ? section : 'main']: [{ cardId: card.id, count: 4 }] } };
+    });
+    const records: SavedDeckRecordV1[] = [sampleRecord, ...perCard,
+      { ...sampleRecord, id: 'title', ruleConfig: { ...sampleRecord.ruleConfig, identityType: 'title', selectedTitle: original[0].title ?? 'Missing title' } },
+      { ...sampleRecord, id: 'crossover', ruleConfig: { ...sampleRecord.ruleConfig, format: 'crossover', selectedClasses: [CLASS.ROYAL, CLASS.WITCH] } },
+      ...(['main', 'evolve', 'leader', 'token'] as const).map(section => ({ ...sampleRecord, id: `missing-${section}`,
+        sections: { ...sampleRecord.sections, [section]: [{ cardId: 'MISSING', count: 1 }] } })),
+    ];
+    const request = vi.spyOn(globalThis, 'fetch').mockImplementation(async input => {
+      const path = String(input);
+      if (!path.startsWith('/catalog/')) throw new Error(`Unexpected request: ${path}`);
+      if (path.includes('/details/')) throw new Error('Picker requested full details');
+      return new Response(readFileSync(join(output!, path.slice('/catalog/'.length)), 'utf8'));
+    });
+    try {
+      const catalog = await openGeneratedCardCatalog('/catalog');
+      const before = buildSavedDeckPickerOptions(records, original, key => key);
+      expect(before.length).toBeGreaterThan(original.length);
+      expect(before[0].deck.id).toBe(sampleRecord.id);
+      expect(buildSavedDeckPickerOptions(records, catalog.index, key => key)).toEqual(before);
+      expect(catalog.index.every(card => Object.isFrozen(card) && !('ability_text' in card) && !('faces' in card))).toBe(true);
+      expect(request).toHaveBeenCalledTimes(2); // manifest + index, no details
+    } finally {
+      request.mockRestore();
+    }
   });
 
   it('restores complete GameBoard saved decks from selected real detail groups with atomic failure and pinned retry', async () => {

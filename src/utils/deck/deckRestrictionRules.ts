@@ -1,13 +1,13 @@
 import { getIntrinsicDeckExceptionForCard } from '../../data/intrinsicDeckExceptions';
 import { getPolicyRestrictionForCard } from '../../data/policyRestrictions';
-import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
+import type { DeckRuleCard } from '../../models/deckRuleCard';
 import type { EffectiveDeckRestriction } from '../../models/deckRestriction';
 import type { DeckRuleConfig } from '../../models/deckRule';
 
 export const DEFAULT_COPY_LIMIT_PER_CARD = 3;
 
 export const getEffectiveDeckRestriction = (
-  card: DeckBuilderCardData,
+  card: DeckRuleCard,
   _targetSection: 'main' | 'evolve',
   ruleConfig: DeckRuleConfig
 ): EffectiveDeckRestriction => {

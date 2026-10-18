@@ -1,13 +1,13 @@
 import type { DeckBuilderCardData } from './deckBuilderCard';
 
-export type DeckState = {
-  mainDeck: DeckBuilderCardData[];
-  evolveDeck: DeckBuilderCardData[];
-  leaderCards: DeckBuilderCardData[];
-  tokenDeck: DeckBuilderCardData[];
+export type DeckState<Card = DeckBuilderCardData> = {
+  mainDeck: Card[];
+  evolveDeck: Card[];
+  leaderCards: Card[];
+  tokenDeck: Card[];
 };
 
-export const createEmptyDeckState = (): DeckState => ({
+export const createEmptyDeckState = <Card = DeckBuilderCardData>(): DeckState<Card> => ({
   mainDeck: [],
   evolveDeck: [],
   leaderCards: [],

@@ -4,6 +4,7 @@ import { getDisplayDedupKey, type DeckBuilderCardData } from '../../models/deckB
 import type { RestrictionFormat, RestrictionSource } from '../../models/deckRestriction';
 import { createEmptyDeckState, type DeckState } from '../../models/deckState';
 import type { DeckRuleConfig } from '../../models/deckRule';
+import type { DeckRuleCard } from '../../models/deckRuleCard';
 import { DEFAULT_COPY_LIMIT_PER_CARD, getEffectiveDeckRestriction } from '../deck/deckRestrictionRules';
 import { getGlobalIntrinsicLimit } from '../../data/intrinsicDeckExceptions';
 
@@ -98,7 +99,7 @@ export const getDeckLimit = (
   return DECK_LIMITS[targetSection];
 };
 
-export const inferDeckSection = (card: DeckBuilderCardData): DeckSection | undefined => {
+export const inferDeckSection = (card: DeckRuleCard): DeckSection | undefined => {
   if (card.deck_section) return card.deck_section;
 
   if (card.is_token) return 'token';
@@ -108,7 +109,7 @@ export const inferDeckSection = (card: DeckBuilderCardData): DeckSection | undef
   return cardKind ? CARD_KIND_TO_DECK_SECTION[cardKind] : undefined;
 };
 
-export const getAllowedSections = (card: DeckBuilderCardData): DeckTargetSection[] => {
+export const getAllowedSections = (card: DeckRuleCard): DeckTargetSection[] => {
   const section = inferDeckSection(card);
 
   if (section === 'main' || section === 'evolve' || section === 'leader' || section === 'token') {
@@ -130,7 +131,7 @@ export const isRuleConfigured = (ruleConfig: DeckRuleConfig): boolean => {
 };
 
 const matchesConstructedClassRule = (
-  card: DeckBuilderCardData,
+  card: DeckRuleCard,
   targetSection: DeckTargetSection,
   selectedClass: CardClass
 ): boolean => {
@@ -139,7 +140,7 @@ const matchesConstructedClassRule = (
 };
 
 const matchesConstructedTitleRule = (
-  card: DeckBuilderCardData,
+  card: DeckRuleCard,
   targetSection: DeckTargetSection,
   selectedTitle: string
 ): boolean => {
@@ -148,7 +149,7 @@ const matchesConstructedTitleRule = (
 };
 
 const matchesCrossoverClassRule = (
-  card: DeckBuilderCardData,
+  card: DeckRuleCard,
   targetSection: DeckTargetSection,
   selectedClasses: [CardClass, CardClass]
 ): boolean => {
@@ -159,7 +160,7 @@ const matchesCrossoverClassRule = (
 };
 
 export const isCardAllowedInSectionByRule = (
-  card: DeckBuilderCardData,
+  card: DeckRuleCard,
   targetSection: DeckTargetSection,
   ruleConfig: DeckRuleConfig = DEFAULT_RULE_CONFIG
 ): boolean => {
@@ -184,7 +185,7 @@ export const isCardAllowedInSectionByRule = (
 };
 
 export const isCardAllowedByRule = (
-  card: DeckBuilderCardData,
+  card: DeckRuleCard,
   ruleConfig: DeckRuleConfig = DEFAULT_RULE_CONFIG
 ): boolean => {
   const targetSection = inferDeckSection(card);
@@ -193,7 +194,7 @@ export const isCardAllowedByRule = (
 };
 
 export const canAddCardToSection = (
-  card: DeckBuilderCardData,
+  card: DeckRuleCard,
   targetSection: DeckTargetSection,
   ruleConfig: DeckRuleConfig = DEFAULT_RULE_CONFIG
 ): boolean => (
@@ -201,7 +202,7 @@ export const canAddCardToSection = (
   && isCardAllowedInSectionByRule(card, targetSection, ruleConfig)
 );
 
-const getSectionCards = (deckState: DeckState, targetSection: DeckTargetSection): DeckBuilderCardData[] => {
+const getSectionCards = (deckState: DeckState<DeckRuleCard>, targetSection: DeckTargetSection): DeckRuleCard[] => {
   switch (targetSection) {
     case 'main':
       return deckState.mainDeck;
@@ -215,10 +216,10 @@ const getSectionCards = (deckState: DeckState, targetSection: DeckTargetSection)
 };
 
 const getCardCopyLimit = (
-  card: DeckBuilderCardData,
+  card: DeckRuleCard,
   targetSection: DeckTargetSection,
   ruleConfig: DeckRuleConfig = DEFAULT_RULE_CONFIG,
-  deckState?: DeckState
+  deckState?: DeckState<DeckRuleCard>
 ): number => {
   if (targetSection !== 'main' && targetSection !== 'evolve') {
     return Number.POSITIVE_INFINITY;
@@ -230,17 +231,17 @@ const getCardCopyLimit = (
 };
 
 const countCopiesInSection = (
-  cards: DeckBuilderCardData[],
-  targetCard: DeckBuilderCardData
+  cards: readonly DeckRuleCard[],
+  targetCard: DeckRuleCard
 ): number => {
   const dedupeKey = getDisplayDedupKey(targetCard);
   return cards.filter(card => getDisplayDedupKey(card) === dedupeKey).length;
 };
 
 export const getCardAdditionProgress = (
-  card: DeckBuilderCardData,
+  card: DeckRuleCard,
   targetSection: DeckTargetSection,
-  deckState: DeckState = createEmptyDeckState(),
+  deckState: DeckState<DeckRuleCard> = createEmptyDeckState(),
   ruleConfig: DeckRuleConfig = DEFAULT_RULE_CONFIG
 ): { count: number; limit: number | null } => {
   const cards = getSectionCards(deckState, targetSection);
@@ -255,9 +256,9 @@ export const getCardAdditionProgress = (
 };
 
 export const canAddCardToDeckState = (
-  card: DeckBuilderCardData,
+  card: DeckRuleCard,
   targetSection: DeckTargetSection,
-  deckState: DeckState,
+  deckState: DeckState<DeckRuleCard>,
   ruleConfig: DeckRuleConfig = DEFAULT_RULE_CONFIG
 ): boolean => {
   if (!canAddCardToSection(card, targetSection, ruleConfig)) return false;
@@ -270,28 +271,28 @@ export const canAddCardToDeckState = (
   return countCopiesInSection(getSectionCards(deckState, targetSection), card) < copyLimit;
 };
 
-const resolveImportedCard = (
-  importedCard: DeckBuilderCardData,
-  cardCatalogById: ReadonlyMap<string, DeckBuilderCardData>
-): DeckBuilderCardData => cardCatalogById.get(importedCard.id) ?? importedCard;
+const resolveImportedCard = <Card extends DeckRuleCard>(
+  importedCard: Card,
+  cardCatalogById: ReadonlyMap<string, Card>
+): Card => cardCatalogById.get(importedCard.id) ?? importedCard;
 
 export const sanitizeImportedSection = (
   importedCards: DeckBuilderCardData[],
   availableCards: DeckBuilderCardData[],
   targetSection: DeckTargetSection,
   ruleConfig: DeckRuleConfig = DEFAULT_RULE_CONFIG,
-  deckStateHint?: DeckState
+  deckStateHint?: DeckState<DeckRuleCard>
 ): DeckBuilderCardData[] => sanitizeImportedSectionWithCatalog(
   importedCards, new Map(availableCards.map(card => [card.id, card])), targetSection, ruleConfig, deckStateHint
 );
 
-const sanitizeImportedSectionWithCatalog = (
-  importedCards: DeckBuilderCardData[],
-  cardCatalogById: ReadonlyMap<string, DeckBuilderCardData>,
+const sanitizeImportedSectionWithCatalog = <Card extends DeckRuleCard>(
+  importedCards: readonly Card[],
+  cardCatalogById: ReadonlyMap<string, Card>,
   targetSection: DeckTargetSection,
   ruleConfig: DeckRuleConfig,
-  deckStateHint?: DeckState
-): DeckBuilderCardData[] => {
+  deckStateHint?: DeckState<DeckRuleCard>
+): Card[] => {
   const limit = getDeckLimit(targetSection, ruleConfig);
   const copyCounts = new Map<string, number>();
 
@@ -310,13 +311,13 @@ const sanitizeImportedSectionWithCatalog = (
 };
 
 export const validateDeckState = (
-  deckState: DeckState,
+  deckState: DeckState<DeckRuleCard>,
   ruleConfig: DeckRuleConfig = DEFAULT_RULE_CONFIG
 ): DeckValidationIssue[] => {
   const issues: DeckValidationIssue[] = [];
   const shouldValidateRule = ruleConfig.format !== 'other' && isRuleConfigured(ruleConfig);
 
-  const sectionCards: Record<DeckTargetSection, DeckBuilderCardData[]> = {
+  const sectionCards: Record<DeckTargetSection, DeckRuleCard[]> = {
     main: deckState.mainDeck,
     evolve: deckState.evolveDeck,
     leader: deckState.leaderCards,
@@ -454,7 +455,7 @@ export type DeckValidationMessage = {
   params?: Record<string, string | number>;
 };
 
-const getCardNameFromDeckState = (deckState: DeckState, cardId: string): string | null => {
+const getCardNameFromDeckState = (deckState: DeckState<DeckRuleCard>, cardId: string): string | null => {
   const allCards = [
     ...deckState.mainDeck,
     ...deckState.evolveDeck,
@@ -472,7 +473,7 @@ const formatCardList = (names: string[]): string => {
 };
 
 export const getDeckValidationMessages = (
-  deckState: DeckState,
+  deckState: DeckState<DeckRuleCard>,
   ruleConfig: DeckRuleConfig = DEFAULT_RULE_CONFIG
 ): DeckValidationMessage[] => {
   const issues = validateDeckState(deckState, ruleConfig);
@@ -614,17 +615,17 @@ export const getDeckValidationMessages = (
   return Array.from(uniqueMessages.values());
 };
 
-type ImportedDeckState = Partial<DeckState> & {
-  leaderCard?: DeckBuilderCardData | null;
+type ImportedDeckState<Card = DeckBuilderCardData> = Partial<DeckState<Card>> & {
+  leaderCard?: Card | null;
 };
 
-const getImportedLeaderCards = (importedDeck: ImportedDeckState): DeckBuilderCardData[] => {
+const getImportedLeaderCards = <Card,>(importedDeck: ImportedDeckState<Card>): Card[] => {
   if (Array.isArray(importedDeck.leaderCards)) return importedDeck.leaderCards;
   if (importedDeck.leaderCard) return [importedDeck.leaderCard];
   return [];
 };
 
-const getRelatedTokenIdentityKey = (card: Pick<DeckBuilderCardData, 'id' | 'name'>): string => {
+const getRelatedTokenIdentityKey = (card: Pick<DeckRuleCard, 'id' | 'name'>): string => {
   const normalizedName = card.name.trim();
   return normalizedName.length > 0 ? `name:${normalizedName}` : `id:${card.id}`;
 };
@@ -638,19 +639,19 @@ const ALLOWED_RELATED_TOKEN_EXPANSION_NAME_PAIRS = new Set([
   '緊急召喚::ガーディアンゴーレム',
 ]);
 
-type RelatedTokenExpansionEntry = {
-  card: DeckBuilderCardData;
+type RelatedTokenExpansionEntry<Card extends DeckRuleCard> = {
+  card: Card;
   depth: number;
 };
 
 const getRelatedTokenExpansionPairKey = (
-  sourceToken: DeckBuilderCardData,
-  relatedToken: DeckBuilderCardData
+  sourceToken: DeckRuleCard,
+  relatedToken: DeckRuleCard
 ): string => `${sourceToken.name.trim()}::${relatedToken.name.trim()}`;
 
 const canExpandRelatedTokenFromToken = (
-  sourceToken: DeckBuilderCardData,
-  relatedToken: DeckBuilderCardData
+  sourceToken: DeckRuleCard,
+  relatedToken: DeckRuleCard
 ): boolean => ALLOWED_RELATED_TOKEN_EXPANSION_NAME_PAIRS.has(
   getRelatedTokenExpansionPairKey(sourceToken, relatedToken)
 );
@@ -663,17 +664,17 @@ export const appendRelatedTokensToDeckState = (
   deckState, new Map(availableCards.map(card => [card.id, card])), ruleConfig
 );
 
-const appendRelatedTokensWithCatalog = (
-  deckState: DeckState,
-  cardCatalogById: ReadonlyMap<string, DeckBuilderCardData>,
+const appendRelatedTokensWithCatalog = <Card extends DeckRuleCard>(
+  deckState: DeckState<Card>,
+  cardCatalogById: ReadonlyMap<string, Card>,
   ruleConfig: DeckRuleConfig
-): DeckState => {
+): DeckState<Card> => {
   if (cardCatalogById.size === 0) return deckState;
 
   const tokenIdentityKeys = new Set(deckState.tokenDeck.map(getRelatedTokenIdentityKey));
-  const tokensToAppend: DeckBuilderCardData[] = [];
+  const tokensToAppend: Card[] = [];
   const processedCardIds = new Set<string>();
-  const expansionQueue: RelatedTokenExpansionEntry[] = [
+  const expansionQueue: RelatedTokenExpansionEntry<Card>[] = [
     ...deckState.mainDeck,
     ...deckState.evolveDeck,
     ...deckState.leaderCards,
@@ -713,21 +714,28 @@ const appendRelatedTokensWithCatalog = (
   };
 };
 
+type DeckSanitizer<Card> = (importedDeck: ImportedDeckState<Card>, ruleConfig?: DeckRuleConfig) => DeckState<Card>;
+type DeckSanitizerFactory = {
+  // Keep the original full-card API, including external cards with an empty catalog.
+  (availableCards: readonly DeckBuilderCardData[]): DeckSanitizer<DeckBuilderCardData>;
+  <Card extends DeckRuleCard>(availableCards: readonly Card[]): DeckSanitizer<Card>;
+};
+
 /** A per-operation index. Do not retain this across catalog updates. */
-export const createImportedDeckSanitizer = (availableCards: DeckBuilderCardData[]) => {
+export const createImportedDeckSanitizer: DeckSanitizerFactory = <Card extends DeckRuleCard>(availableCards: readonly Card[]) => {
   const cardCatalogById = new Map(availableCards.map(card => [card.id, card]));
-  return (importedDeck: ImportedDeckState, ruleConfig: DeckRuleConfig = DEFAULT_RULE_CONFIG): DeckState => {
+  return (importedDeck: ImportedDeckState<Card>, ruleConfig: DeckRuleConfig = DEFAULT_RULE_CONFIG): DeckState<Card> => {
     // Only eligible main-deck cards may activate deck-wide restrictions.
     const eligibleMainDeck = (importedDeck.mainDeck ?? [])
       .map(card => resolveImportedCard(card, cardCatalogById))
       .filter(card => canAddCardToSection(card, 'main', ruleConfig));
-    const initialState = { ...createEmptyDeckState(), mainDeck: eligibleMainDeck };
+    const initialState = { ...createEmptyDeckState<Card>(), mainDeck: eligibleMainDeck };
     const acceptedMainDeck = sanitizeImportedSectionWithCatalog(eligibleMainDeck, cardCatalogById, 'main', ruleConfig, initialState);
     // A trigger may have been dropped at the section capacity. Re-evaluate using
     // the retained main deck so discarded cards cannot restrict either section.
-    const acceptedState = { ...createEmptyDeckState(), mainDeck: acceptedMainDeck };
+    const acceptedState = { ...createEmptyDeckState<Card>(), mainDeck: acceptedMainDeck };
     const mainDeck = sanitizeImportedSectionWithCatalog(eligibleMainDeck, cardCatalogById, 'main', ruleConfig, acceptedState);
-    const finalState = { ...createEmptyDeckState(), mainDeck };
+    const finalState = { ...createEmptyDeckState<Card>(), mainDeck };
 
     return appendRelatedTokensWithCatalog({
       ...finalState,

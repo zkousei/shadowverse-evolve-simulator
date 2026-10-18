@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createEmptyDeckState } from '../../models/deckState';
+import { beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
+import { createEmptyDeckState, type DeckState } from '../../models/deckState';
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
 import type { DeckRuleConfig } from '../../models/deckRule';
 import {
@@ -7,6 +7,7 @@ import {
   clearDraft,
   createDeckSnapshot,
   createSavedDeckRestorer,
+  type SavedDeckRecordV1,
   DECK_BUILDER_DRAFT_KEY,
   deleteSavedDeck,
   duplicateSavedDeck,
@@ -20,6 +21,19 @@ import {
   saveDraft,
   SAVED_DECKS_KEY,
 } from './deckStorage';
+
+it('preserves full-card result types for existing empty-catalog and empty-snapshot APIs', () => {
+  const ruleConfig: DeckRuleConfig = { format: 'other', identityType: 'class', selectedClass: null, selectedTitle: null, selectedClasses: [null, null] };
+  const emptyDeck = { mainDeck: [], evolveDeck: [], leaderCards: [], tokenDeck: [] };
+  const record: SavedDeckRecordV1 = { schemaVersion: 1, id: 'empty', name: 'Empty', createdAt: '', updatedAt: '', ruleConfig,
+    sections: { main: [], evolve: [], leader: [], token: [] } };
+  const restored = createSavedDeckRestorer([])(record);
+  const snapshot = createDeckSnapshot('Empty', ruleConfig, emptyDeck);
+  expectTypeOf(restored.snapshot.deckState).toEqualTypeOf<DeckState>();
+  expectTypeOf(snapshot.deckState).toEqualTypeOf<DeckState>();
+  expect(restored.snapshot.deckState).toEqual(emptyDeck);
+  expect(snapshot.deckState).toEqual(emptyDeck);
+});
 
 const mockCards: DeckBuilderCardData[] = [
   {

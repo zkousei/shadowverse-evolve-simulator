@@ -1,3 +1,5 @@
+import type { DeckRuleCard } from '../../models/deckRuleCard';
+import type { DeckState } from '../../models/deckState';
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
 import { getDeckValidationMessages, createImportedDeckSanitizer } from '../deckBuilder/deckBuilderRules';
 import { createSavedDeckRestorer, type SavedDeckRecordV1 } from '../deck/deckStorage';
@@ -24,15 +26,15 @@ export type LegalSavedDeckOption = SavedDeckPickerOption & {
   };
 };
 
-const mapLegalSavedDeckOptions = <T extends SavedDeckPickerOption>(
+const mapLegalSavedDeckOptions = <Card extends DeckRuleCard, T extends SavedDeckPickerOption>(
   savedDecks: SavedDeckRecordV1[],
-  allCards: DeckBuilderCardData[],
+  allCards: readonly Card[],
   t: SavedDeckPresentationTranslator,
-  project: (option: LegalSavedDeckOption) => T
+  project: (option: SavedDeckPickerOption & { deckData: DeckState<Card> }) => T
 ): T[] => {
   if (savedDecks.length === 0) return [];
   const restoreSavedDeck = createSavedDeckRestorer(allCards);
-  let sanitizeDeck: ReturnType<typeof createImportedDeckSanitizer> | undefined;
+  let sanitizeDeck: ReturnType<typeof createImportedDeckSanitizer<Card>> | undefined;
   return savedDecks
     .map(deck => {
       const restored = restoreSavedDeck(deck);
@@ -56,7 +58,7 @@ const mapLegalSavedDeckOptions = <T extends SavedDeckPickerOption>(
         },
         summary: formatSavedDeckRuleSummary(deck, t),
         counts: formatSavedDeckCountSummary(deck, t),
-      } satisfies LegalSavedDeckOption);
+      } satisfies SavedDeckPickerOption & { deckData: DeckState<Card> });
     })
     .filter((value): value is T => value !== null);
 };
@@ -70,7 +72,7 @@ export const buildLegalSavedDeckOptions = (
 
 export const buildSavedDeckPickerOptions = (
   savedDecks: SavedDeckRecordV1[],
-  allCards: DeckBuilderCardData[],
+  allCards: readonly DeckRuleCard[],
   t: SavedDeckPresentationTranslator
 ): SavedDeckPickerOption[] => mapLegalSavedDeckOptions(savedDecks, allCards, t,
   ({ deck, summary, counts }) => ({ deck, summary, counts })

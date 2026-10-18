@@ -1,4 +1,5 @@
-import { getDisplayDedupKey, type DeckBuilderCardData } from '../models/deckBuilderCard';
+import type { DeckRuleCard } from '../models/deckRuleCard';
+import { getDisplayDedupKey } from '../models/deckBuilderCard';
 import type { DeckState } from '../models/deckState';
 
 export type IntrinsicDeckException = {
@@ -67,16 +68,16 @@ const INTRINSIC_DECK_EXCEPTION_BY_KEY = new Map(
 );
 
 export const getIntrinsicDeckExceptionForCard = (
-  card: DeckBuilderCardData
+  card: DeckRuleCard
 ): IntrinsicDeckException | undefined => INTRINSIC_DECK_EXCEPTION_BY_KEY.get(getDisplayDedupKey(card));
 
 export const getIntrinsicCopyLimitForCard = (
-  card: DeckBuilderCardData
+  card: DeckRuleCard
 ): number | undefined => getIntrinsicDeckExceptionForCard(card)?.copyLimit;
 
 export const getGlobalIntrinsicLimit = (
-  card: DeckBuilderCardData,
-  deckState: DeckState
+  card: DeckRuleCard,
+  deckState: DeckState<DeckRuleCard>
 ): number | undefined => {
   const hasCutthroatTrigger = deckState.mainDeck.some(c => c.name === '機鋒の咎人・カットスロート');
 
