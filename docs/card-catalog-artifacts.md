@@ -436,3 +436,6 @@ related_cards（371,385 bytes / 3,554種類）。これらは値だけの非圧�
 所有テストは `tools/card_data/measure_catalog_test.py`（ファイル単位のサイズ、関連循環、重複、グループに含まれる全件、
 UTF-8/型/欠落、不明ID、入力非変更）と `tools/python_entrypoints_test.py`（モジュール起動、標準出力、終了コード、
 既存生成物の検証、不正入力・破損時にもファイルを変更しないこと）。実行は `npm run test:python`。
+
+分割候補の比較は[`card-catalog-partition-comparison.md`](card-catalog-partition-comparison.md)を参照。
+`npm run cards:compare:partitions`は配信を変更せず、候補の初回増加・通信回数・取得量を比較する。
