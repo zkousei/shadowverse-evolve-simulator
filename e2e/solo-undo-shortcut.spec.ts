@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test';
 import { boardSection, openMainDeckActions, startKeyboardCardDrag, startSoloGame, zoneCards } from './helpers/gameBoard';
 
 test.use({ locale: 'en-US' });

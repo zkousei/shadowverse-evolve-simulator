@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/test';
 import { readFileSync } from 'node:fs';
 
 test('the real development reader loads summaries and only the requested detail group', async ({ page }) => {

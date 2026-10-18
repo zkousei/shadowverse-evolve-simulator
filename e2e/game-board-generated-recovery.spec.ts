@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/test';
 import { readFileSync } from 'node:fs';
 import { asSchemaOneCatalogFixture, buildGeneratedCatalogFixture } from './helpers/generatedCatalog';
 import { startSoloGame, spawnDefaultToken, zoneCards } from './helpers/gameBoard';

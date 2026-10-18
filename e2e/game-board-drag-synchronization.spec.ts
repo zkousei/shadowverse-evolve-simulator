@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/test';
 import { dragLocatorFromExposedCardPointToLocator, spawnDefaultToken, startKeyboardCardDrag, startSoloGame, zone, zoneCards } from './helpers/gameBoard';
 
 test.use({ locale: 'en-US' });

@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './helpers/test';
 import { deckInput, importSoloDummyDecks, zoneCards } from './helpers/gameBoard';
 
 type DelayedReadsWindow = Window & { __pendingDeckReads: Array<() => Promise<void>> };

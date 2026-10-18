@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './helpers/test';
 import { hoverExposedCardPoint, spawnDefaultToken, startSoloGame, zoneCards } from './helpers/gameBoard';
 
 test.use({ locale: 'en-US' });

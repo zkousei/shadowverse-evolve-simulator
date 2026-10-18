@@ -124,6 +124,16 @@ export const dragLocatorFromExposedCardPointToLocator = async (
       y: pointer.y + targetBox.y + targetBox.height / 2 - sourceBox.y - sourceBox.height / 2,
     };
     await page.mouse.move(pointer.x, pointer.y, { steps: 12 });
+    // Let collision detection and auto-scroll render before reading their
+    // acknowledgement; an old 'over' notification can otherwise win the race.
+    await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+    const settledSource = await source.boundingBox();
+    const settledTarget = await target.boundingBox();
+    if (!settledSource || !settledTarget) throw new Error('The drag card or target disappeared.');
+    expect(Math.abs(settledTarget.x - targetBox.x)).toBeLessThan(1);
+    expect(Math.abs(settledTarget.y - targetBox.y)).toBeLessThan(1);
+    expect(Math.abs(settledSource.x + settledSource.width / 2 - settledTarget.x - settledTarget.width / 2)).toBeLessThan(2);
+    expect(Math.abs(settledSource.y + settledSource.height / 2 - settledTarget.y - settledTarget.height / 2)).toBeLessThan(2);
     expect(await page.getByRole('status').filter({ hasText: announcement('moved over') }).count()).toBe(1);
   }).toPass({ timeout: 5_000 });
   await page.mouse.up();
@@ -142,12 +152,13 @@ export const startKeyboardCardDrag = async (page: Page, card: Locator) => {
   await page.keyboard.press('Space');
   await expect(card).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByRole('status').filter({ hasText: 'was moved over droppable area' })).toHaveCount(1);
-  const initialTransform = await card.evaluate(element => (element as HTMLElement).style.transform);
+  const readDragX = () => card.evaluate(element => new DOMMatrixReadOnly(getComputedStyle(element).transform).m41);
+  const initialX = await readDragX();
   // KeyboardSensor installs its document listener in a later task. An actual
   // arrow movement acknowledges readiness before testing Undo or Escape.
   await expect(async () => {
     await page.keyboard.press('ArrowRight');
-    expect(await card.evaluate(element => (element as HTMLElement).style.transform)).not.toBe(initialTransform);
+    expect(Math.abs(await readDragX() - initialX)).toBeGreaterThan(1);
   }).toPass({ timeout: 5_000 });
 };
 

@@ -1,8 +1,8 @@
 import { decodeGeneratedCardIndex } from '../../src/utils/card/generatedCardIndex';
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../helpers/test';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import type { APIRequestContext } from '@playwright/test';
+import type { APIRequestContext } from '../helpers/test';
 
 type Descriptor = { file: string; bytes: number; sha256: string; count: number };
 const fetchVerified = async (request: APIRequestContext, descriptor: Descriptor, schemaVersion?: number) => {

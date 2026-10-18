@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../helpers/test';
 import { buildGeneratedCatalogFixture } from '../helpers/generatedCatalog';
 
 test.use({ locale: 'en-US' });
