@@ -307,6 +307,7 @@ const reduceGameSyncEvent = (
         lastUndoableCardMoveState: null,
         lastUndoableCardMoveActor: null,
         revision: state.revision + 1,
+        lastResetRevision: state.revision + 1,
       };
     }
 
@@ -630,6 +631,7 @@ const reduceGameSyncEvent = (
       if (!state.lastGameState) return state;
       return {
         ...state.lastGameState,
+        ...(state.lastResetRevision === undefined ? {} : { lastResetRevision: state.lastResetRevision }),
         endStop: { host: false, guest: false },
         revision: state.revision + 1,
         lastGameState: null,
@@ -645,6 +647,7 @@ const reduceGameSyncEvent = (
       if (!latest || latest.actor !== event.actor) return state;
       return withCardMoveHistory({
         ...latest.state,
+        ...(state.lastResetRevision === undefined ? {} : { lastResetRevision: state.lastResetRevision }),
         // Turn undo is independent; restoring a move must not erase or revive it.
         lastGameState: state.lastGameState,
         revision: state.revision + 1,

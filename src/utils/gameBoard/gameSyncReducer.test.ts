@@ -11,6 +11,33 @@ const createState = (overrides: Partial<SyncState> = {}): SyncState => ({
 });
 
 describe('gameSyncReducer', () => {
+  it('records each accepted reset revision even when the empty preparation board is unchanged', () => {
+    const before = createState({ revision: 12 });
+    const event = { id: 'reset-marker', type: 'RESET_GAME', actor: 'host' } as const;
+    const reset = applyGameSyncEvent(before, event, 'host');
+    expect(reset.cards).toEqual(before.cards);
+    expect(reset.tokenOptions).toEqual(before.tokenOptions);
+    expect(reset).toMatchObject({ revision: 13, lastResetRevision: 13 });
+    const again = applyGameSyncEvent(reset, { ...event, id: 'reset-again' }, 'host');
+    expect(again).toMatchObject({ revision: 14, lastResetRevision: 14 });
+    expect(applyGameSyncEvent(reset, { ...event, id: 'denied' }, 'guest')).toBe(reset);
+  });
+
+  it('keeps the latest reset revision through ordinary updates and move/turn undo without putting it in checkpoints', () => {
+    const reset = applyGameSyncEvent(createState({ revision: 7 }), { id: 'reset', type: 'RESET_GAME', actor: 'host' });
+    const changed = applyGameSyncEvent(reset, { id: 'hp', type: 'MODIFY_PLAYER_STAT', actor: 'host', playerKey: 'host', stat: 'hp', delta: -1 });
+    expect(changed).toMatchObject({ lastResetRevision: 8, revision: 9 });
+    expect(changed.lastUndoableCardMoveState).not.toHaveProperty('lastResetRevision');
+    const undo = applyGameSyncEvent(changed, { id: 'undo', type: 'UNDO_CARD_MOVE', actor: 'host' });
+    expect(undo).toMatchObject({ lastResetRevision: 8, revision: 10 });
+    expect(undo.host.hp).toBe(reset.host.hp);
+    const ended = applyGameSyncEvent({ ...reset, gameStatus: 'playing' }, { id: 'end', type: 'END_TURN', actor: 'host' });
+    expect(ended.lastGameState).not.toHaveProperty('lastResetRevision');
+    const undoTurn = applyGameSyncEvent(ended, { id: 'undo-turn', type: 'UNDO_LAST_TURN', actor: 'host' });
+    expect(undoTurn).toMatchObject({ lastResetRevision: 8, revision: 10 });
+    expect(undoTurn.turnCount).toBe(reset.turnCount);
+  });
+
   it('treats shared coin and die events as no-ops for state', () => {
     const state = createState({ revision: 9 });
 

@@ -3,6 +3,8 @@ import { getBoardUnits } from '../../utils/gameBoard/gameBoardMultiSelection';
 import { act, fireEvent, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SyncMessage } from '../../types/sync';
+import { applyGameSyncEvent } from '../../utils/gameBoard/gameSyncReducer';
+import { buildGameBoardNetworkSnapshotState } from '../../utils/gameBoard/snapshot/gameBoardSnapshot';
 import {
   mockPeerJs,
   renderHarness,
@@ -28,6 +30,47 @@ describe('useGameBoardLogic P2P reconnect', () => {
       vi.runOnlyPendingTimers();
     });
     vi.useRealTimers();
+  });
+
+  it('rejects a guest upload finishing in the same task as a host reset snapshot, then allows a fresh upload across stale/duplicate snapshots', () => {
+    const { conn } = connectGuest();
+    const preparing = buildSyncState({ revision: 2 });
+    act(() => conn.emit('data', { type: 'STATE_SNAPSHOT', source: 'host', state: preparing }));
+    const readers: Array<{ onload: ((event: ProgressEvent<FileReader>) => void) | null }> = [];
+    const alert = vi.spyOn(window, 'alert').mockImplementation(() => undefined);
+    vi.stubGlobal('FileReader', class {
+      onload: ((event: ProgressEvent<FileReader>) => void) | null = null;
+      readAsText = vi.fn();
+      constructor() { readers.push(this); }
+    });
+    try {
+      const upload = () => fireEvent.change(screen.getByTestId('guest-deck-upload-input'), { target: { files: [new File([], 'deck.json')] } });
+      const finish = (index: number, text: string) => readers[index].onload?.({ target: { result: text } } as unknown as ProgressEvent<FileReader>);
+      const reset = applyGameSyncEvent(preparing, { id: 'host-reset', type: 'RESET_GAME', actor: 'host' });
+      const resetSnapshot = buildGameBoardNetworkSnapshotState(reset, {});
+      fireEvent.change(screen.getByTestId('guest-deck-upload-input'), { target: { files: [new File([], 'old.json')] } });
+      conn.send.mockClear();
+      // The live state ref must protect the completion before React rerenders.
+      act(() => {
+        conn.emit('data', { type: 'STATE_SNAPSHOT', source: 'host', state: resetSnapshot });
+        finish(0, '{old-invalid-json');
+      });
+      expect(alert).not.toHaveBeenCalled();
+      expect(conn.send.mock.calls.map(([message]) => message).filter(message => message.type === 'EVENT')).toEqual([]);
+      upload();
+      act(() => {
+        conn.emit('data', { type: 'STATE_SNAPSHOT', source: 'host', state: { ...resetSnapshot, revision: 4 } });
+        conn.emit('data', { type: 'STATE_SNAPSHOT', source: 'host', state: preparing });
+        conn.emit('data', { type: 'STATE_SNAPSHOT', source: 'host', state: { ...resetSnapshot, revision: 4 } });
+        finish(1, JSON.stringify({ mainDeck: [{ id: 'FRESH', name: 'Fresh', image: '', deck_section: 'main' }] }));
+      });
+      const imports = conn.send.mock.calls.map(([message]) => message).filter(message => message.type === 'EVENT' && message.event.type === 'IMPORT_DECK');
+      expect(imports).toHaveLength(1);
+      expect(imports[0]).toMatchObject({ event: { actor: 'guest', cards: [expect.objectContaining({ name: 'Fresh', zone: 'mainDeck-guest' })] } });
+    } finally {
+      vi.unstubAllGlobals();
+      alert.mockRestore();
+    }
   });
 
   it.each(['guest', 'host', 'mixed'] as const)('synchronizes a guest batch on %s cards once, including its summary and atomic undo', targetSide => {

@@ -29,6 +29,23 @@ const buildState = (overrides: Partial<SyncState> = {}): SyncState => ({
 });
 
 describe('gameBoardSavedSession', () => {
+  it.each([undefined, 0, 4])('preserves a valid optional reset revision %s while reading a saved session', marker => {
+    const state = buildState({ revision: 8, ...(marker === undefined ? {} : { lastResetRevision: marker }) });
+    const payload = buildSavedHostSessionPayload('ROOM', 'test', state, 'now');
+    const loaded = parseSavedHostSession(JSON.stringify(payload), 'ROOM', 'test');
+    expect(loaded?.state).toMatchObject({ revision: 8 });
+    if (marker === undefined) expect(loaded?.state).not.toHaveProperty('lastResetRevision');
+    else expect(loaded?.state).toHaveProperty('lastResetRevision', marker);
+    // A reset marker alone does not turn a fresh empty room into a saved match.
+    expect(hasMeaningfulGameSessionState(state)).toBe(false);
+  });
+
+  it.each([-1, 1.5, 9, '4', null])('rejects an invalid reset revision %s in saved data', lastResetRevision => {
+    const state = { ...buildState({ revision: 8 }), lastResetRevision };
+    const payload = { room: 'ROOM', appVersion: 'test', savedAt: 'now', state };
+    expect(parseSavedHostSession(JSON.stringify(payload), 'ROOM', 'test')).toBeNull();
+  });
+
   it('builds the host session storage key', () => {
     expect(getHostSessionStorageKey('ROOM123')).toBe('sv-evolve:host-session:ROOM123');
   });

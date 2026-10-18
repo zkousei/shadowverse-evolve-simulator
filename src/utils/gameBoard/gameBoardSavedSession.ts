@@ -42,7 +42,12 @@ const isSyncState = (value: unknown): value is SyncState => (
   (value as SyncState).tokenOptions !== null &&
   Array.isArray((value as SyncState).tokenOptions.host) &&
   Array.isArray((value as SyncState).tokenOptions.guest) &&
-  typeof (value as SyncState).revision === 'number'
+  typeof (value as SyncState).revision === 'number' &&
+  ((value as SyncState).lastResetRevision === undefined || (
+    Number.isSafeInteger((value as SyncState).lastResetRevision) &&
+    (value as SyncState).lastResetRevision! >= 0 &&
+    (value as SyncState).lastResetRevision! <= (value as SyncState).revision
+  ))
 );
 
 const isEndStopState = (value: unknown): value is SyncState['endStop'] => (

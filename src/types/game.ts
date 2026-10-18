@@ -35,6 +35,8 @@ export interface SyncState {
   revealHandsMode: boolean;
   endStop: Record<PlayerRole, boolean>;
   revision: number;
+  /** Revision of the last authoritative reset; omitted by legacy sessions/peers. */
+  lastResetRevision?: number;
   lastGameState?: GameStateCheckpoint | null;
   lastUndoableCardMoveState?: GameStateCheckpoint | null;
   lastUndoableCardMoveActor?: PlayerRole | null;
@@ -43,10 +45,10 @@ export interface SyncState {
   networkHasUndoableCardMove?: boolean;
 }
 
-// Checkpoints never contain other checkpoints or network availability metadata.
+// Checkpoints never contain other checkpoints, reset markers, or network availability metadata.
 export type GameStateCheckpoint = Omit<SyncState,
   'lastGameState' | 'lastUndoableCardMoveState' | 'lastUndoableCardMoveActor' |
-  'cardMoveHistory' | 'networkHasUndoableTurn' | 'networkHasUndoableCardMove'>;
+  'cardMoveHistory' | 'lastResetRevision' | 'networkHasUndoableTurn' | 'networkHasUndoableCardMove'>;
 
 export interface CardMoveCheckpoint {
   actor: PlayerRole;
