@@ -1,19 +1,21 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initialState } from '../../types/game';
 import { generatedCatalogFixture } from '../../test/generatedCatalogFixture';
 import { openGeneratedCardCatalog } from '../../utils/card/generatedCardCatalog';
-import { loadCardCatalog } from '../../utils/card/cardCatalog';
 import type { CardInstance } from '../../components/Card';
 import { useGameBoardActiveCatalogResources } from './useGameBoardActiveCatalogResources';
 
 vi.mock('../../utils/card/generatedCardCatalog', async original => ({
   ...await original<typeof import('../../utils/card/generatedCardCatalog')>(), openGeneratedCardCatalog: vi.fn(),
 }));
-vi.mock('../../utils/card/cardCatalog', () => ({ loadCardCatalog: vi.fn(() => new Promise(() => {})) }));
 const cards = ['A', 'B', 'C', 'OFF'].map(id => ({ id, name: id, image: `/${id}.png`, atk: '3', hp: '4', ability_text: `Ability ${id}`, deck_section: 'main' as const, card_kind_normalized: 'follower' as const }));
 const instance = (cardId: string, image = ''): CardInstance => ({ id: cardId, cardId, name: cardId, image, zone: 'field-host', owner: 'host', isTapped: false, isFlipped: false, counters: { atk: 0, hp: 0 } });
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Unexpected direct HTTP request'));
+});
+afterEach(() => vi.restoreAllMocks());
 
 describe('active GameBoard catalog connection', () => {
   it('opens index metadata without any details or legacy JSON on an empty board', async () => {
@@ -22,7 +24,7 @@ describe('active GameBoard catalog connection', () => {
     vi.mocked(openGeneratedCardCatalog).mockResolvedValue(catalog);
     const { result } = renderHook(() => useGameBoardActiveCatalogResources(initialState));
     await waitFor(() => expect(result.current.catalogStatus).toBe('ready'));
-    expect(loadCardCatalog).not.toHaveBeenCalled();
+    expect(globalThis.fetch).not.toHaveBeenCalled();
     expect(load).not.toHaveBeenCalled();
     expect(result.current.cardStatLookup.OFF).toMatchObject({ atk: 3, hp: 4 });
     expect(result.current.cardDetailLookup).toEqual({});
@@ -62,7 +64,7 @@ it('keeps rules and snapshot artwork available on detail failure, retries in the
   await waitFor(() => expect(result.current.cardDetailLookup.A?.abilityText).toBe('Ability A'));
   expect(load).toHaveBeenCalledTimes(2);
   expect(openGeneratedCardCatalog).toHaveBeenCalledTimes(1);
-  expect(loadCardCatalog).not.toHaveBeenCalled();
+  expect(globalThis.fetch).not.toHaveBeenCalled();
   const refs = result.current;
   unmount();
   expect(refs.cardDetailLookupRef.current).toEqual({});

@@ -1,5 +1,7 @@
 import type { DeckBuilderCardData, RelatedCardReference } from '../../models/deckBuilderCard';
 
+export type GameBoardCatalogStatus = 'loading' | 'ready' | 'error';
+
 /** Rule inputs available in both the full catalog and the generated index.
  * Ability text and faces belong to complete details, not this contract.
  */

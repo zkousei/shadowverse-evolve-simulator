@@ -30,6 +30,29 @@ GameBoardは `useGameBoardActiveCatalogResources` から生成カタログを利
 ブラウザーでは `card-catalog-loading.spec.ts`、`game-board-catalog-retry.spec.ts`、
 `game-board-generated-recovery.spec.ts`、本番用 `production/game-board-catalog.spec.ts` が接続を検証する。
 
+### 未使用の旧HTTP取得処理の整理
+
+分割取得への画面接続後、実行時の参照がなくなった `loadCardCatalog` と
+`useGameBoardCatalogResources` を削除した。読込状態の型は
+`gameBoardCatalogTypes.ts` に移し、表示部品から旧Hookへの型依存も解消した。
+`mergeCardCatalogs` と `buildGameBoardCatalogResources` は実データ互換性比較の純関数として維持する。
+
+旧HTTP取得専用8件と旧Hook専用6件のテストは対象APIの廃止に合わせて削除した。
+現行の安全網は次のテストが引き続き担当する。現行テストの期待値や待機時間は緩和しない。
+
+| 契約 | 現行の所有テスト |
+| --- | --- |
+| 並列取得の共有・検証済みキャッシュ・各失敗からの再試行 | `generatedCardCatalog.test.ts` |
+| 初回読込失敗・明示的な復旧・版の保持 | `useGameBoardGeneratedCatalogResources.test.ts` |
+| 古い結果・Strict Mode・アンマウント・取得済み表示の保持 | `useGameBoardGeneratedCardDetails.test.ts` |
+| 全件ルール用メタデータ・表示画像・refの解除 | `useGameBoardActiveCatalogResources.test.ts` |
+| 正式カード優先のマージと実データ全件の一致 | `cardCatalog.test.ts` / `generatedCardCatalogParity.test.ts` |
+| 実画面で従来JSONを取得しないことと復旧操作 | 通常/本番のカタログE2E |
+
+これは未使用コードの整理であり、初回転送量の追加削減を伴わない。
+Pythonの正本 `public/cards_detailed.json` / `public/cards_preview.json`、生成処理、公開ファイルは維持する。
+これまでに開いた旧アプリが使うURLの配信変更と、indexそのものの縮小は別工程とする。
+
 ### 取得量の比較
 
 7,684件の現データと生成物を対象に、従来JSON2本とmanifest/index/必要グループのファイルサイズを比較した。

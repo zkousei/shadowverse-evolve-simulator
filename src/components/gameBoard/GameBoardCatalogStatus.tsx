@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import type { GameBoardCatalogStatus as CatalogStatus } from '../../hooks/gameBoard/useGameBoardCatalogResources';
+import type { GameBoardCatalogStatus as CatalogStatus } from '../../utils/gameBoard/gameBoardCatalogTypes';
 
 export default function GameBoardCatalogStatus({ status, onRetry }: { status: CatalogStatus; onRetry: () => void }) {
   const { t } = useTranslation();

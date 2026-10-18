@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { openGeneratedCardCatalog, type GeneratedCardCatalog } from '../../utils/card/generatedCardCatalog';
+import type { GameBoardCatalogStatus } from '../../utils/gameBoard/gameBoardCatalogTypes';
 import { buildGameBoardCatalogMetadata } from '../../utils/gameBoard/gameBoardCatalog';
 import { createGameBoardCatalogDetails } from '../../utils/gameBoard/gameBoardCatalogDetails';
 import { createGameBoardSavedDeckReader } from '../../utils/gameBoard/gameBoardSavedDeckReader';
@@ -66,7 +67,7 @@ export const useGameBoardGeneratedCatalogResources = (ids: readonly string[], ba
     return () => { active = false; };
   }, [request]);
 
-  const status: 'ready' | 'error' | 'loading' = settled?.request === request ? settled.status : 'loading';
+  const status: GameBoardCatalogStatus = settled?.request === request ? settled.status : 'loading';
   useLayoutEffect(() => {
     gate.current = { request, resources, allowed: status !== 'loading', queued: false };
     return () => { gate.current = null; };

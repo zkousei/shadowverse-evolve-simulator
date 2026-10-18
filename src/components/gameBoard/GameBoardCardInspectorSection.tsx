@@ -1,5 +1,5 @@
 import type { GameBoardCardDetailStatus } from '../../hooks/gameBoard/useGameBoardGeneratedCardDetails';
-import type { GameBoardCatalogStatus } from '../../hooks/gameBoard/useGameBoardCatalogResources';
+import type { GameBoardCatalogStatus } from '../../utils/gameBoard/gameBoardCatalogTypes';
 import React from 'react';
 import type { CardInstance } from '../Card';
 import GameBoardCardInspector from './GameBoardCardInspector';

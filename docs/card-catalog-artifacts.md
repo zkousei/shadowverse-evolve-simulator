@@ -1,11 +1,12 @@
 # カードカタログの生成・互換性検証
 
-DeckBuilderはビルドで生成した分割カタログを読み込みます。
-GameBoardは引き続き `public/cards_detailed.json` と `public/cards_preview.json` を読みます。
+DeckBuilderとGameBoardはビルドで生成した分割カタログを読み込みます。
+`public/cards_detailed.json` と `public/cards_preview.json` は生成・更新ツールの入力として維持します。
+未使用の旧HTTP取得APIと旧GameBoard Hookは削除済みです。元JSONの公開配信は維持しています。
 保存形式とP2P通信形式は変更していません。
 通常のビルドでは、後述の手順で検証済み生成物を追加します。
 
-GameBoardの次段階については[分割取得に向けた依存調査](game-board-catalog-migration.md)を参照してください。
+GameBoardの接続方式とテストについては[分割取得の移行記録](game-board-catalog-migration.md)を参照してください。
 
 ## 実行方法
 
@@ -113,7 +114,7 @@ npx vitest run src/utils/card/generatedCardCatalogParity.test.ts
 
 `src/utils/card/generatedCardCatalog.ts` に、生成物を読む独立した取得処理を追加しています。
 DeckBuilderは後述のHookを経由してこの取得処理を呼び出します。
-GameBoardの `loadCardCatalog` と保存・通信形式は維持します。
+GameBoardも生成カタログを利用します。保存・通信形式は維持しています。
 
 ```ts
 const catalog = await openGeneratedCardCatalog('/card-catalog');
@@ -154,7 +155,7 @@ const cardsAndRelated = await catalog.loadCardsWithRelated(['BP01-001']);
 ### 画面での利用
 
 DeckBuilderのローディング・再試行表示、連続操作時の古い結果の破棄、復元前の詳細取得、
-更新後の再読み込み案内は後述します。GameBoardの切り替えはこの段階では行いません。
+更新後の再読み込み案内は後述します。GameBoardの詳細取得・対戦を保持する復旧については移行記録を参照してください。
 この取得処理は既存方式への自動フォールバックを持ちません。呼び出し元が検証済みの成功結果だけを採用する設計です。
 
 主なテスト所有先は `src/utils/card/generatedCardCatalog.test.ts` です。
@@ -286,7 +287,7 @@ Vite previewにもカタログ限定のヘッダーと欠損時404を追加し�
   保存が失敗した場合は再読み込みを中止します。
 
 今回のローカルテストはVercelへの公開・実環境検証の代替にはなりません。
-GameBoardの取得先はこの段階では変更しません。
+GameBoardの画面接続と復旧フローは `game-board-catalog-migration.md` を参照してください。
 
 ### 配信準備のテスト所有先
 
