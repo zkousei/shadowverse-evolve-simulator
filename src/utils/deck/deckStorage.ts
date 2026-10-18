@@ -35,14 +35,14 @@ export type DeckBuilderDraftV1 = {
   sections: SavedDeckSections;
 };
 
-export type DeckBuilderSnapshot = {
+export type DeckBuilderSnapshot<Card = DeckBuilderCardData> = {
   name: string;
   ruleConfig: DeckRuleConfig;
-  deckState: DeckState;
+  deckState: DeckState<Card>;
 };
 
-export type RestoreDeckResult = {
-  snapshot: DeckBuilderSnapshot;
+export type RestoreDeckResult<Card = DeckBuilderCardData> = {
+  snapshot: DeckBuilderSnapshot<Card>;
   missingCardIds: string[];
 };
 
@@ -93,11 +93,11 @@ const compactCardsToRefs = (cards: DeckBuilderCardData[]): SavedDeckCardRef[] =>
   return Array.from(counts.entries()).map(([cardId, count]) => ({ cardId, count }));
 };
 
-const expandCardRefs = (
+const expandCardRefs = <Card extends { readonly id: string }>(
   refs: SavedDeckCardRef[],
-  cardCatalogById: ReadonlyMap<string, DeckBuilderCardData>
-): { cards: DeckBuilderCardData[]; missingCardIds: string[] } => {
-  const cards: DeckBuilderCardData[] = [];
+  cardCatalogById: ReadonlyMap<string, Card>
+): { cards: Card[]; missingCardIds: string[] } => {
+  const cards: Card[] = [];
   const missingCardIds = new Set<string>();
 
   refs.forEach(ref => {
@@ -225,10 +225,10 @@ export const restoreDeckState = (
   sections, new Map(availableCards.map(card => [card.id, card]))
 );
 
-const restoreDeckStateWithCatalog = (
+const restoreDeckStateWithCatalog = <Card extends { readonly id: string }>(
   sections: SavedDeckSections,
-  cardCatalogById: ReadonlyMap<string, DeckBuilderCardData>
-): { deckState: DeckState; missingCardIds: string[] } => {
+  cardCatalogById: ReadonlyMap<string, Card>
+): { deckState: DeckState<Card>; missingCardIds: string[] } => {
   const main = expandCardRefs(sections.main, cardCatalogById);
   const evolve = expandCardRefs(sections.evolve, cardCatalogById);
   const leader = expandCardRefs(sections.leader, cardCatalogById);
@@ -250,11 +250,16 @@ const restoreDeckStateWithCatalog = (
   };
 };
 
-export const createDeckSnapshot = (
+type DeckSnapshotFactory = {
+  (name: string, ruleConfig: DeckRuleConfig, deckState: DeckState): DeckBuilderSnapshot;
+  <Card>(name: string, ruleConfig: DeckRuleConfig, deckState: DeckState<Card>): DeckBuilderSnapshot<Card>;
+};
+
+export const createDeckSnapshot: DeckSnapshotFactory = <Card = DeckBuilderCardData>(
   name: string,
   ruleConfig: DeckRuleConfig,
-  deckState: DeckState
-): DeckBuilderSnapshot => ({
+  deckState: DeckState<Card>
+): DeckBuilderSnapshot<Card> => ({
   name: normalizeDeckName(name),
   ruleConfig,
   deckState,
@@ -397,10 +402,16 @@ export const clearDraft = (): void => {
   storage?.removeItem(DECK_BUILDER_DRAFT_KEY);
 };
 
+type SavedDeckRestorerFactory = {
+  // Preserve full-card result inference for existing callers, including [].
+  (availableCards: readonly DeckBuilderCardData[]): (deck: SavedDeckRecordV1) => RestoreDeckResult;
+  <Card extends { readonly id: string }>(availableCards: readonly Card[]): (deck: SavedDeckRecordV1) => RestoreDeckResult<Card>;
+};
+
 /** Reuse within one synchronous batch; create again for a refreshed catalog. */
-export const createSavedDeckRestorer = (availableCards: DeckBuilderCardData[]) => {
+export const createSavedDeckRestorer: SavedDeckRestorerFactory = <Card extends { readonly id: string }>(availableCards: readonly Card[]) => {
   const cardCatalogById = new Map(availableCards.map(card => [card.id, card]));
-  return (deck: SavedDeckRecordV1): RestoreDeckResult => {
+  return (deck: SavedDeckRecordV1): RestoreDeckResult<Card> => {
     const restored = restoreDeckStateWithCatalog(deck.sections, cardCatalogById);
     return {
       snapshot: createDeckSnapshot(deck.name, deck.ruleConfig, restored.deckState),

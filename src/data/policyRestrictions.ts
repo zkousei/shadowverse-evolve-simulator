@@ -1,4 +1,5 @@
-import { getDisplayDedupKey, type DeckBuilderCardData } from '../models/deckBuilderCard';
+import type { DeckRuleCard } from '../models/deckRuleCard';
+import { getDisplayDedupKey } from '../models/deckBuilderCard';
 import type { PolicyRestriction, RestrictionFormat } from '../models/deckRestriction';
 
 const createPolicyRestrictionKey = (
@@ -45,6 +46,6 @@ const POLICY_RESTRICTION_BY_FORMAT_AND_KEY = new Map(
 );
 
 export const getPolicyRestrictionForCard = (
-  card: DeckBuilderCardData,
+  card: DeckRuleCard,
   format: RestrictionFormat
 ): PolicyRestriction | undefined => POLICY_RESTRICTION_BY_FORMAT_AND_KEY.get(`${format}::${getDisplayDedupKey(card)}`);

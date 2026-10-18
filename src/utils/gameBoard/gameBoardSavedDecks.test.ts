@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
+import type { GeneratedCardIndexEntry } from '../card/generatedCardCatalog';
 import type { SavedDeckRecordV1 } from '../deck/deckStorage';
 import { buildLegalSavedDeckOptions, buildSavedDeckPickerOptions } from './gameBoardSavedDecks';
 
@@ -202,6 +203,62 @@ describe('gameBoardSavedDecks', () => {
 
 
 describe('saved deck picker options', () => {
+  const metadataCatalog = (): readonly GeneratedCardIndexEntry[] => Object.freeze([mainCard, leaderCard].map(card => {
+    const { image, ability_text, faces, ...metadata } = card;
+    void image; void ability_text; void faces;
+    return Object.freeze({ ...metadata, detail_group: card.id.split('-')[0] });
+  }));
+
+  it('accepts a frozen generated index without converting summaries to complete import cards', () => {
+    const cards = metadataCatalog();
+    const deck = createDeck();
+    expect(buildSavedDeckPickerOptions([deck], cards, t)).toEqual(buildSavedDeckPickerOptions([deck], [mainCard, leaderCard], t));
+    expectTypeOf<GeneratedCardIndexEntry>().not.toExtend<DeckBuilderCardData>();
+    // The full import API must still require full-card inputs with an image.
+    expectTypeOf<GeneratedCardIndexEntry>().not.toExtend<Parameters<typeof buildLegalSavedDeckOptions>[1][number]>();
+    expect(cards.every(card => !('image' in card) && !('ability_text' in card) && !('faces' in card))).toBe(true);
+  });
+
+  it.each(['main', 'evolve', 'leader', 'token'] as const)('preserves missing %s ID exclusion with frozen summary data', section => {
+    const valid = createDeck({ id: 'valid' });
+    const missing = createDeck({ id: 'missing', sections: { ...valid.sections, [section]: [{ cardId: 'MISSING', count: 1 }] } });
+    const result = buildSavedDeckPickerOptions([missing, valid], metadataCatalog(), t);
+    expect(result.map(option => option.deck.id)).toEqual(['valid']);
+    expect(result).toEqual(buildSavedDeckPickerOptions([missing, valid], [mainCard, leaderCard], t));
+  });
+
+  it('keeps existing validation and stored summaries for metadata-only inputs instead of trusting saved counts', () => {
+    const valid = createDeck({ id: 'valid' });
+    const invalid = createDeck({ id: 'too-small-after-copy-limit', ruleConfig: { ...valid.ruleConfig, format: 'constructed', selectedClass: 'ロイヤル' } });
+    const options = buildSavedDeckPickerOptions([invalid, valid], metadataCatalog(), t);
+    expect(options).toEqual([{ deck: valid, summary: 'Other', counts: 'Main 50 / Evolve 0 / Leader 1 / Token 0' }]);
+  });
+
+  it('never reads image, ability text or faces to determine picker eligibility', () => {
+    const unreadDetails: DeckBuilderCardData = { ...mainCard,
+      get image(): string { throw new Error('Image not needed for rules'); },
+      get ability_text(): string { throw new Error('Ability not needed for rules'); },
+      get faces(): never { throw new Error('Faces not needed for rules'); },
+    };
+    Object.freeze(unreadDetails);
+    expect(buildSavedDeckPickerOptions([createDeck()], [unreadDetails, leaderCard], t))
+      .toEqual(buildSavedDeckPickerOptions([createDeck()], metadataCatalog(), t));
+  });
+
+  it('keeps summary catalogs immutable and bounds indexing for 200 options with recursive token references', () => {
+    let scans = 0;
+    const source = Object.freeze({ ...metadataCatalog()[0], related_cards: Object.freeze([Object.freeze({ id: 'TOKEN-1', name: 'Token' })]) });
+    const token = Object.freeze({ id: 'TOKEN-1', name: 'Token', deck_section: 'token' as const, related_cards: Object.freeze([Object.freeze({ id: source.id, name: source.name })]) });
+    const unused = Object.freeze({ get id() { scans++; return 'UNUSED'; }, name: 'Unused' });
+    const catalog = Object.freeze([source, metadataCatalog()[1], token, unused]);
+    const options = buildSavedDeckPickerOptions(Array.from({ length: 200 }, (_, i) => createDeck({ id: `deck-${i}` })), catalog, t);
+    expect(options).toHaveLength(200);
+    expect(scans).toBeLessThanOrEqual(2);
+    expect(options.every(option => !('deckData' in option))).toBe(true);
+    expect(source.related_cards).toEqual([{ id: 'TOKEN-1', name: 'Token' }]);
+    expect(token.related_cards).toEqual([{ id: source.id, name: source.name }]);
+  });
+
   it('returns compact saved-record metadata without expanded card arrays', () => {
     const deck = createDeck();
     const complete = { ...mainCard, ability_text: 'DETAIL_NOT_FOR_LIST', faces: [{ side: 'back', name: 'Back', ability_text: 'BACK_NOT_FOR_LIST' }] };

@@ -109,7 +109,7 @@ export const getAvailableSubtypeTags = (cards: DeckBuilderCardData[]): string[] 
   uniqueSortedValues(cards.flatMap(card => getSubtypeTags(card)))
 );
 
-export const getDisplayDedupKey = (card: DeckBuilderCardData): string => [
+export const getDisplayDedupKey = (card: Readonly<Pick<DeckBuilderCardData, 'name' | 'deck_section' | 'type' | 'class'>>): string => [
   card.name,
   card.deck_section ?? '',
   card.type ?? '',
