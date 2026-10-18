@@ -8,13 +8,13 @@ from tools.card_data.measure_catalog import exported_deck_ids, measure_catalog
 
 def fixture():
     return build_catalog([
-        {'id': 'A-001', 'name': '同名', 'image': '', 'cost': 0, 'is_token': False,
-         'related_cards': [{'id': 'B-001'}], 'future_extension': {'x': 1}},
-        {'id': 'A-002', 'name': '同名', 'image': '', 'cost': False},
+        {'id': 'A-001', 'name': '同名', 'image': '', 'cost': '0', 'is_token': False,
+         'related_cards': [{'id': 'B-001', 'name': 'Related'}], 'future_extension': {'x': 1}},
+        {'id': 'A-002', 'name': '同名', 'image': '', 'cost': '-'},
         {'id': 'C-001', 'name': 'Unused', 'image': ''},
     ], [
         {'id': 'A-001', 'name': 'Ignored duplicate', 'image': ''},
-        {'id': 'B-001', 'name': '関連', 'image': '', 'related_cards': [{'id': 'A-001'}]},
+        {'id': 'B-001', 'name': '関連', 'image': '', 'related_cards': [{'id': 'A-001', 'name': 'Source'}]},
     ])
 
 

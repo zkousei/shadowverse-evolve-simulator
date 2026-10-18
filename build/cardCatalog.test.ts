@@ -45,7 +45,7 @@ test('emits freshly verified manifest, index and full details without modifying 
 
 test('fails the build on invalid source data instead of publishing an incomplete catalog', async () => {
   const root = fixture();
-  writeFileSync(join(root, 'public/cards_preview.json'), '[{"id":"PV01-001","name":"Preview","related_cards":[{"id":"MISSING-1"}]}]');
+  writeFileSync(join(root, 'public/cards_preview.json'), '[{"id":"PV01-001","name":"Preview","related_cards":[{"id":"MISSING-1","name":"Missing"}]}]');
   await expect(compile(root)).rejects.toThrow(/unresolved related card/);
 });
 
@@ -109,4 +109,18 @@ test('a second disk build replaces the previous catalog instead of accumulating 
   expect(readdirSync(join(root, 'dist/card-catalog/versions'))).toEqual([current.catalogVersion]);
   expect(JSON.parse(readFileSync(join(root, 'dist/card-catalog', current.details.BP02.file), 'utf8'))[0])
     .toMatchObject({ id: 'BP02-001', name: 'New' });
+});
+
+// Both index and detail-only errors must fail before any deployment is emitted.
+test.each([
+  { cost: 1 }, { ability_text: 123 }, { faces: [{ name: 'Back' }] },
+])('rejects reader-incompatible source data during Vite build: %j', async fields => {
+  const root = fixture();
+  writeFileSync(join(root, 'public/cards_detailed.json'), JSON.stringify([
+    { id: 'BP01-001', name: 'Test', ...fields },
+  ]));
+  mkdirSync(join(root, 'dist'));
+  writeFileSync(join(root, 'dist/index.html'), 'previous complete deployment');
+  await expect(compile(root, true)).rejects.toThrow(/BP01-001:/);
+  expect(readFileSync(join(root, 'dist/index.html'), 'utf8')).toBe('previous complete deployment');
 });

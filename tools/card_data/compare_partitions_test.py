@@ -9,13 +9,13 @@ from tools.card_data.measure_catalog import measure_catalog
 
 def fixture():
     return build_catalog([
-        {'id': 'A-001', 'name': '日本語', 'cost': 0, 'is_token': False,
-         'related_cards': [{'id': 'B-001'}], 'future': {'nested': [0, False, None]}},
-        {'id': 'A-002', 'name': 'Two', 'faces': [{'name': 'Back', 'ability_text': 'Details'}]},
+        {'id': 'A-001', 'name': '日本語', 'cost': '0', 'is_token': False,
+         'related_cards': [{'id': 'B-001', 'name': 'Related'}], 'future': {'nested': [0, False, None]}},
+        {'id': 'A-002', 'name': 'Two', 'faces': [{'side': 'back', 'name': 'Back', 'ability_text': 'Details'}]},
         {'id': 'A-003', 'name': 'Three'},
         {'id': 'A-004', 'name': 'Four'},
         {'id': 'A-005', 'name': 'Five'},
-        {'id': 'B-001', 'name': 'Related', 'related_cards': [{'id': 'A-001'}]},
+        {'id': 'B-001', 'name': 'Related', 'related_cards': [{'id': 'A-001', 'name': 'Source'}]},
     ], [])
 
 
