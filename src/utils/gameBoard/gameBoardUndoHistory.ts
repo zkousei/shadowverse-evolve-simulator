@@ -28,6 +28,7 @@ export const createGameStateCheckpoint = (
     guest: { ...state.guest },
     cards: state.cards.map(card => ({ ...card, counters: { ...card.counters } })),
     turnPlayer: state.turnPlayer,
+    ...(state.startingPlayer === undefined ? {} : { startingPlayer: state.startingPlayer }),
     turnCount: state.turnCount,
     phase: state.phase,
     gameStatus: state.gameStatus,

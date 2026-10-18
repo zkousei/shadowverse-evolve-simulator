@@ -35,6 +35,8 @@ const isSyncState = (value: unknown): value is SyncState => (
   isPlayerHud((value as SyncState).guest) &&
   Array.isArray((value as SyncState).cards) &&
   ((value as SyncState).turnPlayer === 'host' || (value as SyncState).turnPlayer === 'guest') &&
+  ((value as SyncState).startingPlayer === undefined ||
+    (value as SyncState).startingPlayer === 'host' || (value as SyncState).startingPlayer === 'guest') &&
   typeof (value as SyncState).turnCount === 'number' &&
   ['Start', 'Main', 'End'].includes((value as SyncState).phase) &&
   ['preparing', 'playing'].includes((value as SyncState).gameStatus) &&

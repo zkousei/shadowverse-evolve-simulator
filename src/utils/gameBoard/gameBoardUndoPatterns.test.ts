@@ -20,7 +20,7 @@ const undo = (state: SyncState, actor: PlayerRole, isSoloMode = false) =>
 // A test-owned field manifest also fails type checking if a restorable field
 // is added without extending the restoration assertions.
 const restorableFields = {
-  host: true, guest: true, cards: true, turnPlayer: true, turnCount: true,
+  host: true, guest: true, cards: true, turnPlayer: true, startingPlayer: true, turnCount: true,
   phase: true, gameStatus: true, tokenOptions: true, revealHandsMode: true, endStop: true,
 } satisfies Record<Exclude<keyof GameStateCheckpoint, 'revision'>, true>;
 const expectRestored = (before: SyncState, restored: SyncState, revision: number) => {
