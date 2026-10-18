@@ -45,8 +45,10 @@ test('restores saved-deck availability from the same retried catalog', async ({ 
   const input = page.locator('input[type="file"]');
   await expect(input).toBeEnabled();
   await input.setInputFiles(path.resolve('public/sample-decks/constructed-royal-sample.json'));
+  await expect(page.getByPlaceholder('Deck Name', { exact: true })).toHaveValue('Sample Constructed Royal');
   await page.getByRole('button', { name: 'Save', exact: true }).click();
-  await expect(page.getByText('"Sample Constructed Royal" was saved.')).toBeVisible();
+  // Catalog recovery needs a persisted deck, not the short-lived save toast.
+  await expect(page.getByText('Saved', { exact: true })).toBeVisible();
   await page.goto('/game?mode=solo');
   const retry = page.getByRole('button', { name: 'Retry card information', exact: true });
   await expect(retry).toBeVisible();
@@ -78,8 +80,10 @@ test('recovers a missing saved-deck detail group from an empty board without aut
   const input = page.locator('input[type="file"]');
   await expect(input).toBeEnabled();
   await input.setInputFiles(path.resolve('public/sample-decks/constructed-royal-sample.json'));
+  await expect(page.getByPlaceholder('Deck Name', { exact: true })).toHaveValue('Sample Constructed Royal');
   await page.getByRole('button', { name: 'Save', exact: true }).click();
-  await expect(page.getByText('"Sample Constructed Royal" was saved.')).toBeVisible();
+  // Catalog recovery needs a persisted deck, not the short-lived save toast.
+  await expect(page.getByText('Saved', { exact: true })).toBeVisible();
   blockDetails = true;
   await page.goto('/game?mode=solo');
   const open = page.getByRole('button', { name: 'Load Player 1 from My Decks', exact: true });
