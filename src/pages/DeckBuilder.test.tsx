@@ -13,7 +13,7 @@ import {
 import type { DeckBuilderCardData } from '../models/deckBuilderCard';
 import type { DeckRuleConfig } from '../models/deckRule';
 import enTranslations from '../i18n/en/translation.json';
-import { loadCardCatalog } from '../utils/card/cardCatalog';
+import { generatedCatalogFixture } from '../test/generatedCatalogFixture';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -37,11 +37,12 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-vi.mock('../utils/card/cardCatalog', () => ({
-  loadCardCatalog: vi.fn(),
+const { mockCatalogCards, mockOpenCatalog } = vi.hoisted(() => ({
+  mockCatalogCards: vi.fn<() => Promise<DeckBuilderCardData[]>>(), mockOpenCatalog: vi.fn(),
 }));
-
-const mockLoadCardCatalog = vi.mocked(loadCardCatalog);
+vi.mock('../utils/card/generatedCardCatalog', () => ({
+  openGeneratedCardCatalog: mockOpenCatalog,
+}));
 
 const mockCards: DeckBuilderCardData[] = [
   {
@@ -280,8 +281,10 @@ describe('DeckBuilder', { timeout: 20000 }, () => {
       leaderCards: [mockCards[4]],
       tokenDeck: [mockCards[6]],
     };
-    mockLoadCardCatalog.mockReset();
-    mockLoadCardCatalog.mockResolvedValue(mockCards);
+    mockOpenCatalog.mockReset();
+    mockOpenCatalog.mockImplementation(async () => generatedCatalogFixture(await mockCatalogCards()));
+    mockCatalogCards.mockReset();
+    mockCatalogCards.mockResolvedValue(mockCards);
   });
 
   afterEach(() => {
@@ -587,7 +590,7 @@ describe('DeckBuilder', { timeout: 20000 }, () => {
       product_name: 'Promo Pack',
     };
 
-    mockLoadCardCatalog.mockResolvedValue([...mockCards, duplicateAlpha]);
+    mockCatalogCards.mockResolvedValue([...mockCards, duplicateAlpha]);
 
     render(<DeckBuilder />);
 
@@ -1014,7 +1017,7 @@ describe('DeckBuilder', { timeout: 20000 }, () => {
       product_name: 'Promo Pack',
     };
 
-    mockLoadCardCatalog.mockResolvedValue([...mockCards, duplicateAlpha]);
+    mockCatalogCards.mockResolvedValue([...mockCards, duplicateAlpha]);
 
     render(<DeckBuilder />);
     expect((await screen.findAllByText('Alpha Knight')).length).toBeGreaterThan(0);
@@ -1036,7 +1039,7 @@ describe('DeckBuilder', { timeout: 20000 }, () => {
   });
 
   it('updates pagination controls between the first and last library pages', async () => {
-    mockLoadCardCatalog.mockResolvedValue(createUniqueCards(mockCards[0], 55));
+    mockCatalogCards.mockResolvedValue(createUniqueCards(mockCards[0], 55));
 
     await renderLoadedDeckBuilder('Alpha Knight 1');
 
@@ -1266,7 +1269,7 @@ describe('DeckBuilder', { timeout: 20000 }, () => {
     }));
 
     let resolveCatalog!: (cards: DeckBuilderCardData[]) => void;
-    mockLoadCardCatalog.mockReturnValue(new Promise((resolve) => {
+    mockCatalogCards.mockReturnValue(new Promise((resolve) => {
       resolveCatalog = resolve;
     }));
 
@@ -1295,8 +1298,8 @@ describe('DeckBuilder', { timeout: 20000 }, () => {
   });
 
   it.each([
-    ['fails to load', () => mockLoadCardCatalog.mockRejectedValue(new Error('catalog unavailable'))],
-    ['loads an empty result', () => mockLoadCardCatalog.mockResolvedValue([])],
+    ['fails to load', () => mockCatalogCards.mockRejectedValue(new Error('catalog unavailable'))],
+    ['loads an empty result', () => mockCatalogCards.mockResolvedValue([])],
   ])('keeps catalog-dependent actions disabled when the card catalog %s', async (_scenario, configureCatalogLoad) => {
     seedSavedDecks(1, () => ({
       mainDeck: [mockCards[0]],
@@ -1370,7 +1373,7 @@ describe('DeckBuilder', { timeout: 20000 }, () => {
     const modal = screen.getByRole('dialog', { name: 'My Decks' });
 
     vi.useFakeTimers();
-    fireEvent.click(within(modal).getByRole('button', { name: 'Export' }));
+    await act(async () => { fireEvent.click(within(modal).getByRole('button', { name: 'Export' })); });
 
     expect(createObjectURL).toHaveBeenCalled();
     expect(clickSpy).toHaveBeenCalled();
@@ -1468,7 +1471,7 @@ describe('DeckBuilder', { timeout: 20000 }, () => {
   });
 
   it('imports a DeckLog deck from a public code or URL', async () => {
-    mockLoadCardCatalog.mockResolvedValue(mockCards);
+    mockCatalogCards.mockResolvedValue(mockCards);
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
@@ -1520,7 +1523,7 @@ describe('DeckBuilder', { timeout: 20000 }, () => {
   });
 
   it('closes the DeckLog import modal after a successful import and reopens with an empty input', async () => {
-    mockLoadCardCatalog.mockResolvedValue(mockCards);
+    mockCatalogCards.mockResolvedValue(mockCards);
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
@@ -2235,4 +2238,72 @@ describe('DeckBuilder', { timeout: 20000 }, () => {
     expect(within(reopenedModal).queryByText('Search Alpha')).not.toBeInTheDocument();
     expect(within(reopenedModal).getByText('Search Beta')).toBeInTheDocument();
   });
+
+  it('keeps the current deck unchanged when import detail acquisition fails', async () => {
+    const reader = generatedCatalogFixture(mockCards);
+    mockOpenCatalog.mockResolvedValueOnce(reader);
+    await renderLoadedDeckBuilder();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Deck format' }), { target: { value: 'other' } });
+    fireEvent.change(screen.getByPlaceholderText('Deck Name'), { target: { value: 'Existing working deck' } });
+    fireEvent.click(within(screen.getByAltText('Alpha Knight').closest('.glass-panel') as HTMLElement).getByTitle('Add to Main Deck'));
+    vi.spyOn(reader, 'loadCardsWithRelated').mockRejectedValueOnce(new Error('404'));
+    vi.spyOn(window, 'alert').mockImplementation(() => {});
+    stubFileReaderWithImportedDeck();
+    fireEvent.change(document.querySelector('input[type="file"]')!, { target: { files: [new File(['{}'], 'deck.json')] } });
+    await screen.findByText(enTranslations.deckBuilder.catalog.failed);
+    expect(screen.getByPlaceholderText('Deck Name')).toHaveValue('Existing working deck');
+    expect(screen.getByText('1/50')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(listSavedDecks()[0].sections.main).toEqual([{ cardId: 'BP01-001', count: 1 }]);
+    expect(listSavedDecks()[0].name).toBe('Existing working deck');
+  });
+
+  it('does not apply an old import after Reset Builder', async () => {
+    const reader = generatedCatalogFixture(mockCards);
+    mockOpenCatalog.mockResolvedValueOnce(reader);
+    await renderLoadedDeckBuilder();
+    let resolve!: (cards: Awaited<ReturnType<typeof reader.loadCardsWithRelated>>) => void;
+    const full = await reader.loadCardsWithRelated(mockCards.map(card => card.id));
+    vi.spyOn(reader, 'loadCardsWithRelated').mockReturnValueOnce(new Promise(yes => { resolve = yes; }));
+    stubFileReaderWithImportedDeck();
+    fireEvent.change(document.querySelector('input[type="file"]')!, { target: { files: [new File(['{}'], 'deck.json')] } });
+    await screen.findByText(enTranslations.deckBuilder.catalog.processing);
+    await act(async () => { await Promise.resolve(); });
+    fireEvent.click(screen.getByRole('button', { name: 'Reset Builder' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, Reset' }));
+    await act(async () => resolve(full));
+    expect(screen.getByPlaceholderText('Deck Name')).toHaveValue('');
+    expect(screen.getByText('0/50')).toBeInTheDocument();
+    expect(loadDraft()).toBeNull();
+  });
+
+  it('hides unready page details and can retry the failed page without losing the deck', async () => {
+    const cards = createUniqueCards(mockCards[0], 55, { related_cards: [] });
+    const reader = generatedCatalogFixture(cards);
+    mockOpenCatalog.mockResolvedValueOnce(reader);
+    await renderLoadedDeckBuilder('Alpha Knight 1');
+    const load = reader.loadCardsWithRelated;
+    vi.spyOn(reader, 'loadCardsWithRelated').mockRejectedValueOnce(new Error('404')).mockImplementation(load);
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await screen.findByText(enTranslations.deckBuilder.catalog.failed);
+    expect(screen.queryByText('Alpha Knight 1')).not.toBeInTheDocument();
+    expect(screen.queryByText('Alpha Knight 51')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    await screen.findByText('Alpha Knight 51');
+    expect(screen.getByText('0/50')).toBeInTheDocument();
+    expect(screen.queryByText(enTranslations.deckBuilder.catalog.failed)).not.toBeInTheDocument();
+  });
+
+
+  it('keeps the reload action available after a draft storage failure', async () => {
+    mockOpenCatalog.mockRejectedValueOnce(new Error('Unavailable'));
+    render(<DeckBuilder />);
+    await screen.findByText(enTranslations.deckBuilder.catalog.failed);
+    fireEvent.change(screen.getByPlaceholderText('Deck Name'), { target: { value: 'Early edit' } });
+    vi.spyOn(window.localStorage, 'setItem').mockImplementation(() => { throw new Error('Quota'); });
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft and reload' }));
+    expect(screen.getByText(enTranslations.deckBuilder.catalog.storageFailed)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save draft and reload' })).toBeEnabled();
+  });
+
 });

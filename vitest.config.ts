@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react';
 const domDependentUtilityTests = [
   'src/utils/deck/deckFile.test.ts',
   'src/utils/deck/deckStorage.test.ts',
+  'src/utils/deckBuilder/reloadDeckBuilder.test.ts',
   'src/utils/deckBuilder/deckBuilderPersistence.test.ts',
   'src/utils/gameBoard/gameBoardDismissals.test.ts',
 ];

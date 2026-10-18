@@ -8,6 +8,13 @@
     }
   },
   "deckBuilder": {
+    "catalog": {
+      "failed": "Card information could not be loaded. Your deck has not been changed. Retry or reload to get the latest information.",
+      "processing": "Loading card information…",
+      "reload": "Save draft and reload",
+      "retry": "Retry",
+      "storageFailed": "The draft could not be saved. This page has not been reloaded. Check browser storage before reloading."
+    },
     "restriction": {
       "limited": "Limited to {{limit}}",
       "banned": "Banned",

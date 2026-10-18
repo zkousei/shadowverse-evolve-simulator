@@ -5,7 +5,7 @@ import { leaderZoneCards, zoneCards } from './helpers/gameBoard';
 
 test.use({ locale: 'en-US' });
 
-test('shares pending catalog requests and restores a saved deck after navigating to solo play', async ({ page }) => {
+test('DeckBuilder uses generated data and GameBoard shares pending legacy requests when restoring a saved deck', async ({ page }) => {
   const requests = { '/cards_detailed.json': 0, '/cards_preview.json': 0 };
   let holdResponses = false;
   let releaseResponses!: () => void;
@@ -28,7 +28,7 @@ test('shares pending catalog requests and restores a saved deck after navigating
     await fileInput.setInputFiles(path.resolve(process.cwd(), 'public/sample-decks/constructed-royal-sample.json'));
     await page.getByRole('button', { name: 'Save', exact: true }).click();
     await expect(page.getByText('"Sample Constructed Royal" was saved.')).toBeVisible();
-    expect(requests).toEqual({ '/cards_detailed.json': 1, '/cards_preview.json': 1 });
+    expect(requests).toEqual({ '/cards_detailed.json': 0, '/cards_preview.json': 0 });
 
     holdResponses = true;
     await page.getByRole('button', { name: 'Play', exact: true }).click();
@@ -47,7 +47,7 @@ test('shares pending catalog requests and restores a saved deck after navigating
     await expect(zoneCards(page, 'mainDeck-host')).toHaveCount(40);
     await expect(zoneCards(page, 'evolveDeck-host')).toHaveCount(10);
     await expect(leaderZoneCards(page, 'host')).toHaveCount(1);
-    expect(requests).toEqual({ '/cards_detailed.json': 2, '/cards_preview.json': 2 });
+    expect(requests).toEqual({ '/cards_detailed.json': 1, '/cards_preview.json': 1 });
   } finally {
     releaseResponses();
   }

@@ -15,6 +15,7 @@ import { createDefaultDeckRuleConfig, getImportedDeckRuleConfig } from '../../mo
 import type { DeckState } from '../../models/deckState';
 import { mergeCardCatalogs } from './cardCatalog';
 import { openGeneratedCardCatalog } from './generatedCardCatalog';
+import { createGeneratedDeckBuilderCatalog } from '../deckBuilder/generatedDeckBuilderCatalog';
 import { buildDeckBuilderCatalogView, type DeckBuilderCatalogFilters } from '../deckBuilder/deckBuilderCatalog';
 import { getDeckValidationMessages, sanitizeImportedDeckState } from '../deckBuilder/deckBuilderRules';
 import {
@@ -66,6 +67,9 @@ describe('generated card catalog compatibility', () => {
       expect(request).toHaveBeenCalledTimes(2);
       const details = await catalog.loadCards(original.map(card => card.id));
       expect(details).toEqual(original);
+      const adapter = createGeneratedDeckBuilderCatalog(catalog);
+      expect(await adapter.loadAvailable(original.map(card => card.id))).toEqual(original);
+      expect(adapter.knownCards()).toEqual(original);
       expect(request).toHaveBeenCalledTimes(2 + new Set(index.map(entry => entry.detail_group)).size);
       const source = original.find(card => card.related_cards?.length);
       expect(source).toBeDefined();
