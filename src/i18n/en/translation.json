@@ -567,6 +567,8 @@
       "noAbilityText": "No detailed ability text found for this card."
     },
     "deckPicker": {
+      "loading": "Loading saved deck…",
+      "loadFailed": "Could not load the saved deck. Try loading it again.",
       "title": "Load from My Decks",
       "subtitle": "Legal saved decks for {{label}}",
       "close": "Close",

@@ -1,8 +1,13 @@
-import { useLayoutEffect, useRef, type RefObject } from 'react';
+import { useCallback, useLayoutEffect, useRef, type RefObject } from 'react';
 import type { PlayerRole, SyncState } from '../../types/game';
 import type { DispatchableGameSyncEvent } from './useGameBoardLogic';
 import { buildImportedDeckPayload, type ImportableDeckData } from '../../utils/gameBoard/gameBoardDeckActions';
 import { canImportDeck } from '../../utils/gameBoard/gameRules';
+
+export type PendingDeckImport = {
+    isCurrent: () => boolean;
+    cancel: () => void;
+};
 
 interface UseGameBoardSetupActionsArgs {
     canInteract: boolean;
@@ -68,6 +73,30 @@ export function useGameBoardSetupActions({
         });
     };
 
+    const beginDeckImport = useCallback((target: PlayerRole): PendingDeckImport | null => {
+        const current = latest.current;
+        const state = current.gameStateRef?.current ?? current.gameState;
+        if (!mounted.current || !current.canInteract || !canImportDeck(state, target)) return null;
+        const request = { context: getDeckImportContext(state, target) };
+        const startingRole = current.role;
+        pendingReads.current.set(target, request);
+        const cancel = () => {
+            if (pendingReads.current.get(target) === request) pendingReads.current.delete(target);
+        };
+        return {
+            cancel,
+            isCurrent: () => {
+                const active = latest.current;
+                const currentState = active.gameStateRef?.current ?? active.gameState;
+                const valid = mounted.current && pendingReads.current.get(target) === request &&
+                    active.canInteract && active.role === startingRole && canImportDeck(currentState, target) &&
+                    getDeckImportContext(currentState, target) === request.context;
+                if (!valid) cancel();
+                return valid;
+            },
+        };
+    }, []);
+
     const handleDeckUpload = (event: React.ChangeEvent<HTMLInputElement>, targetRole?: PlayerRole) => {
         const current = latest.current;
         const target = targetRole ?? current.role;
@@ -79,37 +108,32 @@ export function useGameBoardSetupActions({
         const file = event.target.files?.[0];
         if (!file) return;
         event.target.value = '';
-        const request = { context: getDeckImportContext(state, target) };
-        pendingReads.current.set(target, request);
+        const request = beginDeckImport(target);
+        if (!request) return;
         const reader = new FileReader();
         reader.onload = (e) => {
-            const active = latest.current;
-            const currentState = active.gameStateRef?.current ?? active.gameState;
-            if (!mounted.current || pendingReads.current.get(target) !== request || !active.canInteract ||
-                !canImportDeck(currentState, target) || getDeckImportContext(currentState, target) !== request.context) {
-                if (pendingReads.current.get(target) === request) pendingReads.current.delete(target);
-                return;
-            }
+            if (!request.isCurrent()) return;
             try {
                 const data = JSON.parse(e.target?.result as string) as ImportableDeckData;
                 importDeckData(data, target);
             } catch {
                 alert(latest.current.t('deckBuilder.alerts.importFailed'));
             } finally {
-                if (pendingReads.current.get(target) === request) pendingReads.current.delete(target);
+                request.cancel();
             }
         };
         reader.readAsText(file);
     };
 
     return {
+        beginDeckImport,
         confirmResetGame,
         importDeckData,
         handleDeckUpload,
     };
 }
 // Other players' imports/revisions and presentation-only image/name updates
-// must not cancel this player's file read. Avoid serializing custom image data.
+// must not cancel this player's pending import. Avoid serializing custom image data.
 const getDeckImportContext = (state: SyncState, target: PlayerRole): string => JSON.stringify({
     cards: state.cards.filter(card => card.owner === target).map(({ image, name, ...card }) => {
         void image; void name;

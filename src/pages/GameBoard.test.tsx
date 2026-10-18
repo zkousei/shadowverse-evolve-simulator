@@ -317,6 +317,7 @@ const buildMockGameBoardLogic = (
     executeMulligan: vi.fn(),
     drawCard: vi.fn(),
     handleExtractCard: vi.fn(),
+    beginDeckImport: vi.fn(() => ({ isCurrent: () => true, cancel: vi.fn() })),
     confirmResetGame: vi.fn(),
     handleDeckUpload: vi.fn(),
     importDeckData: vi.fn(),
@@ -2350,12 +2351,12 @@ describe('GameBoard', () => {
     expect(within(picker).getByText('Beta Deck')).toBeInTheDocument();
     fireEvent.click(within(picker).getByRole('button', { name: 'Load' }));
 
-    expect(importDeckData).toHaveBeenCalledWith({
+    await waitFor(() => expect(importDeckData).toHaveBeenCalledWith({
       mainDeck: [catalogCards[0]],
       evolveDeck: [],
       leaderCards: [],
       tokenDeck: [],
-    }, 'host');
+    }, 'host'));
   });
 
   it('closes the saved deck picker when the backdrop is clicked', async () => {
