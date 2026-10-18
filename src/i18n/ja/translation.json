@@ -112,7 +112,14 @@
       "promptConstructed": "構築戦(タイトル)またはクラス戦を有効にすると、デッキルールに基づいたフィルタリングが行われます。",
       "promptCrossover": "クロスオーバーを有効にすると、2つのクラスのカードを使用できるようになります。",
       "resolveBeforeExport": "エクスポートする前にデッキルールの不備を解消してください。",
-      "legalReady": "このデッキは適法で、エクスポート可能です。"
+      "legalReady": "このデッキは適法で、エクスポート可能です。",
+      "legalSummary": "適法",
+      "illegalSummary": "不備あり（{{count}}件）",
+      "validationStatusAria": "デッキのルール適合状態",
+      "validationDetails": "詳細",
+      "validationDetailsAria": "デッキルールの確認内容",
+      "validationDialogTitle": "デッキルールの確認",
+      "validationResults": "確認結果"
     },
     "modals": {
       "deleteAllDecks": {

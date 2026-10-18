@@ -1,4 +1,5 @@
 import React from 'react';
+import DeckBuilderValidationStatus from './DeckBuilderValidationStatus';
 import { useTranslation } from 'react-i18next';
 import { CLASS, CONSTRUCTED_CLASS_VALUES, type CardClass } from '../../models/class';
 import { DECK_FORMAT_VALUES, type DeckFormat, type DeckRuleConfig } from '../../models/deckRule';
@@ -18,12 +19,6 @@ type DeckBuilderRulePanelProps = {
   onCrossoverClassChange: (index: 0 | 1, nextValue: string) => void;
 };
 
-type DeckIssueParams = Record<string, string | number> & {
-  deck?: string;
-  deckI18nKey?: string;
-  format?: string;
-};
-
 const fieldStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
@@ -41,26 +36,6 @@ const selectStyle: React.CSSProperties = {
 const getClassTranslationKey = (cardClass: CardClass): string => (
   Object.entries(CLASS).find(([, value]) => value === cardClass)?.[0].toLowerCase() ?? 'neutral'
 );
-
-const buildTranslatedDeckIssueParams = (
-  params: DeckValidationMessage['params'],
-  t: ReturnType<typeof useTranslation>['t']
-): DeckIssueParams => {
-  const nextParams: DeckIssueParams = { ...(params ?? {}) };
-
-  if (nextParams.deckI18nKey) {
-    nextParams.deck = t(nextParams.deckI18nKey);
-  }
-
-  if (
-    typeof nextParams.format === 'string'
-    && ['constructed', 'crossover', 'other'].includes(nextParams.format)
-  ) {
-    nextParams.format = t(`deckBuilder.deckRule.formats.${nextParams.format}`);
-  }
-
-  return nextParams;
-};
 
 const DeckBuilderRulePanel: React.FC<DeckBuilderRulePanelProps> = ({
   deckRuleConfig,
@@ -233,30 +208,7 @@ const DeckBuilderRulePanel: React.FC<DeckBuilderRulePanelProps> = ({
             {t('deckBuilder.deckRule.promptCrossover')}
           </p>
         )}
-        {deckIssueMessages.length > 0 && (
-          <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: '0.75rem' }}>
-            <p style={{ margin: '0 0 0.5rem 0', color: '#ef4444', fontSize: '0.875rem', fontWeight: 700 }}>
-              {t('deckBuilder.deckRule.resolveBeforeExport')}
-            </p>
-            <ul style={{ margin: 0, paddingLeft: '1rem', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
-              {deckIssueMessages.map((message) => {
-                const params = buildTranslatedDeckIssueParams(message.params, t);
-                return (
-                  <li key={message.id + JSON.stringify(params)} style={{ marginBottom: '0.25rem' }}>
-                    {t(message.id, params)}
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        )}
-        {deckIssueMessages.length === 0 && (
-          <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: '0.75rem' }}>
-            <p style={{ margin: 0, color: 'var(--vivid-green-cyan)', fontSize: '0.875rem', fontWeight: 700 }}>
-              {t('deckBuilder.deckRule.legalReady')}
-            </p>
-          </div>
-        )}
+        <DeckBuilderValidationStatus messages={deckIssueMessages} />
       </div>
     </>
   );

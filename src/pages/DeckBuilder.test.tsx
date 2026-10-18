@@ -303,7 +303,9 @@ describe('DeckBuilder', { timeout: 20000 }, () => {
     const constructedClass = screen.getByRole('combobox', { name: 'Constructed class' });
 
     expect(screen.getByText('Select a class or title to enable constructed deck building.')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Deck validation details' }));
     expect(screen.getByText('Resolve these issues before exporting.')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(within(constructedClass).queryByRole('option', { name: 'Neutral' })).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByPlaceholderText('Search cards by name...'), {
@@ -993,6 +995,7 @@ describe('DeckBuilder', { timeout: 20000 }, () => {
     const leaderSection = screen.getByRole('heading', { name: /^Leader/ }).nextElementSibling as HTMLElement;
     expect(within(leaderSection).getByText('Leader Luna')).toBeInTheDocument();
     expect(within(leaderSection).getByText('Leader Merlin')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Deck validation details' }));
     expect(screen.getByText('Main Deck must contain at least 40 cards (0/40).')).toBeInTheDocument();
   });
 
@@ -1003,6 +1006,7 @@ describe('DeckBuilder', { timeout: 20000 }, () => {
 
     const exportButton = screen.getByRole('button', { name: /Export/i });
     expect(exportButton).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Deck validation details' }));
     expect(screen.getByText('Constructed decks require a selected class.')).toBeInTheDocument();
     expect(screen.getByText('Main Deck must contain at least 40 cards (0/40).')).toBeInTheDocument();
     expect(screen.getByText('This Constructed deck requires exactly 1 leader(s) (0/1).')).toBeInTheDocument();
@@ -1267,7 +1271,7 @@ describe('DeckBuilder', { timeout: 20000 }, () => {
 
     await waitFor(() => {
       expect(screen.getByDisplayValue('Imported Legal Crossover')).toBeInTheDocument();
-      expect(screen.getByText('This deck is legal and ready to export.')).toBeInTheDocument();
+      expect(screen.getByRole('status', { name: 'Deck legality' })).toHaveTextContent('Legal');
       expect(screen.getByRole('button', { name: /Export/i })).toBeEnabled();
     });
 

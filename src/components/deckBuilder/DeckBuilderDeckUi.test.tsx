@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import DeckBuilderDeckControls from './DeckBuilderDeckControls';
 import DeckBuilderDeckHeader from './DeckBuilderDeckHeader';
@@ -125,6 +125,58 @@ describe('DeckBuilder extracted UI components - deck', () => {
     expect(onOpenResetBuilderDialog).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps issue details in a dismissible dialog and updates its live contents', () => {
+    const props = {
+      deckRuleConfig: createDefaultDeckRuleConfig(), titles: [], crossoverClassOptionsA: [], crossoverClassOptionsB: [],
+      isRuleReady: true, onDeckFormatChange: vi.fn(), onDeckIdentityTypeChange: vi.fn(),
+      onConstructedClassChange: vi.fn(), onConstructedTitleChange: vi.fn(), onCrossoverClassChange: vi.fn(),
+    };
+    const issue = { id: 'deckBuilder.validation.mainDeckTooSmall', params: { expected: 40, actual: 39 } };
+    const { rerender } = render(<DeckBuilderRulePanel {...props} deckIssueMessages={[issue]} />);
+    expect(screen.getByRole('status', { name: 'Deck legality' })).toHaveTextContent('Illegal · Issues: 1');
+    expect(screen.queryByText('Main Deck must contain at least 40 cards (39/40).')).not.toBeInTheDocument();
+    const details = screen.getByRole('button', { name: 'Deck validation details' });
+    fireEvent.click(details);
+    const dialog = screen.getByRole('dialog', { name: 'Deck validation' });
+    expect(within(dialog).getByText('Main Deck must contain at least 40 cards (39/40).')).toBeInTheDocument();
+    const close = within(dialog).getByRole('button', { name: 'Close' });
+    expect(close).toHaveFocus();
+    const results = within(dialog).getByRole('region', { name: 'Validation results' });
+    fireEvent.keyDown(close, { key: 'Tab' });
+    expect(results).toHaveFocus();
+    fireEvent.keyDown(results, { key: 'Tab', shiftKey: true });
+    expect(close).toHaveFocus();
+    rerender(<DeckBuilderRulePanel {...props} deckIssueMessages={[]} />);
+    expect(within(dialog).queryByRole('list')).not.toBeInTheDocument();
+    expect(within(dialog).getByText('This deck is legal and ready to export.')).toBeInTheDocument();
+    fireEvent.keyDown(close, { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(details).toHaveFocus();
+    fireEvent.click(details);
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(details).toHaveFocus();
+  });
+
+  it('translates every issue parameter and allows the details backdrop to dismiss', () => {
+    render(<DeckBuilderRulePanel
+      deckRuleConfig={createDefaultDeckRuleConfig()} titles={[]} crossoverClassOptionsA={[]} crossoverClassOptionsB={[]}
+      isRuleReady={true} deckIssueMessages={[
+        { id: 'deckBuilder.validation.limitExceeded', params: { deckI18nKey: 'deckBuilder.deckArea.mainDeck', actual: 51, expected: 50 } },
+        { id: 'deckBuilder.validation.invalidLeaderCount', params: { format: 'constructed', expected: 1, actual: 0 } },
+      ]} onDeckFormatChange={vi.fn()} onDeckIdentityTypeChange={vi.fn()} onConstructedClassChange={vi.fn()}
+      onConstructedTitleChange={vi.fn()} onCrossoverClassChange={vi.fn()} />);
+    expect(screen.getByRole('status', { name: 'Deck legality' })).toHaveTextContent('Illegal · Issues: 2');
+    fireEvent.click(screen.getByRole('button', { name: 'Deck validation details' }));
+    const dialog = screen.getByRole('dialog', { name: 'Deck validation' });
+    expect(within(dialog).getByText('Main Deck exceeds its limit (51/50).')).toBeInTheDocument();
+    expect(within(dialog).getByText('This Constructed deck requires exactly 1 leader(s) (0/1).')).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByText('Main Deck exceeds its limit (51/50).'));
+    expect(dialog).toBeInTheDocument();
+    fireEvent.click(dialog.parentElement!);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
   it('renders rule panel across constructed and crossover states', () => {
     const onDeckFormatChange = vi.fn();
     const onDeckIdentityTypeChange = vi.fn();
@@ -155,7 +207,7 @@ describe('DeckBuilder extracted UI components - deck', () => {
     );
 
     expect(screen.getByText('Select a class or title to enable constructed deck building.')).toBeInTheDocument();
-    expect(screen.getByText('This deck is legal and ready to export.')).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: 'Deck legality' })).toHaveTextContent('Legal');
 
     fireEvent.change(screen.getByRole('combobox', { name: 'Deck format' }), { target: { value: 'crossover' } });
     fireEvent.click(screen.getByRole('button', { name: 'Title' }));

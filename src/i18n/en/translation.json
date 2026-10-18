@@ -171,7 +171,14 @@
       "promptConstructed": "Select a class or title to enable constructed deck building.",
       "promptCrossover": "Select two different classes to enable crossover deck building.",
       "resolveBeforeExport": "Resolve these issues before exporting.",
-      "legalReady": "This deck is legal and ready to export."
+      "legalReady": "This deck is legal and ready to export.",
+      "legalSummary": "Legal",
+      "illegalSummary": "Illegal · Issues: {{count}}",
+      "validationStatusAria": "Deck legality",
+      "validationDetails": "Details",
+      "validationDetailsAria": "Deck validation details",
+      "validationDialogTitle": "Deck validation",
+      "validationResults": "Validation results"
     },
     "myDecks": {
       "title": "My Decks",
