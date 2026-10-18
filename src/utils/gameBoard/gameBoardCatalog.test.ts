@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
 import type { CardInstance } from '../../components/Card';
-import { buildGameBoardCatalogResources } from './gameBoardCatalog';
+import { buildGameBoardCatalogMetadata, buildGameBoardCatalogResources } from './gameBoardCatalog';
+import type { GeneratedCardIndexEntry } from '../card/generatedCardCatalog';
 import { resolveSelectedCardFaceDetail } from '../card/cardDetails';
 
 const catalogCard = (id: string, patch: Partial<DeckBuilderCardData> = {}): DeckBuilderCardData => ({
@@ -14,7 +15,10 @@ const runtimeCard = (card: DeckBuilderCardData, zone = 'field-host'): CardInstan
   isEvolveCard: card.deck_section === 'evolve',
 });
 
-describe('buildGameBoardCatalogResources', () => {
+describe.each([
+  { label: 'full catalog resources', build: buildGameBoardCatalogResources },
+  { label: 'catalog metadata', build: buildGameBoardCatalogMetadata },
+])('$label candidate contracts', ({ build }) => {
   it('uses an off-deck evolve family member to resolve a source without its own related IDs', () => {
     const base = catalogCard('BASE', { name: 'Knight' });
     const source = catalogCard('EVO-REPRINT', {
@@ -24,12 +28,12 @@ describe('buildGameBoardCatalogResources', () => {
       ...source, id: 'EVO-ORIGINAL', related_cards: [{ id: base.id, name: base.name }],
     });
     const board = [runtimeCard(base)];
-    const resources = buildGameBoardCatalogResources([base, source, familyMember]);
+    const resources = build([base, source, familyMember]);
     expect(resources.evolveAutoAttachResolver.resolveCandidates(runtimeCard(source, 'evolveDeck-host'), board))
       .toEqual([{ card: board[0], matchSource: 'reprint' }]);
     // Loading only the runtime IDs loses the family information even though
     // both cards participating in the action are present.
-    expect(buildGameBoardCatalogResources([base, source]).evolveAutoAttachResolver
+    expect(build([base, source]).evolveAutoAttachResolver
       .resolveCandidates(runtimeCard(source, 'evolveDeck-host'), board)).toEqual([]);
   });
 
@@ -45,7 +49,7 @@ describe('buildGameBoardCatalogResources', () => {
       ...source, id: 'EVO-OTHER', related_cards: [{ id: other.id, name: other.name }],
     });
     const board = [runtimeCard(base), runtimeCard(reprint)];
-    const resolve = (cards: DeckBuilderCardData[]) => buildGameBoardCatalogResources(cards)
+    const resolve = (cards: DeckBuilderCardData[]) => build(cards)
       .evolveAutoAttachResolver.resolveCandidates(runtimeCard(source, 'evolveDeck-host'), board);
     expect(resolve([base, reprint, other, source, conflicting]))
       .toEqual([{ card: board[0], matchSource: 'direct' }]);
@@ -62,13 +66,15 @@ describe('buildGameBoardCatalogResources', () => {
     const source = catalogCard('SUCCESS', { ...linked, id: 'SUCCESS', name: '開催大成功！' });
     const base = catalogCard('RUNNER', { related_cards: [{ id: linked.id, name: linked.name }] });
     const board = [runtimeCard(base)];
-    const resources = buildGameBoardCatalogResources([base, source, linked]);
+    const resources = build([base, source, linked]);
     expect(resources.fieldLinkAutoAttachResolver.resolveCandidates(runtimeCard(source, 'evolveDeck-host'), board))
       .toEqual(board);
-    expect(buildGameBoardCatalogResources([base, source]).fieldLinkAutoAttachResolver
+    expect(build([base, source]).fieldLinkAutoAttachResolver
       .resolveCandidates(runtimeCard(source, 'evolveDeck-host'), board)).toEqual([]);
   });
+});
 
+describe('buildGameBoardCatalogResources', () => {
   it('keeps complete ability text and selected-face stats separate from front-side base stats', () => {
     const card = catalogCard('DOUBLE', {
       atk: '2', hp: '3', ability_text: 'Front ability',
@@ -174,5 +180,28 @@ describe('buildGameBoardCatalogResources', () => {
     expect(resources.catalogById['preview-follower']?.catalog_status).toBe('preview');
     expect(resources.statLookup['preview-follower']).toMatchObject({ atk: 4, hp: 5 });
     expect(resources.detailLookup['preview-follower']?.image).toBe('');
+  });
+});
+
+describe('buildGameBoardCatalogMetadata', () => {
+  it('accepts a frozen generated index and exposes rules without manufacturing complete details', () => {
+    const related = Object.freeze([Object.freeze({ id: 'TOKEN', name: 'Token' })]);
+    const index: readonly GeneratedCardIndexEntry[] = Object.freeze([
+      Object.freeze({ id: 'MAIN', name: 'Main', detail_group: 'MAIN', atk: '2', hp: '3', related_cards: related }),
+      Object.freeze({ id: 'TOKEN', name: 'Token', detail_group: 'TOKEN', deck_section: 'token' as const,
+        card_kind_normalized: 'token_equipment' as const }),
+      Object.freeze({ id: 'TREASURE', name: 'Treasure', detail_group: 'TREASURE',
+        card_kind_normalized: 'token_treasure' as const }),
+      Object.freeze({ id: 'CREST', name: 'Crest', detail_group: 'CREST',
+        card_kind_normalized: 'token_crest' as const }),
+    ]);
+    const metadata = buildGameBoardCatalogMetadata(index);
+    expect(metadata.statLookup).toEqual({ MAIN: { atk: 2, hp: 3 } });
+    expect(metadata.tokenManualLinkCardIds).toEqual(new Set(['TOKEN', 'TREASURE']));
+    expect(metadata.fieldLinkCardIds).toEqual(new Set());
+    expect(metadata).not.toHaveProperty('detailLookup');
+    expect(metadata).not.toHaveProperty('catalogById');
+    expect(index[0].related_cards).toEqual([{ id: 'TOKEN', name: 'Token' }]);
+    expect(index.every(card => !('ability_text' in card) && !('faces' in card))).toBe(true);
   });
 });

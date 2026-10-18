@@ -1,5 +1,5 @@
 import type { CardInstance } from '../../components/Card';
-import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
+import type { GameBoardCatalogRuleCard } from './gameBoardCatalogTypes';
 
 export interface EvolveAutoAttachCandidate {
   card: CardInstance;
@@ -14,14 +14,14 @@ export interface EvolveAutoAttachResolver {
 const SUPPORTED_SOURCE_KINDS = new Set(['evolve_follower', 'evolve_amulet']);
 
 const buildCardIdentityKey = (
-  card: Pick<DeckBuilderCardData, 'name' | 'title' | 'card_kind_normalized'> | null | undefined
+  card: Pick<GameBoardCatalogRuleCard, 'name' | 'title' | 'card_kind_normalized'> | null | undefined
 ): string | null => {
   if (!card?.name) return null;
   return [card.name, card.title ?? '', card.card_kind_normalized ?? ''].join('::');
 };
 
 const buildEvolveFamilyKey = (
-  card: Pick<DeckBuilderCardData, 'name' | 'title' | 'card_kind_normalized' | 'deck_section'> | null | undefined
+  card: Pick<GameBoardCatalogRuleCard, 'name' | 'title' | 'card_kind_normalized' | 'deck_section'> | null | undefined
 ): string | null => {
   if (!card?.name) return null;
   return [card.name, card.title ?? '', card.card_kind_normalized ?? '', card.deck_section ?? ''].join('::');
@@ -32,8 +32,8 @@ const isAdvanceKind = (cardKindNormalized?: string): boolean => (
 );
 
 const getMainRelatedTargetIds = (
-  card: DeckBuilderCardData | undefined,
-  cardsById: Record<string, DeckBuilderCardData>
+  card: GameBoardCatalogRuleCard | undefined,
+  cardsById: Record<string, GameBoardCatalogRuleCard>
 ): string[] => {
   if (!card?.related_cards) return [];
 
@@ -48,10 +48,10 @@ const getMainRelatedTargetIds = (
 };
 
 const buildFamilyFallbackTargetKeysByCardId = (
-  cards: DeckBuilderCardData[],
-  cardsById: Record<string, DeckBuilderCardData>
+  cards: readonly GameBoardCatalogRuleCard[],
+  cardsById: Record<string, GameBoardCatalogRuleCard>
 ): Record<string, Set<string>> => {
-  const familyMembers = new Map<string, DeckBuilderCardData[]>();
+  const familyMembers = new Map<string, GameBoardCatalogRuleCard[]>();
 
   cards.forEach(card => {
     const familyKey = buildEvolveFamilyKey(card);
@@ -109,7 +109,7 @@ const getRootFieldCards = (boardCards: CardInstance[], owner: CardInstance['owne
 const isValidFieldTarget = (
   card: CardInstance,
   boardCards: CardInstance[],
-  cardsById: Record<string, DeckBuilderCardData>
+  cardsById: Record<string, GameBoardCatalogRuleCard>
 ): boolean => {
   if (card.isLeaderCard || card.isEvolveCard || card.isTokenCard) return false;
   if (boardCards.some(fieldCard => fieldCard.attachedTo === card.id && fieldCard.isEvolveCard)) return false;
@@ -131,9 +131,9 @@ const dedupeCandidates = (candidates: EvolveAutoAttachCandidate[]): EvolveAutoAt
 };
 
 export const buildEvolveAutoAttachResolver = (
-  cards: DeckBuilderCardData[]
+  cards: readonly GameBoardCatalogRuleCard[]
 ): EvolveAutoAttachResolver => {
-  const cardsById = cards.reduce<Record<string, DeckBuilderCardData>>((lookup, card) => {
+  const cardsById = cards.reduce<Record<string, GameBoardCatalogRuleCard>>((lookup, card) => {
     lookup[card.id] = card;
     return lookup;
   }, {});
