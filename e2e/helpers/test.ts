@@ -4,9 +4,9 @@ import { test as base } from '@playwright/test';
 // can hold page.goto's load event for 30s and can shift rectangles mid-gesture.
 // Use the app's existing fallback fonts consistently, before creating any page.
 export const test = base.extend({
-  context: async ({ context }, use) => {
+  context: async ({ context }, runTest) => {
     await context.route(/^https:\/\/fonts\.(?:googleapis|gstatic)\.com\//, route => route.abort());
-    await use(context);
+    await runTest(context);
   },
 });
 export * from '@playwright/test';
