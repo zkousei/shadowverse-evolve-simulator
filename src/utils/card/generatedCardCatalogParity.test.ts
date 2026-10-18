@@ -22,6 +22,7 @@ import {
   restoreDraftToSnapshot, restoreSavedDeckToSnapshot, serializeDeckState, type SavedDeckRecordV1,
 } from '../deck/deckStorage';
 import { buildGameBoardCatalogMetadata, buildGameBoardCatalogResources } from '../gameBoard/gameBoardCatalog';
+import { createGameBoardCatalogDetails } from '../gameBoard/gameBoardCatalogDetails';
 import { buildLegalSavedDeckOptions } from '../gameBoard/gameBoardSavedDecks';
 
 type IndexCard = DeckBuilderCardData & { detail_group: string };
@@ -76,6 +77,47 @@ describe('generated card catalog compatibility', () => {
       const related = await catalog.loadCardsWithRelated([source!.id]);
       expect(related.length).toBeGreaterThan(1);
       for (const entry of related) expect(entry).toEqual(original.find(card => card.id === entry.id));
+    } finally {
+      request.mockRestore();
+    }
+  });
+
+  it('loads GameBoard details from a pinned real reader and retries a failed group without partial success or extra downloads', async () => {
+    const first = original.find(card => card.faces?.length);
+    expect(first).toBeDefined();
+    const firstGroup = index.find(card => card.id === first!.id)!.detail_group;
+    const secondIndex = index.find(card => card.detail_group !== firstGroup)!;
+    const second = original.find(card => card.id === secondIndex.id)!;
+    const manifest = readJson<Manifest>(join(output!, 'manifest.json'));
+    const failedFile = manifest.details[secondIndex.detail_group].file;
+    let failOnce = true;
+    const request = vi.spyOn(globalThis, 'fetch').mockImplementation(async input => {
+      const path = String(input);
+      if (!path.startsWith('/catalog/')) throw new Error(`Unexpected request: ${path}`);
+      if (path === `/catalog/${failedFile}` && failOnce) {
+        failOnce = false;
+        return new Response('Removed or temporarily unavailable', { status: 404 });
+      }
+      return new Response(readFileSync(join(output!, path.slice('/catalog/'.length)), 'utf8'));
+    });
+    try {
+      const catalog = await openGeneratedCardCatalog('/catalog');
+      const service = createGameBoardCatalogDetails(catalog);
+      expect(request).toHaveBeenCalledTimes(2);
+      await expect(service.load([first!.id, second.id])).rejects.toThrow('404');
+      const result = await service.load([first!.id, 'EXTERNAL-CARD', second.id, first!.id]);
+      expect(result.version).toBe(catalog.version);
+      expect(result.cards).toEqual([first, second, first]);
+      expect(result.unknownIds).toEqual(['EXTERNAL-CARD']);
+      expect(result.detailLookup).toEqual({
+        [first!.id]: originalResources.detailLookup[first!.id],
+        [second.id]: originalResources.detailLookup[second.id],
+      });
+      expect(Object.isFrozen(result.cards)).toBe(true);
+      expect(result.cards.every(Object.isFrozen)).toBe(true);
+      expect(request).toHaveBeenCalledTimes(5); // manifest/index, two groups, one failed-group retry
+      expect((await service.load([first!.id, second.id])).unknownIds).toEqual([]);
+      expect(request).toHaveBeenCalledTimes(5);
     } finally {
       request.mockRestore();
     }
