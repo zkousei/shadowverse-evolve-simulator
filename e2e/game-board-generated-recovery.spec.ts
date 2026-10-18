@@ -1,15 +1,15 @@
 import { expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
-import { buildGeneratedCatalogFixture } from './helpers/generatedCatalog';
+import { asSchemaOneCatalogFixture, buildGeneratedCatalogFixture } from './helpers/generatedCatalog';
 import { startSoloGame, spawnDefaultToken, zoneCards } from './helpers/gameBoard';
 
 test.use({ locale: 'en-US' });
 
-test('detail delay and missing old groups do not block play, and explicit catalog recovery preserves the active board', async ({ page }) => {
+test('detail delay and missing schema 1 groups do not block play, and schema 2 recovery preserves the active board', async ({ page }) => {
   const deck = JSON.parse(readFileSync('e2e/fixtures/dummy-deck.json', 'utf8'));
   const cards = [...deck.mainDeck, ...deck.evolveDeck, deck.leaderCard, ...(deck.tokenDeck ?? [])]
     .map(card => ({ ...card, ability_text: 'Verified original ability' }));
-  let deployed = buildGeneratedCatalogFixture(cards);
+  let deployed = asSchemaOneCatalogFixture(buildGeneratedCatalogFixture(cards));
   const updated = buildGeneratedCatalogFixture(cards.map(card => ({ ...card, ability_text: 'Verified updated ability' })));
   let release!: () => void;
   const pending = new Promise<void>(resolve => { release = resolve; });
@@ -53,6 +53,8 @@ test('detail delay and missing old groups do not block play, and explicit catalo
     const cardIds = () => page.locator('[data-card-id]').evaluateAll(nodes => nodes.map(node => node.getAttribute('data-card-id')).sort());
     const before = await cardIds();
     await zoneCards(page, 'hand-host').last().click();
+    expect(deployed.manifest.schemaVersion).toBe(1);
+    expect(updated.manifest.schemaVersion).toBe(2);
     deployed = updated;
     missing = false;
     await inspector.getByRole('button', { name: 'Refresh card catalog', exact: true }).click();

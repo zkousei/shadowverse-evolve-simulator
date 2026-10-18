@@ -14,6 +14,7 @@ import { CLASS } from '../../models/class';
 import { createDefaultDeckRuleConfig, getImportedDeckRuleConfig } from '../../models/deckRule';
 import type { DeckState } from '../../models/deckState';
 import { mergeCardCatalogs } from './cardCatalog';
+import { decodeGeneratedCardIndex } from './generatedCardIndex';
 import { openGeneratedCardCatalog } from './generatedCardCatalog';
 import { createGeneratedDeckBuilderCatalog } from '../deckBuilder/generatedDeckBuilderCatalog';
 import { buildDeckBuilderCatalogView, type DeckBuilderCatalogFilters } from '../deckBuilder/deckBuilderCatalog';
@@ -130,7 +131,7 @@ describe('generated card catalog compatibility', () => {
       cwd: root, encoding: 'utf8',
     });
     const manifest = readJson<Manifest>(join(output, 'manifest.json'));
-    index = readJson<IndexCard[]>(join(output, manifest.index.file));
+    index = decodeGeneratedCardIndex(readJson<unknown>(join(output, manifest.index.file)), manifest.schemaVersion) as IndexCard[];
     const details = new Map<string, DeckBuilderCardData>();
     for (const group of Object.values(manifest.details)) {
       for (const card of readJson<DeckBuilderCardData[]>(join(output, group.file))) details.set(card.id, card);
@@ -144,7 +145,7 @@ describe('generated card catalog compatibility', () => {
       readJson<DeckBuilderCardData[]>(join(root, 'public/cards_detailed.json')),
       readJson<DeckBuilderCardData[]>(join(root, 'public/cards_preview.json')),
     );
-    expect(manifest.schemaVersion).toBe(1);
+    expect(manifest.schemaVersion).toBe(2);
     expect(manifest.counts.total).toBe(original.length);
     originalResources = buildGameBoardCatalogResources(original);
     restoredResources = buildGameBoardCatalogResources(restored);
@@ -156,6 +157,14 @@ describe('generated card catalog compatibility', () => {
     expect(restored).toEqual(original);
     expect(index.map(card => card.id)).toEqual(original.map(card => card.id));
     expect(index.some(card => 'ability_text' in card || 'faces' in card)).toBe(false);
+  });
+
+  it('expands compact rows to every original summary field, preserving values and missing keys', () => {
+    const fields = new Set(['id', 'name', 'image', 'class', 'title', 'type', 'subtype', 'rarity', 'product_name', 'cost', 'atk', 'hp', 'card_kind_normalized', 'deck_section', 'is_token', 'is_evolve_card', 'is_deck_build_legal', 'catalog_status', 'related_cards']);
+    expect(index).toEqual(original.map(card => ({
+      ...Object.fromEntries(Object.entries(card).filter(([key]) => fields.has(key))),
+      detail_group: card.id.split('-')[0],
+    })));
   });
 
   it('preserves all available library filter options', () => {

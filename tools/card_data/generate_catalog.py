@@ -12,7 +12,7 @@ import shutil
 import sys
 import tempfile
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 # Preserve rule/identity inputs conservatively. Only display details and unknown
 # extension fields are omitted here; complete records remain in detail files.
 INDEX_FIELDS = (
@@ -77,6 +77,39 @@ def index_card(card: dict) -> dict:
             'detail_group': group_for(card['id'])}
 
 
+INDEX_COLUMNS = (*INDEX_FIELDS, 'detail_group')
+
+
+def encode_index(index: list[dict]) -> dict:
+    """Only the wire representation changes; preserve value types and absence."""
+    rows = []
+    required = {'id', 'name', 'detail_group'}
+    for entry in index:
+        if not isinstance(entry, dict) or not required <= entry.keys() or entry.keys() - set(INDEX_COLUMNS):
+            raise ValueError('Invalid compact index fields')
+        mask = sum(1 << bit for bit, key in enumerate(INDEX_COLUMNS) if key in entry)
+        rows.append([mask, *(copy.deepcopy(entry[key]) for key in INDEX_COLUMNS if key in entry)])
+    return {'encoding': 'rows-v1', 'fields': list(INDEX_COLUMNS), 'rows': rows}
+
+
+def decode_index(value) -> list[dict]:
+    if (not isinstance(value, dict) or set(value) != {'encoding', 'fields', 'rows'}
+            or value['encoding'] != 'rows-v1' or value['fields'] != list(INDEX_COLUMNS)
+            or not isinstance(value['rows'], list)):
+        raise ValueError('Invalid compact index envelope')
+    result = []
+    required = 3 + (1 << (len(INDEX_COLUMNS) - 1))
+    for row in value['rows']:
+        if (not isinstance(row, list) or not row or type(row[0]) is not int
+                or row[0] < 0 or row[0] >= 1 << len(INDEX_COLUMNS) or row[0] & required != required):
+            raise ValueError('Invalid compact index mask')
+        keys = [key for bit, key in enumerate(INDEX_COLUMNS) if row[0] & (1 << bit)]
+        if len(row) != len(keys) + 1:
+            raise ValueError('Invalid compact index row length')
+        result.append(dict(zip(keys, copy.deepcopy(row[1:]))))
+    return result
+
+
 def reassemble_catalog(index: list[dict], details: dict[str, list[dict]]) -> list[dict]:
     validate_cards(index, 'index')
     by_id = {}
@@ -125,7 +158,10 @@ def build_catalog(released, preview) -> CatalogArtifacts:
         details.setdefault(group_for(card['id']), []).append(card)
     if json_bytes(reassemble_catalog(index, details)) != json_bytes(merged):
         raise ValueError('Catalog round-trip verification failed')
-    files = {'index.json': json_bytes(index)}
+    compact_index = encode_index(index)
+    if json_bytes(decode_index(compact_index)) != json_bytes(index):
+        raise ValueError('Compact index round-trip verification failed')
+    files = {'index.json': json_bytes(compact_index)}
     files.update({f'details/{group}.json': json_bytes(cards) for group, cards in sorted(details.items())})
     version = sha256(json_bytes({'schemaVersion': SCHEMA_VERSION,
                                 'files': {name: sha256(data) for name, data in files.items()}}))
@@ -143,6 +179,7 @@ def build_catalog(released, preview) -> CatalogArtifacts:
         'index': descriptor('index.json', len(index)), 'details': detail_descriptors,
         'report': {
             'fullCatalog': sizes(json_bytes(merged)),
+            'objectIndex': sizes(json_bytes(index)),
             'detailGroups': len(details),
             'detailBytes': sum(value['bytes'] for value in detail_descriptors.values()),
             'detailGzipBytes': sum(value['gzipBytes'] for value in detail_descriptors.values()),
@@ -204,7 +241,7 @@ def validate_output_manifest(root: Path) -> None:
         raise ValueError('Output contains an unrelated manifest')
     version = value.get('catalogVersion')
     index = value.get('index')
-    if (value.get('schemaVersion') != SCHEMA_VERSION
+    if (value.get('schemaVersion') not in (1, SCHEMA_VERSION)
             or not isinstance(version, str) or not re.fullmatch(r'[a-f0-9]{64}', version)
             or not isinstance(index, dict) or index.get('file') != f'versions/{version}/index.json'
             or not isinstance(value.get('details'), dict) or not isinstance(value.get('counts'), dict)):

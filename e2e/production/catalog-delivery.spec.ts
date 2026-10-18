@@ -1,10 +1,11 @@
+import { decodeGeneratedCardIndex } from '../../src/utils/card/generatedCardIndex';
 import { expect, test } from '@playwright/test';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import type { APIRequestContext } from '@playwright/test';
 
 type Descriptor = { file: string; bytes: number; sha256: string; count: number };
-const fetchVerified = async (request: APIRequestContext, descriptor: Descriptor) => {
+const fetchVerified = async (request: APIRequestContext, descriptor: Descriptor, schemaVersion?: number) => {
   const response = await request.get(`/card-catalog/${descriptor.file}`);
   expect(response.status()).toBe(200);
   expect(response.headers()['content-type']).toContain('application/json');
@@ -12,7 +13,8 @@ const fetchVerified = async (request: APIRequestContext, descriptor: Descriptor)
   const body = await response.body();
   expect(body.length).toBe(descriptor.bytes);
   expect(createHash('sha256').update(body).digest('hex')).toBe(descriptor.sha256);
-  const records = JSON.parse(body.toString());
+  const raw = JSON.parse(body.toString());
+  const records = schemaVersion ? decodeGeneratedCardIndex(raw, schemaVersion) : raw;
   expect(records).toHaveLength(descriptor.count);
   return records;
 };
@@ -23,7 +25,8 @@ test('serves verified summaries and complete details from the production build',
   expect(response.headers()['content-type']).toContain('application/json');
   expect(response.headers()['cache-control']).toBe('public, max-age=0, must-revalidate');
   const manifest = await response.json();
-  const summaries = await fetchVerified(request, manifest.index);
+  expect(manifest.schemaVersion).toBe(2);
+  const summaries = await fetchVerified(request, manifest.index, manifest.schemaVersion);
   const details = await fetchVerified(request, manifest.details[summaries[0].detail_group]);
   const original = JSON.parse(readFileSync('public/cards_detailed.json', 'utf8'));
   expect(details.find((card: { id: string }) => card.id === original[0].id))
