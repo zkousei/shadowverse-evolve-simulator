@@ -6,6 +6,7 @@ import {
   areDeckSnapshotsEqual,
   clearDraft,
   createDeckSnapshot,
+  createSavedDeckRestorer,
   DECK_BUILDER_DRAFT_KEY,
   deleteSavedDeck,
   duplicateSavedDeck,
@@ -272,4 +273,30 @@ describe('deckStorage', () => {
     expect(getSavedDeckById(saved.id)?.name).toBe('My Deck');
     expect(renameSavedDeck('missing-id', 'Ignored')).toBeNull();
   });
+  it('reuses the restoration catalog without sharing section arrays or missing-ID state', () => {
+    const record = saveDeck({ name: 'Batch', ruleConfig: otherRuleConfig,
+      deckState: { ...createEmptyDeckState(), mainDeck: [mockCards[0], mockCards[0]] } });
+    Object.freeze(record.sections.main);
+    const restore = createSavedDeckRestorer(mockCards);
+    const first = restore(record);
+    first.snapshot.deckState.mainDeck.pop();
+    const second = restore(record);
+    expect(second.snapshot.deckState.mainDeck).toEqual([mockCards[0], mockCards[0]]);
+    expect(second.snapshot.deckState.mainDeck[0]).toBe(mockCards[0]);
+    const missing = restore({ ...record, sections: {
+      main: [{ cardId: 'missing-x', count: 2 }], evolve: [{ cardId: 'missing-y', count: 1 }],
+      leader: [{ cardId: 'missing-x', count: 1 }], token: [{ cardId: 'missing-z', count: 1 }],
+    } });
+    expect(missing.missingCardIds).toEqual(['missing-x', 'missing-y', 'missing-z']);
+    expect(restore(record).missingCardIds).toEqual([]);
+  });
+
+  it('preserves last-ID-wins resolution in a reusable restoration index', () => {
+    const record = saveDeck({ name: 'Batch', ruleConfig: otherRuleConfig,
+      deckState: { ...createEmptyDeckState(), mainDeck: [mockCards[0]] } });
+    const complete = { ...mockCards[0], ability_text: 'Latest ability' };
+    const restore = createSavedDeckRestorer([mockCards[0], complete]);
+    expect(restore(record).snapshot.deckState.mainDeck[0]).toBe(complete);
+  });
+
 });
