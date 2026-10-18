@@ -5,6 +5,8 @@ GameBoardは引き続き `public/cards_detailed.json` と `public/cards_preview.
 保存形式とP2P通信形式は変更していません。
 通常のビルドでは、後述の手順で検証済み生成物を追加します。
 
+GameBoardの次段階については[分割取得に向けた依存調査](game-board-catalog-migration.md)を参照してください。
+
 ## 実行方法
 
 リポジトリのルートで実行します。外部通信・追加のPythonライブラリは不要です。
