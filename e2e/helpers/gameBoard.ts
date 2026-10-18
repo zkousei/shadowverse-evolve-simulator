@@ -93,8 +93,6 @@ export const dragLocatorFromExposedCardPointToLocator = async (
 ) => {
   await target.scrollIntoViewIfNeeded();
   const sourcePoint = await hoverExposedCardPoint(page, source);
-  const sourceBox = await source.boundingBox();
-  if (!sourceBox) throw new Error('The source card has no bounding box.');
   const sourceId = await source.getAttribute('data-card-id');
   const targetCardId = await target.getAttribute('data-card-id');
   const targetId = targetCardId ?? (await target.getAttribute('data-testid'))?.replace(/^zone-/, '');
@@ -114,19 +112,20 @@ export const dragLocatorFromExposedCardPointToLocator = async (
   // Cross the pointer activation distance before waiting for DnD to activate.
   await page.mouse.move(sourcePoint.x + 10, sourcePoint.y, { steps: 2 });
   await expect(source).toHaveAttribute('aria-pressed', 'true');
-  const targetBox = await target.boundingBox();
-  if (!targetBox) throw new Error('The drag target has no bounding box.');
-  await page.mouse.move(
-    // Align card centers, accounting for the point where the card was grabbed.
-    // Moving a corner grab to the target center overlaps an attached card instead.
-    targetBox.x + targetBox.width / 2 - sourceBox.width / 2 + sourcePoint.x - sourceBox.x,
-    targetBox.y + targetBox.height / 2 - sourceBox.height / 2 + sourcePoint.y - sourceBox.y,
-    { steps: 12 }
-  );
-  // Releasing before collision detection has rendered can drop onto the old target.
-  await expect(page.getByRole('status').filter({
-    hasText: announcement('moved over'),
-  })).toHaveCount(1);
+  let pointer = { x: sourcePoint.x + 10, y: sourcePoint.y };
+  // Auto-scroll can move both rectangles during the gesture. Re-align their
+  // current centers until DnD acknowledges the exact intended target.
+  await expect(async () => {
+    const sourceBox = await source.boundingBox();
+    const targetBox = await target.boundingBox();
+    if (!sourceBox || !targetBox) throw new Error('The drag card or target has no bounding box.');
+    pointer = {
+      x: pointer.x + targetBox.x + targetBox.width / 2 - sourceBox.x - sourceBox.width / 2,
+      y: pointer.y + targetBox.y + targetBox.height / 2 - sourceBox.y - sourceBox.height / 2,
+    };
+    await page.mouse.move(pointer.x, pointer.y, { steps: 12 });
+    expect(await page.getByRole('status').filter({ hasText: announcement('moved over') }).count()).toBe(1);
+  }).toPass({ timeout: 5_000 });
   await page.mouse.up();
   await expect(page.getByRole('status').filter({
     hasText: announcement('dropped over'),
@@ -135,6 +134,21 @@ export const dragLocatorFromExposedCardPointToLocator = async (
   // (AbstractPointerSensor.detach). It has no DOM completion signal. Respect
   // that guard before the caller clicks Undo or another control.
   await page.waitForTimeout(50);
+};
+
+/** Confirm the sensor handles keys, not just that activation rendered. */
+export const startKeyboardCardDrag = async (page: Page, card: Locator) => {
+  await card.focus();
+  await page.keyboard.press('Space');
+  await expect(card).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('status').filter({ hasText: 'was moved over droppable area' })).toHaveCount(1);
+  const initialTransform = await card.evaluate(element => (element as HTMLElement).style.transform);
+  // KeyboardSensor installs its document listener in a later task. An actual
+  // arrow movement acknowledges readiness before testing Undo or Escape.
+  await expect(async () => {
+    await page.keyboard.press('ArrowRight');
+    expect(await card.evaluate(element => (element as HTMLElement).style.transform)).not.toBe(initialTransform);
+  }).toPass({ timeout: 5_000 });
 };
 
 export const spawnDefaultToken = async (

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { boardSection, openMainDeckActions, startSoloGame, zoneCards } from './helpers/gameBoard';
+import { boardSection, openMainDeckActions, startKeyboardCardDrag, startSoloGame, zoneCards } from './helpers/gameBoard';
 
 test.use({ locale: 'en-US' });
 
@@ -71,11 +71,7 @@ for (const modifier of ['Control', 'Meta']) {
     const tracker = page.getByTestId('player-tracker-host');
     await expect(tracker.getByText('HP: 21', { exact: true })).toBeVisible();
     const card = zoneCards(page, 'hand-host').first();
-    await card.focus();
-    await page.keyboard.press('Space');
-    // Wait for DnD activation and measuring before sending more sensor keys.
-    await expect(card).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.getByRole('status').filter({ hasText: 'was moved over droppable area' })).toHaveCount(1);
+    await startKeyboardCardDrag(page, card);
     await page.keyboard.press(`${modifier}+z`);
     await expect(tracker.getByText('HP: 21', { exact: true })).toBeVisible();
     await expect(card).toHaveAttribute('aria-pressed', 'true');
