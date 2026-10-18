@@ -1,4 +1,4 @@
-import type { GameBoardCatalogStatus } from '../../hooks/gameBoard/useGameBoardCatalogResources';
+import type { GameBoardCatalogStatus } from '../../utils/gameBoard/gameBoardCatalogTypes';
 import type { GameBoardCardDetailStatus } from '../../hooks/gameBoard/useGameBoardGeneratedCardDetails';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
