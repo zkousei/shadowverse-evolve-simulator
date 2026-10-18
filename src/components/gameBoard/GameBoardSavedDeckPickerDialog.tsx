@@ -1,15 +1,15 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import type { LegalSavedDeckOption } from '../../utils/gameBoard/gameBoardSavedDecks';
+import type { SavedDeckPickerOption } from '../../utils/gameBoard/gameBoardSavedDecks';
 
 type GameBoardSavedDeckPickerDialogProps = {
   targetLabel: string;
   savedDeckSearch: string;
-  filteredSavedDeckOptions: LegalSavedDeckOption[];
+  filteredSavedDeckOptions: SavedDeckPickerOption[];
   onBackdropClick: (event: React.MouseEvent<HTMLDivElement>) => void;
   onClose: () => void;
   onSearchChange: (value: string) => void;
-  onLoadDeck: (option: LegalSavedDeckOption) => void;
+  onLoadDeck: (option: SavedDeckPickerOption) => void;
 };
 
 const GameBoardSavedDeckPickerDialog: React.FC<GameBoardSavedDeckPickerDialogProps> = ({

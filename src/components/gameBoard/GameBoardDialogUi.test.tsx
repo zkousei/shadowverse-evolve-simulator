@@ -192,12 +192,6 @@ describe('GameBoard extracted UI components - dialogs', () => {
       },
       summary: 'Royal / Hero Tale',
       counts: 'Main 40 / Evolve 10 / Leader 1',
-      deckData: {
-        mainDeck: [],
-        evolveDeck: [],
-        leaderCards: [],
-        tokenDeck: [],
-      },
     };
 
     render(

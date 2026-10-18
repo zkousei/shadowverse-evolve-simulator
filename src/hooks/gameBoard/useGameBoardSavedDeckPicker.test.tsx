@@ -42,6 +42,15 @@ beforeEach(() => {
 });
 
 describe('useGameBoardSavedDeckPicker', () => {
+  it('retains only saved-record and presentation data while the list is open', async () => {
+    const { result, selected } = await open();
+    expect(Object.keys(selected).sort()).toEqual(['counts', 'deck', 'summary']);
+    expect(selected).not.toHaveProperty('deckData');
+    act(() => result.current.setSavedDeckSearch('Original'));
+    expect(result.current.filteredSavedDeckOptions[0]).toBe(selected);
+  });
+
+
   it('uses the shared catalog when it becomes available after a retry', () => {
     const options = args();
     options.catalogCards = [];
@@ -62,6 +71,25 @@ describe('useGameBoardSavedDeckPicker', () => {
       mainDeck: [main], evolveDeck: [], leaderCards: [], tokenDeck: [token],
     }, target);
     expect(result.current.savedDeckImportTargetRole).toBeNull();
+  });
+
+  it('restores the selected record using current full details rather than list data', async () => {
+    const { result, rerender, options, selected } = await open();
+    const latest = { ...main, ability_text: 'Updated ability', faces: [{ side: 'back', name: 'Updated back', ability_text: 'Updated back ability' }] };
+    rerender({ ...options, catalogCards: [latest, token] });
+    act(() => result.current.handleSavedDeckImport(selected));
+    expect(options.importDeckData).toHaveBeenCalledExactlyOnceWith({
+      mainDeck: [latest], evolveDeck: [], leaderCards: [], tokenDeck: [token],
+    }, 'host');
+  });
+
+  it('rejects a selected record when its card disappeared from the current catalog', async () => {
+    const { result, rerender, options, selected } = await open();
+    rerender({ ...options, catalogCards: [token] });
+    act(() => result.current.handleSavedDeckImport(selected));
+    expect(options.importDeckData).not.toHaveBeenCalled();
+    expect(result.current.filteredSavedDeckOptions).toEqual([]);
+    expect(result.current.savedDeckImportTargetRole).toBe('host');
   });
 
   it('refreshes a deleted record without importing the stale selection or hiding other decks', async () => {

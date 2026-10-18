@@ -7,23 +7,29 @@ import {
   type SavedDeckPresentationTranslator,
 } from '../deck/savedDeckPresentation';
 
-export type LegalSavedDeckOption = {
+/** Picker rows contain compact saved IDs and presentation only. */
+export type SavedDeckPickerOption = {
   deck: SavedDeckRecordV1;
+  summary: string;
+  counts: string;
+};
+
+/** Only a freshly restored full option can supply data for an import. */
+export type LegalSavedDeckOption = SavedDeckPickerOption & {
   deckData: {
     mainDeck: DeckBuilderCardData[];
     evolveDeck: DeckBuilderCardData[];
     leaderCards: DeckBuilderCardData[];
     tokenDeck: DeckBuilderCardData[];
   };
-  summary: string;
-  counts: string;
 };
 
-export const buildLegalSavedDeckOptions = (
+const mapLegalSavedDeckOptions = <T extends SavedDeckPickerOption>(
   savedDecks: SavedDeckRecordV1[],
   allCards: DeckBuilderCardData[],
-  t: SavedDeckPresentationTranslator
-): LegalSavedDeckOption[] => {
+  t: SavedDeckPresentationTranslator,
+  project: (option: LegalSavedDeckOption) => T
+): T[] => {
   if (savedDecks.length === 0) return [];
   const restoreSavedDeck = createSavedDeckRestorer(allCards);
   let sanitizeDeck: ReturnType<typeof createImportedDeckSanitizer> | undefined;
@@ -40,7 +46,7 @@ export const buildLegalSavedDeckOptions = (
       const issues = getDeckValidationMessages(sanitizedDeckState, restored.snapshot.ruleConfig);
       if (issues.length > 0) return null;
 
-      return {
+      return project({
         deck,
         deckData: {
           mainDeck: sanitizedDeckState.mainDeck,
@@ -50,7 +56,22 @@ export const buildLegalSavedDeckOptions = (
         },
         summary: formatSavedDeckRuleSummary(deck, t),
         counts: formatSavedDeckCountSummary(deck, t),
-      } satisfies LegalSavedDeckOption;
+      } satisfies LegalSavedDeckOption);
     })
-    .filter((value): value is LegalSavedDeckOption => value !== null);
+    .filter((value): value is T => value !== null);
 };
+
+
+export const buildLegalSavedDeckOptions = (
+  savedDecks: SavedDeckRecordV1[],
+  allCards: DeckBuilderCardData[],
+  t: SavedDeckPresentationTranslator
+): LegalSavedDeckOption[] => mapLegalSavedDeckOptions(savedDecks, allCards, t, option => option);
+
+export const buildSavedDeckPickerOptions = (
+  savedDecks: SavedDeckRecordV1[],
+  allCards: DeckBuilderCardData[],
+  t: SavedDeckPresentationTranslator
+): SavedDeckPickerOption[] => mapLegalSavedDeckOptions(savedDecks, allCards, t,
+  ({ deck, summary, counts }) => ({ deck, summary, counts })
+);
