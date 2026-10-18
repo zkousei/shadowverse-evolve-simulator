@@ -272,7 +272,7 @@ export const canAddCardToDeckState = (
 
 const resolveImportedCard = (
   importedCard: DeckBuilderCardData,
-  cardCatalogById: Map<string, DeckBuilderCardData>
+  cardCatalogById: ReadonlyMap<string, DeckBuilderCardData>
 ): DeckBuilderCardData => cardCatalogById.get(importedCard.id) ?? importedCard;
 
 export const sanitizeImportedSection = (
@@ -281,8 +281,17 @@ export const sanitizeImportedSection = (
   targetSection: DeckTargetSection,
   ruleConfig: DeckRuleConfig = DEFAULT_RULE_CONFIG,
   deckStateHint?: DeckState
+): DeckBuilderCardData[] => sanitizeImportedSectionWithCatalog(
+  importedCards, new Map(availableCards.map(card => [card.id, card])), targetSection, ruleConfig, deckStateHint
+);
+
+const sanitizeImportedSectionWithCatalog = (
+  importedCards: DeckBuilderCardData[],
+  cardCatalogById: ReadonlyMap<string, DeckBuilderCardData>,
+  targetSection: DeckTargetSection,
+  ruleConfig: DeckRuleConfig,
+  deckStateHint?: DeckState
 ): DeckBuilderCardData[] => {
-  const cardCatalogById = new Map(availableCards.map(card => [card.id, card]));
   const limit = getDeckLimit(targetSection, ruleConfig);
   const copyCounts = new Map<string, number>();
 
@@ -650,10 +659,17 @@ export const appendRelatedTokensToDeckState = (
   deckState: DeckState,
   availableCards: DeckBuilderCardData[],
   ruleConfig: DeckRuleConfig = DEFAULT_RULE_CONFIG
-): DeckState => {
-  if (availableCards.length === 0) return deckState;
+): DeckState => appendRelatedTokensWithCatalog(
+  deckState, new Map(availableCards.map(card => [card.id, card])), ruleConfig
+);
 
-  const cardCatalogById = new Map(availableCards.map(card => [card.id, card]));
+const appendRelatedTokensWithCatalog = (
+  deckState: DeckState,
+  cardCatalogById: ReadonlyMap<string, DeckBuilderCardData>,
+  ruleConfig: DeckRuleConfig
+): DeckState => {
+  if (cardCatalogById.size === 0) return deckState;
+
   const tokenIdentityKeys = new Set(deckState.tokenDeck.map(getRelatedTokenIdentityKey));
   const tokensToAppend: DeckBuilderCardData[] = [];
   const processedCardIds = new Set<string>();
@@ -697,28 +713,33 @@ export const appendRelatedTokensToDeckState = (
   };
 };
 
+/** A per-operation index. Do not retain this across catalog updates. */
+export const createImportedDeckSanitizer = (availableCards: DeckBuilderCardData[]) => {
+  const cardCatalogById = new Map(availableCards.map(card => [card.id, card]));
+  return (importedDeck: ImportedDeckState, ruleConfig: DeckRuleConfig = DEFAULT_RULE_CONFIG): DeckState => {
+    // Only eligible main-deck cards may activate deck-wide restrictions.
+    const eligibleMainDeck = (importedDeck.mainDeck ?? [])
+      .map(card => resolveImportedCard(card, cardCatalogById))
+      .filter(card => canAddCardToSection(card, 'main', ruleConfig));
+    const initialState = { ...createEmptyDeckState(), mainDeck: eligibleMainDeck };
+    const acceptedMainDeck = sanitizeImportedSectionWithCatalog(eligibleMainDeck, cardCatalogById, 'main', ruleConfig, initialState);
+    // A trigger may have been dropped at the section capacity. Re-evaluate using
+    // the retained main deck so discarded cards cannot restrict either section.
+    const acceptedState = { ...createEmptyDeckState(), mainDeck: acceptedMainDeck };
+    const mainDeck = sanitizeImportedSectionWithCatalog(eligibleMainDeck, cardCatalogById, 'main', ruleConfig, acceptedState);
+    const finalState = { ...createEmptyDeckState(), mainDeck };
+
+    return appendRelatedTokensWithCatalog({
+      ...finalState,
+      evolveDeck: sanitizeImportedSectionWithCatalog(importedDeck.evolveDeck ?? [], cardCatalogById, 'evolve', ruleConfig, finalState),
+      leaderCards: sanitizeImportedSectionWithCatalog(getImportedLeaderCards(importedDeck), cardCatalogById, 'leader', ruleConfig),
+      tokenDeck: sanitizeImportedSectionWithCatalog(importedDeck.tokenDeck ?? [], cardCatalogById, 'token', ruleConfig),
+    }, cardCatalogById, ruleConfig);
+  };
+};
+
 export const sanitizeImportedDeckState = (
   importedDeck: ImportedDeckState,
   availableCards: DeckBuilderCardData[],
   ruleConfig: DeckRuleConfig = DEFAULT_RULE_CONFIG
-): DeckState => {
-  const cardCatalogById = new Map(availableCards.map(card => [card.id, card]));
-  // Only eligible main-deck cards may activate deck-wide restrictions.
-  const eligibleMainDeck = (importedDeck.mainDeck ?? [])
-    .map(card => resolveImportedCard(card, cardCatalogById))
-    .filter(card => canAddCardToSection(card, 'main', ruleConfig));
-  const initialState = { ...createEmptyDeckState(), mainDeck: eligibleMainDeck };
-  const acceptedMainDeck = sanitizeImportedSection(eligibleMainDeck, availableCards, 'main', ruleConfig, initialState);
-  // A trigger may have been dropped at the section capacity. Re-evaluate using
-  // the retained main deck so discarded cards cannot restrict either section.
-  const acceptedState = { ...createEmptyDeckState(), mainDeck: acceptedMainDeck };
-  const mainDeck = sanitizeImportedSection(eligibleMainDeck, availableCards, 'main', ruleConfig, acceptedState);
-  const finalState = { ...createEmptyDeckState(), mainDeck };
-
-  return appendRelatedTokensToDeckState({
-    ...finalState,
-    evolveDeck: sanitizeImportedSection(importedDeck.evolveDeck ?? [], availableCards, 'evolve', ruleConfig, finalState),
-    leaderCards: sanitizeImportedSection(getImportedLeaderCards(importedDeck), availableCards, 'leader', ruleConfig),
-    tokenDeck: sanitizeImportedSection(importedDeck.tokenDeck ?? [], availableCards, 'token', ruleConfig),
-  }, availableCards, ruleConfig);
-};
+): DeckState => createImportedDeckSanitizer(availableCards)(importedDeck, ruleConfig);

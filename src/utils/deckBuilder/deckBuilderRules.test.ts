@@ -4,6 +4,7 @@ import type { DeckRuleConfig } from '../../models/deckRule';
 import { getDisplayDedupKey, type DeckBuilderCardData } from '../../models/deckBuilderCard';
 import {
   appendRelatedTokensToDeckState,
+  createImportedDeckSanitizer,
   canAddCardToDeckState,
   canAddCardToSection,
   getAllowedSections,
@@ -1148,5 +1149,47 @@ describe('crossover main-deck class requirements', () => {
     expect(validateDeckState(state, crossoverRule)).toContainEqual({ code: 'invalid-crossover-main-classes', deck: 'main' });
     expect(getDeckValidationMessages(state, crossoverRule)).toContainEqual({ id: 'deckBuilder.validation.crossoverMainClassesInclude', params: { firstClass: 'ロイヤル', secondClass: 'ウィッチ' } });
     expect(validateDeckState({ ...state, mainDeck: [...state.mainDeck, witchCard] }, crossoverRule).some(issue => issue.code === 'invalid-crossover-main-classes')).toBe(false);
+  });
+});
+
+
+describe('import catalog indexing', () => {
+  it('scans unrelated catalog entries at most once across every imported section and token expansion', () => {
+    let reads = 0;
+    const unrelated: DeckBuilderCardData = { ...mainCard, get id() { reads++; return 'UNUSED-001'; } };
+    const sanitized = sanitizeImportedDeckState({ mainDeck: [mainCard], evolveDeck: [], leaderCards: [], tokenDeck: [] }, [mainCard, unrelated]);
+    expect(sanitized.mainDeck).toEqual([mainCard]);
+    expect(reads).toBeLessThanOrEqual(1);
+  });
+});
+
+
+describe('batch import sanitization', () => {
+  it('keeps copy counts and deck-wide restrictions separate between calls', () => {
+    const trigger = { ...mainCard, id: 'CUT-001', name: '機鋒の咎人・カットスロート' };
+    const sanitize = createImportedDeckSanitizer([trigger, mainCard]);
+    const restricted = sanitize({ mainDeck: [trigger, mainCard, mainCard, mainCard] });
+    expect(restricted.mainDeck).toEqual([trigger, mainCard]);
+    const normal = sanitize({ mainDeck: [mainCard, mainCard, mainCard] });
+    expect(normal.mainDeck).toEqual([mainCard, mainCard, mainCard]);
+    normal.mainDeck.pop();
+    expect(sanitize({ mainDeck: [mainCard, mainCard, mainCard] }).mainDeck).toHaveLength(3);
+  });
+
+  it('preserves last-ID-wins resolution and complete details with frozen catalog inputs', () => {
+    const complete = { ...mainCard, ability_text: 'Canonical ability', faces: [{ side: 'back', name: 'Back', ability_text: 'Back ability' }] };
+    const catalog = [mainCard, complete];
+    Object.freeze(catalog);
+    Object.freeze(complete);
+    Object.freeze(complete.faces);
+    const sanitize = createImportedDeckSanitizer(catalog);
+    const restored = sanitize({ mainDeck: [{ ...mainCard, ability_text: 'Old ability' }] });
+    expect(restored.mainDeck[0]).toBe(complete);
+    expect(restored.mainDeck[0].faces).toEqual(complete.faces);
+  });
+
+  it('keeps external card fallback with an empty catalog', () => {
+    const sanitize = createImportedDeckSanitizer([]);
+    expect(sanitize({ mainDeck: [mainCard] }).mainDeck).toEqual([mainCard]);
   });
 });

@@ -85,6 +85,47 @@ const createDeck = (overrides: Partial<SavedDeckRecordV1> = {}): SavedDeckRecord
 });
 
 describe('gameBoardSavedDecks', () => {
+  it.each([1, 200])('bounds full-catalog indexing when validating %i saved decks', count => {
+    let unrelatedIdReads = 0;
+    const unrelated: DeckBuilderCardData = {
+      ...mainCard,
+      get id() { unrelatedIdReads++; return 'UNUSED-001'; },
+    };
+    const options = buildLegalSavedDeckOptions(
+      Array.from({ length: count }, (_, index) => createDeck({ id: `deck-${index}` })),
+      [mainCard, leaderCard, unrelated], t
+    );
+    expect(options).toHaveLength(count);
+    expect(options.every(option => option.deckData.mainDeck.length === 3)).toBe(true);
+    // Index construction must be independent of the number of saved decks.
+    // An unrelated card is never read by deck validation or token expansion.
+    expect(unrelatedIdReads).toBeLessThanOrEqual(2);
+  });
+
+  it('skips sanitization indexing if every saved deck references missing cards', () => {
+    let reads = 0;
+    const unused: DeckBuilderCardData = { ...mainCard, get id() { reads++; return 'UNUSED-001'; } };
+    expect(buildLegalSavedDeckOptions([createDeck()], [unused], t)).toEqual([]);
+    expect(reads).toBeLessThanOrEqual(1);
+  });
+
+  it('does not scan the catalog if there are no saved decks', () => {
+    const unread: DeckBuilderCardData = { ...mainCard, get id(): string { throw new Error('Unexpected catalog scan'); } };
+    expect(buildLegalSavedDeckOptions([], [unread], t)).toEqual([]);
+  });
+
+  it('builds a fresh index for each list refresh, including changes to the same array', () => {
+    const catalog = [mainCard, leaderCard];
+    const deck = createDeck();
+    const first = buildLegalSavedDeckOptions([deck], catalog, t);
+    catalog[0] = { ...mainCard, ability_text: 'Updated ability' };
+    const second = buildLegalSavedDeckOptions([deck], catalog, t);
+    expect(first[0].deckData.mainDeck[0]).toBe(mainCard);
+    expect(second[0].deckData.mainDeck[0].ability_text).toBe('Updated ability');
+    catalog.splice(0, 1);
+    expect(buildLegalSavedDeckOptions([deck], catalog, t)).toEqual([]);
+  });
+
   it('restores complete card details and automatically includes a related token outside saved sections', () => {
     const token: DeckBuilderCardData = {
       id: 'TOKEN-001', name: 'Related Token', image: '/token.png',

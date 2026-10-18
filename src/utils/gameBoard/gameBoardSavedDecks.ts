@@ -1,6 +1,6 @@
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
-import { getDeckValidationMessages, sanitizeImportedDeckState } from '../deckBuilder/deckBuilderRules';
-import { restoreSavedDeckToSnapshot, type SavedDeckRecordV1 } from '../deck/deckStorage';
+import { getDeckValidationMessages, createImportedDeckSanitizer } from '../deckBuilder/deckBuilderRules';
+import { createSavedDeckRestorer, type SavedDeckRecordV1 } from '../deck/deckStorage';
 import {
   formatSavedDeckCountSummary,
   formatSavedDeckRuleSummary,
@@ -23,15 +23,18 @@ export const buildLegalSavedDeckOptions = (
   savedDecks: SavedDeckRecordV1[],
   allCards: DeckBuilderCardData[],
   t: SavedDeckPresentationTranslator
-): LegalSavedDeckOption[] => (
-  savedDecks
+): LegalSavedDeckOption[] => {
+  if (savedDecks.length === 0) return [];
+  const restoreSavedDeck = createSavedDeckRestorer(allCards);
+  let sanitizeDeck: ReturnType<typeof createImportedDeckSanitizer> | undefined;
+  return savedDecks
     .map(deck => {
-      const restored = restoreSavedDeckToSnapshot(deck, allCards);
+      const restored = restoreSavedDeck(deck);
       if (restored.missingCardIds.length > 0) return null;
 
-      const sanitizedDeckState = sanitizeImportedDeckState(
+      sanitizeDeck ??= createImportedDeckSanitizer(allCards);
+      const sanitizedDeckState = sanitizeDeck(
         restored.snapshot.deckState,
-        allCards,
         restored.snapshot.ruleConfig
       );
       const issues = getDeckValidationMessages(sanitizedDeckState, restored.snapshot.ruleConfig);
@@ -49,5 +52,5 @@ export const buildLegalSavedDeckOptions = (
         counts: formatSavedDeckCountSummary(deck, t),
       } satisfies LegalSavedDeckOption;
     })
-    .filter((value): value is LegalSavedDeckOption => value !== null)
-);
+    .filter((value): value is LegalSavedDeckOption => value !== null);
+};

@@ -95,7 +95,7 @@ const compactCardsToRefs = (cards: DeckBuilderCardData[]): SavedDeckCardRef[] =>
 
 const expandCardRefs = (
   refs: SavedDeckCardRef[],
-  cardCatalogById: Map<string, DeckBuilderCardData>
+  cardCatalogById: ReadonlyMap<string, DeckBuilderCardData>
 ): { cards: DeckBuilderCardData[]; missingCardIds: string[] } => {
   const cards: DeckBuilderCardData[] = [];
   const missingCardIds = new Set<string>();
@@ -221,8 +221,14 @@ export const serializeDeckState = (deckState: DeckState): SavedDeckSections => (
 export const restoreDeckState = (
   sections: SavedDeckSections,
   availableCards: DeckBuilderCardData[]
+): { deckState: DeckState; missingCardIds: string[] } => restoreDeckStateWithCatalog(
+  sections, new Map(availableCards.map(card => [card.id, card]))
+);
+
+const restoreDeckStateWithCatalog = (
+  sections: SavedDeckSections,
+  cardCatalogById: ReadonlyMap<string, DeckBuilderCardData>
 ): { deckState: DeckState; missingCardIds: string[] } => {
-  const cardCatalogById = new Map(availableCards.map(card => [card.id, card]));
   const main = expandCardRefs(sections.main, cardCatalogById);
   const evolve = expandCardRefs(sections.evolve, cardCatalogById);
   const leader = expandCardRefs(sections.leader, cardCatalogById);
@@ -391,17 +397,22 @@ export const clearDraft = (): void => {
   storage?.removeItem(DECK_BUILDER_DRAFT_KEY);
 };
 
+/** Reuse within one synchronous batch; create again for a refreshed catalog. */
+export const createSavedDeckRestorer = (availableCards: DeckBuilderCardData[]) => {
+  const cardCatalogById = new Map(availableCards.map(card => [card.id, card]));
+  return (deck: SavedDeckRecordV1): RestoreDeckResult => {
+    const restored = restoreDeckStateWithCatalog(deck.sections, cardCatalogById);
+    return {
+      snapshot: createDeckSnapshot(deck.name, deck.ruleConfig, restored.deckState),
+      missingCardIds: restored.missingCardIds,
+    };
+  };
+};
+
 export const restoreSavedDeckToSnapshot = (
   deck: SavedDeckRecordV1,
   availableCards: DeckBuilderCardData[]
-): RestoreDeckResult => {
-  const restored = restoreDeckState(deck.sections, availableCards);
-
-  return {
-    snapshot: createDeckSnapshot(deck.name, deck.ruleConfig, restored.deckState),
-    missingCardIds: restored.missingCardIds,
-  };
-};
+): RestoreDeckResult => createSavedDeckRestorer(availableCards)(deck);
 
 export const restoreDraftToSnapshot = (
   draft: DeckBuilderDraftV1,
