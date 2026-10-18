@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { GeneratedCardCatalog, GeneratedCardDetails } from '../../utils/card/generatedCardCatalog';
 import { buildCardDetailLookup, type CardDetailLookup } from '../../utils/card/cardDetails';
 import { createGameBoardCatalogDetails } from '../../utils/gameBoard/gameBoardCatalogDetails';
@@ -7,7 +7,9 @@ type DetailsContext = {
   catalog: GeneratedCardCatalog;
   loader: ReturnType<typeof createGameBoardCatalogDetails>;
   known: Map<string, GeneratedCardDetails>;
+  knownIds: ReadonlySet<string>;
 };
+export type GameBoardCardDetailStatus = 'idle' | 'loading' | 'ready' | 'error' | 'unknown';
 type Request = { context: DetailsContext | null; key: string; attempt: number };
 type RequestState =
   | { status: 'ready'; requestedIds: readonly string[]; unknownIds: readonly string[] }
@@ -19,7 +21,7 @@ const EMPTY_LOOKUP: CardDetailLookup = Object.freeze({});
 /** Presentation data only. Never delays or applies a game event or snapshot. */
 export const useGameBoardGeneratedCardDetails = (catalog: GeneratedCardCatalog | null, ids: readonly string[]) => {
   const context = useMemo<DetailsContext | null>(() => catalog ? {
-    catalog, loader: createGameBoardCatalogDetails(catalog), known: new Map(),
+    catalog, loader: createGameBoardCatalogDetails(catalog), known: new Map(), knownIds: new Set(catalog.index.map(card => card.id)),
   } : null, [catalog]);
   const key = JSON.stringify(ids);
   const [attempt, setAttempt] = useState(0);
@@ -31,7 +33,13 @@ export const useGameBoardGeneratedCardDetails = (catalog: GeneratedCardCatalog |
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [settled, setSettled] = useState<{ request: Request; value: RequestState } | null>(null);
   const lifetime = useRef<{ context: DetailsContext | null; active: boolean } | null>(null);
-  const retry = useCallback(() => setAttempt(value => value + 1), []);
+  const retryState = useRef<{ allowed: boolean; queued: boolean } | null>(null);
+  const retry = useCallback(() => {
+    const current = retryState.current;
+    if (!current?.allowed || current.queued) return;
+    current.queued = true;
+    setAttempt(value => value + 1);
+  }, []);
 
   useEffect(() => {
     // A new lifetime is necessary even if Strict Mode reuses the same context.
@@ -77,6 +85,18 @@ export const useGameBoardGeneratedCardDetails = (catalog: GeneratedCardCatalog |
     ? { status: 'idle' }
     : request.context === context && request.key === key && request.attempt === attempt && settled?.request === request
       ? settled.value : { status: 'loading' };
+  useLayoutEffect(() => {
+    retryState.current = { allowed: status.status === 'error', queued: false };
+    return () => { retryState.current = null; };
+  }, [request, status.status]);
+  const requestedIds = new Set<string>(JSON.parse(key));
+  const getDetailStatus = (id: string): GameBoardCardDetailStatus => {
+    if (!context) return 'idle';
+    if (!context.knownIds.has(id)) return 'unknown';
+    if (cached && Object.hasOwn(cached.lookup, id)) return 'ready';
+    if (!requestedIds.has(id)) return 'idle';
+    return status.status === 'error' ? 'error' : 'loading';
+  };
   return { ...status, version: catalog?.version ?? null,
-    knownCards: cached?.cards ?? EMPTY_CARDS, detailLookup: cached?.lookup ?? EMPTY_LOOKUP, retry };
+    knownCards: cached?.cards ?? EMPTY_CARDS, detailLookup: cached?.lookup ?? EMPTY_LOOKUP, retry, getDetailStatus };
 };

@@ -19,6 +19,49 @@ const ready = async (result: { current: { status: string } }) => {
 };
 
 describe('useGameBoardGeneratedCardDetails', () => {
+  it('retries only after the current failure and ignores repeated retry clicks while loading or ready', async () => {
+    const source = generatedCatalogFixture([a]);
+    const initial = deferred<readonly GeneratedCardDetails[]>();
+    const retried = deferred<readonly GeneratedCardDetails[]>();
+    const read = source.loadCards;
+    const load = vi.spyOn(source, 'loadCards').mockReturnValueOnce(initial.promise).mockReturnValueOnce(retried.promise);
+    const { result, unmount } = renderHook(() => useGameBoardGeneratedCardDetails(source, [a.id]));
+    act(() => { result.current.retry(); result.current.retry(); });
+    expect(load).toHaveBeenCalledTimes(1);
+    await act(async () => initial.reject(new Error('404')));
+    act(() => { result.current.retry(); result.current.retry(); });
+    expect(load).toHaveBeenCalledTimes(2);
+    act(() => result.current.retry());
+    expect(load).toHaveBeenCalledTimes(2);
+    await act(async () => retried.resolve(await read([a.id])));
+    await ready(result);
+    const retry = result.current.retry;
+    act(() => retry());
+    expect(load).toHaveBeenCalledTimes(2);
+    unmount();
+    act(() => retry());
+    expect(load).toHaveBeenCalledTimes(2);
+  });
+
+  it('reports cached, unknown, unrequested, loading and failed card details independently', async () => {
+    const source = generatedCatalogFixture([a, b]);
+    const { result, rerender } = renderHook(({ ids }) => useGameBoardGeneratedCardDetails(source, ids), { initialProps: { ids: [a.id] } });
+    await ready(result);
+    expect(result.current.getDetailStatus(a.id)).toBe('ready');
+    expect(result.current.getDetailStatus(b.id)).toBe('idle');
+    expect(result.current.getDetailStatus('CUSTOM')).toBe('unknown');
+    const pending = deferred<readonly GeneratedCardDetails[]>();
+    vi.spyOn(source, 'loadCards').mockReturnValueOnce(pending.promise);
+    rerender({ ids: [b.id, 'CUSTOM'] });
+    expect(result.current.getDetailStatus(a.id)).toBe('ready');
+    expect(result.current.getDetailStatus(b.id)).toBe('loading');
+    expect(result.current.getDetailStatus('CUSTOM')).toBe('unknown');
+    await act(async () => pending.reject(new Error('404')));
+    expect(result.current.getDetailStatus(a.id)).toBe('ready');
+    expect(result.current.getDetailStatus(b.id)).toBe('error');
+    expect(result.current.getDetailStatus('CUSTOM')).toBe('unknown');
+  });
+
   it('stays idle without a catalog or IDs and never fetches unrequested details', async () => {
     const source = generatedCatalogFixture([a, b]);
     const load = vi.spyOn(source, 'loadCards');

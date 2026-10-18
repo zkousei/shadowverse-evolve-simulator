@@ -556,7 +556,11 @@
     "catalog": {
       "loading": "Loading card information…",
       "error": "Could not load card information. You can retry without reloading the game.",
-      "retry": "Retry card information"
+      "retry": "Retry card information",
+      "unknown": "This card is not in the current card catalog.",
+      "refresh": "Refresh card catalog",
+      "refreshing": "Refreshing card catalog…",
+      "refreshFailed": "Could not refresh the card catalog."
     },
     "inspector": {
       "close": "Close",
