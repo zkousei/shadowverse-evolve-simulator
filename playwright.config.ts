@@ -10,7 +10,7 @@ export default defineConfig({
     reporter: [['html', { open: 'never' }], ['list']],
     use: {
         baseURL: 'http://127.0.0.1:5173',
-        trace: 'on-first-retry',
+        trace: 'retain-on-failure',
         locale: 'ja-JP',
     },
     projects: [
@@ -21,7 +21,9 @@ export default defineConfig({
     ],
     webServer: {
         command: 'npm run dev -- --host 127.0.0.1',
-        url: 'http://127.0.0.1:5173',
+        // Development generates and verifies the catalog on its first request.
+        // Finish server preparation before functional UI assertions begin.
+        url: 'http://127.0.0.1:5173/card-catalog/manifest.json',
         reuseExistingServer: !process.env.CI,
     },
 });
