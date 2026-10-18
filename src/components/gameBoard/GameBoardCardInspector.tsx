@@ -1,4 +1,5 @@
 import type { GameBoardCatalogStatus } from '../../hooks/gameBoard/useGameBoardCatalogResources';
+import type { GameBoardCardDetailStatus } from '../../hooks/gameBoard/useGameBoardGeneratedCardDetails';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { CardInstance } from '../Card';
@@ -12,6 +13,11 @@ import {
 
 type GameBoardCardInspectorProps = {
   catalogStatus?: GameBoardCatalogStatus;
+  detailStatus?: GameBoardCardDetailStatus;
+  onRetryDetails?: () => void;
+  onRefreshCatalog?: () => void;
+  isRefreshingCatalog?: boolean;
+  catalogRefreshFailed?: boolean;
   selectedInspectorCard: CardInstance;
   selectedInspectorDetail?: CardDetail | null;
   inspectorPresentation: CardDetailPresentation;
@@ -22,6 +28,11 @@ type GameBoardCardInspectorProps = {
 const GameBoardCardInspector = React.forwardRef<HTMLDivElement, GameBoardCardInspectorProps>(
   ({
     catalogStatus = 'ready',
+    detailStatus,
+    onRetryDetails,
+    onRefreshCatalog,
+    isRefreshingCatalog = false,
+    catalogRefreshFailed = false,
     selectedInspectorCard,
     selectedInspectorDetail,
     inspectorPresentation,
@@ -30,6 +41,11 @@ const GameBoardCardInspector = React.forwardRef<HTMLDivElement, GameBoardCardIns
   }, ref) => {
     const { t } = useTranslation();
     const hasFaces = Boolean(selectedInspectorDetail?.faces && selectedInspectorDetail.faces.length > 1);
+    const missingStatus = detailStatus === 'idle'
+      ? catalogStatus === 'error' ? 'error' : 'loading'
+      : detailStatus ?? (catalogStatus === 'ready' ? 'ready' : catalogStatus);
+    const showRecovery = !selectedInspectorDetail && (missingStatus === 'error' || missingStatus === 'unknown') &&
+      Boolean(onRetryDetails || onRefreshCatalog || isRefreshingCatalog || catalogRefreshFailed);
 
     return (
       <div
@@ -128,10 +144,24 @@ const GameBoardCardInspector = React.forwardRef<HTMLDivElement, GameBoardCardIns
             }}>
               {selectedInspectorDetail?.abilityText
                 ? formatAbilityText(selectedInspectorDetail.abilityText)
-                : !selectedInspectorDetail && catalogStatus !== 'ready'
-                  ? t(`gameBoard.catalog.${catalogStatus === 'loading' ? 'loading' : 'error'}`)
+                : !selectedInspectorDetail && missingStatus === 'unknown'
+                  ? t('gameBoard.catalog.unknown')
+                  : !selectedInspectorDetail && missingStatus !== 'ready'
+                  ? t(`gameBoard.catalog.${missingStatus === 'error' ? 'error' : 'loading'}`)
                   : t('gameBoard.inspector.noAbilityText')}
             </div>
+            {showRecovery && (
+              <div style={{ marginTop: '0.6rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                {isRefreshingCatalog && <span role="status">{t('gameBoard.catalog.refreshing')}</span>}
+                {!isRefreshingCatalog && catalogRefreshFailed && <span role="alert">{t('gameBoard.catalog.refreshFailed')}</span>}
+                {missingStatus === 'error' && detailStatus !== 'idle' && onRetryDetails && (
+                  <button type="button" onClick={onRetryDetails} disabled={isRefreshingCatalog}>{t('gameBoard.catalog.retry')}</button>
+                )}
+                {onRefreshCatalog && (
+                  <button type="button" onClick={onRefreshCatalog} disabled={isRefreshingCatalog}>{t('gameBoard.catalog.refresh')}</button>
+                )}
+              </div>
+            )}
           </div>
         </>
       )}
