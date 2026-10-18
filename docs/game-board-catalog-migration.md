@@ -69,6 +69,20 @@ Pythonの正本 `public/cards_detailed.json` / `public/cards_preview.json`、生
 グループ単位の取得であり、別のデッキや対象ID数によって効果は変わる。index全体の増加は残る。
 開発Strict Modeでは初回openが2回実行される。本番用E2Eはmanifest/index各1回、詳細と従来JSONは0回を検証する。
 
+### indexの圧縮表現への移行
+
+schema 2では一覧の項目名を共通ヘッダーにまとめ、値と項目の有無を行ごとに記録する。
+アプリへ渡す一覧は従来と同じオブジェクトへ復元するため、全件ルール判定・画像・検索・保存デッキの入力型は維持する。
+新しいReaderはschema 1も読める。旧schema 1を保持した状態で詳細404が発生し、schema 2へ明示的に復旧しても
+盤面と対戦を保持することを`game-board-generated-recovery.spec.ts`で検証する。
+更新前のschema 1専用アプリが新manifestを取得した場合は、ブラウザーでの再読み込みが必要となる。
+
+同じ現データのmanifest/indexは3,000,040 bytes / gzip 239,645 bytesとなる。
+前段のオブジェクト一覧との比較ではgzipで約13%減、従来JSON全体との比較では約53%減。
+ロイヤルサンプルの詳細追加後は3,932,221 bytes / gzip 319,187 bytes。
+いずれもファイルサイズ比較であり、実際の配信圧縮やキャッシュを含む実測転送量ではない。
+形式とテストの詳細は`card-catalog-artifacts.md`を参照する。
+
 ## 移行前の取得と利用箇所
 
 

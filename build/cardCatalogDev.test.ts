@@ -6,6 +6,7 @@ import { mkdtempSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { cardCatalog } from './cardCatalog';
+import { decodeGeneratedCardIndex } from '../src/utils/card/generatedCardIndex';
 import * as artifacts from './cardCatalogArtifacts';
 
 const servers: ViteDevServer[] = [];
@@ -172,5 +173,7 @@ test('a source change after verification rejects the pending snapshot and a late
   }
   await expectFailure(await pending, 503);
   const current = await (await get('/card-catalog/manifest.json')).json();
-  expect((await (await get(`/card-catalog/${current.index.file}`)).json())[0].name).toBe('New');
+  const wire = await (await get(`/card-catalog/${current.index.file}`)).json();
+  const index = decodeGeneratedCardIndex(wire, current.schemaVersion) as Record<string, unknown>[];
+  expect(index[0].name).toBe('New');
 });

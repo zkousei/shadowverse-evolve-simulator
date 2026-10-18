@@ -12,7 +12,7 @@ const fullCards = () => [
   card('BP01-002'),
   card('TK01-001', { related_cards: [{ id: 'BP01-001', name: '元カード' }] }),
 ];
-const fixture = (cards = fullCards(), transformIndex = (index: Record<string, unknown>[]) => index, transformFile = (_name: string, text: string) => text) => {
+const fixture = (cards = fullCards(), transformIndex = (index: Record<string, unknown>[]) => index, transformFile = (_name: string, text: string) => text, schemaVersion = 1) => {
   const groups = new Map<string, typeof cards>();
   for (const entry of cards) {
     const group = entry.id.split('-')[0];
@@ -26,13 +26,13 @@ const fixture = (cards = fullCards(), transformIndex = (index: Record<string, un
   for (const [group, entries] of groups) files.set(`details/${group}.json`, encode(entries));
   for (const [name, text] of files) files.set(name, transformFile(name, text));
   const hashes = Object.fromEntries([...files].sort(([a], [b]) => a < b ? -1 : 1).map(([name, text]) => [name, hash(text)]));
-  const version = hash(encode({ files: hashes, schemaVersion: 1 }));
+  const version = hash(encode({ files: hashes, schemaVersion }));
   const descriptor = (name: string, count: number) => {
     const text = files.get(name)!;
     return { file: `versions/${version}/${name}`, count, bytes: Buffer.byteLength(text), gzipBytes: 1, sha256: hash(text) };
   };
   const manifest = {
-    schemaVersion: 1, catalogVersion: version,
+    schemaVersion, catalogVersion: version,
     counts: { released: cards.length, preview: 0, total: cards.length },
     index: descriptor('index.json', index.length),
     details: Object.fromEntries([...groups].map(([group, entries]) => [group, descriptor(`details/${group}.json`, entries.length)])),
@@ -150,7 +150,7 @@ describe('generated card catalog reader', () => {
   });
 
   it.each([
-    ['unsupported schema', (m: ReturnType<typeof fixture>['manifest']) => { m.schemaVersion = 2; }],
+    ['unsupported schema', (m: ReturnType<typeof fixture>['manifest']) => { m.schemaVersion = 3; }],
     ['traversal path', (m: ReturnType<typeof fixture>['manifest']) => { m.index.file = '../index.json'; }],
     ['external path', (m: ReturnType<typeof fixture>['manifest']) => { m.details.BP01.file = 'https://example.com/cards.json'; }],
     ['other version', (m: ReturnType<typeof fixture>['manifest']) => { m.catalogVersion = 'f'.repeat(64); }],
@@ -241,4 +241,24 @@ describe('generated card catalog reader', () => {
     await expect(openGeneratedCardCatalog(path)).rejects.toThrow();
     expect(fetchMock).not.toHaveBeenCalled();
   });
+});
+
+
+it('reads schema 2 compact rows as the exact same frozen summaries and complete details', async () => {
+  const fields = ['id', 'name', 'image', 'class', 'title', 'type', 'subtype', 'rarity', 'product_name', 'cost', 'atk', 'hp', 'card_kind_normalized', 'deck_section', 'is_token', 'is_evolve_card', 'is_deck_build_legal', 'catalog_status', 'related_cards', 'detail_group'];
+  const { index, version, fetchMock } = fixture(fullCards(), index => index, (name, text) => {
+    if (name !== 'index.json') return text;
+    const entries: Record<string, unknown>[] = JSON.parse(text);
+    return encode({ encoding: 'rows-v1', fields, rows: entries.map(entry => [
+      fields.reduce((mask, field, bit) => field in entry ? mask + 2 ** bit : mask, 0),
+      ...fields.filter(field => field in entry).map(field => entry[field]),
+    ]) });
+  }, 2);
+  const catalog = await openGeneratedCardCatalog('/catalog');
+  expect(catalog.version).toBe(version);
+  expect(catalog.index).toEqual(index);
+  expect(catalog.index.every(Object.isFrozen)).toBe(true);
+  expect(fetchMock).toHaveBeenCalledTimes(2);
+  expect(await catalog.loadCardsWithRelated(['BP01-001'])).toEqual([fullCards()[0], fullCards()[2]]);
+  expect(fetchMock).toHaveBeenCalledTimes(4);
 });

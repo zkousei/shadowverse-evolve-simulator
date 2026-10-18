@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from tools.card_data.generate_catalog import (
-    build_catalog, check_catalog, generate_catalog, reassemble_catalog, verify_version,
+    build_catalog, check_catalog, decode_index, encode_index, generate_catalog, reassemble_catalog, verify_version,
 )
 
 
@@ -33,7 +33,7 @@ def fixtures():
 
 
 def unpack(bundle):
-    index = json.loads(bundle.files['index.json'])
+    index = decode_index(json.loads(bundle.files['index.json']))
     details = {Path(name).stem: json.loads(data)
                for name, data in bundle.files.items() if name.startswith('details/')}
     return index, details
@@ -76,6 +76,79 @@ class GenerateCatalogTest(unittest.TestCase):
         self.assertNotIn('cost', index[1])
         self.assertEqual(index[0]['detail_group'], 'BP02')
         self.assertEqual(set(details), {'BP01', 'BP02', 'PV01'})
+
+    def test_build_uses_versioned_compact_rows_without_losing_missing_or_false_values(self):
+        bundle = build_catalog(self.released, self.preview)
+        self.assertEqual(bundle.manifest['schemaVersion'], 2)
+        wire = json.loads(bundle.files['index.json'])
+        self.assertEqual(wire['encoding'], 'rows-v1')
+        self.assertEqual(len(wire['rows']), 3)
+        first = wire['rows'][0]
+        restored = dict(zip([key for bit, key in enumerate(wire['fields'])
+                             if first[0] & (1 << bit)], first[1:]))
+        self.assertEqual(restored['atk'], 0)
+        self.assertIs(restored['is_token'], False)
+        self.assertEqual(restored['related_cards'], self.released[0]['related_cards'])
+        self.assertNotIn('faces', restored)
+        self.assertEqual(restored['detail_group'], 'BP02')
+
+    def test_compact_codec_preserves_values_order_and_absence_without_mutating(self):
+        entries = [{'id': 'A-1', 'name': '日本語', 'detail_group': 'A', 'image': '',
+                    'is_token': False, 'cost': '0', 'related_cards': [], 'atk': 0},
+                   {'id': 'B-2', 'name': 'Minimal', 'detail_group': 'B'}]
+        before = copy.deepcopy(entries)
+        wire = encode_index(entries)
+        self.assertEqual(decode_index(wire), entries)
+        self.assertEqual(entries, before)
+        self.assertEqual(decode_index(encode_index([])), [])
+        decoded = decode_index(wire)
+        decoded[0]['related_cards'].append({'id': 'A-1', 'name': 'self'})
+        self.assertEqual(decode_index(wire), entries)
+        with self.assertRaises(ValueError):
+            encode_index([{**entries[0], 'ability_text': 'not an index field'}])
+
+    def test_compact_codec_rejects_shifted_missing_and_unknown_data(self):
+        wire = encode_index([{'id': 'A-1', 'name': 'A', 'detail_group': 'A'}])
+        required = wire['rows'][0][0]
+        invalid = [None, [], {**wire, 'encoding': 'future'}, {**wire, 'extra': 1},
+                   {**wire, 'fields': list(reversed(wire['fields']))},
+                   {**wire, 'fields': ['id'] * len(wire['fields'])},
+                   {**wire, 'rows': {}}, {**wire, 'rows': [None]},
+                   {**wire, 'rows': [[]]},
+                   *[{**wire, 'rows': [[mask, 'A-1', 'A', 'A']]}
+                     for mask in [True, -1, required + 0.5, required + (1 << 20)]],
+                   *[{**wire, 'rows': [[required - missing, 'A-1', 'A']]}
+                     for missing in [1, 2, 1 << 19]],
+                   {**wire, 'rows': [[required, 'A-1', 'A']]},
+                   {**wire, 'rows': [[required, 'A-1', 'A', 'A', 'extra']]}]
+        for value in invalid:
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                decode_index(value)
+
+    def test_generating_after_a_schema_one_manifest_keeps_old_files_and_installs_schema_two(self):
+        from tools.card_data.generate_catalog import json_bytes, sha256, sizes
+        current = build_catalog(self.released, self.preview)
+        index, _details = unpack(current)
+        old_files = {**current.files, 'index.json': json_bytes(index)}
+        old_version = sha256(json_bytes({'schemaVersion': 1,
+                                        'files': {name: sha256(data) for name, data in old_files.items()}}))
+        manifest = copy.deepcopy(current.manifest)
+        manifest.update(schemaVersion=1, catalogVersion=old_version)
+        for entry in [manifest['index'], *manifest['details'].values()]:
+            name = entry['file'].split('/', 2)[2]
+            entry.update(file=f'versions/{old_version}/{name}', sha256=sha256(old_files[name]), **sizes(old_files[name]))
+        for name, data in old_files.items():
+            target = self.output / 'versions' / old_version / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)
+        (self.output / 'manifest.json').write_bytes(json_bytes(manifest))
+        updated = generate_catalog(self.released_path, self.preview_path, self.output)
+        self.assertEqual(updated.manifest['schemaVersion'], 2)
+        self.assertNotEqual(updated.manifest['catalogVersion'], old_version)
+        self.assertEqual(json.loads((self.output / 'manifest.json').read_bytes()), updated.manifest)
+        for name, data in old_files.items():
+            self.assertEqual((self.output / 'versions' / old_version / name).read_bytes(), data)
+        check_catalog(self.released_path, self.preview_path, self.output)
 
     def test_output_is_deterministic_and_version_changes_with_data_or_order(self):
         first = build_catalog(self.released, self.preview)

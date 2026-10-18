@@ -4,6 +4,7 @@ import { mkdtempSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { cardCatalog } from './cardCatalog';
+import { decodeGeneratedCardIndex } from '../src/utils/card/generatedCardIndex';
 
 const roots: string[] = [];
 afterEach(() => roots.splice(0).forEach(root => rmSync(root, { recursive: true, force: true })));
@@ -31,7 +32,10 @@ test('emits freshly verified manifest, index and full details without modifying 
   const assets = new Map(result.output.filter(file => file.type === 'asset').map(file => [file.fileName, String(file.source)]));
   const manifest = JSON.parse(assets.get('card-catalog/manifest.json')!);
   expect(manifest.counts.total).toBe(1);
-  expect(JSON.parse(assets.get(`card-catalog/${manifest.index.file}`)!)[0].ability_text).toBeUndefined();
+  expect(manifest.schemaVersion).toBe(2);
+  const index = decodeGeneratedCardIndex(JSON.parse(assets.get(`card-catalog/${manifest.index.file}`)!), manifest.schemaVersion) as Record<string, unknown>[];
+  expect(index[0].ability_text).toBeUndefined();
+  expect(index[0]).toMatchObject({ id: 'BP01-001', name: 'Test', detail_group: 'BP01' });
   expect(JSON.parse(assets.get(`card-catalog/${manifest.details.BP01.file}`)!)[0]).toMatchObject({
     ability_text: 'Full details', future: { value: 0 },
   });
