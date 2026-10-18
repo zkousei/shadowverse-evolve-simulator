@@ -113,9 +113,7 @@ export const dragLocatorFromExposedCardPointToLocator = async (
   await page.mouse.move(sourcePoint.x + 10, sourcePoint.y, { steps: 2 });
   await expect(source).toHaveAttribute('aria-pressed', 'true');
   let pointer = { x: sourcePoint.x + 10, y: sourcePoint.y };
-  // Auto-scroll can move both rectangles during the gesture. Re-align their
-  // current centers until DnD acknowledges the exact intended target.
-  await expect(async () => {
+  const moveTowardTarget = async (steps: number) => {
     const sourceBox = await source.boundingBox();
     const targetBox = await target.boundingBox();
     if (!sourceBox || !targetBox) throw new Error('The drag card or target has no bounding box.');
@@ -123,10 +121,20 @@ export const dragLocatorFromExposedCardPointToLocator = async (
       x: pointer.x + targetBox.x + targetBox.width / 2 - sourceBox.x - sourceBox.width / 2,
       y: pointer.y + targetBox.y + targetBox.height / 2 - sourceBox.y - sourceBox.height / 2,
     };
-    await page.mouse.move(pointer.x, pointer.y, { steps: 12 });
+    await page.mouse.move(pointer.x, pointer.y, { steps });
     // Let collision detection and auto-scroll render before reading their
     // acknowledgement; an old 'over' notification can otherwise win the race.
     await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+    return targetBox;
+  };
+  // Finish the interpolated gesture before checking alignment. A busy browser
+  // can take seconds to process its input events. Replaying that gesture on
+  // every retry leaves no time for scroll correction or collision feedback.
+  await moveTowardTarget(12);
+  // Auto-scroll can move both rectangles. Correct with one input event using
+  // their current centers. Require exact target acknowledgement within 5s.
+  await expect(async () => {
+    const targetBox = await moveTowardTarget(1);
     const settledSource = await source.boundingBox();
     const settledTarget = await target.boundingBox();
     if (!settledSource || !settledTarget) throw new Error('The drag card or target disappeared.');
