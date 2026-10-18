@@ -13,6 +13,8 @@ type EvolveAutoAttachSelection = {
 
 type GameBoardDialogsHostProps = {
   savedDeckPicker: {
+    isLoading?: boolean;
+    loadFailed?: boolean;
     targetLabel: string;
     savedDeckSearch: string;
     filteredSavedDeckOptions: SavedDeckPickerOption[];
@@ -43,6 +45,8 @@ const GameBoardDialogsHost: React.FC<GameBoardDialogsHostProps> = ({
   <>
     {savedDeckPicker && (
       <GameBoardSavedDeckPickerDialog
+        isLoading={savedDeckPicker.isLoading}
+        loadFailed={savedDeckPicker.loadFailed}
         targetLabel={savedDeckPicker.targetLabel}
         savedDeckSearch={savedDeckPicker.savedDeckSearch}
         filteredSavedDeckOptions={savedDeckPicker.filteredSavedDeckOptions}

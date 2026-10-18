@@ -1,5 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { useGameBoardSetupActions, type PendingDeckImport } from './useGameBoardSetupActions';
+import type { PlayerRole } from '../../types/game';
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
 import { SAVED_DECKS_KEY, type SavedDeckRecordV1 } from '../../utils/deck/deckStorage';
 import { buildSyncState } from './gameBoardTestUtils';
@@ -24,8 +26,13 @@ const record: SavedDeckRecordV1 = {
 };
 const store = (decks: SavedDeckRecordV1[]) => localStorage.setItem(SAVED_DECKS_KEY, JSON.stringify({ schemaVersion: 1, decks }));
 const args = () => ({
+  beginDeckImport: vi.fn<(target: PlayerRole) => PendingDeckImport | null>(() => {
+    let valid = true;
+    return { isCurrent: () => valid, cancel: () => { valid = false; } };
+  }),
+  resolveSavedDeckCards: undefined as ((deck: SavedDeckRecordV1) => Promise<DeckBuilderCardData[]>) | undefined,
   catalogCards: [main, token], gameState: buildSyncState(), importDeckData: vi.fn(), isSoloMode: true,
-  role: 'host' as const, t: (key: string) => key,
+  role: 'host' as PlayerRole, t: (key: string) => key,
 });
 const open = async (options = args(), target: 'host' | 'guest' = 'host') => {
   const hook = renderHook(props => useGameBoardSavedDeckPicker(props), { initialProps: options });
@@ -66,7 +73,7 @@ describe('useGameBoardSavedDeckPicker', () => {
 
   it.each(['host', 'guest'] as const)('imports complete current details and related tokens for %s, then closes', async target => {
     const { result, options, selected } = await open(args(), target);
-    act(() => result.current.handleSavedDeckImport(selected));
+    await act(async () => { await result.current.handleSavedDeckImport(selected); });
     expect(options.importDeckData).toHaveBeenCalledExactlyOnceWith({
       mainDeck: [main], evolveDeck: [], leaderCards: [], tokenDeck: [token],
     }, target);
@@ -77,7 +84,7 @@ describe('useGameBoardSavedDeckPicker', () => {
     const { result, rerender, options, selected } = await open();
     const latest = { ...main, ability_text: 'Updated ability', faces: [{ side: 'back', name: 'Updated back', ability_text: 'Updated back ability' }] };
     rerender({ ...options, catalogCards: [latest, token] });
-    act(() => result.current.handleSavedDeckImport(selected));
+    await act(async () => { await result.current.handleSavedDeckImport(selected); });
     expect(options.importDeckData).toHaveBeenCalledExactlyOnceWith({
       mainDeck: [latest], evolveDeck: [], leaderCards: [], tokenDeck: [token],
     }, 'host');
@@ -86,7 +93,7 @@ describe('useGameBoardSavedDeckPicker', () => {
   it('rejects a selected record when its card disappeared from the current catalog', async () => {
     const { result, rerender, options, selected } = await open();
     rerender({ ...options, catalogCards: [token] });
-    act(() => result.current.handleSavedDeckImport(selected));
+    await act(async () => { await result.current.handleSavedDeckImport(selected); });
     expect(options.importDeckData).not.toHaveBeenCalled();
     expect(result.current.filteredSavedDeckOptions).toEqual([]);
     expect(result.current.savedDeckImportTargetRole).toBe('host');
@@ -95,7 +102,7 @@ describe('useGameBoardSavedDeckPicker', () => {
   it('refreshes a deleted record without importing the stale selection or hiding other decks', async () => {
     const { result, options, selected } = await open();
     store([{ ...record, id: 'other', name: 'Other' }]);
-    act(() => result.current.handleSavedDeckImport(selected));
+    await act(async () => { await result.current.handleSavedDeckImport(selected); });
     expect(options.importDeckData).not.toHaveBeenCalled();
     expect(result.current.savedDeckImportTargetRole).toBe('host');
     expect(result.current.filteredSavedDeckOptions.map(option => option.deck.id)).toEqual(['other']);
@@ -108,10 +115,10 @@ describe('useGameBoardSavedDeckPicker', () => {
     if (change === 'name') updated.name = 'Renamed';
     if (change === 'rules') updated.ruleConfig.selectedTitle = 'New title';
     store([updated]);
-    act(() => result.current.handleSavedDeckImport(selected));
+    await act(async () => { await result.current.handleSavedDeckImport(selected); });
     expect(options.importDeckData).not.toHaveBeenCalled();
     expect(result.current.filteredSavedDeckOptions[0].deck).toEqual(updated);
-    act(() => result.current.handleSavedDeckImport(result.current.filteredSavedDeckOptions[0]));
+    await act(async () => { await result.current.handleSavedDeckImport(result.current.filteredSavedDeckOptions[0]); });
     expect(options.importDeckData).toHaveBeenCalledTimes(1);
     expect(options.importDeckData.mock.calls[0][0].mainDeck).toHaveLength(change === 'contents' ? 2 : 1);
     expect(result.current.savedDeckImportTargetRole).toBeNull();
@@ -120,7 +127,7 @@ describe('useGameBoardSavedDeckPicker', () => {
   it('does not import a record that became invalid while the picker was open', async () => {
     const { result, options, selected } = await open();
     store([{ ...record, sections: { ...record.sections, main: [{ cardId: 'MISSING', count: 1 }] } }]);
-    act(() => result.current.handleSavedDeckImport(selected));
+    await act(async () => { await result.current.handleSavedDeckImport(selected); });
     expect(options.importDeckData).not.toHaveBeenCalled();
     expect(result.current.filteredSavedDeckOptions).toEqual([]);
   });
@@ -128,21 +135,184 @@ describe('useGameBoardSavedDeckPicker', () => {
   it('does not invalidate the selection when only a different saved deck changes', async () => {
     const { result, options, selected } = await open();
     store([{ ...record, id: 'other', name: 'Other' }, record]);
-    act(() => result.current.handleSavedDeckImport(selected));
+    await act(async () => { await result.current.handleSavedDeckImport(selected); });
     expect(options.importDeckData).toHaveBeenCalledTimes(1);
   });
 
   it('checks current import rules after the picker has opened', async () => {
     const { result, rerender, options, selected } = await open();
     rerender({ ...options, gameState: buildSyncState({ host: { isReady: true } }) });
-    act(() => result.current.handleSavedDeckImport(selected));
+    await act(async () => { await result.current.handleSavedDeckImport(selected); });
     expect(options.importDeckData).not.toHaveBeenCalled();
   });
 
   it('ignores selection after closing the picker', async () => {
     const { result, options, selected } = await open();
     act(() => result.current.closeSavedDeckPicker());
-    act(() => result.current.handleSavedDeckImport(selected));
+    await act(async () => { await result.current.handleSavedDeckImport(selected); });
+    expect(options.importDeckData).not.toHaveBeenCalled();
+  });
+});
+
+
+const deferredCards = () => {
+  let resolve!: (cards: DeckBuilderCardData[]) => void;
+  let reject!: (error: Error) => void;
+  const promise = new Promise<DeckBuilderCardData[]>((yes, no) => { resolve = yes; reject = no; });
+  return { promise, resolve, reject };
+};
+
+describe('pending saved-deck details', () => {
+  it('does not start resolving when the shared guard refuses the import', async () => {
+    const options = args(); options.beginDeckImport.mockReturnValue(null);
+    options.resolveSavedDeckCards = vi.fn().mockResolvedValue([main, token]);
+    const { result, selected } = await open(options);
+    await act(async () => { await result.current.handleSavedDeckImport(selected); });
+    expect(options.resolveSavedDeckCards).not.toHaveBeenCalled();
+    expect(options.importDeckData).not.toHaveBeenCalled();
+    expect(result.current.isSavedDeckLoading).toBe(false);
+  });
+
+  it('rejects an incomplete related-token result and allows a complete retry', async () => {
+    const options = args(); const load = vi.fn().mockResolvedValue([main]); options.resolveSavedDeckCards = load;
+    const { result, selected } = await open(options);
+    await act(async () => { await result.current.handleSavedDeckImport(selected); });
+    expect(options.importDeckData).not.toHaveBeenCalled();
+    expect(result.current.savedDeckLoadFailed).toBe(true);
+    load.mockResolvedValue([main, token]);
+    await act(async () => { await result.current.handleSavedDeckImport(selected); });
+    expect(options.importDeckData).toHaveBeenCalledTimes(1);
+  });
+
+  it('waits for complete cards before importing and exposes loading state', async () => {
+    const pending = deferredCards();
+    const options = args();
+    options.resolveSavedDeckCards = vi.fn(() => pending.promise);
+    const { result, selected } = await open(options);
+    let finished!: Promise<void>;
+    act(() => { finished = result.current.handleSavedDeckImport(selected); });
+    expect(result.current.isSavedDeckLoading).toBe(true);
+    expect(options.importDeckData).not.toHaveBeenCalled();
+    expect(options.resolveSavedDeckCards).toHaveBeenCalledWith(record);
+    await act(async () => { pending.resolve([main, token]); await finished; });
+    expect(result.current.isSavedDeckLoading).toBe(false);
+    expect(options.importDeckData).toHaveBeenCalledExactlyOnceWith({ mainDeck: [main], evolveDeck: [], leaderCards: [], tokenDeck: [token] }, 'host');
+  });
+
+  it('clears the previous failure when a new attempt discovers a deleted record', async () => {
+    const options = args(); const load = vi.fn().mockRejectedValue(new Error('Offline')); options.resolveSavedDeckCards = load;
+    const { result, selected } = await open(options);
+    await act(async () => { await result.current.handleSavedDeckImport(selected); });
+    expect(result.current.savedDeckLoadFailed).toBe(true);
+    store([]);
+    await act(async () => { await result.current.handleSavedDeckImport(selected); });
+    expect(result.current.savedDeckLoadFailed).toBe(false);
+    expect(result.current.filteredSavedDeckOptions).toEqual([]);
+    expect(load).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the picker open after failure and allows explicit retry', async () => {
+    const pending = deferredCards();
+    const options = args();
+    const load = vi.fn(() => pending.promise);
+    options.resolveSavedDeckCards = load;
+    const { result, selected } = await open(options);
+    let finished!: Promise<void>;
+    act(() => { finished = result.current.handleSavedDeckImport(selected); });
+    await act(async () => { pending.reject(new Error('404')); await finished; });
+    expect(result.current.savedDeckLoadFailed).toBe(true);
+    expect(result.current.savedDeckImportTargetRole).toBe('host');
+    expect(options.importDeckData).not.toHaveBeenCalled();
+    load.mockResolvedValue([main, token]);
+    await act(async () => { await result.current.handleSavedDeckImport(selected); });
+    expect(options.importDeckData).toHaveBeenCalledTimes(1);
+    expect(result.current.savedDeckLoadFailed).toBe(false);
+    expect(result.current.savedDeckImportTargetRole).toBeNull();
+  });
+
+  it.each((['close', 'target', 'catalog', 'resolver', 'role', 'unmount'] as const).flatMap(change => (['success', 'failure'] as const).map(outcome => ({ change, outcome }))))('ignores late $outcome after $change', async ({ change, outcome }) => {
+    const pending = deferredCards();
+    const options = args();
+    options.resolveSavedDeckCards = () => pending.promise;
+    const { result, rerender, unmount, selected } = await open(options);
+    let finished!: Promise<void>;
+    act(() => { finished = result.current.handleSavedDeckImport(selected); });
+    if (change === 'close') act(() => result.current.closeSavedDeckPicker());
+    if (change === 'target') act(() => result.current.openSavedDeckPicker('guest'));
+    if (change === 'catalog') rerender({ ...options, catalogCards: [...options.catalogCards] });
+    if (change === 'resolver') rerender({ ...options, resolveSavedDeckCards: () => Promise.resolve([main, token]) });
+    if (change === 'role') rerender({ ...options, role: 'guest' });
+    if (change === 'unmount') unmount();
+    await act(async () => { if (outcome === 'success') pending.resolve([main, token]); else pending.reject(new Error('Stale failure')); await finished; });
+    expect(options.importDeckData).not.toHaveBeenCalled();
+    if (change === 'target') expect(result.current.savedDeckImportTargetRole).toBe('guest');
+    if (change !== 'unmount') expect(result.current.savedDeckLoadFailed).toBe(false);
+  });
+
+  it.each(['updated', 'deleted'] as const)('rechecks the saved record when it was %s during loading', async change => {
+    const pending = deferredCards();
+    const options = args(); options.resolveSavedDeckCards = () => pending.promise;
+    const { result, selected } = await open(options);
+    let finished!: Promise<void>;
+    act(() => { finished = result.current.handleSavedDeckImport(selected); });
+    store(change === 'deleted' ? [] : [{ ...record, name: 'Updated' }]);
+    await act(async () => { pending.resolve([main, token]); await finished; });
+    expect(options.importDeckData).not.toHaveBeenCalled();
+    expect(result.current.savedDeckImportTargetRole).toBe('host');
+    expect(result.current.filteredSavedDeckOptions.map(option => option.deck.name)).toEqual(change === 'deleted' ? [] : ['Updated']);
+  });
+
+  it('does not revive a request when preparation becomes invalid and then valid again', async () => {
+    const pending = deferredCards(); const options = args(); options.resolveSavedDeckCards = () => pending.promise;
+    const { result, rerender, selected } = await open(options);
+    let finished!: Promise<void>;
+    act(() => { finished = result.current.handleSavedDeckImport(selected); });
+    rerender({ ...options, gameState: buildSyncState({ host: { isReady: true } }) });
+    rerender(options);
+    await act(async () => { pending.resolve([main, token]); await finished; });
+    expect(options.importDeckData).not.toHaveBeenCalled();
+  });
+
+  it('keeps the newest selection when an older request later fails', async () => {
+    const old = deferredCards(); const newer = deferredCards(); const options = args();
+    options.resolveSavedDeckCards = vi.fn().mockReturnValueOnce(old.promise).mockReturnValueOnce(newer.promise);
+    const { result, selected } = await open(options);
+    let first!: Promise<void>; let second!: Promise<void>;
+    act(() => { first = result.current.handleSavedDeckImport(selected); });
+    act(() => { second = result.current.handleSavedDeckImport(selected); });
+    await act(async () => { newer.resolve([main, token]); await second; });
+    await act(async () => { old.reject(new Error('Old failure')); await first; });
+    expect(options.importDeckData).toHaveBeenCalledTimes(1);
+    expect(result.current.savedDeckLoadFailed).toBe(false);
+  });
+
+  it('reports a commit failure even after the real setup action consumes its guard', async () => {
+    const options = args();
+    const { result } = renderHook(() => {
+      const setup = useGameBoardSetupActions({ canInteract: true, gameState: options.gameState, role: options.role,
+        uuid: () => 'test-id', dispatchGameEvent: () => { throw new Error('Dispatch failed'); }, setShowResetConfirm: vi.fn(), t: options.t });
+      return useGameBoardSavedDeckPicker({ ...options, beginDeckImport: setup.beginDeckImport, importDeckData: setup.importDeckData });
+    });
+    act(() => result.current.openSavedDeckPicker('host'));
+    await act(async () => { await result.current.handleSavedDeckImport(result.current.filteredSavedDeckOptions[0]); });
+    expect(result.current.savedDeckLoadFailed).toBe(true);
+    expect(result.current.savedDeckImportTargetRole).toBe('host');
+    expect(result.current.isSavedDeckLoading).toBe(false);
+  });
+
+  it.each(['reset', 'direct import'] as const)('uses the real setup guard to ignore completion after %s', async action => {
+    const pending = deferredCards(); const options = args(); options.resolveSavedDeckCards = () => pending.promise;
+    const { result } = renderHook(() => {
+      const setup = useGameBoardSetupActions({ canInteract: true, gameState: options.gameState, role: options.role,
+        uuid: () => 'test-id', dispatchGameEvent: vi.fn(), setShowResetConfirm: vi.fn(), t: options.t });
+      const picker = useGameBoardSavedDeckPicker({ ...options, beginDeckImport: setup.beginDeckImport });
+      return { setup, picker };
+    });
+    act(() => result.current.picker.openSavedDeckPicker('host'));
+    let finished!: Promise<void>;
+    act(() => { finished = result.current.picker.handleSavedDeckImport(result.current.picker.filteredSavedDeckOptions[0]); });
+    act(() => { if (action === 'reset') result.current.setup.confirmResetGame(); else result.current.setup.importDeckData({ mainDeck: [] }, 'host'); });
+    await act(async () => { pending.resolve([main, token]); await finished; });
     expect(options.importDeckData).not.toHaveBeenCalled();
   });
 });

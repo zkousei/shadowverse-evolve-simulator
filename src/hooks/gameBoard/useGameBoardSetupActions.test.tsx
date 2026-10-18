@@ -135,6 +135,68 @@ describe('useGameBoardSetupActions (Pure Hook)', () => {
             });
         });
 
+        it('invalidates a pending non-file import on reset even if the empty board is unchanged', () => {
+            const { result } = renderHook(() => useGameBoardSetupActions(defaultArgs));
+            const pending = result.current.beginDeckImport('host')!;
+            expect(pending.isCurrent()).toBe(true);
+            result.current.confirmResetGame();
+            expect(pending.isCurrent()).toBe(false);
+        });
+
+        it('keeps the newest operation per player and cancellation cannot remove its replacement', () => {
+            const { result } = renderHook(() => useGameBoardSetupActions(defaultArgs));
+            const old = result.current.beginDeckImport('host')!;
+            const guest = result.current.beginDeckImport('guest')!;
+            const newest = result.current.beginDeckImport('host')!;
+            old.cancel();
+            expect(old.isCurrent()).toBe(false);
+            expect(newest.isCurrent()).toBe(true);
+            expect(guest.isCurrent()).toBe(true);
+            newest.cancel();
+            expect(newest.isCurrent()).toBe(false);
+        });
+
+        it('shares ordering with file reads and synchronous imports', () => {
+            const { result } = renderHook(() => useGameBoardSetupActions(defaultArgs));
+            result.current.handleDeckUpload(uploadEvent());
+            const saved = result.current.beginDeckImport('host')!;
+            finish(0, json('Old file'));
+            expect(defaultArgs.dispatchGameEvent).not.toHaveBeenCalled();
+            expect(saved.isCurrent()).toBe(true);
+            result.current.handleDeckUpload(uploadEvent());
+            expect(saved.isCurrent()).toBe(false);
+            const pending = result.current.beginDeckImport('host')!;
+            result.current.importDeckData({ mainDeck: [] }, 'host');
+            expect(pending.isCurrent()).toBe(false);
+        });
+
+        it('checks live state before a pending operation can commit', () => {
+            const state = { current: buildSyncState() };
+            const { result } = renderHook(() => useGameBoardSetupActions({ ...defaultArgs, gameStateRef: state }));
+            const pending = result.current.beginDeckImport('host')!;
+            state.current = buildSyncState({ host: { isReady: true } });
+            expect(pending.isCurrent()).toBe(false);
+            state.current = buildSyncState();
+            expect(pending.isCurrent()).toBe(false);
+        });
+
+        it.each(['role', 'permission'] as const)('does not revive requests after %s changes back', change => {
+            const { result, rerender } = renderHook(options => useGameBoardSetupActions(options), { initialProps: { ...defaultArgs, role: 'host' as PlayerRole } });
+            const pending = result.current.beginDeckImport('host')!;
+            rerender({ ...defaultArgs, role: change === 'role' ? 'guest' : 'host', canInteract: change !== 'permission' });
+            rerender(defaultArgs);
+            expect(pending.isCurrent()).toBe(false);
+        });
+
+        it('does not start an operation without permission and invalidates it on unmount', () => {
+            const { result, rerender, unmount } = renderHook(options => useGameBoardSetupActions(options), { initialProps: { ...defaultArgs, canInteract: false } });
+            expect(result.current.beginDeckImport('host')).toBeNull();
+            rerender(defaultArgs);
+            const pending = result.current.beginDeckImport('host')!;
+            unmount();
+            expect(pending.isCurrent()).toBe(false);
+        });
+
         it.each([json('Old'), '{broken'])('ignores a result after a local reset, including stale parse errors: %s', text => {
             const alert = vi.spyOn(window, 'alert').mockImplementation(() => undefined);
             const { result } = renderHook(() => useGameBoardSetupActions(defaultArgs));

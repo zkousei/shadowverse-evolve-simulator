@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import type { SavedDeckPickerOption } from '../../utils/gameBoard/gameBoardSavedDecks';
 
 type GameBoardSavedDeckPickerDialogProps = {
+  isLoading?: boolean;
+  loadFailed?: boolean;
   targetLabel: string;
   savedDeckSearch: string;
   filteredSavedDeckOptions: SavedDeckPickerOption[];
@@ -13,6 +15,8 @@ type GameBoardSavedDeckPickerDialogProps = {
 };
 
 const GameBoardSavedDeckPickerDialog: React.FC<GameBoardSavedDeckPickerDialogProps> = ({
+  isLoading = false,
+  loadFailed = false,
   targetLabel,
   savedDeckSearch,
   filteredSavedDeckOptions,
@@ -42,6 +46,7 @@ const GameBoardSavedDeckPickerDialog: React.FC<GameBoardSavedDeckPickerDialogPro
       <div
         role="dialog"
         aria-modal="true"
+        aria-busy={isLoading}
         aria-label={t('gameBoard.deckPicker.title')}
         onClick={(event) => event.stopPropagation()}
         className="glass-panel"
@@ -101,6 +106,9 @@ const GameBoardSavedDeckPickerDialog: React.FC<GameBoardSavedDeckPickerDialogPro
           </span>
         </div>
 
+        {isLoading && <div role="status">{t('gameBoard.deckPicker.loading')}</div>}
+        {loadFailed && !isLoading && <div role="alert">{t('gameBoard.deckPicker.loadFailed')}</div>}
+
         <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingRight: '0.25rem' }}>
           {filteredSavedDeckOptions.length === 0 ? (
             <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: '1rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
@@ -128,6 +136,7 @@ const GameBoardSavedDeckPickerDialog: React.FC<GameBoardSavedDeckPickerDialogPro
                 </div>
                 <button
                   type="button"
+                  disabled={isLoading}
                   onClick={() => onLoadDeck(option)}
                   style={{
                     padding: '0.45rem 0.7rem',

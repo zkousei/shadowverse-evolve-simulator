@@ -1563,6 +1563,7 @@ export const useGameBoardLogic = () => {
   });
 
   const {
+    beginDeckImport,
     confirmResetGame,
     importDeckData,
     handleDeckUpload,
@@ -1594,7 +1595,7 @@ export const useGameBoardLogic = () => {
     handleStatChange, setPhase, endTurn, handleUndoTurn, handleSetInitialTurnOrder,
     handlePureCoinFlip, handleRollDice, handleStartGame, handleToggleReady,
     handleDrawInitialHand, startMulligan, handleMulliganOrderSelect, executeMulligan,
-    drawCard, handleExtractCard, handleExtractCards, confirmResetGame, handleDeckUpload, importDeckData, spawnToken, spawnTokens,
+    beginDeckImport, drawCard, handleExtractCard, handleExtractCards, confirmResetGame, handleDeckUpload, importDeckData, spawnToken, spawnTokens,
     handleModifyCounter, handleModifyGenericCounter, handleDragEnd, toggleTap, handleFlipCard, handleSetCardFace, handleSendToBottom, handleSendCardsToBottom,
     handleBanish, handleBanishCards, handlePlayToField, handleSendToCemetery, handleSendCardsToCemetery, handleReturnEvolve, handleShuffleDeck, handleDeclareAttack,
     handleSetRevealHandsMode, handleSetEndStop,

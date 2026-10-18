@@ -161,7 +161,7 @@ const GameBoard: React.FC = () => {
     handleStatChange, setPhase, endTurn, handleUndoTurn, handleSetInitialTurnOrder,
     handlePureCoinFlip, handleRollDice, handleStartGame, handleToggleReady,
     handleDrawInitialHand, startMulligan, handleMulliganOrderSelect, executeMulligan,
-    drawCard, handleExtractCard, handleExtractCards, confirmResetGame, handleDeckUpload, importDeckData, spawnTokens,
+    beginDeckImport, drawCard, handleExtractCard, handleExtractCards, confirmResetGame, handleDeckUpload, importDeckData, spawnTokens,
     handleModifyCounter, handleModifyGenericCounter, handleDragEnd, toggleTap, handleFlipCard, handleSetCardFace, handleSendToBottom, handleSendCardsToBottom,
     handleBanish, handleBanishCards, handlePlayToField, handleSendToCemetery, handleSendCardsToCemetery, handleReturnEvolve, handleShuffleDeck, handleDeclareAttack,
     handleSetRevealHandsMode, handleSetEndStop,
@@ -185,8 +185,8 @@ const GameBoard: React.FC = () => {
   const [isHandRevealDialogOpen, setIsHandRevealDialogOpen] = React.useState(false);
   const [selectedHandRevealIds, setSelectedHandRevealIds] = React.useState<string[]>([]);
   const {
-    allCardsLength,
-    savedDeckSearch,
+    isSavedDeckLoading, savedDeckLoadFailed,
+    allCardsLength,    savedDeckSearch,
     setSavedDeckSearch,
     savedDeckImportTargetRole,
     filteredSavedDeckOptions,
@@ -195,6 +195,7 @@ const GameBoard: React.FC = () => {
     closeSavedDeckPicker,
     handleSavedDeckImport,
   } = useGameBoardSavedDeckPicker({
+    beginDeckImport,
     catalogCards,
     gameState,
     importDeckData,
@@ -678,6 +679,7 @@ const GameBoard: React.FC = () => {
   };
   const savedDeckPickerDialogProps = savedDeckImportTargetRole && savedDeckPickerTargetLabel
     ? {
+        isLoading: isSavedDeckLoading, loadFailed: savedDeckLoadFailed,
         targetLabel: savedDeckPickerTargetLabel,
         savedDeckSearch,
         filteredSavedDeckOptions,
