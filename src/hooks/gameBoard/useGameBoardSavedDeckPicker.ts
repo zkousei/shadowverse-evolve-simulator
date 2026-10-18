@@ -2,7 +2,7 @@ import React from 'react';
 import type { ImportableDeckData } from '../../utils/gameBoard/gameBoardDeckActions';
 import { canImportDeck } from '../../utils/gameBoard/gameRules';
 import { buildLegalSavedDeckOptions, type LegalSavedDeckOption } from '../../utils/gameBoard/gameBoardSavedDecks';
-import { listSavedDecks } from '../../utils/deck/deckStorage';
+import { getSavedDeckById, listSavedDecks } from '../../utils/deck/deckStorage';
 import { loadCardCatalog } from '../../utils/card/cardCatalog';
 import { buildSavedDeckPickerViewModel } from './gameBoardDialogViewModel';
 import type { PlayerRole, SyncState } from '../../types/game';
@@ -66,9 +66,23 @@ export const useGameBoardSavedDeckPicker = ({
     if (!savedDeckImportTargetRole) return;
     if (!canImportDeck(gameState, savedDeckImportTargetRole)) return;
 
-    importDeckData(option.deckData, savedDeckImportTargetRole);
+    const currentDeck = getSavedDeckById(option.deck.id);
+    // A different tab may have edited/deleted the record since the list opened.
+    // Refresh first so the user can review the new selection before importing it.
+    if (!currentDeck || JSON.stringify(currentDeck) !== JSON.stringify(option.deck)) {
+      refreshSavedDeckOptions();
+      return;
+    }
+
+    const [currentOption] = buildLegalSavedDeckOptions([currentDeck], allCardsRef.current, t);
+    if (!currentOption) {
+      refreshSavedDeckOptions();
+      return;
+    }
+
+    importDeckData(currentOption.deckData, savedDeckImportTargetRole);
     closeSavedDeckPicker();
-  }, [closeSavedDeckPicker, gameState, importDeckData, savedDeckImportTargetRole]);
+  }, [closeSavedDeckPicker, gameState, importDeckData, refreshSavedDeckOptions, savedDeckImportTargetRole, t]);
 
   const { filteredSavedDeckOptions, savedDeckPickerTargetLabel } = buildSavedDeckPickerViewModel({
     savedDeckOptions,
