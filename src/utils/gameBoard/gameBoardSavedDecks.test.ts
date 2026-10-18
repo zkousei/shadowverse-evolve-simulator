@@ -85,6 +85,36 @@ const createDeck = (overrides: Partial<SavedDeckRecordV1> = {}): SavedDeckRecord
 });
 
 describe('gameBoardSavedDecks', () => {
+  it('restores complete card details and automatically includes a related token outside saved sections', () => {
+    const token: DeckBuilderCardData = {
+      id: 'TOKEN-001', name: 'Related Token', image: '/token.png',
+      deck_section: 'token', card_kind_normalized: 'token_follower', is_token: true,
+      atk: '1', hp: '2', ability_text: 'Token ability',
+    };
+    const detailedMain: DeckBuilderCardData = {
+      ...mainCard, related_cards: [{ id: token.id, name: token.name }],
+      faces: [{ side: 'back', name: 'Back Knight', ability_text: 'Back ability', atk: '5', hp: '6' }],
+    };
+    const [option] = buildLegalSavedDeckOptions([createDeck()], [detailedMain, leaderCard, token], t);
+    expect(option.deckData.mainDeck).toHaveLength(3);
+    for (const card of option.deckData.mainDeck) expect(card).toEqual(detailedMain);
+    expect(option.deckData.tokenDeck).toEqual([token]);
+    expect(option.deckData.leaderCards).toEqual([leaderCard]);
+    expect(option.deck.sections.token).toEqual([]);
+  });
+
+  it.each(['main', 'evolve', 'leader', 'token'] as const)(
+    'excludes a saved deck with a missing %s ID without hiding another valid deck', section => {
+      const valid = createDeck({ id: 'valid' });
+      const missing = createDeck({
+        id: 'missing', sections: { ...valid.sections, [section]: [{ cardId: 'MISSING', count: 1 }] },
+      });
+      const options = buildLegalSavedDeckOptions([missing, valid], [mainCard, leaderCard], t);
+      expect(options.map(option => option.deck.id)).toEqual(['valid']);
+      expect(options[0].deckData.mainDeck).toHaveLength(3);
+    }
+  );
+
   it('builds legal saved deck options with restored deck data and summaries', () => {
     const [option] = buildLegalSavedDeckOptions([createDeck()], [mainCard, leaderCard], t);
 
