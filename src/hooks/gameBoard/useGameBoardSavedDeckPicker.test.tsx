@@ -8,6 +8,7 @@ import { buildSyncState } from './gameBoardTestUtils';
 import { useGameBoardSavedDeckPicker } from './useGameBoardSavedDeckPicker';
 import { generatedCatalogFixture } from '../../test/generatedCatalogFixture';
 import { createGameBoardSavedDeckReader } from '../../utils/gameBoard/gameBoardSavedDeckReader';
+import { applyGameSyncEvent } from '../../utils/gameBoard/gameSyncReducer';
 
 
 const token: DeckBuilderCardData = {
@@ -165,6 +166,34 @@ const deferredCards = () => {
 };
 
 describe('pending saved-deck details', () => {
+  it.each(['success', 'failure'] as const)('ignores late saved-deck %s after an authoritative reset of the same empty board, then permits retry', async outcome => {
+    const pending = deferredCards();
+    const options = args();
+    const load = vi.fn().mockReturnValueOnce(pending.promise).mockResolvedValue([main, token]);
+    const stateRef = { current: options.gameState };
+    const dispatch = vi.fn();
+    const { result } = renderHook(() => {
+      const setup = useGameBoardSetupActions({ canInteract: true, gameState: options.gameState, gameStateRef: stateRef,
+        role: options.role, uuid: () => 'test-id', dispatchGameEvent: dispatch, setShowResetConfirm: vi.fn(), t: options.t });
+      return useGameBoardSavedDeckPicker({ ...options, resolveSavedDeckCards: load, beginDeckImport: setup.beginDeckImport, importDeckData: setup.importDeckData });
+    });
+    act(() => result.current.openSavedDeckPicker('host'));
+    let finished!: Promise<void>;
+    act(() => { finished = result.current.handleSavedDeckImport(result.current.filteredSavedDeckOptions[0]); });
+    stateRef.current = applyGameSyncEvent(stateRef.current, { id: 'received-reset', type: 'RESET_GAME', actor: 'host' });
+    await act(async () => {
+      if (outcome === 'success') pending.resolve([main, token]);
+      else pending.reject(new Error('Old read failed'));
+      await finished;
+    });
+    expect(dispatch).not.toHaveBeenCalled();
+    expect(result.current.savedDeckLoadFailed).toBe(false);
+    expect(result.current.isSavedDeckLoading).toBe(false);
+    await act(async () => { await result.current.handleSavedDeckImport(result.current.filteredSavedDeckOptions[0]); });
+    expect(dispatch).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ type: 'IMPORT_DECK', actor: 'host' }));
+    expect(result.current.savedDeckImportTargetRole).toBeNull();
+  });
+
   it('accepts the pinned saved-deck reader as a resolver and retries a failure before importing complete data', async () => {
     const source = generatedCatalogFixture([main, token]);
     const related = vi.spyOn(source, 'loadCardsWithRelated').mockRejectedValueOnce(new Error('HTTP 404'));

@@ -20,6 +20,13 @@ const buildState = (overrides: Partial<SyncState> = {}): SyncState => ({
 });
 
 describe('buildGameBoardNetworkSnapshotState', () => {
+  it('preserves a reset revision through JSON transport without adding the marker to legacy states', () => {
+    const state = buildState({ revision: 12, lastResetRevision: 9 });
+    const snapshot: SyncState = JSON.parse(JSON.stringify(buildGameBoardNetworkSnapshotState(state, {})));
+    expect(snapshot).toMatchObject({ revision: 12, lastResetRevision: 9 });
+    expect(buildGameBoardNetworkSnapshotState(buildState(), {})).not.toHaveProperty('lastResetRevision');
+  });
+
   it('strips restorable non-token images and preserves token/custom images', () => {
     const state = buildState({
       cards: [

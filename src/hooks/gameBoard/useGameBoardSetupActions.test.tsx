@@ -143,6 +143,57 @@ describe('useGameBoardSetupActions (Pure Hook)', () => {
             expect(pending.isCurrent()).toBe(false);
         });
 
+        it.each(['host', 'guest'] as const)('invalidates a pending %s import immediately when a remote reset marker changes on an unchanged board', target => {
+            const stateRef = { current: buildSyncState({ revision: 4 }) };
+            const { result } = renderHook(() => useGameBoardSetupActions({ ...defaultArgs, gameStateRef: stateRef }));
+            const pending = result.current.beginDeckImport(target)!;
+            expect(pending.isCurrent()).toBe(true);
+            stateRef.current = buildSyncState({ revision: 5, lastResetRevision: 5 });
+            expect(pending.isCurrent()).toBe(false);
+            stateRef.current = buildSyncState({ revision: 6 });
+            expect(pending.isCurrent()).toBe(false);
+            expect(result.current.beginDeckImport(target)?.isCurrent()).toBe(true);
+        });
+
+        it('ignores an old malformed file after a remote reset without parsing or alerting', () => {
+            const alert = vi.spyOn(window, 'alert').mockImplementation(() => undefined);
+            const stateRef = { current: buildSyncState({ revision: 4 }) };
+            const { result } = renderHook(() => useGameBoardSetupActions({ ...defaultArgs, gameStateRef: stateRef }));
+            result.current.handleDeckUpload(uploadEvent());
+            stateRef.current = buildSyncState({ revision: 5, lastResetRevision: 5 });
+            finish(0, '{bad');
+            expect(alert).not.toHaveBeenCalled();
+            expect(defaultArgs.dispatchGameEvent).not.toHaveBeenCalled();
+        });
+
+        it('does not revive a pending read after observing a reset and then the original marker again', () => {
+            const before = buildSyncState({ revision: 4 });
+            const { result, rerender } = renderHook(props => useGameBoardSetupActions(props), { initialProps: { ...defaultArgs, gameState: before } });
+            result.current.handleDeckUpload(uploadEvent());
+            rerender({ ...defaultArgs, gameState: buildSyncState({ revision: 5, lastResetRevision: 5 }) });
+            rerender({ ...defaultArgs, gameState: before });
+            finish(0, json('Old'));
+            expect(defaultArgs.dispatchGameEvent).not.toHaveBeenCalled();
+        });
+
+        it('preserves pending reads across duplicate reset markers and unrelated revisions', () => {
+            const stateRef = { current: buildSyncState({ revision: 5, lastResetRevision: 5 }) };
+            const { result } = renderHook(() => useGameBoardSetupActions({ ...defaultArgs, gameStateRef: stateRef }));
+            result.current.handleDeckUpload(uploadEvent());
+            stateRef.current = buildSyncState({ revision: 9, lastResetRevision: 5 });
+            finish(0, json('Current'));
+            expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ type: 'IMPORT_DECK' }));
+        });
+
+        it('treats omitted legacy reset markers like zero', () => {
+            const stateRef = { current: buildSyncState({ revision: 4 }) };
+            const { result } = renderHook(() => useGameBoardSetupActions({ ...defaultArgs, gameStateRef: stateRef }));
+            result.current.handleDeckUpload(uploadEvent());
+            stateRef.current = buildSyncState({ revision: 5, lastResetRevision: 0 });
+            finish(0, json('Legacy'));
+            expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledTimes(1);
+        });
+
         it('keeps the newest operation per player and cancellation cannot remove its replacement', () => {
             const { result } = renderHook(() => useGameBoardSetupActions(defaultArgs));
             const old = result.current.beginDeckImport('host')!;

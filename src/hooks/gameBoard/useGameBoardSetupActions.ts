@@ -135,6 +135,9 @@ export function useGameBoardSetupActions({
 // Other players' imports/revisions and presentation-only image/name updates
 // must not cancel this player's pending import. Avoid serializing custom image data.
 const getDeckImportContext = (state: SyncState, target: PlayerRole): string => JSON.stringify({
+    // A reset can preserve this player's exact card/token composition. Its
+    // authoritative marker also arrives in snapshots, independently of UI effects.
+    lastResetRevision: state.lastResetRevision ?? 0,
     cards: state.cards.filter(card => card.owner === target).map(({ image, name, ...card }) => {
         void image; void name;
         return card;

@@ -405,6 +405,7 @@ export function HookHarness() {
       <button onClick={() => handleLookAtTop(2, 'guest')}>Guest Look Top 2</button>
       <button onClick={handleUndoCardMove}>Undo Move</button>
       <input data-testid="deck-upload-input" type="file" onChange={(event) => handleDeckUpload(event, 'host')} />
+      <input data-testid="guest-deck-upload-input" type="file" onChange={(event) => handleDeckUpload(event, 'guest')} />
       <button onClick={() => handleModifyCounter('counter-card', 'atk', 2, 'host')}>Add ATK Counter</button>
       <button onClick={() => handleModifyGenericCounter('counter-card', 1, 'host')}>Add Generic Counter</button>
       <button onClick={() => handleDragEnd(dragEvent('drag-card', 'ex-host'))}>Drag Card to EX</button>
@@ -581,6 +582,7 @@ export const buildSyncState = (overrides: SyncStateOverrides = {}): SyncState =>
   tokenOptions: overrides.tokenOptions ?? { host: [], guest: [] },
   endStop: overrides.endStop ?? { host: false, guest: false },
   revision: overrides.revision ?? 1,
+  ...(overrides.lastResetRevision === undefined ? {} : { lastResetRevision: overrides.lastResetRevision }),
   lastGameState: overrides.lastGameState,
   lastUndoableCardMoveActor: overrides.lastUndoableCardMoveActor ?? null,
   lastUndoableCardMoveState: overrides.lastUndoableCardMoveState ?? null,
