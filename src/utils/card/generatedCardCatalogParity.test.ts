@@ -23,6 +23,7 @@ import {
 } from '../deck/deckStorage';
 import { buildGameBoardCatalogMetadata, buildGameBoardCatalogResources } from '../gameBoard/gameBoardCatalog';
 import { createGameBoardCatalogDetails } from '../gameBoard/gameBoardCatalogDetails';
+import { createGameBoardSavedDeckReader, UnknownSavedDeckCardsError } from '../gameBoard/gameBoardSavedDeckReader';
 import { buildLegalSavedDeckOptions } from '../gameBoard/gameBoardSavedDecks';
 
 type IndexCard = DeckBuilderCardData & { detail_group: string };
@@ -297,6 +298,80 @@ describe('generated card catalog compatibility', () => {
     const restoredMissing = restoreSavedDeckToSnapshot(missing, restored);
     expect(restoredMissing).toEqual(restoreSavedDeckToSnapshot(missing, original));
     expect(restoredMissing.missingCardIds).toContain('MISSING-001');
+  });
+
+  it('restores complete GameBoard saved decks from selected real detail groups with atomic failure and pinned retry', async () => {
+    const sample = readJson<Record<string, unknown> & DeckState>(join(root, 'public/sample-decks/constructed-royal-sample.json'));
+    const sampleRecord: SavedDeckRecordV1 = {
+      schemaVersion: 1, id: 'sample-reader', name: 'Sample', createdAt: '', updatedAt: '',
+      ruleConfig: getImportedDeckRuleConfig(sample),
+      sections: serializeDeckState({ ...sample, tokenDeck: sample.tokenDeck ?? [] }),
+    };
+    const parent = original.find(card => card.deck_section === 'main' && card.related_cards?.some(
+      ref => originalResources.catalogById[ref.id]?.card_kind_normalized === 'token_follower',
+    ))!;
+    const faced = original.find(card => card.deck_section === 'evolve' && card.faces?.length)!;
+    expect(parent).toBeDefined();
+    expect(faced).toBeDefined();
+    const extraRecord: SavedDeckRecordV1 = {
+      ...sampleRecord, id: 'full-detail-reader', name: 'Full detail',
+      ruleConfig: { ...createDefaultDeckRuleConfig(), format: 'other' },
+      sections: serializeDeckState({ mainDeck: [parent], evolveDeck: [faced], leaderCards: [], tokenDeck: [] }),
+    };
+    const manifest = readJson<Manifest>(join(output!, 'manifest.json'));
+    const failedGroup = index.find(card => card.id === sampleRecord.sections.main[0].cardId)!.detail_group;
+    const failedFile = manifest.details[failedGroup].file;
+    let failOnce = true;
+    const request = vi.spyOn(globalThis, 'fetch').mockImplementation(async input => {
+      const path = String(input);
+      if (!path.startsWith('/catalog/')) throw new Error(`Unexpected request: ${path}`);
+      if (path === `/catalog/${failedFile}` && failOnce) {
+        failOnce = false;
+        return new Response('Temporarily unavailable', { status: 404 });
+      }
+      return new Response(readFileSync(join(output!, path.slice('/catalog/'.length)), 'utf8'));
+    });
+    try {
+      const catalog = await openGeneratedCardCatalog('/catalog');
+      const reader = createGameBoardSavedDeckReader(catalog);
+      expect(request).toHaveBeenCalledTimes(2); // manifest + index only
+      await expect(reader.loadCards(sampleRecord)).rejects.toThrow('404');
+      const cards = await reader.loadCards(sampleRecord);
+      const [expected] = buildLegalSavedDeckOptions([sampleRecord], original, key => key);
+      expect(expected).toBeDefined();
+      expect(buildLegalSavedDeckOptions([sampleRecord], cards, key => key)).toEqual([expected]);
+      expect(expected.deckData.mainDeck).toHaveLength(40);
+      expect(expected.deckData.evolveDeck).toHaveLength(10);
+      expect(expected.deckData.leaderCards).toHaveLength(1);
+
+      const fullCards = await reader.loadCards(extraRecord);
+      const [fullExpected] = buildLegalSavedDeckOptions([extraRecord], original, key => key);
+      expect(fullExpected).toBeDefined();
+      expect(fullExpected.deckData.tokenDeck.length).toBeGreaterThan(0);
+      expect(buildLegalSavedDeckOptions([extraRecord], fullCards, key => key)).toEqual([fullExpected]);
+      expect(fullCards.find(card => card.id === faced.id)?.faces).toEqual(faced.faces);
+      for (const card of [...cards, ...fullCards]) expect(card).toEqual(originalResources.catalogById[card.id]);
+      const paths = request.mock.calls.map(([input]) => String(input));
+      const detailPaths = paths.filter(path => path.includes('/details/'));
+      const requestedGroups = new Set(detailPaths);
+      const expectedGroups = new Set([...cards, ...fullCards].map(card =>
+        `/catalog/${manifest.details[index.find(entry => entry.id === card.id)!.detail_group].file}`));
+      expect(requestedGroups).toEqual(expectedGroups);
+      expect(requestedGroups.size).toBeLessThan(Object.keys(manifest.details).length);
+      expect(detailPaths.filter(path => path === `/catalog/${failedFile}`)).toHaveLength(2);
+      for (const path of requestedGroups) {
+        if (path !== `/catalog/${failedFile}`) expect(detailPaths.filter(value => value === path)).toHaveLength(1);
+      }
+      const previousCount = request.mock.calls.length;
+      await reader.loadCards(sampleRecord);
+      expect(request).toHaveBeenCalledTimes(previousCount);
+      await expect(reader.loadCards({ sections: { ...sampleRecord.sections, token: [{ cardId: 'UNKNOWN', count: 1 }] } }))
+        .rejects.toBeInstanceOf(UnknownSavedDeckCardsError);
+      expect(request).toHaveBeenCalledTimes(previousCount);
+      expect(paths.every(path => path.endsWith('/manifest.json') || path.includes(`/versions/${reader.version}/`))).toBe(true);
+    } finally {
+      request.mockRestore();
+    }
   });
 
   it('preserves automatic related-token additions from actual catalog references', () => {
