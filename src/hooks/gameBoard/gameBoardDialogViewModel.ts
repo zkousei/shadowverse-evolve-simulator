@@ -1,13 +1,13 @@
 import { getPlayerLabel } from '../../utils/gameBoard/soloMode';
 import { filterSavedDeckOptionsBySearch } from '../../utils/gameBoard/gameBoardPresentation';
 import { getTotalTokenSpawnCount } from '../../utils/gameBoard/gameBoardTokens';
-import type { LegalSavedDeckOption } from '../../utils/gameBoard/gameBoardSavedDecks';
+import type { SavedDeckPickerOption } from '../../utils/gameBoard/gameBoardSavedDecks';
 import type { PlayerRole, TokenOption } from '../../types/game';
 
 type TranslationFn = (key: string, options?: Record<string, unknown>) => string;
 
 type BuildSavedDeckPickerViewModelArgs = {
-  savedDeckOptions: LegalSavedDeckOption[];
+  savedDeckOptions: SavedDeckPickerOption[];
   savedDeckSearch: string;
   savedDeckImportTargetRole: PlayerRole | null;
   isSoloMode: boolean;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
 import type { SavedDeckRecordV1 } from '../deck/deckStorage';
-import { buildLegalSavedDeckOptions } from './gameBoardSavedDecks';
+import { buildLegalSavedDeckOptions, buildSavedDeckPickerOptions } from './gameBoardSavedDecks';
 
 const t = (key: string, params?: Record<string, string | number>): string => {
   const messages: Record<string, string> = {
@@ -197,5 +197,52 @@ describe('gameBoardSavedDecks', () => {
     });
 
     expect(buildLegalSavedDeckOptions([deck], [mainCard, leaderCard], t)).toEqual([]);
+  });
+});
+
+
+describe('saved deck picker options', () => {
+  it('returns compact saved-record metadata without expanded card arrays', () => {
+    const deck = createDeck();
+    const complete = { ...mainCard, ability_text: 'DETAIL_NOT_FOR_LIST', faces: [{ side: 'back', name: 'Back', ability_text: 'BACK_NOT_FOR_LIST' }] };
+    const options = buildSavedDeckPickerOptions([deck], [complete, leaderCard], t);
+    expect(options).toEqual([{
+      deck, summary: 'Other', counts: 'Main 50 / Evolve 0 / Leader 1 / Token 0',
+    }]);
+    expect(options[0].deck).toBe(deck);
+    expect(options[0]).not.toHaveProperty('deckData');
+    expect(JSON.stringify(options)).not.toContain('DETAIL_NOT_FOR_LIST');
+    expect(JSON.stringify(options)).not.toContain('BACK_NOT_FOR_LIST');
+  });
+
+  it.each(['main', 'evolve', 'leader', 'token'] as const)('keeps valid options and rejects missing %s IDs', section => {
+    const valid = createDeck({ id: 'valid' });
+    const missing = createDeck({ id: 'missing', sections: { ...valid.sections, [section]: [{ cardId: 'MISSING', count: 1 }] } });
+    const options = buildSavedDeckPickerOptions([missing, valid], [mainCard, leaderCard], t);
+    expect(options.map(option => option.deck.id)).toEqual(['valid']);
+  });
+
+  it('keeps legality checks and stored count summaries consistent with full restoration', () => {
+    const valid = createDeck({ id: 'valid' });
+    const invalid = createDeck({ id: 'invalid', ruleConfig: { ...valid.ruleConfig, format: 'constructed', selectedClass: 'ロイヤル' } });
+    const catalog = [mainCard, leaderCard];
+    const options = buildSavedDeckPickerOptions([invalid, valid], catalog, t);
+    expect(options.map(option => option.deck.id)).toEqual(['valid']);
+    expect(options).toEqual(buildLegalSavedDeckOptions([invalid, valid], catalog, t)
+      .map(({ deck, summary, counts }) => ({ deck, summary, counts })));
+  });
+
+  it('keeps the bounded catalog scans for 200 metadata-only options', () => {
+    let reads = 0;
+    const unrelated: DeckBuilderCardData = { ...mainCard, get id() { reads++; return 'UNUSED-001'; } };
+    const options = buildSavedDeckPickerOptions(Array.from({ length: 200 }, (_, i) => createDeck({ id: `deck-${i}` })), [mainCard, leaderCard, unrelated], t);
+    expect(options).toHaveLength(200);
+    expect(options.every(option => !('deckData' in option))).toBe(true);
+    expect(reads).toBeLessThanOrEqual(2);
+  });
+
+  it('keeps empty lists free of catalog scans', () => {
+    const unread: DeckBuilderCardData = { ...mainCard, get id(): string { throw new Error('Unexpected catalog scan'); } };
+    expect(buildSavedDeckPickerOptions([], [unread], t)).toEqual([]);
   });
 });

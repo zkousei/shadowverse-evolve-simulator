@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import { buildSavedDeckPickerViewModel, buildTokenSpawnViewModel } from './gameBoardDialogViewModel';
-import type { LegalSavedDeckOption } from '../../utils/gameBoard/gameBoardSavedDecks';
+import type { SavedDeckPickerOption } from '../../utils/gameBoard/gameBoardSavedDecks';
 import type { SavedDeckRecordV1 } from '../../utils/deck/deckStorage';
 import type { TokenOption } from '../../types/game';
 
 vi.mock('../../utils/gameBoard/gameBoardPresentation', () => ({
-    filterSavedDeckOptionsBySearch: vi.fn((options: LegalSavedDeckOption[], search: string) =>
+    filterSavedDeckOptionsBySearch: vi.fn((options: SavedDeckPickerOption[], search: string) =>
         options.filter(o => o.deck.name.toLowerCase().includes(search.toLowerCase()))
     ),
 }));
@@ -26,16 +26,14 @@ const t = (key: string) => key;
 
 describe('gameBoardDialogViewModel', () => {
     describe('buildSavedDeckPickerViewModel', () => {
-        const baseDeckOptions: LegalSavedDeckOption[] = [
+        const baseDeckOptions: SavedDeckPickerOption[] = [
             {
                 deck: { name: 'Dragon Deck', id: 'd1' } as unknown as SavedDeckRecordV1,
-                deckData: { mainDeck: [], evolveDeck: [], leaderCards: [], tokenDeck: [] },
                 summary: '',
                 counts: '',
             },
             {
                 deck: { name: 'Elf Deck', id: 'd2' } as unknown as SavedDeckRecordV1,
-                deckData: { mainDeck: [], evolveDeck: [], leaderCards: [], tokenDeck: [] },
                 summary: '',
                 counts: '',
             },

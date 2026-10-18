@@ -1,7 +1,7 @@
 import React from 'react';
 import type { ImportableDeckData } from '../../utils/gameBoard/gameBoardDeckActions';
 import { canImportDeck } from '../../utils/gameBoard/gameRules';
-import { buildLegalSavedDeckOptions, type LegalSavedDeckOption } from '../../utils/gameBoard/gameBoardSavedDecks';
+import { buildLegalSavedDeckOptions, buildSavedDeckPickerOptions, type SavedDeckPickerOption } from '../../utils/gameBoard/gameBoardSavedDecks';
 import { getSavedDeckById, listSavedDecks } from '../../utils/deck/deckStorage';
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
 import { buildSavedDeckPickerViewModel } from './gameBoardDialogViewModel';
@@ -27,7 +27,7 @@ export const useGameBoardSavedDeckPicker = ({
   t,
 }: UseGameBoardSavedDeckPickerArgs) => {
   const allCardsLength = catalogCards.length;
-  const [savedDeckOptions, setSavedDeckOptions] = React.useState<LegalSavedDeckOption[]>([]);
+  const [savedDeckOptions, setSavedDeckOptions] = React.useState<SavedDeckPickerOption[]>([]);
   const [savedDeckSearch, setSavedDeckSearch] = React.useState('');
   const [savedDeckImportTargetRole, setSavedDeckImportTargetRole] = React.useState<PlayerRole | null>(null);
   const refreshSavedDeckOptions = React.useCallback(() => {
@@ -36,7 +36,7 @@ export const useGameBoardSavedDeckPicker = ({
       return;
     }
 
-    setSavedDeckOptions(buildLegalSavedDeckOptions(listSavedDecks(), catalogCards, t));
+    setSavedDeckOptions(buildSavedDeckPickerOptions(listSavedDecks(), catalogCards, t));
   }, [catalogCards, t]);
 
   const openSavedDeckPicker = React.useCallback((targetRole: PlayerRole) => {
@@ -53,7 +53,7 @@ export const useGameBoardSavedDeckPicker = ({
     setSavedDeckSearch('');
   }, []);
 
-  const handleSavedDeckImport = React.useCallback((option: LegalSavedDeckOption) => {
+  const handleSavedDeckImport = React.useCallback((option: SavedDeckPickerOption) => {
     if (!savedDeckImportTargetRole) return;
     if (!canImportDeck(gameState, savedDeckImportTargetRole)) return;
 

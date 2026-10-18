@@ -4,7 +4,7 @@ import GameBoardEvolveAutoAttachDialog from './GameBoardEvolveAutoAttachDialog';
 import GameBoardSearchShuffleConfirmDialog from './GameBoardSearchShuffleConfirmDialog';
 import GameBoardSavedDeckPickerDialog from './GameBoardSavedDeckPickerDialog';
 import type { CardDetailLookup } from '../../utils/card/cardDetails';
-import type { LegalSavedDeckOption } from '../../utils/gameBoard/gameBoardSavedDecks';
+import type { SavedDeckPickerOption } from '../../utils/gameBoard/gameBoardSavedDecks';
 
 type EvolveAutoAttachSelection = {
   sourceCard: CardInstance;
@@ -15,11 +15,11 @@ type GameBoardDialogsHostProps = {
   savedDeckPicker: {
     targetLabel: string;
     savedDeckSearch: string;
-    filteredSavedDeckOptions: LegalSavedDeckOption[];
+    filteredSavedDeckOptions: SavedDeckPickerOption[];
     onBackdropClick: (event: React.MouseEvent<HTMLDivElement>) => void;
     onClose: () => void;
     onSearchChange: (value: string) => void;
-    onLoadDeck: (option: LegalSavedDeckOption) => void;
+    onLoadDeck: (option: SavedDeckPickerOption) => void;
   } | null;
   evolveAutoAttach: {
     selection: EvolveAutoAttachSelection;
