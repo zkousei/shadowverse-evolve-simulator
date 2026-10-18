@@ -12,24 +12,17 @@ const fullCards = () => [
   card('BP01-002'),
   card('TK01-001', { related_cards: [{ id: 'BP01-001', name: '元カード' }] }),
 ];
-const compactFields = ['id', 'name', 'image', 'class', 'title', 'type', 'subtype', 'rarity', 'product_name', 'cost', 'atk', 'hp', 'card_kind_normalized', 'deck_section', 'is_token', 'is_evolve_card', 'is_deck_build_legal', 'catalog_status', 'related_cards', 'detail_group'];
-const fixture = (cards = fullCards(), transformIndex = (index: Record<string, unknown>[]) => index, transformFile = (_name: string, text: string) => text, schemaVersion = 1, assignGroup = (id: string) => id.split('-')[0]) => {
+const fixture = (cards = fullCards(), transformIndex = (index: Record<string, unknown>[]) => index, transformFile = (_name: string, text: string) => text, schemaVersion = 1) => {
   const groups = new Map<string, typeof cards>();
   for (const entry of cards) {
-    const group = assignGroup(entry.id);
+    const group = entry.id.split('-')[0];
     groups.set(group, [...(groups.get(group) ?? []), entry]);
   }
   const index = transformIndex(cards.map(entry => {
     const summary = Object.fromEntries(Object.entries(entry).filter(([key]) => !['ability_text', 'faces', 'extension'].includes(key)));
-    return { ...summary, detail_group: assignGroup(entry.id) };
+    return { ...summary, detail_group: entry.id.split('-')[0] };
   }));
-  const wireIndex = schemaVersion === 3 ? {
-    encoding: 'rows-v1', fields: compactFields, rows: index.map(entry => [
-      compactFields.reduce((mask, field, bit) => field in entry ? mask + 2 ** bit : mask, 0),
-      ...compactFields.filter(field => field in entry).map(field => entry[field]),
-    ]),
-  } : index;
-  const files = new Map<string, string>([['index.json', encode(wireIndex)]]);
+  const files = new Map<string, string>([['index.json', encode(index)]]);
   for (const [group, entries] of groups) files.set(`details/${group}.json`, encode(entries));
   for (const [name, text] of files) files.set(name, transformFile(name, text));
   const hashes = Object.fromEntries([...files].sort(([a], [b]) => a < b ? -1 : 1).map(([name, text]) => [name, hash(text)]));
@@ -157,8 +150,14 @@ describe('generated card catalog reader', () => {
     expect((await oldCatalog.loadCards(['BP01-001']))[0].name).toBe(fullCards()[0].name);
   });
 
+  it.each([3, 4])('rejects unsupported schema %s before requesting index or details', async schema => {
+    const { fetchMock } = fixture([], index => index, (_name, text) => text, schema);
+    await expect(openGeneratedCardCatalog('/catalog')).rejects.toThrow(/unsupported version/);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it.each([
-    ['unsupported schema', (m: ReturnType<typeof fixture>['manifest']) => { m.schemaVersion = 4; }],
+    ['unsupported schema', (m: ReturnType<typeof fixture>['manifest']) => { m.schemaVersion = 3; }],
     ['traversal path', (m: ReturnType<typeof fixture>['manifest']) => { m.index.file = '../index.json'; }],
     ['external path', (m: ReturnType<typeof fixture>['manifest']) => { m.details.BP01.file = 'https://example.com/cards.json'; }],
     ['other version', (m: ReturnType<typeof fixture>['manifest']) => { m.catalogVersion = 'f'.repeat(64); }],
@@ -345,168 +344,6 @@ it('aborts a stalled detail response body after its deadline and permits a same-
     expect(await catalog.loadCards(['BP01-001'])).toEqual([fullCards()[0]]);
     await catalog.loadCards(['BP01-001', 'TK01-001']);
     expect(fetchMock).toHaveBeenCalledTimes(5); // manifest/index, stalled group, successful group, retry
-    await vi.advanceTimersByTimeAsync(0);
-    expect(vi.getTimerCount()).toBe(0);
-  } finally { vi.useRealTimers(); }
-});
-
-
-const splitGroup = (id: string) => id.startsWith('BP01-') ? `BP01@${id.split('-')[1].padStart(4, '0')}` : id.split('-')[0];
-const splitFixture = (cards = fullCards(), transformIndex = (index: Record<string, unknown>[]) => index,
-  transformFile = (_name: string, text: string) => text, assignGroup = splitGroup, schemaVersion = 3) =>
-  fixture(cards, transformIndex, transformFile, schemaVersion, assignGroup);
-
-describe('schema 3 split catalog reader', () => {
-  it('uses exact shard assignments while preserving order, duplicates, complete details, related cycles and cache sharing', async () => {
-    const cards = fullCards();
-    Object.assign(cards[1], { related_cards: [{ id: 'BP01-001', name: 'first' }] });
-    const { fetchMock, index } = splitFixture(cards);
-    const catalog = await openGeneratedCardCatalog('/catalog');
-    expect(catalog.index).toEqual(index);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(await catalog.loadCards(['BP01-002', 'BP01-001', 'BP01-002'])).toEqual([cards[1], cards[0], cards[1]]);
-    expect(await catalog.loadCardsWithRelated(['BP01-002'])).toEqual([cards[1], cards[0], cards[2]]);
-    expect(fetchMock).toHaveBeenCalledTimes(5);
-    expect(catalog.index.every(Object.isFrozen)).toBe(true);
-    const detail = (await catalog.loadCards(['BP01-001']))[0];
-    expect(Object.isFrozen((detail as unknown as Record<string, unknown>).extension)).toBe(true);
-    const paths = fetchMock.mock.calls.map(([path]) => path);
-    expect(paths.filter(path => path.includes('/details/')).map(path => path.split('/').pop())).toEqual(['BP01@0002.json', 'BP01@0001.json', 'TK01.json']);
-  });
-
-  it('allows unsplit products and empty catalogs under schema 3', async () => {
-    splitFixture(fullCards(), index => index, (_name, text) => text, id => id.split('-')[0]);
-    expect((await openGeneratedCardCatalog('/catalog')).index).toHaveLength(3);
-    const { fetchMock } = splitFixture([]);
-    const empty = await openGeneratedCardCatalog('/catalog');
-    expect(await empty.loadCardsWithRelated([])).toEqual([]);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-  });
-
-  it.each([1, 2])('does not accept shard syntax under schema %s', async schema => {
-    const { fetchMock } = splitFixture(fullCards(), index => index, (_name, text) => text, splitGroup, schema);
-    await expect(openGeneratedCardCatalog('/catalog')).rejects.toThrow(/unsafe group/);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-  });
-
-  it.each(['BP01@1', 'BP01@0000', 'BP01@00001', 'BP01@-001', 'BP01@0001/../x', 'BP01%400001', 'BP01@0001@0002'])('rejects noncanonical or unsafe shard %s before fetching files', async group => {
-    const { fetchMock } = splitFixture(fullCards(), index => index, (_name, text) => text, id => id.startsWith('BP01-') ? group : 'TK01');
-    await expect(openGeneratedCardCatalog('/catalog')).rejects.toThrow(/unsafe group/);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-  });
-
-  it.each(['mixed', 'gap'] as const)('rejects %s product groups before fetching files', async kind => {
-    const { fetchMock } = splitFixture(fullCards(), index => index, (_name, text) => text, id => {
-      if (id === 'BP01-001') return kind === 'mixed' ? 'BP01' : 'BP01@0001';
-      if (id === 'BP01-002') return kind === 'mixed' ? 'BP01@0001' : 'BP01@0003';
-      return 'TK01';
-    });
-    await expect(openGeneratedCardCatalog('/catalog')).rejects.toThrow(/product groups/);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-  });
-
-  it.each(['foreign-product', 'unknown-shard', 'base-instead-of-shard', 'numeric-group'] as const)('rejects a hash-consistent index with %s', async kind => {
-    const wrongGroup = { 'foreign-product': 'TK01', 'unknown-shard': 'BP01@0003',
-      'base-instead-of-shard': 'BP01', 'numeric-group': 1 }[kind];
-    splitFixture(fullCards(), index => index.map(entry => entry.id === 'BP01-001' ? { ...entry, detail_group: wrongGroup } : entry));
-    await expect(openGeneratedCardCatalog('/catalog')).rejects.toThrow(/index projection/);
-  });
-
-  it('rejects shard membership counts that disagree with the index', async () => {
-    splitFixture(fullCards(), index => index.map(entry => entry.id === 'BP01-002' ? { ...entry, detail_group: 'BP01@0001' } : entry));
-    await expect(openGeneratedCardCatalog('/catalog')).rejects.toThrow(/group count mismatch/);
-  });
-
-  it('rejects validly hashed details from another shard of the same product', async () => {
-    splitFixture(fullCards(), index => index, (name, text) => name === 'details/BP01@0001.json' ? encode([fullCards()[1]]) : text);
-    const catalog = await openGeneratedCardCatalog('/catalog');
-    await expect(catalog.loadCards(['BP01-001'])).rejects.toThrow(/detail does not match index/);
-    expect(await catalog.loadCards(['BP01-002'])).toEqual([fullCards()[1]]);
-  });
-
-  it('does not mix versions when a schema 2 source is replaced by a schema 3 source', async () => {
-    const old = fixture(fullCards(), index => index, (name, text) => {
-      if (name !== 'index.json') return text;
-      const entries: Record<string, unknown>[] = JSON.parse(text);
-      return encode({ encoding: 'rows-v1', fields: compactFields, rows: entries.map(entry => [
-        compactFields.reduce((mask, field, bit) => field in entry ? mask + 2 ** bit : mask, 0),
-        ...compactFields.filter(field => field in entry).map(field => entry[field]),
-      ]) });
-    }, 2);
-    const oldCatalog = await openGeneratedCardCatalog('/catalog');
-    const cards = fullCards();
-    cards[0].name = 'Updated';
-    const fresh = splitFixture(cards);
-    for (const [path, body] of old.routes) if (!path.endsWith('/manifest.json')) fresh.routes.set(path, body);
-    const current = await openGeneratedCardCatalog('/catalog');
-    expect((await oldCatalog.loadCards(['BP01-001']))[0].name).toBe(fullCards()[0].name);
-    expect((await current.loadCards(['BP01-001']))[0].name).toBe('Updated');
-    expect(current.version).not.toBe(oldCatalog.version);
-  });
-
-  it('shares four request slots across eight shards of one product', async () => {
-    const cards = Array.from({ length: 8 }, (_, i) => card(`BP01-${String(i + 1).padStart(3, '0')}`));
-    const { fetchMock, routes, manifest } = splitFixture(cards);
-    const catalog = await openGeneratedCardCatalog('/catalog');
-    const gates = cards.map(() => deferred());
-    const started: number[] = [];
-    fetchMock.mockImplementation(async path => {
-      const part = Number(path.match(/@(\d+)\.json$/)![1]);
-      started.push(part);
-      return gates[part - 1].promise;
-    });
-    const first = catalog.loadCards([cards[0].id, cards[1].id, cards[0].id]);
-    const second = catalog.loadCards(cards.slice(2).map(card => card.id));
-    expect(started).toEqual([1, 2, 3, 4]);
-    const finish = (part: number) => gates[part - 1].resolve(new Response(routes.get(`/catalog/${manifest.details[`BP01@${String(part).padStart(4, '0')}`].file}`)));
-    finish(2);
-    await vi.waitFor(() => expect(started).toEqual([1, 2, 3, 4, 5]));
-    gates.forEach((_gate, i) => finish(i + 1));
-    expect(await first).toEqual([cards[0], cards[1], cards[0]]);
-    expect(await second).toEqual(cards.slice(2));
-    await catalog.loadCards(cards.map(card => card.id));
-    expect(fetchMock).toHaveBeenCalledTimes(10);
-  });
-
-  it('retries only a failed shard and keeps a successful sibling cached', async () => {
-    const { fetchMock, routes, manifest } = splitFixture();
-    const catalog = await openGeneratedCardCatalog('/catalog');
-    const path = `/catalog/${manifest.details['BP01@0001'].file}`;
-    const original = routes.get(path)!;
-    routes.delete(path);
-    await expect(catalog.loadCards(['BP01-001', 'BP01-002'])).rejects.toThrow(/404/);
-    await catalog.loadCards(['BP01-002']);
-    const before = fetchMock.mock.calls.length;
-    routes.set(path, original);
-    expect(await catalog.loadCards(['BP01-002', 'BP01-001'])).toEqual([fullCards()[1], fullCards()[0]]);
-    expect(fetchMock).toHaveBeenCalledTimes(before + 1);
-  });
-});
-
-
-it('aborts a stalled schema 3 shard body without evicting its successful sibling', async () => {
-  const { fetchMock, routes } = splitFixture();
-  const catalog = await openGeneratedCardCatalog('/catalog');
-  vi.useFakeTimers();
-  try {
-    let attempts = 0;
-    let stalledSignal: AbortSignal | undefined;
-    fetchMock.mockImplementation(async (path, options) => {
-      if (path.endsWith('/BP01@0001.json') && attempts++ === 0) {
-        stalledSignal = options?.signal ?? undefined;
-        return new Response(new ReadableStream<Uint8Array>({ start(controller) {
-          options?.signal?.addEventListener('abort', () => controller.error(new Error('aborted response body')), { once: true });
-        } }));
-      }
-      return new Response(routes.get(path));
-    });
-    const outcome = catalog.loadCards(['BP01-001']).then(() => 'unexpected success', error => error);
-    expect(await catalog.loadCards(['BP01-002'])).toEqual([fullCards()[1]]);
-    await vi.advanceTimersByTimeAsync(30_000);
-    expect(stalledSignal?.aborted).toBe(true);
-    expect((await outcome).message).toMatch(/timed out/);
-    expect(await catalog.loadCards(['BP01-001', 'BP01-002'])).toEqual(fullCards().slice(0, 2));
-    expect(fetchMock).toHaveBeenCalledTimes(5);
     await vi.advanceTimersByTimeAsync(0);
     expect(vi.getTimerCount()).toBe(0);
   } finally { vi.useRealTimers(); }

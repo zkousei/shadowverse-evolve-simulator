@@ -8,17 +8,16 @@ const required = 2 ** 19 + 3;
 const wire = (): { encoding: string; fields: string[]; rows: unknown[][] } => ({ encoding: 'rows-v1', fields: [...fields], rows: [[required, 'A-1', '日本語', 'A']] });
 
 describe('generated compact index decoding', () => {
+  it.each([3, 4])('rejects unsupported schema %s even with otherwise valid compact rows', schema => {
+    expect(() => decodeGeneratedCardIndex(wire(), schema)).toThrow(/compact index/);
+  });
+
   it('restores exact values and distinguishes absent fields, empty strings and false without mutating input', () => {
     const input = wire();
     input.rows = [[required + 2 ** 2 + 2 ** 14 + 2 ** 18, 'A-1', '日本語', '', false, [{ id: 'A-1', name: 'self', future: { zero: 0 } }], 'A']];
     const before = JSON.stringify(input);
     expect(decodeGeneratedCardIndex(input, 2)).toEqual([{ id: 'A-1', name: '日本語', image: '', is_token: false, related_cards: [{ id: 'A-1', name: 'self', future: { zero: 0 } }], detail_group: 'A' }]);
     expect(JSON.stringify(input)).toBe(before);
-  });
-  it('uses the same compact rows for schema 3 without accepting schema 1 arrays', () => {
-    expect(decodeGeneratedCardIndex(wire(), 3)).toEqual(decodeGeneratedCardIndex(wire(), 2));
-    expect(decodeGeneratedCardIndex({ ...wire(), rows: [] }, 3)).toEqual([]);
-    expect(() => decodeGeneratedCardIndex([], 3)).toThrow(/compact index/);
   });
   it('accepts an empty compact catalog', () => {
     expect(decodeGeneratedCardIndex({ ...wire(), rows: [] }, 2)).toEqual([]);
@@ -28,7 +27,7 @@ describe('generated compact index decoding', () => {
     expect(decodeGeneratedCardIndex(entries, 1)).toBe(entries);
     expect(() => decodeGeneratedCardIndex(entries, 2)).toThrow();
     expect(() => decodeGeneratedCardIndex(wire(), 1)).toThrow();
-    expect(() => decodeGeneratedCardIndex(wire(), 4)).toThrow();
+    expect(() => decodeGeneratedCardIndex(wire(), 3)).toThrow();
   });
   it.each([
     ['wrong encoding', () => ({ ...wire(), encoding: 'unknown' })],
@@ -49,6 +48,6 @@ describe('generated compact index decoding', () => {
     ['missing value', () => ({ ...wire(), rows: [[required, 'A-1', 'A']] })],
     ['extra value', () => ({ ...wire(), rows: [[required, 'A-1', 'A', 'A', 'extra']] })],
   ])('rejects %s rather than interpreting shifted or partial data', (_label, make) => {
-    for (const schema of [2, 3]) expect(() => decodeGeneratedCardIndex(make(), schema)).toThrow(/compact index/);
+    expect(() => decodeGeneratedCardIndex(make(), 2)).toThrow(/compact index/);
   });
 });
