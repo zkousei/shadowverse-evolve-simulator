@@ -35,6 +35,60 @@ class PythonEntrypointsTest(unittest.TestCase):
             self.assertEqual(result.exception.code, 1)
             self.assertEqual({p: p.read_bytes() for p in output.rglob('*') if p.is_file()}, generated)
 
+    def test_catalog_measurement_module_is_read_only_and_measures_selected_groups(self):
+        card = {'id': 'TEST-001', 'name': 'Test', 'image': '', 'ability_text': 'Details'}
+        with self.workspace():
+            Path('public/cards_detailed.json').write_text(json.dumps([card]))
+            Path('public/cards_preview.json').write_text('[]')
+            Path('deck.json').write_text(json.dumps({'mainDeck': [card, card]}))
+            before = {str(p): p.read_bytes() for p in Path('.').rglob('*') if p.is_file()}
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output), patch.object(sys, 'argv', ['measure_catalog', '--deck', 'deck.json']), self.assertRaises(SystemExit) as result:
+                self.run_module('tools.card_data.measure_catalog')
+            self.assertEqual(result.exception.code, 0)
+            report = json.loads(output.getvalue())
+            self.assertEqual(report['scenarios']['initial']['requests'], 2)
+            self.assertEqual(report['scenarios']['selected']['requests'], 3)
+            self.assertEqual(report['scenarios']['selected']['requestedEntries'], 2)
+            self.assertEqual(report['scenarios']['selected']['uniqueRequestedCards'], 1)
+            self.assertEqual(report['scenarios']['selected']['groups'], ['TEST'])
+            self.assertEqual({str(p): p.read_bytes() for p in Path('.').rglob('*') if p.is_file()}, before)
+            self.assertFalse(Path('artifacts').exists())
+            from tools.card_data.generate_catalog import generate_catalog
+            generate_catalog(Path('public/cards_detailed.json'), Path('public/cards_preview.json'), Path('build-catalog'))
+            before = {str(p): p.read_bytes() for p in Path('.').rglob('*') if p.is_file()}
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output), patch.object(sys, 'argv', ['measure_catalog', '--deck', 'deck.json', '--check-output', 'build-catalog']), self.assertRaises(SystemExit) as result:
+                self.run_module('tools.card_data.measure_catalog')
+            self.assertEqual(result.exception.code, 0)
+            self.assertEqual(json.loads(output.getvalue()), report)
+            self.assertEqual({str(p): p.read_bytes() for p in Path('.').rglob('*') if p.is_file()}, before)
+
+    def test_catalog_measurement_rejects_bad_decks_and_corrupt_builds_without_writing(self):
+        from tools.card_data.generate_catalog import generate_catalog
+
+        with self.workspace():
+            Path('public/cards_detailed.json').write_text(json.dumps([{'id': 'TEST-001', 'name': 'Test'}]))
+            Path('public/cards_preview.json').write_text('[]')
+            generate_catalog(Path('public/cards_detailed.json'), Path('public/cards_preview.json'), Path('build-catalog'))
+            for deck in ('{', '{}', '{"mainDeck":{},"mainDeck":[]}', '{"mainDeck":[{"id":"UNKNOWN"}]}'):
+                Path('deck.json').write_text(deck)
+                before = {str(p): p.read_bytes() for p in Path('.').rglob('*') if p.is_file()}
+                output = io.StringIO()
+                with self.subTest(deck=deck), contextlib.redirect_stdout(output), contextlib.redirect_stderr(io.StringIO()), patch.object(sys, 'argv', ['measure_catalog', '--deck', 'deck.json', '--check-output', 'build-catalog']), self.assertRaises(SystemExit) as result:
+                    self.run_module('tools.card_data.measure_catalog')
+                self.assertEqual(result.exception.code, 1)
+                self.assertEqual(output.getvalue(), '')
+                self.assertEqual({str(p): p.read_bytes() for p in Path('.').rglob('*') if p.is_file()}, before)
+            Path('build-catalog/manifest.json').write_text('{}')
+            before = {str(p): p.read_bytes() for p in Path('.').rglob('*') if p.is_file()}
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output), contextlib.redirect_stderr(io.StringIO()), patch.object(sys, 'argv', ['measure_catalog', '--check-output', 'build-catalog']), self.assertRaises(SystemExit) as result:
+                self.run_module('tools.card_data.measure_catalog')
+            self.assertEqual(result.exception.code, 1)
+            self.assertEqual(output.getvalue(), '')
+            self.assertEqual({str(p): p.read_bytes() for p in Path('.').rglob('*') if p.is_file()}, before)
+
     def run_module(self, name):
         # Discovery may already have imported this module via its parser tests.
         # Execute a fresh __main__ namespace, then restore the discovered modules.

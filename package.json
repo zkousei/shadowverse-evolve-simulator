@@ -24,6 +24,7 @@
     "cards:audit": "python3 -m tools.card_data.audit_cards",
     "cards:audit:preview": "python3 -m tools.card_data.audit_preview_cards",
     "cards:generate:catalog": "python3 -m tools.card_data.generate_catalog",
+    "cards:measure:catalog": "python3 -m tools.card_data.measure_catalog",
     "cards:check:catalog": "python3 -m tools.card_data.generate_catalog --check",
     "cards:audit:all": "npm run cards:audit && npm run cards:audit:preview"
   },
