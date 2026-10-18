@@ -11,7 +11,7 @@ const invalid = (): never => { throw new Error('Invalid generated card catalog: 
 /** Expand the wire format before existing card, graph and projection checks. */
 export const decodeGeneratedCardIndex = (value: unknown, schemaVersion: number): unknown[] => {
   if (schemaVersion === 1) return Array.isArray(value) ? value : invalid();
-  if (schemaVersion !== 2 || !value || typeof value !== 'object' || Array.isArray(value)) return invalid();
+  if ((schemaVersion !== 2 && schemaVersion !== 3) || !value || typeof value !== 'object' || Array.isArray(value)) return invalid();
   const data = value as Record<string, unknown>;
   if (Object.keys(data).length !== 3 || data.encoding !== 'rows-v1' ||
       !Array.isArray(data.fields) || data.fields.length !== columns.length ||
