@@ -229,7 +229,8 @@ const reduceGameSyncEvent = (
 
       const nextPlayer = state.turnPlayer === 'host' ? 'guest' : 'host';
       if (state.endStop[nextPlayer]) return state;
-      const isNewTurnRound = nextPlayer === 'host';
+      // Legacy sessions have no reliable starter metadata; preserve their existing count convention.
+      const isNewTurnRound = nextPlayer === (state.startingPlayer ?? 'host');
       const newTurnCount = isNewTurnRound ? state.turnCount + 1 : state.turnCount;
       const nextPlayerState = { ...state[nextPlayer] };
 
@@ -616,6 +617,7 @@ const reduceGameSyncEvent = (
       return bumpRevision({
         ...state,
         turnPlayer: starter,
+        startingPlayer: starter,
         turnCount: 1,
         phase: 'Start',
         endStop: { host: false, guest: false },

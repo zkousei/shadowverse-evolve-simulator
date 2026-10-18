@@ -28,6 +28,8 @@ export interface SyncState {
   guest: PlayerHUD;
   cards: CardInstance[]; // all cards in play
   turnPlayer: PlayerRole;
+  /** First player of the match; legacy sessions omit this and count host-based rounds. */
+  startingPlayer?: PlayerRole;
   turnCount: number;
   phase: 'Start' | 'Main' | 'End';
   gameStatus: 'preparing' | 'playing';
@@ -62,6 +64,7 @@ export const initialState: SyncState = {
   guest: { hp: 20, pp: 0, maxPp: 0, ep: 3, sep: 1, combo: 0, initialHandDrawn: false, mulliganUsed: false, isReady: false },
   cards: [],
   turnPlayer: 'host',
+  startingPlayer: 'host',
   turnCount: 1,
   phase: 'Start',
   gameStatus: 'preparing',

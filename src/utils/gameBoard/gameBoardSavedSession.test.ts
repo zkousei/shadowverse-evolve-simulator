@@ -29,6 +29,37 @@ const buildState = (overrides: Partial<SyncState> = {}): SyncState => ({
 });
 
 describe('gameBoardSavedSession', () => {
+  it('preserves the guest starter when saving, restoring and undoing a turn', () => {
+    const ordered = applyGameSyncEvent(buildState(), { id: 'order', type: 'SET_INITIAL_TURN_ORDER', actor: 'host', starter: 'guest', manual: true });
+    const started = applyGameSyncEvent(ordered, { id: 'start', type: 'START_GAME', actor: 'host' });
+    const ended = applyGameSyncEvent(started, { id: 'end', type: 'END_TURN', actor: 'guest' });
+    const payload = buildSavedHostSessionPayload('ROOM', 'test', ended, 'now');
+    const loaded = parseSavedHostSession(JSON.stringify(payload), 'ROOM', 'test');
+    expect(loaded?.state).toMatchObject({ startingPlayer: 'guest', turnPlayer: 'host', turnCount: 1 });
+    const undone = applyGameSyncEvent(loaded!.state, { id: 'undo', type: 'UNDO_LAST_TURN', actor: 'host' });
+    expect(undone).toMatchObject({ startingPlayer: 'guest', turnPlayer: 'guest', turnCount: 1 });
+    const next = applyGameSyncEvent(loaded!.state, { id: 'next', type: 'END_TURN', actor: 'host' });
+    expect(next).toMatchObject({ turnPlayer: 'guest', turnCount: 2 });
+  });
+
+  it('continues legacy saved sessions without guessing or changing their existing turn count', () => {
+    const payload = buildSavedHostSessionPayload('ROOM', 'test', buildState({ gameStatus: 'playing', turnPlayer: 'guest', turnCount: 4 }), 'now');
+    const raw = JSON.parse(JSON.stringify(payload));
+    delete raw.state.startingPlayer;
+    const loaded = parseSavedHostSession(JSON.stringify(raw), 'ROOM', 'test');
+    expect(loaded?.state.turnCount).toBe(4);
+    const next = applyGameSyncEvent(loaded!.state, { id: 'next', type: 'END_TURN', actor: 'guest' });
+    expect(next).toMatchObject({ turnPlayer: 'host', turnCount: 5 });
+    const undone = applyGameSyncEvent(next, { id: 'undo-legacy', type: 'UNDO_LAST_TURN', actor: 'host' });
+    expect(undone).toMatchObject({ turnPlayer: 'guest', turnCount: 4 });
+    expect(undone).not.toHaveProperty('startingPlayer');
+  });
+
+  it.each(['invalid', null, 1])('rejects an invalid optional starting player %s', startingPlayer => {
+    const payload = { room: 'ROOM', appVersion: 'test', savedAt: 'now', state: { ...buildState(), startingPlayer } };
+    expect(parseSavedHostSession(JSON.stringify(payload), 'ROOM', 'test')).toBeNull();
+  });
+
   it.each([undefined, 0, 4])('preserves a valid optional reset revision %s while reading a saved session', marker => {
     const state = buildState({ revision: 8, ...(marker === undefined ? {} : { lastResetRevision: marker }) });
     const payload = buildSavedHostSessionPayload('ROOM', 'test', state, 'now');

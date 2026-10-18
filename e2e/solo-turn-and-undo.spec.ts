@@ -1,6 +1,7 @@
 import { test, expect } from './helpers/test';
 import {
   boardSection,
+  importSoloDummyDecks,
   startSoloGame,
   spawnDefaultToken,
   openMainDeckActions,
@@ -32,6 +33,39 @@ test('retains more than five logs in a scrollable dropdown without increasing he
 });
 
 test.describe('Solo Turn and Undo Flow', () => {
+  test('keeps both players on the same round when Player 2 starts, including end-turn Undo', async ({ page }) => {
+    await page.goto('/game?mode=solo');
+    await importSoloDummyDecks(page);
+    const preparation = page.getByTestId('preparation-controls');
+    await preparation.getByRole('button', { name: /Player 2 1st/ }).click();
+    await preparation.getByRole('button', { name: /Draw Hand \(4\)/ }).click();
+    await expect(zoneCards(page, 'hand-host')).toHaveCount(4);
+    await preparation.getByRole('button', { name: /Player 1 Ready/ }).click();
+    await preparation.getByRole('button', { name: /Draw P2 Hand \(4\)/ }).click();
+    await expect(zoneCards(page, 'hand-guest')).toHaveCount(4);
+    await preparation.getByRole('button', { name: /Player 2 Ready/ }).click();
+    await preparation.getByRole('button', { name: /START GAME/ }).click();
+    await expect(preparation).toBeHidden();
+    const turn = page.getByTestId('gameboard-turn-panel');
+    await expect(turn).toContainText('TURN 1');
+    await expect(boardSection(page, 'top')).toHaveAttribute('data-turn-active', 'true');
+    await boardSection(page, 'top').getByRole('button', { name: 'End Player 2 Turn', exact: true }).click();
+    await expect(boardSection(page, 'bottom')).toHaveAttribute('data-turn-active', 'true');
+    await expect(turn).toContainText('TURN 1');
+    await expect(zoneCards(page, 'hand-host')).toHaveCount(5);
+    await boardSection(page, 'bottom').getByRole('button', { name: 'End Player 1 Turn', exact: true }).click();
+    await expect(turn).toContainText('TURN 2');
+    await expect(boardSection(page, 'top')).toHaveAttribute('data-turn-active', 'true');
+    await expect(zoneCards(page, 'hand-guest')).toHaveCount(5);
+    await page.getByRole('button', { name: /UNDO LAST END TURN/ }).click();
+    await page.getByRole('dialog', { name: 'Undo Last End Turn' }).getByRole('button', { name: 'Yes, Undo' }).click();
+    await expect(turn).toContainText('TURN 1');
+    await expect(boardSection(page, 'bottom')).toHaveAttribute('data-turn-active', 'true');
+    await expect(zoneCards(page, 'hand-guest')).toHaveCount(4);
+    await boardSection(page, 'bottom').getByRole('button', { name: 'End Player 1 Turn', exact: true }).click();
+    await expect(turn).toContainText('TURN 2');
+  });
+
   test('undoes multiple moves across solo players and then still undoes the end turn', async ({ page }) => {
     await startSoloGame(page);
     await boardSection(page, 'bottom').getByRole('button', { name: 'End Player 1 Turn' }).click();

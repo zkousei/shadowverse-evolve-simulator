@@ -11,6 +11,41 @@ const createState = (overrides: Partial<SyncState> = {}): SyncState => ({
 });
 
 describe('gameSyncReducer', () => {
+  it.each(['host', 'guest'] as const)('counts complete rounds from the %s starter and preserves turn resources and Undo', starter => {
+    let state = applyGameSyncEvent(createState(), {
+      id: 'order', type: 'SET_INITIAL_TURN_ORDER', actor: 'host', starter, manual: true,
+    });
+    state = applyGameSyncEvent(state, { id: 'start', type: 'START_GAME', actor: 'host' });
+    const second = starter === 'host' ? 'guest' : 'host';
+    for (let step = 0; step < 6; step++) {
+      expect(state).toMatchObject({ turnPlayer: step % 2 === 0 ? starter : second, turnCount: Math.floor(step / 2) + 1 });
+      const before = state;
+      const next = before.turnPlayer === 'host' ? 'guest' : 'host';
+      const draw = vi.spyOn(CardLogic, 'drawCard');
+      const ended = applyGameSyncEvent(before, { id: `end-${step}`, type: 'END_TURN', actor: before.turnPlayer });
+      expect(ended[next].maxPp).toBe(before[next].maxPp + 1);
+      expect(ended[next].pp).toBe(ended[next].maxPp);
+      expect(draw).toHaveBeenCalledExactlyOnceWith(before.cards, next);
+      draw.mockRestore();
+      const undone = applyGameSyncEvent(ended, { id: `undo-${step}`, type: 'UNDO_LAST_TURN', actor: 'host' });
+      expect(undone).toMatchObject({ turnPlayer: before.turnPlayer, turnCount: before.turnCount });
+      state = applyGameSyncEvent(undone, { id: `redo-${step}`, type: 'END_TURN', actor: before.turnPlayer });
+      expect(state.turnCount).toBe(ended.turnCount);
+    }
+  });
+
+  it('keeps the guest starter through card Undo and resets it for a fresh game', () => {
+    const ordered = applyGameSyncEvent(createState(), { id: 'order', type: 'SET_INITIAL_TURN_ORDER', actor: 'host', starter: 'guest', manual: true });
+    const started = applyGameSyncEvent(ordered, { id: 'start', type: 'START_GAME', actor: 'host' });
+    const changed = applyGameSyncEvent(started, { id: 'hp', type: 'MODIFY_PLAYER_STAT', actor: 'guest', playerKey: 'guest', stat: 'hp', delta: -1 });
+    const undone = applyGameSyncEvent(changed, { id: 'undo-card', type: 'UNDO_CARD_MOVE', actor: 'guest' });
+    expect(undone).toHaveProperty('startingPlayer', 'guest');
+    const ended = applyGameSyncEvent(undone, { id: 'end', type: 'END_TURN', actor: 'guest' });
+    expect(ended).toMatchObject({ turnPlayer: 'host', turnCount: 1 });
+    const reset = applyGameSyncEvent(ended, { id: 'reset', type: 'RESET_GAME', actor: 'host' });
+    expect(reset).toMatchObject({ startingPlayer: 'host', turnPlayer: 'host', turnCount: 1 });
+  });
+
   it('records each accepted reset revision even when the empty preparation board is unchanged', () => {
     const before = createState({ revision: 12 });
     const event = { id: 'reset-marker', type: 'RESET_GAME', actor: 'host' } as const;

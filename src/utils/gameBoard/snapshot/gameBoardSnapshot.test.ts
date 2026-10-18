@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { initialState, type SyncState } from '../../../types/game';
+import { applyGameSyncEvent } from '../gameSyncReducer';
 import { buildGameBoardNetworkSnapshotState } from './gameBoardSnapshot';
 
 const buildState = (overrides: Partial<SyncState> = {}): SyncState => ({
@@ -20,6 +21,15 @@ const buildState = (overrides: Partial<SyncState> = {}): SyncState => ({
 });
 
 describe('buildGameBoardNetworkSnapshotState', () => {
+  it('transports the guest starter and turn count through a JSON network snapshot', () => {
+    const ordered = applyGameSyncEvent(buildState(), { id: 'order', type: 'SET_INITIAL_TURN_ORDER', actor: 'host', starter: 'guest', manual: true });
+    const started = applyGameSyncEvent(ordered, { id: 'start', type: 'START_GAME', actor: 'host' });
+    const snapshot: SyncState = JSON.parse(JSON.stringify(buildGameBoardNetworkSnapshotState(started, {})));
+    expect(snapshot).toHaveProperty('startingPlayer', 'guest');
+    const next = applyGameSyncEvent(snapshot, { id: 'end', type: 'END_TURN', actor: 'guest' });
+    expect(next).toMatchObject({ turnPlayer: 'host', turnCount: 1 });
+  });
+
   it('preserves a reset revision through JSON transport without adding the marker to legacy states', () => {
     const state = buildState({ revision: 12, lastResetRevision: 9 });
     const snapshot: SyncState = JSON.parse(JSON.stringify(buildGameBoardNetworkSnapshotState(state, {})));
