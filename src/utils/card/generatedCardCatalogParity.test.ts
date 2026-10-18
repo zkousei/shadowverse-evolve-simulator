@@ -58,51 +58,6 @@ describe('generated card catalog compatibility', () => {
   let originalResources: ReturnType<typeof buildGameBoardCatalogResources>;
   let restoredResources: ReturnType<typeof buildGameBoardCatalogResources>;
 
-  it('reads every real card through schema 3 selective shards without changing metadata, details or related references', async () => {
-    const candidate = join(output!, 'schema3-fixture');
-    // Comparison model only, explicitly repackaged as a test fixture. The
-    // production generator and its schema 2 output remain unchanged.
-    execFileSync('python3', ['-c', `
-import sys
-from pathlib import Path
-from tools.card_data.generate_catalog import read_inputs, json_bytes, sha256, DEFAULT_RELEASED, DEFAULT_PREVIEW
-from tools.card_data.compare_partitions import model_partition
-bundle, _ = read_inputs(DEFAULT_RELEASED, DEFAULT_PREVIEW)
-model = model_partition(bundle, max_bytes=131072, split_above_bytes=393216)
-manifest = model.manifest
-manifest['schemaVersion'] = 3
-version = sha256(json_bytes({'schemaVersion': 3, 'files': {name: sha256(data) for name, data in model.files.items()}}))
-manifest['catalogVersion'] = version
-dest = Path(sys.argv[1])
-for entry in [manifest['index'], *manifest['details'].values()]:
-    name = '/'.join(entry['file'].split('/')[2:])
-    entry['file'] = f'versions/{version}/{name}'
-    path = dest / entry['file']
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(model.files[name])
-(dest / 'manifest.json').write_bytes(json_bytes(manifest))
-`, candidate], { cwd: root, encoding: 'utf8' });
-    const manifest = readJson<Manifest>(join(candidate, 'manifest.json'));
-    const request = vi.spyOn(globalThis, 'fetch').mockImplementation(async input => {
-      const path = String(input);
-      if (!path.startsWith('/catalog/')) throw new Error(`Unexpected request: ${path}`);
-      return new Response(readFileSync(join(candidate, path.slice('/catalog/'.length)), 'utf8'));
-    });
-    try {
-      const catalog = await openGeneratedCardCatalog('/catalog');
-      expect(Object.keys(manifest.details).length).toBeGreaterThan(new Set(index.map(card => card.detail_group)).size);
-      expect(catalog.index.some(card => card.detail_group.includes('@'))).toBe(true);
-      const withoutGroup = (card: object) => Object.fromEntries(Object.entries(card).filter(([key]) => key !== 'detail_group'));
-      expect(catalog.index.map(withoutGroup)).toEqual(index.map(withoutGroup));
-      expect(await catalog.loadCards(original.map(card => card.id))).toEqual(original);
-      const source = original.find(card => card.related_cards?.length)!;
-      for (const card of await catalog.loadCardsWithRelated([source.id])) {
-        expect(card).toEqual(original.find(entry => entry.id === card.id));
-      }
-      expect(request).toHaveBeenCalledTimes(2 + Object.keys(manifest.details).length);
-    } finally { request.mockRestore(); }
-  });
-
   it('reads actual generated artifacts through the versioned reader without changing any card data', async () => {
     const request = vi.spyOn(globalThis, 'fetch').mockImplementation(async input => {
       const path = String(input);

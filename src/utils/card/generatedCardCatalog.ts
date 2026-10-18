@@ -38,14 +38,6 @@ const count = (value: unknown): number => {
   return value;
 };
 const groupFor = (id: string) => id.split('-')[0];
-// Schema 3 names a product's shards independently of the card ID prefix.
-const productForGroup = (group: string, schemaVersion: number): string => {
-  if (GROUP.test(group)) return group;
-  const match = schemaVersion === 3 ? /^([A-Za-z0-9_]+)@([0-9]{4}|[1-9][0-9]{4,})$/.exec(group) : null;
-  if (!match || match[2] === '0000') return fail('unsafe group');
-  return match[1];
-};
-
 const digest = async (buffer: ArrayBuffer): Promise<string> => {
   const hashed = await globalThis.crypto.subtle.digest('SHA-256', buffer);
   return Array.from(new Uint8Array(hashed), byte => byte.toString(16).padStart(2, '0')).join('');
@@ -80,37 +72,21 @@ const descriptor = (value: unknown, file: string): Descriptor => {
 };
 const parseManifest = async (value: unknown): Promise<Manifest> => {
   const raw = object(value);
-  if ((raw.schemaVersion !== 1 && raw.schemaVersion !== 2 && raw.schemaVersion !== 3) || typeof raw.catalogVersion !== 'string' || !HASH.test(raw.catalogVersion)) return fail('unsupported version');
-  const schemaVersion = raw.schemaVersion;
+  if ((raw.schemaVersion !== 1 && raw.schemaVersion !== 2) || typeof raw.catalogVersion !== 'string' || !HASH.test(raw.catalogVersion)) return fail('unsupported version');
   const prefix = `versions/${raw.catalogVersion}/`;
   const index = descriptor(raw.index, `${prefix}index.json`);
-  const products = new Map<string, Set<string>>();
   const details = Object.fromEntries(Object.entries(object(raw.details)).map(([group, entry]) => {
-    const product = productForGroup(group, schemaVersion);
-    const groups = products.get(product) ?? new Set<string>();
-    groups.add(group);
-    products.set(product, groups);
+    if (!GROUP.test(group)) return fail('unsafe group');
     return [group, descriptor(entry, `${prefix}details/${group}.json`)];
   }));
-  if (schemaVersion === 3) {
-    for (const [product, groups] of products) {
-      if (groups.has(product)) {
-        if (groups.size !== 1) return fail('mixed product groups');
-      } else {
-        for (let part = 1; part <= groups.size; part++) {
-          if (!groups.has(`${product}@${String(part).padStart(4, '0')}`)) return fail('noncontiguous product groups');
-        }
-      }
-    }
-  }
   const rawCounts = object(raw.counts);
   const counts = { released: count(rawCounts.released), preview: count(rawCounts.preview), total: count(rawCounts.total) };
   if (counts.released + counts.preview !== counts.total || index.count !== counts.total ||
       Object.values(details).reduce((sum, entry) => sum + entry.count, 0) !== counts.total) return fail('inconsistent counts');
   const files = { 'index.json': index.sha256, ...Object.fromEntries(Object.entries(details).map(([group, entry]) => [`details/${group}.json`, entry.sha256])) };
-  const version = await digest(new TextEncoder().encode(canonical({ schemaVersion, files }) + '\n').buffer);
+  const version = await digest(new TextEncoder().encode(canonical({ schemaVersion: raw.schemaVersion, files }) + '\n').buffer);
   if (version !== raw.catalogVersion) return fail('version does not match file hashes');
-  return { schemaVersion, catalogVersion: version, index, details, counts };
+  return { schemaVersion: raw.schemaVersion, catalogVersion: version, index, details, counts };
 };
 const readFile = async (base: string, entry: Descriptor, signal?: AbortSignal): Promise<unknown> => {
   const response = await fetchResponse(`${base}/${entry.file}`, false, signal);
@@ -151,9 +127,9 @@ const validateCard = (value: unknown): JsonObject => {
   }
   return entry;
 };
-const project = (entry: JsonObject, group: string): JsonObject => Object.fromEntries([
+const project = (entry: JsonObject): JsonObject => Object.fromEntries([
   ...INDEX_FIELDS.filter(key => key in entry).map(key => [key, entry[key]]),
-  ['detail_group', group],
+  ['detail_group', groupFor(entry.id as string)],
 ]);
 
 /** Opens one immutable version. Nothing is installed into existing app state. */
@@ -169,9 +145,8 @@ export const openGeneratedCardCatalog = async (basePath: string): Promise<Genera
   const index = rawIndex.map(value => {
     const entry = validateCard(value);
     const id = entry.id as string;
-    const group = entry.detail_group;
-    if (byId.has(id) || typeof group !== 'string' || !Object.hasOwn(manifest.details, group) ||
-        productForGroup(group, manifest.schemaVersion) !== groupFor(id) || canonical(entry) !== canonical(project(entry, group))) return fail('invalid index projection or duplicate ID');
+    const group = groupFor(id);
+    if (byId.has(id) || !Object.hasOwn(manifest.details, group) || canonical(entry) !== canonical(project(entry))) return fail('invalid index projection or duplicate ID');
     if (entry.catalog_status === 'released') released++;
     else if (entry.catalog_status !== 'preview') return fail('missing catalog status');
     const summary = freeze(entry) as GeneratedCardIndexEntry;
@@ -201,8 +176,7 @@ export const openGeneratedCardCatalog = async (basePath: string): Promise<Genera
       for (const value of raw) {
         const entry = validateCard(value);
         const id = entry.id as string;
-        if (result.has(id) || !byId.has(id) || byId.get(id)!.detail_group !== group ||
-            canonical(project(entry, group)) !== canonical(byId.get(id))) return fail('detail does not match index');
+        if (result.has(id) || groupFor(id) !== group || !byId.has(id) || canonical(project(entry)) !== canonical(byId.get(id))) return fail('detail does not match index');
         result.set(id, freeze(entry) as GeneratedCardDetails);
       }
       if (expected.some(entry => !result.has(entry.id))) return fail('missing detail card');
