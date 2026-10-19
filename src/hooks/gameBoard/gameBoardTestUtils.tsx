@@ -9,121 +9,36 @@ import type { SyncState } from '../../types/game';
 import type { DeckBuilderCardData } from '../../models/deckBuilderCard';
 import { openGeneratedCardCatalog } from '../../utils/card/generatedCardCatalog';
 import { generatedCatalogFixture } from '../../test/generatedCatalogFixture';
+import enTranslations from '../../i18n/en/translation.json';
 import { useGameBoardLogic } from './useGameBoardLogic';
+
+const getTestTranslation = (key: string, options?: Record<string, unknown>) => {
+  // useGameBoardLogic tests explicitly assert raw key strings for undoLog events
+  if (key.startsWith('gameBoard.undoLog')) return key;
+  const keys = key.split('.');
+  let val: unknown = enTranslations;
+  for (const k of keys) {
+    if (val && typeof val === 'object' && k in val) {
+      val = (val as Record<string, unknown>)[k];
+    } else {
+      return key;
+    }
+  }
+  if (typeof val === 'string') {
+    let translated = val;
+    if (options) {
+      for (const [k, v] of Object.entries(options)) {
+        translated = translated.replaceAll(`{{${k}}}`, String(v));
+      }
+    }
+    return translated;
+  }
+  return key;
+};
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string, options?: Record<string, unknown>) => {
-      const map: Record<string, string> = {
-        'gameBoard.status.initializing': 'Initializing P2P...',
-        'gameBoard.status.connectingToHost': 'Connecting to host...',
-        'gameBoard.status.syncTimedOut': 'Timed out waiting for host state. Reconnecting...',
-        'gameBoard.status.waitingForRestore': 'Waiting for host session restore... retrying sync.',
-        'gameBoard.status.waitingForHostDecision': 'Host is choosing whether to resume the saved session. Waiting...',
-        'gameBoard.status.guestConnectedReady': 'Guest connected! Game ready.',
-        'gameBoard.status.connectedHostSyncing': 'Connected to host. Syncing latest game state...',
-        'gameBoard.status.guestConnectedChooseResume': 'Guest connected. Choose whether to resume the saved session.',
-        'gameBoard.status.connectedHostReady': 'Connected to host! Game ready.',
-        'gameBoard.status.guestDisconnectedWaiting': 'Guest disconnected. Waiting for reconnection...',
-        'gameBoard.status.connectionErrorWaiting': 'Connection error. Waiting for guest...',
-        'gameBoard.status.connectionLostReconnecting': 'Connection lost. Reconnecting...',
-        'gameBoard.status.connectionErrorReconnecting': 'Connection error. Reconnecting...',
-        'gameBoard.status.peerConnectionLostReconnecting': 'Peer connection lost. Reconnecting...',
-        'gameBoard.status.unableToReachHostReconnecting': 'Unable to reach host. Reconnecting...',
-        'gameBoard.status.reconnectExhausted': 'Automatic reconnection stopped. Use Reconnect to try again.',
-        'gameBoard.status.sessionRestored': 'Saved host session restored.',
-        'gameBoard.status.startingFresh': 'Starting a fresh host session.',
-        'gameBoard.status.soloMode': 'Solo Mode',
-        'gameBoard.status.connectedWaitingGuest': 'Connected! Waiting for guest...',
-        'gameBoard.status.connectedJoiningRoom': 'Connected! Joining room...',
-        'gameBoard.status.disconnectedFromPeer': 'Disconnected from Peer server. Reopen room if needed.',
-        'gameBoard.status.p2pErrorWaiting': 'P2P error. Waiting for guest...',
-        'gameBoard.status.debugAutoStarted': '[DEBUG] Game auto-started. Both decks injected (20 cards each).',
-        'gameBoard.modals.shared.actor.you': 'You',
-        'gameBoard.modals.shared.actor.opponent': 'Opponent',
-        'gameBoard.modals.shared.actor.player1': 'Player 1',
-        'gameBoard.modals.shared.actor.player2': 'Player 2',
-        'gameBoard.modals.shared.owner.you': 'your',
-        'gameBoard.modals.shared.owner.opponent': "opponent's",
-        'gameBoard.modals.shared.owner.player1': "Player 1's",
-        'gameBoard.modals.shared.owner.player2': "Player 2's",
-        'gameBoard.modals.shared.messages.lookTopResolved': '{{actor}} resolved Look Top {{count}}',
-        'gameBoard.modals.shared.messages.lookTopDetail.revealedToHand': 'Revealed to Hand: {{cards}}',
-        'gameBoard.modals.shared.messages.lookTopDetail.bottom': 'Bottom: {{count}}',
-        'gameBoard.modals.shared.messages.lookTopDetail.top': 'Top: {{count}}',
-        'gameBoard.modals.shared.messages.lookTopDetail.hand': 'Hand: {{count}}',
-        'gameBoard.modals.shared.messages.lookTopDetail.field': 'Field: {{cards}}',
-        'gameBoard.modals.shared.messages.lookTopDetail.ex': 'EX: {{cards}}',
-        'gameBoard.modals.shared.messages.lookTopDetail.cemetery': 'Cemetery: {{cards}}',
-        'gameBoard.modals.shared.messages.coinFlip': '{{actor}} flipped: {{result}}',
-        'gameBoard.modals.shared.messages.diceRoll': '{{actor}} rolled: {{value}}',
-        'gameBoard.modals.shared.messages.resetGame': '{{actor}} reset the game',
-        'gameBoard.modals.shared.messages.shuffleDeck': '{{actor}} shuffled the deck',
-        'gameBoard.modals.shared.messages.drawCard': '{{actor}} drew a card',
-        'gameBoard.modals.shared.messages.millCard': '{{actor}} milled {{cardName}}',
-        'gameBoard.modals.shared.messages.topCardToEx': '{{actor}} moved {{cardName}} to EX Area',
-        'gameBoard.modals.shared.messages.topCardToBanish': '{{actor}} banished {{cardName}} from the top of the deck',
-        'gameBoard.modals.shared.messages.searchToHand': '{{actor}} added a card from Search to hand',
-        'gameBoard.modals.shared.messages.searchToHandMultiple': '{{actor}} added {{count}} cards from Search to hand',
-        'gameBoard.modals.shared.messages.searchToHandMultipleOwned': '{{actor}} added {{count}} cards from {{sourceOwner}} Main Deck to {{destinationOwner}} hand',
-        'gameBoard.modals.shared.messages.searchPlayedField': '{{actor}} played to field {{cardName}} from Search',
-        'gameBoard.modals.shared.messages.searchPlayedFieldMultiple': '{{actor}} played {{count}} cards from Search to field',
-        'gameBoard.modals.shared.messages.searchSetField': '{{actor}} set a card from Search to field',
-        'gameBoard.modals.shared.messages.searchSetFieldMultiple': '{{actor}} set {{count}} cards from Search to field',
-        'gameBoard.modals.shared.messages.searchToEx': '{{actor}} added {{cardName}} from Search to EX Area',
-        'gameBoard.modals.shared.messages.searchToExGeneric': '{{actor}} added a card from Search to EX Area',
-        'gameBoard.modals.shared.messages.searchToExMultiple': '{{actor}} added {{count}} cards from Search to EX Area',
-        'gameBoard.modals.shared.messages.mainDeckToCemetery': '{{actor}} sent {{cardName}} from Main Deck to Cemetery',
-        'gameBoard.modals.shared.messages.mainDeckToCemeteryMultiple': '{{actor}} sent {{count}} cards from Main Deck to Cemetery',
-        'gameBoard.modals.shared.messages.mainDeckToCemeteryMultipleOwned': '{{actor}} sent {{count}} cards from {{sourceOwner}} Main Deck to {{destinationOwner}} Cemetery',
-        'gameBoard.modals.shared.messages.cemeteryToHand': '{{actor}} added {{cardName}} from Cemetery to hand',
-        'gameBoard.modals.shared.messages.cemeteryToHandMultiple': '{{actor}} added {{count}} cards from Cemetery to hand',
-        'gameBoard.modals.shared.messages.cemeteryToHandMultipleOwned': '{{actor}} added {{count}} cards from {{sourceOwner}} Cemetery to {{destinationOwner}} hand',
-        'gameBoard.modals.shared.messages.cemeteryToBottom': '{{actor}} sent {{cardName}} from Cemetery to bottom of deck',
-        'gameBoard.modals.shared.messages.cemeteryToBottomMultiple': '{{actor}} sent {{count}} cards from Cemetery to bottom of deck',
-        'gameBoard.modals.shared.messages.cemeteryToBottomMultipleOwned': '{{actor}} sent {{count}} cards from {{sourceOwner}} Cemetery to bottom of {{destinationOwner}} deck',
-        'gameBoard.modals.shared.messages.cemeteryPlayedField': '{{actor}} played to field {{cardName}} from Cemetery',
-        'gameBoard.modals.shared.messages.cemeteryPlayedFieldMultiple': '{{actor}} played {{count}} cards from Cemetery to field',
-        'gameBoard.modals.shared.messages.cemeteryToEx': '{{actor}} added {{cardName}} from Cemetery to EX Area',
-        'gameBoard.modals.shared.messages.cemeteryToExMultiple': '{{actor}} added {{count}} cards from Cemetery to EX Area',
-        'gameBoard.modals.shared.messages.cemeteryToBanish': '{{actor}} banished {{cardName}} from Cemetery',
-        'gameBoard.modals.shared.messages.cemeteryToBanishMultiple': '{{actor}} banished {{count}} cards from Cemetery',
-        'gameBoard.modals.shared.messages.cemeteryToBanishMultipleOwned': '{{actor}} banished {{count}} cards from {{sourceOwner}} Cemetery',
-        'gameBoard.modals.shared.messages.evolvePlayedField': '{{actor}} played to field {{cardName}} from Evolve Deck',
-        'gameBoard.modals.shared.messages.evolveSetUsed': '{{actor}} set {{cardName}} to USED',
-        'gameBoard.modals.shared.messages.evolveSetUnused': '{{actor}} set {{cardName}} to UNUSED',
-        'gameBoard.modals.shared.messages.banishToHand': '{{actor}} added {{cardName}} from Banish to hand',
-        'gameBoard.modals.shared.messages.banishToHandMultiple': '{{actor}} added {{count}} cards from Banish to hand',
-        'gameBoard.modals.shared.messages.banishToBottom': '{{actor}} sent {{cardName}} from Banish to bottom of deck',
-        'gameBoard.modals.shared.messages.banishToBottomMultiple': '{{actor}} sent {{count}} cards from Banish to bottom of deck',
-        'gameBoard.modals.shared.messages.banishPlayedField': '{{actor}} played to field {{cardName}} from Banish',
-        'gameBoard.modals.shared.messages.banishPlayedFieldMultiple': '{{actor}} played {{count}} cards from Banish to field',
-        'gameBoard.modals.shared.messages.banishToEx': '{{actor}} added {{cardName}} from Banish to EX Area',
-        'gameBoard.modals.shared.messages.banishToExMultiple': '{{actor}} added {{count}} cards from Banish to EX Area',
-        'gameBoard.modals.shared.messages.namedCardListWithMore': '{{cards}}, and {{count}} more',
-        'gameBoard.modals.shared.messages.revealLookTop': '{{actor}} revealed from Look Top',
-        'gameBoard.modals.shared.messages.revealHand': '{{actor}} revealed cards from hand',
-        'gameBoard.modals.shared.messages.revealSearch': '{{actor}} revealed from Search',
-        'gameBoard.modals.shared.messages.attackDeclared': '{{actor}} declared an attack',
-        'gameBoard.modals.shared.messages.attackAnnouncement': '{{attacker}} attacks {{target}}',
-        'gameBoard.modals.shared.messages.attackHistory': '{{attacker}} -> {{target}}',
-        'gameBoard.modals.shared.messages.leaderLabel': '{{owner}} Leader',
-        'gameBoard.modals.shared.messages.cardPlayed': '{{actor}} played {{cardName}}',
-        'gameBoard.modals.shared.messages.cardPlayedToField': '{{actor}} played to field {{cardName}}',
-        'gameBoard.modals.shared.messages.starterDecided': '{{actor}} will go first!',
-        'gameBoard.modals.shared.messages.starterDecidedManual': 'Manually set: {{actor}} will go first!',
-        'gameBoard.turn.p1': '{{label}} TURN',
-        'gameBoard.turn.your': 'YOUR TURN',
-        'gameBoard.alerts.gameStart': 'GAME START!',
-      };
-      let value = map[key] || key;
-      if (options) {
-        Object.keys(options).forEach(k => {
-          value = value.replace(`{{${k}}}`, String(options[k]));
-        });
-      }
-      return value;
-    },
+    t: (key: string, options?: Record<string, unknown>) => getTestTranslation(key, options),
   }),
 }));
 
