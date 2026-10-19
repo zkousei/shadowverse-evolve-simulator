@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import CardSearchModal from './CardSearchModal';
 import type { CardInstance } from '../Card';
@@ -32,6 +32,47 @@ const renderWithInputProfile = (
 );
 
 describe('CardSearchModal', () => {
+  it('recovers artwork from a transient image failure without reopening the deck', () => {
+    vi.useFakeTimers();
+    try {
+      render(<CardSearchModal isOpen onClose={vi.fn()} title="Deck" cards={[createCard()]} onExtractCard={vi.fn()} viewerRole="host" />);
+      fireEvent.error(screen.getByAltText('Test Card'));
+      expect(screen.queryByAltText('Test Card')).not.toBeInTheDocument();
+      act(() => vi.advanceTimersByTime(1000));
+      expect(screen.getByAltText('Test Card')).toHaveAttribute('src', '/test.png');
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('requests artwork only near the scroll viewport while keeping every card action available', () => {
+    const observers: Array<{ notify: IntersectionObserverCallback; observe: ReturnType<typeof vi.fn>; disconnect: ReturnType<typeof vi.fn>; options?: IntersectionObserverInit }> = [];
+    vi.stubGlobal('IntersectionObserver', class {
+      observe = vi.fn();
+      disconnect = vi.fn();
+      constructor(notify: IntersectionObserverCallback, options?: IntersectionObserverInit) {
+        observers.push({ notify, options, observe: this.observe, disconnect: this.disconnect });
+      }
+    });
+    try {
+      const cards = Array.from({ length: 12 }, (_, index) => createCard({ id: `card-${index}`, name: `Card ${index}`, image: `/art-${index}.png` }));
+      const { unmount } = render(<CardSearchModal isOpen onClose={vi.fn()} title="Deck" cards={cards} onExtractCard={vi.fn()} viewerRole="host" />);
+      expect(screen.queryAllByRole('img')).toHaveLength(0);
+      expect(screen.getAllByRole('button', { name: /^Add to Hand$/ })).toHaveLength(12);
+      expect(observers).toHaveLength(12);
+      expect(observers[0].options?.root).toBe(screen.getByTestId('search-card-grid'));
+      const reveal = (index: number, isIntersecting = true) => act(() => observers[index].notify([{ isIntersecting } as IntersectionObserverEntry], {} as IntersectionObserver));
+      reveal(0);
+      reveal(1);
+      expect(screen.getAllByRole('img')).toHaveLength(2);
+      expect(screen.getByAltText('Card 0')).toHaveAttribute('src', '/art-0.png');
+      reveal(0, false);
+      expect(screen.getByAltText('Card 0')).toBeInTheDocument();
+      reveal(11);
+      expect(screen.getByAltText('Card 11')).toHaveAttribute('src', '/art-11.png');
+      unmount();
+      for (const observer of observers) expect(observer.disconnect).toHaveBeenCalled();
+    } finally { vi.unstubAllGlobals(); }
+  });
+
   it('does not show hand or EX extraction buttons for evolve cards', () => {
     render(
       <CardSearchModal

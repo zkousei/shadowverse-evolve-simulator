@@ -259,6 +259,7 @@ export function HookHarness() {
     isSpectator,
     spectatorCount,
     gameState,
+    getCards,
     hasUndoableMove,
     canUndoTurn,
     cardPlayMessage,
@@ -326,6 +327,8 @@ export function HookHarness() {
       <div data-testid="is-spectator">{String(isSpectator)}</div>
       <div data-testid="spectator-count">{String(spectatorCount)}</div>
       <div data-testid="host-hp">{gameState.host.hp}</div>
+      <div data-testid="guest-hand-images">{getCards('hand-guest').map(card => card.image).join(',')}</div>
+      <div data-testid="guest-hand-count">{getCards('hand-guest').length}</div>
       <div data-testid="host-hand-count">{gameState.cards.filter((card: CardInstance) => card.zone === 'hand-host').length}</div>
       <div data-testid="host-ex-count">{gameState.cards.filter((card: CardInstance) => card.zone === 'ex-host').length}</div>
       <div data-testid="host-field-count">{gameState.cards.filter((card: CardInstance) => card.zone === 'field-host').length}</div>

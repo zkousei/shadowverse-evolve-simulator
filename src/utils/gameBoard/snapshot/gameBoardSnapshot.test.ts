@@ -37,7 +37,7 @@ describe('buildGameBoardNetworkSnapshotState', () => {
     expect(buildGameBoardNetworkSnapshotState(buildState(), {})).not.toHaveProperty('lastResetRevision');
   });
 
-  it('strips restorable non-token images and preserves token/custom images', () => {
+  it('preserves official, token and custom image URLs so a receiver need not wait for its catalog', () => {
     const state = buildState({
       cards: [
         {
@@ -79,6 +79,8 @@ describe('buildGameBoardNetworkSnapshotState', () => {
       lastUndoableCardMoveState: buildState({ revision: 77 }),
     });
 
+    state.cards.push({ ...state.cards[0], id: 'legacy-card', image: '' });
+    state.cards.push({ ...state.cards[0], id: 'blank-token', image: '', isTokenCard: true });
     const snapshot = buildGameBoardNetworkSnapshotState(state, {
       'BP01-001': {
         image: '/same-image.png',
@@ -108,9 +110,12 @@ describe('buildGameBoardNetworkSnapshotState', () => {
       },
     });
 
-    expect(snapshot.cards.find((card) => card.id === 'restorable-card')?.image).toBe('');
+    expect(snapshot.cards.find((card) => card.id === 'restorable-card')?.image).toBe('/same-image.png');
     expect(snapshot.cards.find((card) => card.id === 'custom-image-card')?.image).toBe('/custom-image.png');
     expect(snapshot.cards.find((card) => card.id === 'token-card')?.image).toBe('/token-image.png');
+    expect(snapshot.cards.find(card => card.id === 'legacy-card')?.image).toBe('/same-image.png');
+    expect(state.cards.find(card => card.id === 'legacy-card')?.image).toBe('');
+    expect(snapshot.cards.find(card => card.id === 'blank-token')?.image).toBe('');
     expect(snapshot.lastGameState).toBeNull();
     expect(snapshot.lastUndoableCardMoveState).toBeNull();
     expect(snapshot.networkHasUndoableTurn).toBe(true);

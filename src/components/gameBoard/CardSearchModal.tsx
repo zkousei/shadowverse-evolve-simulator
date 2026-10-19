@@ -3,7 +3,7 @@ import type { CardInstance } from '../Card';
 import type { PlayerRole } from '../../types/game';
 import { formatAbilityText, resolveSelectedCardFaceDetail, type CardDetailLookup, type CardFaceSide } from '../../utils/card/cardDetails';
 import { normalizeBaseCardType, type RuntimeBaseCardType } from '../../utils/card/cardType';
-import CardArtwork from '../CardArtwork';
+import GameBoardDeferredArtwork from './GameBoardDeferredArtwork';
 import GameBoardCardFacePreview from './GameBoardCardFacePreview';
 import { useTranslation } from 'react-i18next';
 import { useGameBoardInputProfile } from '../../contexts/gameBoardInputProfileContext';
@@ -648,7 +648,8 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
                   boxShadow: (selectedCardId === c.id || isBulkSelected) ? '0 0 0 3px rgba(56,189,248,0.18)' : 'none'
                 }}
               >
-                <CardArtwork
+                <GameBoardDeferredArtwork
+                  scrollRootRef={cardGridRef}
                   image={cardDisplayDetail?.image || c.image}
                   alt={c.name}
                   detail={cardDisplayDetail}
