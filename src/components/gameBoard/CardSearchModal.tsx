@@ -1,14 +1,15 @@
 import React from 'react';
 import type { CardInstance } from '../Card';
 import type { PlayerRole } from '../../types/game';
-import { formatAbilityText, resolveSelectedCardFaceDetail, type CardDetailLookup, type CardFaceSide } from '../../utils/card/cardDetails';
-import { normalizeBaseCardType, type RuntimeBaseCardType } from '../../utils/card/cardType';
-import GameBoardDeferredArtwork from './GameBoardDeferredArtwork';
-import GameBoardCardFacePreview from './GameBoardCardFacePreview';
+import { resolveSelectedCardFaceDetail, type CardDetailLookup, type CardFaceSide } from '../../utils/card/cardDetails';
 import { useTranslation } from 'react-i18next';
 import { useGameBoardInputProfile } from '../../contexts/gameBoardInputProfileContext';
+import { useCardSearchModalFilter, type SearchSortMode } from './useCardSearchModalFilter';
+import CardSearchModalDetailContent from './CardSearchModalDetailContent';
+import CardSearchModalBulkActionBar from './CardSearchModalBulkActionBar';
+import CardSearchModalCardItem from './CardSearchModalCardItem';
 
-interface CardSearchModalProps {
+export interface CardSearchModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
@@ -32,34 +33,6 @@ interface CardSearchModalProps {
   readOnly?: boolean;
   onRequestMainDeckShuffleConfirm?: (targetRole: PlayerRole) => void;
 }
-
-type SearchTypeCounts = Record<RuntimeBaseCardType, number>;
-type SearchSortMode = 'added' | 'cost' | 'type';
-type SearchTypeOrder = RuntimeBaseCardType | 'unknown';
-
-const parseSortCost = (cost?: string): number => {
-  if (!cost) return Number.MAX_SAFE_INTEGER;
-  const parsed = Number.parseInt(cost, 10);
-  return Number.isNaN(parsed) ? Number.MAX_SAFE_INTEGER : parsed;
-};
-
-const getSortTypeOrder = (baseCardType: RuntimeBaseCardType | null): SearchTypeOrder => {
-  if (baseCardType === 'follower' || baseCardType === 'spell' || baseCardType === 'amulet') {
-    return baseCardType;
-  }
-  return 'unknown';
-};
-
-const searchTypeRank: Record<SearchTypeOrder, number> = {
-  follower: 0,
-  spell: 1,
-  amulet: 2,
-  unknown: 3,
-};
-
-const compareCardName = (left: CardInstance, right: CardInstance): number => (
-  left.name.localeCompare(right.name, undefined, { sensitivity: 'base' })
-);
 
 const CardSearchModal: React.FC<CardSearchModalProps> = ({
   isOpen,
@@ -91,18 +64,37 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
   const [selectedCardId, setSelectedCardId] = React.useState<string | null>(null);
   const [isBulkSelecting, setIsBulkSelecting] = React.useState(false);
   const [bulkSelectedCardIds, setBulkSelectedCardIds] = React.useState<string[]>([]);
-  const [sortMode, setSortMode] = React.useState<SearchSortMode>('added');
   const [reserveDetailSpace, setReserveDetailSpace] = React.useState(false);
   const modalPanelRef = React.useRef<HTMLDivElement | null>(null);
   const detailPopoverRef = React.useRef<HTMLDivElement | null>(null);
   const cardGridRef = React.useRef<HTMLDivElement | null>(null);
+
+  const {
+    sortMode,
+    setSortMode,
+    visibleCards,
+    sourceZonePrefix,
+    isMainDeckSearch,
+    isPreparingMainDeckSearch,
+    isEvolveDeck,
+    isPublicRecoveryZone,
+    canSortCards,
+    supportsBulkSelection,
+    searchTypeCountLabel,
+  } = useCardSearchModalFilter({
+    cards,
+    cardDetailLookup,
+    isOpen,
+    zoneId,
+    allowHandExtraction,
+    readOnly,
+  });
 
   React.useEffect(() => {
     if (!isOpen) {
       setSelectedCardId(null);
       setIsBulkSelecting(false);
       setBulkSelectedCardIds([]);
-      setSortMode('added');
       return;
     }
 
@@ -153,86 +145,11 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
     return () => window.removeEventListener('resize', measureScrollRoom);
   }, [cards.length, isCoarseInput, isOpen, selectedCardId]);
 
-  // Search behavior must key off the structural zone id, not the localized
-  // modal title, otherwise i18n changes can alter which actions are allowed.
-  const sourceZonePrefix = zoneId?.split('-')[0] ?? null;
-  const isMainDeckSearch = sourceZonePrefix === 'mainDeck';
-  const isPreparingMainDeckSearch = !allowHandExtraction && isMainDeckSearch;
-  const isEvolveDeck = sourceZonePrefix === 'evolveDeck';
-  const shouldShowTypeCounts = sourceZonePrefix === 'cemetery' || sourceZonePrefix === 'mainDeck';
-  const isPublicRecoveryZone = sourceZonePrefix === 'cemetery' || sourceZonePrefix === 'banish';
-  const canSortCards = sourceZonePrefix === 'cemetery' || sourceZonePrefix === 'banish';
-  const supportsBulkSelection = !readOnly && (sourceZonePrefix === 'mainDeck' || sourceZonePrefix === 'cemetery' || sourceZonePrefix === 'banish');
-  const visibleCards = React.useMemo(() => {
-    if (!canSortCards || sortMode === 'added') return cards;
-
-    const indexedCards = cards.map((card, index) => ({ card, index }));
-    const getBaseType = (card: CardInstance) => {
-      const cardDetail = cardDetailLookup[card.cardId];
-      return card.baseCardType
-        ?? normalizeBaseCardType(card.cardKindNormalized)
-        ?? normalizeBaseCardType(cardDetail?.cardKindNormalized)
-        ?? normalizeBaseCardType(cardDetail?.type);
-    };
-
-    indexedCards.sort((left, right) => {
-      if (sortMode === 'cost') {
-        const leftCost = parseSortCost(cardDetailLookup[left.card.cardId]?.cost);
-        const rightCost = parseSortCost(cardDetailLookup[right.card.cardId]?.cost);
-        if (leftCost !== rightCost) return leftCost - rightCost;
-
-        const comparedName = compareCardName(left.card, right.card);
-        if (comparedName !== 0) return comparedName;
-      }
-
-      if (sortMode === 'type') {
-        const leftType = getSortTypeOrder(getBaseType(left.card));
-        const rightType = getSortTypeOrder(getBaseType(right.card));
-        if (leftType !== rightType) return searchTypeRank[leftType] - searchTypeRank[rightType];
-
-        const comparedName = compareCardName(left.card, right.card);
-        if (comparedName !== 0) return comparedName;
-      }
-
-      return left.index - right.index;
-    });
-
-    return indexedCards.map((entry) => entry.card);
-  }, [canSortCards, cardDetailLookup, cards, sortMode]);
-  const searchTypeCounts = shouldShowTypeCounts
-    ? cards.reduce<SearchTypeCounts>((counts, card) => {
-      const cardDetail = cardDetailLookup[card.cardId];
-      const baseCardType = card.baseCardType
-        ?? normalizeBaseCardType(card.cardKindNormalized)
-        ?? normalizeBaseCardType(cardDetail?.cardKindNormalized)
-        ?? normalizeBaseCardType(cardDetail?.type);
-
-      if (baseCardType) {
-        counts[baseCardType] += 1;
-      }
-
-      return counts;
-    }, { follower: 0, spell: 0, amulet: 0 })
-    : null;
-  const searchTypeCountLabel = shouldShowTypeCounts
-    ? t('gameBoard.modals.search.typeCounts', searchTypeCounts ?? undefined)
-    : null;
   const actionRole = targetRole ?? viewerRole;
   const bulkSelectedCards = cards.filter(card => bulkSelectedCardIds.includes(card.id));
   const selectedCard = selectedCardId ? cards.find(card => card.id === selectedCardId) ?? null : null;
   const selectedCardDetail = selectedCard
     ? resolveSelectedCardFaceDetail(cardDetailLookup[selectedCard.cardId], selectedCard.selectedFaceSide)
-    : null;
-  const selectedCardMeta = [
-    selectedCardDetail?.className,
-    selectedCardDetail?.title
-  ].filter(Boolean).join(' / ');
-  const selectedCardType = [
-    selectedCardDetail?.type,
-    selectedCardDetail?.subtype
-  ].filter(Boolean).join(' / ');
-  const selectedCardStats = selectedCardDetail && selectedCardDetail.atk !== null && selectedCardDetail.hp !== null
-    ? `${selectedCardDetail.atk} / ${selectedCardDetail.hp}`
     : null;
   const selectedCardHasFaces = Boolean(selectedCardDetail?.faces && selectedCardDetail.faces.length > 1);
   const shouldShowDetailPopover = Boolean(selectedCard && !isBulkSelecting && !isCoarseInput);
@@ -382,69 +299,6 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
     bulkSelectedCardIds.forEach(cardId => onBanish?.(cardId));
   };
 
-  const renderSelectedCardDetailContent = (card: CardInstance) => (
-    <>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '0.45rem' }}>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ color: '#f8fafc', fontWeight: 800, fontSize: '0.85rem', lineHeight: 1.35 }}>
-            {selectedCardDetail?.name || card.name}
-          </div>
-          {selectedCardMeta && (
-            <div style={{ color: '#cbd5e1', fontSize: '0.68rem', marginTop: '0.12rem', lineHeight: 1.4 }}>
-              {selectedCardMeta}
-            </div>
-          )}
-          {selectedCardType && (
-            <div style={{ color: '#94a3b8', fontSize: '0.66rem', marginTop: '0.08rem', lineHeight: 1.4 }}>
-              {selectedCardType}
-            </div>
-          )}
-          {selectedCardStats && (
-            <div style={{ color: '#e2e8f0', fontSize: '0.68rem', marginTop: '0.12rem', lineHeight: 1.4 }}>
-              {t('gameBoard.modals.search.stats')}: {selectedCardStats}
-            </div>
-          )}
-        </div>
-        <button
-          onClick={() => setSelectedCardId(null)}
-          style={{
-            background: 'rgba(255,255,255,0.06)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            color: 'white',
-            padding: '0.12rem 0.45rem',
-            borderRadius: '999px',
-            cursor: 'pointer',
-            fontSize: '0.68rem',
-            fontWeight: 'bold'
-          }}
-        >
-          {t('common.buttons.close')}
-        </button>
-      </div>
-
-      {selectedCardHasFaces && selectedCardDetail ? (
-        <GameBoardCardFacePreview
-          card={card}
-          detail={selectedCardDetail}
-          compact={true}
-        />
-      ) : (
-        <div style={{
-          borderTop: '1px solid rgba(255,255,255,0.08)',
-          paddingTop: '0.5rem',
-          whiteSpace: 'pre-wrap',
-          color: '#e5e7eb',
-          fontSize: '0.74rem',
-          lineHeight: 1.55
-        }}>
-          {selectedCardDetail?.abilityText
-            ? formatAbilityText(selectedCardDetail.abilityText)
-            : t('gameBoard.modals.search.noDetailText')}
-        </div>
-      )}
-    </>
-  );
-
   return (
     <div
       style={{
@@ -463,15 +317,15 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
           borderRadius: 'var(--radius-lg)',
           border: '1px solid var(--border-color)',
           backgroundColor: '#1a1d24',
-        width: '100%',
-        maxWidth: '900px',
-        maxHeight: '90vh',
-        display: 'flex',
-        flexDirection: 'column',
-        boxShadow: '0 0 40px rgba(0,0,0,0.5)',
-        position: 'relative'
-      }}
-    >
+          width: '100%',
+          maxWidth: '900px',
+          maxHeight: '90vh',
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: '0 0 40px rgba(0,0,0,0.5)',
+          position: 'relative'
+        }}
+      >
         <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
           <div>
             <h2 className="Garamond" style={{ margin: 0 }}>{title} ({cards.length})</h2>
@@ -611,277 +465,55 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
               paddingBottom: shouldShowDetailPopover && reserveDetailSpace ? '11rem' : isCoarseInput ? 0 : '1.5rem'
             }}
           >
-          {visibleCards.map(c => {
-            const baseCardDetail = cardDetailLookup[c.cardId];
-            const cardDisplayDetail = resolveSelectedCardFaceDetail(baseCardDetail, c.selectedFaceSide) ?? undefined;
-            const hasSelectableFaces = Boolean(baseCardDetail?.faces && baseCardDetail.faces.length > 1);
-            const selectedFaceSide = c.selectedFaceSide ?? 'front';
-            const canSetCardFace = Boolean(onSetCardFace && canEditSearchedEvolveDeck && c.isEvolveCard && c.owner === targetRole && hasSelectableFaces);
-            const isUsed = isEvolveDeck && !c.isFlipped;
-            const canAddToHand = canAddCardToHand(c);
-            const canRevealToHand = canRevealCardToHand(c);
-            const canAddToEx = canAddCardToEx(c);
-            const canPlayToField = canPlayCardToField();
-            const playToFieldLabel = isPreparingMainDeckSearch ? t('gameBoard.modals.search.setFaceDown') : t('gameBoard.modals.search.playToField');
-            const isBulkSelected = bulkSelectedCardIds.includes(c.id);
-            const isTouchControlsOpen = isCoarseInput && selectedCardId === c.id;
-
-            return (
-              <div
+            {visibleCards.map(c => (
+              <CardSearchModalCardItem
                 key={c.id}
-                className="search-card-container"
+                card={c}
+                cardDetailLookup={cardDetailLookup}
+                scrollRootRef={cardGridRef}
+                isSelected={selectedCardId === c.id}
+                isBulkSelecting={isBulkSelecting}
+                isBulkSelected={bulkSelectedCardIds.includes(c.id)}
+                isEvolveDeck={isEvolveDeck}
+                isPublicRecoveryZone={isPublicRecoveryZone}
+                isPreparingMainDeckSearch={isPreparingMainDeckSearch}
+                allowHandExtraction={allowHandExtraction}
+                canEditSearchedEvolveDeck={canEditSearchedEvolveDeck}
+                readOnly={readOnly}
+                isCoarseInput={isCoarseInput}
+                viewerRole={viewerRole}
+                targetRole={targetRole}
+                actionRole={actionRole}
+                canAddToHand={canAddCardToHand(c)}
+                canRevealToHand={canRevealCardToHand(c)}
+                canAddToEx={canAddCardToEx(c)}
+                canPlayToField={canPlayCardToField()}
+                canSendToCemetery={canSendCardToCemetery(c)}
+                canSendToBottom={canSendCardToBottom()}
+                canBanish={canBanishCard()}
                 onClick={() => {
                   if (isBulkSelecting) {
                     toggleBulkCardSelection(c.id);
                     return;
                   }
-
                   setSelectedCardId(current => current === c.id ? null : c.id);
                 }}
-                style={{
-                  position: 'relative',
-                  opacity: isUsed ? 0.6 : 1,
-                  transition: 'opacity 0.1s',
-                  cursor: 'pointer',
-                  outline: (selectedCardId === c.id || isBulkSelected) ? '2px solid #38bdf8' : 'none',
-                  borderRadius: '6px',
-                  boxShadow: (selectedCardId === c.id || isBulkSelected) ? '0 0 0 3px rgba(56,189,248,0.18)' : 'none'
-                }}
-              >
-                <GameBoardDeferredArtwork
-                  scrollRootRef={cardGridRef}
-                  image={cardDisplayDetail?.image || c.image}
-                  alt={c.name}
-                  detail={cardDisplayDetail}
-                  baseCardType={c.baseCardType}
-                  isLeaderCard={c.isLeaderCard}
-                  isTokenCard={c.isTokenCard}
-                  isEvolveCard={c.isEvolveCard}
-                  style={{ width: '100%', borderRadius: '4px', display: 'block', filter: isUsed ? 'grayscale(80%)' : 'none' }}
-                  draggable={false}
-                />
-
-                {isUsed && (
-                  <div style={{ position: 'absolute', top: 5, left: 5, background: '#ef4444', color: 'white', fontSize: '10px', fontWeight: 'bold', padding: '2px 4px', borderRadius: '4px', pointerEvents: 'none' }}>
-                    {t('gameBoard.modals.search.used')}
-                  </div>
-                )}
-                {isEvolveDeck && !isUsed && (
-                  <div style={{ position: 'absolute', top: 5, left: 5, background: '#252a34', color: '#949db0', fontSize: '10px', fontWeight: 'bold', border: '1px solid gray', padding: '2px 4px', borderRadius: '4px', pointerEvents: 'none' }}>
-                    {t('gameBoard.modals.search.unused')}
-                  </div>
-                )}
-
-                {isBulkSelecting && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: 5,
-                      right: 5,
-                      width: '22px',
-                      height: '22px',
-                      borderRadius: '999px',
-                      background: isBulkSelected ? '#38bdf8' : 'rgba(15, 23, 42, 0.92)',
-                      border: `1px solid ${isBulkSelected ? '#38bdf8' : 'rgba(255,255,255,0.28)'}`,
-                      color: 'white',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '0.8rem',
-                      fontWeight: 'bold',
-                      pointerEvents: 'none'
-                    }}
-                  >
-                    {isBulkSelected ? '✓' : ''}
-                  </div>
-                )}
-
-                {!isBulkSelecting && !readOnly && (c.owner === viewerRole || isPublicRecoveryZone) && (
-                  <div
-                    className="modal-card-controls"
-                    data-testid={`search-card-controls-${c.id}`}
-                    style={{
-                      position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                      background: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column',
-                      justifyContent: 'center', alignItems: 'center', gap: '4px',
-                      borderRadius: '4px', padding: '6px',
-                      transition: 'opacity 0.15s ease',
-                      opacity: isCoarseInput ? (isTouchControlsOpen ? 1 : 0) : undefined,
-                      pointerEvents: isCoarseInput ? (isTouchControlsOpen ? 'auto' : 'none') : undefined,
-                    }}
-                  >
-                    {canPlayToField && actionRole && (
-                      <button
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleExtractFromSearch(c.id, `field-${actionRole}`);
-                        }}
-                        style={{
-                          width: '100%', background: '#3b82f6', color: 'white', border: 'none',
-                          padding: '3px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        {playToFieldLabel}
-                      </button>
-                    )}
-                    {canAddToHand && actionRole && (
-                      <button
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleExtractFromSearch(c.id, `hand-${actionRole}`);
-                        }}
-                        disabled={!allowHandExtraction}
-                        style={{
-                          width: '100%', background: allowHandExtraction ? '#10b981' : '#374151', color: allowHandExtraction ? 'white' : '#949db0', border: 'none',
-                          padding: '3px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold',
-                          cursor: allowHandExtraction ? 'pointer' : 'not-allowed'
-                        }}
-                      >
-                        {t('gameBoard.modals.search.addToHand')}
-                      </button>
-                    )}
-                    {canRevealToHand && actionRole && (
-                      <button
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleExtractFromSearch(c.id, `hand-${actionRole}`, true);
-                        }}
-                        disabled={!allowHandExtraction}
-                        style={{
-                          width: '100%', background: allowHandExtraction ? '#14b8a6' : '#374151', color: allowHandExtraction ? 'white' : '#949db0', border: 'none',
-                          padding: '3px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold',
-                          cursor: allowHandExtraction ? 'pointer' : 'not-allowed'
-                        }}
-                      >
-                        {t('gameBoard.modals.search.revealAndAddToHand')}
-                      </button>
-                    )}
-                    {canAddToEx && actionRole && (
-                      <button
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleExtractFromSearch(c.id, `ex-${actionRole}`);
-                        }}
-                        disabled={!allowHandExtraction}
-                        style={{
-                          width: '100%', background: allowHandExtraction ? '#a855f7' : '#374151', color: allowHandExtraction ? 'white' : '#949db0', border: 'none',
-                          padding: '3px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold',
-                          cursor: allowHandExtraction ? 'pointer' : 'not-allowed'
-                        }}
-                      >
-                        {t('gameBoard.modals.search.addToEx')}
-                      </button>
-                    )}
-                    {canSendCardToCemetery(c) && (
-                      <button
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleSendCardToCemetery(c);
-                        }}
-                        style={{
-                          width: '100%', background: '#7c3aed', color: 'white', border: 'none',
-                          padding: '3px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        {t('gameBoard.card.quickActionDescriptions.cemetery')}
-                      </button>
-                    )}
-                    {canSendCardToBottom() && (
-                      <button
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleSendCardToBottom(c.id);
-                        }}
-                        style={{
-                          width: '100%', background: '#475569', color: 'white', border: 'none',
-                          padding: '3px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        {t('gameBoard.card.quickActionDescriptions.sendToBottom')}
-                      </button>
-                    )}
-                    {canBanishCard() && (
-                      <button
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleBanishCard(c);
-                        }}
-                        style={{
-                          width: '100%', background: '#dc2626', color: 'white', border: 'none',
-                          padding: '3px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        {t('gameBoard.card.quickActionDescriptions.banish')}
-                      </button>
-                    )}
-
-                    {onToggleFlip && c.isEvolveCard && c.owner === viewerRole && (
-                      <button
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          onToggleFlip(c.id);
-                        }}
-                        style={{
-                          width: '100%', background: '#4b5563', color: 'white', border: '1px solid #9ca3af',
-                          padding: '3px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold',
-                          cursor: 'pointer', marginTop: '2px'
-                        }}
-                      >
-                        {c.isFlipped ? t('gameBoard.modals.search.setUsed') : t('gameBoard.modals.search.setUnused')}
-                      </button>
-                    )}
-                    {canSetCardFace && (
-                      <div
-                        style={{
-                          width: '100%',
-                          display: 'grid',
-                          gridTemplateColumns: '1fr 1fr',
-                          gap: '3px',
-                          marginTop: '2px',
-                        }}
-                      >
-                        {(['front', 'back'] as const).map((faceSide) => {
-                          const isSelected = selectedFaceSide === faceSide;
-                          return (
-                            <button
-                              key={faceSide}
-                              type="button"
-                              aria-pressed={isSelected}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                onSetCardFace?.(c.id, faceSide);
-                              }}
-                              style={{
-                                background: isSelected ? '#f59e0b' : '#334155',
-                                color: isSelected ? '#111827' : 'white',
-                                border: isSelected ? '1px solid #fbbf24' : '1px solid #64748b',
-                                padding: '3px',
-                                borderRadius: '4px',
-                                fontSize: '10px',
-                                fontWeight: 'bold',
-                                cursor: 'pointer',
-                              }}
-                            >
-                              {t(`gameBoard.modals.search.face.${faceSide}`)}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )}
+                onPlayToField={() => handleExtractFromSearch(c.id, `field-${actionRole}`)}
+                onAddToHand={() => handleExtractFromSearch(c.id, `hand-${actionRole}`)}
+                onRevealToHand={() => handleExtractFromSearch(c.id, `hand-${actionRole}`, true)}
+                onAddToEx={() => handleExtractFromSearch(c.id, `ex-${actionRole}`)}
+                onSendToCemetery={() => handleSendCardToCemetery(c)}
+                onSendToBottom={() => handleSendCardToBottom(c.id)}
+                onBanish={() => handleBanishCard(c)}
+                onToggleFlip={onToggleFlip}
+                onSetCardFace={onSetCardFace}
+              />
+            ))}
+            {cards.length === 0 && (
+              <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                {t('gameBoard.modals.search.empty')}
               </div>
-            );
-          })}
-          {cards.length === 0 && (
-            <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-              {t('gameBoard.modals.search.empty')}
-            </div>
-          )}
+            )}
           </div>
           {shouldShowCoarseDetailPane && (
             <div
@@ -899,140 +531,37 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
                 padding: '0.8rem'
               }}
             >
-              {selectedCard && renderSelectedCardDetailContent(selectedCard)}
+              {selectedCard && (
+                <CardSearchModalDetailContent
+                  card={selectedCard}
+                  cardDetailLookup={cardDetailLookup}
+                  onClose={() => setSelectedCardId(null)}
+                />
+              )}
             </div>
           )}
         </div>
 
-        {isBulkSelecting && (
-          <div
-            style={{
-              borderTop: '1px solid rgba(255,255,255,0.08)',
-              padding: '1rem 1.5rem',
-              display: 'flex',
-              flexWrap: 'wrap',
-              alignItems: 'center',
-              gap: '0.6rem',
-              background: 'rgba(15, 23, 42, 0.92)'
-            }}
-          >
-            <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginRight: '0.2rem' }}>
-              {selectedCountLabel}
-            </span>
-            {canBulkPlayToField && actionRole && (
-              <button
-                onClick={() => handleBulkExtract(`field-${actionRole}`)}
-                style={{
-                  background: '#3b82f6',
-                  color: 'white',
-                  border: 'none',
-                  padding: '0.5rem 0.8rem',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontWeight: 'bold'
-                }}
-              >
-                {isPreparingMainDeckSearch ? t('gameBoard.modals.search.setFaceDown') : t('gameBoard.modals.search.playToField')}
-              </button>
-            )}
-            {canBulkAddToHand && actionRole && (
-              <button
-                onClick={() => handleBulkExtract(`hand-${actionRole}`)}
-                style={{
-                  background: '#10b981',
-                  color: 'white',
-                  border: 'none',
-                  padding: '0.5rem 0.8rem',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontWeight: 'bold'
-                }}
-              >
-                {t('gameBoard.modals.search.addToHand')}
-              </button>
-            )}
-            {canBulkRevealToHand && actionRole && (
-              <button
-                onClick={() => handleBulkExtract(`hand-${actionRole}`, true)}
-                style={{
-                  background: '#14b8a6',
-                  color: 'white',
-                  border: 'none',
-                  padding: '0.5rem 0.8rem',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontWeight: 'bold'
-                }}
-              >
-                {t('gameBoard.modals.search.revealAndAddToHand')}
-              </button>
-            )}
-            {canBulkAddToEx && actionRole && (
-              <button
-                onClick={() => handleBulkExtract(`ex-${actionRole}`)}
-                style={{
-                  background: '#a855f7',
-                  color: 'white',
-                  border: 'none',
-                  padding: '0.5rem 0.8rem',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontWeight: 'bold'
-                }}
-              >
-                {t('gameBoard.modals.search.addToEx')}
-              </button>
-            )}
-            {canBulkSendToCemetery && (
-              <button
-                onClick={handleBulkSendToCemetery}
-                style={{
-                  background: '#7c3aed',
-                  color: 'white',
-                  border: 'none',
-                  padding: '0.5rem 0.8rem',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontWeight: 'bold'
-                }}
-              >
-                {t('gameBoard.card.quickActionDescriptions.cemetery')}
-              </button>
-            )}
-            {canBulkSendToBottom && (
-              <button
-                onClick={handleBulkSendToBottom}
-                style={{
-                  background: '#475569',
-                  color: 'white',
-                  border: 'none',
-                  padding: '0.5rem 0.8rem',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontWeight: 'bold'
-                }}
-              >
-                {t('gameBoard.card.quickActionDescriptions.sendToBottom')}
-              </button>
-            )}
-            {canBulkBanish && (
-              <button
-                onClick={handleBulkBanish}
-                style={{
-                  background: '#dc2626',
-                  color: 'white',
-                  border: 'none',
-                  padding: '0.5rem 0.8rem',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontWeight: 'bold'
-                }}
-              >
-                {t('gameBoard.card.quickActionDescriptions.banish')}
-              </button>
-            )}
-          </div>
-        )}
+        <CardSearchModalBulkActionBar
+          isBulkSelecting={isBulkSelecting}
+          selectedCountLabel={selectedCountLabel}
+          actionRole={actionRole}
+          isPreparingMainDeckSearch={isPreparingMainDeckSearch}
+          canBulkPlayToField={canBulkPlayToField}
+          canBulkAddToHand={canBulkAddToHand}
+          canBulkRevealToHand={canBulkRevealToHand}
+          canBulkAddToEx={canBulkAddToEx}
+          canBulkSendToCemetery={canBulkSendToCemetery}
+          canBulkSendToBottom={canBulkSendToBottom}
+          canBulkBanish={canBulkBanish}
+          onBulkPlayToField={() => handleBulkExtract(`field-${actionRole}`)}
+          onBulkAddToHand={() => handleBulkExtract(`hand-${actionRole}`)}
+          onBulkRevealToHand={() => handleBulkExtract(`hand-${actionRole}`, true)}
+          onBulkAddToEx={() => handleBulkExtract(`ex-${actionRole}`)}
+          onBulkSendToCemetery={handleBulkSendToCemetery}
+          onBulkSendToBottom={handleBulkSendToBottom}
+          onBulkBanish={handleBulkBanish}
+        />
 
         {shouldShowDetailPopover && selectedCard && (
           <div
@@ -1053,7 +582,11 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
               zIndex: 2
             }}
           >
-            {renderSelectedCardDetailContent(selectedCard)}
+            <CardSearchModalDetailContent
+              card={selectedCard}
+              cardDetailLookup={cardDetailLookup}
+              onClose={() => setSelectedCardId(null)}
+            />
           </div>
         )}
       </div>
