@@ -1,17 +1,21 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import type { CardInstance } from '../Card';
 import { useTranslation } from 'react-i18next';
 import CardArtwork from '../CardArtwork';
+import type { CardDetailLookup } from '../../utils/card/cardDetails';
 import {
-  buildCardDetailPresentation,
-  formatAbilityText,
-  resolveSelectedCardFaceDetail,
-  type CardDetailLookup,
-} from '../../utils/card/cardDetails';
+  useTopDeckAssignments,
+  type TopDeckAction,
+} from './useTopDeckAssignments';
+import TopDeckHoverPreview from './TopDeckHoverPreview';
+import { getTopDeckHoverPreviewPosition } from './topDeckHoverPosition';
+import TopDeckDestinationColumns, {
+  type ActionButtonConfig,
+} from './TopDeckDestinationColumns';
 
-export type TopDeckAction = 'hand' | 'revealedHand' | 'field' | 'ex' | 'cemetery' | 'top' | 'bottom';
+export type { TopDeckAction };
 
-interface TopDeckModalProps {
+export interface TopDeckModalProps {
   isOpen: boolean;
   cards: CardInstance[];
   cardDetailLookup?: CardDetailLookup;
@@ -20,161 +24,43 @@ interface TopDeckModalProps {
   onCancel: () => void;
 }
 
-interface AssignedCard {
-  card: CardInstance;
-  action: TopDeckAction;
-  order?: number;
-}
-
 type HoveredTopDeckCard = {
   card: CardInstance;
   left: number;
   top: number;
 };
 
-const HOVER_PREVIEW_WIDTH = 320;
-const HOVER_PREVIEW_HEIGHT = 420;
-const HOVER_PREVIEW_OFFSET = 18;
-const HOVER_PREVIEW_PADDING = 12;
-
-const getTopDeckHoverPreviewPosition = (clientX: number, clientY: number) => {
-  const visualViewport = window.visualViewport;
-  const viewportLeft = visualViewport?.offsetLeft ?? 0;
-  const viewportTop = visualViewport?.offsetTop ?? 0;
-  const viewportWidth = visualViewport?.width ?? window.innerWidth;
-  const viewportHeight = visualViewport?.height ?? window.innerHeight;
-  const minLeft = viewportLeft + HOVER_PREVIEW_PADDING;
-  const minTop = viewportTop + HOVER_PREVIEW_PADDING;
-  const maxLeft = Math.max(minLeft, viewportLeft + viewportWidth - HOVER_PREVIEW_WIDTH - HOVER_PREVIEW_PADDING);
-  const maxTop = Math.max(minTop, viewportTop + viewportHeight - HOVER_PREVIEW_HEIGHT - HOVER_PREVIEW_PADDING);
-
-  return {
-    left: Math.max(minLeft, Math.min(clientX + HOVER_PREVIEW_OFFSET, maxLeft)),
-    top: Math.max(minTop, Math.min(clientY + HOVER_PREVIEW_OFFSET, maxTop)),
-  };
-};
-
-const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLookup = {}, handCards, onConfirm, onCancel }) => {
+const TopDeckModal: React.FC<TopDeckModalProps> = ({
+  isOpen,
+  cards,
+  cardDetailLookup = {},
+  handCards,
+  onConfirm,
+  onCancel,
+}) => {
   const { t } = useTranslation();
-  const [pendingCards, setPendingCards] = useState<CardInstance[]>([]);
-  const [assignedCards, setAssignedCards] = useState<AssignedCard[]>([]);
-  const [currentAction, setCurrentAction] = useState<TopDeckAction>('top');
   const [isHandOpen, setIsHandOpen] = useState(true);
-  const [isBottomOrderRandomized, setIsBottomOrderRandomized] = useState(false);
   const [hoveredTopDeckCard, setHoveredTopDeckCard] = useState<HoveredTopDeckCard | null>(null);
-  const wasOpenRef = useRef(false);
-  const previousCardIdsKeyRef = useRef('');
 
-  useEffect(() => {
-    if (!isOpen) {
-      wasOpenRef.current = false;
-      previousCardIdsKeyRef.current = '';
-      setHoveredTopDeckCard(null);
-      return;
-    }
-
-    const cardIdsKey = cards.map((card) => card.id).join('\u0000');
-    const shouldResetState = !wasOpenRef.current || previousCardIdsKeyRef.current !== cardIdsKey;
-
-    if (shouldResetState) {
-      setPendingCards([...cards]);
-      setAssignedCards([]);
-      setCurrentAction('field');
-      setIsBottomOrderRandomized(false);
-    } else {
-      const latestCardById = new Map(cards.map((card) => [card.id, card]));
-
-      setPendingCards((previous) => previous
-        .map((card) => latestCardById.get(card.id))
-        .filter((card): card is CardInstance => Boolean(card))
-      );
-      setAssignedCards((previous) => previous
-        .map((assignment) => {
-          const latestCard = latestCardById.get(assignment.card.id);
-          return latestCard
-            ? { ...assignment, card: latestCard }
-            : null;
-        })
-        .filter((assignment): assignment is AssignedCard => assignment !== null)
-      );
-    }
-
-    wasOpenRef.current = true;
-    previousCardIdsKeyRef.current = cardIdsKey;
-  }, [isOpen, cards]);
+  const {
+    pendingCards,
+    currentAction,
+    setCurrentAction,
+    isBottomOrderRandomized,
+    setIsBottomOrderRandomized,
+    handleAssign,
+    handleUnassign,
+    reorderAssignedDeckCards,
+    getGroup,
+    getConfirmResults,
+    allAssigned,
+  } = useTopDeckAssignments({
+    isOpen,
+    cards,
+    onAssignmentChange: () => setHoveredTopDeckCard(null),
+  });
 
   if (!isOpen) return null;
-
-  const handleAssign = (card: CardInstance) => {
-    setHoveredTopDeckCard(null);
-    setPendingCards(prev => prev.filter(c => c.id !== card.id));
-    setAssignedCards(prev => {
-      const isDeckBack = currentAction === 'top' || currentAction === 'bottom';
-      let order: number | undefined = undefined;
-      
-      if (isDeckBack) {
-        const bucketCount = prev.filter(a => a.action === currentAction).length;
-        order = bucketCount + 1;
-      }
-      
-      return [...prev, { card, action: currentAction, order }];
-    });
-  };
-
-  const handleUnassign = (cardId: string) => {
-    setHoveredTopDeckCard(null);
-    const target = assignedCards.find(a => a.card.id === cardId);
-    if (!target) return;
-
-    setAssignedCards(prev => {
-      const filtered = prev.filter(a => a.card.id !== cardId);
-      // Re-order if it was a deck bucket
-      if (target.action === 'top' || target.action === 'bottom') {
-        let count = 1;
-        return filtered.map(a => {
-          if (a.action === target.action) {
-            return { ...a, order: count++ };
-          }
-          return a;
-        });
-      }
-      return filtered;
-    });
-    setPendingCards(prev => [...prev, target.card]);
-  };
-
-  const reorderAssignedDeckCards = (action: 'top' | 'bottom', cardId: string, direction: 'backward' | 'forward') => {
-    setAssignedCards(prev => {
-      const bucket = prev
-        .filter(a => a.action === action)
-        .sort((a, b) => (a.order || 0) - (b.order || 0));
-      const currentIndex = bucket.findIndex(a => a.card.id === cardId);
-      if (currentIndex === -1) return prev;
-
-      const targetIndex = direction === 'backward' ? currentIndex - 1 : currentIndex + 1;
-      if (targetIndex < 0 || targetIndex >= bucket.length) return prev;
-
-      const reorderedBucket = [...bucket];
-      [reorderedBucket[currentIndex], reorderedBucket[targetIndex]] = [reorderedBucket[targetIndex], reorderedBucket[currentIndex]];
-      const nextOrderMap = new Map(reorderedBucket.map((entry, index) => [entry.card.id, index + 1]));
-
-      return prev.map(entry => {
-        if (entry.action !== action) return entry;
-        const nextOrder = nextOrderMap.get(entry.card.id);
-        return nextOrder ? { ...entry, order: nextOrder } : entry;
-      });
-    });
-  };
-
-  const getGroup = (action: TopDeckAction) => {
-    const group = assignedCards.filter(a => a.action === action);
-    // Top/Bottom order is not just visual. It determines the final deck
-    // resolution order returned by onConfirm.
-    if (action === 'top' || action === 'bottom') {
-      return [...group].sort((a, b) => (a.order || 0) - (b.order || 0));
-    }
-    return group;
-  };
 
   const showTopDeckCardPreview = (card: CardInstance, event: React.MouseEvent) => {
     setHoveredTopDeckCard({
@@ -194,26 +80,7 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
     setHoveredTopDeckCard(null);
   };
 
-  const getConfirmResults = () => {
-    const topAssignments = assignedCards
-      .filter(a => a.action === 'top')
-      .sort((a, b) => (a.order || 0) - (b.order || 0));
-    const bottomAssignments = assignedCards
-      .filter(a => a.action === 'bottom')
-      .sort((a, b) => (a.order || 0) - (b.order || 0));
-    const orderedBottomAssignments = isBottomOrderRandomized
-      ? shuffleAssignments(bottomAssignments).map((assignment, index) => ({ ...assignment, order: index + 1 }))
-      : bottomAssignments;
-    const nonOrderedAssignments = assignedCards.filter(a => a.action !== 'top' && a.action !== 'bottom');
-
-    return [...nonOrderedAssignments, ...topAssignments, ...orderedBottomAssignments].map(a => ({
-      cardId: a.card.id,
-      action: a.action,
-      order: a.order,
-    }));
-  };
-
-  const actionButtons: { id: TopDeckAction; label: string; color: string }[] = [
+  const actionButtons: ActionButtonConfig[] = [
     { id: 'field', label: t('gameBoard.modals.topDeck.destinations.field'), color: '#f59e0b' },
     { id: 'hand', label: t('gameBoard.modals.topDeck.destinations.hand'), color: '#10b981' },
     { id: 'revealedHand', label: t('gameBoard.modals.topDeck.destinations.revealedHand'), color: '#14b8a6' },
@@ -222,8 +89,6 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
     { id: 'top', label: t('gameBoard.modals.topDeck.destinations.top'), color: '#3b82f6' },
     { id: 'cemetery', label: t('gameBoard.modals.topDeck.destinations.cemetery'), color: '#64748b' },
   ];
-
-  const allAssigned = pendingCards.length === 0;
 
   return (
     <div style={{
@@ -268,7 +133,7 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
 
         {/* Content Area */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '2rem', display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
-          
+
           {/* Pending Cards */}
           <section>
             <h3 style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: '#8b949e', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -303,160 +168,19 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
           </section>
 
           {/* Results Area */}
-          {/* Results Area - Grid layout for all destinations */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
-            
-            {actionButtons.map(btn => {
-              const group = getGroup(btn.id);
-              const isOrdered = btn.id === 'top' || btn.id === 'bottom';
-              const orderedAction: 'top' | 'bottom' | null = isOrdered ? (btn.id as 'top' | 'bottom') : null;
-              
-              return (
-                <div key={btn.id} style={{ 
-                  background: isOrdered ? (btn.id === 'top' ? 'rgba(56, 139, 253, 0.05)' : 'rgba(137, 87, 229, 0.05)') : 'rgba(255,255,255,0.02)', 
-                  border: `1px solid ${isOrdered ? (btn.id === 'top' ? '#38434d' : '#423a4d') : '#30363d'}`,
-                  padding: '1.2rem', borderRadius: '12px', minHeight: '140px'
-                }}>
-                  <h4 style={{ margin: '0 0 1rem 0', display: 'flex', justifyContent: 'space-between', color: isOrdered ? (btn.id === 'top' ? '#58a6ff' : '#bc8cff') : '#c9d1d9' }}>
-                    <span>{btn.label}</span>
-                    <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>{t('gameBoard.modals.topDeck.tapToReturn')}</span>
-                  </h4>
-                  {btn.id === 'bottom' && (
-                    <label
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.45rem',
-                        margin: '-0.35rem 0 0.9rem 0',
-                        color: '#c9d1d9',
-                        fontSize: '0.78rem',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isBottomOrderRandomized}
-                        onChange={(event) => setIsBottomOrderRandomized(event.target.checked)}
-                      />
-                      {t('gameBoard.modals.topDeck.randomizeBottom')}
-                    </label>
-                  )}
-                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                    {group.map(a => (
-                      <div
-                        key={a.card.id}
-                        onClick={() => handleUnassign(a.card.id)}
-                        onMouseEnter={(event) => showTopDeckCardPreview(a.card, event)}
-                        onMouseMove={(event) => moveTopDeckCardPreview(a.card, event)}
-                        onMouseLeave={hideTopDeckCardPreview}
-                        style={{ position: 'relative', cursor: 'pointer' }}
-                      >
-                        <CardArtwork
-                          image={a.card.image}
-                          alt={a.card.name}
-                          detail={cardDetailLookup[a.card.cardId]}
-                          baseCardType={a.card.baseCardType}
-                          isLeaderCard={a.card.isLeaderCard}
-                          isTokenCard={a.card.isTokenCard}
-                          isEvolveCard={a.card.isEvolveCard}
-                          style={{ width: isOrdered ? '64px' : '53px', height: isOrdered ? '90px' : '75px', borderRadius: '6px', border: currentAction === btn.id ? `2px solid ${btn.color}` : 'none' }}
-                          draggable={false}
-                        />
-                        {isOrdered && (
-                          <>
-                            <div style={{
-                              position: 'absolute', bottom: '-6px', right: '-6px', 
-                              background: btn.color,
-                              color: 'white', width: '20px', height: '20px', borderRadius: '50%',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontSize: '0.8rem', fontWeight: 'bold', border: '1px solid #0d1117'
-                            }}>
-                              {a.order}
-                            </div>
-                            <div
-                              style={{
-                                position: 'absolute',
-                                top: '-10px',
-                                left: '50%',
-                                transform: 'translateX(-50%)',
-                                display: 'flex',
-                                gap: '4px',
-                                background: 'rgba(13, 17, 23, 0.92)',
-                                border: '1px solid #30363d',
-                                borderRadius: '999px',
-                                padding: '3px 5px',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.35)'
-                              }}
-                              onClick={(event) => event.stopPropagation()}
-                            >
-                              <button
-                                type="button"
-                                aria-label={t('gameBoard.modals.topDeck.reorderBackward', { destination: btn.label, card: a.card.name })}
-                                disabled={(a.order || 0) <= 1}
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  if (!orderedAction) return;
-                                  reorderAssignedDeckCards(orderedAction, a.card.id, 'backward');
-                                }}
-                                style={{
-                                  border: 'none',
-                                  background: (a.order || 0) <= 1 ? '#21262d' : '#30363d',
-                                  color: (a.order || 0) <= 1 ? '#6b7280' : '#f0f6fc',
-                                  borderRadius: '999px',
-                                  width: '22px',
-                                  height: '22px',
-                                  cursor: (a.order || 0) <= 1 ? 'not-allowed' : 'pointer',
-                                  fontWeight: 'bold',
-                                  fontSize: '0.85rem',
-                                  padding: 0
-                                }}
-                              >
-                                ←
-                              </button>
-                              <button
-                                type="button"
-                                aria-label={t('gameBoard.modals.topDeck.reorderForward', { destination: btn.label, card: a.card.name })}
-                                disabled={(a.order || 0) >= group.length}
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  if (!orderedAction) return;
-                                  reorderAssignedDeckCards(orderedAction, a.card.id, 'forward');
-                                }}
-                                style={{
-                                  border: 'none',
-                                  background: (a.order || 0) >= group.length ? '#21262d' : '#30363d',
-                                  color: (a.order || 0) >= group.length ? '#6b7280' : '#f0f6fc',
-                                  borderRadius: '999px',
-                                  width: '22px',
-                                  height: '22px',
-                                  cursor: (a.order || 0) >= group.length ? 'not-allowed' : 'pointer',
-                                  fontWeight: 'bold',
-                                  fontSize: '0.85rem',
-                                  padding: 0
-                                }}
-                              >
-                                →
-                              </button>
-                            </div>
-                          </>
-                        )}
-                        {!isOrdered && (
-                          <div style={{
-                            position: 'absolute', top: '2px', left: '2px',
-                            background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: '9px',
-                            padding: '1px 4px', borderRadius: '3px'
-                          }}>
-                            {btn.id.toUpperCase()}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                    {group.length === 0 && <div style={{ fontSize: '0.8rem', color: '#484f58', display: 'flex', alignItems: 'center' }}>{t('gameBoard.modals.topDeck.empty')}</div>}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <TopDeckDestinationColumns
+            actionButtons={actionButtons}
+            currentAction={currentAction}
+            cardDetailLookup={cardDetailLookup}
+            isBottomOrderRandomized={isBottomOrderRandomized}
+            setIsBottomOrderRandomized={setIsBottomOrderRandomized}
+            getGroup={getGroup}
+            onUnassign={handleUnassign}
+            onReorder={reorderAssignedDeckCards}
+            onCardHover={showTopDeckCardPreview}
+            onCardMove={moveTopDeckCardPreview}
+            onCardLeave={hideTopDeckCardPreview}
+          />
         </div>
 
         {/* Hand Reference Strip */}
@@ -535,115 +259,6 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({ isOpen, cards, cardDetailLo
       )}
     </div>
   );
-};
-
-const TopDeckHoverPreview: React.FC<{
-  card: CardInstance;
-  cardDetailLookup: CardDetailLookup;
-  left: number;
-  top: number;
-}> = ({ card, cardDetailLookup, left, top }) => {
-  const { t } = useTranslation();
-  const detail = resolveSelectedCardFaceDetail(cardDetailLookup[card.cardId], card.selectedFaceSide);
-  const presentation = buildCardDetailPresentation(detail);
-  const displayName = detail?.name || card.name;
-
-  return (
-    <div
-      data-testid="top-deck-hover-preview"
-      style={{
-        position: 'fixed',
-        left,
-        top,
-        zIndex: 7000,
-        pointerEvents: 'none',
-        width: `${HOVER_PREVIEW_WIDTH}px`,
-        maxHeight: `${HOVER_PREVIEW_HEIGHT}px`,
-        overflow: 'hidden',
-        background: 'rgba(15, 23, 42, 0.96)',
-        border: '1px solid rgba(148, 163, 184, 0.35)',
-        borderRadius: '12px',
-        padding: '0.75rem',
-        boxShadow: '0 18px 45px rgba(0,0,0,0.5)',
-        color: '#e5e7eb',
-      }}
-    >
-      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-        <CardArtwork
-          image={detail?.image || card.image}
-          alt={displayName}
-          detail={detail ?? undefined}
-          baseCardType={card.baseCardType}
-          isLeaderCard={card.isLeaderCard}
-          isTokenCard={card.isTokenCard}
-          isEvolveCard={card.isEvolveCard}
-          style={{
-            width: '96px',
-            height: '134px',
-            borderRadius: '8px',
-            boxShadow: '0 8px 20px rgba(0,0,0,0.35)',
-            flexShrink: 0,
-          }}
-          draggable={false}
-        />
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ fontWeight: 800, fontSize: '0.95rem', lineHeight: 1.35, color: '#f8fafc' }}>
-            {displayName}
-          </div>
-          {presentation.primaryMeta && (
-            <div style={{ color: '#cbd5e1', fontSize: '0.73rem', marginTop: '0.22rem', lineHeight: 1.4 }}>
-              {presentation.primaryMeta}
-            </div>
-          )}
-          {presentation.secondaryMeta && (
-            <div style={{ color: '#94a3b8', fontSize: '0.72rem', marginTop: '0.14rem', lineHeight: 1.4 }}>
-              {presentation.secondaryMeta}
-            </div>
-          )}
-          <div style={{ display: 'grid', gridTemplateColumns: '52px 1fr', gap: '0.18rem 0.45rem', marginTop: '0.55rem', fontSize: '0.74rem' }}>
-            <span style={{ color: '#94a3b8' }}>{t('gameBoard.inspector.id')}</span>
-            <span>{card.cardId}</span>
-            <span style={{ color: '#94a3b8' }}>{t('gameBoard.inspector.cost')}</span>
-            <span>{detail?.cost || '-'}</span>
-            {presentation.stats && (
-              <>
-                <span style={{ color: '#94a3b8' }}>{t('gameBoard.inspector.stats')}</span>
-                <span>{presentation.stats}</span>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-      <div style={{ borderTop: '1px solid rgba(148, 163, 184, 0.18)', marginTop: '0.75rem', paddingTop: '0.65rem' }}>
-        <div style={{ color: '#f8fafc', fontWeight: 700, fontSize: '0.8rem', marginBottom: '0.4rem' }}>
-          {t('gameBoard.inspector.abilityText')}
-        </div>
-        <div
-          style={{
-            whiteSpace: 'pre-wrap',
-            color: '#e5e7eb',
-            fontSize: '0.76rem',
-            lineHeight: 1.55,
-            maxHeight: '150px',
-            overflow: 'hidden',
-          }}
-        >
-          {detail?.abilityText ? formatAbilityText(detail.abilityText) : t('gameBoard.inspector.noAbilityText')}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const shuffleAssignments = <T,>(assignments: T[]): T[] => {
-  const shuffled = [...assignments];
-
-  for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1));
-    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
-  }
-
-  return shuffled;
 };
 
 export default TopDeckModal;
