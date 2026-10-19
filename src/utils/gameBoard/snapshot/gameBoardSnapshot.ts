@@ -6,16 +6,12 @@ export const buildGameBoardNetworkSnapshotState = (
   detailLookup: CardDetailLookup
 ): SyncState => ({
   ...state,
-  cards: state.cards.map((card) => {
-    const canRestoreImageFromLookup =
-      !card.isTokenCard &&
-      !!detailLookup[card.cardId]?.image &&
-      card.image === detailLookup[card.cardId].image;
-
-    return canRestoreImageFromLookup
-      ? { ...card, image: '' }
-      : { ...card };
-  }),
+  // URLs are small compared with the artwork itself. Keep them so a cold
+  // receiver can start loading images before its catalog index is available.
+  cards: state.cards.map(card => ({
+    ...card,
+    image: card.image || (!card.isTokenCard && detailLookup[card.cardId]?.image) || '',
+  })),
   cardMoveHistory: [],
   lastGameState: null,
   lastUndoableCardMoveState: null,

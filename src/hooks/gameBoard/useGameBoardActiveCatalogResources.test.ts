@@ -1,5 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { buildGameBoardNetworkSnapshotState } from '../../utils/gameBoard/snapshot/gameBoardSnapshot';
+import { buildCardDetailLookup } from '../../utils/card/cardDetails';
 import { initialState } from '../../types/game';
 import { generatedCatalogFixture } from '../../test/generatedCatalogFixture';
 import { openGeneratedCardCatalog } from '../../utils/card/generatedCardCatalog';
@@ -18,6 +20,17 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 describe('active GameBoard catalog connection', () => {
+  it('can display a received official image while the guest catalog index is still pending', () => {
+    vi.mocked(openGeneratedCardCatalog).mockReturnValue(new Promise(() => {}));
+    const hostState = { ...initialState, cards: [instance('A', '/A.png')] };
+    const wireState = JSON.parse(JSON.stringify(buildGameBoardNetworkSnapshotState(hostState, buildCardDetailLookup(cards))));
+    const { result } = renderHook(() => useGameBoardActiveCatalogResources(wireState));
+    expect(result.current.catalogStatus).toBe('loading');
+    expect(result.current.cardDetailLookup).toEqual({});
+    expect(result.current.displayCards[0].image).toBe('/A.png');
+    expect(hostState.cards[0].image).toBe('/A.png');
+  });
+
   it('opens index metadata without any details or legacy JSON on an empty board', async () => {
     const catalog = generatedCatalogFixture(cards);
     const load = vi.spyOn(catalog, 'loadCards');

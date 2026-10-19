@@ -1,3 +1,4 @@
+import { buildCardDetailLookup } from '../../utils/card/cardDetails';
 import { generatedCatalogFixture } from '../../test/generatedCatalogFixture';
 import { undoBoard, undoFixtures, undoOperations } from '../../utils/gameBoard/testing/undoFixtures';
 import { getBoardUnits } from '../../utils/gameBoard/gameBoardMultiSelection';
@@ -31,6 +32,22 @@ describe('useGameBoardLogic P2P reconnect', () => {
       vi.runOnlyPendingTimers();
     });
     vi.useRealTimers();
+  });
+
+  it('renders image URLs from a received host snapshot before the guest catalog is ready', () => {
+    const card = createCatalogCard({ id: 'COLD-001', image: '/cold-guest.png' });
+    installMockCatalogFetch([card]).mockReturnValue(new Promise(() => {}));
+    const { conn } = connectGuest();
+    const state = buildSyncState({ revision: 2, gameStatus: 'playing', cards: [{
+      id: 'cold-hand', cardId: card.id, name: card.name, image: card.image,
+      owner: 'guest', zone: 'hand-guest', isTapped: false, isFlipped: false, counters: { atk: 0, hp: 0 },
+    }] });
+    const snapshot = JSON.parse(JSON.stringify(buildGameBoardNetworkSnapshotState(state, buildCardDetailLookup([card]))));
+    act(() => conn.emit('data', { type: 'STATE_SNAPSHOT', source: 'host', state: snapshot }));
+    expect(screen.getByTestId('guest-hand-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('guest-hand-images')).toHaveTextContent('/cold-guest.png');
+    expect(screen.getByTestId('connection-state')).toHaveTextContent('connected');
+    expect(state.cards[0].image).toBe('/cold-guest.png');
   });
 
   it('applies local and incoming events while generated details are pending or fail, without reverting the live board', async () => {
@@ -3367,7 +3384,7 @@ describe('useGameBoardLogic P2P reconnect', () => {
         networkHasUndoableCardMove: true,
       }),
     });
-    expect(snapshotCall?.[0]?.state?.cards?.[0]?.image).toBe('');
+    expect(snapshotCall?.[0]?.state?.cards?.[0]?.image).toBe('/catalog-card.png');
     expect(screen.getByTestId('status')).toHaveTextContent('Guest connected! Game ready.');
   });
 

@@ -82,7 +82,7 @@ describe('buildSnapshotSyncMessage', () => {
     );
 
     expect(message.pendingEffects).toEqual([{ type: 'DRAW_CARD_COMPLETED', actor: 'guest' }]);
-    expect(message.state.cards[0]?.image).toBe('');
+    expect(message.state.cards[0]?.image).toBe('/same-image.png');
     expect(message.state.lastGameState).toBeNull();
     expect(message.state.networkHasUndoableTurn).toBe(true);
   });
