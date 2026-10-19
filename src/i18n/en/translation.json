@@ -899,7 +899,7 @@
           "cemeteryToExMultiple": "{{actor}} added {{count}} cards from Cemetery to EX Area",
           "cemeteryToExOwned": "{{actor}} added {{cardName}} from {{sourceOwner}} Cemetery to {{destinationOwner}} EX Area",
           "cemeteryToExMultipleOwned": "{{actor}} added {{count}} cards from {{sourceOwner}} Cemetery to {{destinationOwner}} EX Area",
-          "evolvePlayedField": "{{actor}} played to field {{cardName}} from Eボルヴ デッキ",
+          "evolvePlayedField": "{{actor}} played to field {{cardName}} from Evolve Deck",
           "evolveSetUsed": "{{actor}} set {{cardName}} to USED",
           "evolveSetUnused": "{{actor}} set {{cardName}} to UNUSED",
           "banishToHand": "{{actor}} added {{cardName}} from Banish to hand",
