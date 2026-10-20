@@ -212,7 +212,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
       <div
         style={{
           position: 'absolute',
-          top: isMobileHorizontalHandZone ? 1 : -6,
+          top: isMobileZone ? 1 : -6,
           left: isCompactInput ? 7 : 10,
           zIndex: 20,
           display: isCompactInput ? 'grid' : 'inline-flex',

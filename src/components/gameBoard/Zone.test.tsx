@@ -495,6 +495,23 @@ describe('Zone', () => {
     const labelChip = screen.getByText('手札').parentElement as HTMLElement;
     expect(labelChip).toHaveStyle({ top: '1px' });
   });
+
+  it('positions deck zone label chip inside the zone on mobile so it does not protrude above into the summary bar', () => {
+    renderWithInputProfile(
+      'coarse',
+      <Zone
+        id="mainDeck-guest"
+        label="Main Deck"
+        cards={[createCard('card-1', { zone: 'mainDeck-guest' })]}
+        layout="stack"
+      />,
+      'standard',
+      'mobile'
+    );
+
+    const labelChip = screen.getByText('Main Deck').parentElement as HTMLElement;
+    expect(labelChip).toHaveStyle({ top: '1px' });
+  });
 });
 
 it('makes zone select-all interactive even though its label chip is non-interactive', () => {

@@ -1090,23 +1090,28 @@ const GameBoard: React.FC = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: '0.4rem',
+                flexWrap: 'nowrap',
+                overflowX: 'auto',
+                gap: '0.35rem',
                 width: '100%',
-                padding: '0.35rem 0.6rem',
+                padding: '0.24rem 0.5rem',
                 borderRadius: 'var(--radius-md)',
                 background: 'rgba(15, 23, 42, 0.86)',
                 border: '1px solid rgba(148, 163, 184, 0.25)',
                 color: '#f8fafc',
-                fontSize: '0.72rem',
+                fontSize: '0.7rem',
                 fontWeight: 700,
+                flexShrink: 0,
               }}
             >
-              <span style={{ color: '#93c5fd', fontWeight: 800 }}>{topLabel}</span>
-              <span>HP {gameState[topRole].hp}</span>
-              <span>PP {gameState[topRole].pp}/{gameState[topRole].maxPp}</span>
-              <span>EP {gameState[topRole].ep} / SEP {gameState[topRole].sep}</span>
-              <span>Hand {getCards(`hand-${topRole}`).length}</span>
+              <span style={{ color: '#93c5fd', fontWeight: 800, whiteSpace: 'nowrap' }}>{topLabel}</span>
+              <span style={{ whiteSpace: 'nowrap' }}>HP {gameState[topRole].hp}</span>
+              <span style={{ whiteSpace: 'nowrap' }}>PP {gameState[topRole].pp}/{gameState[topRole].maxPp}</span>
+              <span style={{ whiteSpace: 'nowrap' }}>EP {gameState[topRole].ep} / SEP {gameState[topRole].sep}</span>
+              <span style={{ whiteSpace: 'nowrap' }}>{t('zone.hand', 'Hand')} {getCards(`hand-${topRole}`).length}</span>
+              <span data-testid="mobile-opponent-summary-deck" style={{ whiteSpace: 'nowrap' }}>
+                {t('zone.mainDeck', 'Deck')} {getCards(`mainDeck-${topRole}`).length}
+              </span>
               <button
                 type="button"
                 data-testid="mobile-opponent-summary-ex"
@@ -1118,12 +1123,14 @@ const GameBoard: React.FC = () => {
                   border: '1px solid rgba(16, 185, 129, 0.45)',
                   background: 'rgba(16, 185, 129, 0.2)',
                   color: '#a7f3d0',
-                  fontSize: '0.7rem',
+                  fontSize: '0.68rem',
                   fontWeight: 800,
                   cursor: canView ? 'pointer' : 'not-allowed',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
                 }}
               >
-                EX {getCards(`ex-${topRole}`).length}
+                {t('zone.exArea', 'EX')} {getCards(`ex-${topRole}`).length}
               </button>
               <button
                 type="button"
@@ -1136,12 +1143,14 @@ const GameBoard: React.FC = () => {
                   border: '1px solid rgba(96, 165, 250, 0.45)',
                   background: 'rgba(59, 130, 246, 0.2)',
                   color: '#bfdbfe',
-                  fontSize: '0.7rem',
+                  fontSize: '0.68rem',
                   fontWeight: 800,
                   cursor: canView ? 'pointer' : 'not-allowed',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
                 }}
               >
-                Cemetery {getCards(`cemetery-${topRole}`).length}
+                {t('zone.cemetery', 'Cemetery')} {getCards(`cemetery-${topRole}`).length}
               </button>
               <button
                 type="button"
@@ -1154,12 +1163,14 @@ const GameBoard: React.FC = () => {
                   border: '1px solid rgba(148, 163, 184, 0.35)',
                   background: 'rgba(148, 163, 184, 0.14)',
                   color: '#e2e8f0',
-                  fontSize: '0.7rem',
+                  fontSize: '0.68rem',
                   fontWeight: 800,
                   cursor: canView ? 'pointer' : 'not-allowed',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
                 }}
               >
-                Banish {getCards(`banish-${topRole}`).length}
+                {t('zone.banish', 'Banish')} {getCards(`banish-${topRole}`).length}
               </button>
               {mobileSoloViewpoint === 'battle' && (
                 <button
@@ -1176,6 +1187,8 @@ const GameBoard: React.FC = () => {
                     fontSize: '0.68rem',
                     fontWeight: 800,
                     cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
                   }}
                 >
                   {isBattleTopSecondaryCollapsed ? '▼ EX Row' : '▲ Hide EX Row'}
@@ -1194,6 +1207,7 @@ const GameBoard: React.FC = () => {
               gap: boardSectionGap,
               opacity: 0.9,
               display: isMobileLayout && mobileSoloViewpoint === 'bottom' ? 'none' : undefined,
+              marginTop: isMobileLayout ? '0.35rem' : undefined,
             }}
           >
             {isSoloMode ? (
@@ -1528,8 +1542,8 @@ const GameBoard: React.FC = () => {
                         }}
                       >
                         {isBattleBottomSecondaryCollapsed
-                          ? `▼ EX (${getCards(`ex-${bottomRole}`).length}) / Cemetery (${getCards(`cemetery-${bottomRole}`).length}) / Banish (${getCards(`banish-${bottomRole}`).length})`
-                          : '▲ Hide EX / Cemetery / Banish'}
+                          ? `▼ ${t('zone.exArea', 'EX')} (${getCards(`ex-${bottomRole}`).length}) / ${t('zone.cemetery', 'Cemetery')} (${getCards(`cemetery-${bottomRole}`).length}) / ${t('zone.banish', 'Banish')} (${getCards(`banish-${bottomRole}`).length})`
+                          : `▲ ${t('zone.exArea', 'EX')}・${t('zone.cemetery', 'Cemetery')}・${t('zone.banish', 'Banish')}`}
                       </button>
                       {isBattleBottomSecondaryCollapsed && (
                         <div style={{ display: 'flex', gap: '0.35rem' }}>
@@ -1548,7 +1562,7 @@ const GameBoard: React.FC = () => {
                               cursor: canView ? 'pointer' : 'not-allowed',
                             }}
                           >
-                            Cemetery {getCards(`cemetery-${bottomRole}`).length}
+                            {t('zone.cemetery', 'Cemetery')} {getCards(`cemetery-${bottomRole}`).length}
                           </button>
                           <button
                             type="button"
@@ -1565,7 +1579,7 @@ const GameBoard: React.FC = () => {
                               cursor: canView ? 'pointer' : 'not-allowed',
                             }}
                           >
-                            Banish {getCards(`banish-${bottomRole}`).length}
+                            {t('zone.banish', 'Banish')} {getCards(`banish-${bottomRole}`).length}
                           </button>
                         </div>
                       )}

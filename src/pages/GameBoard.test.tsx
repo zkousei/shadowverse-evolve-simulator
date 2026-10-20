@@ -3687,8 +3687,14 @@ describe('GameBoard', () => {
       const battleTab = screen.getByTestId('mobile-viewpoint-battle');
       expect(battleTab).toHaveAttribute('aria-pressed', 'true');
       expect(screen.getByTestId('board-section-top')).not.toHaveStyle({ display: 'none' });
+      expect(screen.getByTestId('board-section-top')).toHaveStyle({ marginTop: '0.35rem' });
       expect(screen.getByTestId('board-section-bottom')).not.toHaveStyle({ display: 'none' });
       expect(screen.getByTestId('top-board-upper-rows')).toHaveStyle({ display: 'none' });
+
+      // Summary bar stays in a single row without wrapping and displays opponent deck count
+      const summaryBar = screen.getByTestId('mobile-opponent-summary-bar');
+      expect(summaryBar).toHaveStyle({ flexWrap: 'nowrap', overflowX: 'auto' });
+      expect(screen.getByTestId('mobile-opponent-summary-deck')).toBeInTheDocument();
 
       // Hand zone uses single-row horizontal scroll on mobile
       expect(screen.getByTestId('zone-hand-host')).toHaveStyle({
