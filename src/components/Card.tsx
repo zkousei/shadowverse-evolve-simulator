@@ -60,7 +60,11 @@ interface Props {
   onTap?: (id: string) => void;
   onModifyCounter?: (id: string, stat: 'atk' | 'hp', delta: number) => void;
   onModifyGenericCounter?: (id: string, delta: number) => void;
+  onSendToTop?: (id: string) => void;
   onSendToBottom?: (id: string) => void;
+  onSendToHand?: (id: string) => void;
+  onSendToEx?: (id: string) => void;
+  onStartAttach?: (id: string) => void;
   onBanish?: (id: string) => void;
   onReturnEvolve?: (id: string) => void;
   onCemetery?: (id: string) => void;
@@ -74,7 +78,7 @@ interface Props {
   debugIndex?: number;
 }
 
-const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideCurrentStats, highlightTone, onInspect, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, onCardTapAction, onQuickActionsHoverChange, isHidden, isLocked, quickActionsDisabled, disableCombatAndCounterControls, debugIndex }) => {
+const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideCurrentStats, highlightTone, onInspect, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToTop, onSendToBottom, onSendToHand, onSendToEx, onStartAttach, onBanish, onReturnEvolve, onCemetery, onPlayToField, onCardTapAction, onQuickActionsHoverChange, isHidden, isLocked, quickActionsDisabled, disableCombatAndCounterControls, debugIndex }) => {
   const { t } = useTranslation();
   const selection = useBoardMultiSelectionContext();
   const selectionTone = selection?.tone(card.id);
@@ -235,7 +239,11 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
   };
   const quickActionDescriptions = {
     inspect: t('gameBoard.card.quickActionDescriptions.inspect'),
+    sendToTop: t('gameBoard.card.quickActionDescriptions.sendToTop'),
     sendToBottom: t('gameBoard.card.quickActionDescriptions.sendToBottom'),
+    toHand: t('gameBoard.card.quickActionDescriptions.toHand'),
+    toEx: t('gameBoard.card.quickActionDescriptions.toEx'),
+    attachToCard: t('gameBoard.card.quickActionDescriptions.attachToCard'),
     cemetery: t('gameBoard.card.quickActionDescriptions.cemetery'),
     banish: t('gameBoard.card.quickActionDescriptions.banish'),
     toEvolveDeck: t('gameBoard.card.quickActionDescriptions.toEvolveDeck'),
@@ -461,7 +469,11 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
             onInspect={onInspect}
             onModifyCounter={onModifyCounter}
             onModifyGenericCounter={onModifyGenericCounter}
+            onSendToTop={onSendToTop}
             onSendToBottom={onSendToBottom}
+            onSendToHand={onSendToHand}
+            onSendToEx={onSendToEx}
+            onStartAttach={onStartAttach}
             onCemetery={onCemetery}
             onBanish={onBanish}
             onReturnEvolve={onReturnEvolve}

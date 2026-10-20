@@ -9,6 +9,7 @@ import {
   buildOpenedPreviewUiState,
   buildStartedDeckHoverUiState,
 } from '../../utils/deckBuilder/deckBuilderPreviewState';
+import { shouldEnableDeckCardHoverPreview } from '../../utils/deckBuilder/deckBuilderResponsiveLayout';
 
 export const useDeckBuilderPreviewUi = () => {
   const [previewCard, setPreviewCard] = React.useState<DeckBuilderCardData | null>(null);
@@ -48,10 +49,19 @@ export const useDeckBuilderPreviewUi = () => {
     applyDeckBuilderPreviewUiState(buildClosedPreviewUiState());
   }, [applyDeckBuilderPreviewUiState]);
 
+  const canShowHoverPreview = () => (
+    shouldEnableDeckCardHoverPreview(
+      typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+        ? window.matchMedia.bind(window)
+        : undefined
+    )
+  );
+
   const handleDeckCardMouseEnter = React.useCallback((
     card: DeckBuilderCardData,
     event: React.MouseEvent<HTMLDivElement>
   ) => {
+    if (!canShowHoverPreview()) return;
     applyDeckBuilderPreviewUiState(
       buildStartedDeckHoverUiState(
         card,
@@ -63,6 +73,7 @@ export const useDeckBuilderPreviewUi = () => {
   const handleDeckCardMouseMove = React.useCallback((
     event: React.MouseEvent<HTMLDivElement>
   ) => {
+    if (!canShowHoverPreview()) return;
     applyDeckBuilderPreviewUiState(
       buildMovedDeckHoverUiState(
         buildDeckHoverPointerPosition(event.clientX, event.clientY)

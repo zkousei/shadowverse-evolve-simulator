@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus } from 'lucide-react';
+import { Minus, Plus } from 'lucide-react';
 import type { DeckRuleConfig } from '../../models/deckRule';
 import type { DeckState } from '../../models/deckState';
 import DeckBuilderRestrictionNotice from './DeckBuilderRestrictionNotice';
@@ -54,6 +54,7 @@ type DeckBuilderLibraryCardProps = {
   canAddToSection: (section: DeckTargetSection) => boolean;
   onOpenPreview: (card: DeckBuilderCardData) => void;
   onAddToSection: (card: DeckBuilderCardData, section: DeckTargetSection) => void;
+  onRemoveFromSection?: (section: DeckTargetSection, cardId: string) => void;
 };
 
 const DeckBuilderLibraryCard: React.FC<DeckBuilderLibraryCardProps> = ({
@@ -65,6 +66,7 @@ const DeckBuilderLibraryCard: React.FC<DeckBuilderLibraryCardProps> = ({
   canAddToSection,
   onOpenPreview,
   onAddToSection,
+  onRemoveFromSection,
 }) => {
   const { t } = useTranslation();
   const restrictionSection = card.deck_section === 'evolve' ? 'evolve' : card.deck_section === 'main' ? 'main' : undefined;
@@ -154,33 +156,64 @@ const DeckBuilderLibraryCard: React.FC<DeckBuilderLibraryCardProps> = ({
               : t('deckBuilder.restriction.progress', { count, limit });
 
           return (
-            <button
+            <div
               key={section}
-              type="button"
-              onClick={() => onAddToSection(card, section)}
-              disabled={!canAdd}
               style={{
                 flex: section === 'token' ? '1 1 100%' : 1,
-                padding: '0.25rem',
-                background: canAdd ? action.background : 'var(--bg-surface-elevated)',
-                borderRadius: '4px',
                 display: 'flex',
-                justifyContent: 'center',
-                color: '#fff',
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                opacity: canAdd ? 1 : 0.5,
-                cursor: canAdd ? 'pointer' : 'not-allowed',
+                gap: '0.25rem',
+                minWidth: 0,
               }}
-              title={t(action.titleKey)}
-              aria-label={`${t(action.titleKey)}: ${progressLabel}`}
             >
-              <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                {action.showPlus && limit !== 0 && <Plus size={16} color="#fff" />}
-                {action.label && limit !== 0 && <span>{action.label}</span>}
-                <span>{progressLabel}</span>
-              </span>
-            </button>
+              {onRemoveFromSection && count > 0 && (
+                <button
+                  type="button"
+                  data-testid={`library-card-remove-${section}-${card.id}`}
+                  onClick={() => onRemoveFromSection(section, card.id)}
+                  aria-label={`Remove ${card.name} from ${section}`}
+                  title={`Remove ${card.name}`}
+                  style={{
+                    padding: '0.25rem 0.35rem',
+                    background: 'rgba(239, 68, 68, 0.25)',
+                    border: '1px solid rgba(248, 113, 113, 0.45)',
+                    borderRadius: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#fca5a5',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <Minus size={14} color="#fca5a5" />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => onAddToSection(card, section)}
+                disabled={!canAdd}
+                style={{
+                  flex: 1,
+                  padding: '0.25rem',
+                  background: canAdd ? action.background : 'var(--bg-surface-elevated)',
+                  borderRadius: '4px',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  color: '#fff',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  opacity: canAdd ? 1 : 0.5,
+                  cursor: canAdd ? 'pointer' : 'not-allowed',
+                }}
+                title={t(action.titleKey)}
+                aria-label={`${t(action.titleKey)}: ${progressLabel}`}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                  {action.showPlus && limit !== 0 && <Plus size={16} color="#fff" />}
+                  {action.label && limit !== 0 && <span>{action.label}</span>}
+                  <span>{progressLabel}</span>
+                </span>
+              </button>
+            </div>
           );
         })}
       </div>

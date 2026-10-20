@@ -85,4 +85,23 @@ describe('gameBoardEnvironment', () => {
       boardDensity: 'standard',
     });
   });
+
+  it('resolves coarse input and mobile layout profile on smartphone widths', () => {
+    const environment = resolveBoardEnvironment({
+      viewportWidth: 390,
+      viewportHeight: 844,
+      matchMediaFn: createMatchMedia({
+        '(pointer: coarse)': true,
+        '(any-pointer: coarse)': true,
+        '(hover: hover)': false,
+        '(any-hover: hover)': false,
+      }),
+    });
+
+    expect(environment).toEqual({
+      inputProfile: 'coarse',
+      layoutProfile: 'mobile',
+      boardDensity: 'standard',
+    });
+  });
 });

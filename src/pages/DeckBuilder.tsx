@@ -29,12 +29,17 @@ import { createEmptyDeckState, type DeckState } from '../models/deckState';
 import {
   appendRelatedTokensToDeckState,
   canAddCardToDeckState,
+  DECK_LIMITS,
   getDeckLimit,
   getAllowedSections,
   getDeckValidationMessages,
   isRuleConfigured,
   type DeckTargetSection,
 } from '../utils/deckBuilder/deckBuilderRules';
+import {
+  isCompactDeckBuilderViewport,
+  type DeckBuilderMobileTab,
+} from '../utils/deckBuilder/deckBuilderResponsiveLayout';
 import { buildCardDetailLookup } from '../utils/card/cardDetails';
 import {
   buildDeckBuilderCatalogView,
@@ -164,6 +169,17 @@ const DeckBuilder: React.FC = () => {
   const [deckState, setDeckState] = useState<DeckState>(createEmptyDeckState());
   const [deckSortMode, setDeckSortMode] = useState<DeckSortMode>('added');
   const [savedDecks, setSavedDecks] = useState<SavedDeckRecordV1[]>(() => listSavedDecks());
+  const [isCompact, setIsCompact] = useState(() => (
+    typeof window !== 'undefined' ? isCompactDeckBuilderViewport(window.innerWidth) : false
+  ));
+  const [mobileTab, setMobileTab] = useState<DeckBuilderMobileTab>('library');
+  useEffect(() => {
+    const handleResize = () => {
+      setIsCompact(isCompactDeckBuilderViewport(window.innerWidth));
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const subtypeTags = getAvailableSubtypeTags(catalogSummaries);
   const releasedCards = React.useMemo(
     () => catalogSummaries.filter(card => card.catalog_status !== 'preview'),
@@ -707,6 +723,8 @@ const DeckBuilder: React.FC = () => {
     onNext: () => updateLibraryFilters({ page: Math.min(totalPages - 1, page + 1) }),
     onOpenPreview: handleOpenPreview,
     onAddToSection: addToDeck,
+    onRemoveFromSection: isCompact ? removeFromDeck : undefined,
+    isCompact,
   };
 
   const deckPaneProps = {
@@ -765,6 +783,8 @@ const DeckBuilder: React.FC = () => {
     onDeckCardMouseEnter: handleDeckCardMouseEnter,
     onDeckCardMouseMove: handleDeckCardMouseMove,
     onDeckCardMouseLeave: handleDeckCardMouseLeave,
+    onOpenPreview: handleOpenPreview,
+    isCompact,
   };
 
   const myDecksModalProps = {
@@ -866,7 +886,7 @@ const DeckBuilder: React.FC = () => {
   } : null;
 
   return (
-    <div style={{ display: 'flex', height: '100%', overflow: 'hidden', position: 'relative' }}>
+    <div style={{ display: 'flex', flexDirection: isCompact ? 'column' : 'row', height: '100%', overflow: 'hidden', position: 'relative' }}>
       {(catalogFailed || reloadFailed || actions.pending) && (
         <div role={catalogFailed || reloadFailed ? 'alert' : 'status'} style={{ position: 'absolute', top: 8, left: '20%', right: '20%', zIndex: 500, padding: '1rem', background: 'var(--bg-surface)', border: '1px solid var(--border-light)', borderRadius: 8 }}>
           <p>{t(reloadFailed ? 'deckBuilder.catalog.storageFailed' : catalogFailed ? 'deckBuilder.catalog.failed' : 'deckBuilder.catalog.processing')}</p>
@@ -882,9 +902,74 @@ const DeckBuilder: React.FC = () => {
         />
       )}
 
-      <DeckBuilderLibraryPane {...libraryPaneProps} />
+      {isCompact ? (
+        <>
+          <div
+            role="tablist"
+            aria-label={t('deckBuilder.mobileTabs.aria')}
+            style={{
+              display: 'flex',
+              gap: '0.5rem',
+              padding: '0.5rem 1rem',
+              background: 'var(--bg-surface)',
+              borderBottom: '1px solid var(--border-light)',
+              flexShrink: 0,
+            }}
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mobileTab === 'library'}
+              onClick={() => setMobileTab('library')}
+              style={{
+                flex: 1,
+                padding: '0.5rem 0.75rem',
+                borderRadius: 'var(--radius-md)',
+                border: mobileTab === 'library' ? '1px solid var(--brand-primary)' : '1px solid var(--border-light)',
+                background: mobileTab === 'library' ? 'var(--brand-primary)' : 'var(--bg-surface-elevated)',
+                color: mobileTab === 'library' ? '#fff' : 'var(--text-main)',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              {t('deckBuilder.mobileTabs.library')}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mobileTab === 'deck'}
+              onClick={() => setMobileTab('deck')}
+              style={{
+                flex: 1,
+                padding: '0.5rem 0.75rem',
+                borderRadius: 'var(--radius-md)',
+                border: mobileTab === 'deck' ? '1px solid var(--brand-primary)' : '1px solid var(--border-light)',
+                background: mobileTab === 'deck' ? 'var(--brand-primary)' : 'var(--bg-surface-elevated)',
+                color: mobileTab === 'deck' ? '#fff' : 'var(--text-main)',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              {t('deckBuilder.mobileTabs.deck', {
+                mainCount: mainDeck.length,
+                mainLimit: DECK_LIMITS.main,
+              })}
+            </button>
+          </div>
+          <div style={{ display: mobileTab === 'library' ? 'flex' : 'none', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+            <DeckBuilderLibraryPane {...libraryPaneProps} />
+          </div>
+          <div style={{ display: mobileTab === 'deck' ? 'flex' : 'none', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+            <DeckBuilderDeckPane {...deckPaneProps} />
+          </div>
+        </>
+      ) : (
+        <>
+          <DeckBuilderLibraryPane {...libraryPaneProps} />
 
-      <DeckBuilderDeckPane {...deckPaneProps} />
+          <DeckBuilderDeckPane {...deckPaneProps} />
+        </>
+      )}
 
       {isMyDecksOpen && (
         <DeckBuilderMyDecksModal {...myDecksModalProps} />

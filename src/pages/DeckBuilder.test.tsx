@@ -2477,4 +2477,60 @@ describe('DeckBuilder', { timeout: 20000 }, () => {
     expect(screen.getByRole('button', { name: 'Save draft and reload' })).toBeEnabled();
   });
 
+  it('switches between Card Library and Deck tabs on compact viewports while keeping both panes mounted and opening preview on deck card name tap', async () => {
+    const originalInnerWidth = window.innerWidth;
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      writable: true,
+      value: 375,
+    });
+
+    try {
+      await renderLoadedDeckBuilder();
+
+      const tablist = screen.getByRole('tablist', { name: 'Deck builder view' });
+      const libraryTab = within(tablist).getByRole('tab', { name: 'Card Library' });
+      const deckTab = within(tablist).getByRole('tab', { name: 'Deck (0/50)' });
+
+      expect(libraryTab).toHaveAttribute('aria-selected', 'true');
+      expect(deckTab).toHaveAttribute('aria-selected', 'false');
+
+      // Switch to Deck tab to configure rule, then back to Library
+      fireEvent.click(deckTab);
+      expect(deckTab).toHaveAttribute('aria-selected', 'true');
+      expect(libraryTab).toHaveAttribute('aria-selected', 'false');
+
+      fireEvent.change(screen.getByRole('combobox', { name: 'Deck format' }), {
+        target: { value: 'other' },
+      });
+
+      fireEvent.click(libraryTab);
+      const searchInput = screen.getByPlaceholderText('Search cards by name...');
+      fireEvent.change(searchInput, { target: { value: 'Alpha' } });
+      await flushDeckBuilderCatalogLoad();
+
+      const alphaCardPanel = screen.getByAltText('Alpha Knight').closest('.glass-panel') as HTMLElement;
+      fireEvent.click(within(alphaCardPanel).getByTitle('Add to Main Deck'));
+
+      // Deck tab label updates with live main deck count
+      const updatedDeckTab = within(tablist).getByRole('tab', { name: 'Deck (1/50)' });
+      fireEvent.click(updatedDeckTab);
+
+      // Search input stays mounted with its state preserved even while Library tab is inactive
+      expect(searchInput).toHaveValue('Alpha');
+
+      // Tapping the card name in the deck list opens the preview modal
+      const deckCardName = screen.getAllByText('Alpha Knight').find(el => el.tagName === 'DIV')!;
+      fireEvent.click(deckCardName);
+      expect(screen.getByRole('dialog', { name: 'Alpha Knight preview' })).toBeInTheDocument();
+    } finally {
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        writable: true,
+        value: originalInnerWidth,
+      });
+    }
+  });
+
 });
+

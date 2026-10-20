@@ -68,6 +68,11 @@
       "tokenDeck": "Token Deck"
     },
     "title": "Card Library",
+    "mobileTabs": {
+      "aria": "Deck builder view",
+      "library": "Card Library",
+      "deck": "Deck ({{mainCount}}/{{mainLimit}})"
+    },
     "loading": "Loading card database...",
     "status": {
       "unsavedChanges": "Unsaved changes",
@@ -115,6 +120,8 @@
         "subtypeInput": "Subtype filter input"
       },
       "searchCards": "Search cards by name...",
+      "advancedFilters": "Advanced Filters",
+      "advancedFiltersActive": "Advanced Filters ({{count}})",
       "hideSameNameVariants": "Hide same-name variants",
       "showPreviewCards": "Show preview cards",
       "allExpansions": "All Expansions",
@@ -558,7 +565,8 @@
       "endStopOn": "End Stop ON",
       "endStopOff": "End Stop OFF",
       "endStopBlocked": "{{label}} has End Stop enabled.",
-      "availableDuringGameOnly": "Available during the game only."
+      "availableDuringGameOnly": "Available during the game only.",
+      "switchViewpoint": "View: {{label}}"
     },
     "catalog": {
       "loading": "Loading card information…",
@@ -616,7 +624,11 @@
       },
       "quickActionDescriptions": {
         "inspect": "View card details",
+        "sendToTop": "Send to top of deck",
         "sendToBottom": "Send to bottom of deck",
+        "toHand": "Return to hand",
+        "toEx": "Move to EX area",
+        "attachToCard": "Stack / Link onto card",
         "cemetery": "Send to cemetery",
         "banish": "Banish this card",
         "toEvolveDeck": "Return to evolve deck"
@@ -669,6 +681,8 @@
       "resume": "Resume Previous Session",
       "attackMode": "ATTACK MODE",
       "attackSelect": "Select an enemy follower or leader for ",
+      "attachMode": "STACK / LINK MODE",
+      "attachSelect": "Select a target card on the field for ",
       "cancel": "Cancel",
       "recentEvents": "Recent Events"
     },

@@ -144,12 +144,7 @@ export function useGameBoardFieldActions({
         dispatchGameEvent({ type: 'MODIFY_GENERIC_COUNTER', actor: actor ?? getSoloCardMoveActor(cardId), cardId, delta });
     }, [dispatchGameEvent, getSoloCardMoveActor]);
 
-    const handleDragEnd = useCallback((event: DragEndEvent) => {
-        const { active, over } = event;
-        if (!over) return;
-        const cardId = active.id as string;
-        const overId = over.id as string;
-
+    const handleAttachToCard = useCallback((cardId: string, overId: string) => {
         const sourceCard = gameStateRef.current.cards.find(card => card.id === cardId);
         const overCard = gameStateRef.current.cards.find(card => card.id === overId);
         const overRootCard = overCard ? findUnitRootCard(gameStateRef.current.cards, overCard) : undefined;
@@ -219,6 +214,12 @@ export function useGameBoardFieldActions({
         });
     }, [cardCatalogByIdRef, dispatchGameEvent, executeEvolveAutoAttach, fieldLinkCardIdsRef, gameStateRef, isSoloMode, queueEvolveAutoAttachSelection, resolveEvolveAutoAttachSelection, tokenManualLinkCardIdsRef]);
 
+    const handleDragEnd = useCallback((event: DragEndEvent) => {
+        const { active, over } = event;
+        if (!over) return;
+        handleAttachToCard(active.id as string, over.id as string);
+    }, [handleAttachToCard]);
+
     const toggleTap = useCallback((cardId: string) => {
         dispatchGameEvent({ type: 'TOGGLE_TAP', ...(isSoloMode ? { actor: getSoloCardMoveActor(cardId) } : {}), cardId });
     }, [dispatchGameEvent, getSoloCardMoveActor, isSoloMode]);
@@ -230,6 +231,43 @@ export function useGameBoardFieldActions({
     const handleSetCardFace = useCallback((cardId: string, faceSide: 'front' | 'back', targetRole?: PlayerRole) => {
         dispatchGameEvent({ type: 'SET_CARD_FACE', actor: targetRole, cardId, faceSide });
     }, [dispatchGameEvent]);
+
+    const handleSendToTop = useCallback((cardId: string) => {
+        const sourceCard = gameStateRef.current.cards.find(card => card.id === cardId);
+        if (!sourceCard) return;
+        const deckZone = sourceCard.isEvolveCard ? `evolveDeck-${sourceCard.owner}` : `mainDeck-${sourceCard.owner}`;
+        dispatchGameEvent({
+            type: 'MOVE_CARD',
+            actor: getSoloCardMoveActor(cardId),
+            cardId,
+            overId: deckZone,
+        });
+        setSearchZone(null);
+    }, [dispatchGameEvent, gameStateRef, getSoloCardMoveActor, setSearchZone]);
+
+    const handleSendToHand = useCallback((cardId: string) => {
+        const sourceCard = gameStateRef.current.cards.find(card => card.id === cardId);
+        if (!sourceCard) return;
+        dispatchGameEvent({
+            type: 'MOVE_CARD',
+            actor: getSoloCardMoveActor(cardId),
+            cardId,
+            overId: `hand-${sourceCard.owner}`,
+        });
+        setSearchZone(null);
+    }, [dispatchGameEvent, gameStateRef, getSoloCardMoveActor, setSearchZone]);
+
+    const handleSendToEx = useCallback((cardId: string) => {
+        const sourceCard = gameStateRef.current.cards.find(card => card.id === cardId);
+        if (!sourceCard) return;
+        dispatchGameEvent({
+            type: 'MOVE_CARD',
+            actor: getSoloCardMoveActor(cardId),
+            cardId,
+            overId: `ex-${sourceCard.owner}`,
+        });
+        setSearchZone(null);
+    }, [dispatchGameEvent, gameStateRef, getSoloCardMoveActor, setSearchZone]);
 
     const handleSendToBottom = useCallback((cardId: string) => {
         dispatchGameEvent({ type: 'SEND_TO_BOTTOM', actor: getSoloCardMoveActor(cardId), cardId });
@@ -370,9 +408,13 @@ export function useGameBoardFieldActions({
         handleModifyCounter,
         handleModifyGenericCounter,
         handleDragEnd,
+        handleAttachToCard,
         toggleTap,
         handleFlipCard,
         handleSetCardFace,
+        handleSendToTop,
+        handleSendToHand,
+        handleSendToEx,
         handleSendToBottom,
         handleSendCardsToBottom,
         handleBanish,

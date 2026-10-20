@@ -37,7 +37,7 @@ const resolveEnvironmentInputProfile = (
   viewportWidth: number,
   matchMediaFn?: MatchMediaFn
 ): GameBoardInputProfile => {
-  if (!matchMediaFn || viewportWidth < 900) {
+  if (!matchMediaFn) {
     return getInputProfileForViewportWidth(viewportWidth, matchMediaFn);
   }
 

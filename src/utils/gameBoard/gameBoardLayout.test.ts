@@ -55,7 +55,7 @@ describe('gameBoardLayout', () => {
     expect(layout.boardShellColumns).toBe('176px 864px 176px');
   });
 
-  it('uses tablet profile in 900-1279px only when input profile is coarse', () => {
+  it('uses tablet profile in 900-1279px and mobile profile below 900px when input profile is coarse', () => {
     expect(getLayoutProfileForViewportWidth(900, 'coarse')).toBe('tablet');
     expect(getLayoutProfileForViewportWidth(1024, 'coarse')).toBe('tablet');
     expect(getLayoutProfileForViewportWidth(1279, 'coarse')).toBe('tablet');
@@ -63,8 +63,19 @@ describe('gameBoardLayout', () => {
     expect(getLayoutProfileForViewportWidth(900, 'fine')).toBe('desktop');
     expect(getLayoutProfileForViewportWidth(1024, 'fine')).toBe('desktop');
     expect(getLayoutProfileForViewportWidth(1279, 'fine')).toBe('desktop');
-    expect(getLayoutProfileForViewportWidth(899, 'coarse')).toBe('desktop');
+    expect(getLayoutProfileForViewportWidth(899, 'coarse')).toBe('mobile');
+    expect(getLayoutProfileForViewportWidth(390, 'coarse')).toBe('mobile');
+    expect(getLayoutProfileForViewportWidth(899, 'fine')).toBe('desktop');
     expect(getLayoutProfileForViewportWidth(1280, 'coarse')).toBe('desktop');
+  });
+
+  it('fits mobile board layout within smartphone viewport widths without CSS zoom', () => {
+    const layout = resolveBoardLayout(390, 'coarse');
+
+    expect(layout.profile).toBe('mobile');
+    expect(layout.boardShellColumns).toBe('1fr');
+    expect(layout.boardContentWidth).toBeLessThanOrEqual(390);
+    expect(resolveBoardDisplayScale(390, 'coarse')).toBe(1);
   });
 
   it('fits tablet board shell within the viewport budget', () => {
@@ -92,6 +103,7 @@ describe('gameBoardLayout', () => {
     expect(resolveBoardDisplayScale(1280, 'fine')).toBe(1);
     expect(resolveBoardDisplayScale(1024, 'fine')).toBe(0.608);
     expect(resolveBoardDisplayScale(1024, 'coarse')).toBe(1);
+    expect(resolveBoardDisplayScale(390, 'coarse')).toBe(1);
   });
 
   it('uses overview density for PC desktop viewports while keeping tablet layouts standard', () => {

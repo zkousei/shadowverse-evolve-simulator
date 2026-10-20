@@ -26,7 +26,11 @@ interface Props {
   onTap?: (id: string) => void;
   onModifyCounter?: (id: string, stat: 'atk' | 'hp', delta: number) => void;
   onModifyGenericCounter?: (id: string, delta: number) => void;
+  onSendToTop?: (id: string) => void;
   onSendToBottom?: (id: string) => void;
+  onSendToHand?: (id: string) => void;
+  onSendToEx?: (id: string) => void;
+  onStartAttach?: (id: string) => void;
   onBanish?: (id: string) => void;
   onReturnEvolve?: (id: string) => void;
   onCemetery?: (id: string) => void;
@@ -44,7 +48,7 @@ interface Props {
   isDebug?: boolean;
 }
 
-const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLookup, onInspectCard, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, onCardTapAction, onZoneTapAction, hideCards, layout = 'horizontal', isProtected, lockCards, disableQuickActionsForCard, getHighlightTone, viewerRole, containerStyle, isDebug }) => {
+const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLookup, onInspectCard, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToTop, onSendToBottom, onSendToHand, onSendToEx, onStartAttach, onBanish, onReturnEvolve, onCemetery, onPlayToField, onCardTapAction, onZoneTapAction, hideCards, layout = 'horizontal', isProtected, lockCards, disableQuickActionsForCard, getHighlightTone, viewerRole, containerStyle, isDebug }) => {
   const { t } = useTranslation();
   const selection = useBoardMultiSelectionContext();
   const zoneTapPointerStartRef = React.useRef<{ x: number; y: number } | null>(null);
@@ -121,7 +125,10 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
           detail={cardDetailLookup?.[linkedCard.cardId]}
           highlightTone={getHighlightTone?.(linkedCard)}
           onInspect={onInspectCard}
+          onSendToTop={linkedCard.isTokenCard ? onSendToTop : undefined}
           onSendToBottom={linkedCard.isTokenCard ? onSendToBottom : undefined}
+          onSendToHand={linkedCard.isTokenCard ? onSendToHand : undefined}
+          onSendToEx={linkedCard.isTokenCard ? onSendToEx : undefined}
           onBanish={linkedCard.isTokenCard ? onBanish : undefined}
           onReturnEvolve={onReturnEvolve}
           onCemetery={linkedCard.isTokenCard ? onCemetery : undefined}
@@ -135,7 +142,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
         />
       </div>
     ));
-  }, [attachmentLeftOffset, attachmentTopOffset, cardDetailLookup, cardStatLookup, disableQuickActionsForCard, getHighlightTone, handleQuickActionsHoverChange, hideCards, isDebug, isProtected, isReadOnlySpectator, linkedCardLeftOffset, linkedCardTopOffset, lockCards, onBanish, onCardTapAction, onCemetery, onInspectCard, onReturnEvolve, onSendToBottom, shouldDisableZoneQuickActions, viewerRole]);
+  }, [attachmentLeftOffset, attachmentTopOffset, cardDetailLookup, cardStatLookup, disableQuickActionsForCard, getHighlightTone, handleQuickActionsHoverChange, hideCards, isDebug, isProtected, isReadOnlySpectator, linkedCardLeftOffset, linkedCardTopOffset, lockCards, onBanish, onCardTapAction, onCemetery, onInspectCard, onReturnEvolve, onSendToBottom, onSendToEx, onSendToHand, onSendToTop, shouldDisableZoneQuickActions, viewerRole]);
 
   return (
     <div
@@ -303,7 +310,11 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
                       onTap={onTap}
                       onModifyCounter={onModifyCounter}
                       onModifyGenericCounter={onModifyGenericCounter}
+                      onSendToTop={onSendToTop}
                       onSendToBottom={onSendToBottom}
+                      onSendToHand={onSendToHand}
+                      onSendToEx={onSendToEx}
+                      onStartAttach={onStartAttach}
                       onBanish={onBanish}
                       onReturnEvolve={onReturnEvolve}
                       onCemetery={onCemetery}
@@ -333,7 +344,11 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
                           onTap={onTap}
                           onModifyCounter={onModifyCounter}
                           onModifyGenericCounter={onModifyGenericCounter}
+                          onSendToTop={onSendToTop}
                           onSendToBottom={onSendToBottom}
+                          onSendToHand={onSendToHand}
+                          onSendToEx={onSendToEx}
+                          onStartAttach={onStartAttach}
                           onBanish={onBanish}
                           onReturnEvolve={onReturnEvolve}
                           onCemetery={onCemetery}
@@ -379,7 +394,11 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
                 onTap={onTap}
                 onModifyCounter={onModifyCounter}
                 onModifyGenericCounter={onModifyGenericCounter}
+                onSendToTop={onSendToTop}
                 onSendToBottom={onSendToBottom}
+                onSendToHand={onSendToHand}
+                onSendToEx={onSendToEx}
+                onStartAttach={onStartAttach}
                 onBanish={onBanish}
                 onReturnEvolve={onReturnEvolve}
                 onCemetery={onCemetery}
@@ -409,7 +428,11 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
                     onTap={onTap}
                     onModifyCounter={onModifyCounter}
                     onModifyGenericCounter={onModifyGenericCounter}
+                    onSendToTop={onSendToTop}
                     onSendToBottom={onSendToBottom}
+                    onSendToHand={onSendToHand}
+                    onSendToEx={onSendToEx}
+                    onStartAttach={onStartAttach}
                     onBanish={onBanish}
                     onReturnEvolve={onReturnEvolve}
                     onCemetery={onCemetery}

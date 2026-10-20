@@ -64,6 +64,8 @@ type DeckBuilderLibraryPaneProps = {
   onNext: () => void;
   onOpenPreview: (card: DeckBuilderCardData) => void;
   onAddToSection: (card: DeckBuilderCardData, section: DeckTargetSection) => void;
+  onRemoveFromSection?: (section: DeckTargetSection, cardId: string) => void;
+  isCompact?: boolean;
 };
 
 const DeckBuilderLibraryPane: React.FC<DeckBuilderLibraryPaneProps> = ({
@@ -116,14 +118,17 @@ const DeckBuilderLibraryPane: React.FC<DeckBuilderLibraryPaneProps> = ({
   onNext,
   onOpenPreview,
   onAddToSection,
+  onRemoveFromSection,
+  isCompact = false,
 }) => {
   const { t } = useTranslation();
 
   return (
-    <div style={{ flex: 1, padding: '2rem', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-      <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>{t('deckBuilder.title')}</h1>
+    <div style={{ flex: 1, padding: isCompact ? '1rem' : '2rem', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+      <h1 style={{ fontSize: isCompact ? '1.5rem' : '2rem', marginBottom: '1rem' }}>{t('deckBuilder.title')}</h1>
 
       <DeckBuilderLibraryFilters
+        isCompact={isCompact}
         search={search}
         hideSameNameVariants={hideSameNameVariants}
         showPreviewCards={showPreviewCards}
@@ -172,7 +177,7 @@ const DeckBuilderLibraryPane: React.FC<DeckBuilderLibraryPaneProps> = ({
       {isLoading ? (
         <p style={{ color: 'var(--text-muted)', textAlign: 'center', marginTop: '2rem' }}>{t('deckBuilder.loading')}</p>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '1rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isCompact ? 'repeat(auto-fill, minmax(120px, 1fr))' : 'repeat(auto-fill, minmax(150px, 1fr))', gap: isCompact ? '0.75rem' : '1rem' }}>
           {paginatedCards.map((card) => (
             <DeckBuilderLibraryCard
               key={card.id}
@@ -184,6 +189,7 @@ const DeckBuilderLibraryPane: React.FC<DeckBuilderLibraryPaneProps> = ({
               canAddToSection={(section) => canAddToSection(card, section)}
               onOpenPreview={onOpenPreview}
               onAddToSection={onAddToSection}
+              onRemoveFromSection={onRemoveFromSection}
             />
           ))}
         </div>

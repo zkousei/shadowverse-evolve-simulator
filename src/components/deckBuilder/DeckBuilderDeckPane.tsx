@@ -67,6 +67,8 @@ type DeckBuilderDeckPaneProps = {
   onDeckCardMouseEnter: (card: DeckBuilderCardData, event: React.MouseEvent<HTMLDivElement>) => void;
   onDeckCardMouseMove: (event: React.MouseEvent<HTMLDivElement>) => void;
   onDeckCardMouseLeave: () => void;
+  onOpenPreview?: (card: DeckBuilderCardData) => void;
+  isCompact?: boolean;
 };
 
 const DeckBuilderDeckPane: React.FC<DeckBuilderDeckPaneProps> = ({
@@ -125,6 +127,8 @@ const DeckBuilderDeckPane: React.FC<DeckBuilderDeckPaneProps> = ({
   onDeckCardMouseEnter,
   onDeckCardMouseMove,
   onDeckCardMouseLeave,
+  onOpenPreview,
+  isCompact = false,
 }) => {
   const { t } = useTranslation();
   const mainDeckTypeCounts = getDeckBaseCardTypeCounts(groupedMainDeck);
@@ -133,7 +137,21 @@ const DeckBuilderDeckPane: React.FC<DeckBuilderDeckPaneProps> = ({
     .join(' / ');
 
   return (
-    <div className="glass-panel" style={{ width: '350px', display: 'flex', flexDirection: 'column', borderRight: 'none', borderTop: 'none', borderBottom: 'none', borderRadius: 0 }}>
+    <div
+      className="glass-panel"
+      style={{
+        width: isCompact ? '100%' : '350px',
+        flex: isCompact ? 1 : undefined,
+        minHeight: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        borderRight: 'none',
+        borderTop: 'none',
+        borderBottom: 'none',
+        borderLeft: isCompact ? 'none' : undefined,
+        borderRadius: 0,
+      }}
+    >
       <DeckBuilderDeckHeader
         isCardCatalogReady={isCardCatalogReady}
         deckName={deckName}
@@ -190,6 +208,7 @@ const DeckBuilderDeckPane: React.FC<DeckBuilderDeckPaneProps> = ({
           showCountWhenSingle={false}
           countTextAlign="right"
           onRemove={onRemoveLeader}
+          onOpenPreview={onOpenPreview}
           onCardMouseEnter={onDeckCardMouseEnter}
           onCardMouseMove={onDeckCardMouseMove}
           onCardMouseLeave={onDeckCardMouseLeave}
@@ -209,6 +228,7 @@ const DeckBuilderDeckPane: React.FC<DeckBuilderDeckPaneProps> = ({
           summaryLabel={mainDeckTypeSummaryLabel}
           onRemove={onRemoveMain}
           onAdd={onAddMain}
+          onOpenPreview={onOpenPreview}
           onCardMouseEnter={onDeckCardMouseEnter}
           onCardMouseMove={onDeckCardMouseMove}
           onCardMouseLeave={onDeckCardMouseLeave}
@@ -225,6 +245,7 @@ const DeckBuilderDeckPane: React.FC<DeckBuilderDeckPaneProps> = ({
           canAddCard={canAddEvolveCard}
           onRemove={onRemoveEvolve}
           onAdd={onAddEvolve}
+          onOpenPreview={onOpenPreview}
           onCardMouseEnter={onDeckCardMouseEnter}
           onCardMouseMove={onDeckCardMouseMove}
           onCardMouseLeave={onDeckCardMouseLeave}
@@ -242,6 +263,7 @@ const DeckBuilderDeckPane: React.FC<DeckBuilderDeckPaneProps> = ({
           headingMarginTop="2rem"
           onRemove={onRemoveToken}
           onAdd={onAddToken}
+          onOpenPreview={onOpenPreview}
           onCardMouseEnter={onDeckCardMouseEnter}
           onCardMouseMove={onDeckCardMouseMove}
           onCardMouseLeave={onDeckCardMouseLeave}

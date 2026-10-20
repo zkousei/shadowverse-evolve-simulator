@@ -751,6 +751,46 @@ describe('Card', () => {
     expect(screen.getByRole('button', { name: 'REST' })).toHaveStyle({ color: 'rgb(255, 255, 255)' });
   });
 
+  it('fires non-drag movement and attach actions from coarse action sheet', () => {
+    const onSendToTop = vi.fn();
+    const onSendToHand = vi.fn();
+    const onSendToEx = vi.fn();
+    const onStartAttach = vi.fn();
+
+    renderWithInputProfile(
+      'coarse',
+      <Card
+        card={createCard({ zone: 'field-host' })}
+        onSendToTop={onSendToTop}
+        onSendToHand={onSendToHand}
+        onSendToEx={onSendToEx}
+        onStartAttach={onStartAttach}
+      />
+    );
+
+    const cardElement = screen.getByAltText('Test Card').closest('.game-card') as HTMLElement;
+    const tapCard = () => {
+      fireEvent.pointerDown(cardElement, { clientX: 10, clientY: 20, button: 0 });
+      fireEvent.pointerUp(cardElement, { clientX: 10, clientY: 20, button: 0 });
+    };
+
+    tapCard();
+    fireEvent.click(screen.getByRole('button', { name: 'Send to top of deck' }));
+    expect(onSendToTop).toHaveBeenCalledWith('card-1');
+
+    tapCard();
+    fireEvent.click(screen.getByRole('button', { name: 'Return to hand' }));
+    expect(onSendToHand).toHaveBeenCalledWith('card-1');
+
+    tapCard();
+    fireEvent.click(screen.getByRole('button', { name: 'Move to EX area' }));
+    expect(onSendToEx).toHaveBeenCalledWith('card-1');
+
+    tapCard();
+    fireEvent.click(screen.getByRole('button', { name: 'Stack / Link onto card' }));
+    expect(onStartAttach).toHaveBeenCalledWith('card-1');
+  });
+
   it('disables browser touch gestures on coarse input to keep dragging smooth', () => {
     renderWithInputProfile(
       'coarse',

@@ -10,6 +10,7 @@ import { useGameBoardBoardDensity, useGameBoardInputProfile } from '../../contex
 
 type GameBoardHeaderProps = {
   isTabletLayout: boolean;
+  isMobileLayout?: boolean;
   room: string;
   isSoloMode: boolean;
   isHost: boolean;
@@ -46,6 +47,7 @@ type GameBoardHeaderProps = {
 
 const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
   isTabletLayout,
+  isMobileLayout = false,
   room,
   isSoloMode,
   isHost,
@@ -83,6 +85,7 @@ const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
   const inputProfile = useGameBoardInputProfile();
   const boardDensity = useGameBoardBoardDensity();
   const [isEventsOpen, setIsEventsOpen] = React.useState(false);
+  const [isMobileToolsCollapsed, setIsMobileToolsCollapsed] = React.useState(false);
   const isCompactControls = inputProfile === 'coarse';
   const keepInlineCompactHeader = isCompactControls && isTabletLayout;
   const compactHeaderColumnGap = keepInlineCompactHeader ? '0.42rem' : '0.5rem';
@@ -90,6 +93,7 @@ const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
   const compactHeaderPadding = keepInlineCompactHeader ? '0.42rem 0.56rem' : '0.48rem 0.62rem';
   const compactLeftBlockGap = keepInlineCompactHeader ? '0.42rem' : '0.5rem';
   const isOverviewControls = inputProfile === 'fine' && boardDensity === 'overview';
+  const shouldHideMobileToolsRow = isMobileLayout && gameState.gameStatus === 'playing' && isMobileToolsCollapsed;
 
   return (
     <div
@@ -115,7 +119,7 @@ const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
       <div
         style={{
           visibility: selectionActive ? 'hidden' : undefined,
-          display: 'flex',
+          display: shouldHideMobileToolsRow ? 'none' : 'flex',
           gap: isCompactControls ? compactLeftBlockGap : isOverviewControls ? '0.8rem' : '1rem',
           alignItems: 'center',
           flexWrap: keepInlineCompactHeader ? 'nowrap' : isCompactControls ? 'wrap' : 'nowrap',
@@ -280,9 +284,11 @@ const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
         <div
           style={{
             display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem',
             visibility: selectionActive ? 'hidden' : undefined,
             flex: keepInlineCompactHeader ? undefined : isCompactControls ? '1 1 100%' : undefined,
-            justifyContent: keepInlineCompactHeader ? 'flex-end' : isCompactControls ? 'flex-start' : 'flex-end',
+            justifyContent: keepInlineCompactHeader ? 'flex-end' : isMobileLayout ? 'space-between' : isCompactControls ? 'flex-start' : 'flex-end',
             minWidth: 0,
           }}
         >
@@ -296,6 +302,28 @@ const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
             canChangePhase={!isSpectator && (isSoloMode || gameState.turnPlayer === role)}
             onPhaseChange={onPhaseChange}
           />
+          {isMobileLayout && (
+            <button
+              type="button"
+              data-testid="mobile-header-more-toggle"
+              aria-expanded={!isMobileToolsCollapsed}
+              onClick={() => setIsMobileToolsCollapsed((prev) => !prev)}
+              style={{
+                padding: '0.28rem 0.55rem',
+                minHeight: '28px',
+                borderRadius: '8px',
+                border: '1px solid rgba(255, 255, 255, 0.16)',
+                background: isMobileToolsCollapsed ? 'rgba(59, 130, 246, 0.25)' : 'rgba(255, 255, 255, 0.08)',
+                color: '#f8fafc',
+                fontSize: '0.72rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {isMobileToolsCollapsed ? '▼ Tools' : '▲ Tools'}
+            </button>
+          )}
         </div>
       )}
       {selectionActive && <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', padding: '0 10px', borderRadius: 12, background: '#0f172a', border: '1px solid #38bdf8' }}>
