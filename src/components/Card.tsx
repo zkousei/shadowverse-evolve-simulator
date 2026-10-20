@@ -6,7 +6,11 @@ import type { BaseCardStats } from '../utils/card/cardStats';
 import { isMainDeckSpellCard, type RuntimeBaseCardType } from '../utils/card/cardType';
 import { resolveSelectedCardFaceDetail, type CardDetail, type CardFaceSide } from '../utils/card/cardDetails';
 import CardArtwork from './CardArtwork';
-import { useGameBoardBoardDensity, useGameBoardInputProfile } from '../contexts/gameBoardInputProfileContext';
+import {
+  useGameBoardBoardDensity,
+  useGameBoardInputProfile,
+  useGameBoardLayoutProfile,
+} from '../contexts/gameBoardInputProfileContext';
 import { getCardSizeForInputProfile } from '../utils/gameBoard/gameBoardCardLayout';
 import { computeCoarseSheetPlacement, type CoarseSheetPlacement } from './card/cardCoarsePlacement';
 import { CardStatBadges } from './card/CardStatBadges';
@@ -88,12 +92,13 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
   const coarseActionSheetRef = React.useRef<HTMLDivElement | null>(null);
   const inputProfile = useGameBoardInputProfile();
   const boardDensity = useGameBoardBoardDensity();
+  const layoutProfile = useGameBoardLayoutProfile();
   const [isQuickActionsOpen, setIsQuickActionsOpen] = React.useState(false);
   const [coarseSheetPlacement, setCoarseSheetPlacement] = React.useState<CoarseSheetPlacement | null>(null);
   const [isDesktopQuickActionsHovered, setIsDesktopQuickActionsHovered] = React.useState(false);
   const isCoarseInput = inputProfile === 'coarse';
   const isOverviewQuickActions = !isCoarseInput && boardDensity === 'overview';
-  const cardSize = getCardSizeForInputProfile(inputProfile, boardDensity);
+  const cardSize = getCardSizeForInputProfile(inputProfile, boardDensity, layoutProfile);
   const isInteractionLocked = isLocked || card.isLeaderCard || card.zone.startsWith('leader-');
   const canShowQuickActionOverlay = !isHidden && !isInteractionLocked && !selection?.active;
   const canToggleQuickActions = isCoarseInput && canShowQuickActionOverlay && !quickActionsDisabled;

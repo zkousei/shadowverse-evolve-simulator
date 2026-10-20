@@ -1,5 +1,6 @@
 import type { GameBoardInputProfile } from './gameBoardInputProfile';
 import type { GameBoardBoardDensity } from './gameBoardBoardDensity';
+import type { GameBoardLayoutProfile } from './gameBoardLayout';
 
 export type GameBoardCardSize = {
   width: number;
@@ -21,12 +22,20 @@ export const coarseCardSize: GameBoardCardSize = {
   height: 106,
 };
 
+export const mobileCardSize: GameBoardCardSize = {
+  width: 60,
+  height: 84,
+};
+
 export const getCardSizeForInputProfile = (
   inputProfile: GameBoardInputProfile,
-  boardDensity: GameBoardBoardDensity = 'standard'
+  boardDensity: GameBoardBoardDensity = 'standard',
+  layoutProfile: GameBoardLayoutProfile = 'desktop'
 ): GameBoardCardSize => (
   inputProfile === 'coarse'
-    ? coarseCardSize
+    ? layoutProfile === 'mobile'
+      ? mobileCardSize
+      : coarseCardSize
     : boardDensity === 'overview'
       ? overviewDesktopCardSize
       : desktopCardSize
@@ -34,10 +43,13 @@ export const getCardSizeForInputProfile = (
 
 export const getFieldZoneGapForInputProfile = (
   inputProfile: GameBoardInputProfile,
-  boardDensity: GameBoardBoardDensity = 'standard'
+  boardDensity: GameBoardBoardDensity = 'standard',
+  layoutProfile: GameBoardLayoutProfile = 'desktop'
 ): string => (
   inputProfile === 'coarse'
-    ? '1.14rem'
+    ? layoutProfile === 'mobile'
+      ? '0.45rem'
+      : '1.14rem'
     : boardDensity === 'overview'
       ? '1.9rem'
       : '1.9rem'

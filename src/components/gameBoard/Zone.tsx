@@ -6,7 +6,11 @@ import Card, { type CardInspectAnchor, type CardInstance, type CardTapAnchor } f
 import type { PlayerRole } from '../../types/game';
 import type { CardStatLookup } from '../../utils/card/cardStats';
 import type { CardDetailLookup } from '../../utils/card/cardDetails';
-import { useGameBoardBoardDensity, useGameBoardInputProfile } from '../../contexts/gameBoardInputProfileContext';
+import {
+  useGameBoardBoardDensity,
+  useGameBoardInputProfile,
+  useGameBoardLayoutProfile,
+} from '../../contexts/gameBoardInputProfileContext';
 import {
   getCardSizeForInputProfile,
   getExZoneGapForInputProfile,
@@ -55,11 +59,13 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
   const [quickActionsHoveredCardId, setQuickActionsHoveredCardId] = React.useState<string | null>(null);
   const inputProfile = useGameBoardInputProfile();
   const boardDensity = useGameBoardBoardDensity();
+  const layoutProfile = useGameBoardLayoutProfile();
   const isCompactInput = inputProfile === 'coarse';
+  const isMobileZone = layoutProfile === 'mobile';
   const isFineInput = inputProfile === 'fine';
   const isOverviewDesktop = inputProfile === 'fine' && boardDensity === 'overview';
   const { isOver, setNodeRef } = useDroppable({ id });
-  const cardSize = getCardSizeForInputProfile(inputProfile, boardDensity);
+  const cardSize = getCardSizeForInputProfile(inputProfile, boardDensity, layoutProfile);
   const stackAttachmentOffset = getStackAttachmentOffsetForInputProfile(inputProfile, boardDensity);
   const linkedCardOffset = getLinkedCardOffsetForInputProfile(inputProfile, boardDensity);
   const attachmentTopOffset = stackAttachmentOffset.top;
@@ -71,6 +77,8 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
   const isStack = layout === 'stack';
   const isFieldZone = id.startsWith('field-');
   const isExZone = id.startsWith('ex-');
+  const isHandZone = id.startsWith('hand-');
+  const isMobileHorizontalHandZone = isMobileZone && isHandZone && !isStack;
   const shouldDisableZoneQuickActions = id.startsWith('cemetery-') || id.startsWith('banish-');
   const isReadOnlySpectator = viewerRole === 'spectator';
   const zoneLabelChipGap = isCompactInput ? '2px' : isFineInput ? '3px' : isOverviewDesktop ? '4px' : '6px';
@@ -186,11 +194,12 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
         gap: isStack
           ? '0.5rem'
           : isFieldZone
-            ? getFieldZoneGapForInputProfile(inputProfile, boardDensity)
+            ? getFieldZoneGapForInputProfile(inputProfile, boardDensity, layoutProfile)
             : isExZone
               ? getExZoneGapForInputProfile(inputProfile, boardDensity)
               : '0.5rem',
-        flexWrap: isStack ? 'nowrap' : 'wrap',
+        flexWrap: isStack || isMobileHorizontalHandZone ? 'nowrap' : 'wrap',
+        overflowX: isMobileHorizontalHandZone ? 'auto' : undefined,
         alignItems: isStack ? 'center' : 'flex-start',
         zIndex: quickActionsHoveredCardId ? 240 : undefined,
         transition: 'var(--transition-fast)',

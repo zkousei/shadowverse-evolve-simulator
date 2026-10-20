@@ -107,8 +107,16 @@ const GameBoard: React.FC = () => {
   const isMobileLayout = layoutProfile === 'mobile';
   const isMobileCompactLandscape = isMobileLayout && viewportHeight <= 500;
   const isTabletCompactBoard = isCompactBoard && (isTabletLayout || isMobileLayout);
-  const [mobileSoloViewpoint, setMobileSoloViewpoint] = React.useState<'all' | 'bottom' | 'top' | 'battle'>('all');
-  const zoneActionPlacement = inputProfile === 'fine' && boardDensity === 'overview' ? 'overlay' : 'below';
+  const [mobileSoloViewpoint, setMobileSoloViewpoint] = React.useState<'all' | 'bottom' | 'top' | 'battle'>(
+    isMobileCompactLandscape ? 'battle' : 'all'
+  );
+  const [isBattleBottomSecondaryCollapsed, setIsBattleBottomSecondaryCollapsed] = React.useState(false);
+  React.useEffect(() => {
+    if (isMobileCompactLandscape) {
+      setMobileSoloViewpoint((prev) => (prev === 'all' ? 'battle' : prev));
+    }
+  }, [isMobileCompactLandscape]);
+  const zoneActionPlacement = (inputProfile === 'fine' && boardDensity === 'overview') || isMobileLayout ? 'overlay' : 'below';
   const {
     boardShellPadding,
     boardShellGap,
@@ -282,6 +290,14 @@ const GameBoard: React.FC = () => {
     searchZoneId: searchZone?.id ?? null,
     t,
   });
+  const hasTopExCards = getCards(`ex-${topRole}`).length > 0;
+  const [battleTopSecondaryOverride, setBattleTopSecondaryOverride] = React.useState<'expanded' | 'collapsed' | null>(null);
+  React.useEffect(() => {
+    setBattleTopSecondaryOverride(null);
+  }, [hasTopExCards]);
+  const isBattleTopSecondaryCollapsed = battleTopSecondaryOverride
+    ? battleTopSecondaryOverride === 'collapsed'
+    : !hasTopExCards;
   const canShowUndoMoveForRole = (playerRole: PlayerRole) => getCanShowUndoMoveForRole({
     gameStatus: gameState.gameStatus, isSoloMode, isSpectator, canInteract,
     role, playerRole, hasUndoableMove, undoMoveActor,
@@ -853,7 +869,7 @@ const GameBoard: React.FC = () => {
       handleDragEnd(event);
     }}>
       <GameBoardMultiSelectionContext.Provider value={selectionContext}>
-      <GameBoardInputProfileProvider value={inputProfile} boardDensity={boardDensity}>
+      <GameBoardInputProfileProvider value={inputProfile} boardDensity={boardDensity} layoutProfile={layoutProfile}>
         <div
           data-layout-profile={layoutProfile}
           data-input-profile={inputProfile}
@@ -1086,7 +1102,80 @@ const GameBoard: React.FC = () => {
               <span>PP {gameState[topRole].pp}/{gameState[topRole].maxPp}</span>
               <span>EP {gameState[topRole].ep} / SEP {gameState[topRole].sep}</span>
               <span>Hand {getCards(`hand-${topRole}`).length}</span>
-              <span>Cemetery {getCards(`cemetery-${topRole}`).length}</span>
+              <button
+                type="button"
+                data-testid="mobile-opponent-summary-ex"
+                disabled={!canView}
+                onClick={() => openSearchZone(`ex-${topRole}`, t('gameBoard.zones.exArea', { label: topLabel }))}
+                style={{
+                  padding: '0.12rem 0.42rem',
+                  borderRadius: '6px',
+                  border: '1px solid rgba(16, 185, 129, 0.45)',
+                  background: 'rgba(16, 185, 129, 0.2)',
+                  color: '#a7f3d0',
+                  fontSize: '0.7rem',
+                  fontWeight: 800,
+                  cursor: canView ? 'pointer' : 'not-allowed',
+                }}
+              >
+                EX {getCards(`ex-${topRole}`).length}
+              </button>
+              <button
+                type="button"
+                data-testid="mobile-opponent-summary-cemetery"
+                disabled={!canView}
+                onClick={() => openSearchZone(`cemetery-${topRole}`, t('gameBoard.zones.cemetery', { label: topLabel }))}
+                style={{
+                  padding: '0.12rem 0.42rem',
+                  borderRadius: '6px',
+                  border: '1px solid rgba(96, 165, 250, 0.45)',
+                  background: 'rgba(59, 130, 246, 0.2)',
+                  color: '#bfdbfe',
+                  fontSize: '0.7rem',
+                  fontWeight: 800,
+                  cursor: canView ? 'pointer' : 'not-allowed',
+                }}
+              >
+                Cemetery {getCards(`cemetery-${topRole}`).length}
+              </button>
+              <button
+                type="button"
+                data-testid="mobile-opponent-summary-banish"
+                disabled={!canView}
+                onClick={() => openSearchZone(`banish-${topRole}`, t('gameBoard.zones.banish', { label: topLabel }))}
+                style={{
+                  padding: '0.12rem 0.42rem',
+                  borderRadius: '6px',
+                  border: '1px solid rgba(148, 163, 184, 0.35)',
+                  background: 'rgba(148, 163, 184, 0.14)',
+                  color: '#e2e8f0',
+                  fontSize: '0.7rem',
+                  fontWeight: 800,
+                  cursor: canView ? 'pointer' : 'not-allowed',
+                }}
+              >
+                Banish {getCards(`banish-${topRole}`).length}
+              </button>
+              {mobileSoloViewpoint === 'battle' && (
+                <button
+                  type="button"
+                  data-testid="mobile-battle-top-secondary-toggle"
+                  aria-expanded={!isBattleTopSecondaryCollapsed}
+                  onClick={() => setBattleTopSecondaryOverride(isBattleTopSecondaryCollapsed ? 'expanded' : 'collapsed')}
+                  style={{
+                    padding: '0.12rem 0.42rem',
+                    borderRadius: '6px',
+                    border: '1px solid rgba(56, 189, 248, 0.4)',
+                    background: 'rgba(14, 165, 233, 0.18)',
+                    color: '#e0f2fe',
+                    fontSize: '0.68rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {isBattleTopSecondaryCollapsed ? '▼ EX Row' : '▲ Hide EX Row'}
+                </button>
+              )}
             </div>
           )}
 
@@ -1124,16 +1213,26 @@ const GameBoard: React.FC = () => {
 
                 <div style={{ width: `${boardContentWidth}px`, minWidth: 0, display: 'flex', flexDirection: 'column', gap: boardColumnStackGap, alignItems: 'flex-start' }}>
                   <div
-                    data-testid="top-board-upper-rows"
+                    data-testid="top-board-hand-row"
                     style={{
                       display: isMobileLayout && mobileSoloViewpoint === 'battle' ? 'none' : 'flex',
+                      width: '100%',
+                    }}
+                  >
+                    <GameBoardTopHandSection {...topSoloHandSectionProps} />
+                  </div>
+
+                  <div
+                    data-testid="top-board-upper-rows"
+                    style={{
+                      display: isMobileLayout && mobileSoloViewpoint === 'battle' && isBattleTopSecondaryCollapsed
+                        ? 'none'
+                        : 'flex',
                       flexDirection: 'column',
                       gap: boardColumnStackGap,
                       width: '100%',
                     }}
                   >
-                    <GameBoardTopHandSection {...topSoloHandSectionProps} />
-
                     <GameBoardBoardRow columns={boardColumns} width={boardContentWidth} rowGap={boardRowGap}>
                       <GameBoardSearchableStackSection
                         zoneProps={{ id: `cemetery-${topRole}`, label: t('gameBoard.zones.cemetery', { label: topLabel }), cards: getCards(`cemetery-${topRole}`), cardDetailLookup, layout: 'stack', onInspectCard: handleInspectCard, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: stackZoneMinHeight }, isDebug }}
@@ -1247,16 +1346,26 @@ const GameBoard: React.FC = () => {
 
                 <div style={{ width: `${boardContentWidth}px`, minWidth: 0, display: 'flex', flexDirection: 'column', gap: boardColumnStackGap, alignItems: 'flex-start' }}>
                   <div
-                    data-testid="top-board-upper-rows"
+                    data-testid="top-board-hand-row"
                     style={{
                       display: isMobileLayout && mobileSoloViewpoint === 'battle' ? 'none' : 'flex',
+                      width: '100%',
+                    }}
+                  >
+                    <GameBoardTopHandSection {...topReadOnlyHandSectionProps} />
+                  </div>
+
+                  <div
+                    data-testid="top-board-upper-rows"
+                    style={{
+                      display: isMobileLayout && mobileSoloViewpoint === 'battle' && isBattleTopSecondaryCollapsed
+                        ? 'none'
+                        : 'flex',
                       flexDirection: 'column',
                       gap: boardColumnStackGap,
                       width: '100%',
                     }}
                   >
-                    <GameBoardTopHandSection {...topReadOnlyHandSectionProps} />
-
                     <GameBoardBoardRow columns={boardColumns} width={boardContentWidth} rowGap={boardRowGap}>
                       <GameBoardSearchableStackSection
                         zoneProps={{ id: `cemetery-${topRole}`, label: t('gameBoard.zones.cemetery', { label: topLabel }), cards: getCards(`cemetery-${topRole}`), cardDetailLookup, layout: 'stack', onInspectCard: handleInspectCard, viewerRole, containerStyle: { minWidth: `${sideZoneWidth}px`, minHeight: stackZoneMinHeight }, isDebug }}
@@ -1381,9 +1490,91 @@ const GameBoard: React.FC = () => {
                   />
                   </GameBoardBoardRow>
 
+                  {isMobileLayout && mobileSoloViewpoint === 'battle' && (
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '0.4rem',
+                        width: '100%',
+                        padding: '0.2rem 0.5rem',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'rgba(15, 23, 42, 0.72)',
+                        border: '1px solid rgba(148, 163, 184, 0.2)',
+                        fontSize: '0.68rem',
+                        color: '#cbd5e1',
+                      }}
+                    >
+                      <button
+                        type="button"
+                        data-testid="mobile-battle-bottom-secondary-toggle"
+                        aria-expanded={!isBattleBottomSecondaryCollapsed}
+                        onClick={() => setIsBattleBottomSecondaryCollapsed((prev) => !prev)}
+                        style={{
+                          padding: '0.14rem 0.45rem',
+                          borderRadius: '6px',
+                          border: '1px solid rgba(56, 189, 248, 0.4)',
+                          background: 'rgba(14, 165, 233, 0.18)',
+                          color: '#e0f2fe',
+                          fontSize: '0.68rem',
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {isBattleBottomSecondaryCollapsed
+                          ? `▼ EX (${getCards(`ex-${bottomRole}`).length}) / Cemetery (${getCards(`cemetery-${bottomRole}`).length}) / Banish (${getCards(`banish-${bottomRole}`).length})`
+                          : '▲ Hide EX / Cemetery / Banish'}
+                      </button>
+                      {isBattleBottomSecondaryCollapsed && (
+                        <div style={{ display: 'flex', gap: '0.35rem' }}>
+                          <button
+                            type="button"
+                            disabled={!canView}
+                            onClick={() => openSearchZone(`cemetery-${bottomRole}`, t('gameBoard.zones.cemetery', { label: bottomLabel }))}
+                            style={{
+                              padding: '0.12rem 0.4rem',
+                              borderRadius: '6px',
+                              border: '1px solid rgba(96, 165, 250, 0.4)',
+                              background: 'rgba(59, 130, 246, 0.2)',
+                              color: '#bfdbfe',
+                              fontSize: '0.68rem',
+                              fontWeight: 800,
+                              cursor: canView ? 'pointer' : 'not-allowed',
+                            }}
+                          >
+                            Cemetery {getCards(`cemetery-${bottomRole}`).length}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={!canView}
+                            onClick={() => openSearchZone(`banish-${bottomRole}`, t('gameBoard.zones.banish', { label: bottomLabel }))}
+                            style={{
+                              padding: '0.12rem 0.4rem',
+                              borderRadius: '6px',
+                              border: '1px solid rgba(148, 163, 184, 0.35)',
+                              background: 'rgba(148, 163, 184, 0.14)',
+                              color: '#e2e8f0',
+                              fontSize: '0.68rem',
+                              fontWeight: 800,
+                              cursor: canView ? 'pointer' : 'not-allowed',
+                            }}
+                          >
+                            Banish {getCards(`banish-${bottomRole}`).length}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
 	                <div
                     data-testid="bottom-board-row-secondary-wrap"
-                    style={{ marginTop: bottomBoardRowSecondaryMarginTop }}
+                    style={{
+                      marginTop: bottomBoardRowSecondaryMarginTop,
+                      display: isMobileLayout && mobileSoloViewpoint === 'battle' && isBattleBottomSecondaryCollapsed
+                        ? 'none'
+                        : undefined,
+                    }}
                   >
                   <GameBoardBoardRow columns={boardColumns} width={boardContentWidth} rowGap={boardRowGap}>
                   <GameBoardSearchableStackSection

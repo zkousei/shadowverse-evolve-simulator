@@ -3621,7 +3621,7 @@ describe('GameBoard', () => {
     }
   });
 
-  it('uses a 3-column board shell, auto-collapses header tools, and supports Battle viewpoint mode in smartphone landscape', () => {
+  it('uses a 3-column board shell, auto-collapses header tools, defaults to Battle viewpoint mode, and supports summary searches and bottom row toggle in smartphone landscape', () => {
     const originalInnerWidth = window.innerWidth;
     const originalInnerHeight = window.innerHeight;
     const originalMatchMedia = window.matchMedia;
@@ -3640,9 +3640,11 @@ describe('GameBoard', () => {
       writable: true,
       value: vi.fn(() => ({ matches: true })),
     });
+    const setSearchZone = vi.fn();
     mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
       mode: 'p2p',
       isSoloMode: false,
+      setSearchZone,
       gameState: createGameState([], { gameStatus: 'playing' }),
     }));
 
@@ -3659,14 +3661,88 @@ describe('GameBoard', () => {
       const moreToggle = screen.getByTestId('mobile-header-more-toggle');
       expect(moreToggle).toHaveAttribute('aria-expanded', 'false');
 
-      // Switch to Battle viewpoint mode: keeps both fields visible while collapsing opponent upper rows
+      // Defaults to Battle viewpoint mode automatically on short landscape mobile screens
       const battleTab = screen.getByTestId('mobile-viewpoint-battle');
-      fireEvent.click(battleTab);
-
+      expect(battleTab).toHaveAttribute('aria-pressed', 'true');
       expect(screen.getByTestId('board-section-top')).not.toHaveStyle({ display: 'none' });
       expect(screen.getByTestId('board-section-bottom')).not.toHaveStyle({ display: 'none' });
       expect(screen.getByTestId('top-board-upper-rows')).toHaveStyle({ display: 'none' });
-      expect(screen.getByTestId('mobile-opponent-summary-bar')).toBeInTheDocument();
+
+      // Hand zone uses single-row horizontal scroll on mobile
+      expect(screen.getByTestId('zone-hand-host')).toHaveStyle({
+        flexWrap: 'nowrap',
+        overflowX: 'auto',
+      });
+
+      // Clicking Cemetery or EX in the opponent summary bar opens the corresponding search modal directly
+      fireEvent.click(screen.getByTestId('mobile-opponent-summary-cemetery'));
+      expect(setSearchZone).toHaveBeenCalledWith(expect.objectContaining({ id: 'cemetery-guest' }));
+      fireEvent.click(screen.getByTestId('mobile-opponent-summary-ex'));
+      expect(setSearchZone).toHaveBeenCalledWith(expect.objectContaining({ id: 'ex-guest' }));
+
+      // Opponent secondary row (EX / Cemetery / Banish) can be manually toggled from the summary bar
+      const topSecondaryToggle = screen.getByTestId('mobile-battle-top-secondary-toggle');
+      expect(screen.getByTestId('top-board-upper-rows')).toHaveStyle({ display: 'none' });
+      fireEvent.click(topSecondaryToggle);
+      expect(screen.getByTestId('top-board-upper-rows')).not.toHaveStyle({ display: 'none' });
+      expect(screen.getByTestId('top-board-hand-row')).toHaveStyle({ display: 'none' });
+
+      // Toggling the bottom secondary row (EX / Cemetery / Banish) collapses it in Battle mode
+      const bottomSecondaryToggle = screen.getByTestId('mobile-battle-bottom-secondary-toggle');
+      expect(screen.getByTestId('bottom-board-row-secondary-wrap')).not.toHaveStyle({ display: 'none' });
+      fireEvent.click(bottomSecondaryToggle);
+      expect(screen.getByTestId('bottom-board-row-secondary-wrap')).toHaveStyle({ display: 'none' });
+    } finally {
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        writable: true,
+        value: originalInnerWidth,
+      });
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        writable: true,
+        value: originalInnerHeight,
+      });
+      Object.defineProperty(window, 'matchMedia', {
+        configurable: true,
+        writable: true,
+        value: originalMatchMedia,
+      });
+    }
+  });
+
+  it('automatically shows the opponent EX row in Battle viewpoint mode when opponent EX has cards while keeping opponent hand hidden', () => {
+    const originalInnerWidth = window.innerWidth;
+    const originalInnerHeight = window.innerHeight;
+    const originalMatchMedia = window.matchMedia;
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      writable: true,
+      value: 844,
+    });
+    Object.defineProperty(window, 'innerHeight', {
+      configurable: true,
+      writable: true,
+      value: 390,
+    });
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      writable: true,
+      value: vi.fn(() => ({ matches: true })),
+    });
+    const oppExCard = makeCard({ id: 'opp-ex-1', name: 'Opponent Token', owner: 'guest', zone: 'ex-guest' });
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      mode: 'p2p',
+      isSoloMode: false,
+      gameState: createGameState([oppExCard], { gameStatus: 'playing' }),
+    }));
+
+    try {
+      render(<GameBoard />);
+      expect(screen.getByTestId('mobile-viewpoint-battle')).toHaveAttribute('aria-pressed', 'true');
+      // Opponent hand row stays hidden in Battle mode, but opponent EX/Cemetery/Banish row auto-expands because EX has a card
+      expect(screen.getByTestId('top-board-hand-row')).toHaveStyle({ display: 'none' });
+      expect(screen.getByTestId('top-board-upper-rows')).not.toHaveStyle({ display: 'none' });
     } finally {
       Object.defineProperty(window, 'innerWidth', {
         configurable: true,
