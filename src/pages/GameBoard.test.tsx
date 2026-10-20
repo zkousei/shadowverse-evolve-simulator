@@ -2167,6 +2167,28 @@ describe('GameBoard', () => {
     expect(handleUndoCardMove).toHaveBeenCalledTimes(1);
   });
 
+  it('renders shortened undo button label on mobile layout while retaining full accessible title and label', () => {
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      hasUndoableMove: true,
+      gameState: createGameState([], { gameStatus: 'playing', turnPlayer: 'host', lastUndoableCardMoveActor: 'host' }),
+    }));
+
+    // Desktop: full label
+    const { unmount } = render(<GameBoard />);
+    expect(screen.getByTestId('undo-move-host')).toHaveTextContent('↩ Undo Move');
+    expect(screen.getByTestId('undo-move-host')).toHaveAttribute('title', '↩ Undo Move');
+
+    unmount();
+
+    // Mobile: shortened label
+    window.innerWidth = 390;
+    window.innerHeight = 844;
+    render(<GameBoard />);
+    expect(screen.getByTestId('undo-move-host')).toHaveTextContent('↩ Undo');
+    expect(screen.getByTestId('undo-move-host')).toHaveAttribute('aria-label', '↩ Undo Move');
+    expect(screen.getByTestId('undo-move-host')).toHaveAttribute('title', '↩ Undo Move');
+  });
+
   it('keeps own opponent-turn Undo available before and during multi selection', () => {
     const handleUndoCardMove = vi.fn();
     mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({

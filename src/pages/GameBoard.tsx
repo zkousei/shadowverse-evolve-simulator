@@ -309,12 +309,14 @@ const GameBoard: React.FC = () => {
         data-testid={`undo-move-${playerRole}`}
         onClick={performUndoMove}
         aria-keyshortcuts="Control+Z Meta+Z"
+        aria-label={t('gameBoard.turn.undoMove')}
+        title={t('gameBoard.turn.undoMove')}
         disabled={!canUndo}
         className="glass-panel"
         style={{
-          padding: '0.28rem 0.45rem',
-          minHeight: '26px',
-          fontSize: '0.74rem',
+          padding: isMobileLayout ? '0.24rem 0.35rem' : '0.28rem 0.45rem',
+          minHeight: isMobileLayout ? '25px' : '26px',
+          fontSize: isMobileLayout ? '0.68rem' : '0.74rem',
           background: canUndo
             ? 'linear-gradient(135deg, #f59e0b, #d97706)'
             : 'rgba(148, 163, 184, 0.18)',
@@ -323,14 +325,17 @@ const GameBoard: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: '0.35rem',
+          gap: isMobileLayout ? '0.2rem' : '0.35rem',
           borderRadius: '8px',
           boxShadow: canUndo ? '0 2px 8px rgba(245, 158, 11, 0.35)' : 'none',
           cursor: canUndo ? 'pointer' : 'not-allowed',
           opacity: canUndo ? 1 : 0.4,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
         }}
       >
-        {t('gameBoard.turn.undoMove')}
+        {isMobileLayout ? t('gameBoard.turn.undoMoveShort') : t('gameBoard.turn.undoMove')}
       </button>
     );
   };
