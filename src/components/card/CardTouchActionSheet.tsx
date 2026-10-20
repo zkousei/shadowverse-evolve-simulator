@@ -21,7 +21,11 @@ export interface CardTouchActionSheetProps {
   playActionLabel: string;
   quickActionDescriptions: {
     inspect: string;
+    sendToTop?: string;
     sendToBottom: string;
+    toHand?: string;
+    toEx?: string;
+    attachToCard?: string;
     cemetery: string;
     banish: string;
     toEvolveDeck: string;
@@ -30,7 +34,11 @@ export interface CardTouchActionSheetProps {
   onInspect?: (card: CardInstance, anchor: CardInspectAnchor) => void;
   onModifyCounter?: (id: string, stat: 'atk' | 'hp', delta: number) => void;
   onModifyGenericCounter?: (id: string, delta: number) => void;
+  onSendToTop?: (id: string) => void;
   onSendToBottom?: (id: string) => void;
+  onSendToHand?: (id: string) => void;
+  onSendToEx?: (id: string) => void;
+  onStartAttach?: (id: string) => void;
   onCemetery?: (id: string) => void;
   onBanish?: (id: string) => void;
   onReturnEvolve?: (id: string) => void;
@@ -71,7 +79,11 @@ export const CardTouchActionSheet: React.FC<CardTouchActionSheetProps> = ({
   onInspect,
   onModifyCounter,
   onModifyGenericCounter,
+  onSendToTop,
   onSendToBottom,
+  onSendToHand,
+  onSendToEx,
+  onStartAttach,
   onCemetery,
   onBanish,
   onReturnEvolve,
@@ -224,6 +236,21 @@ export const CardTouchActionSheet: React.FC<CardTouchActionSheetProps> = ({
         </>
       )}
 
+      {onSendToTop && !card.isEvolveCard && quickActionDescriptions.sendToTop && (
+        <button
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            onSendToTop(card.id);
+            onClose();
+          }}
+          title={quickActionDescriptions.sendToTop}
+          aria-label={quickActionDescriptions.sendToTop}
+          style={{ ...coarseSheetButtonStyle, background: 'var(--bg-surface-elevated)', color: 'white' }}
+        >
+          {quickActionDescriptions.sendToTop}
+        </button>
+      )}
       {onSendToBottom && (
         <button
           onPointerDown={(e) => e.stopPropagation()}
@@ -237,6 +264,51 @@ export const CardTouchActionSheet: React.FC<CardTouchActionSheetProps> = ({
           style={{ ...coarseSheetButtonStyle, background: 'var(--bg-surface-elevated)', color: 'white' }}
         >
           {quickActionDescriptions.sendToBottom}
+        </button>
+      )}
+      {onSendToHand && !card.isEvolveCard && !card.zone.startsWith('hand-') && quickActionDescriptions.toHand && (
+        <button
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            onSendToHand(card.id);
+            onClose();
+          }}
+          title={quickActionDescriptions.toHand}
+          aria-label={quickActionDescriptions.toHand}
+          style={{ ...coarseSheetButtonStyle, background: '#1e3a8a', color: 'white' }}
+        >
+          {quickActionDescriptions.toHand}
+        </button>
+      )}
+      {onSendToEx && !card.isEvolveCard && !card.zone.startsWith('ex-') && quickActionDescriptions.toEx && (
+        <button
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            onSendToEx(card.id);
+            onClose();
+          }}
+          title={quickActionDescriptions.toEx}
+          aria-label={quickActionDescriptions.toEx}
+          style={{ ...coarseSheetButtonStyle, background: '#0e7490', color: 'white' }}
+        >
+          {quickActionDescriptions.toEx}
+        </button>
+      )}
+      {onStartAttach && quickActionDescriptions.attachToCard && (
+        <button
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            onStartAttach(card.id);
+            onClose();
+          }}
+          title={quickActionDescriptions.attachToCard}
+          aria-label={quickActionDescriptions.attachToCard}
+          style={{ ...coarseSheetButtonStyle, gridColumn: '1 / -1', background: '#4338ca', color: 'white' }}
+        >
+          {quickActionDescriptions.attachToCard}
         </button>
       )}
       {onCemetery && (

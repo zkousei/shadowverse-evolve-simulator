@@ -1,5 +1,3 @@
-import { isTabletViewportWidth } from './gameBoardLayout';
-
 export type GameBoardInputProfile = 'fine' | 'coarse';
 
 type MatchMediaResult = {
@@ -14,7 +12,7 @@ export const getInputProfileForViewportWidth = (
   viewportWidth: number,
   matchMediaFn?: MatchMediaFn
 ): GameBoardInputProfile => {
-  if (!isTabletViewportWidth(viewportWidth)) {
+  if (viewportWidth >= 1280) {
     return 'fine';
   }
 

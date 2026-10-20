@@ -6,6 +6,7 @@ import {
   getExZoneGapForInputProfile,
   getFieldZoneGapForInputProfile,
   getRequiredFieldWidthForCardCount,
+  mobileCardSize,
   overviewDesktopCardSize,
 } from './gameBoardCardLayout';
 import { resolveBoardLayout } from './gameBoardLayout';
@@ -21,8 +22,16 @@ describe('gameBoardCardLayout', () => {
   it('uses a compact card size with slightly wider field spacing for coarse input', () => {
     expect(coarseCardSize).toEqual({ width: 76, height: 106 });
     expect(getCardSizeForInputProfile('coarse')).toEqual(coarseCardSize);
+    expect(getCardSizeForInputProfile('coarse', 'standard', 'tablet')).toEqual(coarseCardSize);
     expect(getFieldZoneGapForInputProfile('coarse')).toBe('1.14rem');
+    expect(getFieldZoneGapForInputProfile('coarse', 'standard', 'tablet')).toBe('1.14rem');
     expect(getExZoneGapForInputProfile('coarse')).toBe('0.36rem');
+  });
+
+  it('uses a slimmer mobile card size and tapped-safe field gap only when layoutProfile is mobile', () => {
+    expect(mobileCardSize).toEqual({ width: 60, height: 84 });
+    expect(getCardSizeForInputProfile('coarse', 'standard', 'mobile')).toEqual(mobileCardSize);
+    expect(getFieldZoneGapForInputProfile('coarse', 'standard', 'mobile')).toBe('1.5rem');
   });
 
   it('uses overview desktop sizing without switching to coarse input behavior', () => {

@@ -289,4 +289,43 @@ describe('GameBoardPlayerControlsPanel', () => {
     expect(screen.getByTestId('player-tracker')).toHaveAttribute('data-compact', 'false');
     expect(screen.queryByTestId('player-controls-tracker-disclosure')).not.toBeInTheDocument();
   });
+
+  it('arranges middle playing controls in a two-column grid and enables compact tracker on mobile layout', () => {
+    render(
+      <GameBoardInputProfileProvider value="coarse" layoutProfile="mobile">
+        <GameBoardPlayerControlsPanel
+          {...createBaseProps()}
+          panelWidth={108}
+          middleControls={<button type="button">End Turn</button>}
+          undoMoveButton={<button type="button">Undo Move</button>}
+        />
+      </GameBoardInputProfileProvider>
+    );
+
+    expect(screen.getByTestId('player-controls-middle-actions')).toHaveStyle({
+      display: 'grid',
+      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    });
+    expect(screen.getByTestId('player-tracker')).toHaveAttribute('data-compact', 'true');
+  });
+
+  it('splits actions and tracker into two side-by-side columns on wide portrait mobile panels', () => {
+    render(
+      <GameBoardInputProfileProvider value="coarse" layoutProfile="mobile">
+        <GameBoardPlayerControlsPanel
+          {...createBaseProps()}
+          panelWidth={370}
+          middleControls={<button type="button">End Turn</button>}
+          undoMoveButton={<button type="button">Undo Move</button>}
+        />
+      </GameBoardInputProfileProvider>
+    );
+
+    expect(screen.getByTestId('player-controls-body')).toHaveStyle({
+      display: 'grid',
+      gridTemplateColumns: 'minmax(0, 1.05fr) minmax(0, 0.95fr)',
+    });
+    expect(screen.getByTestId('player-tracker')).toHaveAttribute('data-compact', 'true');
+  });
 });
+

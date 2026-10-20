@@ -37,7 +37,7 @@ const resolveEnvironmentInputProfile = (
   viewportWidth: number,
   matchMediaFn?: MatchMediaFn
 ): GameBoardInputProfile => {
-  if (!matchMediaFn || viewportWidth < 900) {
+  if (!matchMediaFn) {
     return getInputProfileForViewportWidth(viewportWidth, matchMediaFn);
   }
 
@@ -65,7 +65,8 @@ export const resolveBoardEnvironment = ({
   const inputProfile = resolveEnvironmentInputProfile(viewportWidth, matchMediaFn);
   const layoutProfile = getLayoutProfileForViewportWidth(
     viewportWidth,
-    inputProfile as GameBoardLayoutInputProfile
+    inputProfile as GameBoardLayoutInputProfile,
+    viewportHeight
   );
   const boardDensity = getBoardDensityForViewportWidth(
     viewportWidth,

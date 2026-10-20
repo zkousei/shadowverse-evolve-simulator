@@ -891,4 +891,92 @@ describe('useGameBoardFieldActions (Pure Hook)', () => {
       expect(defaultArgs.dispatchGameEvent).not.toHaveBeenCalled();
     });
   });
+
+  // ─── 11. Non-drag movement & 2-tap attach actions ───────────────
+  describe('non-drag movement and attach actions', () => {
+    it('dispatches MOVE_CARD to mainDeck on handleSendToTop', () => {
+      const gameState = buildSyncState({
+        cards: [makeCard({ id: 'card-1', zone: 'field-host', owner: 'host' })],
+      });
+      const { result } = renderHook(() => useGameBoardFieldActions({
+        ...defaultArgs,
+        gameStateRef: { current: gameState },
+      }));
+
+      result.current.handleSendToTop('card-1');
+
+      expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledWith({
+        type: 'MOVE_CARD',
+        actor: undefined,
+        cardId: 'card-1',
+        overId: 'mainDeck-host',
+      });
+      expect(defaultArgs.setSearchZone).toHaveBeenCalledWith(null);
+    });
+
+    it('dispatches MOVE_CARD to owner hand on handleSendToHand and attributes actor in solo mode', () => {
+      const gameState = buildSyncState({
+        cards: [makeCard({ id: 'card-1', zone: 'field-guest', owner: 'guest' })],
+      });
+      const { result } = renderHook(() => useGameBoardFieldActions({
+        ...defaultArgs,
+        isSoloMode: true,
+        gameStateRef: { current: gameState },
+      }));
+
+      result.current.handleSendToHand('card-1');
+
+      expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledWith({
+        type: 'MOVE_CARD',
+        actor: 'guest',
+        cardId: 'card-1',
+        overId: 'hand-guest',
+      });
+    });
+
+    it('dispatches MOVE_CARD to owner ex on handleSendToEx', () => {
+      const gameState = buildSyncState({
+        cards: [makeCard({ id: 'card-1', zone: 'hand-host', owner: 'host' })],
+      });
+      const { result } = renderHook(() => useGameBoardFieldActions({
+        ...defaultArgs,
+        gameStateRef: { current: gameState },
+      }));
+
+      result.current.handleSendToEx('card-1');
+
+      expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledWith({
+        type: 'MOVE_CARD',
+        actor: undefined,
+        cardId: 'card-1',
+        overId: 'ex-host',
+      });
+    });
+
+    it('resolves link vs stack identically to drag-and-drop on handleAttachToCard', () => {
+      const gameState = buildSyncState({
+        cards: [
+          makeCard({ id: 'equip-1', cardId: 'EQUIP-001', zone: 'ex-host', owner: 'host' }),
+          makeCard({ id: 'unit-1', zone: 'field-host', owner: 'host' }),
+        ],
+      });
+      vi.mocked(gameBoardManualLink.isTokenManualLinkCard).mockReturnValue(true);
+      vi.mocked(gameBoardManualLink.isEquipmentLinkTargetCard).mockReturnValue(true);
+
+      const { result } = renderHook(() => useGameBoardFieldActions({
+        ...defaultArgs,
+        gameStateRef: { current: gameState },
+      }));
+
+      result.current.handleAttachToCard('equip-1', 'unit-1');
+
+      expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledWith({
+        type: 'LINK_CARD_TO_FIELD',
+        actor: 'host',
+        cardId: 'equip-1',
+        parentCardId: 'unit-1',
+      });
+    });
+  });
 });
+

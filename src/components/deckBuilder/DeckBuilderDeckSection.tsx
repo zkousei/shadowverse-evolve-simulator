@@ -24,6 +24,7 @@ type DeckBuilderDeckSectionProps = {
   summaryLabel?: React.ReactNode;
   onRemove: (cardId: string) => void;
   onAdd?: (card: DeckBuilderCardData) => void;
+  onOpenPreview?: (card: DeckBuilderCardData) => void;
   onCardMouseEnter: (
     card: DeckBuilderCardData,
     event: React.MouseEvent<HTMLDivElement>
@@ -50,6 +51,7 @@ const DeckBuilderDeckSection: React.FC<DeckBuilderDeckSectionProps> = ({
   summaryLabel,
   onRemove,
   onAdd,
+  onOpenPreview,
   onCardMouseEnter,
   onCardMouseMove,
   onCardMouseLeave,
@@ -117,8 +119,9 @@ const DeckBuilderDeckSection: React.FC<DeckBuilderDeckSectionProps> = ({
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
-                    cursor: 'help',
+                    cursor: onOpenPreview ? 'pointer' : 'help',
                   }}
+                  onClick={onOpenPreview ? () => onOpenPreview(card) : undefined}
                   onMouseEnter={(event) => onCardMouseEnter(card, event)}
                   onMouseMove={onCardMouseMove}
                   onMouseLeave={onCardMouseLeave}
@@ -161,7 +164,14 @@ const DeckBuilderDeckSection: React.FC<DeckBuilderDeckSectionProps> = ({
                 <button
                   type="button"
                   onClick={() => onRemove(card.id)}
-                  style={{ color: '#ef4444' }}
+                  style={{
+                    color: '#ef4444',
+                    minWidth: '28px',
+                    minHeight: '28px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
                   title={removeTitle}
                 >
                   <Minus size={16} />
@@ -171,7 +181,14 @@ const DeckBuilderDeckSection: React.FC<DeckBuilderDeckSectionProps> = ({
                     type="button"
                     onClick={() => onAdd(card)}
                     disabled={!canAdd}
-                    style={{ color: canAdd ? 'var(--vivid-green-cyan)' : 'var(--text-muted)' }}
+                    style={{
+                      color: canAdd ? 'var(--vivid-green-cyan)' : 'var(--text-muted)',
+                      minWidth: '28px',
+                      minHeight: '28px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
                     title={addTitle}
                   >
                     <Plus size={16} />

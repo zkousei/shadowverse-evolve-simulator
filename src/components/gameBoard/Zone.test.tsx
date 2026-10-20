@@ -76,9 +76,10 @@ const createCard = (id: string, overrides: Partial<CardInstance> = {}): CardInst
 const renderWithInputProfile = (
   profile: 'fine' | 'coarse',
   ui: React.ReactElement,
-  boardDensity: 'standard' | 'overview' = 'standard'
+  boardDensity: 'standard' | 'overview' = 'standard',
+  layoutProfile: 'desktop' | 'tablet' | 'mobile' = 'desktop'
 ) => render(
-  <GameBoardInputProfileProvider value={profile} boardDensity={boardDensity}>
+  <GameBoardInputProfileProvider value={profile} boardDensity={boardDensity} layoutProfile={layoutProfile}>
     {ui}
   </GameBoardInputProfileProvider>
 );
@@ -474,6 +475,67 @@ describe('Zone', () => {
       whiteSpace: 'nowrap',
     });
     expect(screen.getByText('1')).toHaveStyle({ fontSize: '0.46rem' });
+  });
+
+  it('positions the hand zone label chip inside the zone and pads the top on mobile so it does not overlap the row above', () => {
+    renderWithInputProfile(
+      'coarse',
+      <Zone
+        id="hand-host"
+        label="手札"
+        cards={[createCard('card-1', { zone: 'hand-host' })]}
+      />,
+      'standard',
+      'mobile'
+    );
+
+    const zone = screen.getByTestId('zone-hand-host');
+    expect(zone).toHaveStyle({ paddingTop: '0.75rem' });
+
+    const labelChip = screen.getByText('手札').parentElement as HTMLElement;
+    expect(labelChip).toHaveStyle({ top: '1px' });
+  });
+
+  it('positions deck zone label chip inside the zone on mobile so it does not protrude above into the summary bar', () => {
+    renderWithInputProfile(
+      'coarse',
+      <Zone
+        id="mainDeck-guest"
+        label="Main Deck"
+        cards={[createCard('card-1', { zone: 'mainDeck-guest' })]}
+        layout="stack"
+      />,
+      'standard',
+      'mobile'
+    );
+
+    const labelChip = screen.getByText('Main Deck').parentElement as HTMLElement;
+    expect(labelChip).toHaveStyle({ top: '1px' });
+  });
+
+  it('isolates the stack card container and keeps label chip above stack cards in a 40-card deck', () => {
+    const cards = Array.from({ length: 40 }, (_, i) => createCard(`card-${i}`, { zone: 'mainDeck-guest' }));
+    renderWithInputProfile(
+      'coarse',
+      <Zone
+        id="mainDeck-guest"
+        label="Main Deck"
+        cards={cards}
+        layout="stack"
+      />,
+      'standard',
+      'mobile'
+    );
+
+    const labelChip = screen.getByText('Main Deck').parentElement as HTMLElement;
+    expect(Number(labelChip.style.zIndex)).toBeGreaterThanOrEqual(30);
+
+    const mockCard = screen.getAllByTestId('mock-card')[0];
+    const stackCardWrapper = mockCard.parentElement?.parentElement as HTMLElement;
+    expect(stackCardWrapper).toHaveStyle({
+      isolation: 'isolate',
+      zIndex: '1',
+    });
   });
 });
 

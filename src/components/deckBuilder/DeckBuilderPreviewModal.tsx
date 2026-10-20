@@ -149,6 +149,8 @@ const DeckBuilderPreviewModal: React.FC<DeckBuilderPreviewModalProps> = ({
           position: 'relative',
           width: '100%',
           maxWidth: hasFaceDetails ? '980px' : '660px',
+          maxHeight: '90vh',
+          overflowY: 'auto',
           display: 'flex',
           flexDirection: 'column',
           gap: '0.6rem',

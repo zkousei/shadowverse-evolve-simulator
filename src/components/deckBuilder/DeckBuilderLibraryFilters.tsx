@@ -3,10 +3,11 @@ import { useTranslation } from 'react-i18next';
 import { Search } from 'lucide-react';
 import { CLASS, CLASS_FILTER_VALUES } from '../../models/class';
 import type { ClassFilter } from '../../models/class';
-import type {
-  DeckBuilderCardTypeFilter,
-  DeckBuilderDeckSectionFilter,
+import {
+  type DeckBuilderCardTypeFilter,
+  type DeckBuilderDeckSectionFilter,
 } from '../../utils/deckBuilder/deckBuilderFilters';
+import { getAdvancedDeckBuilderFilterCount } from '../../utils/deckBuilder/deckBuilderResponsiveLayout';
 
 const CLASS_FILTER_LABEL_KEYS: Record<ClassFilter, string> = {
   All: 'all',
@@ -35,6 +36,7 @@ const DECK_SECTION_LABEL_KEYS: Record<DeckBuilderDeckSectionFilter, string> = {
 };
 
 type DeckBuilderLibraryFiltersProps = {
+  isCompact?: boolean;
   search: string;
   hideSameNameVariants: boolean;
   showPreviewCards: boolean;
@@ -83,6 +85,7 @@ const segmentedGroupStyle: React.CSSProperties = {
 };
 
 const DeckBuilderLibraryFilters: React.FC<DeckBuilderLibraryFiltersProps> = ({
+  isCompact = false,
   search,
   hideSameNameVariants,
   showPreviewCards,
@@ -119,11 +122,22 @@ const DeckBuilderLibraryFilters: React.FC<DeckBuilderLibraryFiltersProps> = ({
   onRemoveSubtype,
 }) => {
   const { t } = useTranslation();
+  const [isAdvancedOpen, setIsAdvancedOpen] = React.useState(false);
+  const showAdvancedFilters = !isCompact || isAdvancedOpen;
+  const advancedFilterCount = getAdvancedDeckBuilderFilterCount({
+    cardTypeFilter,
+    expansionFilter,
+    rarityFilter,
+    productNameFilter,
+    selectedSubtypeTags,
+    hideSameNameVariants,
+    showPreviewCards,
+  });
 
   return (
     <>
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', alignItems: 'center' }}>
-        <div style={{ position: 'relative', flex: 1 }}>
+      <div style={{ display: 'flex', gap: isCompact ? '0.6rem' : '1rem', marginBottom: isCompact ? '0.85rem' : '1.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ position: 'relative', flex: '1 1 200px' }}>
           <Search
             size={20}
             style={{
@@ -152,41 +166,67 @@ const DeckBuilderLibraryFilters: React.FC<DeckBuilderLibraryFiltersProps> = ({
           />
         </div>
 
-        <label
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            color: 'var(--text-muted)',
-            fontSize: '0.875rem',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          <input
-            type="checkbox"
-            checked={hideSameNameVariants}
-            onChange={(event) => onHideSameNameVariantsChange(event.target.checked)}
-          />
-          {t('deckBuilder.filters.hideSameNameVariants')}
-        </label>
+        {isCompact && (
+          <button
+            type="button"
+            aria-expanded={isAdvancedOpen}
+            onClick={() => setIsAdvancedOpen((prev) => !prev)}
+            style={{
+              padding: '0.5rem 0.75rem',
+              borderRadius: 'var(--radius-md)',
+              border: advancedFilterCount > 0 ? '1px solid var(--accent-primary)' : '1px solid var(--border-light)',
+              background: advancedFilterCount > 0 ? 'rgba(59, 130, 246, 0.16)' : 'var(--bg-surface)',
+              color: 'var(--text-main)',
+              fontSize: '0.875rem',
+              fontWeight: advancedFilterCount > 0 ? 700 : 500,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {advancedFilterCount > 0
+              ? t('deckBuilder.filters.advancedFiltersActive', { count: advancedFilterCount })
+              : t('deckBuilder.filters.advancedFilters')}
+          </button>
+        )}
 
-        <label
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            color: 'var(--text-muted)',
-            fontSize: '0.875rem',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          <input
-            type="checkbox"
-            checked={showPreviewCards}
-            onChange={(event) => onShowPreviewCardsChange(event.target.checked)}
-          />
-          {t('deckBuilder.filters.showPreviewCards')}
-        </label>
+        {showAdvancedFilters && (
+          <>
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                color: 'var(--text-muted)',
+                fontSize: '0.875rem',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={hideSameNameVariants}
+                onChange={(event) => onHideSameNameVariantsChange(event.target.checked)}
+              />
+              {t('deckBuilder.filters.hideSameNameVariants')}
+            </label>
+
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                color: 'var(--text-muted)',
+                fontSize: '0.875rem',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={showPreviewCards}
+                onChange={(event) => onShowPreviewCardsChange(event.target.checked)}
+              />
+              {t('deckBuilder.filters.showPreviewCards')}
+            </label>
+          </>
+        )}
 
         <button
           type="button"
@@ -205,7 +245,7 @@ const DeckBuilderLibraryFilters: React.FC<DeckBuilderLibraryFiltersProps> = ({
         </button>
       </div>
 
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: isCompact ? '0.6rem' : '1rem', marginBottom: isCompact ? '0.75rem' : '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
         <div
           role="group"
           aria-label={t('deckBuilder.filters.aria.section')}
@@ -235,7 +275,7 @@ const DeckBuilderLibraryFilters: React.FC<DeckBuilderLibraryFiltersProps> = ({
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: isCompact ? '0.6rem' : '1rem', marginBottom: isCompact ? '0.75rem' : '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
         <div
           role="group"
           aria-label={t('deckBuilder.filters.aria.class')}
@@ -264,40 +304,42 @@ const DeckBuilderLibraryFilters: React.FC<DeckBuilderLibraryFiltersProps> = ({
           ))}
         </div>
 
-        <div
-          role="group"
-          aria-label={t('deckBuilder.filters.aria.cardType')}
-          style={segmentedGroupStyle}
-        >
-          <span style={{ padding: '0.5rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-            {t('deckBuilder.filters.labels.cardType')}:
-          </span>
+        {showAdvancedFilters && (
+          <div
+            role="group"
+            aria-label={t('deckBuilder.filters.aria.cardType')}
+            style={segmentedGroupStyle}
+          >
+            <span style={{ padding: '0.5rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+              {t('deckBuilder.filters.labels.cardType')}:
+            </span>
 
-          {cardTypeFilterValues.map((cardType) => (
-            <button
-              key={cardType}
-              type="button"
-              aria-pressed={cardTypeFilter === cardType}
-              onClick={() => onCardTypeFilterChange(cardType)}
-              style={{
-                padding: '0.25rem 0.75rem',
-                borderRadius: '4px',
-                background: cardTypeFilter === cardType ? 'var(--brand-accent)' : 'transparent',
-                color: cardTypeFilter === cardType ? '#fff' : 'var(--text-main)',
-                fontWeight: cardTypeFilter === cardType ? 'bold' : 'normal',
-              }}
-            >
-              {t(`deckBuilder.filters.cardType.${CARD_TYPE_LABEL_KEYS[cardType]}`)}
-            </button>
-          ))}
-        </div>
+            {cardTypeFilterValues.map((cardType) => (
+              <button
+                key={cardType}
+                type="button"
+                aria-pressed={cardTypeFilter === cardType}
+                onClick={() => onCardTypeFilterChange(cardType)}
+                style={{
+                  padding: '0.25rem 0.75rem',
+                  borderRadius: '4px',
+                  background: cardTypeFilter === cardType ? 'var(--brand-accent)' : 'transparent',
+                  color: cardTypeFilter === cardType ? '#fff' : 'var(--text-main)',
+                  fontWeight: cardTypeFilter === cardType ? 'bold' : 'normal',
+                }}
+              >
+                {t(`deckBuilder.filters.cardType.${CARD_TYPE_LABEL_KEYS[cardType]}`)}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: isCompact ? '0.6rem' : '1rem', marginBottom: isCompact ? '0.85rem' : '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
         <div
           role="group"
           aria-label={t('deckBuilder.filters.aria.cost')}
-          style={{ display: 'flex', background: 'var(--bg-surface)', padding: '0.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}
+          style={{ display: 'flex', flexWrap: 'wrap', background: 'var(--bg-surface)', padding: '0.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}
         >
           <span style={{ padding: '0.5rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
             {t('deckBuilder.filters.labels.cost')}:
@@ -321,167 +363,171 @@ const DeckBuilderLibraryFilters: React.FC<DeckBuilderLibraryFiltersProps> = ({
           ))}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-            {t('deckBuilder.filters.labels.expansion')}:
-          </span>
-          <select
-            aria-label={t('deckBuilder.filters.aria.expansion')}
-            value={expansionFilter}
-            onChange={(event) => onExpansionFilterChange(event.target.value)}
-            style={{
-              padding: '0.5rem',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--border-light)',
-              background: 'var(--bg-surface)',
-              color: 'var(--text-main)',
-              outline: 'none',
-              minWidth: '120px',
-            }}
-          >
-            <option value="All">{t('deckBuilder.filters.allExpansions')}</option>
-            {expansions.map((expansion) => (
-              <option key={expansion} value={expansion}>
-                {expansion}
-              </option>
-            ))}
-          </select>
-        </div>
+        {showAdvancedFilters && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                {t('deckBuilder.filters.labels.expansion')}:
+              </span>
+              <select
+                aria-label={t('deckBuilder.filters.aria.expansion')}
+                value={expansionFilter}
+                onChange={(event) => onExpansionFilterChange(event.target.value)}
+                style={{
+                  padding: '0.5rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border-light)',
+                  background: 'var(--bg-surface)',
+                  color: 'var(--text-main)',
+                  outline: 'none',
+                  minWidth: '120px',
+                }}
+              >
+                <option value="All">{t('deckBuilder.filters.allExpansions')}</option>
+                {expansions.map((expansion) => (
+                  <option key={expansion} value={expansion}>
+                    {expansion}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-            {t('deckBuilder.filters.labels.rarity')}:
-          </span>
-          <select
-            aria-label={t('deckBuilder.filters.aria.rarity')}
-            value={rarityFilter}
-            onChange={(event) => onRarityFilterChange(event.target.value)}
-            style={{
-              padding: '0.5rem',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--border-light)',
-              background: 'var(--bg-surface)',
-              color: 'var(--text-main)',
-              outline: 'none',
-              minWidth: '120px',
-            }}
-          >
-            <option value="All">{t('deckBuilder.filters.allRarities')}</option>
-            {rarities.map((rarity) => (
-              <option key={rarity} value={rarity}>
-                {rarity}
-              </option>
-            ))}
-          </select>
-        </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                {t('deckBuilder.filters.labels.rarity')}:
+              </span>
+              <select
+                aria-label={t('deckBuilder.filters.aria.rarity')}
+                value={rarityFilter}
+                onChange={(event) => onRarityFilterChange(event.target.value)}
+                style={{
+                  padding: '0.5rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border-light)',
+                  background: 'var(--bg-surface)',
+                  color: 'var(--text-main)',
+                  outline: 'none',
+                  minWidth: '120px',
+                }}
+              >
+                <option value="All">{t('deckBuilder.filters.allRarities')}</option>
+                {rarities.map((rarity) => (
+                  <option key={rarity} value={rarity}>
+                    {rarity}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-            {t('deckBuilder.filters.labels.productName')}:
-          </span>
-          <select
-            aria-label={t('deckBuilder.filters.aria.productName')}
-            value={productNameFilter}
-            onChange={(event) => onProductNameFilterChange(event.target.value)}
-            style={{
-              padding: '0.5rem',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--border-light)',
-              background: 'var(--bg-surface)',
-              color: 'var(--text-main)',
-              outline: 'none',
-              minWidth: '220px',
-              maxWidth: '320px',
-            }}
-          >
-            <option value="All">{t('deckBuilder.filters.allProducts')}</option>
-            {productNames.map((productName) => (
-              <option key={productName} value={productName}>
-                {productName}
-              </option>
-            ))}
-          </select>
-        </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', maxWidth: '100%' }}>
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                {t('deckBuilder.filters.labels.productName')}:
+              </span>
+              <select
+                aria-label={t('deckBuilder.filters.aria.productName')}
+                value={productNameFilter}
+                onChange={(event) => onProductNameFilterChange(event.target.value)}
+                style={{
+                  padding: '0.5rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border-light)',
+                  background: 'var(--bg-surface)',
+                  color: 'var(--text-main)',
+                  outline: 'none',
+                  minWidth: isCompact ? '140px' : '220px',
+                  maxWidth: '320px',
+                }}
+              >
+                <option value="All">{t('deckBuilder.filters.allProducts')}</option>
+                {productNames.map((productName) => (
+                  <option key={productName} value={productName}>
+                    {productName}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', minWidth: '240px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-              {t('deckBuilder.filters.labels.subtype')}:
-            </span>
-            <input
-              type="text"
-              aria-label={t('deckBuilder.filters.aria.subtypeInput')}
-              list="subtype-filter-options"
-              placeholder={t('deckBuilder.filters.searchSubtype')}
-              value={subtypeSearch}
-              onChange={(event) => onSubtypeSearchChange(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  event.preventDefault();
-                  onAddSubtype();
-                }
-              }}
-              style={{
-                flex: 1,
-                minWidth: '160px',
-                padding: '0.5rem',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--border-light)',
-                background: 'var(--bg-surface)',
-                color: 'var(--text-main)',
-                outline: 'none',
-              }}
-            />
-            <datalist id="subtype-filter-options">
-              {filteredSubtypeOptions.map((tag) => (
-                <option key={tag} value={tag} />
-              ))}
-            </datalist>
-            <button
-              type="button"
-              onClick={onAddSubtype}
-              disabled={!canAddSubtype}
-              style={{
-                padding: '0.5rem 0.75rem',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--border-light)',
-                background: 'var(--bg-surface)',
-                color: 'var(--text-main)',
-                cursor: 'pointer',
-              }}
-            >
-              {t('deckBuilder.filters.addSubtype')}
-            </button>
-          </div>
-
-          {selectedSubtypeTags.length > 0 && (
-            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-              {selectedSubtypeTags.map((tag) => (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() => onRemoveSubtype(tag)}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', minWidth: isCompact ? '200px' : '240px', maxWidth: '100%' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                  {t('deckBuilder.filters.labels.subtype')}:
+                </span>
+                <input
+                  type="text"
+                  aria-label={t('deckBuilder.filters.aria.subtypeInput')}
+                  list="subtype-filter-options"
+                  placeholder={t('deckBuilder.filters.searchSubtype')}
+                  value={subtypeSearch}
+                  onChange={(event) => onSubtypeSearchChange(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      onAddSubtype();
+                    }
+                  }}
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.3rem',
-                    padding: '0.25rem 0.5rem',
-                    borderRadius: '999px',
+                    flex: 1,
+                    minWidth: '140px',
+                    padding: '0.5rem',
+                    borderRadius: 'var(--radius-md)',
                     border: '1px solid var(--border-light)',
                     background: 'var(--bg-surface)',
                     color: 'var(--text-main)',
-                    fontSize: '0.75rem',
+                    outline: 'none',
+                  }}
+                />
+                <datalist id="subtype-filter-options">
+                  {filteredSubtypeOptions.map((tag) => (
+                    <option key={tag} value={tag} />
+                  ))}
+                </datalist>
+                <button
+                  type="button"
+                  onClick={onAddSubtype}
+                  disabled={!canAddSubtype}
+                  style={{
+                    padding: '0.5rem 0.75rem',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--border-light)',
+                    background: 'var(--bg-surface)',
+                    color: 'var(--text-main)',
                     cursor: 'pointer',
                   }}
-                  title={t('deckBuilder.filters.removeSubtypeFilter', { tag })}
                 >
-                  <span>{tag}</span>
-                  <span style={{ color: 'var(--text-muted)' }}>×</span>
+                  {t('deckBuilder.filters.addSubtype')}
                 </button>
-              ))}
+              </div>
+
+              {selectedSubtypeTags.length > 0 && (
+                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                  {selectedSubtypeTags.map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => onRemoveSubtype(tag)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.3rem',
+                        padding: '0.25rem 0.5rem',
+                        borderRadius: '999px',
+                        border: '1px solid var(--border-light)',
+                        background: 'var(--bg-surface)',
+                        color: 'var(--text-main)',
+                        fontSize: '0.75rem',
+                        cursor: 'pointer',
+                      }}
+                      title={t('deckBuilder.filters.removeSubtypeFilter', { tag })}
+                    >
+                      <span>{tag}</span>
+                      <span style={{ color: 'var(--text-muted)' }}>×</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
     </>
   );

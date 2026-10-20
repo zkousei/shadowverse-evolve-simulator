@@ -259,6 +259,11 @@
       "invalidRule": "{{deck}} に選択したデッキルールと一致しないカードが含まれています: {{cardList}}。"
     },
     "title": "カードライブラリ",
+    "mobileTabs": {
+      "aria": "デッキビルダー表示切替",
+      "library": "カードライブラリ",
+      "deck": "デッキ ({{mainCount}}/{{mainLimit}})"
+    },
     "loading": "カード情報を読み込み中です...",
     "status": {
       "unsavedChanges": "未保存の変更があります",
@@ -306,6 +311,8 @@
         "subtypeInput": "サブタイプフィルター入力"
       },
       "searchCards": "カード名で検索...",
+      "advancedFilters": "詳細フィルター",
+      "advancedFiltersActive": "詳細フィルター ({{count}})",
       "hideSameNameVariants": "同名バリエーションを隠す",
       "showPreviewCards": "プレビューカードを表示",
       "allExpansions": "すべてのエクスパンション",
@@ -504,7 +511,8 @@
       "endStopOn": "End Stop ON",
       "endStopOff": "End Stop OFF",
       "endStopBlocked": "{{label}} が End Stop 中です。",
-      "availableDuringGameOnly": "対戦中のみ使用可能です。"
+      "availableDuringGameOnly": "対戦中のみ使用可能です。",
+      "switchViewpoint": "視点: {{label}}"
     },
     "catalog": {
       "loading": "カード情報を読み込んでいます…",
@@ -562,7 +570,11 @@
       },
       "quickActionDescriptions": {
         "inspect": "カード詳細を表示",
+        "sendToTop": "山札の上に送る",
         "sendToBottom": "山札の下に送る",
+        "toHand": "手札に戻す",
+        "toEx": "EXエリアに送る",
+        "attachToCard": "他のカードに重ねる・リンクする",
         "cemetery": "墓地に送る",
         "banish": "消滅させる",
         "toEvolveDeck": "エボルヴデッキに戻す"
@@ -596,6 +608,7 @@
     "turn": {
       "undo": "↺ ターン終了を取り消す",
       "undoMove": "↩ 操作を取り消す",
+      "undoMoveShort": "↩ 取消",
       "p1": "{{label}} ターン",
       "your": "あなたのターン",
       "opponent": "相手のターン",
@@ -615,6 +628,8 @@
       "resume": "セッションを復帰する",
       "attackMode": "攻撃モード",
       "attackSelect": "攻撃目標となる相手フォロワーまたはリーダーを選択してください：",
+      "attachMode": "重ねる・リンク対象選択",
+      "attachSelect": "対象となるフィールドのカードを選択してください：",
       "cancel": "キャンセル",
       "recentEvents": "最近のイベント"
     },

@@ -306,7 +306,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
         backgroundColor: 'rgba(0,0,0,0.85)',
         display: 'flex', justifyContent: 'center', alignItems: 'center',
         zIndex: 1000,
-        padding: '2rem'
+        padding: isCoarseInput ? '0.5rem' : '2rem'
       }}
     >
       <div
@@ -326,7 +326,7 @@ const CardSearchModal: React.FC<CardSearchModalProps> = ({
           position: 'relative'
         }}
       >
-        <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
+        <div style={{ padding: isCoarseInput ? '0.75rem 1rem' : '1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
           <div>
             <h2 className="Garamond" style={{ margin: 0 }}>{title} ({cards.length})</h2>
             {searchTypeCountLabel && (

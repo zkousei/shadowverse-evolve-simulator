@@ -6,7 +6,11 @@ import Card, { type CardInspectAnchor, type CardInstance, type CardTapAnchor } f
 import type { PlayerRole } from '../../types/game';
 import type { CardStatLookup } from '../../utils/card/cardStats';
 import type { CardDetailLookup } from '../../utils/card/cardDetails';
-import { useGameBoardBoardDensity, useGameBoardInputProfile } from '../../contexts/gameBoardInputProfileContext';
+import {
+  useGameBoardBoardDensity,
+  useGameBoardInputProfile,
+  useGameBoardLayoutProfile,
+} from '../../contexts/gameBoardInputProfileContext';
 import {
   getCardSizeForInputProfile,
   getExZoneGapForInputProfile,
@@ -26,7 +30,11 @@ interface Props {
   onTap?: (id: string) => void;
   onModifyCounter?: (id: string, stat: 'atk' | 'hp', delta: number) => void;
   onModifyGenericCounter?: (id: string, delta: number) => void;
+  onSendToTop?: (id: string) => void;
   onSendToBottom?: (id: string) => void;
+  onSendToHand?: (id: string) => void;
+  onSendToEx?: (id: string) => void;
+  onStartAttach?: (id: string) => void;
   onBanish?: (id: string) => void;
   onReturnEvolve?: (id: string) => void;
   onCemetery?: (id: string) => void;
@@ -44,18 +52,20 @@ interface Props {
   isDebug?: boolean;
 }
 
-const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLookup, onInspectCard, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, onCardTapAction, onZoneTapAction, hideCards, layout = 'horizontal', isProtected, lockCards, disableQuickActionsForCard, getHighlightTone, viewerRole, containerStyle, isDebug }) => {
+const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLookup, onInspectCard, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToTop, onSendToBottom, onSendToHand, onSendToEx, onStartAttach, onBanish, onReturnEvolve, onCemetery, onPlayToField, onCardTapAction, onZoneTapAction, hideCards, layout = 'horizontal', isProtected, lockCards, disableQuickActionsForCard, getHighlightTone, viewerRole, containerStyle, isDebug }) => {
   const { t } = useTranslation();
   const selection = useBoardMultiSelectionContext();
   const zoneTapPointerStartRef = React.useRef<{ x: number; y: number } | null>(null);
   const [quickActionsHoveredCardId, setQuickActionsHoveredCardId] = React.useState<string | null>(null);
   const inputProfile = useGameBoardInputProfile();
   const boardDensity = useGameBoardBoardDensity();
+  const layoutProfile = useGameBoardLayoutProfile();
   const isCompactInput = inputProfile === 'coarse';
+  const isMobileZone = layoutProfile === 'mobile';
   const isFineInput = inputProfile === 'fine';
   const isOverviewDesktop = inputProfile === 'fine' && boardDensity === 'overview';
   const { isOver, setNodeRef } = useDroppable({ id });
-  const cardSize = getCardSizeForInputProfile(inputProfile, boardDensity);
+  const cardSize = getCardSizeForInputProfile(inputProfile, boardDensity, layoutProfile);
   const stackAttachmentOffset = getStackAttachmentOffsetForInputProfile(inputProfile, boardDensity);
   const linkedCardOffset = getLinkedCardOffsetForInputProfile(inputProfile, boardDensity);
   const attachmentTopOffset = stackAttachmentOffset.top;
@@ -67,6 +77,8 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
   const isStack = layout === 'stack';
   const isFieldZone = id.startsWith('field-');
   const isExZone = id.startsWith('ex-');
+  const isHandZone = id.startsWith('hand-');
+  const isMobileHorizontalHandZone = isMobileZone && isHandZone && !isStack;
   const shouldDisableZoneQuickActions = id.startsWith('cemetery-') || id.startsWith('banish-');
   const isReadOnlySpectator = viewerRole === 'spectator';
   const zoneLabelChipGap = isCompactInput ? '2px' : isFineInput ? '3px' : isOverviewDesktop ? '4px' : '6px';
@@ -121,7 +133,10 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
           detail={cardDetailLookup?.[linkedCard.cardId]}
           highlightTone={getHighlightTone?.(linkedCard)}
           onInspect={onInspectCard}
+          onSendToTop={linkedCard.isTokenCard ? onSendToTop : undefined}
           onSendToBottom={linkedCard.isTokenCard ? onSendToBottom : undefined}
+          onSendToHand={linkedCard.isTokenCard ? onSendToHand : undefined}
+          onSendToEx={linkedCard.isTokenCard ? onSendToEx : undefined}
           onBanish={linkedCard.isTokenCard ? onBanish : undefined}
           onReturnEvolve={onReturnEvolve}
           onCemetery={linkedCard.isTokenCard ? onCemetery : undefined}
@@ -135,7 +150,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
         />
       </div>
     ));
-  }, [attachmentLeftOffset, attachmentTopOffset, cardDetailLookup, cardStatLookup, disableQuickActionsForCard, getHighlightTone, handleQuickActionsHoverChange, hideCards, isDebug, isProtected, isReadOnlySpectator, linkedCardLeftOffset, linkedCardTopOffset, lockCards, onBanish, onCardTapAction, onCemetery, onInspectCard, onReturnEvolve, onSendToBottom, shouldDisableZoneQuickActions, viewerRole]);
+  }, [attachmentLeftOffset, attachmentTopOffset, cardDetailLookup, cardStatLookup, disableQuickActionsForCard, getHighlightTone, handleQuickActionsHoverChange, hideCards, isDebug, isProtected, isReadOnlySpectator, linkedCardLeftOffset, linkedCardTopOffset, lockCards, onBanish, onCardTapAction, onCemetery, onInspectCard, onReturnEvolve, onSendToBottom, onSendToEx, onSendToHand, onSendToTop, shouldDisableZoneQuickActions, viewerRole]);
 
   return (
     <div
@@ -171,19 +186,23 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
         minHeight: '160px',
         border: `2px dashed ${isOver ? 'var(--vivid-green-cyan)' : 'var(--border-light)'}`,
         backgroundColor: isOver ? 'rgba(0, 208, 132, 0.1)' : 'rgba(26, 29, 36, 0.5)',
-        borderRadius: 'var(--radius-md)',
-        padding: isCompactInput ? '0.32rem' : '0.5rem',
+        padding: isMobileHorizontalHandZone
+          ? '0.75rem 0.32rem 0.32rem'
+          : isCompactInput
+            ? '0.32rem'
+            : '0.5rem',
         position: 'relative',
         display: 'flex',
         flexDirection: isStack ? 'column' : 'row',
         gap: isStack
           ? '0.5rem'
           : isFieldZone
-            ? getFieldZoneGapForInputProfile(inputProfile, boardDensity)
+            ? getFieldZoneGapForInputProfile(inputProfile, boardDensity, layoutProfile)
             : isExZone
               ? getExZoneGapForInputProfile(inputProfile, boardDensity)
               : '0.5rem',
-        flexWrap: isStack ? 'nowrap' : 'wrap',
+        flexWrap: isStack || isMobileHorizontalHandZone ? 'nowrap' : 'wrap',
+        overflowX: isMobileHorizontalHandZone ? 'auto' : undefined,
         alignItems: isStack ? 'center' : 'flex-start',
         zIndex: quickActionsHoveredCardId ? 240 : undefined,
         transition: 'var(--transition-fast)',
@@ -193,14 +212,18 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
       <div
         style={{
           position: 'absolute',
-          top: -6,
+          top: isMobileZone ? 1 : -6,
           left: isCompactInput ? 7 : 10,
-          zIndex: 20,
+          zIndex: 30,
           display: isCompactInput ? 'grid' : 'inline-flex',
           gridTemplateColumns: isCompactInput ? 'minmax(0, 1fr) auto' : undefined,
           alignItems: 'center',
           gap: zoneLabelChipGap,
-          maxWidth: isOverviewDesktop ? 'calc(100% - 12px)' : 'calc(100% - 20px)',
+          maxWidth: isMobileZone
+            ? 'calc(100% - 12px)'
+            : isOverviewDesktop
+              ? 'calc(100% - 12px)'
+              : 'calc(100% - 20px)',
           padding: zoneLabelChipPadding,
           background: 'rgba(17, 24, 39, 0.92)',
           border: '1px solid rgba(255,255,255,0.16)',
@@ -270,7 +293,16 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
       {(() => {
         if (isStack && topLevelCards.length > 0) {
           return (
-            <div style={{ position: 'relative', width: `${cardSize.width}px`, height: `${cardSize.height}px` }}>
+            <div
+              data-testid="zone-stack-container"
+              style={{
+                position: 'relative',
+                width: `${cardSize.width}px`,
+                height: `${cardSize.height}px`,
+                isolation: 'isolate',
+                zIndex: 1,
+              }}
+            >
               {topLevelCards.map((card, index) => {
                 // To make index 0 (Top card) appear at the absolute top of the stack:
                 // 1. Give it the highest zIndex
@@ -303,7 +335,11 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
                       onTap={onTap}
                       onModifyCounter={onModifyCounter}
                       onModifyGenericCounter={onModifyGenericCounter}
+                      onSendToTop={onSendToTop}
                       onSendToBottom={onSendToBottom}
+                      onSendToHand={onSendToHand}
+                      onSendToEx={onSendToEx}
+                      onStartAttach={onStartAttach}
                       onBanish={onBanish}
                       onReturnEvolve={onReturnEvolve}
                       onCemetery={onCemetery}
@@ -333,7 +369,11 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
                           onTap={onTap}
                           onModifyCounter={onModifyCounter}
                           onModifyGenericCounter={onModifyGenericCounter}
+                          onSendToTop={onSendToTop}
                           onSendToBottom={onSendToBottom}
+                          onSendToHand={onSendToHand}
+                          onSendToEx={onSendToEx}
+                          onStartAttach={onStartAttach}
                           onBanish={onBanish}
                           onReturnEvolve={onReturnEvolve}
                           onCemetery={onCemetery}
@@ -379,7 +419,11 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
                 onTap={onTap}
                 onModifyCounter={onModifyCounter}
                 onModifyGenericCounter={onModifyGenericCounter}
+                onSendToTop={onSendToTop}
                 onSendToBottom={onSendToBottom}
+                onSendToHand={onSendToHand}
+                onSendToEx={onSendToEx}
+                onStartAttach={onStartAttach}
                 onBanish={onBanish}
                 onReturnEvolve={onReturnEvolve}
                 onCemetery={onCemetery}
@@ -409,7 +453,11 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
                     onTap={onTap}
                     onModifyCounter={onModifyCounter}
                     onModifyGenericCounter={onModifyGenericCounter}
+                    onSendToTop={onSendToTop}
                     onSendToBottom={onSendToBottom}
+                    onSendToHand={onSendToHand}
+                    onSendToEx={onSendToEx}
+                    onStartAttach={onStartAttach}
                     onBanish={onBanish}
                     onReturnEvolve={onReturnEvolve}
                     onCemetery={onCemetery}

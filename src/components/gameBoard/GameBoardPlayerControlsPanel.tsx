@@ -2,7 +2,11 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import GameBoardPlayerTrackerSection from './GameBoardPlayerTrackerSection';
 import type { SyncState } from '../../types/game';
-import { useGameBoardBoardDensity, useGameBoardInputProfile } from '../../contexts/gameBoardInputProfileContext';
+import {
+  useGameBoardBoardDensity,
+  useGameBoardInputProfile,
+  useGameBoardLayoutProfile,
+} from '../../contexts/gameBoardInputProfileContext';
 
 type GameBoardPlayerControlsPanelProps = {
   label: string;
@@ -73,17 +77,28 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
   const { t } = useTranslation();
   const inputProfile = useGameBoardInputProfile();
   const boardDensity = useGameBoardBoardDensity();
+  const layoutProfile = useGameBoardLayoutProfile();
+  const isMobileLayout = layoutProfile === 'mobile';
+  const isMobileWidePanel = isMobileLayout && panelWidth >= 260;
   const isCompactControls = inputProfile === 'coarse';
   const isNarrowCompactPanel = isCompactControls && panelWidth <= 160;
   const isOverviewControls = inputProfile === 'fine' && boardDensity === 'overview';
   const showSetupActions = gameStatus === 'preparing';
   const showPlayingActions = gameStatus === 'playing';
-  const compactPanelPadding = isCompactControls ? (isNarrowCompactPanel ? '0.48rem' : '0.55rem') : isOverviewControls ? '0.42rem 0.5rem' : '0.65rem 0.75rem';
-  const compactPanelGap = isCompactControls ? (isNarrowCompactPanel ? '0.26rem' : '0.32rem') : isOverviewControls ? '0.22rem' : '0.35rem';
-  const compactSectionGap = isCompactControls ? (isNarrowCompactPanel ? '0.24rem' : '0.3rem') : isOverviewControls ? '0.2rem' : '0.3rem';
-  const compactCellPadding = isCompactControls ? (isNarrowCompactPanel ? '0.32rem' : '0.36rem') : isOverviewControls ? '0.4rem' : '0.35rem 0.5rem';
+  const compactPanelPadding = isMobileLayout
+    ? '0.36rem 0.42rem'
+    : isCompactControls ? (isNarrowCompactPanel ? '0.48rem' : '0.55rem') : isOverviewControls ? '0.42rem 0.5rem' : '0.65rem 0.75rem';
+  const compactPanelGap = isMobileLayout
+    ? '0.2rem'
+    : isCompactControls ? (isNarrowCompactPanel ? '0.26rem' : '0.32rem') : isOverviewControls ? '0.22rem' : '0.35rem';
+  const compactSectionGap = isMobileLayout
+    ? '0.18rem'
+    : isCompactControls ? (isNarrowCompactPanel ? '0.24rem' : '0.3rem') : isOverviewControls ? '0.2rem' : '0.3rem';
+  const compactCellPadding = isMobileLayout
+    ? '0.24rem 0.28rem'
+    : isCompactControls ? (isNarrowCompactPanel ? '0.32rem' : '0.36rem') : isOverviewControls ? '0.4rem' : '0.35rem 0.5rem';
   const compactButtonBaseStyle: React.CSSProperties = {
-    minHeight: isCompactControls ? '30px' : '25px',
+    minHeight: isMobileLayout ? '25px' : isCompactControls ? '30px' : '25px',
     fontSize: isCompactControls ? '0.64rem' : '0.72rem',
     lineHeight: 1.1,
     whiteSpace: 'nowrap',
@@ -91,7 +106,7 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
     textOverflow: 'ellipsis',
   };
   const compactPrimaryActionLabelStyle: React.CSSProperties = {
-    minHeight: isCompactControls ? '30px' : '25px',
+    minHeight: isMobileLayout ? '26px' : isCompactControls ? '30px' : '25px',
     fontSize: isCompactControls ? '0.66rem' : '0.72rem',
     lineHeight: 1.1,
     whiteSpace: 'nowrap',
@@ -102,36 +117,15 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
     ? (isNarrowCompactPanel ? '0.16rem' : '0.2rem')
     : isOverviewControls ? '0.2rem' : '0.3rem';
   const groupedActionStyle: React.CSSProperties = {
-    padding: isCompactControls || isOverviewControls ? '0.24rem 0.16rem' : compactCellPadding,
+    padding: isMobileLayout ? '0.18rem 0.14rem' : isCompactControls || isOverviewControls ? '0.24rem 0.16rem' : compactCellPadding,
     color: '#f8fafc',
     fontWeight: 'bold',
     opacity: canUsePlayingActions ? 1 : 0.5,
     cursor: canUsePlayingActions ? 'pointer' : 'not-allowed',
     ...compactButtonBaseStyle,
   };
-  return (
-    <div
-      style={{
-        width: `${panelWidth}px`,
-        boxSizing: 'border-box',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        height: '100%',
-        gap: compactPanelGap,
-        background: 'rgba(15, 23, 42, 0.88)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
-        padding: compactPanelPadding,
-        borderRadius: '16px',
-        ...containerStyle,
-      }}
-    >
-      <div style={{ fontSize: isCompactControls ? (isNarrowCompactPanel ? '0.68rem' : '0.72rem') : isOverviewControls ? '0.64rem' : '0.8rem', fontWeight: 'bold', color: 'white', marginBottom: isCompactControls ? (isNarrowCompactPanel ? '0.12rem' : '0.16rem') : isOverviewControls ? '0.2rem' : '0.25rem' }}>
-        {t('gameBoard.zones.controls', { label })}
-      </div>
+  const actionSections = (
+    <>
       <div
         data-testid="player-controls-primary-actions"
         style={{
@@ -320,12 +314,15 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
       </div>
       {showPlayingActions && (
         <div
+          data-testid="player-controls-middle-actions"
           style={{
-            display: 'flex',
-            flexDirection: 'column',
+            display: isMobileLayout ? 'grid' : 'flex',
+            flexDirection: isMobileLayout ? undefined : 'column',
+            gridTemplateColumns: isMobileLayout ? 'repeat(2, minmax(0, 1fr))' : undefined,
             gap: compactSectionGap,
-            minHeight: isCompactControls ? '28px' : '26px',
+            minHeight: isMobileLayout ? '24px' : isCompactControls ? '28px' : '26px',
             justifyContent: 'center',
+            alignItems: isMobileLayout ? 'center' : undefined,
           }}
         >
           {middleControls}
@@ -333,15 +330,64 @@ const GameBoardPlayerControlsPanel: React.FC<GameBoardPlayerControlsPanelProps> 
           {undoMoveButton}
         </div>
       )}
-      <GameBoardPlayerTrackerSection
-        testId={trackerTestId}
-        label={label}
-        playerState={playerState}
-        onAdjustStat={onAdjustStat}
-        compact={!forceExpandedTracker && (isCompactControls || isOverviewControls) && panelWidth <= 180}
-        readOnly={readOnlyTracker}
-        containerStyle={{ marginTop: isOverviewControls ? '0.2rem' : 'auto' }}
-      />
+    </>
+  );
+  const trackerSection = (
+    <GameBoardPlayerTrackerSection
+      testId={trackerTestId}
+      label={label}
+      playerState={playerState}
+      onAdjustStat={onAdjustStat}
+      compact={!forceExpandedTracker && (isCompactControls || isOverviewControls) && (panelWidth <= 180 || isMobileLayout)}
+      readOnly={readOnlyTracker}
+      containerStyle={{ marginTop: isMobileWidePanel ? 0 : isOverviewControls ? '0.2rem' : 'auto' }}
+    />
+  );
+
+  return (
+    <div
+      style={{
+        width: `${panelWidth}px`,
+        boxSizing: 'border-box',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        height: '100%',
+        gap: compactPanelGap,
+        background: 'rgba(15, 23, 42, 0.88)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+        padding: compactPanelPadding,
+        borderRadius: '16px',
+        ...containerStyle,
+      }}
+    >
+      <div style={{ fontSize: isMobileLayout ? '0.64rem' : isCompactControls ? (isNarrowCompactPanel ? '0.68rem' : '0.72rem') : isOverviewControls ? '0.64rem' : '0.8rem', fontWeight: 'bold', color: 'white', marginBottom: isMobileLayout ? '0.06rem' : isCompactControls ? (isNarrowCompactPanel ? '0.12rem' : '0.16rem') : isOverviewControls ? '0.2rem' : '0.25rem' }}>
+        {t('gameBoard.zones.controls', { label })}
+      </div>
+      {isMobileWidePanel ? (
+        <div
+          data-testid="player-controls-body"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'minmax(0, 1.05fr) minmax(0, 0.95fr)',
+            gap: '0.4rem',
+            alignItems: 'start',
+          }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: compactPanelGap }}>
+            {actionSections}
+          </div>
+          {trackerSection}
+        </div>
+      ) : (
+        <>
+          {actionSections}
+          {trackerSection}
+        </>
+      )}
     </div>
   );
 };

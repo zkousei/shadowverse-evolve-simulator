@@ -29,6 +29,8 @@ vi.mock('../components/gameBoard/Zone', () => ({
     cards,
     onInspectCard,
     onAttack,
+    onStartAttach,
+    onCardTapAction,
     hideCards,
     viewerRole,
     containerStyle,
@@ -38,6 +40,8 @@ vi.mock('../components/gameBoard/Zone', () => ({
     cards: CardInstance[];
     onInspectCard?: (card: CardInstance, anchor: CardInspectAnchor) => void;
     onAttack?: (id: string) => void;
+    onStartAttach?: (id: string) => void;
+    onCardTapAction?: (card: CardInstance, anchor: { x: number; y: number }) => boolean | void;
     hideCards?: boolean;
     viewerRole?: string;
     containerStyle?: React.CSSProperties;
@@ -58,14 +62,17 @@ vi.mock('../components/gameBoard/Zone', () => ({
           {onInspectCard && (
             <button
               type="button"
-              onClick={() => onInspectCard(card, {
-                top: 40,
-                left: 40,
-                right: 140,
-                bottom: 180,
-                width: 100,
-                height: 140,
-              })}
+              onClick={() => {
+                if (onCardTapAction?.(card, { x: 40, y: 40 })) return;
+                onInspectCard(card, {
+                  top: 40,
+                  left: 40,
+                  right: 140,
+                  bottom: 180,
+                  width: 100,
+                  height: 140,
+                });
+              }}
             >
               Inspect {card.name}
             </button>
@@ -73,6 +80,11 @@ vi.mock('../components/gameBoard/Zone', () => ({
           {onAttack && (
             <button type="button" onClick={() => onAttack(card.id)}>
               Attack {card.name}
+            </button>
+          )}
+          {onStartAttach && (
+            <button type="button" onClick={() => onStartAttach(card.id)}>
+              Attach {card.name}
             </button>
           )}
         </div>
@@ -329,9 +341,13 @@ const buildMockGameBoardLogic = (
     handleModifyCounter: vi.fn(),
     handleModifyGenericCounter: vi.fn(),
     handleDragEnd: vi.fn(),
+    handleAttachToCard: vi.fn(),
     toggleTap: vi.fn(),
     handleFlipCard: vi.fn(),
+    handleSendToTop: vi.fn(),
     handleSendToBottom: vi.fn(),
+    handleSendToHand: vi.fn(),
+    handleSendToEx: vi.fn(),
     handleBanish: vi.fn(),
     handlePlayToField: vi.fn(),
     handleSendToCemetery: vi.fn(),
@@ -2151,6 +2167,28 @@ describe('GameBoard', () => {
     expect(handleUndoCardMove).toHaveBeenCalledTimes(1);
   });
 
+  it('renders shortened undo button label on mobile layout while retaining full accessible title and label', () => {
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      hasUndoableMove: true,
+      gameState: createGameState([], { gameStatus: 'playing', turnPlayer: 'host', lastUndoableCardMoveActor: 'host' }),
+    }));
+
+    // Desktop: full label
+    const { unmount } = render(<GameBoard />);
+    expect(screen.getByTestId('undo-move-host')).toHaveTextContent('↩ Undo Move');
+    expect(screen.getByTestId('undo-move-host')).toHaveAttribute('title', '↩ Undo Move');
+
+    unmount();
+
+    // Mobile: shortened label
+    window.innerWidth = 390;
+    window.innerHeight = 844;
+    render(<GameBoard />);
+    expect(screen.getByTestId('undo-move-host')).toHaveTextContent('↩ Undo');
+    expect(screen.getByTestId('undo-move-host')).toHaveAttribute('aria-label', '↩ Undo Move');
+    expect(screen.getByTestId('undo-move-host')).toHaveAttribute('title', '↩ Undo Move');
+  });
+
   it('keeps own opponent-turn Undo available before and during multi selection', () => {
     const handleUndoCardMove = vi.fn();
     mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
@@ -3429,6 +3467,320 @@ describe('GameBoard', () => {
         configurable: true,
         writable: true,
         value: originalInnerWidth,
+      });
+      Object.defineProperty(window, 'matchMedia', {
+        configurable: true,
+        writable: true,
+        value: originalMatchMedia,
+      });
+    }
+  });
+
+  it('supports 2-tap stack/link target selection and cancels with Escape', async () => {
+    const sourceCard = makeCard({ id: 'source-card', name: 'Source Amulet', zone: 'field-host' });
+    const targetCard = makeCard({ id: 'target-card', name: 'Target Unit', zone: 'field-host' });
+    const handleAttachToCard = vi.fn();
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      handleAttachToCard,
+      gameState: createGameState([sourceCard, targetCard], {
+        gameStatus: 'playing',
+        turnPlayer: 'host',
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Attach Source Amulet' }));
+    expect(screen.getByTestId('board-playmat')).toHaveAttribute('data-attach-mode-active', 'true');
+    expect(screen.getByTestId('board-playmat')).toHaveAttribute('data-attach-source-card-id', 'source-card');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect Target Unit' }));
+    expect(handleAttachToCard).toHaveBeenCalledWith('source-card', 'target-card');
+    expect(screen.getByTestId('board-playmat')).toHaveAttribute('data-attach-mode-active', 'false');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Attach Source Amulet' }));
+    expect(screen.getByTestId('board-playmat')).toHaveAttribute('data-attach-mode-active', 'true');
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('board-playmat')).toHaveAttribute('data-attach-mode-active', 'false');
+    });
+  });
+
+  it('uses mobile layout profile without CSS zoom shrinking when viewport is < 900px on coarse pointer', () => {
+    const originalInnerWidth = window.innerWidth;
+    const originalMatchMedia = window.matchMedia;
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      writable: true,
+      value: 390,
+    });
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      writable: true,
+      value: vi.fn(() => ({ matches: true })),
+    });
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      mode: 'solo',
+      isSoloMode: true,
+      gameState: createGameState([], { gameStatus: 'playing' }),
+    }));
+
+    try {
+      const { container } = render(<GameBoard />);
+      const shell = container.firstElementChild as HTMLElement;
+      const topSection = screen.getByTestId('board-section-top');
+      const topGrid = topSection.firstElementChild as HTMLElement;
+
+      expect(shell).toHaveAttribute('data-layout-profile', 'mobile');
+      expect(shell).toHaveAttribute('data-input-profile', 'coarse');
+      expect(topGrid).toHaveStyle({ gridTemplateColumns: '1fr' });
+      expect(topGrid.style.zoom).toBe('');
+      expect(screen.getByTestId('mobile-solo-viewpoint-tabs')).toBeInTheDocument();
+    } finally {
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        writable: true,
+        value: originalInnerWidth,
+      });
+      Object.defineProperty(window, 'matchMedia', {
+        configurable: true,
+        writable: true,
+        value: originalMatchMedia,
+      });
+    }
+  });
+
+  it('renders target selection banner during 2-tap attach mode and cancels via the banner button', () => {
+    const sourceCard = makeCard({ id: 'source-card', name: 'Source Amulet', zone: 'field-host' });
+    const targetCard = makeCard({ id: 'target-card', name: 'Target Unit', zone: 'field-host' });
+
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      gameState: createGameState([sourceCard, targetCard], {
+        gameStatus: 'playing',
+        turnPlayer: 'host',
+      }),
+    }));
+
+    render(<GameBoard />);
+
+    expect(screen.queryByTestId('board-target-selection-banner')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Attach Source Amulet' }));
+    const banner = screen.getByTestId('board-target-selection-banner');
+    expect(banner).toBeInTheDocument();
+    expect(banner).toHaveTextContent('Source Amulet');
+
+    fireEvent.click(screen.getByTestId('cancel-target-selection-button'));
+    expect(screen.queryByTestId('board-target-selection-banner')).not.toBeInTheDocument();
+    expect(screen.getByTestId('board-playmat')).toHaveAttribute('data-attach-mode-active', 'false');
+  });
+
+  it('provides mobile viewpoint tabs, opponent summary bar, and header utility toggle in P2P mode on mobile', () => {
+    const originalInnerWidth = window.innerWidth;
+    const originalMatchMedia = window.matchMedia;
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      writable: true,
+      value: 390,
+    });
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      writable: true,
+      value: vi.fn(() => ({ matches: true })),
+    });
+    const oppHandCard = makeCard({ id: 'opp-hand-1', owner: 'guest', zone: 'hand-guest' });
+    const oppCemeteryCard = makeCard({ id: 'opp-cem-1', owner: 'guest', zone: 'cemetery-guest' });
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      mode: 'p2p',
+      isSoloMode: false,
+      gameState: createGameState([oppHandCard, oppCemeteryCard], {
+        gameStatus: 'playing',
+        guest: {
+          hp: 17,
+          pp: 3,
+          maxPp: 5,
+          ep: 2,
+          sep: 1,
+          combo: 0,
+          initialHandDrawn: true,
+          mulliganUsed: false,
+          isReady: true,
+        },
+      }),
+    }));
+
+    try {
+      render(<GameBoard />);
+      const viewpointTabs = screen.getByTestId('mobile-solo-viewpoint-tabs');
+      expect(viewpointTabs).toBeInTheDocument();
+
+      // Switch to own board viewpoint ('My' / bottomLabel)
+      const buttons = within(viewpointTabs).getAllByRole('button');
+      fireEvent.click(buttons[1]);
+
+      expect(screen.getByTestId('board-section-top')).toHaveStyle({ display: 'none' });
+      const summaryBar = screen.getByTestId('mobile-opponent-summary-bar');
+      expect(summaryBar).toBeInTheDocument();
+      expect(summaryBar).toHaveTextContent('HP 17');
+      expect(summaryBar).toHaveTextContent('PP 3/5');
+
+      // Mobile header utility toggle is present
+      const moreToggle = screen.getByTestId('mobile-header-more-toggle');
+      expect(moreToggle).toBeInTheDocument();
+    } finally {
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        writable: true,
+        value: originalInnerWidth,
+      });
+      Object.defineProperty(window, 'matchMedia', {
+        configurable: true,
+        writable: true,
+        value: originalMatchMedia,
+      });
+    }
+  });
+
+  it('uses a 3-column board shell, auto-collapses header tools, defaults to Battle viewpoint mode, and supports summary searches and bottom row toggle in smartphone landscape', () => {
+    const originalInnerWidth = window.innerWidth;
+    const originalInnerHeight = window.innerHeight;
+    const originalMatchMedia = window.matchMedia;
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      writable: true,
+      value: 844,
+    });
+    Object.defineProperty(window, 'innerHeight', {
+      configurable: true,
+      writable: true,
+      value: 390,
+    });
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      writable: true,
+      value: vi.fn(() => ({ matches: true })),
+    });
+    const setSearchZone = vi.fn();
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      mode: 'p2p',
+      isSoloMode: false,
+      setSearchZone,
+      gameState: createGameState([], { gameStatus: 'playing' }),
+    }));
+
+    try {
+      const { container } = render(<GameBoard />);
+      const shell = container.firstElementChild as HTMLElement;
+      const topSection = screen.getByTestId('board-section-top');
+      const topGrid = topSection.firstElementChild as HTMLElement;
+
+      expect(shell).toHaveAttribute('data-layout-profile', 'mobile');
+      expect(topGrid.style.gridTemplateColumns).not.toBe('1fr');
+
+      // Header tools row starts auto-collapsed on short landscape mobile screens
+      const moreToggle = screen.getByTestId('mobile-header-more-toggle');
+      expect(moreToggle).toHaveAttribute('aria-expanded', 'false');
+
+      // Defaults to Battle viewpoint mode automatically on short landscape mobile screens
+      const battleTab = screen.getByTestId('mobile-viewpoint-battle');
+      expect(battleTab).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getByTestId('board-section-top')).not.toHaveStyle({ display: 'none' });
+      expect(screen.getByTestId('board-section-top')).toHaveStyle({ marginTop: '0.35rem' });
+      expect(screen.getByTestId('board-section-bottom')).not.toHaveStyle({ display: 'none' });
+      expect(screen.getByTestId('top-board-upper-rows')).toHaveStyle({ display: 'none' });
+
+      // Summary bar stays in a single row without wrapping and displays opponent deck count
+      const summaryBar = screen.getByTestId('mobile-opponent-summary-bar');
+      expect(summaryBar).toHaveStyle({ flexWrap: 'nowrap', overflowX: 'auto' });
+      expect(screen.getByTestId('mobile-opponent-summary-deck')).toBeInTheDocument();
+
+      // Hand zone uses single-row horizontal scroll on mobile
+      expect(screen.getByTestId('zone-hand-host')).toHaveStyle({
+        flexWrap: 'nowrap',
+        overflowX: 'auto',
+      });
+
+      // Clicking Cemetery or EX in the opponent summary bar opens the corresponding search modal directly
+      fireEvent.click(screen.getByTestId('mobile-opponent-summary-cemetery'));
+      expect(setSearchZone).toHaveBeenCalledWith(expect.objectContaining({ id: 'cemetery-guest' }));
+      fireEvent.click(screen.getByTestId('mobile-opponent-summary-ex'));
+      expect(setSearchZone).toHaveBeenCalledWith(expect.objectContaining({ id: 'ex-guest' }));
+
+      // Opponent secondary row (EX / Cemetery / Banish) can be manually toggled from the summary bar
+      const topSecondaryToggle = screen.getByTestId('mobile-battle-top-secondary-toggle');
+      expect(screen.getByTestId('top-board-upper-rows')).toHaveStyle({ display: 'none' });
+      fireEvent.click(topSecondaryToggle);
+      expect(screen.getByTestId('top-board-upper-rows')).not.toHaveStyle({ display: 'none' });
+      expect(screen.getByTestId('top-board-hand-row')).toHaveStyle({ display: 'none' });
+
+      // Toggling the bottom secondary row (EX / Cemetery / Banish) collapses it in Battle mode
+      const bottomSecondaryToggle = screen.getByTestId('mobile-battle-bottom-secondary-toggle');
+      expect(screen.getByTestId('bottom-board-row-secondary-wrap')).not.toHaveStyle({ display: 'none' });
+      fireEvent.click(bottomSecondaryToggle);
+      expect(screen.getByTestId('bottom-board-row-secondary-wrap')).toHaveStyle({ display: 'none' });
+    } finally {
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        writable: true,
+        value: originalInnerWidth,
+      });
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        writable: true,
+        value: originalInnerHeight,
+      });
+      Object.defineProperty(window, 'matchMedia', {
+        configurable: true,
+        writable: true,
+        value: originalMatchMedia,
+      });
+    }
+  });
+
+  it('automatically shows the opponent EX row in Battle viewpoint mode when opponent EX has cards while keeping opponent hand hidden', () => {
+    const originalInnerWidth = window.innerWidth;
+    const originalInnerHeight = window.innerHeight;
+    const originalMatchMedia = window.matchMedia;
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      writable: true,
+      value: 844,
+    });
+    Object.defineProperty(window, 'innerHeight', {
+      configurable: true,
+      writable: true,
+      value: 390,
+    });
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      writable: true,
+      value: vi.fn(() => ({ matches: true })),
+    });
+    const oppExCard = makeCard({ id: 'opp-ex-1', name: 'Opponent Token', owner: 'guest', zone: 'ex-guest' });
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      mode: 'p2p',
+      isSoloMode: false,
+      gameState: createGameState([oppExCard], { gameStatus: 'playing' }),
+    }));
+
+    try {
+      render(<GameBoard />);
+      expect(screen.getByTestId('mobile-viewpoint-battle')).toHaveAttribute('aria-pressed', 'true');
+      // Opponent hand row stays hidden in Battle mode, but opponent EX/Cemetery/Banish row auto-expands because EX has a card
+      expect(screen.getByTestId('top-board-hand-row')).toHaveStyle({ display: 'none' });
+      expect(screen.getByTestId('top-board-upper-rows')).not.toHaveStyle({ display: 'none' });
+    } finally {
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        writable: true,
+        value: originalInnerWidth,
+      });
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        writable: true,
+        value: originalInnerHeight,
       });
       Object.defineProperty(window, 'matchMedia', {
         configurable: true,

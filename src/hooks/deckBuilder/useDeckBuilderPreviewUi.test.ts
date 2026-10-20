@@ -56,4 +56,30 @@ describe('useDeckBuilderPreviewUi', () => {
 
     expect(result.current.previewCard).toBeNull();
   });
+
+  it('suppresses deck card hover preview when primary pointer is coarse', () => {
+    const originalMatchMedia = window.matchMedia;
+    window.matchMedia = ((query: string) => ({
+      matches: query === '(pointer: coarse)',
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    })) as typeof window.matchMedia;
+
+    try {
+      const { result } = renderHook(() => useDeckBuilderPreviewUi());
+      const mockEvent = { clientX: 100, clientY: 200 } as React.MouseEvent<HTMLDivElement>;
+
+      act(() => {
+        result.current.handleDeckCardMouseEnter(mockCard, mockEvent);
+      });
+      expect(result.current.hoveredDeckCard).toBeNull();
+    } finally {
+      window.matchMedia = originalMatchMedia;
+    }
+  });
 });

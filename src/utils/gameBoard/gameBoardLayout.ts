@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
 import type { GameBoardBoardDensity } from './gameBoardBoardDensity';
 
-export type GameBoardLayoutProfile = 'desktop' | 'tablet';
+export type GameBoardLayoutProfile = 'desktop' | 'tablet' | 'mobile';
 export type GameBoardLayoutInputProfile = 'fine' | 'coarse';
 
 export type GameBoardLayout = {
@@ -41,6 +41,9 @@ const BOARD_SHELL_COLUMN_GAP = 16;
 const TABLET_VIEWPORT_HORIZONTAL_RESERVED = 80;
 const TABLET_MIN_SHELL_WIDTH = 860;
 const TABLET_MAX_SHELL_WIDTH = 1120;
+const MOBILE_VIEWPORT_HORIZONTAL_RESERVED = 20;
+const MOBILE_MIN_CONTENT_WIDTH = 300;
+const MOBILE_MAX_CONTENT_WIDTH = 860;
 const NARROW_DESKTOP_HORIZONTAL_RESERVED = 80;
 const NARROW_DESKTOP_BOARD_SHELL_WIDTH = 1552;
 const MIN_NARROW_DESKTOP_DISPLAY_SCALE = 0.25;
@@ -49,6 +52,9 @@ const clamp = (value: number, min: number, max: number): number => (
   Math.min(Math.max(value, min), max)
 );
 
+const MOBILE_LANDSCAPE_MIN_WIDTH = 640;
+const MOBILE_LANDSCAPE_MAX_HEIGHT = 500;
+
 const buildLayout = (
   profile: GameBoardLayoutProfile,
   {
@@ -56,7 +62,10 @@ const buildLayout = (
     topPanelWidth,
     sideZoneWidth,
     centerZoneWidth,
-  }: Pick<GameBoardLayout, 'sidePanelWidth' | 'topPanelWidth' | 'sideZoneWidth' | 'centerZoneWidth'>
+    isSingleColumn = false,
+  }: Pick<GameBoardLayout, 'sidePanelWidth' | 'topPanelWidth' | 'sideZoneWidth' | 'centerZoneWidth'> & {
+    isSingleColumn?: boolean;
+  }
 ): GameBoardLayout => {
   const boardContentWidth = sideZoneWidth * 2 + centerZoneWidth;
 
@@ -68,7 +77,7 @@ const buildLayout = (
     centerZoneWidth,
     boardContentWidth,
     boardColumns: `${sideZoneWidth}px ${centerZoneWidth}px ${sideZoneWidth}px`,
-    boardShellColumns: `${topPanelWidth}px ${boardContentWidth}px ${sidePanelWidth}px`,
+    boardShellColumns: isSingleColumn ? '1fr' : `${topPanelWidth}px ${boardContentWidth}px ${sidePanelWidth}px`,
   };
 };
 
@@ -92,6 +101,44 @@ export const tabletGameBoardLayout = buildLayout('tablet', {
   sideZoneWidth: 120,
   centerZoneWidth: 640,
 });
+
+const resolveMobileLayout = (viewportWidth: number): GameBoardLayout => {
+  if (viewportWidth >= MOBILE_LANDSCAPE_MIN_WIDTH) {
+    const boardShellWidth = clamp(
+      Math.round(viewportWidth - MOBILE_VIEWPORT_HORIZONTAL_RESERVED),
+      620,
+      960
+    );
+    const controlPanelWidth = clamp(Math.round(boardShellWidth * 0.145), 96, 128);
+    const availableBoardContentWidth = boardShellWidth - (controlPanelWidth * 2) - 16;
+    const sideZoneWidth = clamp(Math.round(availableBoardContentWidth * 0.145), 76, 92);
+    const centerZoneWidth = Math.max(240, availableBoardContentWidth - (sideZoneWidth * 2));
+
+    return buildLayout('mobile', {
+      sidePanelWidth: controlPanelWidth,
+      topPanelWidth: controlPanelWidth,
+      sideZoneWidth,
+      centerZoneWidth,
+      isSingleColumn: false,
+    });
+  }
+
+  const boardContentWidth = clamp(
+    Math.round(viewportWidth - MOBILE_VIEWPORT_HORIZONTAL_RESERVED),
+    MOBILE_MIN_CONTENT_WIDTH,
+    MOBILE_MAX_CONTENT_WIDTH
+  );
+  const sideZoneWidth = clamp(Math.round(boardContentWidth * 0.22), 76, 92);
+  const centerZoneWidth = Math.max(148, boardContentWidth - (sideZoneWidth * 2));
+
+  return buildLayout('mobile', {
+    sidePanelWidth: boardContentWidth,
+    topPanelWidth: boardContentWidth,
+    sideZoneWidth,
+    centerZoneWidth,
+    isSingleColumn: true,
+  });
+};
 
 const resolveTabletLayout = (viewportWidth: number): GameBoardLayout => {
   const boardShellWidth = clamp(
@@ -129,8 +176,22 @@ export const isTabletViewportWidth = (viewportWidth: number): boolean => (
 
 export const getLayoutProfileForViewportWidth = (
   viewportWidth: number,
-  inputProfile: GameBoardLayoutInputProfile = 'coarse'
+  inputProfile: GameBoardLayoutInputProfile = 'coarse',
+  viewportHeight?: number
 ): GameBoardLayoutProfile => {
+  if (
+    inputProfile === 'coarse' &&
+    viewportHeight !== undefined &&
+    viewportHeight <= MOBILE_LANDSCAPE_MAX_HEIGHT &&
+    viewportWidth < DESKTOP_MIN_WIDTH
+  ) {
+    return 'mobile';
+  }
+
+  if (viewportWidth < TABLET_MIN_WIDTH) {
+    return inputProfile === 'coarse' ? 'mobile' : 'desktop';
+  }
+
   if (!isTabletViewportWidth(viewportWidth)) {
     return 'desktop';
   }
@@ -141,9 +202,11 @@ export const getLayoutProfileForViewportWidth = (
 export const resolveBoardLayout = (
   viewportWidth: number,
   inputProfile: GameBoardLayoutInputProfile = 'coarse',
-  boardDensity: GameBoardBoardDensity = 'standard'
+  boardDensity: GameBoardBoardDensity = 'standard',
+  viewportHeight?: number
 ): GameBoardLayout => {
-  const profile = getLayoutProfileForViewportWidth(viewportWidth, inputProfile);
+  const profile = getLayoutProfileForViewportWidth(viewportWidth, inputProfile, viewportHeight);
+  if (profile === 'mobile') return resolveMobileLayout(viewportWidth);
   if (profile === 'tablet') return resolveTabletLayout(viewportWidth);
   return boardDensity === 'overview' ? overviewDesktopGameBoardLayout : desktopGameBoardLayout;
 };
@@ -175,11 +238,62 @@ export const getBoardDensityForViewportWidth = (
 export const resolveBoardLayoutSpacing = (
   inputProfile: GameBoardLayoutInputProfile = 'coarse',
   layoutProfile: GameBoardLayoutProfile = 'desktop',
-  boardDensity: GameBoardBoardDensity = 'standard'
+  boardDensity: GameBoardBoardDensity = 'standard',
+  viewportHeight?: number
 ): GameBoardLayoutSpacing => {
   const isCompactBoard = inputProfile === 'coarse';
   const isTabletCompactBoard = isCompactBoard && layoutProfile === 'tablet';
+  const isMobileCompactBoard = isCompactBoard && layoutProfile === 'mobile';
+  const isMobileLandscapeCompactBoard = (
+    isMobileCompactBoard &&
+    viewportHeight !== undefined &&
+    viewportHeight <= MOBILE_LANDSCAPE_MAX_HEIGHT
+  );
   const isOverviewBoard = boardDensity === 'overview';
+
+  if (isMobileLandscapeCompactBoard) {
+    return {
+      boardShellPadding: '0.2rem',
+      boardShellGap: '0.2rem',
+      playmatPadding: '0.18rem',
+      playmatGap: '0.14rem',
+      boardSectionPadding: '0.14rem 0.18rem',
+      boardSectionGap: '0.12rem',
+      boardShellColumnGap: '0.28rem',
+      bottomPanelMarginLeft: '0',
+      boardColumnStackGap: '0.16rem',
+      bottomBoardRowSecondaryMarginTop: '0.1rem',
+      boardSectionDividerMargin: '0.1rem 0',
+      boardRowGap: '0.22rem',
+      stackZoneMinHeight: '76px',
+      fieldZoneMinHeight: '88px',
+      handZoneMinHeight: '76px',
+      bottomHandZoneMinHeight: '84px',
+      leaderZoneMinHeight: '76px',
+    };
+  }
+
+  if (isMobileCompactBoard) {
+    return {
+      boardShellPadding: '0.28rem',
+      boardShellGap: '0.28rem',
+      playmatPadding: '0.24rem',
+      playmatGap: '0.2rem',
+      boardSectionPadding: '0.2rem',
+      boardSectionGap: '0.18rem',
+      boardShellColumnGap: '0.32rem',
+      bottomPanelMarginLeft: '0',
+      boardColumnStackGap: '0.24rem',
+      bottomBoardRowSecondaryMarginTop: '0.16rem',
+      boardSectionDividerMargin: '0.18rem 0',
+      boardRowGap: '0.28rem',
+      stackZoneMinHeight: '104px',
+      fieldZoneMinHeight: '116px',
+      handZoneMinHeight: '108px',
+      bottomHandZoneMinHeight: '112px',
+      leaderZoneMinHeight: '112px',
+    };
+  }
 
   if (isTabletCompactBoard) {
     return {

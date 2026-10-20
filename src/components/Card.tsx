@@ -6,7 +6,11 @@ import type { BaseCardStats } from '../utils/card/cardStats';
 import { isMainDeckSpellCard, type RuntimeBaseCardType } from '../utils/card/cardType';
 import { resolveSelectedCardFaceDetail, type CardDetail, type CardFaceSide } from '../utils/card/cardDetails';
 import CardArtwork from './CardArtwork';
-import { useGameBoardBoardDensity, useGameBoardInputProfile } from '../contexts/gameBoardInputProfileContext';
+import {
+  useGameBoardBoardDensity,
+  useGameBoardInputProfile,
+  useGameBoardLayoutProfile,
+} from '../contexts/gameBoardInputProfileContext';
 import { getCardSizeForInputProfile } from '../utils/gameBoard/gameBoardCardLayout';
 import { computeCoarseSheetPlacement, type CoarseSheetPlacement } from './card/cardCoarsePlacement';
 import { CardStatBadges } from './card/CardStatBadges';
@@ -60,7 +64,11 @@ interface Props {
   onTap?: (id: string) => void;
   onModifyCounter?: (id: string, stat: 'atk' | 'hp', delta: number) => void;
   onModifyGenericCounter?: (id: string, delta: number) => void;
+  onSendToTop?: (id: string) => void;
   onSendToBottom?: (id: string) => void;
+  onSendToHand?: (id: string) => void;
+  onSendToEx?: (id: string) => void;
+  onStartAttach?: (id: string) => void;
   onBanish?: (id: string) => void;
   onReturnEvolve?: (id: string) => void;
   onCemetery?: (id: string) => void;
@@ -74,7 +82,7 @@ interface Props {
   debugIndex?: number;
 }
 
-const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideCurrentStats, highlightTone, onInspect, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToBottom, onBanish, onReturnEvolve, onCemetery, onPlayToField, onCardTapAction, onQuickActionsHoverChange, isHidden, isLocked, quickActionsDisabled, disableCombatAndCounterControls, debugIndex }) => {
+const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideCurrentStats, highlightTone, onInspect, onAttack, onTap, onModifyCounter, onModifyGenericCounter, onSendToTop, onSendToBottom, onSendToHand, onSendToEx, onStartAttach, onBanish, onReturnEvolve, onCemetery, onPlayToField, onCardTapAction, onQuickActionsHoverChange, isHidden, isLocked, quickActionsDisabled, disableCombatAndCounterControls, debugIndex }) => {
   const { t } = useTranslation();
   const selection = useBoardMultiSelectionContext();
   const selectionTone = selection?.tone(card.id);
@@ -84,12 +92,13 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
   const coarseActionSheetRef = React.useRef<HTMLDivElement | null>(null);
   const inputProfile = useGameBoardInputProfile();
   const boardDensity = useGameBoardBoardDensity();
+  const layoutProfile = useGameBoardLayoutProfile();
   const [isQuickActionsOpen, setIsQuickActionsOpen] = React.useState(false);
   const [coarseSheetPlacement, setCoarseSheetPlacement] = React.useState<CoarseSheetPlacement | null>(null);
   const [isDesktopQuickActionsHovered, setIsDesktopQuickActionsHovered] = React.useState(false);
   const isCoarseInput = inputProfile === 'coarse';
   const isOverviewQuickActions = !isCoarseInput && boardDensity === 'overview';
-  const cardSize = getCardSizeForInputProfile(inputProfile, boardDensity);
+  const cardSize = getCardSizeForInputProfile(inputProfile, boardDensity, layoutProfile);
   const isInteractionLocked = isLocked || card.isLeaderCard || card.zone.startsWith('leader-');
   const canShowQuickActionOverlay = !isHidden && !isInteractionLocked && !selection?.active;
   const canToggleQuickActions = isCoarseInput && canShowQuickActionOverlay && !quickActionsDisabled;
@@ -235,7 +244,11 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
   };
   const quickActionDescriptions = {
     inspect: t('gameBoard.card.quickActionDescriptions.inspect'),
+    sendToTop: t('gameBoard.card.quickActionDescriptions.sendToTop'),
     sendToBottom: t('gameBoard.card.quickActionDescriptions.sendToBottom'),
+    toHand: t('gameBoard.card.quickActionDescriptions.toHand'),
+    toEx: t('gameBoard.card.quickActionDescriptions.toEx'),
+    attachToCard: t('gameBoard.card.quickActionDescriptions.attachToCard'),
     cemetery: t('gameBoard.card.quickActionDescriptions.cemetery'),
     banish: t('gameBoard.card.quickActionDescriptions.banish'),
     toEvolveDeck: t('gameBoard.card.quickActionDescriptions.toEvolveDeck'),
@@ -416,6 +429,7 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
             showGenericCounter={!isHidden && !card.isFlipped && genericCounterValue > 0}
             genericCounterValue={genericCounterValue}
             counterLabel={t('gameBoard.card.counter')}
+            isTapped={card.isTapped}
           />
 
           <CardHoverQuickActions
@@ -461,7 +475,11 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
             onInspect={onInspect}
             onModifyCounter={onModifyCounter}
             onModifyGenericCounter={onModifyGenericCounter}
+            onSendToTop={onSendToTop}
             onSendToBottom={onSendToBottom}
+            onSendToHand={onSendToHand}
+            onSendToEx={onSendToEx}
+            onStartAttach={onStartAttach}
             onCemetery={onCemetery}
             onBanish={onBanish}
             onReturnEvolve={onReturnEvolve}
