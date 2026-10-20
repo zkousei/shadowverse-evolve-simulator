@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import GameBoardPlayerTracker from './GameBoardPlayerTracker';
+import GameBoardInputProfileProvider from '../../contexts/GameBoardInputProfileProvider';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -115,4 +116,42 @@ describe('GameBoardPlayerTracker', () => {
       borderRadius: '50%',
     });
   });
+
+  it('stacks PP and MAX into two slim rows with horizontal button pairs on mobile compact layout so buttons do not overflow narrow panels', () => {
+    const props = createBaseProps();
+
+    render(
+      <GameBoardInputProfileProvider value="coarse" layoutProfile="mobile">
+        <GameBoardPlayerTracker
+          {...props}
+          compact={true}
+        />
+      </GameBoardInputProfileProvider>
+    );
+
+    expect(screen.getByText('HP: 20').parentElement).toHaveStyle({
+      display: 'flex',
+      flexDirection: 'row',
+      flexWrap: 'nowrap',
+    });
+    expect(screen.getByTestId('player-tracker-host-pp-section')).toHaveStyle({
+      display: 'flex',
+      flexDirection: 'column',
+    });
+    expect(screen.getByTestId('player-tracker-host-pp-controls')).toHaveStyle({
+      display: 'flex',
+      flexDirection: 'row',
+    });
+    expect(screen.getByTestId('player-tracker-host-maxPp-controls')).toHaveStyle({
+      display: 'flex',
+      flexDirection: 'row',
+    });
+
+    fireEvent.click(screen.getByTestId('player-tracker-host-ep-increase'));
+    fireEvent.click(screen.getByTestId('player-tracker-host-sep-decrease'));
+    expect(props.onAdjustStat).toHaveBeenCalledWith('ep', 1);
+    expect(props.onAdjustStat).toHaveBeenCalledWith('sep', -1);
+  });
 });
+
+

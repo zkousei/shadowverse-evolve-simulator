@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { useGameBoardLayoutProfile } from '../../contexts/gameBoardInputProfileContext';
 
 type TrackerStat = 'hp' | 'ep' | 'sep' | 'pp' | 'maxPp';
 
@@ -31,20 +32,22 @@ const GameBoardPlayerTracker: React.FC<GameBoardPlayerTrackerProps> = ({
   containerStyle,
 }) => {
   const { t } = useTranslation();
+  const layoutProfile = useGameBoardLayoutProfile();
+  const isMobileCompact = compact && layoutProfile === 'mobile';
 
   const trackerContainerStyle: React.CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
-    gap: compact ? '0.2rem' : '0.16rem',
-    marginTop: compact ? '0.18rem' : '0.22rem',
-    padding: compact ? '0.32rem' : '0.32rem 0.42rem',
+    gap: isMobileCompact ? '0.16rem' : compact ? '0.2rem' : '0.16rem',
+    marginTop: isMobileCompact ? '0.1rem' : compact ? '0.18rem' : '0.22rem',
+    padding: isMobileCompact ? '0.24rem 0.28rem' : compact ? '0.32rem' : '0.32rem 0.42rem',
     background: 'rgba(15, 23, 42, 0.75)',
     borderRadius: '10px',
     border: '1px solid rgba(255, 255, 255, 0.08)',
     ...containerStyle,
   };
   const trackerHeaderStyle: React.CSSProperties = {
-    fontSize: compact ? '0.66rem' : '0.74rem',
+    fontSize: isMobileCompact ? '0.58rem' : compact ? '0.66rem' : '0.74rem',
     fontWeight: 'bold',
     color: '#f8fafc',
     lineHeight: 1.1,
@@ -55,26 +58,27 @@ const GameBoardPlayerTracker: React.FC<GameBoardPlayerTrackerProps> = ({
   };
   const trackerStatRowStyle: React.CSSProperties = {
     display: 'flex',
+    flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    gap: compact ? '0.14rem' : '0.25rem',
+    gap: isMobileCompact ? '0.1rem' : compact ? '0.14rem' : '0.25rem',
     flexWrap: 'nowrap',
   };
   const trackerStatLabelBaseStyle: React.CSSProperties = {
     fontWeight: 'bold',
-    fontSize: compact ? '0.66rem' : '0.74rem',
+    fontSize: isMobileCompact ? '0.62rem' : compact ? '0.66rem' : '0.74rem',
     lineHeight: 1.1,
     whiteSpace: 'nowrap',
   };
   const trackerAdjustButtonBaseStyle: React.CSSProperties = {
-    minWidth: compact ? '22px' : '24px',
-    minHeight: compact ? '20px' : '22px',
-    padding: compact ? '1px 5px' : '1px 6px',
+    minWidth: isMobileCompact ? '18px' : compact ? '22px' : '24px',
+    minHeight: isMobileCompact ? '18px' : compact ? '20px' : '22px',
+    padding: isMobileCompact ? '0 3px' : compact ? '1px 5px' : '1px 6px',
     borderRadius: '6px',
     border: '1px solid',
     color: '#f8fafc',
     fontWeight: 'bold',
-    fontSize: compact ? '0.68rem' : '0.72rem',
+    fontSize: isMobileCompact ? '0.64rem' : compact ? '0.68rem' : '0.72rem',
     cursor: 'pointer',
     boxShadow: '0 2px 6px rgba(0,0,0,0.22)',
     transition: 'all 0.15s ease',
@@ -93,14 +97,14 @@ const GameBoardPlayerTracker: React.FC<GameBoardPlayerTrackerProps> = ({
   };
   const trackerButtonRowStyle: React.CSSProperties = {
     display: 'flex',
-    gap: compact ? '0.16rem' : '0.25rem',
+    gap: isMobileCompact ? '0.12rem' : compact ? '0.16rem' : '0.25rem',
     flexShrink: 0,
   };
   const ppSectionStyle: React.CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
-    gap: compact ? '0.18rem' : '0.16rem',
-    padding: compact ? '0.32rem' : '0.28rem 0.38rem',
+    gap: isMobileCompact ? '0.14rem' : compact ? '0.18rem' : '0.16rem',
+    padding: isMobileCompact ? '0.22rem 0.28rem' : compact ? '0.32rem' : '0.28rem 0.38rem',
     background: 'linear-gradient(135deg, rgba(30, 58, 138, 0.35), rgba(15, 23, 42, 0.6))',
     borderRadius: '8px',
     border: '1px solid rgba(59, 130, 246, 0.35)',
@@ -110,50 +114,203 @@ const GameBoardPlayerTracker: React.FC<GameBoardPlayerTrackerProps> = ({
   return (
     <div data-testid={testId} data-compact={String(compact)} style={trackerContainerStyle}>
       <div title={t('gameBoard.board.statusLabel', { label })} style={trackerHeaderStyle}>{t('gameBoard.board.statusLabel', { label })}</div>
-      <div style={trackerStatRowStyle}>
-        <span style={{ ...trackerStatLabelBaseStyle, color: '#ef4444' }}>{t('gameBoard.board.stats.hp')}: {hp}</span>
-        {!readOnly && <div style={trackerButtonRowStyle}>
-          <button data-testid={`${testId}-hp-increase`} onClick={() => onAdjustStat('hp', 1)} style={trackerIncreaseButtonStyle}>+</button>
-          <button data-testid={`${testId}-hp-decrease`} onClick={() => onAdjustStat('hp', -1)} style={trackerDecreaseButtonStyle}>-</button>
-        </div>}
-      </div>
-      <div style={trackerStatRowStyle}>
-        <span style={{ ...trackerStatLabelBaseStyle, color: '#fbbf24' }}>{t('gameBoard.board.stats.ep')}: {ep}</span>
-        {!readOnly && <div style={trackerButtonRowStyle}>
-          <button data-testid={`${testId}-ep-increase`} onClick={() => onAdjustStat('ep', 1)} style={trackerIncreaseButtonStyle}>+</button>
-          <button data-testid={`${testId}-ep-decrease`} onClick={() => onAdjustStat('ep', -1)} style={trackerDecreaseButtonStyle}>-</button>
-        </div>}
-      </div>
-      <div style={trackerStatRowStyle}>
-        <span style={{ ...trackerStatLabelBaseStyle, color: '#facc15' }}>{t('gameBoard.board.stats.sep')}: {sep}</span>
-        {!readOnly && <div style={trackerButtonRowStyle}>
-          <button data-testid={`${testId}-sep-increase`} onClick={() => onAdjustStat('sep', 1)} style={trackerIncreaseButtonStyle}>+</button>
-          <button data-testid={`${testId}-sep-decrease`} onClick={() => onAdjustStat('sep', -1)} style={trackerDecreaseButtonStyle}>-</button>
-        </div>}
-      </div>
-      <div style={ppSectionStyle}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: isMobileCompact ? '0.12rem' : compact ? '0.2rem' : '0.16rem',
+        }}
+      >
         <div style={trackerStatRowStyle}>
-          {!readOnly && <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: compact ? '1px' : '2px', flexShrink: 0 }}>
-            <button data-testid={`${testId}-maxPp-increase`} onClick={() => onAdjustStat('maxPp', 1)} style={{ ...trackerIncreaseButtonStyle, width: compact ? '22px' : '24px', height: compact ? '20px' : '18px', minWidth: compact ? '22px' : '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, fontSize: compact ? '0.68rem' : '0.72rem' }}>+</button>
-            <span style={{ fontSize: compact ? '0.58rem' : '0.6rem', color: '#93c5fd', fontWeight: 'bold', lineHeight: 1 }}>{t('gameBoard.board.stats.max')}</span>
-            <button data-testid={`${testId}-maxPp-decrease`} onClick={() => onAdjustStat('maxPp', -1)} style={{ ...trackerDecreaseButtonStyle, width: compact ? '22px' : '24px', height: compact ? '20px' : '18px', minWidth: compact ? '22px' : '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, fontSize: compact ? '0.68rem' : '0.72rem' }}>-</button>
-          </div>}
-          <div style={{ textAlign: 'center', flex: 1 }}>
-            <div style={{ fontSize: compact ? '0.62rem' : '0.68rem', color: '#3b82f6', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: compact ? 0 : '-2px', lineHeight: 1.1 }}>{t('gameBoard.board.stats.playPoints')}</div>
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '2px' }}>
-              <span style={{ color: '#3b82f6', fontWeight: '900', fontSize: compact ? '1.28rem' : '1.45rem', lineHeight: 1 }}>{pp}</span>
-              <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: compact ? '0.78rem' : '0.9rem', fontWeight: 'bold' }}>/</span>
-              <span style={{ color: '#fff', fontSize: compact ? '1rem' : '1.15rem', fontWeight: 'bold', lineHeight: 1 }}>{maxPp}</span>
-            </div>
-          </div>
-          {!readOnly && <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? '2px' : '4px', alignItems: 'center', flexShrink: 0 }}>
-            <button data-testid={`${testId}-pp-increase`} onClick={() => onAdjustStat('pp', 1)} style={{ width: compact ? '24px' : '24px', height: compact ? '24px' : '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', borderRadius: '50%', cursor: 'pointer', fontSize: compact ? '0.86rem' : '0.86rem', color: '#3b82f6', fontWeight: 'bold' }}>∧</button>
-            <button data-testid={`${testId}-pp-decrease`} onClick={() => onAdjustStat('pp', -1)} style={{ width: compact ? '24px' : '24px', height: compact ? '24px' : '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', borderRadius: '50%', cursor: 'pointer', fontSize: compact ? '0.86rem' : '0.86rem', color: '#3b82f6', fontWeight: 'bold' }}>∨</button>
+          <span style={{ ...trackerStatLabelBaseStyle, color: '#ef4444' }}>{t('gameBoard.board.stats.hp')}: {hp}</span>
+          {!readOnly && <div style={trackerButtonRowStyle}>
+            <button data-testid={`${testId}-hp-increase`} onClick={() => onAdjustStat('hp', 1)} style={trackerIncreaseButtonStyle}>+</button>
+            <button data-testid={`${testId}-hp-decrease`} onClick={() => onAdjustStat('hp', -1)} style={trackerDecreaseButtonStyle}>-</button>
           </div>}
         </div>
+        <div style={trackerStatRowStyle}>
+          <span style={{ ...trackerStatLabelBaseStyle, color: '#fbbf24' }}>{t('gameBoard.board.stats.ep')}: {ep}</span>
+          {!readOnly && <div style={trackerButtonRowStyle}>
+            <button data-testid={`${testId}-ep-increase`} onClick={() => onAdjustStat('ep', 1)} style={trackerIncreaseButtonStyle}>+</button>
+            <button data-testid={`${testId}-ep-decrease`} onClick={() => onAdjustStat('ep', -1)} style={trackerDecreaseButtonStyle}>-</button>
+          </div>}
+        </div>
+        <div style={trackerStatRowStyle}>
+          <span style={{ ...trackerStatLabelBaseStyle, color: '#facc15' }}>{t('gameBoard.board.stats.sep')}: {sep}</span>
+          {!readOnly && <div style={trackerButtonRowStyle}>
+            <button data-testid={`${testId}-sep-increase`} onClick={() => onAdjustStat('sep', 1)} style={trackerIncreaseButtonStyle}>+</button>
+            <button data-testid={`${testId}-sep-decrease`} onClick={() => onAdjustStat('sep', -1)} style={trackerDecreaseButtonStyle}>-</button>
+          </div>}
+        </div>
+      </div>
+      <div style={ppSectionStyle}>
+        {isMobileCompact ? (
+          <div
+            data-testid={`${testId}-pp-section`}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.16rem',
+              width: '100%',
+            }}
+          >
+            <div
+              data-testid={`${testId}-pp-row`}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                width: '100%',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px' }}>
+                <span style={{ fontSize: '0.62rem', color: '#3b82f6', fontWeight: 'bold' }}>PP</span>
+                <span style={{ color: '#3b82f6', fontWeight: '900', fontSize: '1.05rem', lineHeight: 1 }}>{pp}</span>
+                <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.72rem', fontWeight: 'bold' }}>/</span>
+                <span style={{ color: '#fff', fontSize: '0.88rem', fontWeight: 'bold', lineHeight: 1 }}>{maxPp}</span>
+              </div>
+              {!readOnly && (
+                <div
+                  data-testid={`${testId}-pp-controls`}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    gap: '2px',
+                    alignItems: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <button
+                    data-testid={`${testId}-pp-increase`}
+                    onClick={() => onAdjustStat('pp', 1)}
+                    style={{
+                      width: '20px',
+                      height: '20px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: 'var(--bg-surface-elevated)',
+                      border: '1px solid var(--border-light)',
+                      borderRadius: '50%',
+                      cursor: 'pointer',
+                      fontSize: '0.74rem',
+                      color: '#3b82f6',
+                      fontWeight: 'bold',
+                      padding: 0,
+                    }}
+                  >
+                    ∧
+                  </button>
+                  <button
+                    data-testid={`${testId}-pp-decrease`}
+                    onClick={() => onAdjustStat('pp', -1)}
+                    style={{
+                      width: '20px',
+                      height: '20px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: 'var(--bg-surface-elevated)',
+                      border: '1px solid var(--border-light)',
+                      borderRadius: '50%',
+                      cursor: 'pointer',
+                      fontSize: '0.74rem',
+                      color: '#3b82f6',
+                      fontWeight: 'bold',
+                      padding: 0,
+                    }}
+                  >
+                    ∨
+                  </button>
+                </div>
+              )}
+            </div>
+            <div
+              data-testid={`${testId}-maxPp-row`}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                width: '100%',
+              }}
+            >
+              <span style={{ fontSize: '0.58rem', color: '#93c5fd', fontWeight: 'bold', lineHeight: 1 }}>
+                {t('gameBoard.board.stats.max')}: {maxPp}
+              </span>
+              {!readOnly && (
+                <div
+                  data-testid={`${testId}-maxPp-controls`}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: '2px',
+                    flexShrink: 0,
+                  }}
+                >
+                  <button
+                    data-testid={`${testId}-maxPp-increase`}
+                    onClick={() => onAdjustStat('maxPp', 1)}
+                    style={{
+                      ...trackerIncreaseButtonStyle,
+                      width: '18px',
+                      height: '18px',
+                      minWidth: '18px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: 0,
+                      fontSize: '0.62rem',
+                    }}
+                  >
+                    +
+                  </button>
+                  <button
+                    data-testid={`${testId}-maxPp-decrease`}
+                    onClick={() => onAdjustStat('maxPp', -1)}
+                    style={{
+                      ...trackerDecreaseButtonStyle,
+                      width: '18px',
+                      height: '18px',
+                      minWidth: '18px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: 0,
+                      fontSize: '0.62rem',
+                    }}
+                  >
+                    -
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div style={trackerStatRowStyle}>
+            {!readOnly && <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: compact ? '1px' : '2px', flexShrink: 0 }}>
+              <button data-testid={`${testId}-maxPp-increase`} onClick={() => onAdjustStat('maxPp', 1)} style={{ ...trackerIncreaseButtonStyle, width: compact ? '22px' : '24px', height: compact ? '20px' : '18px', minWidth: compact ? '22px' : '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, fontSize: compact ? '0.68rem' : '0.72rem' }}>+</button>
+              <span style={{ fontSize: compact ? '0.58rem' : '0.6rem', color: '#93c5fd', fontWeight: 'bold', lineHeight: 1 }}>{t('gameBoard.board.stats.max')}</span>
+              <button data-testid={`${testId}-maxPp-decrease`} onClick={() => onAdjustStat('maxPp', -1)} style={{ ...trackerDecreaseButtonStyle, width: compact ? '22px' : '24px', height: compact ? '20px' : '18px', minWidth: compact ? '22px' : '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, fontSize: compact ? '0.68rem' : '0.72rem' }}>-</button>
+            </div>}
+            <div style={{ textAlign: 'center', flex: 1 }}>
+              <div style={{ fontSize: compact ? '0.62rem' : '0.68rem', color: '#3b82f6', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: compact ? 0 : '-2px', lineHeight: 1.1 }}>{t('gameBoard.board.stats.playPoints')}</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '2px' }}>
+                <span style={{ color: '#3b82f6', fontWeight: '900', fontSize: compact ? '1.28rem' : '1.45rem', lineHeight: 1 }}>{pp}</span>
+                <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: compact ? '0.78rem' : '0.9rem', fontWeight: 'bold' }}>/</span>
+                <span style={{ color: '#fff', fontSize: compact ? '1rem' : '1.15rem', fontWeight: 'bold', lineHeight: 1 }}>{maxPp}</span>
+              </div>
+            </div>
+            {!readOnly && <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? '2px' : '4px', alignItems: 'center', flexShrink: 0 }}>
+              <button data-testid={`${testId}-pp-increase`} onClick={() => onAdjustStat('pp', 1)} style={{ width: compact ? '24px' : '24px', height: compact ? '24px' : '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', borderRadius: '50%', cursor: 'pointer', fontSize: compact ? '0.86rem' : '0.86rem', color: '#3b82f6', fontWeight: 'bold' }}>∧</button>
+              <button data-testid={`${testId}-pp-decrease`} onClick={() => onAdjustStat('pp', -1)} style={{ width: compact ? '24px' : '24px', height: compact ? '24px' : '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-light)', borderRadius: '50%', cursor: 'pointer', fontSize: compact ? '0.86rem' : '0.86rem', color: '#3b82f6', fontWeight: 'bold' }}>∨</button>
+            </div>}
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
 export default GameBoardPlayerTracker;
+
