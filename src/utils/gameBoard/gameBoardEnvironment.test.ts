@@ -104,4 +104,23 @@ describe('gameBoardEnvironment', () => {
       boardDensity: 'standard',
     });
   });
+
+  it('resolves large smartphone landscape viewports (width >= 900, height <= 500) to mobile layout profile', () => {
+    const environment = resolveBoardEnvironment({
+      viewportWidth: 932,
+      viewportHeight: 430,
+      matchMediaFn: createMatchMedia({
+        '(pointer: coarse)': true,
+        '(any-pointer: coarse)': true,
+        '(hover: hover)': false,
+        '(any-hover: hover)': false,
+      }),
+    });
+
+    expect(environment).toEqual({
+      inputProfile: 'coarse',
+      layoutProfile: 'mobile',
+      boardDensity: 'standard',
+    });
+  });
 });

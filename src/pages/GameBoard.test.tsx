@@ -3620,6 +3620,71 @@ describe('GameBoard', () => {
       });
     }
   });
+
+  it('uses a 3-column board shell, auto-collapses header tools, and supports Battle viewpoint mode in smartphone landscape', () => {
+    const originalInnerWidth = window.innerWidth;
+    const originalInnerHeight = window.innerHeight;
+    const originalMatchMedia = window.matchMedia;
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      writable: true,
+      value: 844,
+    });
+    Object.defineProperty(window, 'innerHeight', {
+      configurable: true,
+      writable: true,
+      value: 390,
+    });
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      writable: true,
+      value: vi.fn(() => ({ matches: true })),
+    });
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
+      mode: 'p2p',
+      isSoloMode: false,
+      gameState: createGameState([], { gameStatus: 'playing' }),
+    }));
+
+    try {
+      const { container } = render(<GameBoard />);
+      const shell = container.firstElementChild as HTMLElement;
+      const topSection = screen.getByTestId('board-section-top');
+      const topGrid = topSection.firstElementChild as HTMLElement;
+
+      expect(shell).toHaveAttribute('data-layout-profile', 'mobile');
+      expect(topGrid.style.gridTemplateColumns).not.toBe('1fr');
+
+      // Header tools row starts auto-collapsed on short landscape mobile screens
+      const moreToggle = screen.getByTestId('mobile-header-more-toggle');
+      expect(moreToggle).toHaveAttribute('aria-expanded', 'false');
+
+      // Switch to Battle viewpoint mode: keeps both fields visible while collapsing opponent upper rows
+      const battleTab = screen.getByTestId('mobile-viewpoint-battle');
+      fireEvent.click(battleTab);
+
+      expect(screen.getByTestId('board-section-top')).not.toHaveStyle({ display: 'none' });
+      expect(screen.getByTestId('board-section-bottom')).not.toHaveStyle({ display: 'none' });
+      expect(screen.getByTestId('top-board-upper-rows')).toHaveStyle({ display: 'none' });
+      expect(screen.getByTestId('mobile-opponent-summary-bar')).toBeInTheDocument();
+    } finally {
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        writable: true,
+        value: originalInnerWidth,
+      });
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        writable: true,
+        value: originalInnerHeight,
+      });
+      Object.defineProperty(window, 'matchMedia', {
+        configurable: true,
+        writable: true,
+        value: originalMatchMedia,
+      });
+    }
+  });
 });
 
 

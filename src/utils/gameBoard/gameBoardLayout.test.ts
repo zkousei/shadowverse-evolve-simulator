@@ -78,6 +78,23 @@ describe('gameBoardLayout', () => {
     expect(resolveBoardDisplayScale(390, 'coarse')).toBe(1);
   });
 
+  it('uses a 3-column horizontal board shell for smartphone landscape viewports and treats short coarse screens as mobile', () => {
+    expect(getLayoutProfileForViewportWidth(932, 'coarse', 430)).toBe('mobile');
+    expect(getLayoutProfileForViewportWidth(1024, 'coarse', 768)).toBe('tablet');
+
+    const landscapeLayout = resolveBoardLayout(844, 'coarse', 'standard', 390);
+    expect(landscapeLayout.profile).toBe('mobile');
+    expect(landscapeLayout.boardShellColumns).toBe(
+      `${landscapeLayout.topPanelWidth}px ${landscapeLayout.boardContentWidth}px ${landscapeLayout.sidePanelWidth}px`
+    );
+    expect(landscapeLayout.topPanelWidth + landscapeLayout.boardContentWidth + landscapeLayout.sidePanelWidth).toBeLessThanOrEqual(844);
+
+    const landscapeSpacing = resolveBoardLayoutSpacing('coarse', 'mobile', 'standard', 390);
+    expect(landscapeSpacing.fieldZoneMinHeight).toBe('88px');
+    expect(landscapeSpacing.stackZoneMinHeight).toBe('76px');
+    expect(landscapeSpacing.handZoneMinHeight).toBe('76px');
+  });
+
   it('fits tablet board shell within the viewport budget', () => {
     const viewportWidth = 1024;
     const layout = resolveBoardLayout(viewportWidth, 'coarse');

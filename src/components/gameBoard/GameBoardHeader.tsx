@@ -11,6 +11,7 @@ import { useGameBoardBoardDensity, useGameBoardInputProfile } from '../../contex
 type GameBoardHeaderProps = {
   isTabletLayout: boolean;
   isMobileLayout?: boolean;
+  isMobileCompactLandscape?: boolean;
   room: string;
   isSoloMode: boolean;
   isHost: boolean;
@@ -48,6 +49,7 @@ type GameBoardHeaderProps = {
 const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
   isTabletLayout,
   isMobileLayout = false,
+  isMobileCompactLandscape = false,
   room,
   isSoloMode,
   isHost,
@@ -85,7 +87,10 @@ const GameBoardHeader: React.FC<GameBoardHeaderProps> = ({
   const inputProfile = useGameBoardInputProfile();
   const boardDensity = useGameBoardBoardDensity();
   const [isEventsOpen, setIsEventsOpen] = React.useState(false);
-  const [isMobileToolsCollapsed, setIsMobileToolsCollapsed] = React.useState(false);
+  const [isMobileToolsCollapsed, setIsMobileToolsCollapsed] = React.useState(isMobileCompactLandscape);
+  React.useEffect(() => {
+    setIsMobileToolsCollapsed(isMobileCompactLandscape);
+  }, [isMobileCompactLandscape]);
   const isCompactControls = inputProfile === 'coarse';
   const keepInlineCompactHeader = isCompactControls && isTabletLayout;
   const compactHeaderColumnGap = keepInlineCompactHeader ? '0.42rem' : '0.5rem';

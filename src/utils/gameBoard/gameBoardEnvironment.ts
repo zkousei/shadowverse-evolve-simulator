@@ -65,7 +65,8 @@ export const resolveBoardEnvironment = ({
   const inputProfile = resolveEnvironmentInputProfile(viewportWidth, matchMediaFn);
   const layoutProfile = getLayoutProfileForViewportWidth(
     viewportWidth,
-    inputProfile as GameBoardLayoutInputProfile
+    inputProfile as GameBoardLayoutInputProfile,
+    viewportHeight
   );
   const boardDensity = getBoardDensityForViewportWidth(
     viewportWidth,
