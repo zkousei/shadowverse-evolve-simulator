@@ -728,7 +728,7 @@ const GameBoard: React.FC = () => {
       viewerRole,
       containerStyle: {
         minHeight: bottomHandZoneMinHeight,
-        ...(isMobileLayout ? { flexWrap: 'nowrap' as const, overflowX: 'auto' as const, justifyContent: 'flex-start' } : {}),
+        ...(isMobileLayout ? { flexWrap: 'nowrap' as const, overflowX: 'auto' as const, justifyContent: 'flex-start', marginTop: '0.35rem' } : {}),
       },
       isDebug,
     },

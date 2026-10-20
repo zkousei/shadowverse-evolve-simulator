@@ -48,7 +48,7 @@ export const getFieldZoneGapForInputProfile = (
 ): string => (
   inputProfile === 'coarse'
     ? layoutProfile === 'mobile'
-      ? '0.45rem'
+      ? '1.5rem'
       : '1.14rem'
     : boardDensity === 'overview'
       ? '1.9rem'

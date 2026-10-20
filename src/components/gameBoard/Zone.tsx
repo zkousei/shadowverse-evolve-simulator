@@ -186,8 +186,11 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
         minHeight: '160px',
         border: `2px dashed ${isOver ? 'var(--vivid-green-cyan)' : 'var(--border-light)'}`,
         backgroundColor: isOver ? 'rgba(0, 208, 132, 0.1)' : 'rgba(26, 29, 36, 0.5)',
-        borderRadius: 'var(--radius-md)',
-        padding: isCompactInput ? '0.32rem' : '0.5rem',
+        padding: isMobileHorizontalHandZone
+          ? '0.75rem 0.32rem 0.32rem'
+          : isCompactInput
+            ? '0.32rem'
+            : '0.5rem',
         position: 'relative',
         display: 'flex',
         flexDirection: isStack ? 'column' : 'row',
@@ -209,7 +212,7 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
       <div
         style={{
           position: 'absolute',
-          top: -6,
+          top: isMobileHorizontalHandZone ? 1 : -6,
           left: isCompactInput ? 7 : 10,
           zIndex: 20,
           display: isCompactInput ? 'grid' : 'inline-flex',

@@ -551,6 +551,18 @@ describe('Card', () => {
     expect(screen.queryByText('+1')).not.toBeInTheDocument();
   });
 
+  it('counter-rotates current stats badge when card is tapped so stats remain upright', () => {
+    render(
+      <Card
+        card={createCard({ isTapped: true, counters: { atk: 1, hp: 0 } })}
+        baseStats={{ atk: 3, hp: 4 }}
+      />
+    );
+
+    const badge = screen.getByTestId('current-stats-badge');
+    expect(badge).toHaveStyle({ transform: 'rotate(-90deg)' });
+  });
+
   it('shows raw counter overlay when current stats are unavailable', () => {
     render(
       <Card

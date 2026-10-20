@@ -76,9 +76,10 @@ const createCard = (id: string, overrides: Partial<CardInstance> = {}): CardInst
 const renderWithInputProfile = (
   profile: 'fine' | 'coarse',
   ui: React.ReactElement,
-  boardDensity: 'standard' | 'overview' = 'standard'
+  boardDensity: 'standard' | 'overview' = 'standard',
+  layoutProfile: 'desktop' | 'tablet' | 'mobile' = 'desktop'
 ) => render(
-  <GameBoardInputProfileProvider value={profile} boardDensity={boardDensity}>
+  <GameBoardInputProfileProvider value={profile} boardDensity={boardDensity} layoutProfile={layoutProfile}>
     {ui}
   </GameBoardInputProfileProvider>
 );
@@ -474,6 +475,25 @@ describe('Zone', () => {
       whiteSpace: 'nowrap',
     });
     expect(screen.getByText('1')).toHaveStyle({ fontSize: '0.46rem' });
+  });
+
+  it('positions the hand zone label chip inside the zone and pads the top on mobile so it does not overlap the row above', () => {
+    renderWithInputProfile(
+      'coarse',
+      <Zone
+        id="hand-host"
+        label="手札"
+        cards={[createCard('card-1', { zone: 'hand-host' })]}
+      />,
+      'standard',
+      'mobile'
+    );
+
+    const zone = screen.getByTestId('zone-hand-host');
+    expect(zone).toHaveStyle({ paddingTop: '0.75rem' });
+
+    const labelChip = screen.getByText('手札').parentElement as HTMLElement;
+    expect(labelChip).toHaveStyle({ top: '1px' });
   });
 });
 

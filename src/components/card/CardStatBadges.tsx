@@ -8,6 +8,7 @@ export interface CardStatBadgesProps {
   showGenericCounter: boolean;
   genericCounterValue: number;
   counterLabel: string;
+  isTapped?: boolean;
 }
 
 export const CardStatBadges: React.FC<CardStatBadgesProps> = ({
@@ -18,6 +19,7 @@ export const CardStatBadges: React.FC<CardStatBadgesProps> = ({
   showGenericCounter,
   genericCounterValue,
   counterLabel,
+  isTapped = false,
 }) => {
   return (
     <>
@@ -42,6 +44,9 @@ export const CardStatBadges: React.FC<CardStatBadgesProps> = ({
             position: 'absolute',
             top: 6,
             right: 6,
+            zIndex: 25,
+            transform: isTapped ? 'rotate(-90deg)' : undefined,
+            transformOrigin: 'center center',
             background: 'rgba(15, 23, 42, 0.92)',
             border: '1px solid rgba(255,255,255,0.18)',
             borderRadius: '999px',

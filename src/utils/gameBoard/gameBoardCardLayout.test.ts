@@ -28,10 +28,10 @@ describe('gameBoardCardLayout', () => {
     expect(getExZoneGapForInputProfile('coarse')).toBe('0.36rem');
   });
 
-  it('uses a slimmer mobile card size and tighter field gap only when layoutProfile is mobile', () => {
+  it('uses a slimmer mobile card size and tapped-safe field gap only when layoutProfile is mobile', () => {
     expect(mobileCardSize).toEqual({ width: 60, height: 84 });
     expect(getCardSizeForInputProfile('coarse', 'standard', 'mobile')).toEqual(mobileCardSize);
-    expect(getFieldZoneGapForInputProfile('coarse', 'standard', 'mobile')).toBe('0.45rem');
+    expect(getFieldZoneGapForInputProfile('coarse', 'standard', 'mobile')).toBe('1.5rem');
   });
 
   it('uses overview desktop sizing without switching to coarse input behavior', () => {

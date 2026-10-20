@@ -429,6 +429,7 @@ const Card: React.FC<Props> = ({ card, baseStats, detail, displayCounters, hideC
             showGenericCounter={!isHidden && !card.isFlipped && genericCounterValue > 0}
             genericCounterValue={genericCounterValue}
             counterLabel={t('gameBoard.card.counter')}
+            isTapped={card.isTapped}
           />
 
           <CardHoverQuickActions
