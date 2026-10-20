@@ -214,12 +214,16 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
           position: 'absolute',
           top: isMobileZone ? 1 : -6,
           left: isCompactInput ? 7 : 10,
-          zIndex: 20,
+          zIndex: 30,
           display: isCompactInput ? 'grid' : 'inline-flex',
           gridTemplateColumns: isCompactInput ? 'minmax(0, 1fr) auto' : undefined,
           alignItems: 'center',
           gap: zoneLabelChipGap,
-          maxWidth: isOverviewDesktop ? 'calc(100% - 12px)' : 'calc(100% - 20px)',
+          maxWidth: isMobileZone
+            ? 'calc(100% - 12px)'
+            : isOverviewDesktop
+              ? 'calc(100% - 12px)'
+              : 'calc(100% - 20px)',
           padding: zoneLabelChipPadding,
           background: 'rgba(17, 24, 39, 0.92)',
           border: '1px solid rgba(255,255,255,0.16)',
@@ -289,7 +293,16 @@ const Zone: React.FC<Props> = ({ id, label, cards, cardStatLookup, cardDetailLoo
       {(() => {
         if (isStack && topLevelCards.length > 0) {
           return (
-            <div style={{ position: 'relative', width: `${cardSize.width}px`, height: `${cardSize.height}px` }}>
+            <div
+              data-testid="zone-stack-container"
+              style={{
+                position: 'relative',
+                width: `${cardSize.width}px`,
+                height: `${cardSize.height}px`,
+                isolation: 'isolate',
+                zIndex: 1,
+              }}
+            >
               {topLevelCards.map((card, index) => {
                 // To make index 0 (Top card) appear at the absolute top of the stack:
                 // 1. Give it the highest zIndex

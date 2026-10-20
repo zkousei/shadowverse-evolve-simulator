@@ -512,6 +512,31 @@ describe('Zone', () => {
     const labelChip = screen.getByText('Main Deck').parentElement as HTMLElement;
     expect(labelChip).toHaveStyle({ top: '1px' });
   });
+
+  it('isolates the stack card container and keeps label chip above stack cards in a 40-card deck', () => {
+    const cards = Array.from({ length: 40 }, (_, i) => createCard(`card-${i}`, { zone: 'mainDeck-guest' }));
+    renderWithInputProfile(
+      'coarse',
+      <Zone
+        id="mainDeck-guest"
+        label="Main Deck"
+        cards={cards}
+        layout="stack"
+      />,
+      'standard',
+      'mobile'
+    );
+
+    const labelChip = screen.getByText('Main Deck').parentElement as HTMLElement;
+    expect(Number(labelChip.style.zIndex)).toBeGreaterThanOrEqual(30);
+
+    const mockCard = screen.getAllByTestId('mock-card')[0];
+    const stackCardWrapper = mockCard.parentElement?.parentElement as HTMLElement;
+    expect(stackCardWrapper).toHaveStyle({
+      isolation: 'isolate',
+      zIndex: '1',
+    });
+  });
 });
 
 it('makes zone select-all interactive even though its label chip is non-interactive', () => {
