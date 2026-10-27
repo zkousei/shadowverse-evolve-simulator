@@ -1,5 +1,247 @@
 [
   {
+    "id": "CP05-001",
+    "name": "魔眼の狩人・ソーン",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-001.jpg",
+    "class": "エルフ",
+    "type": "フォロワー",
+    "subtype": "グラブル・十天衆・光属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "LG",
+    "ability_text": "これをプレイする際、場の元のコスト5のグラブル・フォロワー2体をアクト：コストを-5する。\n【最終上限解放可能】\nこれが上限解放したとき、2枚引く。自分の手札1枚を捨てる。\nこれが最終上限解放したとき、これは【疾走】を持つ。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "5",
+    "atk": "3",
+    "hp": "3"
+  },
+  {
+    "id": "CP05-002",
+    "name": "調和の舞手・ユエル＆ソシエ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-002.jpg",
+    "class": "エルフ",
+    "type": "フォロワー",
+    "subtype": "グラブル・火属性・水属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "LG",
+    "ability_text": "【ファンファーレ】手札の火属性・カード3枚を公開：相手の場のフォロワー1体を選ぶ。それに3ダメージ。それのリーダーに3ダメージ。\n【クイック】【起動】コスト1手札のこれを捨てる：相手の場のフォロワー1体を選ぶ。それに4ダメージ。この能力はこのターン、自分が他の【クイック】【起動】能力をプレイしていたなら使える。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "3",
+    "atk": "3",
+    "hp": "3"
+  },
+  {
+    "id": "CP05-011",
+    "name": "天禀の射手・メーテラ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-011.jpg",
+    "class": "エルフ",
+    "type": "フォロワー",
+    "subtype": "グラブル・風属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "SR",
+    "ability_text": "これが上限解放したとき、相手の場のフォロワー1体を選ぶ。それに5ダメージ。\n自分のエンドフェイズが来たとき、このターン、自分の場のフォロワーが上限解放や最終上限解放を合わせて3回以上していたなら、相手のリーダーすべてに5ダメージ。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "4",
+    "atk": "3",
+    "hp": "3"
+  },
+  {
+    "id": "CP05-013",
+    "name": "緋焔の踊り子・アンスリア",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-013.jpg",
+    "class": "エルフ",
+    "type": "フォロワー",
+    "subtype": "グラブル・火属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "BR",
+    "ability_text": "【進化】コスト1：これは進化する。\n【ファンファーレ】手札の火属性・カード3枚を公開：『火晶のエレメント』1枚をEXエリアに置く。自分のリーダーは体力+2する。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "3",
+    "atk": "3",
+    "hp": "3",
+    "related_cards": [
+      {
+        "id": "CP05-014",
+        "name": "緋焔の踊り子・アンスリア"
+      },
+      {
+        "id": "CP05-T09",
+        "name": "火晶のエレメント"
+      }
+    ]
+  },
+  {
+    "id": "CP05-014",
+    "name": "緋焔の踊り子・アンスリア",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-014.jpg",
+    "class": "エルフ",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "グラブル・火属性",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "BR",
+    "ability_text": "【進化時】相手の場のフォロワー1体を選ぶ。それに3ダメージ。『火晶のエレメント』1枚をEXエリアに置く。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "-",
+    "atk": "4",
+    "hp": "4",
+    "related_cards": [
+      {
+        "id": "CP05-013",
+        "name": "緋焔の踊り子・アンスリア"
+      },
+      {
+        "id": "CP05-T09",
+        "name": "火晶のエレメント"
+      }
+    ]
+  },
+  {
+    "id": "CP05-018",
+    "name": "箒星",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-018.jpg",
+    "class": "エルフ",
+    "type": "スペル",
+    "subtype": "グラブル・風属性",
+    "card_kind_normalized": "spell",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "BR",
+    "ability_text": "これをプレイする際、コストを-Xする。Xは「このターン中に自分の場のフォロワーが上限解放や最終上限解放をした回数」である。\n相手の場のフォロワー1体を選ぶ。それに4ダメージ。『風晶のエレメント』1枚をEXエリアに置く。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "3"
+  },
+  {
+    "id": "CP05-021",
+    "name": "光の理・ル・オー",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-021.jpg",
+    "class": "ロイヤル",
+    "type": "フォロワー",
+    "subtype": "グラブル・六竜・光属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "LG",
+    "ability_text": "【進化】コスト1：これは進化する。\n【ファンファーレ】『光晶のエレメント』1枚をEXエリアに置く。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "5",
+    "atk": "3",
+    "hp": "3",
+    "related_cards": [
+      {
+        "id": "CP05-022",
+        "name": "光の理・ル・オー"
+      }
+    ]
+  },
+  {
+    "id": "CP05-022",
+    "name": "光の理・ル・オー",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-022.jpg",
+    "class": "ロイヤル",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "グラブル・六竜・光属性",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "LG",
+    "ability_text": "【進化時】自分の墓場の元のコスト5のグラブル・フォロワー1枚を選ぶ。それを場に出す。\n【超進化時】これは【オーラ】と「相手の場の【疾走】を持つフォロワーが攻撃したとき、それは攻撃力-5する」を持つ。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "-",
+    "atk": "4",
+    "hp": "4",
+    "related_cards": [
+      {
+        "id": "CP05-021",
+        "name": "光の理・ル・オー"
+      }
+    ]
+  },
+  {
+    "id": "CP05-033",
+    "name": "眠れる輝竜・アーサー",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-033.jpg",
+    "class": "ロイヤル",
+    "type": "フォロワー",
+    "subtype": "グラブル・風属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "BR",
+    "ability_text": "このターン、自分の場のフォロワーが上限解放や最終上限解放を合わせて3回以上していたなら、これは【突進】【指定攻撃】【必殺】を持つ。\n【ファンファーレ】自分の場に『眠れる獅子・モルドレッド』がいないなら、自分のデッキから『眠れる獅子・モルドレッド』1枚を探し、場に出す。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "2",
+    "atk": "1",
+    "hp": "2",
+    "related_cards": [
+      {
+        "id": "CP05-034",
+        "name": "眠れる獅子・モルドレッド"
+      }
+    ]
+  },
+  {
+    "id": "CP05-034",
+    "name": "眠れる獅子・モルドレッド",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-034.jpg",
+    "class": "ロイヤル",
+    "type": "フォロワー",
+    "subtype": "グラブル・風属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "BR",
+    "ability_text": "このターン、自分の場のフォロワーが上限解放や最終上限解放を合わせて3回以上していたなら、これは【疾走】を持つ。\n【ファンファーレ】自分の場に『眠れる輝竜・アーサー』がいないなら、自分のデッキから『眠れる輝竜・アーサー』1枚を探し、場に出す。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "2",
+    "atk": "2",
+    "hp": "1",
+    "related_cards": [
+      {
+        "id": "CP05-033",
+        "name": "眠れる輝竜・アーサー"
+      }
+    ]
+  },
+  {
     "id": "CP05-037",
     "name": "魔弾の射手・エッセル",
     "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-037.png",
@@ -18,6 +260,84 @@
     "cost": "3",
     "atk": "2",
     "hp": "4"
+  },
+  {
+    "id": "CP05-041",
+    "name": "開闢の錬金術師・カリオストロ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-041.jpg",
+    "class": "ウィッチ",
+    "type": "フォロワー",
+    "subtype": "グラブル・土属性・光属性・闇属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "GR",
+    "ability_text": "【進化】コスト1：これは進化する。\n【ファンファーレ】自分のPP最大値が7以上なら、『アルス・マグナ』1枚と『ヒヒイロカネ』1枚をEXエリアに置く。\n【起動】これをアクト手札のグラブル・カード1枚を捨てる：相手の場のフォロワー1体を選ぶ。それに2ダメージ。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "2",
+    "atk": "2",
+    "hp": "2",
+    "related_cards": [
+      {
+        "id": "CP05-042",
+        "name": "開闢の錬金術師・カリオストロ"
+      },
+      {
+        "id": "CP05-T08",
+        "name": "アルス・マグナ"
+      },
+      {
+        "id": "CP05-T15",
+        "name": "ヒヒイロカネ"
+      }
+    ]
+  },
+  {
+    "id": "CP05-042",
+    "name": "開闢の錬金術師・カリオストロ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-042.jpg",
+    "class": "ウィッチ",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "グラブル・土属性・光属性・闇属性",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "GR",
+    "ability_text": "【進化時】相手の場のフォロワー1体を選ぶ。それに2ダメージ。\n【起動】これをアクト手札のグラブル・カード1枚を捨てる：相手の場のフォロワー1体を選ぶ。それに2ダメージ。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "-",
+    "atk": "3",
+    "hp": "3",
+    "related_cards": [
+      {
+        "id": "CP05-041",
+        "name": "開闢の錬金術師・カリオストロ"
+      }
+    ]
+  },
+  {
+    "id": "CP05-044",
+    "name": "コロッサス・マグナ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-044.jpg",
+    "class": "ウィッチ",
+    "type": "アミュレット",
+    "subtype": "グラブル・火属性",
+    "card_kind_normalized": "amulet",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "GR",
+    "ability_text": "【ファンファーレ】手札の火属性・カード3枚を公開：相手の場のフォロワー1体を選ぶ。それに2ダメージ。\n【起動】コスト1これをアクト手札の火属性・カード1枚を公開：相手の場のフォロワー1体を選ぶ。それに1ダメージ。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "1"
   },
   {
     "id": "CP05-048",
@@ -154,6 +474,452 @@
     ]
   },
   {
+    "id": "CP05-058",
+    "name": "どこにでもいるフツーの女の子・メグ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-058.jpg",
+    "class": "ドラゴン",
+    "type": "フォロワー",
+    "subtype": "グラブル・闇属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "GR",
+    "ability_text": "【進化】コスト1：これは進化する。\n【ファンファーレ】手札の闇属性・カード1枚を捨てる：1枚引く。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "2",
+    "atk": "1",
+    "hp": "1",
+    "related_cards": [
+      {
+        "id": "CP05-059",
+        "name": "どこにでもいるフツーの女の子・メグ"
+      }
+    ]
+  },
+  {
+    "id": "CP05-059",
+    "name": "どこにでもいるフツーの女の子・メグ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-059.jpg",
+    "class": "ドラゴン",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "グラブル・闇属性",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "GR",
+    "ability_text": "【進化時】自分の墓場の「これと同名を除く元のコスト2以下の闇属性・フォロワー」1枚を選ぶ。それを場に出す。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "-",
+    "atk": "2",
+    "hp": "2",
+    "related_cards": [
+      {
+        "id": "CP05-058",
+        "name": "どこにでもいるフツーの女の子・メグ"
+      }
+    ]
+  },
+  {
+    "id": "CP05-065",
+    "name": "メグの親友・まりっぺ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-065.jpg",
+    "class": "ドラゴン",
+    "type": "フォロワー",
+    "subtype": "グラブル・闇属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "SR",
+    "ability_text": "自分の闇属性・カードの能力によってこれを自分の手札から捨てたとき、『闇晶のエレメント』1枚をEXエリアに置く。1枚引く。\n【ファンファーレ】『闇晶のエレメント』1枚をEXエリアに置く。自分の場に『どこにでもいるフツーの女の子・メグ』がいるなら、自分のリーダーは体力+2する。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "2",
+    "atk": "2",
+    "hp": "2",
+    "related_cards": [
+      {
+        "id": "CP05-058",
+        "name": "どこにでもいるフツーの女の子・メグ"
+      }
+    ]
+  },
+  {
+    "id": "CP05-066",
+    "name": "灼脚の麗姫・アリーザ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-066.jpg",
+    "class": "ドラゴン",
+    "type": "フォロワー",
+    "subtype": "グラブル・火属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "BR",
+    "ability_text": "【進化】コスト1：これは進化する。\n【ファンファーレ】自分のデッキの上1枚を見る。その中から、火属性・カード1枚を公開して手札に加えてよい。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "2",
+    "atk": "2",
+    "hp": "2",
+    "related_cards": [
+      {
+        "id": "CP05-067",
+        "name": "灼脚の麗姫・アリーザ"
+      }
+    ]
+  },
+  {
+    "id": "CP05-067",
+    "name": "灼脚の麗姫・アリーザ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-067.jpg",
+    "class": "ドラゴン",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "グラブル・火属性",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "BR",
+    "ability_text": "【攻撃時】『火晶のエレメント』1枚をEXエリアに置く。\n【進化時】相手の場のフォロワー1体を選ぶ。それをアクトする。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "-",
+    "atk": "3",
+    "hp": "3",
+    "related_cards": [
+      {
+        "id": "CP05-066",
+        "name": "灼脚の麗姫・アリーザ"
+      },
+      {
+        "id": "CP05-T09",
+        "name": "火晶のエレメント"
+      }
+    ]
+  },
+  {
+    "id": "CP05-068",
+    "name": "古今独歩の大拳豪・ガンダゴウザ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-068.jpg",
+    "class": "ドラゴン",
+    "type": "フォロワー",
+    "subtype": "グラブル・火属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "BR",
+    "ability_text": "これを自分の手札から公開したとき、自分の場の火属性・フォロワー1体を選ぶ。それは【突進】【指定攻撃】を持つ。\n【突進】【指定攻撃】\n【攻撃時】手札の火属性・カード3枚を公開：相手の場のフォロワー1体を選ぶ。それとそれのリーダーに6ダメージ。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "7",
+    "atk": "6",
+    "hp": "5"
+  },
+  {
+    "id": "CP05-070",
+    "name": "オンリー・ワン・ウィッシュ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-070.jpg",
+    "class": "ドラゴン",
+    "type": "スペル",
+    "subtype": "グラブル・光属性",
+    "card_kind_normalized": "spell",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "BR",
+    "ability_text": "自分のデッキの上1枚を公開する。光属性・カードを公開したなら、『光晶のエレメント』1枚をEXエリアに置く。自分のPP最大値を+1する。自分のPP最大値が10なら、自分のデッキから『大いなる調停者・ゾーイ』1枚を探し、手札に加える。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "2",
+    "related_cards": [
+      {
+        "id": "CP05-055",
+        "name": "大いなる調停者・ゾーイ"
+      }
+    ]
+  },
+  {
+    "id": "CP05-078",
+    "name": "生滅の技巧・ネハン",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-078.jpg",
+    "class": "ナイトメア",
+    "type": "フォロワー",
+    "subtype": "グラブル・光属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "GR",
+    "ability_text": "【ファンファーレ】自分のデッキの上5枚を見る。その中から、「これと同名を除く元のコスト5のグラブル・フォロワー」1枚を場に出してよい。残りを好きな順にデッキの下に置く。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "5",
+    "atk": "2",
+    "hp": "3"
+  },
+  {
+    "id": "CP05-082",
+    "name": "冥闇の剛刃・バザラガ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-082.jpg",
+    "class": "ナイトメア",
+    "type": "フォロワー",
+    "subtype": "グラブル・闇属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "SR",
+    "ability_text": "自分の闇属性・カードの能力によってこれを自分の手札から捨てたとき、コスト1：相手の場のフォロワー1体を選ぶ。それに3ダメージ。\nこれが上限解放したとき、これは「【ラストワード】これを場に出す」を持つ。\n【ファンファーレ】相手の場のフォロワー1体を選ぶ。それを破壊する。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "7",
+    "atk": "4",
+    "hp": "7"
+  },
+  {
+    "id": "CP05-095",
+    "name": "七宝石の姫・レ・フィーエ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-095.jpg",
+    "class": "ビショップ",
+    "type": "フォロワー",
+    "subtype": "グラブル・光属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "GR",
+    "ability_text": "【守護】\n自分のエンドフェイズが来たとき、自分のリーダーは体力+1する。自分の場の元のコスト5のグラブル・フォロワーが3体以上なら、代わりに体力+3する。\n【ファンファーレ】相手の場のフォロワー1体を選ぶ。それを消滅させる。『光晶のエレメント』1枚をEXエリアに置く。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "5",
+    "atk": "3",
+    "hp": "5"
+  },
+  {
+    "id": "CP05-097",
+    "name": "魔杖の外科医・ティコ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-097.jpg",
+    "class": "ビショップ",
+    "type": "フォロワー",
+    "subtype": "グラブル・光属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "SR",
+    "ability_text": "【進化】コスト1：これは進化する。\n【ファンファーレ】『光晶のエレメント』1枚をEXエリアに置く。自分の場に元のコスト5のグラブル・フォロワーがいるなら、自分のリーダーは体力+2する。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "1",
+    "atk": "1",
+    "hp": "1",
+    "related_cards": [
+      {
+        "id": "CP05-098",
+        "name": "魔杖の外科医・ティコ"
+      }
+    ]
+  },
+  {
+    "id": "CP05-098",
+    "name": "魔杖の外科医・ティコ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-098.jpg",
+    "class": "ビショップ",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "グラブル・光属性",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "SR",
+    "ability_text": "【進化時】『光晶のエレメント』1枚をEXエリアに置く。自分の場に元のコスト5のグラブル・フォロワーがいるなら、自分のリーダーは体力+2する。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "-",
+    "atk": "2",
+    "hp": "2",
+    "related_cards": [
+      {
+        "id": "CP05-097",
+        "name": "魔杖の外科医・ティコ"
+      }
+    ]
+  },
+  {
+    "id": "CP05-101",
+    "name": "星跡の巡礼者・ソフィア",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-101.jpg",
+    "class": "ビショップ",
+    "type": "フォロワー",
+    "subtype": "グラブル・水属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "BR",
+    "ability_text": "【進化】コスト1：これは進化する。\n【守護】\n【ファンファーレ】『水晶のエレメント』1枚をEXエリアに置く。\n【クイック】【起動】コスト3手札のこれを捨てる：2枚引く。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "3",
+    "atk": "3",
+    "hp": "3",
+    "related_cards": [
+      {
+        "id": "CP05-102",
+        "name": "星跡の巡礼者・ソフィア"
+      }
+    ]
+  },
+  {
+    "id": "CP05-102",
+    "name": "星跡の巡礼者・ソフィア",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-102.jpg",
+    "class": "ビショップ",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "グラブル・水属性",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "BR",
+    "ability_text": "【守護】（これが場に出たときか、自分のエンドフェイズにこれをアクトできる。相手は、アクト状態の【守護】を持つフォロワー以外を攻撃できない）\n【進化時】自分のデッキから元のコスト3以下の【クイック】【起動】能力を持つフォロワー1枚を探し、場に出す。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "-",
+    "atk": "4",
+    "hp": "4",
+    "related_cards": [
+      {
+        "id": "CP05-101",
+        "name": "星跡の巡礼者・ソフィア"
+      }
+    ]
+  },
+  {
+    "id": "CP05-104",
+    "name": "アフェクション・オース",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-104.jpg",
+    "class": "ビショップ",
+    "type": "スペル",
+    "subtype": "グラブル・光属性",
+    "card_kind_normalized": "spell",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "BR",
+    "ability_text": "【クイック】\n相手の場のフォロワー1体を選ぶ。それに2ダメージ。『光晶のエレメント』1枚をEXエリアに置く。自分の手札の元のコスト5のグラブル・フォロワー1枚を捨ててよい。そうしたなら、自分のデッキから『狂恋の華鎧・ヴィーラ』1枚を探し、手札に加える。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "1"
+  },
+  {
+    "id": "CP05-107",
+    "name": "グラン＆ジータ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-107.jpg",
+    "class": "ニュートラル",
+    "type": "フォロワー",
+    "subtype": "グラブル・全属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "LG",
+    "ability_text": "これが上限解放したとき、コスト3：相手の場のフォロワー1体を選ぶ。それに4ダメージ。それのリーダーに2ダメージ。『ヒヒイロカネ』1枚をEXエリアに置く。\n【ファンファーレ】手札のグラブル・カード1枚を捨てる：2枚引く。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "2",
+    "atk": "2",
+    "hp": "3",
+    "related_cards": [
+      {
+        "id": "CP05-T15",
+        "name": "ヒヒイロカネ"
+      }
+    ]
+  },
+  {
+    "id": "CP05-108",
+    "name": "小さき赤き竜・ビィ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-108.jpg",
+    "class": "ニュートラル",
+    "type": "フォロワー",
+    "subtype": "グラブル・全属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "GR",
+    "ability_text": "【進化】コスト1：これは進化する。\n【ファンファーレ】自分の場に『グラン＆ジータ』がいるなら、これは進化する。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "1",
+    "atk": "1",
+    "hp": "1",
+    "related_cards": [
+      {
+        "id": "CP05-107",
+        "name": "グラン＆ジータ"
+      },
+      {
+        "id": "CP05-109",
+        "name": "小さき赤き竜・ビィ"
+      }
+    ]
+  },
+  {
+    "id": "CP05-109",
+    "name": "小さき赤き竜・ビィ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-109.jpg",
+    "class": "ニュートラル",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "グラブル・全属性",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "GR",
+    "ability_text": "【進化時】『ヒヒイロカネ』1枚をEXエリアに置く。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "-",
+    "atk": "2",
+    "hp": "2",
+    "related_cards": [
+      {
+        "id": "CP05-108",
+        "name": "小さき赤き竜・ビィ"
+      },
+      {
+        "id": "CP05-T15",
+        "name": "ヒヒイロカネ"
+      }
+    ]
+  },
+  {
     "id": "CP05-110",
     "name": "蒼の少女・ルリア",
     "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-110.png",
@@ -172,6 +938,23 @@
     "cost": "1",
     "atk": "1",
     "hp": "1"
+  },
+  {
+    "id": "CP05-T08",
+    "name": "アルス・マグナ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-T08.jpg",
+    "class": "ウィッチ",
+    "type": "スペル・トークン",
+    "subtype": "グラブル・土属性・光属性・闇属性",
+    "card_kind_normalized": "token_spell",
+    "deck_section": "token",
+    "is_token": true,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "ability_text": "相手の場のフォロワー1体を選ぶ。それとそれのリーダーに2ダメージ。自分のリーダーは体力+2する。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "1"
   },
   {
     "id": "CP05-T09",
