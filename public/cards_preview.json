@@ -804,6 +804,24 @@
     "hp": "5"
   },
   {
+    "id": "CP05-096",
+    "name": "シュヴァリエ・マグナ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-096.png",
+    "class": "ビショップ",
+    "type": "アミュレット",
+    "subtype": "グラブル・光属性",
+    "card_kind_normalized": "amulet",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "GR",
+    "ability_text": "【ファンファーレ】自分のデッキの上1枚を公開する。光属性・カードを公開したなら、自分のPP最大値を+1する。\n【起動】これを墓場に置く：『光晶のエレメント』1枚をEXエリアに置く。1枚引く。この能力は自分の場の元のコスト5のグラブル・フォロワーが3体以上なら使える。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "3"
+  },
+  {
     "id": "CP05-097",
     "name": "魔杖の外科医・ティコ",
     "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-097.jpg",
@@ -854,6 +872,26 @@
         "name": "魔杖の外科医・ティコ"
       }
     ]
+  },
+  {
+    "id": "CP05-099",
+    "name": "星界の艇人・ノア",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-099.png",
+    "class": "ビショップ",
+    "type": "フォロワー",
+    "subtype": "グラブル・光属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "SR",
+    "ability_text": "【守護】（これが場に出たときか、自分のエンドフェイズにこれをアクトできる。相手は、アクト状態の【守護】を持つフォロワー以外を攻撃できない）\n【ファンファーレ】これは攻撃力+X/体力+Xする。Xは「自分のPP最大値」である。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "5",
+    "atk": "1",
+    "hp": "1"
   },
   {
     "id": "CP05-101",
