@@ -2,7 +2,7 @@
 
 ## 画面表示とデプロイ
 
-Home のフッターは `1.1.0 (74e05d3)` のように表示します。
+Home のフッターは `1.1.1 (abcdef1)` のように表示します。
 
 - リリース番号の正は `package.json` の `version` です。`package-lock.json` のルート番号も揃えます。
 - ビルド識別子は `VERCEL_GIT_COMMIT_SHA` の先頭7文字です。値がない・不正な場合はローカルの Git HEAD を使います。
@@ -29,7 +29,8 @@ Vercel では `Automatically expose System Environment Variables` を有効に�
 6. GitHub のリリースノートに主な変更と互換性上の注意を記載します。
 7. Vercel のデプロイ対象コミットと Home 表示を確認します。
 
-今回の導入は `v1.1.0` のリリースに含め、package / lockfile の番号を `1.1.0` に揃えています。
+自動バージョン表示と保存形式番号は `v1.1.0` で導入しました。
+`v1.1.1` では旧形式の移行処理を削除し、package / lockfile の番号を `1.1.1` に揃えています。
 過去のタグは付け替えません。
 自動採番・自動タグ作成は導入していません。
 
@@ -41,13 +42,15 @@ Vercel では `Automatically expose System Environment Variables` を有効に�
 - 対応する形式番号なら、リリース番号・ビルド識別子が変わっても既存の状態検証・正規化を通して復元します。
 - 未対応の形式番号・不正な保存データは復元しません。現在の起動処理はそれらを削除します。
 - 保存形式や値の意味を互換性なく変更する場合は `SESSION_SCHEMA_VERSION` を上げ、必要なら明示的な移行処理を追加します。
-- 形式番号のない旧データは、保存元が既知の旧リリース `1.0.1`、または現在のリリース番号と一致する場合だけ schema 1 として移行します。先頭の `v` は無視し、状態の検証・既存の正規化も実行します。
-- 旧 `v1.0.1` / `1.0.1` の移行対象は、今回の `1.1.0` への採番後も維持します。旧 `1.0.0` や独自の `APP_VERSION` で保存したデータは移行しません。
+- 形式番号のない旧データは、`appVersion` の値にかかわらず復元しません。v1.1.0 で提供した旧形式の移行処理は削除しています。
 
-新しい保存キーは `sv-evolve:host-session:versioned:<room>` です。このキーは将来の形式変更でも維持します。
-新しい保存が存在する場合は、読めなくても旧キーへフォールバックしません。
-旧キーは新キーが存在しない場合だけ読み、復元後の保存・破棄・無効データの削除時に除去します。
-新規保存が失敗した場合も、古い復元地点が残らないよう旧キーを削除します。
+保存キーは引き続き `sv-evolve:host-session:versioned:<room>` です。このキーは将来の形式変更でも維持します。
+ホストとして部屋を開いた際、その部屋の旧キー `sv-evolve:host-session:<room>` だけを削除します。
+旧キーは読み込まず、新形式の保存がない場合もフォールバックしません。
+新形式の保存・復元・破棄と、同じ schema 1 内での状態の正規化は維持します。
+旧キーの削除に失敗しても、新形式の保存・復元には影響させません。
+他の部屋のキー、保存デッキ、その他のストレージには触れません。
+部屋 ID が `versioned:` で始まる場合は新形式のキーと衝突するため、旧キーの削除を行いません。
 
 形式番号導入前のアプリへ戻すと、新しいキーは読めないため新形式の対戦は復元できません。
 形式番号導入後のアプリ同士では、対応する番号のものだけ復元します。
@@ -57,5 +60,5 @@ Vercel では `Automatically expose System Environment Variables` を有効に�
 
 - `build/appVersion.test.ts`: 環境ごとの取得優先順位、フォールバック、実際の Vite 定義
 - `src/pages/Home.test.tsx`: リリース番号とビルド識別子の表示
-- `src/utils/gameBoard/gameBoardSavedSession.test.ts`: 保存形式、旧データ判定、保存キーの選択
-- `src/hooks/gameBoard/useGameBoardLogic.test.tsx`: 復元・移行・再保存と画面状態の連携
+- `src/utils/gameBoard/gameBoardSavedSession.test.ts`: 保存形式、旧データの拒否、旧キーだけの削除
+- `src/hooks/gameBoard/useGameBoardLogic.test.tsx`: 復元・旧キー削除・再保存と画面状態の連携

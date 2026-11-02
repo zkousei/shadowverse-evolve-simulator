@@ -135,22 +135,28 @@ const isInitialGuestHud = (hud: SyncState['guest']): boolean => (
   hud.isReady === false
 );
 
-// Keep a stable key across future schemas so an unsupported save cannot fall
-// back to an obsolete legacy match. Pre-schema builds cannot read this key.
+// Keep this key stable across schema changes. Pre-schema saves are never read.
 export const getHostSessionStorageKey = (room: string) => `sv-evolve:host-session:versioned:${room}`;
-export const getLegacyHostSessionStorageKey = (room: string) => `sv-evolve:host-session:${room}`;
+const clearLegacyHostSession = (storage: Pick<Storage, 'removeItem'>, room: string): void => {
+  // A custom room name must never make a retired key overlap another room's current save.
+  if (room.startsWith('versioned:')) return;
+  try {
+    storage.removeItem(`sv-evolve:host-session:${room}`);
+  } catch {
+    // Retired data must not prevent current saves from loading or being written.
+  }
+};
 
 export const readSavedHostSession = (
-  storage: Pick<Storage, 'getItem'>, room: string, appVersion: string,
+  storage: Pick<Storage, 'getItem' | 'removeItem'>, room: string,
 ): SavedHostSession | null => {
-  const current = storage.getItem(getHostSessionStorageKey(room));
-  const raw = current ?? storage.getItem(getLegacyHostSessionStorageKey(room));
-  return parseSavedHostSession(raw, room, appVersion);
+  clearLegacyHostSession(storage, room);
+  return parseSavedHostSession(storage.getItem(getHostSessionStorageKey(room)), room);
 };
 
 export const removeSavedHostSession = (storage: Pick<Storage, 'removeItem'>, room: string): void => {
   storage.removeItem(getHostSessionStorageKey(room));
-  storage.removeItem(getLegacyHostSessionStorageKey(room));
+  clearLegacyHostSession(storage, room);
 };
 
 export const buildSavedHostSessionPayload = (
@@ -210,8 +216,7 @@ export const getSavedHostSessionPersistenceDecision = ({
 
 export const parseSavedHostSession = (
   rawValue: string | null,
-  room: string,
-  appVersion: string
+  room: string
 ): SavedHostSession | null => {
   if (!rawValue) return null;
 
@@ -219,14 +224,7 @@ export const parseSavedHostSession = (
     const parsed = JSON.parse(rawValue) as Partial<SavedHostSession>;
     if (!parsed || parsed.room !== room) return null;
     if (typeof parsed.appVersion !== 'string' || !parsed.appVersion.trim()) return null;
-    if (parsed.sessionSchemaVersion === undefined) {
-      // v1.0.1 was the last tagged release before schema versioning. Keep
-      // its migration path when the application release number advances.
-      const legacyRelease = parsed.appVersion.replace(/^v/, '');
-      if (legacyRelease !== '1.0.1' && legacyRelease !== appVersion.replace(/^v/, '')) return null;
-    }
-    const schemaVersion = parsed.sessionSchemaVersion === undefined ? 1 : parsed.sessionSchemaVersion;
-    if (schemaVersion !== SESSION_SCHEMA_VERSION) return null;
+    if (parsed.sessionSchemaVersion !== SESSION_SCHEMA_VERSION) return null;
     if (typeof parsed.savedAt !== 'string') return null;
     if (!isSyncState(parsed.state)) return null;
 
@@ -266,18 +264,7 @@ export const persistSavedHostSession = (
   storageKey: string,
   payload: SavedHostSession,
 ): 'saved' | 'saved-without-move-history' | 'failed' => {
-  // Remove the old resume point before either write; storage errors must not
-  // escape into the in-memory match.
-  try {
-    storage.removeItem(getLegacyHostSessionStorageKey(payload.room));
-  } catch {
-    try {
-      storage.removeItem(storageKey);
-    } catch {
-      // Storage itself may be unavailable.
-    }
-    return 'failed';
-  }
+  clearLegacyHostSession(storage, payload.room);
   try {
     storage.setItem(storageKey, JSON.stringify(payload));
     return 'saved';

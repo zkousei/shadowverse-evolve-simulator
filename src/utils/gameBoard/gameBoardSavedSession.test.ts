@@ -34,38 +34,83 @@ describe('gameBoardSavedSession', () => {
   it('restores the supported schema across application releases', () => {
     const payload = buildSavedHostSessionPayload('ROOM', '1.0.1', buildState({ turnCount: 3 }), 'now');
     expect(payload.sessionSchemaVersion).toBe(1);
-    expect(parseSavedHostSession(JSON.stringify(payload), 'ROOM', '2.0.0')?.state.turnCount).toBe(3);
+    expect(parseSavedHostSession(JSON.stringify(payload), 'ROOM')?.state.turnCount).toBe(3);
   });
 
   it.each([0, 2, -1, '1', null])('rejects unsupported or malformed schema %s even for the same release', sessionSchemaVersion => {
     const payload = { ...buildSavedHostSessionPayload('ROOM', '1.0.1', buildState(), 'now'), sessionSchemaVersion };
-    expect(parseSavedHostSession(JSON.stringify(payload), 'ROOM', '1.0.1')).toBeNull();
+    expect(parseSavedHostSession(JSON.stringify(payload), 'ROOM')).toBeNull();
   });
 
-  it('migrates only matching legacy releases, allowing the former v tag prefix', () => {
-    const legacy = { room: 'ROOM', appVersion: 'v1.0.1', savedAt: 'now', state: buildState() };
-    expect(parseSavedHostSession(JSON.stringify(legacy), 'ROOM', '1.0.1')?.sessionSchemaVersion).toBe(1);
-    expect(parseSavedHostSession(JSON.stringify(legacy), 'ROOM', '1.1.0')?.sessionSchemaVersion).toBe(1);
-    expect(parseSavedHostSession(JSON.stringify({ ...legacy, appVersion: 'v1.0.0' }), 'ROOM', '1.1.0')).toBeNull();
+  it.each(['v1.0.1', '1.0.1', '1.1.0', 'custom'])('rejects unversioned sessions regardless of app version %s', appVersion => {
+    const legacy = { room: 'ROOM', appVersion, savedAt: 'now', state: buildState() };
+    expect(parseSavedHostSession(JSON.stringify(legacy), 'ROOM')).toBeNull();
   });
 
   it('keeps room, metadata and state validation for versioned sessions', () => {
     const payload = buildSavedHostSessionPayload('ROOM', '1.0.1', buildState(), 'now');
-    expect(parseSavedHostSession(JSON.stringify(payload), 'OTHER', '1.0.1')).toBeNull();
+    expect(parseSavedHostSession(JSON.stringify(payload), 'OTHER')).toBeNull();
     for (const invalid of [{ state: {} }, { savedAt: null }, { appVersion: null }]) {
-      expect(parseSavedHostSession(JSON.stringify({ ...payload, ...invalid }), 'ROOM', '1.0.1')).toBeNull();
+      expect(parseSavedHostSession(JSON.stringify({ ...payload, ...invalid }), 'ROOM')).toBeNull();
     }
   });
 
-  it('reads the legacy key only when no versioned save exists', () => {
-    const legacy = JSON.stringify({ room: 'ROOM', appVersion: 'v1.0.1', savedAt: 'now', state: buildState({ turnCount: 3 }) });
-    const entries = new Map([['sv-evolve:host-session:ROOM', legacy]]);
-    const storage = { getItem: (key: string) => entries.get(key) ?? null };
-    expect(readSavedHostSession(storage, 'ROOM', '1.0.1')?.state.turnCount).toBe(3);
-    entries.set(getHostSessionStorageKey('ROOM'), JSON.stringify({ ...JSON.parse(legacy), sessionSchemaVersion: 2 }));
-    expect(readSavedHostSession(storage, 'ROOM', '1.0.1')).toBeNull();
-    entries.set(getHostSessionStorageKey('ROOM'), 'broken');
-    expect(readSavedHostSession(storage, 'ROOM', '1.0.1')).toBeNull();
+  it('deletes the old key without reading or changing the current saved match', () => {
+    const current = JSON.stringify(buildSavedHostSessionPayload('ROOM', '1.1.0', buildState({ turnCount: 3 }), 'now'));
+    const entries = new Map([
+      ['sv-evolve:host-session:ROOM', 'old data'],
+      [getHostSessionStorageKey('ROOM'), current],
+      ['sv-evolve:host-session:OTHER', 'another room'],
+      ['unrelated', 'keep'],
+    ]);
+    const storage = {
+      getItem: vi.fn((key: string) => entries.get(key) ?? null),
+      removeItem: vi.fn((key: string) => { entries.delete(key); }),
+    };
+    expect(readSavedHostSession(storage, 'ROOM')?.state.turnCount).toBe(3);
+    expect(storage.getItem).toHaveBeenCalledExactlyOnceWith(getHostSessionStorageKey('ROOM'));
+    expect(storage.removeItem).toHaveBeenCalledExactlyOnceWith('sv-evolve:host-session:ROOM');
+    expect(entries.get(getHostSessionStorageKey('ROOM'))).toBe(current);
+    expect(entries.get('sv-evolve:host-session:OTHER')).toBe('another room');
+    expect(entries.get('unrelated')).toBe('keep');
+  });
+
+  it('does not delete another room through a legacy-key namespace collision', () => {
+    const key = getHostSessionStorageKey('ROOM');
+    const current = JSON.stringify(buildSavedHostSessionPayload('ROOM', '1.1.0', buildState({ turnCount: 3 }), 'now'));
+    const entries = new Map([[key, current]]);
+    const storage = {
+      getItem: (storageKey: string) => entries.get(storageKey) ?? null,
+      removeItem: (storageKey: string) => { entries.delete(storageKey); },
+    };
+    expect(readSavedHostSession(storage, 'versioned:ROOM')).toBeNull();
+    expect(entries.get(key)).toBe(current);
+    removeSavedHostSession(storage, 'versioned:ROOM');
+    expect(entries.get(key)).toBe(current);
+    const payload = buildSavedHostSessionPayload('versioned:ROOM', '1.1.0', buildState(), 'now');
+    persistSavedHostSession({ ...storage, setItem: (storageKey, value) => { entries.set(storageKey, value); } }, getHostSessionStorageKey('versioned:ROOM'), payload);
+    expect(entries.get(key)).toBe(current);
+  });
+
+  it('does not offer an old save when there is no new save', () => {
+    const entries = new Map([['sv-evolve:host-session:ROOM', JSON.stringify({
+      room: 'ROOM', appVersion: '1.1.0', savedAt: 'now', state: buildState({ turnCount: 3 }),
+    })]]);
+    const storage = {
+      getItem: (key: string) => entries.get(key) ?? null,
+      removeItem: (key: string) => { entries.delete(key); },
+    };
+    expect(readSavedHostSession(storage, 'ROOM')).toBeNull();
+    expect(entries.size).toBe(0);
+  });
+
+  it('keeps current save restoration working if old-key cleanup is denied', () => {
+    const current = JSON.stringify(buildSavedHostSessionPayload('ROOM', '1.1.0', buildState({ turnCount: 3 }), 'now'));
+    const storage = {
+      getItem: () => current,
+      removeItem: vi.fn(() => { throw new Error('denied'); }),
+    };
+    expect(readSavedHostSession(storage, 'ROOM')?.state.turnCount).toBe(3);
   });
 
   it('removes both save formats when discarding or clearing a fresh board', () => {
@@ -81,7 +126,7 @@ describe('gameBoardSavedSession', () => {
     const started = applyGameSyncEvent(ordered, { id: 'start', type: 'START_GAME', actor: 'host' });
     const ended = applyGameSyncEvent(started, { id: 'end', type: 'END_TURN', actor: 'guest' });
     const payload = buildSavedHostSessionPayload('ROOM', 'test', ended, 'now');
-    const loaded = parseSavedHostSession(JSON.stringify(payload), 'ROOM', 'test');
+    const loaded = parseSavedHostSession(JSON.stringify(payload), 'ROOM');
     expect(loaded?.state).toMatchObject({ startingPlayer: 'guest', turnPlayer: 'host', turnCount: 1 });
     const undone = applyGameSyncEvent(loaded!.state, { id: 'undo', type: 'UNDO_LAST_TURN', actor: 'host' });
     expect(undone).toMatchObject({ startingPlayer: 'guest', turnPlayer: 'guest', turnCount: 1 });
@@ -89,11 +134,11 @@ describe('gameBoardSavedSession', () => {
     expect(next).toMatchObject({ turnPlayer: 'guest', turnCount: 2 });
   });
 
-  it('continues legacy saved sessions without guessing or changing their existing turn count', () => {
+  it('continues schema 1 sessions without guessing or changing their existing turn count', () => {
     const payload = buildSavedHostSessionPayload('ROOM', 'test', buildState({ gameStatus: 'playing', turnPlayer: 'guest', turnCount: 4 }), 'now');
     const raw = JSON.parse(JSON.stringify(payload));
     delete raw.state.startingPlayer;
-    const loaded = parseSavedHostSession(JSON.stringify(raw), 'ROOM', 'test');
+    const loaded = parseSavedHostSession(JSON.stringify(raw), 'ROOM');
     expect(loaded?.state.turnCount).toBe(4);
     const next = applyGameSyncEvent(loaded!.state, { id: 'next', type: 'END_TURN', actor: 'guest' });
     expect(next).toMatchObject({ turnPlayer: 'host', turnCount: 5 });
@@ -103,14 +148,14 @@ describe('gameBoardSavedSession', () => {
   });
 
   it.each(['invalid', null, 1])('rejects an invalid optional starting player %s', startingPlayer => {
-    const payload = { room: 'ROOM', appVersion: 'test', savedAt: 'now', state: { ...buildState(), startingPlayer } };
-    expect(parseSavedHostSession(JSON.stringify(payload), 'ROOM', 'test')).toBeNull();
+    const payload = { sessionSchemaVersion: 1, room: 'ROOM', appVersion: 'test', savedAt: 'now', state: { ...buildState(), startingPlayer } };
+    expect(parseSavedHostSession(JSON.stringify(payload), 'ROOM')).toBeNull();
   });
 
   it.each([undefined, 0, 4])('preserves a valid optional reset revision %s while reading a saved session', marker => {
     const state = buildState({ revision: 8, ...(marker === undefined ? {} : { lastResetRevision: marker }) });
     const payload = buildSavedHostSessionPayload('ROOM', 'test', state, 'now');
-    const loaded = parseSavedHostSession(JSON.stringify(payload), 'ROOM', 'test');
+    const loaded = parseSavedHostSession(JSON.stringify(payload), 'ROOM');
     expect(loaded?.state).toMatchObject({ revision: 8 });
     if (marker === undefined) expect(loaded?.state).not.toHaveProperty('lastResetRevision');
     else expect(loaded?.state).toHaveProperty('lastResetRevision', marker);
@@ -120,8 +165,8 @@ describe('gameBoardSavedSession', () => {
 
   it.each([-1, 1.5, 9, '4', null])('rejects an invalid reset revision %s in saved data', lastResetRevision => {
     const state = { ...buildState({ revision: 8 }), lastResetRevision };
-    const payload = { room: 'ROOM', appVersion: 'test', savedAt: 'now', state };
-    expect(parseSavedHostSession(JSON.stringify(payload), 'ROOM', 'test')).toBeNull();
+    const payload = { sessionSchemaVersion: 1, room: 'ROOM', appVersion: 'test', savedAt: 'now', state };
+    expect(parseSavedHostSession(JSON.stringify(payload), 'ROOM')).toBeNull();
   });
 
   it('builds the host session storage key', () => {
@@ -204,44 +249,44 @@ describe('gameBoardSavedSession', () => {
     });
   });
 
-  it('parses a saved session only when room, version, and state shape are valid', () => {
+  it('parses a saved session only when room, schema, and state shape are valid', () => {
     const state = buildState({ revision: 7, turnCount: 3, phase: 'Main', gameStatus: 'playing' });
     const raw = JSON.stringify({
-      room: 'ROOM123',
-      savedAt: '2026-03-19T10:00:00.000Z',
-      appVersion: '1.2.3',
-      state,
-    });
-
-    expect(parseSavedHostSession(raw, 'ROOM123', '1.2.3')).toEqual({
       sessionSchemaVersion: 1,
       room: 'ROOM123',
       savedAt: '2026-03-19T10:00:00.000Z',
       appVersion: '1.2.3',
       state,
     });
-    expect(parseSavedHostSession(raw, 'ROOM999', '1.2.3')).toBeNull();
-    expect(parseSavedHostSession(raw, 'ROOM123', '9.9.9')).toBeNull();
-    expect(parseSavedHostSession('{"broken"', 'ROOM123', '1.2.3')).toBeNull();
+
+    expect(parseSavedHostSession(raw, 'ROOM123')).toEqual({
+      sessionSchemaVersion: 1,
+      room: 'ROOM123',
+      savedAt: '2026-03-19T10:00:00.000Z',
+      appVersion: '1.2.3',
+      state,
+    });
+    expect(parseSavedHostSession(raw, 'ROOM999')).toBeNull();
+    expect(parseSavedHostSession('{"broken"', 'ROOM123')).toBeNull();
     expect(
       parseSavedHostSession(
-        JSON.stringify({ room: 'ROOM123', savedAt: 'x', appVersion: '1.2.3', state: {} }),
-        'ROOM123',
-        '1.2.3'
+        JSON.stringify({ sessionSchemaVersion: 1, room: 'ROOM123', savedAt: 'x', appVersion: '1.2.3', state: {} }),
+        'ROOM123'
       )
     ).toBeNull();
   });
 
-  it('fills in missing end stop flags when parsing older saved sessions', () => {
+  it('fills in optional end stop flags within schema 1 sessions', () => {
     const legacyState = { ...buildState({ revision: 7 }), endStop: undefined };
     const raw = JSON.stringify({
+      sessionSchemaVersion: 1,
       room: 'ROOM123',
       savedAt: '2026-03-19T10:00:00.000Z',
       appVersion: '1.2.3',
       state: legacyState,
     });
 
-    expect(parseSavedHostSession(raw, 'ROOM123', '1.2.3')).toEqual({
+    expect(parseSavedHostSession(raw, 'ROOM123')).toEqual({
       sessionSchemaVersion: 1,
       room: 'ROOM123',
       savedAt: '2026-03-19T10:00:00.000Z',
@@ -278,8 +323,8 @@ describe('gameBoardSavedSession', () => {
 
 describe('saved undo history', () => {
   const parse = (state: unknown) => parseSavedHostSession(JSON.stringify({
-    room: 'ROOM123', appVersion: '1.2.3', savedAt: 'today', state,
-  }), 'ROOM123', '1.2.3')?.state;
+    sessionSchemaVersion: 1, room: 'ROOM123', appVersion: '1.2.3', savedAt: 'today', state,
+  }), 'ROOM123')?.state;
 
   it('round-trips multiple checkpoints and can undo after resume', () => {
     const oldest = buildState({ revision: 2, host: { ...initialState.host, hp: 18 } });
@@ -364,10 +409,11 @@ describe('undo history storage limits', () => {
     expect(storage.removeItem.mock.invocationCallOrder[0]).toBeLessThan(storage.setItem.mock.invocationCallOrder[0]);
   });
 
-  it('does not throw into the match if legacy cleanup is denied', () => {
+  it('keeps current saves working if old-key cleanup is denied', () => {
     const storage = { setItem: vi.fn(), removeItem: vi.fn(() => { throw new Error('storage denied'); }) };
-    expect(persistSavedHostSession(storage, 'key', payload)).toBe('failed');
-    expect(storage.setItem).not.toHaveBeenCalled();
+    expect(persistSavedHostSession(storage, 'key', payload)).toBe('saved');
+    expect(storage.setItem).toHaveBeenCalledExactlyOnceWith('key', JSON.stringify(payload));
+    expect(storage.removeItem).toHaveBeenCalledExactlyOnceWith('sv-evolve:host-session:ROOM');
   });
 
   it('falls back to saving the current board and turn checkpoint when history exceeds quota', () => {
