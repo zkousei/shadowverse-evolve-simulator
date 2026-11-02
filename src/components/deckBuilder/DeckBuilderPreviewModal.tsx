@@ -167,8 +167,8 @@ const DeckBuilderPreviewModal: React.FC<DeckBuilderPreviewModalProps> = ({
           onClick={onClose}
           style={{
             position: 'absolute',
-            top: '-0.5rem',
-            right: '-0.5rem',
+            top: '0.5rem',
+            right: '0.5rem',
             width: '2rem',
             height: '2rem',
             borderRadius: '999px',
