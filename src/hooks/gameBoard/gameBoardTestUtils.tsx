@@ -510,7 +510,8 @@ export const buildSyncState = (overrides: SyncStateOverrides = {}): SyncState =>
 });
 
 export const seedHostSavedSession = (overrides: SyncStateOverrides = {}) => {
-  window.sessionStorage.setItem('sv-evolve:host-session:ROOM123', JSON.stringify({
+  window.sessionStorage.setItem('sv-evolve:host-session:versioned:ROOM123', JSON.stringify({
+    sessionSchemaVersion: 1,
     room: 'ROOM123',
     savedAt: '2026-03-19T10:00:00.000Z',
     appVersion: '0.0.0',

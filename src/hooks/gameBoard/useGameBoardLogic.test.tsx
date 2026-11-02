@@ -3708,19 +3708,33 @@ describe('useGameBoardLogic P2P reconnect', () => {
     expect(stored).toMatchObject({ sessionSchemaVersion: 1, appVersion: '0.0.0' });
   });
 
-  it('migrates a resumed legacy save without leaving an obsolete rollback resume point', () => {
-    seedHostSavedSession({ turnCount: 3, host: { hp: 12 } });
+  it('deletes old saves without offering to restore them or deleting another room', () => {
+    window.sessionStorage.setItem('sv-evolve:host-session:ROOM123', JSON.stringify({
+      room: 'ROOM123', appVersion: '0.0.0', savedAt: 'now', state: buildSyncState({ turnCount: 3, host: { hp: 12 } }),
+    }));
+    window.sessionStorage.setItem('sv-evolve:host-session:OTHER', 'keep');
     renderHarness('/game?host=true&room=ROOM123');
-    expect(window.sessionStorage.getItem('sv-evolve:host-session:ROOM123')).not.toBeNull();
+    expect(screen.getByTestId('saved-session')).toHaveTextContent('none');
+    expect(screen.getByTestId('host-hp')).toHaveTextContent('20');
+    expect(window.sessionStorage.getItem('sv-evolve:host-session:ROOM123')).toBeNull();
+    expect(window.sessionStorage.getItem('sv-evolve:host-session:OTHER')).toBe('keep');
+    expect(window.sessionStorage.getItem('sv-evolve:host-session:versioned:ROOM123')).toBeNull();
+  });
+
+  it('cleans old data while keeping the current saved session available to resume', () => {
+    seedHostSavedSession({ turnCount: 3, host: { hp: 12 } });
+    const current = window.sessionStorage.getItem('sv-evolve:host-session:versioned:ROOM123');
+    window.sessionStorage.setItem('sv-evolve:host-session:ROOM123', 'obsolete');
+    renderHarness('/game?host=true&room=ROOM123');
+    expect(screen.getByTestId('saved-session')).toHaveTextContent('ROOM123');
+    expect(window.sessionStorage.getItem('sv-evolve:host-session:ROOM123')).toBeNull();
+    expect(window.sessionStorage.getItem('sv-evolve:host-session:versioned:ROOM123')).toBe(current);
     fireEvent.click(screen.getByRole('button', { name: 'Resume Saved Session' }));
     expect(screen.getByTestId('host-hp')).toHaveTextContent('12');
-    expect(window.sessionStorage.getItem('sv-evolve:host-session:ROOM123')).toBeNull();
-    expect(JSON.parse(window.sessionStorage.getItem('sv-evolve:host-session:versioned:ROOM123')!))
-      .toMatchObject({ sessionSchemaVersion: 1 });
   });
 
   it('rejects a future schema without surfacing a legacy fallback candidate', () => {
-    seedHostSavedSession({ turnCount: 3 });
+    window.sessionStorage.setItem('sv-evolve:host-session:ROOM123', 'obsolete');
     window.sessionStorage.setItem('sv-evolve:host-session:versioned:ROOM123', JSON.stringify({
       sessionSchemaVersion: 2, room: 'ROOM123', savedAt: 'now', appVersion: '0.0.0',
       state: buildSyncState({ turnCount: 4 }),
@@ -3732,6 +3746,7 @@ describe('useGameBoardLogic P2P reconnect', () => {
 
   it('loads a saved host session candidate and restores it when requested', () => {
     window.sessionStorage.setItem('sv-evolve:host-session:versioned:ROOM123', JSON.stringify({
+      sessionSchemaVersion: 1,
       room: 'ROOM123',
       savedAt: '2026-03-19T10:00:00.000Z',
       appVersion: '0.0.0',
@@ -3764,6 +3779,7 @@ describe('useGameBoardLogic P2P reconnect', () => {
 
   it('allows the host to discard a saved session and does not surface it to guests', () => {
     window.sessionStorage.setItem('sv-evolve:host-session:versioned:ROOM123', JSON.stringify({
+      sessionSchemaVersion: 1,
       room: 'ROOM123',
       savedAt: '2026-03-19T10:00:00.000Z',
       appVersion: '0.0.0',
@@ -3833,6 +3849,7 @@ describe('useGameBoardLogic P2P reconnect', () => {
 
   it('ignores a stored fresh host board when checking for a saved session candidate', () => {
     window.sessionStorage.setItem('sv-evolve:host-session:versioned:ROOM123', JSON.stringify({
+      sessionSchemaVersion: 1,
       room: 'ROOM123',
       savedAt: '2026-03-19T10:00:00.000Z',
       appVersion: '0.0.0',
@@ -3857,6 +3874,7 @@ describe('useGameBoardLogic P2P reconnect', () => {
 
   it('responds to guest snapshot requests with a waiting message while a saved session is pending', () => {
     window.sessionStorage.setItem('sv-evolve:host-session:versioned:ROOM123', JSON.stringify({
+      sessionSchemaVersion: 1,
       room: 'ROOM123',
       savedAt: '2026-03-19T10:00:00.000Z',
       appVersion: '0.0.0',
@@ -3918,6 +3936,7 @@ describe('useGameBoardLogic P2P reconnect', () => {
 
   it('responds to spectator snapshot requests with a waiting message while a saved session is pending', () => {
     window.sessionStorage.setItem('sv-evolve:host-session:versioned:ROOM123', JSON.stringify({
+      sessionSchemaVersion: 1,
       room: 'ROOM123',
       savedAt: '2026-03-19T10:00:00.000Z',
       appVersion: '0.0.0',
@@ -4679,6 +4698,7 @@ describe('useGameBoardLogic P2P reconnect', () => {
 
   it('keeps host-side turn undo available after ending the turn', () => {
     window.sessionStorage.setItem('sv-evolve:host-session:versioned:ROOM123', JSON.stringify({
+      sessionSchemaVersion: 1,
       room: 'ROOM123',
       savedAt: '2026-03-19T10:00:00.000Z',
       appVersion: '0.0.0',
@@ -4718,6 +4738,7 @@ describe('useGameBoardLogic P2P reconnect', () => {
 
   it('keeps host-side card-move undo available after a card draw', () => {
     window.sessionStorage.setItem('sv-evolve:host-session:versioned:ROOM123', JSON.stringify({
+      sessionSchemaVersion: 1,
       room: 'ROOM123',
       savedAt: '2026-03-19T10:00:00.000Z',
       appVersion: '0.0.0',
@@ -4772,6 +4793,7 @@ describe('useGameBoardLogic P2P reconnect', () => {
 
   it('moves the host deck top card to ex and supports undo', () => {
     window.sessionStorage.setItem('sv-evolve:host-session:versioned:ROOM123', JSON.stringify({
+      sessionSchemaVersion: 1,
       room: 'ROOM123',
       savedAt: '2026-03-19T10:00:00.000Z',
       appVersion: '0.0.0',

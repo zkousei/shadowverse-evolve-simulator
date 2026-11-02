@@ -62,7 +62,7 @@ export const useGameBoardSessionPersistence = ({
       return;
     }
 
-    const parsed = readSavedHostSession(window.sessionStorage, room, appVersion);
+    const parsed = readSavedHostSession(window.sessionStorage, room);
 
     if (!parsed || !hasMeaningfulGameSessionState(parsed.state)) {
       removeSavedHostSession(window.sessionStorage, room);
@@ -77,7 +77,7 @@ export const useGameBoardSessionPersistence = ({
     hasCheckedSavedSessionRef.current = true;
     setSavedSessionCandidate(parsed);
     setHasCheckedSavedSession(true);
-  }, [appVersion, isHost, isSoloMode, room]);
+  }, [isHost, isSoloMode, room]);
 
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
