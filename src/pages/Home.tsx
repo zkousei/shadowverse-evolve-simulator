@@ -6,6 +6,7 @@ import { isDummyCardArtEnabled } from '../utils/card/cardArtMode';
 import { generateRoomCode } from '../utils/roomCode';
 
 const APP_VERSION = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '0.0.0';
+const APP_BUILD_ID = typeof __APP_BUILD_ID__ === 'string' ? __APP_BUILD_ID__ : 'unknown';
 const IS_DUMMY_CARD_ART_BUILD = isDummyCardArtEnabled();
 
 const Home: React.FC = () => {
@@ -231,7 +232,7 @@ const Home: React.FC = () => {
 
       <div style={{ textAlign: 'center', maxWidth: '800px', width: '100%', margin: '2rem auto 0', padding: '0 1rem' }}>
         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.4rem', letterSpacing: '0.04em' }}>
-          {t('home.footer.version', { version: APP_VERSION })}
+          {t('home.footer.version', { version: `${APP_VERSION} (${APP_BUILD_ID})` })}
         </p>
         <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
           {t('home.footer.copyright')}

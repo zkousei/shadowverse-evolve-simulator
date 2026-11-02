@@ -68,10 +68,6 @@ Vercel で公開する版をダミー画像表示にしたい場合は、Environ
 
 - `VITE_CARD_ART_MODE=dummy`
 
-任意:
-
-- `APP_VERSION=v0.0.4`
-
 推奨設定:
 
 - Build Command: `npm run build`
@@ -81,9 +77,10 @@ Vercel で公開する版をダミー画像表示にしたい場合は、Environ
 
 - `VITE_CARD_ART_MODE=dummy`
   - 公開版のカード画像をダミー表示に切り替えます
-- `APP_VERSION=v0.0.4`
-  - Home 画面の version 表示に使います
-  - ダミー画像への切り替えには影響しません
+- `APP_VERSION` は使用しません。以前の設定が残っていても表示には影響しません。不要になった設定は削除できます。
+- Vercel の `Automatically expose System Environment Variables` が有効であることを確認してください。
+  - ビルド時の `VERCEL_GIT_COMMIT_SHA` からビルド識別子を取得します。
+- バージョン・タグ・保存データ互換性の運用は [リリース運用](./release-management.md) を参照してください。
 - ローカルは env 未設定のままで `official` 表示になります
 
 ## 5. 管理者向けドキュメント一覧

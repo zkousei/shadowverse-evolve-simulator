@@ -3,6 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { applyGameSyncEvent } from './gameSyncReducer';
 import { initialState, type SyncState } from '../../types/game';
 import {
+  readSavedHostSession,
+  removeSavedHostSession,
   buildSavedHostSessionPayload,
   getHostSessionStorageKey,
   getSavedHostSessionPersistenceDecision,
@@ -29,6 +31,51 @@ const buildState = (overrides: Partial<SyncState> = {}): SyncState => ({
 });
 
 describe('gameBoardSavedSession', () => {
+  it('restores the supported schema across application releases', () => {
+    const payload = buildSavedHostSessionPayload('ROOM', '1.0.1', buildState({ turnCount: 3 }), 'now');
+    expect(payload.sessionSchemaVersion).toBe(1);
+    expect(parseSavedHostSession(JSON.stringify(payload), 'ROOM', '2.0.0')?.state.turnCount).toBe(3);
+  });
+
+  it.each([0, 2, -1, '1', null])('rejects unsupported or malformed schema %s even for the same release', sessionSchemaVersion => {
+    const payload = { ...buildSavedHostSessionPayload('ROOM', '1.0.1', buildState(), 'now'), sessionSchemaVersion };
+    expect(parseSavedHostSession(JSON.stringify(payload), 'ROOM', '1.0.1')).toBeNull();
+  });
+
+  it('migrates only matching legacy releases, allowing the former v tag prefix', () => {
+    const legacy = { room: 'ROOM', appVersion: 'v1.0.1', savedAt: 'now', state: buildState() };
+    expect(parseSavedHostSession(JSON.stringify(legacy), 'ROOM', '1.0.1')?.sessionSchemaVersion).toBe(1);
+    expect(parseSavedHostSession(JSON.stringify(legacy), 'ROOM', '1.1.0')?.sessionSchemaVersion).toBe(1);
+    expect(parseSavedHostSession(JSON.stringify({ ...legacy, appVersion: 'v1.0.0' }), 'ROOM', '1.1.0')).toBeNull();
+  });
+
+  it('keeps room, metadata and state validation for versioned sessions', () => {
+    const payload = buildSavedHostSessionPayload('ROOM', '1.0.1', buildState(), 'now');
+    expect(parseSavedHostSession(JSON.stringify(payload), 'OTHER', '1.0.1')).toBeNull();
+    for (const invalid of [{ state: {} }, { savedAt: null }, { appVersion: null }]) {
+      expect(parseSavedHostSession(JSON.stringify({ ...payload, ...invalid }), 'ROOM', '1.0.1')).toBeNull();
+    }
+  });
+
+  it('reads the legacy key only when no versioned save exists', () => {
+    const legacy = JSON.stringify({ room: 'ROOM', appVersion: 'v1.0.1', savedAt: 'now', state: buildState({ turnCount: 3 }) });
+    const entries = new Map([['sv-evolve:host-session:ROOM', legacy]]);
+    const storage = { getItem: (key: string) => entries.get(key) ?? null };
+    expect(readSavedHostSession(storage, 'ROOM', '1.0.1')?.state.turnCount).toBe(3);
+    entries.set(getHostSessionStorageKey('ROOM'), JSON.stringify({ ...JSON.parse(legacy), sessionSchemaVersion: 2 }));
+    expect(readSavedHostSession(storage, 'ROOM', '1.0.1')).toBeNull();
+    entries.set(getHostSessionStorageKey('ROOM'), 'broken');
+    expect(readSavedHostSession(storage, 'ROOM', '1.0.1')).toBeNull();
+  });
+
+  it('removes both save formats when discarding or clearing a fresh board', () => {
+    const storage = { removeItem: vi.fn() };
+    removeSavedHostSession(storage, 'ROOM');
+    expect(storage.removeItem.mock.calls).toEqual([
+      [getHostSessionStorageKey('ROOM')], ['sv-evolve:host-session:ROOM'],
+    ]);
+  });
+
   it('preserves the guest starter when saving, restoring and undoing a turn', () => {
     const ordered = applyGameSyncEvent(buildState(), { id: 'order', type: 'SET_INITIAL_TURN_ORDER', actor: 'host', starter: 'guest', manual: true });
     const started = applyGameSyncEvent(ordered, { id: 'start', type: 'START_GAME', actor: 'host' });
@@ -78,13 +125,14 @@ describe('gameBoardSavedSession', () => {
   });
 
   it('builds the host session storage key', () => {
-    expect(getHostSessionStorageKey('ROOM123')).toBe('sv-evolve:host-session:ROOM123');
+    expect(getHostSessionStorageKey('ROOM123')).toBe('sv-evolve:host-session:versioned:ROOM123');
   });
 
   it('builds a saved host session payload without reshaping the state', () => {
     const state = buildState({ revision: 7, turnCount: 3, phase: 'Main', gameStatus: 'playing' });
 
     expect(buildSavedHostSessionPayload('ROOM123', '1.2.3', state, '2026-03-19T10:00:00.000Z')).toEqual({
+      sessionSchemaVersion: 1,
       room: 'ROOM123',
       savedAt: '2026-03-19T10:00:00.000Z',
       appVersion: '1.2.3',
@@ -130,7 +178,7 @@ describe('gameBoardSavedSession', () => {
       savedAt: '2026-03-19T10:00:00.000Z',
     })).toEqual({
       type: 'remove',
-      storageKey: 'sv-evolve:host-session:ROOM123',
+      storageKey: 'sv-evolve:host-session:versioned:ROOM123',
     });
 
     const meaningfulState = buildState({ turnCount: 3, phase: 'Main', gameStatus: 'playing' });
@@ -145,8 +193,9 @@ describe('gameBoardSavedSession', () => {
       savedAt: '2026-03-19T10:00:00.000Z',
     })).toEqual({
       type: 'persist',
-      storageKey: 'sv-evolve:host-session:ROOM123',
+      storageKey: 'sv-evolve:host-session:versioned:ROOM123',
       payload: {
+        sessionSchemaVersion: 1,
         room: 'ROOM123',
         savedAt: '2026-03-19T10:00:00.000Z',
         appVersion: '1.2.3',
@@ -165,6 +214,7 @@ describe('gameBoardSavedSession', () => {
     });
 
     expect(parseSavedHostSession(raw, 'ROOM123', '1.2.3')).toEqual({
+      sessionSchemaVersion: 1,
       room: 'ROOM123',
       savedAt: '2026-03-19T10:00:00.000Z',
       appVersion: '1.2.3',
@@ -192,6 +242,7 @@ describe('gameBoardSavedSession', () => {
     });
 
     expect(parseSavedHostSession(raw, 'ROOM123', '1.2.3')).toEqual({
+      sessionSchemaVersion: 1,
       room: 'ROOM123',
       savedAt: '2026-03-19T10:00:00.000Z',
       appVersion: '1.2.3',
@@ -306,6 +357,19 @@ describe('undo history storage limits', () => {
     lastUndoableCardMoveState: buildState(), lastUndoableCardMoveActor: 'host',
   }), 'today');
 
+  it('clears the legacy resume point before saving the new format', () => {
+    const storage = { setItem: vi.fn(), removeItem: vi.fn() };
+    expect(persistSavedHostSession(storage, 'key', payload)).toBe('saved');
+    expect(storage.removeItem).toHaveBeenCalledWith('sv-evolve:host-session:ROOM');
+    expect(storage.removeItem.mock.invocationCallOrder[0]).toBeLessThan(storage.setItem.mock.invocationCallOrder[0]);
+  });
+
+  it('does not throw into the match if legacy cleanup is denied', () => {
+    const storage = { setItem: vi.fn(), removeItem: vi.fn(() => { throw new Error('storage denied'); }) };
+    expect(persistSavedHostSession(storage, 'key', payload)).toBe('failed');
+    expect(storage.setItem).not.toHaveBeenCalled();
+  });
+
   it('falls back to saving the current board and turn checkpoint when history exceeds quota', () => {
     const storage = { setItem: vi.fn().mockImplementationOnce(() => { throw new Error('quota'); }), removeItem: vi.fn() };
     expect(persistSavedHostSession(storage, 'key', payload)).toBe('saved-without-move-history');
@@ -315,7 +379,7 @@ describe('undo history storage limits', () => {
     expect(saved.state.lastGameState).toEqual(payload.state.lastGameState);
     expect(saved.state.cards).toEqual(payload.state.cards);
     expect(payload.state.cardMoveHistory).toHaveLength(1);
-    expect(storage.removeItem).not.toHaveBeenCalled();
+    expect(storage.removeItem).toHaveBeenCalledExactlyOnceWith('sv-evolve:host-session:ROOM');
   });
 
   it('removes an obsolete save when both writes fail without throwing into the game', () => {

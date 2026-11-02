@@ -1,9 +1,9 @@
-import { execSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { cardCatalog } from './build/cardCatalog'
 import { deploymentAssetBase } from './build/deploymentAssetBase'
+import { getAppVersion } from './build/appVersion'
 
 const getPackageVersion = () => {
   try {
@@ -17,28 +17,15 @@ const getPackageVersion = () => {
   }
 }
 
-const getAppVersion = () => {
-  const envVersion = process.env.APP_VERSION?.trim()
-  if (envVersion) {
-    return envVersion
-  }
-
-  try {
-    return execSync('git describe --tags --abbrev=0', {
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    }).trim()
-  } catch {
-    return getPackageVersion()
-  }
-}
+const version = getAppVersion(getPackageVersion(), process.env)
 
 // https://vite.dev/config/
 export default defineConfig(({ command }) => ({
   base: deploymentAssetBase(command, process.env),
   plugins: [react(), cardCatalog()],
   define: {
-    __APP_VERSION__: JSON.stringify(getAppVersion()),
+    __APP_VERSION__: JSON.stringify(version.release),
+    __APP_BUILD_ID__: JSON.stringify(version.buildId),
   },
   build: {
     rolldownOptions: {
