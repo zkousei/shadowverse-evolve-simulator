@@ -431,6 +431,7 @@ describe('GameBoard', () => {
 
     mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
       savedSessionCandidate: {
+        sessionSchemaVersion: 1,
         room: 'ROOM123',
         savedAt: '2026-04-04T00:00:00.000Z',
         appVersion: '1.0.0',

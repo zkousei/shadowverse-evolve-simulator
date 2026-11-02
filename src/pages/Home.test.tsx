@@ -2,6 +2,11 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import Home from './Home';
 
+vi.hoisted(() => {
+  vi.stubGlobal('__APP_VERSION__', '1.0.1');
+  vi.stubGlobal('__APP_BUILD_ID__', 'abcdef1');
+});
+
 const navigateMock = vi.fn();
 
 vi.mock('react-router-dom', async () => {
@@ -15,14 +20,14 @@ import enTranslations from '../i18n/en/translation.json';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string) => {
+    t: (key: string, options?: { version?: string }) => {
       const parts = key.split('.');
       let result: unknown = enTranslations;
       for (const p of parts) {
         if (result == null) return key;
         result = typeof result === 'object' ? (result as Record<string, unknown>)[p] : undefined;
       }
-      return typeof result === 'string' ? result : key;
+      return typeof result === 'string' ? result.replace('{{version}}', options?.version ?? '{{version}}') : key;
     },
     i18n: { changeLanguage: vi.fn(), language: 'en' },
   }),
@@ -31,6 +36,11 @@ vi.mock('react-i18next', () => ({
 describe('Home', () => {
   beforeEach(() => {
     navigateMock.mockReset();
+  });
+
+  it('shows the release and build identity in the footer', () => {
+    render(<Home />);
+    expect(screen.getByText(/1\.0\.1 \(abcdef1\)/)).toBeInTheDocument();
   });
 
   it('navigates to the deck builder and solo mode actions', () => {

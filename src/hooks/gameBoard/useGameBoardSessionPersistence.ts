@@ -1,10 +1,10 @@
 import React from 'react';
 import type { SyncState } from '../../types/game';
 import {
-  getHostSessionStorageKey,
   getSavedHostSessionPersistenceDecision,
   hasMeaningfulGameSessionState,
-  parseSavedHostSession,
+  readSavedHostSession,
+  removeSavedHostSession,
   persistSavedHostSession,
   type SavedHostSession,
 } from '../../utils/gameBoard/gameBoardSavedSession';
@@ -62,11 +62,10 @@ export const useGameBoardSessionPersistence = ({
       return;
     }
 
-    const storageKey = getHostSessionStorageKey(room);
-    const parsed = parseSavedHostSession(window.sessionStorage.getItem(storageKey), room, appVersion);
+    const parsed = readSavedHostSession(window.sessionStorage, room, appVersion);
 
     if (!parsed || !hasMeaningfulGameSessionState(parsed.state)) {
-      window.sessionStorage.removeItem(storageKey);
+      removeSavedHostSession(window.sessionStorage, room);
       savedSessionCandidateRef.current = null;
       hasCheckedSavedSessionRef.current = true;
       setSavedSessionCandidate(null);
@@ -99,7 +98,7 @@ export const useGameBoardSessionPersistence = ({
     }
 
     if (decision.type === 'remove') {
-      window.sessionStorage.removeItem(decision.storageKey);
+      removeSavedHostSession(window.sessionStorage, room);
       return;
     }
 
@@ -125,7 +124,7 @@ export const useGameBoardSessionPersistence = ({
 
   const discardSavedSession = React.useCallback(() => {
     if (typeof window !== 'undefined' && room) {
-      window.sessionStorage.removeItem(getHostSessionStorageKey(room));
+      removeSavedHostSession(window.sessionStorage, room);
     }
 
     savedSessionCandidateRef.current = null;

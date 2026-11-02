@@ -3695,8 +3695,43 @@ describe('useGameBoardLogic P2P reconnect', () => {
     expect(conn.close).toHaveBeenCalledTimes(1);
   });
 
+  it('resumes a versioned session from another app release and saves the current schema', () => {
+    window.sessionStorage.setItem('sv-evolve:host-session:versioned:ROOM123', JSON.stringify({
+      sessionSchemaVersion: 1, room: 'ROOM123', savedAt: 'now', appVersion: 'older-build',
+      state: buildSyncState({ turnCount: 3, host: { hp: 13 } }),
+    }));
+    renderHarness('/game?host=true&room=ROOM123');
+    expect(screen.getByTestId('saved-session')).toHaveTextContent('ROOM123');
+    fireEvent.click(screen.getByRole('button', { name: 'Resume Saved Session' }));
+    expect(screen.getByTestId('host-hp')).toHaveTextContent('13');
+    const stored = JSON.parse(window.sessionStorage.getItem('sv-evolve:host-session:versioned:ROOM123')!);
+    expect(stored).toMatchObject({ sessionSchemaVersion: 1, appVersion: '0.0.0' });
+  });
+
+  it('migrates a resumed legacy save without leaving an obsolete rollback resume point', () => {
+    seedHostSavedSession({ turnCount: 3, host: { hp: 12 } });
+    renderHarness('/game?host=true&room=ROOM123');
+    expect(window.sessionStorage.getItem('sv-evolve:host-session:ROOM123')).not.toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Resume Saved Session' }));
+    expect(screen.getByTestId('host-hp')).toHaveTextContent('12');
+    expect(window.sessionStorage.getItem('sv-evolve:host-session:ROOM123')).toBeNull();
+    expect(JSON.parse(window.sessionStorage.getItem('sv-evolve:host-session:versioned:ROOM123')!))
+      .toMatchObject({ sessionSchemaVersion: 1 });
+  });
+
+  it('rejects a future schema without surfacing a legacy fallback candidate', () => {
+    seedHostSavedSession({ turnCount: 3 });
+    window.sessionStorage.setItem('sv-evolve:host-session:versioned:ROOM123', JSON.stringify({
+      sessionSchemaVersion: 2, room: 'ROOM123', savedAt: 'now', appVersion: '0.0.0',
+      state: buildSyncState({ turnCount: 4 }),
+    }));
+    renderHarness('/game?host=true&room=ROOM123');
+    expect(screen.getByTestId('saved-session')).toHaveTextContent('none');
+    expect(window.sessionStorage.getItem('sv-evolve:host-session:ROOM123')).toBeNull();
+  });
+
   it('loads a saved host session candidate and restores it when requested', () => {
-    window.sessionStorage.setItem('sv-evolve:host-session:ROOM123', JSON.stringify({
+    window.sessionStorage.setItem('sv-evolve:host-session:versioned:ROOM123', JSON.stringify({
       room: 'ROOM123',
       savedAt: '2026-03-19T10:00:00.000Z',
       appVersion: '0.0.0',
@@ -3724,11 +3759,11 @@ describe('useGameBoardLogic P2P reconnect', () => {
 
     expect(screen.getByTestId('saved-session')).toHaveTextContent('none');
     expect(screen.getByTestId('host-hp')).toHaveTextContent('13');
-    expect(JSON.parse(window.sessionStorage.getItem('sv-evolve:host-session:ROOM123') ?? '{}').state.host.hp).toBe(13);
+    expect(JSON.parse(window.sessionStorage.getItem('sv-evolve:host-session:versioned:ROOM123') ?? '{}').state.host.hp).toBe(13);
   });
 
   it('allows the host to discard a saved session and does not surface it to guests', () => {
-    window.sessionStorage.setItem('sv-evolve:host-session:ROOM123', JSON.stringify({
+    window.sessionStorage.setItem('sv-evolve:host-session:versioned:ROOM123', JSON.stringify({
       room: 'ROOM123',
       savedAt: '2026-03-19T10:00:00.000Z',
       appVersion: '0.0.0',
@@ -3754,7 +3789,7 @@ describe('useGameBoardLogic P2P reconnect', () => {
     });
 
     expect(screen.getByTestId('saved-session')).toHaveTextContent('none');
-    expect(window.sessionStorage.getItem('sv-evolve:host-session:ROOM123')).toBeNull();
+    expect(window.sessionStorage.getItem('sv-evolve:host-session:versioned:ROOM123')).toBeNull();
 
     unmount();
 
@@ -3766,7 +3801,7 @@ describe('useGameBoardLogic P2P reconnect', () => {
     renderHarness('/game?host=true&room=ROOM123');
 
     expect(screen.getByTestId('saved-session')).toHaveTextContent('none');
-    expect(window.sessionStorage.getItem('sv-evolve:host-session:ROOM123')).toBeNull();
+    expect(window.sessionStorage.getItem('sv-evolve:host-session:versioned:ROOM123')).toBeNull();
   });
 
   it('destroys the peer on unmount', () => {
@@ -3783,13 +3818,13 @@ describe('useGameBoardLogic P2P reconnect', () => {
   it('persists a meaningful host board after a local game change', () => {
     renderHarness('/game?host=true&room=ROOM123');
 
-    expect(window.sessionStorage.getItem('sv-evolve:host-session:ROOM123')).toBeNull();
+    expect(window.sessionStorage.getItem('sv-evolve:host-session:versioned:ROOM123')).toBeNull();
 
     act(() => {
       fireEvent.click(screen.getByRole('button', { name: 'Spawn Token to EX' }));
     });
 
-    const stored = JSON.parse(window.sessionStorage.getItem('sv-evolve:host-session:ROOM123') ?? '{}');
+    const stored = JSON.parse(window.sessionStorage.getItem('sv-evolve:host-session:versioned:ROOM123') ?? '{}');
     expect(stored.room).toBe('ROOM123');
     expect(stored.appVersion).toBe('0.0.0');
     expect(stored.state.cards).toHaveLength(1);
@@ -3797,7 +3832,7 @@ describe('useGameBoardLogic P2P reconnect', () => {
   });
 
   it('ignores a stored fresh host board when checking for a saved session candidate', () => {
-    window.sessionStorage.setItem('sv-evolve:host-session:ROOM123', JSON.stringify({
+    window.sessionStorage.setItem('sv-evolve:host-session:versioned:ROOM123', JSON.stringify({
       room: 'ROOM123',
       savedAt: '2026-03-19T10:00:00.000Z',
       appVersion: '0.0.0',
@@ -3817,11 +3852,11 @@ describe('useGameBoardLogic P2P reconnect', () => {
     renderHarness('/game?host=true&room=ROOM123');
 
     expect(screen.getByTestId('saved-session')).toHaveTextContent('none');
-    expect(window.sessionStorage.getItem('sv-evolve:host-session:ROOM123')).toBeNull();
+    expect(window.sessionStorage.getItem('sv-evolve:host-session:versioned:ROOM123')).toBeNull();
   });
 
   it('responds to guest snapshot requests with a waiting message while a saved session is pending', () => {
-    window.sessionStorage.setItem('sv-evolve:host-session:ROOM123', JSON.stringify({
+    window.sessionStorage.setItem('sv-evolve:host-session:versioned:ROOM123', JSON.stringify({
       room: 'ROOM123',
       savedAt: '2026-03-19T10:00:00.000Z',
       appVersion: '0.0.0',
@@ -3882,7 +3917,7 @@ describe('useGameBoardLogic P2P reconnect', () => {
   });
 
   it('responds to spectator snapshot requests with a waiting message while a saved session is pending', () => {
-    window.sessionStorage.setItem('sv-evolve:host-session:ROOM123', JSON.stringify({
+    window.sessionStorage.setItem('sv-evolve:host-session:versioned:ROOM123', JSON.stringify({
       room: 'ROOM123',
       savedAt: '2026-03-19T10:00:00.000Z',
       appVersion: '0.0.0',
@@ -4643,7 +4678,7 @@ describe('useGameBoardLogic P2P reconnect', () => {
   });
 
   it('keeps host-side turn undo available after ending the turn', () => {
-    window.sessionStorage.setItem('sv-evolve:host-session:ROOM123', JSON.stringify({
+    window.sessionStorage.setItem('sv-evolve:host-session:versioned:ROOM123', JSON.stringify({
       room: 'ROOM123',
       savedAt: '2026-03-19T10:00:00.000Z',
       appVersion: '0.0.0',
@@ -4682,7 +4717,7 @@ describe('useGameBoardLogic P2P reconnect', () => {
   });
 
   it('keeps host-side card-move undo available after a card draw', () => {
-    window.sessionStorage.setItem('sv-evolve:host-session:ROOM123', JSON.stringify({
+    window.sessionStorage.setItem('sv-evolve:host-session:versioned:ROOM123', JSON.stringify({
       room: 'ROOM123',
       savedAt: '2026-03-19T10:00:00.000Z',
       appVersion: '0.0.0',
@@ -4736,7 +4771,7 @@ describe('useGameBoardLogic P2P reconnect', () => {
   });
 
   it('moves the host deck top card to ex and supports undo', () => {
-    window.sessionStorage.setItem('sv-evolve:host-session:ROOM123', JSON.stringify({
+    window.sessionStorage.setItem('sv-evolve:host-session:versioned:ROOM123', JSON.stringify({
       room: 'ROOM123',
       savedAt: '2026-03-19T10:00:00.000Z',
       appVersion: '0.0.0',
