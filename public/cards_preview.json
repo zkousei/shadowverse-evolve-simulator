@@ -40,6 +40,26 @@
     "hp": "3"
   },
   {
+    "id": "CP05-007",
+    "name": "奮励の儁秀・シルヴァ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-007.jpg",
+    "class": "エルフ",
+    "type": "フォロワー",
+    "subtype": "グラブル・水属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "GR",
+    "ability_text": "【疾走】\nこれが上限解放したとき、自分の墓場の【クイック】【起動】能力を持つフォロワーを元のコストの合計が6以下になるように2枚まで選ぶ。それを場に出す。\n【クイック】【起動】コスト2手札のこれを捨てる：相手の場のフォロワー1体を選ぶ。それに4ダメージ。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "7",
+    "atk": "5",
+    "hp": "5"
+  },
+  {
     "id": "CP05-008",
     "name": "虹色の弓使い・クピタン",
     "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-008.png",
@@ -62,6 +82,62 @@
       {
         "id": "CP05-T10",
         "name": "水晶のエレメント"
+      }
+    ]
+  },
+  {
+    "id": "CP05-009",
+    "name": "清新なる銃設計士・ククル",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-009.jpg",
+    "class": "エルフ",
+    "type": "フォロワー",
+    "subtype": "グラブル・水属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "SR",
+    "ability_text": "【進化】コスト1：これは進化する。\n【ファンファーレ】自分の墓場の【クイック】【起動】能力を持つフォロワーが7枚以上なら、『ガンパウダーミキサー・クムユ』1体を場に出す。\n【クイック】【起動】コスト1手札のこれを捨てる：相手のリーダーすべてに2ダメージ。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "2",
+    "atk": "2",
+    "hp": "2",
+    "related_cards": [
+      {
+        "id": "CP05-010",
+        "name": "清新なる銃設計士・ククル"
+      },
+      {
+        "id": "CP05-T01",
+        "name": "ガンパウダーミキサー・クムユ"
+      }
+    ]
+  },
+  {
+    "id": "CP05-010",
+    "name": "清新なる銃設計士・ククル",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-010.jpg",
+    "class": "エルフ",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "グラブル・水属性",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "SR",
+    "ability_text": "【進化時】相手の場のフォロワー1体を選ぶ。それに2ダメージ。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "-",
+    "atk": "3",
+    "hp": "3",
+    "related_cards": [
+      {
+        "id": "CP05-009",
+        "name": "清新なる銃設計士・ククル"
       }
     ]
   },
@@ -302,6 +378,62 @@
     ]
   },
   {
+    "id": "CP05-031",
+    "name": "花開く筋肉・フィオリト",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-031.jpg",
+    "class": "ロイヤル",
+    "type": "フォロワー",
+    "subtype": "グラブル・土属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "BR",
+    "ability_text": "【進化】コスト0：これは進化する。この能力は自分のエボルヴデッキの表向きの土属性・エボルヴフォロワーが4枚以上なら使える。\n【守護】\n【ファンファーレ】『土晶のエレメント』1枚をEXエリアに置く。自分のエボルヴデッキの裏向きの土属性・エボルヴフォロワー1枚を表向きにしてよい。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "2",
+    "atk": "1",
+    "hp": "3",
+    "related_cards": [
+      {
+        "id": "CP05-032",
+        "name": "花開く筋肉・フィオリト"
+      },
+      {
+        "id": "CP05-T11",
+        "name": "土晶のエレメント"
+      }
+    ]
+  },
+  {
+    "id": "CP05-032",
+    "name": "花開く筋肉・フィオリト",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-032.jpg",
+    "class": "ロイヤル",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "グラブル・土属性",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "BR",
+    "ability_text": "【指定攻撃】【必殺】【守護】（【必殺】を持つフォロワーと交戦した相手のフォロワーは、ダメージを与え合ったあと破壊される）",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "-",
+    "atk": "4",
+    "hp": "6",
+    "related_cards": [
+      {
+        "id": "CP05-031",
+        "name": "花開く筋肉・フィオリト"
+      }
+    ]
+  },
+  {
     "id": "CP05-033",
     "name": "眠れる輝竜・アーサー",
     "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-033.jpg",
@@ -352,6 +484,46 @@
         "name": "眠れる輝竜・アーサー"
       }
     ]
+  },
+  {
+    "id": "CP05-035",
+    "name": "燃え滾る闘志・フェザー",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-035.jpg",
+    "class": "ロイヤル",
+    "type": "フォロワー",
+    "subtype": "グラブル・光属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "BR",
+    "ability_text": "【突進】【守護】（【突進】を持つフォロワーは、場に出たターンから相手のフォロワーを攻撃できる）\n【ファンファーレ】『光晶のエレメント』1枚をEXエリアに置く。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "3",
+    "atk": "4",
+    "hp": "4"
+  },
+  {
+    "id": "CP05-036",
+    "name": "信念の蹴撃・ランドル",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-036.jpg",
+    "class": "ロイヤル",
+    "type": "フォロワー",
+    "subtype": "グラブル・風属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "BR",
+    "ability_text": "これをプレイする際、コストを-Xする。Xは「このターン中に自分の場のフォロワーが上限解放や最終上限解放をした回数」である。\n【疾走】\n自分のエンドフェイズが来たとき、これを手札に戻す。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "4",
+    "atk": "2",
+    "hp": "1"
   },
   {
     "id": "CP05-037",
@@ -1388,6 +1560,25 @@
     ]
   },
   {
+    "id": "CP05-T01",
+    "name": "ガンパウダーミキサー・クムユ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-T01.jpg",
+    "class": "エルフ",
+    "type": "フォロワー・トークン",
+    "subtype": "グラブル・土属性",
+    "card_kind_normalized": "token_follower",
+    "deck_section": "token",
+    "is_token": true,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "ability_text": "【突進】【指定攻撃】（【指定攻撃】を持つフォロワーは、スタンド状態のフォロワーを攻撃できる）\n【ラストワード】相手のリーダーすべてに2ダメージ。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "3",
+    "atk": "3",
+    "hp": "2"
+  },
+  {
     "id": "CP05-T08",
     "name": "アルス・マグナ",
     "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-T08.jpg",
@@ -1450,6 +1641,54 @@
     "is_deck_build_legal": true,
     "title": "グランブルーファンタジー",
     "ability_text": "【起動】コスト0：自分の場の土属性・フォロワー1体を選ぶ。それは上限解放する。それが【最終上限解放可能】を持ち、上限解放していたなら、代わりに最終上限解放する。（EXエリアのこれを、選んだフォロワーの下に置くことで、上限解放や最終上限解放できる。上限解放したフォロワーは攻撃力+1され、最終上限解放したフォロワーは攻撃力+1/体力+1される）",
+    "product_name": "コラボパック「グランブルーファンタジー」"
+  },
+  {
+    "id": "CP05-T12",
+    "name": "風晶のエレメント",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-T12.png",
+    "class": "ニュートラル",
+    "type": "トレジャー・トークン",
+    "subtype": "グラブル・風属性",
+    "card_kind_normalized": "token_treasure",
+    "deck_section": "token",
+    "is_token": true,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "ability_text": "【起動】コスト0：自分の場の風属性・フォロワー1体を選ぶ。それは上限解放する。それが【最終上限解放可能】を持ち、上限解放していたなら、代わりに最終上限解放する。（EXエリアのこれを、選んだフォロワーの下に置くことで、上限解放や最終上限解放できる。上限解放したフォロワーは攻撃力+1され、最終上限解放したフォロワーは攻撃力+1/体力+1される）",
+    "product_name": "コラボパック「グランブルーファンタジー」"
+  },
+  {
+    "id": "CP05-T13",
+    "name": "光晶のエレメント",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-T13.png",
+    "class": "ニュートラル",
+    "type": "トレジャー・トークン",
+    "subtype": "グラブル・光属性",
+    "card_kind_normalized": "token_treasure",
+    "deck_section": "token",
+    "is_token": true,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "ability_text": "【起動】コスト0：自分の場の光属性・フォロワー1体を選ぶ。それは上限解放する。それが【最終上限解放可能】を持ち、上限解放していたなら、代わりに最終上限解放する。（EXエリアのこれを、選んだフォロワーの下に置くことで、上限解放や最終上限解放できる。上限解放したフォロワーは攻撃力+1され、最終上限解放したフォロワーは攻撃力+1/体力+1される）",
+    "product_name": "コラボパック「グランブルーファンタジー」"
+  },
+  {
+    "id": "CP05-T14",
+    "name": "闇晶のエレメント",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-T14.png",
+    "class": "ニュートラル",
+    "type": "トレジャー・トークン",
+    "subtype": "グラブル・闇属性",
+    "card_kind_normalized": "token_treasure",
+    "deck_section": "token",
+    "is_token": true,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "ability_text": "【起動】コスト0：自分の場の闇属性・フォロワー1体を選ぶ。それは上限解放する。それが【最終上限解放可能】を持ち、上限解放していたなら、代わりに最終上限解放する。（EXエリアのこれを、選んだフォロワーの下に置くことで、上限解放や最終上限解放できる。上限解放したフォロワーは攻撃力+1され、最終上限解放したフォロワーは攻撃力+1/体力+1される）",
     "product_name": "コラボパック「グランブルーファンタジー」"
   },
   {
