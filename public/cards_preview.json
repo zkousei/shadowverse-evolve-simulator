@@ -352,6 +352,42 @@
     "hp": "4"
   },
   {
+    "id": "CP05-026",
+    "name": "ドラゴンナイツ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-026.png",
+    "class": "ロイヤル",
+    "type": "スペル",
+    "subtype": "グラブル・火属性・水属性・風属性・土属性",
+    "card_kind_normalized": "spell",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "GR",
+    "ability_text": "これをプレイする際、コストを+2してよい。\n下記から2つまでチョイスする。コストを+2したなら、代わりに4つまで。【1】『俊英の双剣士・ランスロット』1体を場に出す。【2】『不撓不屈の騎士・ヴェイン』1体を場に出す。【3】『竜殺しの騎士・ジークフリート』1体を場に出す。【4】『炎帝・パーシヴァル』1体を場に出す。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "5",
+    "related_cards": [
+      {
+        "id": "CP05-T03",
+        "name": "俊英の双剣士・ランスロット"
+      },
+      {
+        "id": "CP05-T04",
+        "name": "不撓不屈の騎士・ヴェイン"
+      },
+      {
+        "id": "CP05-T05",
+        "name": "竜殺しの騎士・ジークフリート"
+      },
+      {
+        "id": "CP05-T06",
+        "name": "炎帝・パーシヴァル"
+      }
+    ]
+  },
+  {
     "id": "CP05-029",
     "name": "不滅の群青・ベアトリクス",
     "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-029.jpg",
@@ -1281,7 +1317,7 @@
     "rarity": "BR",
     "ability_text": "【進化】コスト1：これは進化する。\n【守護】\n【ファンファーレ】『水晶のエレメント』1枚をEXエリアに置く。\n【クイック】【起動】コスト3手札のこれを捨てる：2枚引く。",
     "product_name": "コラボパック「グランブルーファンタジー」",
-    "cost": "3",
+    "cost": "4",
     "atk": "3",
     "hp": "3",
     "related_cards": [
@@ -1577,6 +1613,106 @@
     "cost": "3",
     "atk": "3",
     "hp": "2"
+  },
+  {
+    "id": "CP05-T03",
+    "name": "俊英の双剣士・ランスロット",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-T03.png",
+    "class": "ロイヤル",
+    "type": "フォロワー・トークン",
+    "subtype": "グラブル・水属性",
+    "card_kind_normalized": "token_follower",
+    "deck_section": "token",
+    "is_token": true,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "ability_text": "【疾走】（【疾走】を持つフォロワーは、場に出たターンから攻撃できる）\n【ファンファーレ】『水晶のエレメント』1枚をEXエリアに置く。1枚引く。自分の手札1枚を捨てる。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "3",
+    "atk": "3",
+    "hp": "3",
+    "related_cards": [
+      {
+        "id": "CP05-T10",
+        "name": "水晶のエレメント"
+      }
+    ]
+  },
+  {
+    "id": "CP05-T04",
+    "name": "不撓不屈の騎士・ヴェイン",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-T04.png",
+    "class": "ロイヤル",
+    "type": "フォロワー・トークン",
+    "subtype": "グラブル・風属性",
+    "card_kind_normalized": "token_follower",
+    "deck_section": "token",
+    "is_token": true,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "ability_text": "【ファンファーレ】『風晶のエレメント』1枚をEXエリアに置く。自分のリーダーは体力+3する。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "3",
+    "atk": "2",
+    "hp": "5",
+    "related_cards": [
+      {
+        "id": "CP05-T12",
+        "name": "風晶のエレメント"
+      }
+    ]
+  },
+  {
+    "id": "CP05-T05",
+    "name": "竜殺しの騎士・ジークフリート",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-T05.png",
+    "class": "ロイヤル",
+    "type": "フォロワー・トークン",
+    "subtype": "グラブル・土属性",
+    "card_kind_normalized": "token_follower",
+    "deck_section": "token",
+    "is_token": true,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "ability_text": "【守護】（これが場に出たときか、自分のエンドフェイズにこれをアクトできる。相手は、アクト状態の【守護】を持つフォロワー以外を攻撃できない）\n【ファンファーレ】相手の場のアクト状態のフォロワー1体を選ぶ。それを破壊する。『土晶のエレメント』1枚をEXエリアに置く。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "3",
+    "atk": "3",
+    "hp": "4",
+    "related_cards": [
+      {
+        "id": "CP05-T11",
+        "name": "土晶のエレメント"
+      }
+    ]
+  },
+  {
+    "id": "CP05-T06",
+    "name": "炎帝・パーシヴァル",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-T06.png",
+    "class": "ロイヤル",
+    "type": "フォロワー・トークン",
+    "subtype": "グラブル・火属性",
+    "card_kind_normalized": "token_follower",
+    "deck_section": "token",
+    "is_token": true,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "ability_text": "【ファンファーレ】相手の場のフォロワー1体を選ぶ。それに4ダメージ。『火晶のエレメント』1枚をEXエリアに置く。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "3",
+    "atk": "4",
+    "hp": "3",
+    "related_cards": [
+      {
+        "id": "CP05-T09",
+        "name": "火晶のエレメント"
+      }
+    ]
   },
   {
     "id": "CP05-T08",
