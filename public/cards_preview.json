@@ -2,7 +2,7 @@
   {
     "id": "CP05-001",
     "name": "魔眼の狩人・ソーン",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-001.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-001_official.jpg",
     "class": "エルフ",
     "type": "フォロワー",
     "subtype": "グラブル・十天衆・光属性",
@@ -22,7 +22,7 @@
   {
     "id": "CP05-002",
     "name": "調和の舞手・ユエル＆ソシエ",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-002.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-002_official.jpg",
     "class": "エルフ",
     "type": "フォロワー",
     "subtype": "グラブル・火属性・水属性",
@@ -62,7 +62,7 @@
   {
     "id": "CP05-008",
     "name": "虹色の弓使い・クピタン",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-008.png",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-008_official.jpg",
     "class": "エルフ",
     "type": "フォロワー",
     "subtype": "グラブル・水属性",
@@ -144,7 +144,7 @@
   {
     "id": "CP05-011",
     "name": "天禀の射手・メーテラ",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-011.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-011_official.jpg",
     "class": "エルフ",
     "type": "フォロワー",
     "subtype": "グラブル・風属性",
@@ -164,7 +164,7 @@
   {
     "id": "CP05-013",
     "name": "緋焔の踊り子・アンスリア",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-013.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-013_official.jpg",
     "class": "エルフ",
     "type": "フォロワー",
     "subtype": "グラブル・火属性",
@@ -194,7 +194,7 @@
   {
     "id": "CP05-014",
     "name": "緋焔の踊り子・アンスリア",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-014.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-014_official.jpg",
     "class": "エルフ",
     "type": "フォロワー・エボルヴ",
     "subtype": "グラブル・火属性",
@@ -224,7 +224,7 @@
   {
     "id": "CP05-016",
     "name": "愛憎の舞手・コウ＆ヨウ",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-016.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-016_official.jpg",
     "class": "エルフ",
     "type": "フォロワー",
     "subtype": "グラブル・光属性・闇属性",
@@ -244,7 +244,7 @@
   {
     "id": "CP05-017",
     "name": "カワイイ花マル・マナマル",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-017.png",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-017_official.jpg",
     "class": "エルフ",
     "type": "フォロワー",
     "subtype": "グラブル・闇属性",
@@ -264,7 +264,7 @@
   {
     "id": "CP05-018",
     "name": "箒星",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-018.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-018_official.jpg",
     "class": "エルフ",
     "type": "スペル",
     "subtype": "グラブル・風属性",
@@ -280,9 +280,29 @@
     "cost": "3"
   },
   {
+    "id": "CP05-020",
+    "name": "刀神・オクトー",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-020.jpg",
+    "class": "ロイヤル",
+    "type": "フォロワー",
+    "subtype": "グラブル・十天衆・土属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "LG",
+    "ability_text": "これをプレイする際、自分のエボルヴデッキの表向きの土属性・エボルヴフォロワー2枚につき、コストを-2する。\n【最終上限解放可能】\nこれが上限解放したとき、これは【突進】【指定攻撃】を持つ。\nこれが最終上限解放したとき、コスト1：相手の場のフォロワー1体を選ぶ。それを破壊する。それのリーダーに3ダメージ。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "8",
+    "atk": "5",
+    "hp": "5"
+  },
+  {
     "id": "CP05-021",
     "name": "光の理・ル・オー",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-021.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-021_official.jpg",
     "class": "ロイヤル",
     "type": "フォロワー",
     "subtype": "グラブル・六竜・光属性",
@@ -308,7 +328,7 @@
   {
     "id": "CP05-022",
     "name": "光の理・ル・オー",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-022.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-022_official.jpg",
     "class": "ロイヤル",
     "type": "フォロワー・エボルヴ",
     "subtype": "グラブル・六竜・光属性",
@@ -334,7 +354,7 @@
   {
     "id": "CP05-025",
     "name": "真紅の穿光・ゼタ",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-025.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-025_official.jpg",
     "class": "ロイヤル",
     "type": "フォロワー",
     "subtype": "グラブル・火属性",
@@ -390,7 +410,7 @@
   {
     "id": "CP05-029",
     "name": "不滅の群青・ベアトリクス",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-029.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-029_official.jpg",
     "class": "ロイヤル",
     "type": "フォロワー",
     "subtype": "グラブル・土属性",
@@ -414,9 +434,29 @@
     ]
   },
   {
+    "id": "CP05-030",
+    "name": "氷心の覇王・アグロヴァル",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-030.jpg",
+    "class": "ロイヤル",
+    "type": "フォロワー",
+    "subtype": "グラブル・水属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "SR",
+    "ability_text": "【ファンファーレ】相手の場のフォロワーすべてに「自分の墓場の【クイック】【起動】能力を持つフォロワーの枚数」と同じダメージ。\n【クイック】【起動】コスト3手札のこれを捨てる：相手の場のフォロワー1体を選ぶ。それを破壊する。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "6",
+    "atk": "5",
+    "hp": "5"
+  },
+  {
     "id": "CP05-031",
     "name": "花開く筋肉・フィオリト",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-031.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-031_official.jpg",
     "class": "ロイヤル",
     "type": "フォロワー",
     "subtype": "グラブル・土属性",
@@ -446,7 +486,7 @@
   {
     "id": "CP05-032",
     "name": "花開く筋肉・フィオリト",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-032.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-032_official.jpg",
     "class": "ロイヤル",
     "type": "フォロワー・エボルヴ",
     "subtype": "グラブル・土属性",
@@ -472,7 +512,7 @@
   {
     "id": "CP05-033",
     "name": "眠れる輝竜・アーサー",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-033.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-033_official.jpg",
     "class": "ロイヤル",
     "type": "フォロワー",
     "subtype": "グラブル・風属性",
@@ -498,7 +538,7 @@
   {
     "id": "CP05-034",
     "name": "眠れる獅子・モルドレッド",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-034.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-034_official.jpg",
     "class": "ロイヤル",
     "type": "フォロワー",
     "subtype": "グラブル・風属性",
@@ -524,7 +564,7 @@
   {
     "id": "CP05-035",
     "name": "燃え滾る闘志・フェザー",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-035.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-035_official.jpg",
     "class": "ロイヤル",
     "type": "フォロワー",
     "subtype": "グラブル・光属性",
@@ -544,7 +584,7 @@
   {
     "id": "CP05-036",
     "name": "信念の蹴撃・ランドル",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-036.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-036_official.jpg",
     "class": "ロイヤル",
     "type": "フォロワー",
     "subtype": "グラブル・風属性",
@@ -564,7 +604,7 @@
   {
     "id": "CP05-037",
     "name": "魔弾の射手・エッセル",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-037.png",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-037_official.jpg",
     "class": "ウィッチ",
     "type": "フォロワー",
     "subtype": "グラブル・十天衆・火属性",
@@ -584,7 +624,7 @@
   {
     "id": "CP05-041",
     "name": "開闢の錬金術師・カリオストロ",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-041.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-041_official.jpg",
     "class": "ウィッチ",
     "type": "フォロワー",
     "subtype": "グラブル・土属性・光属性・闇属性",
@@ -618,7 +658,7 @@
   {
     "id": "CP05-042",
     "name": "開闢の錬金術師・カリオストロ",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-042.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-042_official.jpg",
     "class": "ウィッチ",
     "type": "フォロワー・エボルヴ",
     "subtype": "グラブル・土属性・光属性・闇属性",
@@ -642,9 +682,29 @@
     ]
   },
   {
+    "id": "CP05-043",
+    "name": "空慕う帰還者・カシウス",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-043.jpg",
+    "class": "ウィッチ",
+    "type": "フォロワー",
+    "subtype": "グラブル・水属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "GR",
+    "ability_text": "【ファンファーレ】1枚引く。自分の墓場の【クイック】【起動】能力を持つフォロワーが7枚以上なら、自分のPPを3回復する。\n【クイック】【起動】コスト1手札のこれを捨てる：自分のデッキの上3枚を見る。その中から、【クイック】【起動】能力を持つフォロワー1枚を公開して手札に加えてよい。残りを好きな順にデッキの下に置く。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "4",
+    "atk": "3",
+    "hp": "3"
+  },
+  {
     "id": "CP05-044",
     "name": "コロッサス・マグナ",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-044.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-044_official.jpg",
     "class": "ウィッチ",
     "type": "アミュレット",
     "subtype": "グラブル・火属性",
@@ -662,7 +722,7 @@
   {
     "id": "CP05-045",
     "name": "神託の妖童・アルルメイヤ",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-045.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-045_official.jpg",
     "class": "ウィッチ",
     "type": "フォロワー",
     "subtype": "グラブル・土属性",
@@ -692,7 +752,7 @@
   {
     "id": "CP05-046",
     "name": "神託の妖童・アルルメイヤ",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-046.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-046_official.jpg",
     "class": "ウィッチ",
     "type": "フォロワー・エボルヴ",
     "subtype": "グラブル・土属性",
@@ -720,9 +780,35 @@
     ]
   },
   {
+    "id": "CP05-047",
+    "name": "楽隠居の元国王・フォリア",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-047.jpg",
+    "class": "ウィッチ",
+    "type": "フォロワー",
+    "subtype": "グラブル・水属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "SR",
+    "ability_text": "【ファンファーレ】自分の墓場の【クイック】【起動】能力を持つフォロワーが7枚以上なら、『ハクタク』1体を場に出す。\n【クイック】【起動】コスト0：このターン、次に自分が【クイック】【起動】能力をプレイする際、コストを-1する。この能力は1ターンに1回使える。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "4",
+    "atk": "3",
+    "hp": "5",
+    "related_cards": [
+      {
+        "id": "CP05-T07",
+        "name": "ハクタク"
+      }
+    ]
+  },
+  {
     "id": "CP05-048",
     "name": "アルケミック・フレア",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-048.png",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-048_official.jpg",
     "class": "ウィッチ",
     "type": "スペル",
     "subtype": "グラブル・火属性",
@@ -746,7 +832,7 @@
   {
     "id": "CP05-051",
     "name": "炎獄の葬送者・エルモート",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-051.png",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-051_official.jpg",
     "class": "ウィッチ",
     "type": "フォロワー",
     "subtype": "グラブル・火属性",
@@ -766,7 +852,7 @@
   {
     "id": "CP05-052",
     "name": "報恩の技師・アイザック",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-052.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-052_official.jpg",
     "class": "ウィッチ",
     "type": "フォロワー",
     "subtype": "グラブル・水属性",
@@ -792,7 +878,7 @@
   {
     "id": "CP05-053",
     "name": "アルス・グローリア",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-053.png",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-053_official.jpg",
     "class": "ウィッチ",
     "type": "スペル",
     "subtype": "グラブル・土属性・光属性・闇属性",
@@ -808,9 +894,29 @@
     "cost": "1"
   },
   {
+    "id": "CP05-054",
+    "name": "怪力乱神・サラーサ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-054.jpg",
+    "class": "ドラゴン",
+    "type": "フォロワー",
+    "subtype": "グラブル・十天衆・土属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "LG",
+    "ability_text": "【最終上限解放可能】\nこれが上限解放したとき、自分のエボルヴデッキの裏向きの土属性・エボルヴフォロワー2枚まで表向きにしてよい。\nこれが最終上限解放したとき、相手のリーダーすべてと相手の場のフォロワーすべてに「自分のエボルヴデッキの表向きの土属性・エボルヴフォロワー」2枚につき1ダメージ。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "4",
+    "atk": "3",
+    "hp": "3"
+  },
+  {
     "id": "CP05-055",
     "name": "大いなる調停者・ゾーイ",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-055.png",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-055_official.jpg",
     "class": "ドラゴン",
     "type": "フォロワー",
     "subtype": "グラブル・光属性",
@@ -830,7 +936,7 @@
   {
     "id": "CP05-056",
     "name": "炎の理・ウィルナス",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-056.png",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-056_official.jpg",
     "class": "ドラゴン",
     "type": "フォロワー",
     "subtype": "グラブル・六竜・火属性",
@@ -856,7 +962,7 @@
   {
     "id": "CP05-057",
     "name": "炎の理・ウィルナス",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-057.png",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-057_official.jpg",
     "class": "ドラゴン",
     "type": "フォロワー・エボルヴ",
     "subtype": "グラブル・六竜・火属性",
@@ -882,7 +988,7 @@
   {
     "id": "CP05-058",
     "name": "どこにでもいるフツーの女の子・メグ",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-058.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-058_official.jpg",
     "class": "ドラゴン",
     "type": "フォロワー",
     "subtype": "グラブル・闇属性",
@@ -908,7 +1014,7 @@
   {
     "id": "CP05-059",
     "name": "どこにでもいるフツーの女の子・メグ",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-059.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-059_official.jpg",
     "class": "ドラゴン",
     "type": "フォロワー・エボルヴ",
     "subtype": "グラブル・闇属性",
@@ -934,7 +1040,7 @@
   {
     "id": "CP05-065",
     "name": "メグの親友・まりっぺ",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-065.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-065_official.jpg",
     "class": "ドラゴン",
     "type": "フォロワー",
     "subtype": "グラブル・闇属性",
@@ -964,7 +1070,7 @@
   {
     "id": "CP05-066",
     "name": "灼脚の麗姫・アリーザ",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-066.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-066_official.jpg",
     "class": "ドラゴン",
     "type": "フォロワー",
     "subtype": "グラブル・火属性",
@@ -990,7 +1096,7 @@
   {
     "id": "CP05-067",
     "name": "灼脚の麗姫・アリーザ",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-067.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-067_official.jpg",
     "class": "ドラゴン",
     "type": "フォロワー・エボルヴ",
     "subtype": "グラブル・火属性",
@@ -1020,7 +1126,7 @@
   {
     "id": "CP05-068",
     "name": "古今独歩の大拳豪・ガンダゴウザ",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-068.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-068_official.jpg",
     "class": "ドラゴン",
     "type": "フォロワー",
     "subtype": "グラブル・火属性",
@@ -1040,7 +1146,7 @@
   {
     "id": "CP05-070",
     "name": "オンリー・ワン・ウィッシュ",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-070.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-070_official.jpg",
     "class": "ドラゴン",
     "type": "スペル",
     "subtype": "グラブル・光属性",
@@ -1064,7 +1170,7 @@
   {
     "id": "CP05-078",
     "name": "生滅の技巧・ネハン",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-078.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-078_official.jpg",
     "class": "ナイトメア",
     "type": "フォロワー",
     "subtype": "グラブル・光属性",
@@ -1084,7 +1190,7 @@
   {
     "id": "CP05-082",
     "name": "冥闇の剛刃・バザラガ",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-082.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-082_official.jpg",
     "class": "ナイトメア",
     "type": "フォロワー",
     "subtype": "グラブル・闇属性",
@@ -1104,7 +1210,7 @@
   {
     "id": "CP05-088",
     "name": "ストーン・ブレイク",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-088.png",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-088_official.jpg",
     "class": "ナイトメア",
     "type": "スペル",
     "subtype": "グラブル・闇属性",
@@ -1122,7 +1228,7 @@
   {
     "id": "CP05-090",
     "name": "魔導の申し子・フュンフ",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-090.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-090_official.jpg",
     "class": "ビショップ",
     "type": "フォロワー",
     "subtype": "グラブル・十天衆・光属性",
@@ -1142,7 +1248,7 @@
   {
     "id": "CP05-093",
     "name": "狂恋の華鎧・ヴィーラ",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-093.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-093_official.jpg",
     "class": "ビショップ",
     "type": "フォロワー",
     "subtype": "グラブル・光属性",
@@ -1168,7 +1274,7 @@
   {
     "id": "CP05-094",
     "name": "狂恋の華鎧・ヴィーラ",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-094.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-094_official.jpg",
     "class": "ビショップ",
     "type": "フォロワー・エボルヴ",
     "subtype": "グラブル・光属性",
@@ -1194,7 +1300,7 @@
   {
     "id": "CP05-095",
     "name": "七宝石の姫・レ・フィーエ",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-095.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-095_official.jpg",
     "class": "ビショップ",
     "type": "フォロワー",
     "subtype": "グラブル・光属性",
@@ -1214,7 +1320,7 @@
   {
     "id": "CP05-096",
     "name": "シュヴァリエ・マグナ",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-096.png",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-096_official.jpg",
     "class": "ビショップ",
     "type": "アミュレット",
     "subtype": "グラブル・光属性",
@@ -1232,7 +1338,7 @@
   {
     "id": "CP05-097",
     "name": "魔杖の外科医・ティコ",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-097.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-097_official.jpg",
     "class": "ビショップ",
     "type": "フォロワー",
     "subtype": "グラブル・光属性",
@@ -1258,7 +1364,7 @@
   {
     "id": "CP05-098",
     "name": "魔杖の外科医・ティコ",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-098.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-098_official.jpg",
     "class": "ビショップ",
     "type": "フォロワー・エボルヴ",
     "subtype": "グラブル・光属性",
@@ -1284,7 +1390,7 @@
   {
     "id": "CP05-099",
     "name": "星界の艇人・ノア",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-099.png",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-099_official.jpg",
     "class": "ビショップ",
     "type": "フォロワー",
     "subtype": "グラブル・光属性",
@@ -1304,7 +1410,7 @@
   {
     "id": "CP05-101",
     "name": "星跡の巡礼者・ソフィア",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-101.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-101_official.jpg",
     "class": "ビショップ",
     "type": "フォロワー",
     "subtype": "グラブル・水属性",
@@ -1334,7 +1440,7 @@
   {
     "id": "CP05-102",
     "name": "星跡の巡礼者・ソフィア",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-102.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-102_official.jpg",
     "class": "ビショップ",
     "type": "フォロワー・エボルヴ",
     "subtype": "グラブル・水属性",
@@ -1360,7 +1466,7 @@
   {
     "id": "CP05-103",
     "name": "英雄幻視・トルー",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-103.png",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-103_official.jpg",
     "class": "ビショップ",
     "type": "フォロワー",
     "subtype": "グラブル・水属性",
@@ -1386,7 +1492,7 @@
   {
     "id": "CP05-104",
     "name": "アフェクション・オース",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-104.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-104_official.jpg",
     "class": "ビショップ",
     "type": "スペル",
     "subtype": "グラブル・光属性",
@@ -1414,7 +1520,7 @@
   {
     "id": "CP05-105",
     "name": "天司長の後継・サンダルフォン",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-105.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-105_official.jpg",
     "class": "ニュートラル",
     "type": "フォロワー",
     "subtype": "グラブル・光属性",
@@ -1440,7 +1546,7 @@
   {
     "id": "CP05-106",
     "name": "天司長の後継・サンダルフォン",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-106.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-106_official.jpg",
     "class": "ニュートラル",
     "type": "フォロワー・エボルヴ",
     "subtype": "グラブル・光属性",
@@ -1466,7 +1572,7 @@
   {
     "id": "CP05-107",
     "name": "グラン＆ジータ",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-107.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-107_official.jpg",
     "class": "ニュートラル",
     "type": "フォロワー",
     "subtype": "グラブル・全属性",
@@ -1492,7 +1598,7 @@
   {
     "id": "CP05-108",
     "name": "小さき赤き竜・ビィ",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-108.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-108_official.jpg",
     "class": "ニュートラル",
     "type": "フォロワー",
     "subtype": "グラブル・全属性",
@@ -1522,7 +1628,7 @@
   {
     "id": "CP05-109",
     "name": "小さき赤き竜・ビィ",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-109.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-109_official.jpg",
     "class": "ニュートラル",
     "type": "フォロワー・エボルヴ",
     "subtype": "グラブル・全属性",
@@ -1552,7 +1658,7 @@
   {
     "id": "CP05-110",
     "name": "蒼の少女・ルリア",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-110.png",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-110_official.jpg",
     "class": "ニュートラル",
     "type": "フォロワー",
     "subtype": "グラブル・全属性",
@@ -1572,7 +1678,7 @@
   {
     "id": "CP05-111",
     "name": "蒼天の守護騎士・カタリナ",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-111.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-111_official.jpg",
     "class": "ニュートラル",
     "type": "フォロワー",
     "subtype": "グラブル・水属性",
@@ -1715,9 +1821,28 @@
     ]
   },
   {
+    "id": "CP05-T07",
+    "name": "ハクタク",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-T07.jpg",
+    "class": "ウィッチ",
+    "type": "フォロワー・トークン",
+    "subtype": "グラブル・水属性",
+    "card_kind_normalized": "token_follower",
+    "deck_section": "token",
+    "is_token": true,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "ability_text": "【突進】【指定攻撃】【守護】（【指定攻撃】を持つフォロワーは、スタンド状態のフォロワーを攻撃できる）\n【クイック】【起動】コスト1：自分のリーダーは体力+2する。この能力は1ターンに1回使える。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "4",
+    "atk": "4",
+    "hp": "6"
+  },
+  {
     "id": "CP05-T08",
     "name": "アルス・マグナ",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-T08.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-T08_official.jpg",
     "class": "ウィッチ",
     "type": "スペル・トークン",
     "subtype": "グラブル・土属性・光属性・闇属性",
@@ -1734,7 +1859,7 @@
   {
     "id": "CP05-T09",
     "name": "火晶のエレメント",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-T09.png",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-T09_official.jpg",
     "class": "ニュートラル",
     "type": "トレジャー・トークン",
     "subtype": "グラブル・火属性",
@@ -1750,7 +1875,7 @@
   {
     "id": "CP05-T10",
     "name": "水晶のエレメント",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-T10.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-T10_official.jpg",
     "class": "ニュートラル",
     "type": "トレジャー・トークン",
     "subtype": "グラブル・水属性",
@@ -1766,7 +1891,7 @@
   {
     "id": "CP05-T11",
     "name": "土晶のエレメント",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-T11.jpg",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-T11_official.jpg",
     "class": "ニュートラル",
     "type": "トレジャー・トークン",
     "subtype": "グラブル・土属性",
@@ -1782,7 +1907,7 @@
   {
     "id": "CP05-T12",
     "name": "風晶のエレメント",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-T12.png",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-T12_official.jpg",
     "class": "ニュートラル",
     "type": "トレジャー・トークン",
     "subtype": "グラブル・風属性",
@@ -1798,7 +1923,7 @@
   {
     "id": "CP05-T13",
     "name": "光晶のエレメント",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-T13.png",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-T13_official.jpg",
     "class": "ニュートラル",
     "type": "トレジャー・トークン",
     "subtype": "グラブル・光属性",
@@ -1814,7 +1939,7 @@
   {
     "id": "CP05-T14",
     "name": "闇晶のエレメント",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-T14.png",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-T14_official.jpg",
     "class": "ニュートラル",
     "type": "トレジャー・トークン",
     "subtype": "グラブル・闇属性",
@@ -1830,7 +1955,7 @@
   {
     "id": "CP05-T15",
     "name": "ヒヒイロカネ",
-    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-T15.png",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-T15_official.jpg",
     "class": "ニュートラル",
     "type": "トレジャー・トークン",
     "subtype": "グラブル",
