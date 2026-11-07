@@ -815,12 +815,19 @@
       },
       "topDeck": {
         "title": "Look at Top {{count}} Cards",
-        "instruction": "Click a card to move it to: {{destination}}",
-        "assignTo": "Assign selected to:",
+        "instruction": "Select cards, then choose a destination. Changes apply when you confirm.",
+        "selectCards": "Select one or more cards above",
+        "assignSelected": "Move {{count}} selected card(s) to:",
+        "undoLastAssignment": "Undo last assignment",
+        "orderHint": {
+          "top": "Left → right: next card to draw first. Cards are added in selection order.",
+          "bottom": "Left → right: closer to the top first. Cards are added in selection order."
+        },
         "pendingCards": "Cards to be Assigned",
       "allAssignedInline": "All cards have been assigned.",
       "empty": "Empty",
-      "tapToReturn": "Tap card to move back",
+      "tapToSelect": "Select cards to change destination",
+      "returnToPending": "Return to unassigned",
       "reorderBackward": "Move {{destination}} order backward for {{card}}",
       "reorderForward": "Move {{destination}} order forward for {{card}}",
       "randomizeBottom": "Randomize bottom order",

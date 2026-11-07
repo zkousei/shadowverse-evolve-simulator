@@ -1,0 +1,4 @@
+.top-deck-card-option:focus-visible {
+  outline: 2px solid #f0f6fc;
+  outline-offset: 6px;
+}
