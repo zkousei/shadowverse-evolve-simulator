@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import TopDeckModal from './TopDeckModal';
+import TopDeckModal, { type TopDeckAction } from './TopDeckModal';
 import type { CardInstance } from '../Card';
 import type { CardDetail } from '../../utils/card/cardDetails';
 
@@ -31,6 +31,84 @@ const createCardDetail = (id: string): CardDetail => ({
 });
 
 describe('TopDeckModal', () => {
+  it('shows only populated destinations and collapses the selection area until an assignment is undone', () => {
+    render(<TopDeckModal isOpen cards={[createCard('c1'), createCard('c2')]} onConfirm={vi.fn()} onCancel={vi.fn()} />);
+    expect(screen.queryAllByRole('heading', { level: 4 })).toHaveLength(0);
+    expect(screen.getByRole('button', { name: 'Hand' })).toBeInTheDocument();
+    expect(screen.queryAllByRole('button', { name: /All remaining to/ })).toHaveLength(0);
+
+    fireEvent.click(screen.getByAltText('Card c1'));
+    fireEvent.click(screen.getByRole('button', { name: 'Hand' }));
+    expect(screen.getAllByRole('heading', { level: 4 })).toHaveLength(1);
+    expect(screen.getByRole('heading', { name: /Hand/ })).toBeInTheDocument();
+    fireEvent.click(screen.getByAltText('Card c2'));
+    fireEvent.click(screen.getByRole('button', { name: 'Bottom of Deck' }));
+
+    expect(screen.getByText('All cards have been assigned.')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Cards to be Assigned' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'All remaining to bottom' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Hand' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Confirm' })).toBeEnabled();
+    expect(screen.getAllByRole('heading', { level: 4 })).toHaveLength(2);
+
+    fireEvent.click(screen.getByAltText('Card c2'));
+    expect(screen.getByRole('heading', { name: 'Cards to be Assigned' })).toBeInTheDocument();
+    expect(screen.queryAllByRole('button', { name: /All remaining to/ })).toHaveLength(0);
+    expect(screen.queryByRole('heading', { name: /Bottom of Deck/ })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Randomize bottom order')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Hand/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Confirm' })).toBeDisabled();
+    fireEvent.click(screen.getByAltText('Card c2'));
+    fireEvent.click(screen.getByRole('button', { name: 'Top of Deck' }));
+    expect(screen.getByRole('heading', { name: /Top of Deck/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Confirm' })).toBeEnabled();
+  });
+
+  it('selects without moving, supports deselection, and sends cards to bottom in selection order without bulk buttons', () => {
+    const onConfirm = vi.fn();
+    const onCancel = vi.fn();
+    render(<TopDeckModal isOpen cards={[createCard('c1'), createCard('c2'), createCard('c3')]} onConfirm={onConfirm} onCancel={onCancel} />);
+    expect(screen.queryAllByRole('button', { name: /All remaining to/ })).toHaveLength(0);
+    const handButton = screen.getByRole('button', { name: 'Hand' });
+    expect(handButton).toBeDisabled();
+    fireEvent.click(screen.getByAltText('Card c1'));
+    expect(screen.getByRole('button', { name: 'Card c1' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText('3 cards remaining to assign')).toBeInTheDocument();
+    fireEvent.click(screen.getByAltText('Card c1'));
+    expect(handButton).toBeDisabled();
+    fireEvent.click(screen.getByAltText('Card c1'));
+    fireEvent.click(handButton);
+    fireEvent.click(screen.getByAltText('Card c3'));
+    fireEvent.click(screen.getByAltText('Card c2'));
+    fireEvent.click(screen.getByRole('button', { name: 'Bottom of Deck' }));
+    expect(onConfirm).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByText('Confirm'));
+    expect(onConfirm).toHaveBeenCalledWith([
+      { cardId: 'c1', action: 'hand', order: undefined },
+      { cardId: 'c3', action: 'bottom', order: 1 },
+      { cardId: 'c2', action: 'bottom', order: 2 },
+    ]);
+    fireEvent.click(screen.getByText('Cancel'));
+    expect(onCancel).toHaveBeenCalledOnce();
+  });
+
+  it('cancels after private and revealed assignments without applying results or changing the source cards', () => {
+    const cards = [createCard('c1'), createCard('c2')];
+    const originalCards = structuredClone(cards);
+    const onConfirm = vi.fn();
+    const onCancel = vi.fn();
+    render(<TopDeckModal isOpen cards={cards} onConfirm={onConfirm} onCancel={onCancel} />);
+    fireEvent.click(screen.getByAltText('Card c1'));
+    fireEvent.click(screen.getByRole('button', { name: 'Reveal to Hand' }));
+    fireEvent.click(screen.getByAltText('Card c2'));
+    fireEvent.click(screen.getByRole('button', { name: 'Bottom of Deck' }));
+    expect(screen.getByRole('button', { name: 'Confirm' })).toBeEnabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(onCancel).toHaveBeenCalledOnce();
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(cards).toEqual(originalCards);
+  });
+
   it('does not render when closed', () => {
     render(
       <TopDeckModal
@@ -58,9 +136,9 @@ describe('TopDeckModal', () => {
     const confirmButton = screen.getByText('Confirm');
     expect(confirmButton).toBeDisabled();
 
-    fireEvent.click(screen.getAllByText('Top of Deck')[0]);
     fireEvent.click(screen.getByAltText('Card c1'));
     fireEvent.click(screen.getByAltText('Card c2'));
+    fireEvent.click(screen.getAllByText('Top of Deck')[0]);
 
     expect(screen.getByText('All cards have been assigned.')).toBeInTheDocument();
     expect(confirmButton).toBeEnabled();
@@ -72,6 +150,7 @@ describe('TopDeckModal', () => {
     expect(screen.queryByText('2')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByAltText('Card c1'));
+    fireEvent.click(screen.getAllByText('Top of Deck')[0]);
     fireEvent.click(confirmButton);
 
     expect(onConfirm).toHaveBeenCalledWith([
@@ -91,6 +170,7 @@ describe('TopDeckModal', () => {
     );
 
     fireEvent.click(screen.getByAltText('Card c1'));
+    fireEvent.click(screen.getAllByText('Field')[0]);
     expect(screen.getByText('All cards have been assigned.')).toBeInTheDocument();
 
     rerender(
@@ -125,8 +205,8 @@ describe('TopDeckModal', () => {
       />
     );
 
-    fireEvent.click(screen.getAllByText('Bottom of Deck')[0]);
     fireEvent.click(screen.getByAltText('Card c1'));
+    fireEvent.click(screen.getAllByText('Bottom of Deck')[0]);
 
     rerender(
       <TopDeckModal
@@ -140,6 +220,7 @@ describe('TopDeckModal', () => {
     expect(screen.getByText('1 cards remaining to assign')).toBeInTheDocument();
 
     fireEvent.click(screen.getByAltText('Card c2'));
+    fireEvent.click(screen.getAllByText('Bottom of Deck')[0]);
     fireEvent.click(screen.getByText('Confirm'));
 
     expect(onConfirm).toHaveBeenCalledWith([
@@ -148,7 +229,10 @@ describe('TopDeckModal', () => {
     ]);
   });
 
-  it('supports assigning cards to revealed hand', () => {
+  it.each<[string, TopDeckAction]>([
+    ['Field', 'field'], ['Hand', 'hand'], ['Reveal to Hand', 'revealedHand'],
+    ['EX Area', 'ex'], ['Cemetery', 'cemetery'],
+  ])('assigns selected cards to %s', (label, action) => {
     const onConfirm = vi.fn();
     render(
       <TopDeckModal
@@ -159,12 +243,12 @@ describe('TopDeckModal', () => {
       />
     );
 
-    fireEvent.click(screen.getAllByText('Reveal to Hand')[0]);
     fireEvent.click(screen.getByAltText('Card c1'));
+    fireEvent.click(screen.getByRole('button', { name: label }));
     fireEvent.click(screen.getByText('Confirm'));
 
     expect(onConfirm).toHaveBeenCalledWith([
-      { cardId: 'c1', action: 'revealedHand', order: undefined },
+      { cardId: 'c1', action, order: undefined },
     ]);
   });
 
@@ -179,10 +263,10 @@ describe('TopDeckModal', () => {
       />
     );
 
-    fireEvent.click(screen.getAllByText('Bottom of Deck')[0]);
     fireEvent.click(screen.getByAltText('Card c1'));
     fireEvent.click(screen.getByAltText('Card c2'));
     fireEvent.click(screen.getByAltText('Card c3'));
+    fireEvent.click(screen.getAllByText('Bottom of Deck')[0]);
 
     fireEvent.click(screen.getByLabelText('Move Bottom of Deck order forward for Card c1'));
     fireEvent.click(screen.getByLabelText('Move Bottom of Deck order forward for Card c1'));
@@ -211,14 +295,14 @@ describe('TopDeckModal', () => {
         />
       );
 
-      fireEvent.click(screen.getAllByText('Bottom of Deck')[0]);
       fireEvent.click(screen.getByAltText('Card c1'));
       fireEvent.click(screen.getByAltText('Card c2'));
       fireEvent.click(screen.getByAltText('Card c3'));
+      fireEvent.click(screen.getAllByText('Bottom of Deck')[0]);
       fireEvent.click(screen.getByLabelText('Randomize bottom order'));
 
-      fireEvent.click(screen.getAllByText('Top of Deck')[0]);
       fireEvent.click(screen.getByAltText('Card c4'));
+      fireEvent.click(screen.getAllByText('Top of Deck')[0]);
       fireEvent.click(screen.getByText('Confirm'));
 
       expect(onConfirm).toHaveBeenCalledWith([
@@ -243,20 +327,20 @@ describe('TopDeckModal', () => {
       />
     );
 
-    fireEvent.click(screen.getAllByText('Top of Deck')[0]);
     fireEvent.click(screen.getByAltText('Card c1'));
     fireEvent.click(screen.getByAltText('Card c2'));
+    fireEvent.click(screen.getAllByText('Top of Deck')[0]);
 
-    fireEvent.click(screen.getAllByText('Field')[0]);
     fireEvent.click(screen.getByAltText('Card c3'));
+    fireEvent.click(screen.getAllByText('Field')[0]);
 
     const backwardButton = screen.getByLabelText('Move Top of Deck order backward for Card c2');
     expect(screen.getByLabelText('Move Top of Deck order backward for Card c1')).toBeDisabled();
 
     fireEvent.click(backwardButton);
     fireEvent.click(document.querySelector('img[src="/c2.png"]') as Element);
-    fireEvent.click(screen.getAllByText('Top of Deck')[0]);
     fireEvent.click(screen.getByAltText('Card c2'));
+    fireEvent.click(screen.getAllByText('Top of Deck')[0]);
     fireEvent.click(screen.getByText('Confirm'));
 
     expect(onConfirm).toHaveBeenCalledWith([

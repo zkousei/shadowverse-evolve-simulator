@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import './TopDeckModal.css';
 import type { CardInstance } from '../Card';
 import { useTranslation } from 'react-i18next';
 import CardArtwork from '../CardArtwork';
@@ -44,11 +45,11 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({
 
   const {
     pendingCards,
-    currentAction,
-    setCurrentAction,
+    selectedCardIds,
+    toggleSelection,
+    assignSelected,
     isBottomOrderRandomized,
     setIsBottomOrderRandomized,
-    handleAssign,
     handleUnassign,
     reorderAssignedDeckCards,
     getGroup,
@@ -105,72 +106,95 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({
           <div>
             <h2 style={{ margin: 0, color: '#f0f6fc', fontSize: '1.3rem', fontWeight: 'bold' }}>{t('gameBoard.modals.topDeck.title', { count: cards.length })}</h2>
             <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#8b949e' }}>
-              {t('gameBoard.modals.topDeck.instruction', { destination: actionButtons.find(b => b.id === currentAction)?.label })}
+              {t('gameBoard.modals.topDeck.instruction')}
             </p>
           </div>
           <button onClick={onCancel} style={{ background: '#30363d', border: 'none', color: '#c9d1d9', padding: '0.5rem 1.2rem', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>{t('common.buttons.cancel')}</button>
         </div>
 
-        {/* Action Toggle */}
-        <div style={{ display: 'flex', gap: '8px', padding: '1rem 2rem', background: '#0d1117', borderBottom: '1px solid #21262d', flexWrap: 'wrap' }}>
-          <span style={{ alignSelf: 'center', fontSize: '0.9rem', color: '#8b949e', marginRight: '8px' }}>{t('gameBoard.modals.topDeck.assignTo')}</span>
-          {actionButtons.map(btn => (
-            <button
-              key={btn.id}
-              onClick={() => setCurrentAction(btn.id)}
-              style={{
-                background: currentAction === btn.id ? btn.color : '#21262d',
-                color: currentAction === btn.id ? '#000' : '#c9d1d9',
-                border: 'none', padding: '0.6rem 1.2rem', borderRadius: '30px', cursor: 'pointer',
-                fontSize: '0.85rem', fontWeight: 'bold', transition: 'all 0.2s',
-                boxShadow: currentAction === btn.id ? `0 0 15px ${btn.color}66` : 'none'
-              }}
-            >
-              {btn.label}
-            </button>
-          ))}
-        </div>
-
         {/* Content Area */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '2rem', display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
+        <div data-testid="top-deck-content" style={{ flex: 1, overflowY: 'auto', padding: '2rem', display: 'flex', flexDirection: 'column', gap: allAssigned ? '1rem' : '2.5rem' }}>
 
           {/* Pending Cards */}
-          <section>
-            <h3 style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: '#8b949e', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b' }}></span>
-              {t('gameBoard.modals.topDeck.pendingCards')}
-            </h3>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', minHeight: '180px', background: 'rgba(255,255,255,0.02)', padding: '1.5rem', borderRadius: '12px', border: '1px dashed #30363d' }}>
-              {pendingCards.map(card => (
-                <div
-                  key={card.id}
-                  onClick={() => handleAssign(card)}
-                  onMouseEnter={(event) => showTopDeckCardPreview(card, event)}
-                  onMouseMove={(event) => moveTopDeckCardPreview(card, event)}
-                  onMouseLeave={hideTopDeckCardPreview}
-                  style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
-                >
-                  <CardArtwork
-                    image={card.image}
-                    alt={card.name}
-                    detail={cardDetailLookup[card.cardId]}
-                    baseCardType={card.baseCardType}
-                    isLeaderCard={card.isLeaderCard}
-                    isTokenCard={card.isTokenCard}
-                    isEvolveCard={card.isEvolveCard}
-                    style={{ width: '120px', height: '168px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}
-                    draggable={false}
-                  />
+          {allAssigned ? (
+            <section aria-live="polite" style={{ color: '#8b949e', fontSize: '0.9rem' }}>
+              {t('gameBoard.modals.topDeck.allAssignedInline')}
+            </section>
+          ) : (
+            <section>
+              <h3 style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: '#8b949e', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b' }}></span>
+                {t('gameBoard.modals.topDeck.pendingCards')}
+              </h3>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', minHeight: '180px', background: 'rgba(255,255,255,0.02)', padding: '1.5rem', borderRadius: '12px', border: '1px dashed #30363d' }}>
+                {pendingCards.map(card => (
+                  <button
+                    type="button"
+                    className="top-deck-card-option"
+                    key={card.id}
+                    aria-label={card.name}
+                    aria-pressed={selectedCardIds.includes(card.id)}
+                    onClick={() => toggleSelection(card)}
+                    onMouseEnter={(event) => showTopDeckCardPreview(card, event)}
+                    onMouseMove={(event) => moveTopDeckCardPreview(card, event)}
+                    onMouseLeave={hideTopDeckCardPreview}
+                    style={{
+                      position: 'relative', padding: 0, border: 'none', background: 'none',
+                      borderRadius: '8px', cursor: 'pointer',
+                      boxShadow: selectedCardIds.includes(card.id) ? '0 0 0 3px #58a6ff' : undefined,
+                      transition: 'box-shadow 0.2s',
+                    }}
+                  >
+                    <CardArtwork
+                      image={card.image}
+                      alt={card.name}
+                      detail={cardDetailLookup[card.cardId]}
+                      baseCardType={card.baseCardType}
+                      isLeaderCard={card.isLeaderCard}
+                      isTokenCard={card.isTokenCard}
+                      isEvolveCard={card.isEvolveCard}
+                      style={{ width: '120px', height: '168px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}
+                      draggable={false}
+                    />
+                    {selectedCardIds.includes(card.id) && (
+                      <span style={{ position: 'absolute', top: '4px', right: '4px', background: '#1f6feb', color: '#fff', borderRadius: '999px', padding: '3px 7px', fontWeight: 'bold' }}>
+                        ✓ {selectedCardIds.indexOf(card.id) + 1}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+              <div style={{ marginTop: '1rem', padding: '1rem', background: '#161b22', borderRadius: '12px' }}>
+                <div aria-live="polite" style={{ color: '#c9d1d9', marginBottom: '0.75rem', fontSize: '0.9rem' }}>
+                  {selectedCardIds.length > 0
+                    ? t('gameBoard.modals.topDeck.assignSelected', { count: selectedCardIds.length })
+                    : t('gameBoard.modals.topDeck.selectCards')}
                 </div>
-              ))}
-              {pendingCards.length === 0 && <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#484f58', fontStyle: 'italic' }}>{t('gameBoard.modals.topDeck.allAssignedInline')}</div>}
-            </div>
-          </section>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {actionButtons.map(btn => (
+                    <button
+                      key={btn.id}
+                      type="button"
+                      disabled={selectedCardIds.length === 0}
+                      onClick={() => assignSelected(btn.id)}
+                      style={{
+                        background: selectedCardIds.length > 0 ? btn.color : '#21262d',
+                        color: selectedCardIds.length > 0 ? '#000' : '#8b949e',
+                        border: 'none', padding: '0.6rem 1rem', borderRadius: '8px',
+                        cursor: selectedCardIds.length > 0 ? 'pointer' : 'not-allowed', fontWeight: 'bold',
+                      }}
+                    >
+                      {btn.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </section>
+          )}
 
           {/* Results Area */}
           <TopDeckDestinationColumns
             actionButtons={actionButtons}
-            currentAction={currentAction}
             cardDetailLookup={cardDetailLookup}
             isBottomOrderRandomized={isBottomOrderRandomized}
             setIsBottomOrderRandomized={setIsBottomOrderRandomized}

@@ -55,6 +55,66 @@ test.describe('Solo Zone Actions', () => {
     await expect(page.getByTestId('gameboard-recent-events')).toContainText('Hand → Deck: 1');
   });
 
+  test('keeps keyboard card focus visible and cancels Look Top without changing the deck', async ({ page }) => {
+    await startSoloGame(page);
+    const originalDeckIds = await zoneCards(page, 'mainDeck-host').evaluateAll(cards => cards.map(card => card.getAttribute('data-card-id')));
+    const mainDeckSection = await openMainDeckActions(page, 'host');
+    await mainDeckSection.getByRole('button', { name: 'Look Top (N)' }).click();
+    await page.getByRole('dialog', { name: 'How many cards to look at?' }).getByRole('button', { name: '2' }).click();
+    const modal = page.getByText('Look at Top 2 Cards').locator('xpath=ancestor::div[contains(@style, "max-width: 1200px")]');
+    const pendingCards = modal.locator('button[aria-pressed]');
+    await modal.getByRole('button', { name: 'Cancel', exact: true }).focus();
+    await page.keyboard.press('Tab');
+    await expect(pendingCards.first()).toBeFocused();
+    await expect.poll(() => pendingCards.first().evaluate(card => getComputedStyle(card).outlineStyle)).not.toBe('none');
+    await page.keyboard.press('Space');
+    await expect(pendingCards.first()).toHaveAttribute('aria-pressed', 'true');
+    await page.keyboard.press('Tab');
+    await expect(pendingCards.nth(1)).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(pendingCards.nth(1)).toHaveAttribute('aria-pressed', 'true');
+    await modal.getByRole('button', { name: 'Hand', exact: true }).click();
+    await expect(modal.getByRole('button', { name: 'Confirm', exact: true })).toBeEnabled();
+    await modal.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await expect(modal).toBeHidden();
+    await expect(zoneCards(page, 'hand-host')).toHaveCount(4);
+    expect(await zoneCards(page, 'mainDeck-host').evaluateAll(cards => cards.map(card => card.getAttribute('data-card-id')))).toEqual(originalDeckIds);
+  });
+
+  for (const height of [900, 720]) {
+    test(`keeps completed Look Top results visible without inner scrolling at 1280x${height}`, async ({ page }) => {
+      await page.setViewportSize({ width: 1280, height });
+      await startSoloGame(page);
+      const mainDeckSection = await openMainDeckActions(page, 'host');
+      await mainDeckSection.getByRole('button', { name: 'Look Top (N)' }).click();
+      await page.getByRole('dialog', { name: 'How many cards to look at?' }).getByRole('button', { name: '2' }).click();
+      const modal = page.getByText('Look at Top 2 Cards').locator('xpath=ancestor::div[contains(@style, "max-width: 1200px")]');
+      await expect(modal.getByRole('button', { name: /All remaining to/ })).toHaveCount(0);
+      const pending = modal.locator('section').filter({ hasText: 'Cards to be Assigned' });
+      await expect(modal.getByRole('heading', { level: 4 })).toHaveCount(0);
+      await pending.getByRole('img', { name: /E2E/ }).first().click();
+      await modal.getByRole('button', { name: 'Hand', exact: true }).click();
+      await expect(modal.getByRole('heading', { level: 4 })).toHaveCount(1);
+      await pending.getByRole('img', { name: /E2E/ }).first().click();
+      await modal.getByRole('button', { name: 'Bottom of Deck', exact: true }).click();
+      await expect(modal.getByText('All cards have been assigned.')).toBeVisible();
+      await expect(pending).toHaveCount(0);
+      await expect(modal.getByRole('heading', { level: 4 })).toHaveCount(2);
+      await expect(modal.getByRole('button', { name: 'Confirm' })).toBeEnabled();
+      const content = modal.getByTestId('top-deck-content');
+      await expect.poll(() => content.evaluate(element => element.scrollHeight - element.clientHeight)).toBeLessThanOrEqual(1);
+      await expect(modal.getByLabel('Randomize bottom order')).toBeInViewport();
+      await modal.getByRole('heading', { name: /Bottom of Deck/ }).locator('..').getByRole('img').click();
+      await expect(pending).toBeVisible();
+      await expect(modal.getByRole('heading', { level: 4 })).toHaveCount(1);
+      await expect(modal.getByRole('button', { name: 'Confirm' })).toBeDisabled();
+      await pending.getByRole('img', { name: /E2E/ }).first().click();
+      await modal.getByRole('button', { name: 'Top of Deck', exact: true }).click();
+      await expect(modal.getByRole('heading', { name: /Top of Deck/ })).toBeVisible();
+      await expect(modal.getByRole('button', { name: 'Confirm' })).toBeEnabled();
+    });
+  }
+
   test('resolves Look Top into field and EX area destinations', async ({ page }) => {
     await startSoloGame(page);
 
@@ -68,9 +128,15 @@ test.describe('Solo Zone Actions', () => {
     await expect(page.getByText('Look at Top 2 Cards')).toBeVisible();
     const topDeckModal = page.getByText('Look at Top 2 Cards').locator('xpath=ancestor::div[contains(@style, "max-width: 1200px")]');
 
-    await topDeckModal.getByRole('img', { name: /E2E/ }).first().click();
+    const pending = topDeckModal.locator('section').filter({ hasText: 'Cards to be Assigned' });
+    await expect(topDeckModal.getByRole('button', { name: 'Field', exact: true })).toBeDisabled();
+    await pending.getByRole('img', { name: /E2E/ }).first().click();
+    await expect(pending.getByRole('img', { name: /E2E/ })).toHaveCount(2);
+    await topDeckModal.getByRole('button', { name: 'Field', exact: true }).click();
+    await pending.getByRole('img', { name: /E2E/ }).first().click();
     await topDeckModal.getByRole('button', { name: 'EX Area' }).click();
-    await topDeckModal.getByRole('img', { name: /E2E/ }).first().click();
+    await expect(zoneCards(page, 'field-host')).toHaveCount(0);
+    await expect(zoneCards(page, 'ex-host')).toHaveCount(0);
     await topDeckModal.getByRole('button', { name: 'Confirm' }).click();
 
     await expect(page.getByText('Look at Top 2 Cards')).toBeHidden();
@@ -95,10 +161,10 @@ test.describe('Solo Zone Actions', () => {
     const pending = modal.locator('section').filter({ hasText: 'Cards to be Assigned' });
     const cardNames = await pending.getByRole('img', { name: /E2E/ }).evaluateAll(images => images.map(image => image.getAttribute('alt')!));
     expect(cardNames).toHaveLength(2);
+    await pending.getByRole('img', { name: /E2E/ }).first().click();
     await modal.getByRole('button', { name: 'Hand', exact: true }).click();
     await pending.getByRole('img', { name: /E2E/ }).first().click();
     await modal.getByRole('button', { name: 'Bottom of Deck', exact: true }).click();
-    await pending.getByRole('img', { name: /E2E/ }).first().click();
     await modal.getByRole('button', { name: 'Confirm', exact: true }).click();
     await expect(zoneCards(page, 'hand-host')).toHaveCount(5);
     await expect(zoneCards(page, 'mainDeck-host')).toHaveCount(1);

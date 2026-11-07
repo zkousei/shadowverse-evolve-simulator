@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import type { CardInstance } from '../Card';
 
 export type TopDeckAction = 'hand' | 'revealedHand' | 'field' | 'ex' | 'cemetery' | 'top' | 'bottom';
@@ -31,64 +31,72 @@ export function useTopDeckAssignments({
   cards,
   onAssignmentChange,
 }: UseTopDeckAssignmentsParams) {
-  const [pendingCards, setPendingCards] = useState<CardInstance[]>([]);
+  const [pendingCards, setPendingCards] = useState<CardInstance[]>(() => isOpen ? [...cards] : []);
   const [assignedCards, setAssignedCards] = useState<AssignedCard[]>([]);
-  const [currentAction, setCurrentAction] = useState<TopDeckAction>('field');
+  const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
   const [isBottomOrderRandomized, setIsBottomOrderRandomized] = useState(false);
-  const wasOpenRef = useRef(false);
-  const previousCardIdsKeyRef = useRef('');
+  const cardIdsKey = cards.map(card => card.id).join('\u0000');
+  const [previousInput, setPreviousInput] = useState({ isOpen, cards, cardIdsKey });
 
-  useEffect(() => {
-    if (!isOpen) {
-      wasOpenRef.current = false;
-      previousCardIdsKeyRef.current = '';
-      return;
-    }
+  // Synchronize a changed session before rendering its cards or confirm button.
+  if (previousInput.isOpen !== isOpen || previousInput.cards !== cards || previousInput.cardIdsKey !== cardIdsKey) {
+    setPreviousInput({ isOpen, cards, cardIdsKey });
+    if (isOpen) {
+      if (!previousInput.isOpen || previousInput.cardIdsKey !== cardIdsKey) {
+        setPendingCards([...cards]);
+        setAssignedCards([]);
+        setSelectedCardIds([]);
+        setIsBottomOrderRandomized(false);
+      } else {
+        const latestCardById = new Map(cards.map((card) => [card.id, card]));
 
-    const cardIdsKey = cards.map((card) => card.id).join('\u0000');
-    const shouldResetState = !wasOpenRef.current || previousCardIdsKeyRef.current !== cardIdsKey;
-
-    if (shouldResetState) {
-      setPendingCards([...cards]);
-      setAssignedCards([]);
-      setCurrentAction('field');
-      setIsBottomOrderRandomized(false);
-    } else {
-      const latestCardById = new Map(cards.map((card) => [card.id, card]));
-
-      setPendingCards((previous) => previous
-        .map((card) => latestCardById.get(card.id))
-        .filter((card): card is CardInstance => Boolean(card))
-      );
-      setAssignedCards((previous) => previous
-        .map((assignment) => {
-          const latestCard = latestCardById.get(assignment.card.id);
-          return latestCard
-            ? { ...assignment, card: latestCard }
-            : null;
-        })
-        .filter((assignment): assignment is AssignedCard => assignment !== null)
-      );
-    }
-
-    wasOpenRef.current = true;
-    previousCardIdsKeyRef.current = cardIdsKey;
-  }, [isOpen, cards]);
-
-  const handleAssign = (card: CardInstance) => {
-    onAssignmentChange?.();
-    setPendingCards(prev => prev.filter(c => c.id !== card.id));
-    setAssignedCards(prev => {
-      const isDeckBack = currentAction === 'top' || currentAction === 'bottom';
-      let order: number | undefined = undefined;
-
-      if (isDeckBack) {
-        const bucketCount = prev.filter(a => a.action === currentAction).length;
-        order = bucketCount + 1;
+        setPendingCards((previous) => previous
+          .map((card) => latestCardById.get(card.id))
+          .filter((card): card is CardInstance => Boolean(card))
+        );
+        setAssignedCards((previous) => previous
+          .map((assignment) => {
+            const latestCard = latestCardById.get(assignment.card.id);
+            return latestCard
+              ? { ...assignment, card: latestCard }
+              : null;
+          })
+          .filter((assignment): assignment is AssignedCard => assignment !== null)
+        );
       }
+    }
+  }
 
-      return [...prev, { card, action: currentAction, order }];
+  const toggleSelection = (card: CardInstance) => {
+    if (!pendingCards.some(pending => pending.id === card.id)) return;
+    onAssignmentChange?.();
+    setSelectedCardIds(previous => previous.includes(card.id)
+      ? previous.filter(id => id !== card.id)
+      : [...previous, card.id]);
+  };
+
+  const assignCards = (cardsToAssign: CardInstance[], action: TopDeckAction) => {
+    if (cardsToAssign.length === 0) return;
+    onAssignmentChange?.();
+    const assignedIds = new Set(cardsToAssign.map(card => card.id));
+    setPendingCards(previous => previous.filter(card => !assignedIds.has(card.id)));
+    setAssignedCards(previous => {
+      const isOrdered = action === 'top' || action === 'bottom';
+      const bucketCount = previous.filter(assignment => assignment.action === action).length;
+      return [...previous, ...cardsToAssign.map((card, index) => ({
+        card,
+        action,
+        order: isOrdered ? bucketCount + index + 1 : undefined,
+      }))];
     });
+    setSelectedCardIds([]);
+  };
+
+  const assignSelected = (action: TopDeckAction) => {
+    const pendingById = new Map(pendingCards.map(card => [card.id, card]));
+    assignCards(selectedCardIds
+      .map(id => pendingById.get(id))
+      .filter((card): card is CardInstance => Boolean(card)), action);
   };
 
   const handleUnassign = (cardId: string) => {
@@ -100,17 +108,20 @@ export function useTopDeckAssignments({
       const filtered = prev.filter(a => a.card.id !== cardId);
       // Re-order if it was a deck bucket
       if (target.action === 'top' || target.action === 'bottom') {
-        let count = 1;
-        return filtered.map(a => {
-          if (a.action === target.action) {
-            return { ...a, order: count++ };
-          }
-          return a;
-        });
+        const nextOrderById = new Map(filtered
+          .filter(assignment => assignment.action === target.action)
+          .sort((a, b) => (a.order || 0) - (b.order || 0))
+          .map((assignment, index) => [assignment.card.id, index + 1]));
+        return filtered.map(assignment => assignment.action === target.action
+          ? { ...assignment, order: nextOrderById.get(assignment.card.id) }
+          : assignment);
       }
       return filtered;
     });
-    setPendingCards(prev => [...prev, target.card]);
+    setPendingCards(prev => {
+      const pendingIds = new Set([...prev.map(card => card.id), target.card.id]);
+      return cards.filter(card => pendingIds.has(card.id));
+    });
   };
 
   const reorderAssignedDeckCards = (action: 'top' | 'bottom', cardId: string, direction: 'backward' | 'forward') => {
@@ -168,11 +179,11 @@ export function useTopDeckAssignments({
   return {
     pendingCards,
     assignedCards,
-    currentAction,
-    setCurrentAction,
+    selectedCardIds,
+    toggleSelection,
+    assignSelected,
     isBottomOrderRandomized,
     setIsBottomOrderRandomized,
-    handleAssign,
     handleUnassign,
     reorderAssignedDeckCards,
     getGroup,

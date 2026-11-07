@@ -13,7 +13,6 @@ export interface ActionButtonConfig {
 
 export interface TopDeckDestinationColumnsProps {
   actionButtons: ActionButtonConfig[];
-  currentAction: TopDeckAction;
   cardDetailLookup?: CardDetailLookup;
   isBottomOrderRandomized: boolean;
   setIsBottomOrderRandomized: (value: boolean) => void;
@@ -27,7 +26,6 @@ export interface TopDeckDestinationColumnsProps {
 
 export const TopDeckDestinationColumns: React.FC<TopDeckDestinationColumnsProps> = ({
   actionButtons,
-  currentAction,
   cardDetailLookup = {},
   isBottomOrderRandomized,
   setIsBottomOrderRandomized,
@@ -39,11 +37,15 @@ export const TopDeckDestinationColumns: React.FC<TopDeckDestinationColumnsProps>
   onCardLeave,
 }) => {
   const { t } = useTranslation();
+  const populatedDestinations = actionButtons
+    .map(btn => ({ btn, group: getGroup(btn.id) }))
+    .filter(({ group }) => group.length > 0);
+
+  if (populatedDestinations.length === 0) return null;
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
-      {actionButtons.map(btn => {
-        const group = getGroup(btn.id);
+      {populatedDestinations.map(({ btn, group }) => {
         const isOrdered = btn.id === 'top' || btn.id === 'bottom';
         const orderedAction: 'top' | 'bottom' | null = isOrdered ? (btn.id as 'top' | 'bottom') : null;
 
@@ -57,6 +59,11 @@ export const TopDeckDestinationColumns: React.FC<TopDeckDestinationColumnsProps>
               <span>{btn.label}</span>
               <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>{t('gameBoard.modals.topDeck.tapToReturn')}</span>
             </h4>
+            {isOrdered && (
+              <p style={{ color: '#8b949e', fontSize: '0.78rem', margin: '0 0 1rem' }}>
+                {t(`gameBoard.modals.topDeck.orderHint.${btn.id}`)}
+              </p>
+            )}
             {btn.id === 'bottom' && (
               <label
                 style={{
@@ -95,7 +102,7 @@ export const TopDeckDestinationColumns: React.FC<TopDeckDestinationColumnsProps>
                     isLeaderCard={a.card.isLeaderCard}
                     isTokenCard={a.card.isTokenCard}
                     isEvolveCard={a.card.isEvolveCard}
-                    style={{ width: isOrdered ? '64px' : '53px', height: isOrdered ? '90px' : '75px', borderRadius: '6px', border: currentAction === btn.id ? `2px solid ${btn.color}` : 'none' }}
+                    style={{ width: isOrdered ? '64px' : '53px', height: isOrdered ? '90px' : '75px', borderRadius: '6px', border: `1px solid ${btn.color}` }}
                     draggable={false}
                   />
                   {isOrdered && (
@@ -187,7 +194,6 @@ export const TopDeckDestinationColumns: React.FC<TopDeckDestinationColumnsProps>
                   )}
                 </div>
               ))}
-              {group.length === 0 && <div style={{ fontSize: '0.8rem', color: '#484f58', display: 'flex', alignItems: 'center' }}>{t('gameBoard.modals.topDeck.empty')}</div>}
             </div>
           </div>
         );
