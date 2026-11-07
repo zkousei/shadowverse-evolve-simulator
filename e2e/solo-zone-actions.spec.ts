@@ -55,6 +55,44 @@ test.describe('Solo Zone Actions', () => {
     await expect(page.getByTestId('gameboard-recent-events')).toContainText('Hand → Deck: 1');
   });
 
+  test('corrects a mistaken multi-card destination in two actions before confirming, preserving order and game Undo', async ({ page }) => {
+    await startSoloGame(page);
+    const deck = zoneCards(page, 'mainDeck-host');
+    const originalIds = await deck.evaluateAll(cards => cards.map(card => card.getAttribute('data-card-id')));
+    const menu = await openMainDeckActions(page, 'host');
+    await menu.getByRole('button', { name: 'Look Top (N)' }).click();
+    await page.getByRole('dialog', { name: 'How many cards to look at?' }).getByRole('button', { name: '2' }).click();
+    const modal = page.getByText('Look at Top 2 Cards').locator('xpath=ancestor::div[contains(@style, "max-width: 1200px")]');
+    const retry = modal.getByRole('button', { name: 'Undo last assignment' });
+    await expect(retry).toBeDisabled();
+    const pendingCards = modal.locator('button[aria-pressed]');
+    await pendingCards.nth(1).click();
+    await pendingCards.first().click();
+    await modal.getByRole('button', { name: 'Cemetery', exact: true }).click();
+    await expect(modal.getByRole('button', { name: 'Confirm' })).toBeEnabled();
+    await expect(zoneCards(page, 'cemetery-host')).toHaveCount(0);
+    // Only these two actions are needed to correct the whole batch.
+    await retry.click();
+    await expect(pendingCards).toHaveCount(2);
+    await expect(pendingCards.first()).toHaveAttribute('aria-pressed', 'true');
+    await expect(pendingCards.nth(1)).toHaveAttribute('aria-pressed', 'true');
+    await expect(modal.getByRole('button', { name: 'Confirm' })).toBeDisabled();
+    await expect(retry).toBeDisabled();
+    await modal.getByRole('button', { name: 'Bottom of Deck', exact: true }).click();
+    expect(await deck.evaluateAll(cards => cards.map(card => card.getAttribute('data-card-id')))).toEqual(originalIds);
+    await modal.getByRole('button', { name: 'Confirm' }).click();
+    await expect(modal).toBeHidden();
+    expect(await deck.evaluateAll(cards => cards.map(card => card.getAttribute('data-card-id')))).toEqual([...originalIds].reverse());
+    await expect(zoneCards(page, 'cemetery-host')).toHaveCount(0);
+    await page.getByTestId('undo-move-host').click();
+    expect(await deck.evaluateAll(cards => cards.map(card => card.getAttribute('data-card-id')))).toEqual(originalIds);
+    const reopenedMenu = await openMainDeckActions(page, 'host');
+    await reopenedMenu.getByRole('button', { name: 'Look Top (N)' }).click();
+    await page.getByRole('dialog', { name: 'How many cards to look at?' }).getByRole('button', { name: '2' }).click();
+    await expect(retry).toBeDisabled();
+    await modal.getByRole('button', { name: 'Cancel' }).click();
+  });
+
   test('keeps keyboard card focus visible and cancels Look Top without changing the deck', async ({ page }) => {
     await startSoloGame(page);
     const originalDeckIds = await zoneCards(page, 'mainDeck-host').evaluateAll(cards => cards.map(card => card.getAttribute('data-card-id')));

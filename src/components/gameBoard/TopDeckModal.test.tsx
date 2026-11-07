@@ -109,6 +109,38 @@ describe('TopDeckModal', () => {
     expect(cards).toEqual(originalCards);
   });
 
+  it('corrects a mistaken multi-card destination with retry then destination, without confirming early', () => {
+    const onConfirm = vi.fn();
+    render(<TopDeckModal isOpen cards={[createCard('c1'), createCard('c2'), createCard('c3')]} onConfirm={onConfirm} onCancel={vi.fn()} />);
+    const retryButton = screen.getByRole('button', { name: 'Undo last assignment' });
+    expect(retryButton).toBeDisabled();
+    fireEvent.click(screen.getByAltText('Card c2'));
+    fireEvent.click(screen.getByRole('button', { name: 'Hand' }));
+    fireEvent.click(screen.getByAltText('Card c3'));
+    fireEvent.click(screen.getByAltText('Card c1'));
+    fireEvent.click(screen.getByRole('button', { name: 'Cemetery' }));
+    expect(screen.getByRole('button', { name: 'Confirm' })).toBeEnabled();
+    expect(retryButton).toBeEnabled();
+
+    fireEvent.click(retryButton);
+    expect(retryButton).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Confirm' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Card c3' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Card c1' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('heading', { name: /Hand/ })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /Cemetery/ })).not.toBeInTheDocument();
+    expect(onConfirm).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Bottom of Deck' }));
+    expect(onConfirm).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+    expect(onConfirm).toHaveBeenCalledOnce();
+    expect(onConfirm).toHaveBeenCalledWith([
+      { cardId: 'c2', action: 'hand', order: undefined },
+      { cardId: 'c3', action: 'bottom', order: 1 },
+      { cardId: 'c1', action: 'bottom', order: 2 },
+    ]);
+  });
+
   it('does not render when closed', () => {
     render(
       <TopDeckModal

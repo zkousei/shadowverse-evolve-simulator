@@ -48,6 +48,8 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({
     selectedCardIds,
     toggleSelection,
     assignSelected,
+    canUndoLastAssignment,
+    undoLastAssignment,
     isBottomOrderRandomized,
     setIsBottomOrderRandomized,
     handleUnassign,
@@ -254,8 +256,23 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({
 
         {/* Footer */}
         <div style={{ padding: '1.5rem 2rem', background: '#161b22', borderTop: '1px solid #30363d', textAlign: 'right', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ color: '#8b949e', fontSize: '0.9rem' }}>
-            {!allAssigned ? t('gameBoard.modals.topDeck.remaining', { count: pendingCards.length }) : t('gameBoard.modals.topDeck.allOrganized')}
+          <div style={{ color: '#8b949e', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', textAlign: 'left' }}>
+            <span aria-live="polite">
+              {!allAssigned ? t('gameBoard.modals.topDeck.remaining', { count: pendingCards.length }) : t('gameBoard.modals.topDeck.allOrganized')}
+            </span>
+            <button
+              type="button"
+              disabled={!canUndoLastAssignment}
+              onClick={undoLastAssignment}
+              style={{
+                background: canUndoLastAssignment ? '#30363d' : '#21262d',
+                color: canUndoLastAssignment ? '#c9d1d9' : '#6e7681',
+                padding: '0.45rem 0.75rem', border: '1px solid #30363d', borderRadius: '8px',
+                fontSize: '0.8rem', cursor: canUndoLastAssignment ? 'pointer' : 'not-allowed',
+              }}
+            >
+              {t('gameBoard.modals.topDeck.undoLastAssignment')}
+            </button>
           </div>
           <button
             disabled={!allAssigned}

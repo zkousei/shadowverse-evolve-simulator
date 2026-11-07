@@ -229,3 +229,122 @@ describe('selection lifecycle', () => {
     expect(result.current.pendingCards.map(card => card.id)).toEqual(['c1', 'c2', 'c3']);
   });
 });
+
+describe('retrying the last assignment', () => {
+  it.each(['hand', 'revealedHand', 'field', 'ex', 'cemetery', 'top', 'bottom'] as const)(
+    'returns only the latest %s batch selected in its original selection order', action => {
+      const cards = [createCard('c1', 'A'), createCard('c2', 'B'), createCard('c3', 'C'), createCard('c4', 'D')];
+      const { result } = renderHook(() => useTopDeckAssignments({ isOpen: true, cards }));
+      expect(result.current.canUndoLastAssignment).toBe(false);
+      act(() => result.current.undoLastAssignment());
+      expect(result.current.pendingCards).toHaveLength(4);
+      act(() => result.current.toggleSelection(cards[1]));
+      act(() => result.current.assignSelected(action));
+      act(() => {
+        result.current.toggleSelection(cards[2]);
+        result.current.toggleSelection(cards[0]);
+      });
+      act(() => result.current.assignSelected(action));
+      expect(result.current.canUndoLastAssignment).toBe(true);
+      // An empty assignment must not overwrite the last real batch.
+      act(() => result.current.assignSelected('field'));
+      act(() => result.current.undoLastAssignment());
+      expect(result.current.getGroup(action).map(a => [a.card.id, a.order])).toEqual([
+        ['c2', action === 'top' || action === 'bottom' ? 1 : undefined],
+      ]);
+      expect(result.current.pendingCards.map(card => card.id)).toEqual(['c1', 'c3', 'c4']);
+      expect(result.current.selectedCardIds).toEqual(['c3', 'c1']);
+      expect(result.current.allAssigned).toBe(false);
+      expect(result.current.canUndoLastAssignment).toBe(false);
+      act(() => result.current.undoLastAssignment());
+      expect(result.current.getGroup(action).map(a => a.card.id)).toEqual(['c2']);
+      expect(result.current.selectedCardIds).toEqual(['c3', 'c1']);
+      act(() => result.current.assignSelected('bottom'));
+      expect(result.current.getGroup('bottom').map(a => a.card.id)).toEqual(
+        action === 'bottom' ? ['c2', 'c3', 'c1'] : ['c3', 'c1'],
+      );
+      expect(result.current.canUndoLastAssignment).toBe(true);
+    },
+  );
+
+  it.each(['top', 'bottom'] as const)('closes %s order gaps without changing older cards after undoing an interleaved batch', action => {
+    const cards = ['c1', 'c2', 'c3', 'c4'].map(id => createCard(id, id));
+    const { result } = renderHook(() => useTopDeckAssignments({ isOpen: true, cards }));
+    act(() => {
+      result.current.toggleSelection(cards[0]);
+      result.current.toggleSelection(cards[1]);
+    });
+    act(() => result.current.assignSelected(action));
+    act(() => {
+      result.current.toggleSelection(cards[2]);
+      result.current.toggleSelection(cards[3]);
+    });
+    act(() => result.current.assignSelected(action));
+    act(() => result.current.reorderAssignedDeckCards(action, 'c4', 'backward'));
+    act(() => result.current.reorderAssignedDeckCards(action, 'c4', 'backward'));
+    expect(result.current.getGroup(action).map(a => a.card.id)).toEqual(['c1', 'c4', 'c2', 'c3']);
+    act(() => result.current.undoLastAssignment());
+    expect(result.current.getGroup(action).map(a => [a.card.id, a.order])).toEqual([['c1', 1], ['c2', 2]]);
+    expect(result.current.selectedCardIds).toEqual(['c3', 'c4']);
+  });
+
+  it('preserves other deck order and randomization after subsequent selection, reordering and manual returns', () => {
+    const cards = ['c1', 'c2', 'c3', 'c4', 'c5'].map(id => createCard(id, id));
+    const { result } = renderHook(() => useTopDeckAssignments({ isOpen: true, cards }));
+    act(() => {
+      result.current.toggleSelection(cards[0]);
+      result.current.toggleSelection(cards[1]);
+    });
+    act(() => result.current.assignSelected('top'));
+    act(() => {
+      result.current.toggleSelection(cards[2]);
+      result.current.toggleSelection(cards[3]);
+    });
+    act(() => result.current.assignSelected('bottom'));
+    act(() => result.current.reorderAssignedDeckCards('top', 'c2', 'backward'));
+    act(() => result.current.setIsBottomOrderRandomized(true));
+    act(() => result.current.reorderAssignedDeckCards('bottom', 'c4', 'backward'));
+    act(() => result.current.handleUnassign('c4'));
+    act(() => result.current.toggleSelection(cards[4]));
+    act(() => result.current.undoLastAssignment());
+    expect(result.current.getGroup('top').map(a => [a.card.id, a.order])).toEqual([['c2', 1], ['c1', 2]]);
+    expect(result.current.getGroup('bottom')).toEqual([]);
+    expect(result.current.pendingCards.map(card => card.id)).toEqual(['c3', 'c4', 'c5']);
+    expect(result.current.selectedCardIds).toEqual(['c3', 'c4']);
+    expect(result.current.isBottomOrderRandomized).toBe(true);
+    act(() => result.current.assignSelected('top'));
+    expect(result.current.getGroup('top').map(a => [a.card.id, a.order])).toEqual([
+      ['c2', 1], ['c1', 2], ['c3', 3], ['c4', 4],
+    ]);
+  });
+
+  it('retains the latest metadata across same-ID refreshes and clears retry when the session changes', () => {
+    const cards = [createCard('c1', 'A')];
+    const { result, rerender } = renderHook(
+      ({ isOpen, cards }) => useTopDeckAssignments({ isOpen, cards }),
+      { initialProps: { isOpen: true, cards } },
+    );
+    act(() => result.current.toggleSelection(cards[0]));
+    act(() => result.current.assignSelected('cemetery'));
+    rerender({ isOpen: true, cards: [{ ...cards[0], name: 'Updated' }] });
+    expect(result.current.canUndoLastAssignment).toBe(true);
+    act(() => result.current.undoLastAssignment());
+    expect(result.current.pendingCards[0].name).toBe('Updated');
+    expect(result.current.selectedCardIds).toEqual(['c1']);
+    act(() => result.current.assignSelected('bottom'));
+    rerender({ isOpen: false, cards });
+    expect(result.current.canUndoLastAssignment).toBe(false);
+    act(() => result.current.undoLastAssignment());
+    expect(result.current.getGroup('bottom')).toHaveLength(1);
+    rerender({ isOpen: true, cards });
+    expect(result.current.canUndoLastAssignment).toBe(false);
+    expect(result.current.assignedCards).toEqual([]);
+    act(() => result.current.toggleSelection(cards[0]));
+    act(() => result.current.assignSelected('hand'));
+    rerender({ isOpen: true, cards: [createCard('c2', 'B')] });
+    expect(result.current.canUndoLastAssignment).toBe(false);
+    act(() => result.current.undoLastAssignment());
+    expect(result.current.pendingCards.map(card => card.id)).toEqual(['c2']);
+    expect(result.current.selectedCardIds).toEqual([]);
+  });
+});

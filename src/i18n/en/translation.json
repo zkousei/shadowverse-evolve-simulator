@@ -818,6 +818,7 @@
         "instruction": "Select cards, then choose a destination. Changes apply when you confirm.",
         "selectCards": "Select one or more cards above",
         "assignSelected": "Move {{count}} selected card(s) to:",
+        "undoLastAssignment": "Undo last assignment",
         "orderHint": {
           "top": "Left → right: next card to draw first. Cards are added in selection order.",
           "bottom": "Left → right: closer to the top first. Cards are added in selection order."
