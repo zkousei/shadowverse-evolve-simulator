@@ -17,7 +17,8 @@ export interface TopDeckDestinationColumnsProps {
   isBottomOrderRandomized: boolean;
   setIsBottomOrderRandomized: (value: boolean) => void;
   getGroup: (action: TopDeckAction) => AssignedCard[];
-  onUnassign: (cardId: string) => void;
+  selectedCardIds: string[];
+  onToggleSelection: (card: CardInstance) => void;
   onReorder: (action: 'top' | 'bottom', cardId: string, direction: 'backward' | 'forward') => void;
   onCardHover: (card: CardInstance, event: React.MouseEvent) => void;
   onCardMove: (card: CardInstance, event: React.MouseEvent) => void;
@@ -30,7 +31,8 @@ export const TopDeckDestinationColumns: React.FC<TopDeckDestinationColumnsProps>
   isBottomOrderRandomized,
   setIsBottomOrderRandomized,
   getGroup,
-  onUnassign,
+  selectedCardIds,
+  onToggleSelection,
   onReorder,
   onCardHover,
   onCardMove,
@@ -44,7 +46,7 @@ export const TopDeckDestinationColumns: React.FC<TopDeckDestinationColumnsProps>
   if (populatedDestinations.length === 0) return null;
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
+    <div style={{ flexShrink: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
       {populatedDestinations.map(({ btn, group }) => {
         const isOrdered = btn.id === 'top' || btn.id === 'bottom';
         const orderedAction: 'top' | 'bottom' | null = isOrdered ? (btn.id as 'top' | 'bottom') : null;
@@ -57,7 +59,7 @@ export const TopDeckDestinationColumns: React.FC<TopDeckDestinationColumnsProps>
           }}>
             <h4 style={{ margin: '0 0 1rem 0', display: 'flex', justifyContent: 'space-between', color: isOrdered ? (btn.id === 'top' ? '#58a6ff' : '#bc8cff') : '#c9d1d9' }}>
               <span>{btn.label}</span>
-              <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>{t('gameBoard.modals.topDeck.tapToReturn')}</span>
+              <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>{t('gameBoard.modals.topDeck.tapToSelect')}</span>
             </h4>
             {isOrdered && (
               <p style={{ color: '#8b949e', fontSize: '0.78rem', margin: '0 0 1rem' }}>
@@ -88,23 +90,45 @@ export const TopDeckDestinationColumns: React.FC<TopDeckDestinationColumnsProps>
               {group.map(a => (
                 <div
                   key={a.card.id}
-                  onClick={() => onUnassign(a.card.id)}
                   onMouseEnter={(event) => onCardHover(a.card, event)}
                   onMouseMove={(event) => onCardMove(a.card, event)}
                   onMouseLeave={onCardLeave}
                   style={{ position: 'relative', cursor: 'pointer' }}
                 >
-                  <CardArtwork
-                    image={a.card.image}
-                    alt={a.card.name}
-                    detail={cardDetailLookup[a.card.cardId]}
-                    baseCardType={a.card.baseCardType}
-                    isLeaderCard={a.card.isLeaderCard}
-                    isTokenCard={a.card.isTokenCard}
-                    isEvolveCard={a.card.isEvolveCard}
-                    style={{ width: isOrdered ? '64px' : '53px', height: isOrdered ? '90px' : '75px', borderRadius: '6px', border: `1px solid ${btn.color}` }}
-                    draggable={false}
-                  />
+                  <button
+                    type="button"
+                    className="top-deck-card-option"
+                    aria-label={a.card.name}
+                    aria-pressed={selectedCardIds.includes(a.card.id)}
+                    onClick={() => onToggleSelection(a.card)}
+                    style={{ position: 'relative', padding: 0, border: 'none', background: 'none', borderRadius: '6px', display: 'block', cursor: 'pointer', boxShadow: selectedCardIds.includes(a.card.id) ? '0 0 0 3px #58a6ff' : undefined }}
+                  >
+                    <CardArtwork
+                      image={a.card.image}
+                      alt={a.card.name}
+                      detail={cardDetailLookup[a.card.cardId]}
+                      baseCardType={a.card.baseCardType}
+                      isLeaderCard={a.card.isLeaderCard}
+                      isTokenCard={a.card.isTokenCard}
+                      isEvolveCard={a.card.isEvolveCard}
+                      style={{ width: '64px', height: '90px', borderRadius: '6px', border: `1px solid ${btn.color}` }}
+                      draggable={false}
+                    />
+                    {!isOrdered && (
+                      <div style={{
+                        position: 'absolute', top: '2px', left: '2px',
+                        background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: '9px',
+                        padding: '1px 4px', borderRadius: '3px'
+                      }}>
+                        {btn.id.toUpperCase()}
+                      </div>
+                    )}
+                    {selectedCardIds.includes(a.card.id) && (
+                      <span style={{ position: 'absolute', bottom: '3px', left: '2px', background: '#1f6feb', color: '#fff', padding: '1px 3px', borderRadius: '4px', fontSize: '9px', fontWeight: 'bold' }}>
+                        ✓ {selectedCardIds.indexOf(a.card.id) + 1}
+                      </span>
+                    )}
+                  </button>
                   {isOrdered && (
                     <>
                       <div style={{
@@ -183,15 +207,7 @@ export const TopDeckDestinationColumns: React.FC<TopDeckDestinationColumnsProps>
                       </div>
                     </>
                   )}
-                  {!isOrdered && (
-                    <div style={{
-                      position: 'absolute', top: '2px', left: '2px',
-                      background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: '9px',
-                      padding: '1px 4px', borderRadius: '3px'
-                    }}>
-                      {btn.id.toUpperCase()}
-                    </div>
-                  )}
+
                 </div>
               ))}
             </div>

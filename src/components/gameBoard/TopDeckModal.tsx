@@ -48,11 +48,13 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({
     selectedCardIds,
     toggleSelection,
     assignSelected,
+    canUnassignSelected,
+    unassignSelected,
+    canConfirm,
     canUndoLastAssignment,
     undoLastAssignment,
     isBottomOrderRandomized,
     setIsBottomOrderRandomized,
-    handleUnassign,
     reorderAssignedDeckCards,
     getGroup,
     getConfirmResults,
@@ -104,7 +106,7 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({
         boxShadow: '0 0 60px rgba(0,0,0,0.8)', overflow: 'hidden'
       }}>
         {/* Header */}
-        <div style={{ padding: '1rem 2rem', background: '#161b22', borderBottom: '1px solid #30363d', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ flexShrink: 0, padding: '1rem 2rem', background: '#161b22', borderBottom: '1px solid #30363d', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <h2 style={{ margin: 0, color: '#f0f6fc', fontSize: '1.3rem', fontWeight: 'bold' }}>{t('gameBoard.modals.topDeck.title', { count: cards.length })}</h2>
             <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#8b949e' }}>
@@ -115,15 +117,15 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({
         </div>
 
         {/* Content Area */}
-        <div data-testid="top-deck-content" style={{ flex: 1, overflowY: 'auto', padding: '2rem', display: 'flex', flexDirection: 'column', gap: allAssigned ? '1rem' : '2.5rem' }}>
+        <div data-testid="top-deck-content" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
 
           {/* Pending Cards */}
           {allAssigned ? (
-            <section aria-live="polite" style={{ color: '#8b949e', fontSize: '0.9rem' }}>
+            <section aria-live="polite" style={{ flexShrink: 0, color: '#8b949e', fontSize: '0.9rem' }}>
               {t('gameBoard.modals.topDeck.allAssignedInline')}
             </section>
           ) : (
-            <section>
+            <section style={{ flexShrink: 0 }}>
               <h3 style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: '#8b949e', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b' }}></span>
                 {t('gameBoard.modals.topDeck.pendingCards')}
@@ -166,31 +168,6 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({
                   </button>
                 ))}
               </div>
-              <div style={{ marginTop: '1rem', padding: '1rem', background: '#161b22', borderRadius: '12px' }}>
-                <div aria-live="polite" style={{ color: '#c9d1d9', marginBottom: '0.75rem', fontSize: '0.9rem' }}>
-                  {selectedCardIds.length > 0
-                    ? t('gameBoard.modals.topDeck.assignSelected', { count: selectedCardIds.length })
-                    : t('gameBoard.modals.topDeck.selectCards')}
-                </div>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  {actionButtons.map(btn => (
-                    <button
-                      key={btn.id}
-                      type="button"
-                      disabled={selectedCardIds.length === 0}
-                      onClick={() => assignSelected(btn.id)}
-                      style={{
-                        background: selectedCardIds.length > 0 ? btn.color : '#21262d',
-                        color: selectedCardIds.length > 0 ? '#000' : '#8b949e',
-                        border: 'none', padding: '0.6rem 1rem', borderRadius: '8px',
-                        cursor: selectedCardIds.length > 0 ? 'pointer' : 'not-allowed', fontWeight: 'bold',
-                      }}
-                    >
-                      {btn.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </section>
           )}
 
@@ -201,7 +178,8 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({
             isBottomOrderRandomized={isBottomOrderRandomized}
             setIsBottomOrderRandomized={setIsBottomOrderRandomized}
             getGroup={getGroup}
-            onUnassign={handleUnassign}
+            selectedCardIds={selectedCardIds}
+            onToggleSelection={toggleSelection}
             onReorder={reorderAssignedDeckCards}
             onCardHover={showTopDeckCardPreview}
             onCardMove={moveTopDeckCardPreview}
@@ -209,9 +187,43 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({
           />
         </div>
 
+        {/* Destination controls stay outside the scrollable cards. */}
+        {selectedCardIds.length > 0 && (
+          <div data-testid="top-deck-destination-actions" style={{ flexShrink: 0, padding: '0.75rem 2rem', background: '#161b22', borderTop: '1px solid #30363d' }}>
+            <div aria-live="polite" style={{ color: '#c9d1d9', marginBottom: '0.75rem', fontSize: '0.9rem' }}>
+              {t('gameBoard.modals.topDeck.assignSelected', { count: selectedCardIds.length })}
+            </div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {actionButtons.map(btn => (
+                <button
+                  key={btn.id}
+                  type="button"
+                  onClick={() => assignSelected(btn.id)}
+                  style={{
+                    background: btn.color,
+                    color: '#000',
+                    border: 'none', padding: '0.6rem 1rem', borderRadius: '8px',
+                    cursor: 'pointer', fontWeight: 'bold',
+                  }}
+                >
+                  {btn.label}
+                </button>
+              ))}
+              <button
+                type="button"
+                disabled={!canUnassignSelected}
+                onClick={unassignSelected}
+                style={{ background: '#21262d', color: canUnassignSelected ? '#c9d1d9' : '#6e7681', padding: '0.6rem 1rem', border: '1px solid #30363d', borderRadius: '8px', cursor: canUnassignSelected ? 'pointer' : 'not-allowed' }}
+              >
+                {t('gameBoard.modals.topDeck.returnToPending')}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Hand Reference Strip */}
         {handCards && handCards.length > 0 && (
-          <div style={{ background: '#161b22', borderTop: '1px solid #30363d' }}>
+          <div style={{ flexShrink: 0, background: '#161b22', borderTop: '1px solid #30363d' }}>
             <button
               onClick={() => setIsHandOpen(prev => !prev)}
               style={{
@@ -255,7 +267,7 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({
         )}
 
         {/* Footer */}
-        <div style={{ padding: '1.5rem 2rem', background: '#161b22', borderTop: '1px solid #30363d', textAlign: 'right', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ flexShrink: 0, padding: '1.5rem 2rem', background: '#161b22', borderTop: '1px solid #30363d', textAlign: 'right', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ color: '#8b949e', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', textAlign: 'left' }}>
             <span aria-live="polite">
               {!allAssigned ? t('gameBoard.modals.topDeck.remaining', { count: pendingCards.length }) : t('gameBoard.modals.topDeck.allOrganized')}
@@ -275,15 +287,15 @@ const TopDeckModal: React.FC<TopDeckModalProps> = ({
             </button>
           </div>
           <button
-            disabled={!allAssigned}
-            onClick={() => onConfirm(getConfirmResults())}
+            disabled={!canConfirm}
+            onClick={() => { if (canConfirm) onConfirm(getConfirmResults()); }}
             style={{
-              background: allAssigned ? '#238636' : '#21262d',
-              color: allAssigned ? '#fff' : '#484f58',
+              background: canConfirm ? '#238636' : '#21262d',
+              color: canConfirm ? '#fff' : '#484f58',
               fontWeight: 'bold', padding: '0.8rem 3.5rem', borderRadius: '10px', border: 'none',
-              cursor: allAssigned ? 'pointer' : 'not-allowed', fontSize: '1.1rem',
+              cursor: canConfirm ? 'pointer' : 'not-allowed', fontSize: '1.1rem',
               transition: 'all 0.2s',
-              boxShadow: allAssigned ? '0 4px 15px rgba(35, 134, 54, 0.4)' : 'none'
+              boxShadow: canConfirm ? '0 4px 15px rgba(35, 134, 54, 0.4)' : 'none'
             }}
           >
             {t('common.buttons.confirm')}

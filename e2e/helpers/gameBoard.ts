@@ -27,11 +27,11 @@ export const importSoloDummyDecks = async (page: Page, deckPath = dummyDeckPath)
   await expect(leaderZoneCards(page, 'guest')).toHaveCount(1);
 };
 
-export const startSoloGame = async (page: Page) => {
+export const startSoloGame = async (page: Page, deckPath = dummyDeckPath) => {
   await page.goto('/game?mode=solo');
   const preparationControls = page.getByTestId('preparation-controls');
 
-  await importSoloDummyDecks(page);
+  await importSoloDummyDecks(page, deckPath);
 
   await preparationControls.getByRole('button', { name: /Player 1 1st/ }).click();
 
