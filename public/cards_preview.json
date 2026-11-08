@@ -622,6 +622,26 @@
     "hp": "4"
   },
   {
+    "id": "CP05-038",
+    "name": "閃耀の双剣・カトル",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-038.jpg",
+    "class": "ウィッチ",
+    "type": "フォロワー",
+    "subtype": "グラブル・十天衆・水属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "LG",
+    "ability_text": "【最終上限解放可能】\nこれが上限解放したとき、相手の場のフォロワー1体を選ぶ。それに4ダメージ。\nこれが最終上限解放したとき、相手のリーダーすべてに4ダメージ。\n【クイック】【起動】コスト3手札のこれを捨てる：相手の場のフォロワー1体を選ぶ。それに4ダメージ。1枚引く。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "3",
+    "atk": "4",
+    "hp": "2"
+  },
+  {
     "id": "CP05-041",
     "name": "開闢の錬金術師・カリオストロ",
     "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-041_official.jpg",
