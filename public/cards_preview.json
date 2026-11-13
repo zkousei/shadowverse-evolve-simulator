@@ -662,6 +662,58 @@
     "hp": "2"
   },
   {
+    "id": "CP05-039",
+    "name": "水の理・ワムデュス",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-039.png",
+    "class": "ウィッチ",
+    "type": "フォロワー",
+    "subtype": "グラブル・六竜・水属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "LG",
+    "ability_text": "【進化】コスト1：これは進化する。\n【ファンファーレ】自分のデッキの上3枚を見る。その中から、【クイック】を持つスペルや【クイック】【起動】能力を持つフォロワー2枚まで公開して手札に加えてよい。残りを墓場に置く。\n【クイック】【起動】コスト1手札のこれを捨てる：相手の場のフォロワー1体を選ぶ。それに2ダメージ。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "3",
+    "atk": "1",
+    "hp": "3",
+    "related_cards": [
+      {
+        "id": "CP05-040",
+        "name": "水の理・ワムデュス"
+      }
+    ]
+  },
+  {
+    "id": "CP05-040",
+    "name": "水の理・ワムデュス",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-040.png",
+    "class": "ウィッチ",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "グラブル・六竜・水属性",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "LG",
+    "ability_text": "自分のエンドフェイズが来たとき、自分のPPを3回復する。\n【超進化時】これは「これが場にいる限り、自分が【クイック】を持つスペルや【クイック】【起動】能力を持つフォロワーや【クイック】【起動】能力をプレイする際、コストを-1する」を持つ。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "-",
+    "atk": "2",
+    "hp": "4",
+    "related_cards": [
+      {
+        "id": "CP05-039",
+        "name": "水の理・ワムデュス"
+      }
+    ]
+  },
+  {
     "id": "CP05-041",
     "name": "開闢の錬金術師・カリオストロ",
     "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-041_official.jpg",
@@ -1364,6 +1416,62 @@
     "cost": "5",
     "atk": "2",
     "hp": "3"
+  },
+  {
+    "id": "CP05-091",
+    "name": "土の理・ガレヲン",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-091.png",
+    "class": "ビショップ",
+    "type": "フォロワー",
+    "subtype": "グラブル・六竜・土属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "LG",
+    "ability_text": "【進化】コスト1：これは進化する。\n【ファンファーレ】自分のエボルヴデッキの裏向きの土属性・エボルヴフォロワー1枚を表向きにしてよい。自分のエボルヴデッキの表向きの土属性・エボルヴフォロワーが4枚以上なら、1枚引く。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "2",
+    "atk": "2",
+    "hp": "2",
+    "related_cards": [
+      {
+        "id": "CP05-092",
+        "name": "土の理・ガレヲン"
+      }
+    ]
+  },
+  {
+    "id": "CP05-092",
+    "name": "土の理・ガレヲン",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-092.png",
+    "class": "ビショップ",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "グラブル・六竜・土属性",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "LG",
+    "ability_text": "【進化時】自分のデッキの上4枚を見る。その中から、グラブル・カード1枚を公開して手札に加えてよい。残りを好きな順にデッキの下に置く。\n【超進化時】『土晶のエレメント』X枚をEXエリアに置く。自分のリーダーは【体力】+Xする。Xは「自分のエボルヴデッキの表向きの土属性・エボルヴフォロワーの枚数の半分（端数切り上げ）」である。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "-",
+    "atk": "3",
+    "hp": "3",
+    "related_cards": [
+      {
+        "id": "CP05-091",
+        "name": "土の理・ガレヲン"
+      },
+      {
+        "id": "CP05-T11",
+        "name": "土晶のエレメント"
+      }
+    ]
   },
   {
     "id": "CP05-093",
