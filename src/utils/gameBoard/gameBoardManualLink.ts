@@ -36,8 +36,12 @@ export const isEquipmentLinkTargetCard = (
 ): boolean => {
   if (!card) return false;
   if (catalogCard) {
-    return catalogCard.deck_section === 'main' && catalogCard.card_kind_normalized === 'follower';
+    return (
+      (catalogCard.deck_section === 'main' && catalogCard.card_kind_normalized === 'follower') ||
+      (catalogCard.deck_section === 'token' &&
+        (catalogCard.card_kind_normalized === 'token_follower' || catalogCard.card_kind_normalized === 'follower'))
+    );
   }
 
-  return !card.isLeaderCard && !card.isEvolveCard && !card.isTokenCard && card.baseCardType === 'follower';
+  return !card.isLeaderCard && !card.isEvolveCard && card.baseCardType === 'follower';
 };
