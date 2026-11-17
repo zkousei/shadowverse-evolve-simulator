@@ -226,6 +226,26 @@
     "hp": "3"
   },
   {
+    "id": "CP05-012",
+    "name": "美粧の乙女・クロエ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-012.jpg",
+    "class": "エルフ",
+    "type": "フォロワー",
+    "subtype": "グラブル・闇属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "SR",
+    "ability_text": "【ファンファーレ】手札の闇属性・カード1枚を捨てる：1枚引く。\n【起動】これをアクト：自分の墓場の闇属性・カード1枚を選ぶ。それをデッキの下に置く。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "1",
+    "atk": "1",
+    "hp": "1"
+  },
+  {
     "id": "CP05-013",
     "name": "緋焔の踊り子・アンスリア",
     "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-013_official.jpg",
@@ -1120,6 +1140,58 @@
       {
         "id": "CP05-T09",
         "name": "火晶のエレメント"
+      }
+    ]
+  },
+  {
+    "id": "CP05-049",
+    "name": "妄想少女A・ルナール",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-049.jpg",
+    "class": "ウィッチ",
+    "type": "フォロワー",
+    "subtype": "グラブル・闇属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "BR",
+    "ability_text": "【進化】コスト2：これは進化する。\nこれが上限解放したとき、自分の墓場のグラブル・フォロワー1枚を選ぶ。それを手札に加える。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "2",
+    "atk": "2",
+    "hp": "2",
+    "related_cards": [
+      {
+        "id": "CP05-050",
+        "name": "妄想少女A・ルナール"
+      }
+    ]
+  },
+  {
+    "id": "CP05-050",
+    "name": "妄想少女A・ルナール",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-050.jpg",
+    "class": "ウィッチ",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "グラブル・闇属性",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "BR",
+    "ability_text": "これが上限解放したとき、自分の墓場のグラブル・フォロワー1枚を選ぶ。それを手札に加える。\n【進化時】自分の場の他のグラブル・フォロワー1体を選ぶ。自分のデッキから「それと同名のカード」1枚を探し、場に出す。それは「自分のエンドフェイズが来たとき、これは消滅する」を持つ。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "-",
+    "atk": "3",
+    "hp": "3",
+    "related_cards": [
+      {
+        "id": "CP05-049",
+        "name": "妄想少女A・ルナール"
       }
     ]
   },
