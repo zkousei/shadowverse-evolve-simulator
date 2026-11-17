@@ -69,7 +69,22 @@ describe('gameBoardManualLink', () => {
       };
 
       expect(isEquipmentLinkTargetCard(runtimeSpell, followerCatalog)).toBe(true);
-      expect(isEquipmentLinkTargetCard(runtimeSpell, tokenCatalog)).toBe(false);
+      expect(isEquipmentLinkTargetCard(runtimeSpell, tokenCatalog)).toBe(true);
+      expect(isEquipmentLinkTargetCard(runtimeSpell, {
+        ...tokenCatalog,
+        card_kind_normalized: 'token_follower',
+      })).toBe(true);
+      for (const kind of ['token_equipment', 'token_treasure', 'token_amulet', 'token_crest'] as const) {
+        expect(isEquipmentLinkTargetCard(runtimeSpell, {
+          ...tokenCatalog,
+          card_kind_normalized: kind,
+        })).toBe(false);
+      }
+      expect(isEquipmentLinkTargetCard(runtimeSpell, {
+        ...followerCatalog,
+        deck_section: 'evolve',
+        card_kind_normalized: 'evolve_follower',
+      })).toBe(false);
     });
 
     it('falls back to runtime follower flags when catalog data is missing', () => {
@@ -77,7 +92,8 @@ describe('gameBoardManualLink', () => {
       expect(isEquipmentLinkTargetCard(buildCard({ baseCardType: 'spell' }), undefined)).toBe(false);
       expect(isEquipmentLinkTargetCard(buildCard({ baseCardType: 'follower', isLeaderCard: true }), undefined)).toBe(false);
       expect(isEquipmentLinkTargetCard(buildCard({ baseCardType: 'follower', isEvolveCard: true }), undefined)).toBe(false);
-      expect(isEquipmentLinkTargetCard(buildCard({ baseCardType: 'follower', isTokenCard: true }), undefined)).toBe(false);
+      expect(isEquipmentLinkTargetCard(buildCard({ baseCardType: 'follower', isTokenCard: true }), undefined)).toBe(true);
+      expect(isEquipmentLinkTargetCard(buildCard({ baseCardType: null, isTokenCard: true }), undefined)).toBe(false);
       expect(isEquipmentLinkTargetCard(undefined, undefined)).toBe(false);
     });
   });

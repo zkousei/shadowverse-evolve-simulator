@@ -773,6 +773,40 @@ describe('useGameBoardFieldActions (Pure Hook)', () => {
       });
     });
 
+    it.each(['token_equipment', 'token_treasure'])(
+      'links %s beneath a token follower using the real target rules',
+      async (cardKindNormalized) => {
+        const rules = await vi.importActual<typeof gameBoardManualLink>('../../utils/gameBoard/gameBoardManualLink');
+        vi.mocked(gameBoardManualLink.isTokenManualLinkCard).mockImplementation(rules.isTokenManualLinkCard);
+        vi.mocked(gameBoardManualLink.isEquipmentLinkTargetCard).mockImplementation(rules.isEquipmentLinkTargetCard);
+        const gameState = buildSyncState({
+          cards: [
+            makeCard({ id: 'link-token', zone: 'ex-host', owner: 'host', isTokenCard: true, cardKindNormalized }),
+            makeCard({ id: 'token-follower', cardId: 'TOKEN-FOLLOWER', zone: 'field-host', owner: 'host', isTokenCard: true, baseCardType: 'follower' }),
+          ],
+        });
+        const { result } = renderHook(() => useGameBoardFieldActions({
+          ...defaultArgs,
+          gameStateRef: { current: gameState },
+          cardCatalogByIdRef: { current: {
+            'TOKEN-FOLLOWER': {
+              deck_section: 'token',
+              card_kind_normalized: 'token_follower',
+            },
+          } },
+        }));
+
+        result.current.handleDragEnd(makeDragEvent('link-token', 'token-follower'));
+
+        expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledExactlyOnceWith({
+          type: 'LINK_CARD_TO_FIELD',
+          actor: 'host',
+          cardId: 'link-token',
+          parentCardId: 'token-follower',
+        });
+      }
+    );
+
     it('resolves to root card when linking equipment to an evolved unit', () => {
       const rootCard = makeCard({ id: 'root-unit', zone: 'field-host', owner: 'host' });
       const evolvedCard = makeCard({
