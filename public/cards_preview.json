@@ -1448,6 +1448,62 @@
     ]
   },
   {
+    "id": "CP05-062",
+    "name": "純朴の鋼体・ムゲン",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-062.jpg",
+    "class": "ドラゴン",
+    "type": "フォロワー",
+    "subtype": "グラブル・光属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "SR",
+    "ability_text": "【進化】コスト1：これは進化する。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "5",
+    "atk": "5",
+    "hp": "5",
+    "related_cards": [
+      {
+        "id": "CP05-063",
+        "name": "純朴の鋼体・ムゲン"
+      }
+    ]
+  },
+  {
+    "id": "CP05-063",
+    "name": "純朴の鋼体・ムゲン",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-063.jpg",
+    "class": "ドラゴン",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "グラブル・光属性",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "SR",
+    "ability_text": "【進化時】相手の場のフォロワー2体まで選ぶ。それを破壊する。『光晶のエレメント』1枚をEXエリアに置く。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "-",
+    "atk": "6",
+    "hp": "6",
+    "related_cards": [
+      {
+        "id": "CP05-062",
+        "name": "純朴の鋼体・ムゲン"
+      },
+      {
+        "id": "CP05-T13",
+        "name": "光晶のエレメント"
+      }
+    ]
+  },
+  {
     "id": "CP05-064",
     "name": "護国真龍・スカーサハ",
     "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-064.jpg",
@@ -1630,6 +1686,50 @@
         "name": "光晶のエレメント"
       }
     ]
+  },
+  {
+    "id": "CP05-071",
+    "name": "アルバコア",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-071.jpg",
+    "class": "ドラゴン",
+    "type": "アミュレット",
+    "subtype": "グラブル・闇属性",
+    "card_kind_normalized": "amulet",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "BR",
+    "ability_text": "【ファンファーレ】相手の場のカード1枚を選ぶ。それを破壊する。\n【起動】これをアクト墓場に置く：『闇晶のエレメント』1枚をEXエリアに置く。1枚引く。この能力はこのターン、自分の手札の闇属性・カードを捨てていたなら使える。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "4",
+    "related_cards": [
+      {
+        "id": "CP05-T14",
+        "name": "闇晶のエレメント"
+      }
+    ]
+  },
+  {
+    "id": "CP05-072",
+    "name": "神狼・シス",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-072.jpg",
+    "class": "ナイトメア",
+    "type": "フォロワー",
+    "subtype": "グラブル・十天衆・闇属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "LG",
+    "ability_text": "自分のターン中、自分の闇属性・カードの能力によってこれを自分の手札から捨てたとき、コスト3：これを場に出す。\n【最終上限解放可能】\nこれが上限解放したとき、これは【疾走】を持つ。\nこれが最終上限解放したとき、コスト2：自分のデッキから『神狼・シス』1枚を探し、場に出す。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "6",
+    "atk": "3",
+    "hp": "2"
   },
   {
     "id": "CP05-073",
