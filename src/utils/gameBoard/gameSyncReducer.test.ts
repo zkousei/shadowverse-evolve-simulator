@@ -494,7 +494,7 @@ describe('gameSyncReducer', () => {
     expect(unchanged).toBe(unchangedState);
   });
 
-  it('blocks end turn when the next player has end stop enabled', () => {
+  it('queues end turn without advancing the board when the next player has end stop enabled', () => {
     const state = createState({
       gameStatus: 'playing',
       turnPlayer: 'host',
@@ -510,7 +510,100 @@ describe('gameSyncReducer', () => {
       actor: 'host',
     });
 
-    expect(result).toBe(state);
+    expect(result).toMatchObject({ ...state, pendingEndTurn: 'host', revision: state.revision + 1 });
+    expect(applyGameSyncEvent(result, { id: 'repeat', type: 'END_TURN', actor: 'host' })).toBe(result);
+  });
+
+  it.each(['host', 'guest'] as const)('releases a pending %s turn once using the latest quick-action board and supports turn Undo', actor => {
+    const next = actor === 'host' ? 'guest' : 'host';
+    const state = createState({ gameStatus: 'playing', turnPlayer: actor, phase: 'Main',
+      endStop: { host: next === 'host', guest: next === 'guest' } });
+    const pending = applyGameSyncEvent(state, { id: 'end', type: 'END_TURN', actor });
+    const quick = applyGameSyncEvent(pending, { id: 'quick', type: 'MODIFY_PLAYER_STAT', actor: next, playerKey: next, stat: 'hp', delta: -2 });
+    const undoneQuick = applyGameSyncEvent(quick, { id: 'undo-quick', type: 'UNDO_CARD_MOVE', actor: next });
+    expect(undoneQuick.pendingEndTurn).toBe(actor);
+    const released = applyGameSyncEvent(quick, { id: 'release', type: 'SET_END_STOP', actor: next, enabled: false });
+    expect(released).toMatchObject({ turnPlayer: next, phase: 'Start', pendingEndTurn: null,
+      endStop: { host: false, guest: false }, [next]: { hp: 18, maxPp: 1, pp: 1 } });
+    expect(released.revision).toBe(quick.revision + 1);
+    expect(applyGameSyncEvent(released, { id: 'duplicate-release', type: 'SET_END_STOP', actor: next, enabled: false })).toBe(released);
+    expect(applyGameSyncEvent(released, { id: 'late-end', type: 'END_TURN', actor })).toBe(released);
+    expect(applyGameSyncEvent(released, { id: 'late-cancel', type: 'CANCEL_END_TURN', actor })).toBe(released);
+    const undone = applyGameSyncEvent(released, { id: 'undo', type: 'UNDO_LAST_TURN', actor });
+    expect(undone).toMatchObject({ turnPlayer: actor, phase: 'Main', pendingEndTurn: null,
+      endStop: { host: false, guest: false }, [next]: { hp: 18, maxPp: 0, pp: 0 } });
+  });
+
+  it('allows only the current player to cancel, keeps End Stop on, and permits another request', () => {
+    const state = createState({ gameStatus: 'playing', turnPlayer: 'host', endStop: { host: false, guest: true } });
+    const pending = applyGameSyncEvent(state, { id: 'end', type: 'END_TURN', actor: 'host' });
+    expect(applyGameSyncEvent(pending, { id: 'wrong', type: 'CANCEL_END_TURN', actor: 'guest' })).toBe(pending);
+    expect(applyGameSyncEvent(pending, { id: 'forged', type: 'CANCEL_END_TURN', actor: 'host' }, 'guest')).toBe(pending);
+    const cancelled = applyGameSyncEvent(pending, { id: 'cancel', type: 'CANCEL_END_TURN', actor: 'host' });
+    expect(cancelled).toMatchObject({ turnPlayer: 'host', pendingEndTurn: null, endStop: { guest: true } });
+    expect(applyGameSyncEvent(cancelled, { id: 'repeat-cancel', type: 'CANCEL_END_TURN', actor: 'host' })).toBe(cancelled);
+    const released = applyGameSyncEvent(cancelled, { id: 'release', type: 'SET_END_STOP', actor: 'guest', enabled: false });
+    expect(released.turnPlayer).toBe('host');
+    expect(applyGameSyncEvent(cancelled, { id: 'request-again', type: 'END_TURN', actor: 'host' }).pendingEndTurn).toBe('host');
+  });
+
+  it.each(['host', 'guest'] as const)('preserves %s operation Undo through an end request and cancellation', actor => {
+    const next = actor === 'host' ? 'guest' : 'host';
+    const state = createState({ gameStatus: 'playing', turnPlayer: actor,
+      endStop: { host: next === 'host', guest: next === 'guest' } });
+    const changed = applyGameSyncEvent(state, { id: 'hp', type: 'MODIFY_PLAYER_STAT', actor, playerKey: actor, stat: 'hp', delta: -1 });
+    const pending = applyGameSyncEvent(changed, { id: 'request', type: 'END_TURN', actor });
+    expect(pending.cardMoveHistory).toHaveLength(1);
+    expect(pending.networkHasUndoableCardMove).toBe(true);
+    const undoneWhilePending = applyGameSyncEvent(pending, { id: 'undo-pending', type: 'UNDO_CARD_MOVE', actor });
+    expect(undoneWhilePending).toMatchObject({ pendingEndTurn: actor, turnPlayer: actor, [actor]: { hp: 20 } });
+    const cancelled = applyGameSyncEvent(pending, { id: 'cancel', type: 'CANCEL_END_TURN', actor });
+    expect(cancelled.cardMoveHistory).toHaveLength(1);
+    expect(cancelled.networkHasUndoableCardMove).toBe(true);
+    const undoneAfterCancel = applyGameSyncEvent(cancelled, { id: 'undo-cancelled', type: 'UNDO_CARD_MOVE', actor });
+    expect(undoneAfterCancel).toMatchObject({ pendingEndTurn: null, turnPlayer: actor,
+      endStop: state.endStop, [actor]: { hp: 20 } });
+    const released = applyGameSyncEvent(pending, { id: 'release', type: 'SET_END_STOP', actor: next, enabled: false });
+    expect(released.cardMoveHistory).toEqual([]);
+    expect(released.networkHasUndoableCardMove).toBe(false);
+    expect(applyGameSyncEvent(released, { id: 'undo-after-turn', type: 'UNDO_CARD_MOVE', actor })).toBe(released);
+  });
+
+  it('preserves opponent quick-action Undo when the turn owner cancels the request', () => {
+    const state = createState({ gameStatus: 'playing', endStop: { host: false, guest: true } });
+    const pending = applyGameSyncEvent(state, { id: 'request', type: 'END_TURN', actor: 'host' });
+    const quick = applyGameSyncEvent(pending, { id: 'quick', type: 'MODIFY_PLAYER_STAT', actor: 'guest', playerKey: 'guest', stat: 'hp', delta: -2 });
+    const cancelled = applyGameSyncEvent(quick, { id: 'cancel', type: 'CANCEL_END_TURN', actor: 'host' });
+    expect(cancelled.cardMoveHistory).toHaveLength(1);
+    expect(applyGameSyncEvent(cancelled, { id: 'wrong-undo', type: 'UNDO_CARD_MOVE', actor: 'host' })).toBe(cancelled);
+    const undone = applyGameSyncEvent(cancelled, { id: 'undo', type: 'UNDO_CARD_MOVE', actor: 'guest' });
+    expect(undone).toMatchObject({ pendingEndTurn: null, turnPlayer: 'host', guest: { hp: 20 } });
+    const requestedAgain = applyGameSyncEvent(cancelled, { id: 'request-again', type: 'END_TURN', actor: 'host' });
+    expect(requestedAgain.cardMoveHistory).toHaveLength(1);
+    expect(applyGameSyncEvent(requestedAgain, { id: 'undo-again', type: 'UNDO_CARD_MOVE', actor: 'guest' }))
+      .toMatchObject({ pendingEndTurn: 'host', guest: { hp: 20 } });
+  });
+
+  it('keeps operation Undo steps separate across pending end requests and cancellation', () => {
+    const state = createState({ gameStatus: 'playing', endStop: { host: false, guest: true } });
+    const change = (state: SyncState, id: string) => applyGameSyncEvent(state,
+      { id, type: 'MODIFY_PLAYER_STAT', actor: 'host', playerKey: 'host', stat: 'hp', delta: -1 });
+    const pending = applyGameSyncEvent(change(state, 'hp1'), { id: 'request', type: 'END_TURN', actor: 'host' });
+    const cancelled = applyGameSyncEvent(change(pending, 'hp2'), { id: 'cancel', type: 'CANCEL_END_TURN', actor: 'host' });
+    let undone = change(cancelled, 'hp3');
+    expect(undone.cardMoveHistory).toHaveLength(3);
+    for (const hp of [18, 19, 20]) {
+      undone = applyGameSyncEvent(undone, { id: `undo-${hp}`, type: 'UNDO_CARD_MOVE', actor: 'host' });
+      expect(undone).toMatchObject({ pendingEndTurn: null, host: { hp } });
+    }
+  });
+
+  it('releases End Stop without an end request and clears pending requests on reset', () => {
+    const state = createState({ gameStatus: 'playing', endStop: { host: false, guest: true } });
+    expect(applyGameSyncEvent(state, { id: 'release', type: 'SET_END_STOP', actor: 'guest', enabled: false }).turnPlayer).toBe('host');
+    const pending = applyGameSyncEvent(state, { id: 'end', type: 'END_TURN', actor: 'host' });
+    const reset = applyGameSyncEvent(pending, { id: 'reset', type: 'RESET_GAME', actor: 'host' });
+    expect(reset.pendingEndTurn).toBeNull();
   });
 
   it('keeps END_TURN as a no-op when the requester does not match or the game is not playing', () => {

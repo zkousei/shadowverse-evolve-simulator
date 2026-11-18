@@ -36,6 +36,8 @@ export interface SyncState {
   tokenOptions: Record<PlayerRole, TokenOption[]>;
   revealHandsMode: boolean;
   endStop: Record<PlayerRole, boolean>;
+  /** Turn owner's request waiting for End Stop release; absent in legacy sessions. */
+  pendingEndTurn?: PlayerRole | null;
   revision: number;
   /** Revision of the last authoritative reset; omitted by legacy sessions/peers. */
   lastResetRevision?: number;
@@ -47,9 +49,9 @@ export interface SyncState {
   networkHasUndoableCardMove?: boolean;
 }
 
-// Checkpoints never contain other checkpoints, reset markers, or network availability metadata.
+// Checkpoints omit pending end requests, other checkpoints, reset markers, and network metadata.
 export type GameStateCheckpoint = Omit<SyncState,
-  'lastGameState' | 'lastUndoableCardMoveState' | 'lastUndoableCardMoveActor' |
+  'pendingEndTurn' | 'lastGameState' | 'lastUndoableCardMoveState' | 'lastUndoableCardMoveActor' |
   'cardMoveHistory' | 'lastResetRevision' | 'networkHasUndoableTurn' | 'networkHasUndoableCardMove'>;
 
 export interface CardMoveCheckpoint {
@@ -73,6 +75,7 @@ export const initialState: SyncState = {
     guest: [],
   },
   revealHandsMode: false,
+  pendingEndTurn: null,
   endStop: {
     host: false,
     guest: false,

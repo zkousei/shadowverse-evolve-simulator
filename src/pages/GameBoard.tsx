@@ -172,7 +172,7 @@ const GameBoard: React.FC = () => {
     cardStatLookup, cardDetailLookup, generatedCatalog, catalogStatus, retryCatalog,
     displayCards, getDetailStatus, retryDetails, isRefreshingCatalog, catalogRefreshFailed,
     isRollingDice, diceValue, mulliganOrder, isMulliganModalOpen, setIsMulliganModalOpen,
-    handleStatChange, setPhase, endTurn, handleUndoTurn, handleSetInitialTurnOrder,
+    handleStatChange, setPhase, endTurn, cancelEndTurn, handleUndoTurn, handleSetInitialTurnOrder,
     handlePureCoinFlip, handleRollDice, handleStartGame, handleToggleReady,
     handleDrawInitialHand, startMulligan, handleMulliganOrderSelect, executeMulligan,
     beginDeckImport, drawCard, handleExtractCard, handleExtractCards, confirmResetGame, handleDeckUpload, importDeckData, spawnTokens,
@@ -276,6 +276,7 @@ const GameBoard: React.FC = () => {
     isOwnEndStopActive,
     canShowEndStopToggle,
     endTurnBlockedByEndStop,
+    hasPendingEndTurn,
     endTurnDisabledTitle,
   } = buildGameBoardViewModel({
     allCardsLength,
@@ -1638,22 +1639,43 @@ const GameBoard: React.FC = () => {
                           onClick={() => handleSetEndStop(!isOwnEndStopActive)}
                           className="glass-panel"
                           disabled={!canInteract}
-                          title={!canInteract ? interactionBlockedTitle ?? t('gameBoard.board.availableDuringGameOnly') : undefined}
+                          title={!canInteract
+                            ? interactionBlockedTitle ?? t('gameBoard.board.availableDuringGameOnly')
+                            : hasPendingEndTurn ? t('gameBoard.board.finishQuickActionsHint') : undefined}
+                          aria-label={hasPendingEndTurn ? t('gameBoard.board.finishQuickActions') : undefined}
                           aria-pressed={isOwnEndStopActive}
                           style={{
                             padding: '0.28rem 0.45rem',
-                            minHeight: '26px',
+                            height: '28px',
+                            minHeight: '28px',
+                            minWidth: 0,
+                            width: '100%',
+                            boxSizing: 'border-box',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.35rem',
+                            whiteSpace: 'nowrap',
                             fontSize: '0.74rem',
-                            background: isOwnEndStopActive ? '#ef4444' : '#1d4ed8',
+                            background: hasPendingEndTurn
+                              ? 'linear-gradient(135deg, #10b981, #059669)'
+                              : isOwnEndStopActive ? '#ef4444' : '#1d4ed8',
                             fontWeight: 'bold',
                             borderRadius: '8px',
                             opacity: canInteract ? 1 : 0.5,
                             cursor: canInteract ? 'pointer' : 'not-allowed',
                           }}
                         >
-                          {isOwnEndStopActive
-                            ? t('gameBoard.board.endStopOn')
-                            : t('gameBoard.board.endStopOff')}
+                          {hasPendingEndTurn ? (
+                            <>
+                              <span style={{ flexShrink: 0 }}>
+                                <span aria-hidden="true">✓ </span>{t('gameBoard.board.finishQuickActionsShort')}
+                              </span>
+                              <span role="status" style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.6rem', fontWeight: 500 }}>
+                                {t('gameBoard.board.endTurnRequested')}
+                              </span>
+                            </>
+                          ) : t(isOwnEndStopActive ? 'gameBoard.board.endStopOn' : 'gameBoard.board.endStopOff')}
                         </button>
                       )}
                       {isSoloMode ? (
@@ -1669,40 +1691,41 @@ const GameBoard: React.FC = () => {
                         />
                       ) : (gameState.turnPlayer === role && gameState.gameStatus === 'playing') && (
                         <button
-                          onClick={() => endTurn()}
+                          onClick={() => hasPendingEndTurn ? cancelEndTurn() : endTurn()}
                           className="glass-panel"
-                          disabled={!canInteract || endTurnBlockedByEndStop}
-                          title={!canInteract || endTurnBlockedByEndStop ? endTurnDisabledTitle : undefined}
-                          aria-label={t('gameBoard.board.endTurnSelf')}
+                          disabled={!canInteract}
+                          title={!canInteract ? endTurnDisabledTitle
+                            : hasPendingEndTurn ? t('gameBoard.board.endTurnWaiting')
+                              : endTurnBlockedByEndStop ? t('gameBoard.board.endTurnRequestHint') : undefined}
+                          aria-label={t(hasPendingEndTurn ? 'gameBoard.board.cancelEndTurn'
+                            : endTurnBlockedByEndStop ? 'gameBoard.board.requestEndTurn' : 'gameBoard.board.endTurnSelf')}
                           style={{
-                            padding: endTurnBlockedByEndStop ? '0.28rem 0.45rem' : '0.35rem 0.5rem',
-                            minHeight: endTurnBlockedByEndStop ? '36px' : '28px',
+                            padding: '0.28rem 0.45rem',
+                            minHeight: '28px',
+                            minWidth: 0,
+                            whiteSpace: 'nowrap',
                             fontSize: '0.76rem',
-                            background: endTurnBlockedByEndStop
-                              ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.35), rgba(185, 28, 28, 0.55))'
+                            background: hasPendingEndTurn
+                              ? 'rgba(245, 158, 11, 0.08)'
                               : 'linear-gradient(135deg, #f59e0b, #d97706)',
-                            border: endTurnBlockedByEndStop ? '1px solid rgba(248, 113, 113, 0.5)' : undefined,
-                            color: endTurnBlockedByEndStop ? '#fecaca' : '#0f172a',
+                            border: hasPendingEndTurn ? '1px solid rgba(245, 158, 11, 0.65)' : '1px solid rgba(251, 191, 36, 0.7)',
+                            color: hasPendingEndTurn ? '#fbbf24' : '#0f172a',
                             fontWeight: 800,
                             borderRadius: '8px',
-                            boxShadow: endTurnBlockedByEndStop ? 'none' : '0 2px 8px rgba(245, 158, 11, 0.35)',
+                            boxShadow: hasPendingEndTurn ? 'none' : '0 2px 8px rgba(245, 158, 11, 0.35)',
                             opacity: !canInteract ? 0.5 : 1,
-                            cursor: !canInteract || endTurnBlockedByEndStop ? 'not-allowed' : 'pointer',
+                            cursor: !canInteract ? 'not-allowed' : 'pointer',
                             display: 'flex',
-                            flexDirection: 'column',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            gap: '2px',
+                            gap: '0.3rem',
                             lineHeight: 1.15,
                             transition: 'all 0.2s ease',
                           }}
                         >
-                          <span>{t('gameBoard.board.endTurnSelf')}</span>
-                          {endTurnBlockedByEndStop && (
-                            <span style={{ fontSize: '0.64rem', color: '#fca5a5', fontWeight: 600 }}>
-                              {t('gameBoard.board.endStopBlocked', { label: topLabel })}
-                            </span>
-                          )}
+                          <span>{t(hasPendingEndTurn ? 'gameBoard.board.cancelEndTurnShort'
+                            : endTurnBlockedByEndStop ? 'gameBoard.board.requestEndTurn' : 'gameBoard.board.endTurnSelf')}</span>
+                          {endTurnBlockedByEndStop && !hasPendingEndTurn && <span aria-hidden="true">→</span>}
                         </button>
                       )}
                     </>

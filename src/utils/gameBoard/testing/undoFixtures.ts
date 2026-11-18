@@ -7,7 +7,7 @@ import type { PublicUndoSummary } from '../gameBoardUndoLog';
 // Explicit exclusions make a new sync event a type error until its Undo contract
 // is classified here. Turn Undo is covered separately from operation Undo.
 type NonOperationEvent = 'FLIP_SHARED_COIN' | 'ROLL_SHARED_DIE' | 'TOGGLE_READY'
-  | 'SET_PHASE' | 'END_TURN' | 'START_GAME' | 'RESET_GAME' | 'DRAW_INITIAL_HAND'
+  | 'SET_PHASE' | 'END_TURN' | 'CANCEL_END_TURN' | 'START_GAME' | 'RESET_GAME' | 'DRAW_INITIAL_HAND'
   | 'EXECUTE_MULLIGAN' | 'IMPORT_DECK' | 'SET_INITIAL_TURN_ORDER'
   | 'UNDO_LAST_TURN' | 'UNDO_CARD_MOVE' | 'SET_REVEAL_HANDS_MODE' | 'SET_END_STOP';
 type Operation = Exclude<GameSyncEvent['type'], NonOperationEvent>;

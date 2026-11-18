@@ -499,6 +499,7 @@ export const buildSyncState = (overrides: SyncStateOverrides = {}): SyncState =>
   phase: overrides.phase ?? 'Start',
   gameStatus: overrides.gameStatus ?? 'preparing',
   tokenOptions: overrides.tokenOptions ?? { host: [], guest: [] },
+  pendingEndTurn: overrides.pendingEndTurn ?? null,
   endStop: overrides.endStop ?? { host: false, guest: false },
   revision: overrides.revision ?? 1,
   ...(overrides.lastResetRevision === undefined ? {} : { lastResetRevision: overrides.lastResetRevision }),

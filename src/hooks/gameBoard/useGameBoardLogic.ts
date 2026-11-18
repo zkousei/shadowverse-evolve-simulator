@@ -57,6 +57,7 @@ export type DispatchableGameSyncEvent =
   | { type: 'TOGGLE_READY'; actor?: PlayerRole }
   | { type: 'SET_PHASE'; actor?: PlayerRole; phase: SyncState['phase'] }
   | { type: 'END_TURN'; actor?: PlayerRole }
+  | { type: 'CANCEL_END_TURN'; actor?: PlayerRole }
   | { type: 'START_GAME'; actor?: PlayerRole }
   | { type: 'RESET_GAME'; actor?: PlayerRole }
   | { type: 'MOVE_CARD'; actor?: PlayerRole; cardId: string; overId: string }
@@ -1088,6 +1089,7 @@ export const useGameBoardLogic = () => {
     handleStatChange,
     setPhase,
     endTurn,
+    cancelEndTurn,
     handleUndoTurn,
     handleSetInitialTurnOrder,
     handlePureCoinFlip,
@@ -1222,7 +1224,7 @@ export const useGameBoardLogic = () => {
     cardStatLookup, cardDetailLookup, generatedCatalog, catalogStatus, retryCatalog,
     displayCards, getDetailStatus, retryDetails, isRefreshingCatalog, catalogRefreshFailed,
     isRollingDice, diceValue, mulliganOrder, isMulliganModalOpen, setIsMulliganModalOpen,
-    handleStatChange, setPhase, endTurn, handleUndoTurn, handleSetInitialTurnOrder,
+    handleStatChange, setPhase, endTurn, cancelEndTurn, handleUndoTurn, handleSetInitialTurnOrder,
     handlePureCoinFlip, handleRollDice, handleStartGame, handleToggleReady,
     handleDrawInitialHand, startMulligan, handleMulliganOrderSelect, executeMulligan,
     beginDeckImport, drawCard, handleExtractCard, handleExtractCards, confirmResetGame, handleDeckUpload, importDeckData, spawnToken, spawnTokens,

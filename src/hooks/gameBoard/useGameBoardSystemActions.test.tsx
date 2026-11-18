@@ -60,6 +60,12 @@ describe('useGameBoardSystemActions (Pure Hook)', () => {
     });
   });
 
+  it('cancelEndTurn dispatches CANCEL_END_TURN', () => {
+    const { result } = renderHook(() => useGameBoardSystemActions(defaultArgs));
+    result.current.cancelEndTurn();
+    expect(defaultArgs.dispatchGameEvent).toHaveBeenCalledWith({ type: 'CANCEL_END_TURN' });
+  });
+
   it('handleUndoTurn dispatches UNDO_LAST_TURN if canUndoTurn is true', () => {
     const { result } = renderHook(() => useGameBoardSystemActions(defaultArgs));
     result.current.handleUndoTurn();

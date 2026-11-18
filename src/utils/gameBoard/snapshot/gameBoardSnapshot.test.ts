@@ -21,6 +21,15 @@ const buildState = (overrides: Partial<SyncState> = {}): SyncState => ({
 });
 
 describe('buildGameBoardNetworkSnapshotState', () => {
+  it('preserves pending end requests through reconnect snapshots', () => {
+    const pending = applyGameSyncEvent(buildState({ gameStatus: 'playing', endStop: { host: false, guest: true } }),
+      { id: 'end', type: 'END_TURN', actor: 'host' });
+    const snapshot = JSON.parse(JSON.stringify(buildGameBoardNetworkSnapshotState(pending, {})));
+    expect(snapshot.pendingEndTurn).toBe('host');
+    expect(applyGameSyncEvent(snapshot, { id: 'release', type: 'SET_END_STOP', actor: 'guest', enabled: false }))
+      .toMatchObject({ turnPlayer: 'guest', pendingEndTurn: null });
+  });
+
   it('transports the guest starter and turn count through a JSON network snapshot', () => {
     const ordered = applyGameSyncEvent(buildState(), { id: 'order', type: 'SET_INITIAL_TURN_ORDER', actor: 'host', starter: 'guest', manual: true });
     const started = applyGameSyncEvent(ordered, { id: 'start', type: 'START_GAME', actor: 'host' });

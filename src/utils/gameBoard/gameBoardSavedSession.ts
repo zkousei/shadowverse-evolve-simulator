@@ -81,6 +81,9 @@ const normalizeSyncState = (state: SyncState): SyncState => {
     ...state,
     endStop: isEndStopState(state.endStop) ? state.endStop : { host: false, guest: false },
   };
+  normalized.pendingEndTurn = state.gameStatus === 'playing' && state.pendingEndTurn === state.turnPlayer &&
+    normalized.endStop[state.turnPlayer === 'host' ? 'guest' : 'host']
+    ? state.turnPlayer : null;
   // Only legacy sessions without the new field may fall back to the old head.
   const rawHistory: unknown = state.cardMoveHistory === undefined
     ? state.lastUndoableCardMoveState

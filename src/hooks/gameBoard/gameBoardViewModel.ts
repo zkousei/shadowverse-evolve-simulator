@@ -49,6 +49,7 @@ export type GameBoardViewModel = {
   isOpponentEndStopActive: boolean;
   canShowEndStopToggle: boolean;
   endTurnBlockedByEndStop: boolean;
+  hasPendingEndTurn: boolean;
   endTurnDisabledTitle: string;
 };
 
@@ -109,6 +110,7 @@ export const buildGameBoardViewModel = ({
   const isOpponentEndStopActive = !isSoloMode && !isSpectator && gameState.endStop[topRole];
   const canShowEndStopToggle = !isSoloMode && !isSpectator && gameState.gameStatus === 'playing' && gameState.turnPlayer !== role;
   const endTurnBlockedByEndStop = !isSoloMode && !isSpectator && gameState.gameStatus === 'playing' && gameState.turnPlayer === role && isOpponentEndStopActive;
+  const hasPendingEndTurn = !isSoloMode && !isSpectator && gameState.gameStatus === 'playing' && gameState.pendingEndTurn === gameState.turnPlayer;
   const endTurnDisabledTitle = endTurnBlockedByEndStop
     ? t('gameBoard.board.endStopBlocked', { label: topLabel })
     : interactionBlockedTitle ?? t('gameBoard.board.endTurnDisabled');
@@ -140,6 +142,7 @@ export const buildGameBoardViewModel = ({
     isOpponentEndStopActive,
     canShowEndStopToggle,
     endTurnBlockedByEndStop,
+    hasPendingEndTurn,
     endTurnDisabledTitle,
   };
 };

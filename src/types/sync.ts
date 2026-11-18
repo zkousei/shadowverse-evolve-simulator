@@ -26,6 +26,7 @@ export type GameSyncEvent =
   | { id: string; type: 'TOGGLE_READY'; actor: PlayerRole }
   | { id: string; type: 'SET_PHASE'; actor: PlayerRole; phase: SyncState['phase'] }
   | { id: string; type: 'END_TURN'; actor: PlayerRole }
+  | { id: string; type: 'CANCEL_END_TURN'; actor: PlayerRole }
   | { id: string; type: 'START_GAME'; actor: PlayerRole }
   | { id: string; type: 'RESET_GAME'; actor: PlayerRole }
   | { id: string; type: 'MOVE_CARD'; actor: PlayerRole; cardId: string; overId: string }
