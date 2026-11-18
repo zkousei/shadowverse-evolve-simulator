@@ -14,6 +14,44 @@ const bumpRevision = (state: SyncState): SyncState => ({
   revision: state.revision + 1,
 });
 
+// Both direct End and End Stop release use the same atomic turn transition.
+const advanceTurn = (state: SyncState): SyncState => {
+  const nextPlayer = state.turnPlayer === 'host' ? 'guest' : 'host';
+  // Legacy sessions have no reliable starter metadata; preserve their existing count convention.
+  const isNewTurnRound = nextPlayer === (state.startingPlayer ?? 'host');
+  const newTurnCount = isNewTurnRound ? state.turnCount + 1 : state.turnCount;
+  const nextPlayerState = { ...state[nextPlayer] };
+
+  if (nextPlayerState.maxPp < 10) nextPlayerState.maxPp += 1;
+  nextPlayerState.pp = nextPlayerState.maxPp;
+  nextPlayerState.combo = 0;
+
+  const untapCards = state.cards.map(c =>
+    c.isTapped && c.zone === `field-${nextPlayer}` ? { ...c, isTapped: false } : c
+  );
+
+  const finalCards = CardLogic.drawCard(untapCards, nextPlayer);
+
+  const stateBackup = createGameStateCheckpoint(state);
+
+  return bumpRevision({
+    ...state,
+    turnPlayer: nextPlayer,
+    turnCount: newTurnCount,
+    phase: 'Start',
+    pendingEndTurn: null,
+    endStop: {
+      ...state.endStop,
+      [nextPlayer]: false,
+    },
+    [nextPlayer]: nextPlayerState,
+    cards: finalCards,
+    lastGameState: stateBackup,
+    lastUndoableCardMoveState: null,
+    lastUndoableCardMoveActor: null,
+  });
+};
+
 const withCardMoveCheckpoint = (
   state: SyncState,
   actor: GameSyncEvent['actor'],
@@ -214,6 +252,9 @@ const reduceGameSyncEvent = (
       if (state.gameStatus !== 'playing') return state;
       if (state.turnPlayer === event.actor) return state;
       if (state.endStop[event.actor] === event.enabled) return state;
+      if (!event.enabled && state.pendingEndTurn === state.turnPlayer) {
+        return advanceTurn(state);
+      }
       return bumpRevision({
         ...state,
         endStop: {
@@ -228,40 +269,18 @@ const reduceGameSyncEvent = (
       if (state.turnPlayer !== event.actor) return state;
 
       const nextPlayer = state.turnPlayer === 'host' ? 'guest' : 'host';
-      if (state.endStop[nextPlayer]) return state;
-      // Legacy sessions have no reliable starter metadata; preserve their existing count convention.
-      const isNewTurnRound = nextPlayer === (state.startingPlayer ?? 'host');
-      const newTurnCount = isNewTurnRound ? state.turnCount + 1 : state.turnCount;
-      const nextPlayerState = { ...state[nextPlayer] };
-
-      if (nextPlayerState.maxPp < 10) nextPlayerState.maxPp += 1;
-      nextPlayerState.pp = nextPlayerState.maxPp;
-      nextPlayerState.combo = 0;
-
-      const untapCards = state.cards.map(c =>
-        c.isTapped && c.zone === `field-${nextPlayer}` ? { ...c, isTapped: false } : c
-      );
-
-      const finalCards = CardLogic.drawCard(untapCards, nextPlayer);
-
-      const stateBackup = createGameStateCheckpoint(state);
-
-      return bumpRevision({
-        ...state,
-        turnPlayer: nextPlayer,
-        turnCount: newTurnCount,
-        phase: 'Start',
-        endStop: {
-          ...state.endStop,
-          [nextPlayer]: false,
-        },
-        [nextPlayer]: nextPlayerState,
-        cards: finalCards,
-        lastGameState: stateBackup,
-        lastUndoableCardMoveState: null,
-        lastUndoableCardMoveActor: null,
-      });
+      if (state.endStop[nextPlayer]) {
+        if (state.pendingEndTurn === event.actor) return state;
+        return bumpRevision({ ...state, pendingEndTurn: event.actor });
+      }
+      return advanceTurn(state);
     }
+
+    case 'CANCEL_END_TURN':
+      if (!isActorRequester(requester, event.actor)) return state;
+      if (state.gameStatus !== 'playing' || state.turnPlayer !== event.actor) return state;
+      if (state.pendingEndTurn !== event.actor) return state;
+      return bumpRevision({ ...state, pendingEndTurn: null });
 
     case 'START_GAME': {
       if (!isHostRequester(requester)) return state;
@@ -271,6 +290,7 @@ const reduceGameSyncEvent = (
         gameStatus: 'playing',
         cards: state.cards.map(card => card.zone.startsWith('field-') ? { ...card, isFlipped: false } : card),
         endStop: { host: false, guest: false },
+        pendingEndTurn: null,
         [starter]: { ...state[starter], pp: 1, maxPp: 1 },
         lastGameState: null,
         lastUndoableCardMoveState: null,
@@ -304,6 +324,7 @@ const reduceGameSyncEvent = (
         cards: shuffledResetCards,
         tokenOptions: state.tokenOptions,
         endStop: { host: false, guest: false },
+        pendingEndTurn: null,
         lastGameState: null,
         lastUndoableCardMoveState: null,
         lastUndoableCardMoveActor: null,
@@ -621,6 +642,7 @@ const reduceGameSyncEvent = (
         turnCount: 1,
         phase: 'Start',
         endStop: { host: false, guest: false },
+        pendingEndTurn: null,
         [starter]: { ...state[starter], ep: 0 },
         [second]: { ...state[second], ep: 3 },
         lastUndoableCardMoveState: null,
@@ -635,6 +657,7 @@ const reduceGameSyncEvent = (
         ...state.lastGameState,
         ...(state.lastResetRevision === undefined ? {} : { lastResetRevision: state.lastResetRevision }),
         endStop: { host: false, guest: false },
+        pendingEndTurn: null,
         revision: state.revision + 1,
         lastGameState: null,
         lastUndoableCardMoveState: null,
@@ -650,6 +673,7 @@ const reduceGameSyncEvent = (
       return withCardMoveHistory({
         ...latest.state,
         ...(state.lastResetRevision === undefined ? {} : { lastResetRevision: state.lastResetRevision }),
+        pendingEndTurn: state.pendingEndTurn ?? null,
         // Turn undo is independent; restoring a move must not erase or revive it.
         lastGameState: state.lastGameState,
         revision: state.revision + 1,
@@ -714,6 +738,12 @@ export const applyGameSyncEvent = (
   const nextState = reduceGameSyncEvent(state, event, requester);
   if (nextState === state) return handleNumericUndoNoop(state, event);
   if (event.type === 'UNDO_CARD_MOVE') return nextState;
+  // Requesting/cancelling End changes intent, not the board or Undo ownership.
+  // Close numeric grouping, but retain operation history until the turn advances.
+  if (event.type === 'CANCEL_END_TURN' ||
+    (event.type === 'END_TURN' && nextState.turnPlayer === state.turnPlayer)) {
+    return closeNumericUndoGroup(nextState);
+  }
 
   const checkpoint = undoableStateChanges.has(event.type)
     ? createGameStateCheckpoint(state)

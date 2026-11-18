@@ -39,6 +39,10 @@ export function useGameBoardSystemActions({
         dispatchGameEvent({ type: 'END_TURN', actor });
     }, [dispatchGameEvent]);
 
+    const cancelEndTurn = useCallback(() => {
+        dispatchGameEvent({ type: 'CANCEL_END_TURN' });
+    }, [dispatchGameEvent]);
+
     const handleUndoTurn = useCallback(() => {
         if (!canUndoTurn) return;
         dispatchGameEvent({ type: 'UNDO_LAST_TURN' });
@@ -77,6 +81,7 @@ export function useGameBoardSystemActions({
         handleStatChange,
         setPhase,
         endTurn,
+        cancelEndTurn,
         handleUndoTurn,
         handleSetInitialTurnOrder,
         handlePureCoinFlip,

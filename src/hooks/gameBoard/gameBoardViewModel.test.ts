@@ -224,6 +224,14 @@ describe('gameBoardViewModel', () => {
             expect(vm.canShowEndStopToggle).toBe(false);
         });
 
+        it('reports pending end turn to both players but hides it in solo mode', () => {
+            const gameState = buildSyncState({ gameStatus: 'playing', turnPlayer: 'host', pendingEndTurn: 'host', endStop: { host: false, guest: true } });
+            for (const role of ['host', 'guest'] as const) {
+                expect(buildGameBoardViewModel(buildDefaultArgs({ gameState, role })).hasPendingEndTurn).toBe(true);
+            }
+            expect(buildGameBoardViewModel(buildDefaultArgs({ gameState, isSoloMode: true })).hasPendingEndTurn).toBe(false);
+        });
+
         it('blocks end turn when opponent end stop is active on own turn', () => {
             const gameState = buildSyncState({ gameStatus: 'playing', turnPlayer: 'host', endStop: { host: false, guest: true } });
             const vm = buildGameBoardViewModel(buildDefaultArgs({ gameState, role: 'host' }));

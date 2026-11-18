@@ -34,6 +34,32 @@ describe('useGameBoardLogic P2P reconnect', () => {
     vi.useRealTimers();
   });
 
+  it('broadcasts a pending host end request and advances once after a duplicated guest release', () => {
+    renderResumedHostHarness({ gameStatus: 'playing', turnPlayer: 'host', endStop: { host: false, guest: true } });
+    const peer = mockPeerJs.peers[0];
+    const guest = mockPeerJs.createConnection('guest');
+    const spectator = mockPeerJs.createConnection('spectator', { connectionRole: 'spectator' });
+    act(() => {
+      peer.emit('open');
+      peer.emit('connection', guest); guest.open = true; guest.emit('open');
+      peer.emit('connection', spectator); spectator.open = true; spectator.emit('open');
+    });
+    guest.send.mockClear(); spectator.send.mockClear();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Damage Host' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Host End Turn' }));
+    });
+    const snapshot = (conn: typeof guest) => conn.send.mock.calls.map(([message]) => message as SyncMessage)
+      .findLast(message => message.type === 'STATE_SNAPSHOT');
+    expect(snapshot(guest)).toMatchObject({ state: { turnPlayer: 'host', pendingEndTurn: 'host', networkHasUndoableCardMove: true } });
+    expect(snapshot(spectator)).toMatchObject({ state: { turnPlayer: 'host', pendingEndTurn: 'host', networkHasUndoableCardMove: true } });
+    guest.send.mockClear(); spectator.send.mockClear();
+    const release = { type: 'EVENT', event: { id: 'release', type: 'SET_END_STOP', actor: 'guest', enabled: false } };
+    act(() => { guest.emit('data', release); guest.emit('data', release); });
+    expect(snapshot(guest)).toMatchObject({ state: { turnPlayer: 'guest', pendingEndTurn: null, networkHasUndoableCardMove: false, guest: { maxPp: 1 } } });
+    expect(spectator.send.mock.calls.filter(([message]) => (message as SyncMessage).type === 'STATE_SNAPSHOT')).toHaveLength(1);
+  });
+
   it('renders image URLs from a received host snapshot before the guest catalog is ready', () => {
     const card = createCatalogCard({ id: 'COLD-001', image: '/cold-guest.png' });
     installMockCatalogFetch([card]).mockReturnValue(new Promise(() => {}));

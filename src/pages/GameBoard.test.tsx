@@ -320,6 +320,7 @@ const buildMockGameBoardLogic = (
     handleStatChange: vi.fn(),
     setPhase: vi.fn(),
     endTurn: vi.fn(),
+    cancelEndTurn: vi.fn(),
     handleUndoTurn: vi.fn(),
     handleSetInitialTurnOrder: vi.fn(),
     handlePureCoinFlip: vi.fn(),
@@ -1047,7 +1048,7 @@ describe('GameBoard', () => {
     expect(screen.queryByRole('button', { name: 'End Stop OFF' })).not.toBeInTheDocument();
   });
 
-  it('disables end turn while the opponent End Stop is active', () => {
+  it('allows requesting end turn while the opponent End Stop is active', () => {
     const endTurn = vi.fn();
 
     mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({
@@ -1064,13 +1065,48 @@ describe('GameBoard', () => {
 
     render(<GameBoard />);
 
-    const endTurnButton = screen.getByRole('button', { name: 'End Turn' });
-    expect(endTurnButton).toBeDisabled();
-    expect(screen.getByText('Opponent has End Stop enabled.')).toBeInTheDocument();
+    const endTurnButton = screen.getByRole('button', { name: 'Request End Turn' });
+    expect(endTurnButton).toBeEnabled();
+    expect(endTurnButton).toHaveStyle({ background: 'linear-gradient(135deg, #f59e0b, #d97706)', minHeight: '28px', whiteSpace: 'nowrap' });
+    expect(endTurnButton).toHaveAttribute('title', 'Your turn will end when the opponent releases End Stop.');
+    expect(screen.queryByText('Opponent has End Stop enabled.')).not.toBeInTheDocument();
 
     fireEvent.click(endTurnButton);
 
-    expect(endTurn).not.toHaveBeenCalled();
+    expect(endTurn).toHaveBeenCalledOnce();
+  });
+
+  it('shows pending end turn to its owner and allows cancellation', () => {
+    const cancelEndTurn = vi.fn();
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({ cancelEndTurn,
+      gameState: createGameState([], { gameStatus: 'playing', turnPlayer: 'host',
+        pendingEndTurn: 'host', endStop: { host: false, guest: true } }),
+    }));
+    render(<GameBoard />);
+    const cancelButton = screen.getByRole('button', { name: 'Cancel End Request' });
+    expect(cancelButton).toHaveTextContent('Waiting · Cancel');
+    expect(cancelButton).toHaveAttribute('title', "Waiting for opponent's quick actions.");
+    expect(cancelButton).toHaveStyle({ whiteSpace: 'nowrap', minHeight: '28px' });
+    fireEvent.click(cancelButton);
+    expect(cancelEndTurn).toHaveBeenCalledOnce();
+  });
+
+  it('shows the end request to the End Stop player and releases it explicitly', () => {
+    const handleSetEndStop = vi.fn();
+    mockUseGameBoardLogic.mockReturnValue(buildMockGameBoardLogic({ handleSetEndStop,
+      gameState: createGameState([], { gameStatus: 'playing', turnPlayer: 'guest',
+        pendingEndTurn: 'guest', endStop: { host: true, guest: false } }),
+    }));
+    render(<GameBoard />);
+    const finishButton = screen.getByRole('button', { name: 'Finish Quick Actions & Start Turn' });
+    expect(finishButton).toHaveTextContent('Done');
+    expect(finishButton).toHaveTextContent('End requested');
+    expect(finishButton).toHaveAttribute('title', 'Finish quick actions and start your turn.');
+    expect(finishButton).toHaveStyle({ display: 'flex', whiteSpace: 'nowrap', height: '28px', background: 'linear-gradient(135deg, #10b981, #059669)' });
+    expect(finishButton).toContainElement(screen.getByRole('status'));
+    expect(screen.queryByText('Opponent has requested to end their turn.')).not.toBeInTheDocument();
+    fireEvent.click(finishButton);
+    expect(handleSetEndStop).toHaveBeenCalledWith(false);
   });
 
   it('updates solo player tracker stats from the tracker controls', () => {

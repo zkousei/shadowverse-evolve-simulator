@@ -31,6 +31,22 @@ const buildState = (overrides: Partial<SyncState> = {}): SyncState => ({
 });
 
 describe('gameBoardSavedSession', () => {
+  it('restores a pending end request and completes it on End Stop release', () => {
+    const state = applyGameSyncEvent(buildState({ gameStatus: 'playing', endStop: { host: false, guest: true } }),
+      { id: 'end', type: 'END_TURN', actor: 'host' });
+    const payload = buildSavedHostSessionPayload('ROOM', '1.1.1', state, 'now');
+    const loaded = parseSavedHostSession(JSON.stringify(payload), 'ROOM')!;
+    expect(loaded.state.pendingEndTurn).toBe('host');
+    const released = applyGameSyncEvent(loaded.state, { id: 'release', type: 'SET_END_STOP', actor: 'guest', enabled: false });
+    expect(released).toMatchObject({ turnPlayer: 'guest', pendingEndTurn: null });
+  });
+
+  it.each([undefined, 'invalid', 'guest', 1, null])('normalizes legacy or inconsistent pending end request %s', pendingEndTurn => {
+    const state = { ...buildState({ gameStatus: 'playing', endStop: { host: false, guest: true } }), pendingEndTurn };
+    const payload = { sessionSchemaVersion: 1, room: 'ROOM', appVersion: '1.1.1', savedAt: 'now', state };
+    expect(parseSavedHostSession(JSON.stringify(payload), 'ROOM')!.state.pendingEndTurn).toBeNull();
+  });
+
   it('restores the supported schema across application releases', () => {
     const payload = buildSavedHostSessionPayload('ROOM', '1.0.1', buildState({ turnCount: 3 }), 'now');
     expect(payload.sessionSchemaVersion).toBe(1);
