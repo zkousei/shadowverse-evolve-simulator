@@ -1752,6 +1752,58 @@
     "hp": "1"
   },
   {
+    "id": "CP05-076",
+    "name": "幽想の少女・フェリ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-076.jpg",
+    "class": "ナイトメア",
+    "type": "フォロワー",
+    "subtype": "グラブル・闇属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "GR",
+    "ability_text": "自分のターン中、自分の闇属性・カードの能力によってこれを自分の手札から捨てたとき、これを場に出す。\n【進化】コスト1：これは進化する。\n【最終上限解放可能】\nこれが最終上限解放したとき、コスト3：自分の場の他の闇属性・フォロワー2体まで選ぶ。それをスタンドする。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "1",
+    "atk": "1",
+    "hp": "1",
+    "related_cards": [
+      {
+        "id": "CP05-077",
+        "name": "幽想の少女・フェリ"
+      }
+    ]
+  },
+  {
+    "id": "CP05-077",
+    "name": "幽想の少女・フェリ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-077.jpg",
+    "class": "ナイトメア",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "グラブル・闇属性",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "GR",
+    "ability_text": "【最終上限解放可能】\nこれが最終上限解放したとき、コスト3：自分の場の他の闇属性・フォロワー2体まで選ぶ。それをスタンドする。\n【進化時】1枚引く。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "-",
+    "atk": "1",
+    "hp": "1",
+    "related_cards": [
+      {
+        "id": "CP05-076",
+        "name": "幽想の少女・フェリ"
+      }
+    ]
+  },
+  {
     "id": "CP05-078",
     "name": "生滅の技巧・ネハン",
     "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-078_official.jpg",
@@ -1770,6 +1822,24 @@
     "cost": "5",
     "atk": "2",
     "hp": "3"
+  },
+  {
+    "id": "CP05-079",
+    "name": "セレスト・マグナ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-079.jpg",
+    "class": "ナイトメア",
+    "type": "アミュレット",
+    "subtype": "グラブル・闇属性",
+    "card_kind_normalized": "amulet",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "GR",
+    "ability_text": "ターンごとに1回、自分が手札の闇属性・カードを捨てたとき、相手の場のフォロワー1体を選ぶ。それに1ダメージ。\n【起動】これをアクト手札の闇属性・カード1枚を捨てる：自分のデッキの上1枚を見る。それをデッキの下に置いてよい。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "1"
   },
   {
     "id": "CP05-082",
@@ -1810,6 +1880,30 @@
     "cost": "1",
     "atk": "2",
     "hp": "2"
+  },
+  {
+    "id": "CP05-087",
+    "name": "エーヴィヒ・カメラート",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-087.jpg",
+    "class": "ナイトメア",
+    "type": "スペル",
+    "subtype": "グラブル・闇属性",
+    "card_kind_normalized": "spell",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "BR",
+    "ability_text": "【クイック】\n手札の闇属性・カード1枚を捨てる：『闇晶のエレメント』2枚をEXエリアに置く。1枚引く。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "1",
+    "related_cards": [
+      {
+        "id": "CP05-T14",
+        "name": "闇晶のエレメント"
+      }
+    ]
   },
   {
     "id": "CP05-088",
