@@ -40,6 +40,70 @@
     "hp": "3"
   },
   {
+    "id": "CP05-003",
+    "name": "風の理・イーウィヤ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-003.png",
+    "class": "エルフ",
+    "type": "フォロワー",
+    "subtype": "グラブル・六竜・風属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "LG",
+    "ability_text": "【進化】コスト1：これは進化する。\n【ファンファーレ】『風晶のエレメント』1枚をEXエリアに置く。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "1",
+    "atk": "1",
+    "hp": "1",
+    "related_cards": [
+      {
+        "id": "CP05-004",
+        "name": "風の理・イーウィヤ"
+      },
+      {
+        "id": "CP05-T12",
+        "name": "風晶のエレメント"
+      }
+    ]
+  },
+  {
+    "id": "CP05-004",
+    "name": "風の理・イーウィヤ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-004.png",
+    "class": "エルフ",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "グラブル・六竜・風属性",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "LG",
+    "ability_text": "【進化時】『風晶のエレメント』1枚をEXエリアに置く。1枚引く。\n【超進化時】『ヒヒイロカネ』1枚をEXエリアに置く。1枚引く。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "-",
+    "atk": "2",
+    "hp": "2",
+    "related_cards": [
+      {
+        "id": "CP05-003",
+        "name": "風の理・イーウィヤ"
+      },
+      {
+        "id": "CP05-T12",
+        "name": "風晶のエレメント"
+      },
+      {
+        "id": "CP05-T15",
+        "name": "ヒヒイロカネ"
+      }
+    ]
+  },
+  {
     "id": "CP05-005",
     "name": "絢爛の紡ぎ手・コルワ",
     "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-005.jpg",
@@ -394,6 +458,26 @@
         "name": "風晶のエレメント"
       }
     ]
+  },
+  {
+    "id": "CP05-019",
+    "name": "天星剣王・シエテ",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-019.png",
+    "class": "ロイヤル",
+    "type": "フォロワー",
+    "subtype": "グラブル・十天衆・風属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "LG",
+    "ability_text": "【最終上限解放可能】\nこれが上限解放したとき、2枚引く。自分の手札1枚をデッキの下に置く。\nこれが最終上限解放したとき、自分のデッキから元のコスト2以下のフォロワーをカード名が異なるように2枚まで探し、場に出す。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "5",
+    "atk": "3",
+    "hp": "3"
   },
   {
     "id": "CP05-020",
@@ -1750,6 +1834,58 @@
     "cost": "1",
     "atk": "1",
     "hp": "1"
+  },
+  {
+    "id": "CP05-074",
+    "name": "闇の理・フェディエル",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-074.png",
+    "class": "ナイトメア",
+    "type": "フォロワー",
+    "subtype": "グラブル・六竜・闇属性",
+    "card_kind_normalized": "follower",
+    "deck_section": "main",
+    "is_token": false,
+    "is_evolve_card": false,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "LG",
+    "ability_text": "【進化】コスト1：これは進化する。\n自分が手札の闇属性・カード1枚を捨てたとき、相手のリーダーすべてと相手の場のフォロワーすべてに1ダメージ。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "3",
+    "atk": "3",
+    "hp": "3",
+    "related_cards": [
+      {
+        "id": "CP05-075",
+        "name": "闇の理・フェディエル"
+      }
+    ]
+  },
+  {
+    "id": "CP05-075",
+    "name": "闇の理・フェディエル",
+    "image": "https://pub-bdbcbaf7e9804fe7a47da87d11c7064c.r2.dev/images/upcoming/CP05-075.png",
+    "class": "ナイトメア",
+    "type": "フォロワー・エボルヴ",
+    "subtype": "グラブル・六竜・闇属性",
+    "card_kind_normalized": "evolve_follower",
+    "deck_section": "evolve",
+    "is_token": false,
+    "is_evolve_card": true,
+    "is_deck_build_legal": true,
+    "title": "グランブルーファンタジー",
+    "rarity": "LG",
+    "ability_text": "自分が手札の闇属性・カード1枚を捨てたとき、相手のリーダーすべてと相手の場のフォロワーすべてに1ダメージ。\n【進化時】手札2枚を捨てる：2枚引く。\n【超進化時】自分の墓場の「これと同名を除くカード」をカード名が異なるように2枚まで選ぶ。それを手札に加える。自分の手札1枚を捨てる。",
+    "product_name": "コラボパック「グランブルーファンタジー」",
+    "cost": "-",
+    "atk": "4",
+    "hp": "4",
+    "related_cards": [
+      {
+        "id": "CP05-074",
+        "name": "闇の理・フェディエル"
+      }
+    ]
   },
   {
     "id": "CP05-076",
